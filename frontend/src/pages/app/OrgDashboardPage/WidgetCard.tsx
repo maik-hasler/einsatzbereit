@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cardClass } from "../../../lib/surfaceClasses";
 
 interface Props {
 	titleId: string;
@@ -18,7 +19,7 @@ export default function WidgetCard({
 	return (
 		<section
 			aria-labelledby={titleId}
-			className={`flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting ${className ?? ""}`}
+			className={`flex h-full flex-col ${cardClass} ${className ?? ""}`}
 		>
 			<div className="mb-4 flex shrink-0 items-center justify-between gap-3">
 				<h2 id={titleId} className="text-base font-semibold text-gray-900">

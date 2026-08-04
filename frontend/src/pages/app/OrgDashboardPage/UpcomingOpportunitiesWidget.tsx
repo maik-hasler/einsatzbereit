@@ -98,7 +98,7 @@ function UpcomingOpportunitiesWidget({
 						<div
 							key={i}
 							aria-hidden="true"
-							className="rounded-xl border border-gray-100 p-3"
+							className="rounded-card border border-gray-100 p-3"
 						>
 							<Skeleton className="h-4 w-2/3" />
 							{size !== "compact" && <Skeleton className="mt-2 h-3 w-1/2" />}
@@ -134,7 +134,7 @@ function UpcomingOpportunitiesWidget({
 					{items.map((item) => (
 						<li
 							key={item.id}
-							className="relative rounded-xl border border-gray-100 bg-white p-3 shadow-resting transition-shadow hover:shadow-raised"
+							className="relative rounded-card border border-gray-100 bg-white p-3 shadow-resting transition-shadow hover:shadow-raised"
 						>
 							<Link
 								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}

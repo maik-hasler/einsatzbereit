@@ -26,6 +26,7 @@ import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
+import { cardClass } from "../lib/surfaceClasses";
 import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
@@ -405,7 +406,7 @@ export default function EngagementManagementPage() {
 						<div
 							key={i}
 							aria-hidden="true"
-							className="space-y-2 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
+							className={`space-y-2 ${cardClass}`}
 						>
 							<Skeleton className="h-4 w-1/3" />
 							<Skeleton className="h-3 w-1/2" />
@@ -437,10 +438,7 @@ export default function EngagementManagementPage() {
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
 					{engagements.map((e) => (
-						<li
-							key={e.id}
-							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
-						>
+						<li key={e.id} className={cardClass}>
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
 									<p className="text-sm font-medium text-gray-800">
@@ -681,10 +679,7 @@ export default function EngagementManagementPage() {
 							</p>
 							<ul className="space-y-3">
 								{feedbackItems.map((item, idx) => (
-									<li
-										key={idx}
-										className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
-									>
+									<li key={idx} className={cardClass}>
 										<div
 											className="flex items-center gap-1"
 											role="img"
