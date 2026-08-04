@@ -6307,6 +6307,7 @@ export interface EngagementSummary {
     feedbackRating?: number | undefined;
     feedbackComment?: string | undefined;
     feedbackSubmittedAt?: Date | undefined;
+    checkInMethod?: string;
 
     [key: string]: any;
 }

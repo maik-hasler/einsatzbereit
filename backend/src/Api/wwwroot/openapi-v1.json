@@ -7838,6 +7838,10 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "checkInMethod": {
+            "type": "string",
+            "default": "None"
           }
         }
       },

@@ -14,12 +14,16 @@ namespace VisualTests;
 public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	/// <summary>
-	/// Regression for #671: the "Check in" modal rendered no branch for
-	/// checkInMethod == "None", so clicking "Check in" on such an engagement
-	/// opened a blank modal with only a title and a "Done" button.
+	/// Regression for #1016: the "Check in" button used to render for every
+	/// Confirmed engagement regardless of the opportunity's CheckInMethod, so a
+	/// None-method opportunity (the wizard default) showed a button that only ever
+	/// led to a modal saying no check-in was needed. It must not render at all now.
+	/// Supersedes the #671 regression test that used to click this same button to
+	/// assert the modal's None-method instruction text - that click-through is no
+	/// longer reachable from the UI once the button itself is gone for this method.
 	/// </summary>
 	[Test]
-	public async Task CheckInModal_ShowsInstruction_ForNoneCheckInMethod()
+	public async Task CheckInButton_IsHidden_ForNoneCheckInMethod()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -69,12 +73,71 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await row.GetByRole(AriaRole.Button, new() { Name = "Check in" }).ClickAsync();
-		var dialog = Page.Locator("[role='dialog']");
-		await Expect(dialog).ToBeVisibleAsync();
+		// Give the card a moment to finish rendering its action row before
+		// asserting a negative - there's no positive signal to wait on here.
+		await Page.WaitForTimeoutAsync(500);
+		await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Check in" })).Not.ToBeVisibleAsync();
+	}
 
-		await Expect(dialog.GetByText("This opportunity doesn't require an explicit check-in step."))
+	/// <summary>
+	/// Regression for #1016: a Manual-method opportunity must show inline
+	/// instructional text instead of a "Check in" button, since clicking it can't
+	/// actually check the volunteer in - only the organizer can do that.
+	/// </summary>
+	[Test]
+	public async Task CheckInButton_ShowsInlineText_ForManualCheckInMethod()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInManual Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"CheckInManual Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CheckInAndSlotTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "Manual",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var engagementResponse = await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "Applying via CheckInAndSlotTests regression check." });
+		engagementResponse.EnsureSuccessStatusCode();
+		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString();
+
+		(await http.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile?tab=engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var row = Page.Locator("li", new() { HasText = oppTitle });
+		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Expect(row.GetByText("The organizer will check you in manually."))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Check in" })).Not.ToBeVisibleAsync();
 	}
 
 	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)

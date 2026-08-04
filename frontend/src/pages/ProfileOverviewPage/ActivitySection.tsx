@@ -464,10 +464,20 @@ export default function ActivitySection() {
 							<div className="mt-auto flex flex-wrap items-center gap-2">
 								{e.status === "Confirmed" &&
 									!e.isCheckedIn &&
-									e.opportunityTitle && (
+									e.opportunityTitle &&
+									(e.checkInMethod === "QRCode" ||
+										e.checkInMethod === "PINCode") && (
 										<Button onClick={() => setCheckInEngagement(e)} size="sm">
 											{t("checkIn.buttonLabel")}
 										</Button>
+									)}
+								{e.status === "Confirmed" &&
+									!e.isCheckedIn &&
+									e.opportunityTitle &&
+									e.checkInMethod === "Manual" && (
+										<span className="text-xs text-gray-500">
+											{t("checkIn.manualInstruction")}
+										</span>
 									)}
 								{e.isCheckedIn && !e.hasFeedback && (
 									<button
