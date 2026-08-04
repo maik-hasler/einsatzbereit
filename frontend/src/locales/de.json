@@ -1092,7 +1092,12 @@
         "loading": "Organisationen werden geladen…",
         "error": "Organisationen konnten nicht geladen werden.",
         "noOrganizations": "Keine Organisationen gefunden.",
-        "loadMore": "Mehr laden"
+        "loadMore": "Mehr laden",
+        "searchLabel": "Organisationen durchsuchen",
+        "searchPlaceholder": "Nach Name suchen",
+        "searchButton": "Suchen",
+        "flaggedOnlyLabel": "Nur gemeldete",
+        "deletedOnlyLabel": "Nur gelöschte"
       },
       "users": {
         "loading": "Nutzer:innen werden geladen…",

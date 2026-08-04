@@ -34,7 +34,13 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
+			// einsatzbereit#1054 added a second "Search" button (organization
+			// list), so the unscoped role lookup now matches two elements -
+			// scope to the form containing the user-search input.
+			await Page.Locator("form")
+				.Filter(new() { Has = Page.Locator("#admin-user-search") })
+				.GetByRole(AriaRole.Button, new() { Name = "Search" })
+				.ClickAsync();
 
 			// einsatzbereit#1294: Block/Promote carry a per-row aria-label (the
 			// user's name interpolated into the middle of the phrase, e.g.
@@ -78,7 +84,13 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
+			// einsatzbereit#1054 added a second "Search" button (organization
+			// list), so the unscoped role lookup now matches two elements -
+			// scope to the form containing the user-search input.
+			await Page.Locator("form")
+				.Filter(new() { Has = Page.Locator("#admin-user-search") })
+				.GetByRole(AriaRole.Button, new() { Name = "Search" })
+				.ClickAsync();
 
 			var row = Page.Locator("li").Filter(new() { HasTextString = username });
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -132,7 +144,13 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.Locator("#admin-user-search").FillAsync("admin");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
+		// einsatzbereit#1054 added a second "Search" button (organization
+		// list), so the unscoped role lookup now matches two elements -
+		// scope to the form containing the user-search input.
+		await Page.Locator("form")
+			.Filter(new() { Has = Page.Locator("#admin-user-search") })
+			.GetByRole(AriaRole.Button, new() { Name = "Search" })
+			.ClickAsync();
 
 		var ownRow = Page.Locator("li").Filter(new() { HasTextString = "admin@example.com" });
 		await Expect(ownRow).ToBeVisibleAsync(new() { Timeout = 15_000 });

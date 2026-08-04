@@ -25,10 +25,15 @@ internal sealed class ListOrganizationsEndpoint : IEndpoint
 	private static async Task<IResult> ListOrganizationsAsync(
 		[FromQuery] int pageNumber,
 		[FromQuery] int pageSize,
+		[FromQuery] string? search,
+		[FromQuery] bool? deleted,
+		[FromQuery] bool? flagged,
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
-		var result = await sender.Send(new ListOrganizationsQuery(pageNumber, pageSize), cancellationToken);
+		var result = await sender.Send(
+			new ListOrganizationsQuery(pageNumber, pageSize, search, deleted, flagged),
+			cancellationToken);
 
 		return Results.Ok(result);
 	}

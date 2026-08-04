@@ -1092,7 +1092,12 @@
         "loading": "Loading organizations…",
         "error": "Failed to load organizations.",
         "noOrganizations": "No organizations found.",
-        "loadMore": "Load more"
+        "loadMore": "Load more",
+        "searchLabel": "Search organizations",
+        "searchPlaceholder": "Search by name",
+        "searchButton": "Search",
+        "flaggedOnlyLabel": "Flagged only",
+        "deletedOnlyLabel": "Deleted only"
       },
       "users": {
         "loading": "Loading users…",
