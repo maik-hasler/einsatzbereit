@@ -99,6 +99,7 @@ export default function EngagementRecordPage() {
 						className="mt-6 overflow-x-auto"
 						role="region"
 						aria-label={t("engagementRecord.title")}
+						// eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- WCAG 2.1.1: makes the scrollable table reachable via keyboard on browsers without native keyboard-focusable scroll containers
 						tabIndex={0}
 					>
 						<table className="w-full border-collapse text-left text-sm">
