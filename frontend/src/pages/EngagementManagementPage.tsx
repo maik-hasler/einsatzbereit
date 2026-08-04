@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, Link, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type {
 	EngagementSummary,
 	FeedbackItemDto,
@@ -9,6 +10,7 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
@@ -27,7 +29,12 @@ import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
+import {
+	ArrowDownTrayIcon,
+	CheckIconSolid,
+	QrCodeIcon,
+	StarIcon,
+} from "../components/icons";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -41,6 +48,7 @@ export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const { isOrganizer } = useOutletContext<OrgAppContext>();
 	const api = useApiClient();
+	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
@@ -82,6 +90,8 @@ export default function EngagementManagementPage() {
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
 	const [undoingCheckIn, setUndoingCheckIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
+	const [exporting, setExporting] = useState(false);
+	const [exportError, setExportError] = useState<string | null>(null);
 
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkConfirming, setBulkConfirming] = useState(false);
@@ -454,6 +464,47 @@ export default function EngagementManagementPage() {
 		setCancelError(null);
 	}
 
+	// Not routed through useApiClient()/EinsatzbereitApi: NSwag has no typed
+	// response for a file-returning endpoint (see GetEngagementCalendar's
+	// generated client method, which discards the body and returns void), so
+	// this needs a raw authenticated fetch + blob download instead - the same
+	// pattern DangerZoneCard uses for the GDPR data export download.
+	async function handleExport() {
+		if (!opportunityId) return;
+		setExporting(true);
+		setExportError(null);
+		try {
+			const response = await fetch(
+				`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${opportunityId}/engagements/export`,
+				{
+					headers: {
+						Authorization: `Bearer ${auth.user?.access_token ?? ""}`,
+					},
+				},
+			);
+			if (!response.ok) {
+				throw new Error(t("engagementManagement.exportError"));
+			}
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `engagements-${opportunityId}.csv`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			setExportError(
+				err instanceof Error
+					? err.message
+					: t("engagementManagement.exportError"),
+			);
+		} finally {
+			setExporting(false);
+		}
+	}
+
 	if (notFound) {
 		return <NotFoundPage />;
 	}
@@ -486,6 +537,22 @@ export default function EngagementManagementPage() {
 					</Button>
 				</div>
 			)}
+
+			<div className="mb-4 flex justify-end">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={handleExport}
+					disabled={exporting}
+				>
+					<ArrowDownTrayIcon className="h-4 w-4" />
+					{exporting
+						? t("engagementManagement.exportButtonLoading")
+						: t("engagementManagement.exportButton")}
+				</Button>
+			</div>
+			{exportError && <ErrorBanner message={exportError} className="mb-4" />}
 
 			<div className="mb-4 flex flex-wrap items-end gap-3">
 				<div>
