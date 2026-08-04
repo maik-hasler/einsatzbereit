@@ -19,6 +19,14 @@ internal sealed class NotificationReadRepository(
 		NotificationKind.EngagementConfirmed,
 		NotificationKind.EngagementCancelled,
 		NotificationKind.EngagementWithdrawn,
+		NotificationKind.FeedbackSubmitted,
+	];
+
+	private static readonly NotificationKind[] InvitationKinds =
+	[
+		NotificationKind.InvitationReceived,
+		NotificationKind.InvitationAccepted,
+		NotificationKind.InvitationDeclined,
 	];
 
 	public async ValueTask<List<NotificationSummary>> GetByRecipientAsync(
@@ -105,33 +113,39 @@ internal sealed class NotificationReadRepository(
 			.ToHashSet();
 
 		var directOpportunityIds = notifications
-			.Where(n => !EngagementKinds.Contains(n.Kind) && n.Kind != NotificationKind.InvitationReceived)
+			.Where(n => !EngagementKinds.Contains(n.Kind) && !InvitationKinds.Contains(n.Kind))
 			.Select(n => n.RelatedEntityId)
 			.ToHashSet();
 
-		// An InvitationReceived notification's RelatedEntityId is the
-		// invitation's own id, not an opportunity id (there is no opportunity
-		// involved at all) - looking it up in opportunityTitles below always
-		// missed, silently falling back to the frontend's "deleted opportunity"
-		// placeholder for something that was never an opportunity to begin
-		// with. Resolve it against the invitation itself instead.
+		// An invitation notification's RelatedEntityId is the invitation's own
+		// id, not an opportunity id (there is no opportunity involved at all) -
+		// looking it up in opportunityTitles below always missed, silently
+		// falling back to the frontend's "deleted opportunity" placeholder for
+		// something that was never an opportunity to begin with. Resolve it
+		// against the invitation itself instead. InvitationAccepted/Declined
+		// share this same shape (RelatedEntityId = invitation id) - the
+		// invitation row is never deleted after being accepted/declined, only
+		// its Status changes, so the lookup is just as safe for those.
 		var invitationIds = notifications
-			.Where(n => n.Kind == NotificationKind.InvitationReceived)
+			.Where(n => InvitationKinds.Contains(n.Kind))
 			.Select(n => n.RelatedEntityId)
 			.ToHashSet();
 
 		Dictionary<Guid, string> invitationOrganizationNames = [];
+		Dictionary<Guid, Guid> invitationOrganizationIds = [];
 		if (invitationIds.Count > 0)
 		{
 			var invitationIdVOs = invitationIds.Select(id => OrganizationInvitationId.Create(id).GetValueOrThrow()).ToList();
-			invitationOrganizationNames = await dbContext.OrganizationInvitationsQuery
+			var invitationRows = await dbContext.OrganizationInvitationsQuery
 				.Where(i => invitationIdVOs.Contains(i.Id))
 				.Join(
 					dbContext.OrganizationsQuery,
 					i => i.OrganizationId,
 					org => org.Id,
-					(i, org) => new { i.Id, org.Name })
-				.ToDictionaryAsync(x => x.Id.Value, x => x.Name, cancellationToken);
+					(i, org) => new { i.Id, OrganizationId = org.Id, org.Name })
+				.ToListAsync(cancellationToken);
+			invitationOrganizationNames = invitationRows.ToDictionary(x => x.Id.Value, x => x.Name);
+			invitationOrganizationIds = invitationRows.ToDictionary(x => x.Id.Value, x => x.OrganizationId.Value);
 		}
 
 		// Batch-fetch engagements and compute opportunity IDs from them
@@ -175,16 +189,20 @@ internal sealed class NotificationReadRepository(
 			{
 				opportunityTitles.TryGetValue(opportunityId, out relatedTitle);
 
-				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn
+				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn or NotificationKind.FeedbackSubmitted
 					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
 						? $"/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements"
 						: null)
 					: "/my-engagements";
 			}
-			else if (n.Kind == NotificationKind.InvitationReceived)
+			else if (InvitationKinds.Contains(n.Kind))
 			{
 				invitationOrganizationNames.TryGetValue(n.RelatedEntityId, out relatedTitle);
-				actionUrl = "/profile?tab=invitations";
+				actionUrl = n.Kind == NotificationKind.InvitationReceived
+					? "/profile?tab=invitations"
+					: (invitationOrganizationIds.TryGetValue(n.RelatedEntityId, out var invitationOrganizationId)
+						? $"/app/{invitationOrganizationId}/dashboard/members"
+						: null);
 			}
 			else if (!EngagementKinds.Contains(n.Kind))
 			{

@@ -2,7 +2,7 @@ using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
-using Domain.Notifications;
+using Application.Engagements.Common;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
@@ -76,13 +76,12 @@ internal sealed class DeleteTimeSlotCommandHandler(
 		var engagementsToCancel = await dbContext.GetActiveEngagementsForTimeSlotsAsync(affectedIds, cancellationToken);
 		foreach (var engagement in engagementsToCancel)
 		{
-			engagement.Cancel("The recurring time slot series was cancelled.", opportunity.Title).ThrowIfFailure();
-
-			var notification = Notification.Create(
-				engagement.VolunteerId!.Value,
-				NotificationKind.EngagementCancelled,
-				engagement.Id.Value);
-			await dbContext.Notifications.AddAsync(notification, cancellationToken);
+			await EngagementCancellationHelper.CancelAndNotifyAsync(
+				dbContext,
+				engagement,
+				"The recurring time slot series was cancelled.",
+				opportunity.Title,
+				cancellationToken);
 		}
 
 		foreach (var slot in affectedSlots)

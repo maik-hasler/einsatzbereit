@@ -798,7 +798,10 @@
         "OpportunityDeleted": "Ein Einsatz, für den du dich angemeldet hast, wurde entfernt",
         "OpportunityUnpublished": "{{title}} wurde zurückgezogen und deine Anmeldung wurde abgesagt",
         "OpportunityCancelled": "{{title}} wurde abgesagt und deine Anmeldung wurde abgesagt",
-        "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten"
+        "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",
+        "InvitationAccepted": "Deine Einladung, {{title}} beizutreten, wurde angenommen",
+        "InvitationDeclined": "Deine Einladung, {{title}} beizutreten, wurde abgelehnt",
+        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}"
       }
     },
     "language": {
