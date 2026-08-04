@@ -139,6 +139,104 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_InvitationAccepted_HasOrganizationNameAsRelatedTitleAndMembersUrl(
+		CancellationToken cancellationToken)
+	{
+		// einsatzbereit#1047: the inviting organizer previously heard nothing
+		// back when an invite was accepted - they had to re-open the members
+		// page and diff the list to find out.
+		const string organizationName = "Invitation Accepted Notification Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		// Unlike the inline InvitationReceived notification above, InvitationAccepted
+		// is created by OrganizationInvitationAcceptedDomainEventHandler, dispatched
+		// async by OutboxProcessorJob (which polls every 5s) - give it several cycles
+		// before asserting, same budget as OutboxTests.cs.
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Organizations.OrganizationInvitationAcceptedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the accepted event within a few poll cycles");
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = olafNotifications.Items.Single(n => n.Kind == "InvitationAccepted");
+		notification.RelatedTitle.Should().Be(organizationName);
+		notification.ActionUrl.Should().Be($"/app/{org.Id.Value}/dashboard/members");
+	}
+
+	[Test]
+	public async Task GetMyNotifications_InvitationDeclined_HasOrganizationNameAsRelatedTitleAndMembersUrl(
+		CancellationToken cancellationToken)
+	{
+		const string organizationName = "Invitation Declined Notification Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Organizations.OrganizationInvitationDeclinedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the declined event within a few poll cycles");
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = olafNotifications.Items.Single(n => n.Kind == "InvitationDeclined");
+		notification.RelatedTitle.Should().Be(organizationName);
+		notification.ActionUrl.Should().Be($"/app/{org.Id.Value}/dashboard/members");
+	}
+
+	[Test]
+	public async Task GetMyNotifications_FeedbackSubmitted_HasRelatedTitleAndOrganizerDashboardUrl(
+		CancellationToken cancellationToken)
+	{
+		// einsatzbereit#1047: a volunteer submitting feedback previously
+		// notified nobody - the organizer had no signal that feedback had come in.
+		const string opportunityTitle = "Notification Feedback Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 5, Comment = "Great experience" }, cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Engagements.EngagementFeedbackSubmittedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the feedback event within a few poll cycles");
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = olafNotifications.Items.Single(n => n.Kind == "FeedbackSubmitted");
+		notification.RelatedTitle.Should().Be(opportunityTitle);
+		notification.ActionUrl.Should()
+			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
+	}
+
+	[Test]
 	public async Task GetMyNotifications_BeforeCursor_ReturnsOnlyOlderNotifications(
 		CancellationToken cancellationToken)
 	{

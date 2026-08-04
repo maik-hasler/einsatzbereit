@@ -18,7 +18,7 @@ internal sealed class NotificationConfiguration
 			"ck_notification_kind_valid",
 			"kind IN ('EngagementCreated', 'EngagementConfirmed', 'EngagementCancelled', 'EngagementWithdrawn', " +
 			"'OpportunityUpdated', 'OpportunityDeleted', 'OpportunityUnpublished', 'OpportunityCancelled', 'InvitationReceived', " +
-			"'NewMatchingOpportunity')"));
+			"'NewMatchingOpportunity', 'InvitationAccepted', 'InvitationDeclined', 'FeedbackSubmitted')"));
 
 		builder.Property(n => n.Id)
 			.HasConversion(

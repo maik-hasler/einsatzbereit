@@ -798,7 +798,10 @@
         "OpportunityDeleted": "An opportunity you signed up for was removed",
         "OpportunityUnpublished": "{{title}} was taken down and your sign-up was cancelled",
         "OpportunityCancelled": "{{title}} was cancelled and your sign-up was cancelled",
-        "InvitationReceived": "You've been invited to join {{title}}"
+        "InvitationReceived": "You've been invited to join {{title}}",
+        "InvitationAccepted": "Your invitation to join {{title}} was accepted",
+        "InvitationDeclined": "Your invitation to join {{title}} was declined",
+        "FeedbackSubmitted": "New feedback received for {{title}}"
       }
     },
     "language": {
