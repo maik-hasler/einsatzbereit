@@ -492,4 +492,189 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*deleted their account*");
 	}
+
+	// --- UpdateFeedback (#1069) ---
+
+	private static Engagement CreateCheckedInEngagementWithFeedback(int rating, string? comment, DateTimeOffset submittedAt)
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.SubmitFeedback(rating, comment, submittedAt);
+		return engagement;
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldUpdateRatingAndComment_WhenWithinEditWindow()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.UpdateFeedback(5, "Actually, great!", submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeFalse();
+		engagement.FeedbackRating.Should().Be(5);
+		engagement.FeedbackComment.Should().Be("Actually, great!");
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldNotChangeFeedbackSubmittedAt()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		engagement.UpdateFeedback(5, "Actually, great!", submittedAt.AddHours(1));
+
+		// The edit window is anchored to the original submission (#1069) - editing
+		// must not reset it, or repeated edits could keep feedback editable forever.
+		engagement.FeedbackSubmittedAt.Should().Be(submittedAt);
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldFail_WhenFeedbackNotYetSubmitted()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+
+		var result = engagement.UpdateFeedback(5, "Great!", DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*not been submitted*");
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldSucceed_AtExactEditWindowBoundary()
+	{
+		var submittedAt = DateTimeOffset.UtcNow;
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.UpdateFeedback(5, "Better!", submittedAt.AddDays(Engagement.FeedbackEditWindowDays));
+
+		result.IsFailure.Should().BeFalse();
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldFail_WhenEditWindowExpired()
+	{
+		var submittedAt = DateTimeOffset.UtcNow;
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.UpdateFeedback(
+			5,
+			"Better!",
+			submittedAt.AddDays(Engagement.FeedbackEditWindowDays).AddSeconds(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*no longer be edited*");
+	}
+
+	[Test]
+	[Arguments(0)]
+	[Arguments(-1)]
+	[Arguments(6)]
+	public void UpdateFeedback_ShouldFail_WhenRatingIsOutOfRange(int invalidRating)
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.UpdateFeedback(invalidRating, null, submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Rating must be between 1 and 5*");
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldFail_WhenCommentExceedsMaxLength()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+		var tooLongComment = new string('a', 501);
+
+		var result = engagement.UpdateFeedback(4, tooLongComment, submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*must not exceed 500 characters*");
+	}
+
+	[Test]
+	public void UpdateFeedback_ShouldFail_WhenAnonymized()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+		engagement.Anonymize();
+
+		var result = engagement.UpdateFeedback(5, "Great!", submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	// --- DeleteFeedback (#1069) ---
+
+	[Test]
+	public void DeleteFeedback_ShouldClearFeedbackFields_WhenWithinEditWindow()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.DeleteFeedback(submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeFalse();
+		engagement.FeedbackRating.Should().BeNull();
+		engagement.FeedbackComment.Should().BeNull();
+		engagement.FeedbackSubmittedAt.Should().BeNull();
+	}
+
+	[Test]
+	public void DeleteFeedback_ShouldAllowResubmission_Afterward()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+		engagement.DeleteFeedback(submittedAt.AddHours(1));
+
+		var result = engagement.SubmitFeedback(4, "Second try", submittedAt.AddHours(2));
+
+		result.IsFailure.Should().BeFalse();
+		engagement.FeedbackRating.Should().Be(4);
+	}
+
+	[Test]
+	public void DeleteFeedback_ShouldFail_WhenFeedbackNotYetSubmitted()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+
+		var result = engagement.DeleteFeedback(DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*not been submitted*");
+	}
+
+	[Test]
+	public void DeleteFeedback_ShouldFail_WhenEditWindowExpired()
+	{
+		var submittedAt = DateTimeOffset.UtcNow;
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+
+		var result = engagement.DeleteFeedback(
+			submittedAt.AddDays(Engagement.FeedbackEditWindowDays).AddSeconds(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*no longer be edited*");
+	}
+
+	[Test]
+	public void DeleteFeedback_ShouldFail_WhenAnonymized()
+	{
+		var submittedAt = DateTimeOffset.UtcNow.AddDays(-1);
+		var engagement = CreateCheckedInEngagementWithFeedback(3, "Okay", submittedAt);
+		engagement.Anonymize();
+
+		var result = engagement.DeleteFeedback(submittedAt.AddHours(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
 }

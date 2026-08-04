@@ -1215,6 +1215,232 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		summary.FeedbackCount.Should().Be(0);
 	}
 
+	// ── UpdateFeedback / DeleteFeedback (#1069) ───────────────────────────────
+
+	[Test]
+	public async Task UpdateFeedback_ShouldUpdateRatingAndComment_WhenCalledByOwnerWithinWindow(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		await veraClient.UpdateFeedbackAsync(
+			engagement.Id, new UpdateFeedbackRequest { Rating = 5, Comment = "Actually, great!" }, cancellationToken);
+
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
+		summary.Items.Items.Should().ContainSingle(i => i.Rating == 5 && i.Comment == "Actually, great!");
+	}
+
+	[Test]
+	public async Task UpdateFeedback_ShouldReturn404_WhenEngagementNotFound(
+		CancellationToken cancellationToken)
+	{
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => veraClient.UpdateFeedbackAsync(
+			Guid.NewGuid(), new UpdateFeedbackRequest { Rating = 5, Comment = null }, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task UpdateFeedback_ShouldReturn403_WhenCallerIsNotTheOwner(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		var act = () => olafClient.UpdateFeedbackAsync(
+			engagement.Id, new UpdateFeedbackRequest { Rating = 5, Comment = "Hijacked" }, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task UpdateFeedback_ShouldReturn409_WhenFeedbackNotYetSubmitted(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		var act = () => veraClient.UpdateFeedbackAsync(
+			engagement.Id, new UpdateFeedbackRequest { Rating = 5, Comment = null }, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
+	public async Task UpdateFeedback_ShouldReturn409_WhenEditWindowExpired(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		// Backdate the submission directly in the DB - there's no API path to
+		// simulate the passage of time, so this mirrors the raw-SQL approach the
+		// check-constraint tests below already use to bypass the domain.
+		await using (var dbContext = fixture.CreateApplicationDbContext())
+		{
+			var expiredSubmittedAt = DateTimeOffset.UtcNow.AddDays(-(Engagement.FeedbackEditWindowDays + 1));
+			await dbContext.Database.ExecuteSqlInterpolatedAsync(
+				$"UPDATE engagement SET feedback_submitted_at = {expiredSubmittedAt} WHERE id = {engagement.Id}",
+				cancellationToken);
+		}
+
+		var act = () => veraClient.UpdateFeedbackAsync(
+			engagement.Id, new UpdateFeedbackRequest { Rating = 5, Comment = "Too late" }, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
+	public async Task DeleteFeedback_ShouldClearFeedback_WhenCalledByOwnerWithinWindow(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		await veraClient.DeleteFeedbackAsync(engagement.Id, cancellationToken);
+
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
+		summary.FeedbackCount.Should().Be(0);
+	}
+
+	[Test]
+	public async Task DeleteFeedback_ShouldAllowResubmission_Afterward(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+		await veraClient.DeleteFeedbackAsync(engagement.Id, cancellationToken);
+
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 5, Comment = "Second try" }, cancellationToken);
+
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
+		summary.Items.Items.Should().ContainSingle(i => i.Rating == 5 && i.Comment == "Second try");
+	}
+
+	[Test]
+	public async Task DeleteFeedback_ShouldReturn404_WhenEngagementNotFound(
+		CancellationToken cancellationToken)
+	{
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => veraClient.DeleteFeedbackAsync(Guid.NewGuid(), cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task DeleteFeedback_ShouldReturn403_WhenCallerIsNotTheOwner(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		var act = () => olafClient.DeleteFeedbackAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task DeleteFeedback_ShouldReturn409_WhenEditWindowExpired(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
+
+		await using (var dbContext = fixture.CreateApplicationDbContext())
+		{
+			var expiredSubmittedAt = DateTimeOffset.UtcNow.AddDays(-(Engagement.FeedbackEditWindowDays + 1));
+			await dbContext.Database.ExecuteSqlInterpolatedAsync(
+				$"UPDATE engagement SET feedback_submitted_at = {expiredSubmittedAt} WHERE id = {engagement.Id}",
+				cancellationToken);
+		}
+
+		var act = () => veraClient.DeleteFeedbackAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
 	// ── Feedback rating DB check constraint (#1214) ───────────────────────────
 	// SubmitFeedback already rejects an out-of-range rating (Application.UnitTests
 	// covers that), but that only guards the one write path through the API. These

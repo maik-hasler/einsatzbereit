@@ -19,4 +19,7 @@ public sealed record EngagementSummary(
 	string? Location = null,
 	string? VolunteerEmail = null,
 	string? VolunteerPhone = null,
-	string? CancellationReason = null);
+	string? CancellationReason = null,
+	int? FeedbackRating = null,
+	string? FeedbackComment = null,
+	DateTimeOffset? FeedbackSubmittedAt = null);

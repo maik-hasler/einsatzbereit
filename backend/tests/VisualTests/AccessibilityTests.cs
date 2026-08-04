@@ -1420,6 +1420,56 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task ProfileOverviewPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1069: the axe gate above only ever renders the
+		// create-mode "Leave feedback" state - it never opens the edit-mode
+		// SubmitFeedbackModal, the badge+Edit+Delete buttons state, or the
+		// delete-feedback ConfirmDialog. Seed feedback that's already been
+		// submitted so this scan actually reaches all three.
+		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("Manual", "FeedbackEditA11y");
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		(await veraHttp.PostAsJsonAsync($"/v1/engagements/{engagementId}/feedback", new { rating = 4, comment = "Great!" }))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(card.GetByRole(AriaRole.Button, new() { Name = "Edit" })).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var badgeAndButtonsResult = await Page.RunAxe();
+		AssertNoViolations(badgeAndButtonsResult);
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Edit" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+		var editModalResult = await Page.RunAxe();
+		AssertNoViolations(editModalResult);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).Not.ToBeVisibleAsync();
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+		var deleteDialogResult = await Page.RunAxe();
+		AssertNoViolations(deleteDialogResult);
+	}
+
+	[Test]
 	public async Task ProfileOverviewPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297: CheckInModal's PIN-entry state (and its

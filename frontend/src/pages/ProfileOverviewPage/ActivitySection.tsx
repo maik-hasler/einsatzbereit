@@ -9,6 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
+import { isFeedbackEditable } from "../../lib/feedback";
 import { formatDate, formatDateTime } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
@@ -76,6 +77,13 @@ export default function ActivitySection() {
 		useState<EngagementSummary | null>(null);
 	const [feedbackEngagement, setFeedbackEngagement] =
 		useState<EngagementSummary | null>(null);
+	const [confirmDeleteFeedbackId, setConfirmDeleteFeedbackId] = useState<
+		string | null
+	>(null);
+	const [deletingFeedback, setDeletingFeedback] = useState(false);
+	const [deleteFeedbackError, setDeleteFeedbackError] = useState<string | null>(
+		null,
+	);
 
 	// --- Invitations ---
 	const [invitations, setInvitations] = useState<MyInvitationDto[]>([]);
@@ -149,13 +157,74 @@ export default function ActivitySection() {
 		);
 	}
 
-	function handleFeedbackSubmitted() {
+	function handleFeedbackSubmitted(rating: number, comment: string | null) {
 		if (!feedbackEngagement) return;
 		setEngagements((prev) =>
 			prev.map((e) =>
-				e.id === feedbackEngagement.id ? { ...e, hasFeedback: true } : e,
+				e.id === feedbackEngagement.id
+					? {
+							...e,
+							hasFeedback: true,
+							feedbackRating: rating,
+							feedbackComment: comment ?? undefined,
+							feedbackSubmittedAt: e.feedbackSubmittedAt ?? new Date(),
+						}
+					: e,
 			),
 		);
+	}
+
+	async function handleDeleteFeedbackConfirm() {
+		if (!confirmDeleteFeedbackId) return;
+		const engagementId = confirmDeleteFeedbackId;
+		setDeletingFeedback(true);
+		setDeleteFeedbackError(null);
+		try {
+			await api.deleteFeedback(engagementId);
+			setEngagements((prev) =>
+				prev.map((e) =>
+					e.id === engagementId
+						? {
+								...e,
+								hasFeedback: false,
+								feedbackRating: undefined,
+								feedbackComment: undefined,
+								feedbackSubmittedAt: undefined,
+							}
+						: e,
+				),
+			);
+			setConfirmDeleteFeedbackId(null);
+			// Deleting swaps this card from the badge+Edit+Delete branch to the
+			// "Leave feedback" branch in the same commit that unmounts the confirm
+			// dialog, so the Delete button Modal's focus-restore effect is looking
+			// for is already gone from the DOM by the time that cleanup runs -
+			// focus would otherwise fall back to <body>. Move it to the button
+			// that replaces it instead, once the new branch has painted.
+			requestAnimationFrame(() => {
+				const card = document.querySelector(
+					`[data-engagement-id="${engagementId}"]`,
+				);
+				const leaveFeedbackButton = Array.from(
+					card?.querySelectorAll("button") ?? [],
+				).find(
+					(button) => button.textContent?.trim() === t("feedback.buttonLabel"),
+				);
+				leaveFeedbackButton?.focus();
+			});
+		} catch (err) {
+			setDeleteFeedbackError(
+				getApiErrorMessage(err, t("feedback.deleteError")),
+			);
+		} finally {
+			setDeletingFeedback(false);
+		}
+	}
+
+	function handleDeleteFeedbackClose() {
+		if (deletingFeedback) return;
+		setConfirmDeleteFeedbackId(null);
+		setDeleteFeedbackError(null);
 	}
 
 	async function handleAcceptInvitation(invitationId: string) {
@@ -409,9 +478,29 @@ export default function ActivitySection() {
 									</button>
 								)}
 								{e.isCheckedIn && e.hasFeedback && (
-									<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
-										{t("feedback.submitted")}
-									</span>
+									<>
+										<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
+											{t("feedback.submitted")}
+										</span>
+										{isFeedbackEditable(e.feedbackSubmittedAt) && (
+											<>
+												<button
+													type="button"
+													onClick={() => setFeedbackEngagement(e)}
+													className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+												>
+													{t("feedback.editButtonLabel")}
+												</button>
+												<button
+													type="button"
+													onClick={() => setConfirmDeleteFeedbackId(e.id)}
+													className="rounded-lg border border-red-200 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
+												>
+													{t("feedback.deleteButtonLabel")}
+												</button>
+											</>
+										)}
+									</>
 								)}
 								{e.status === "Confirmed" &&
 									e.timeSlotId &&
@@ -494,8 +583,30 @@ export default function ActivitySection() {
 						feedbackEngagement.opportunityTitle ??
 						t("myEngagements.deletedOpportunityTitle")
 					}
+					initialRating={
+						feedbackEngagement.hasFeedback
+							? feedbackEngagement.feedbackRating
+							: undefined
+					}
+					initialComment={
+						feedbackEngagement.hasFeedback
+							? (feedbackEngagement.feedbackComment ?? null)
+							: undefined
+					}
 					onSubmitted={handleFeedbackSubmitted}
 					onClose={() => setFeedbackEngagement(null)}
+				/>
+			)}
+
+			{confirmDeleteFeedbackId && (
+				<ConfirmDialog
+					title={t("confirmDialog.deleteFeedback.title")}
+					message={t("confirmDialog.deleteFeedback.message")}
+					confirmLabel={t("confirmDialog.deleteFeedback.confirm")}
+					onConfirm={handleDeleteFeedbackConfirm}
+					onClose={handleDeleteFeedbackClose}
+					loading={deletingFeedback}
+					error={deleteFeedbackError}
 				/>
 			)}
 		</section>
