@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
+import { textareaClass } from "../lib/formClasses";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
@@ -97,7 +98,7 @@ export default function SubmitFeedbackModal({
 						value={comment}
 						onChange={(e) => setComment(e.target.value)}
 						placeholder={t("feedback.commentPlaceholder")}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+						className={textareaClass}
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{comment.length}/500

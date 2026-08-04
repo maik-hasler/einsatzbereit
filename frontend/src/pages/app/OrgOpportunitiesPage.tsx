@@ -10,7 +10,7 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { labelClass } from "../../lib/formClasses";
+import { labelClass, textareaClass } from "../../lib/formClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -696,7 +696,7 @@ export default function OrgOpportunitiesPage() {
 						onChange={(e) => setCancelReason(e.target.value)}
 						placeholder={t("confirmDialog.cancelOpportunity.reasonPlaceholder")}
 						disabled={cancelling}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+						className={textareaClass}
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{cancelReason.length}/500

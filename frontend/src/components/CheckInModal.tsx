@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { getApiErrorMessage } from "../lib/apiError";
-import { labelClass } from "../lib/formClasses";
+import { inputClass, labelClass } from "../lib/formClasses";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
@@ -123,7 +123,7 @@ export default function CheckInModal({
 								value={pin}
 								onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
 								placeholder={t("checkIn.pinPlaceholder")}
-								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+								className={inputClass}
 							/>
 						</div>
 						{error && <ErrorBanner message={error} />}

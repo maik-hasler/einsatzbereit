@@ -4,7 +4,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import { getApiErrorMessage } from "../lib/apiError";
-import { labelClass } from "../lib/formClasses";
+import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 
 const REPORT_REASONS = [
 	"Spam",
@@ -70,7 +70,7 @@ export default function ReportContentModal({
 						id="report-reason"
 						value={reason}
 						onChange={(e) => setReason(e.target.value as ReportReason)}
-						className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+						className={inputClass}
 					>
 						{REPORT_REASONS.map((r) => (
 							<option key={r} value={r}>
@@ -91,7 +91,7 @@ export default function ReportContentModal({
 						value={details}
 						onChange={(e) => setDetails(e.target.value)}
 						placeholder={t("report.detailsPlaceholder")}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+						className={textareaClass}
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{details.length}/1000

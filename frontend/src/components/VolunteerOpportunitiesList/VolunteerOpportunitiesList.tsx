@@ -370,7 +370,7 @@ export default function VolunteerOpportunitiesList() {
 										if (locationSuggestions.length > 0)
 											setShowLocationSuggestions(true);
 									}}
-									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white"
+									className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-400 focus:bg-white"
 								/>
 								{locationCityInput && (
 									<button
