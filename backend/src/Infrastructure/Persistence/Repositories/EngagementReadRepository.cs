@@ -98,18 +98,61 @@ internal sealed class EngagementReadRepository(
 		if (timeSlotId is not null)
 			scopedQuery = scopedQuery.Where(e => e.TimeSlotId == timeSlotId);
 
-		if (volunteerIds is not null)
-		{
-			// Candidate ids as List<UserId?> (not .Value-unwrapped) so Contains stays
-			// translatable against the nullable value-object VolunteerId column - see
-			// the EF Core nullable-value-object gotcha this repository already has to
-			// work around for TimeSlotId.
-			var candidateIds = volunteerIds
-				.Select(id => (UserId?)UserId.Create(id).GetValueOrThrow())
-				.ToList();
-			scopedQuery = scopedQuery.Where(e => candidateIds.Contains(e.VolunteerId));
-		}
+		scopedQuery = ApplyVolunteerIdsFilter(scopedQuery, volunteerIds);
 
+		return await BuildPagedResultAsync(scopedQuery, pageNumber, pageSize, cancellationToken);
+	}
+
+	public async ValueTask<PagedList<EngagementSummary>> GetPagedByOrganizationAsync(
+		OrganizationId organizationId,
+		int pageNumber,
+		int pageSize,
+		EngagementStatus? status = null,
+		IReadOnlyList<Guid>? volunteerIds = null,
+		CancellationToken cancellationToken = default)
+	{
+		// Kept as an IQueryable (not materialized) so this compiles to a
+		// correlated "IN (SELECT ...)" subquery instead of shipping the id list
+		// to and from Postgres as a literal array - same approach as
+		// OrganizationDashboardReadRepository.GetKpisAsync, whose pending count
+		// this endpoint's queue must line up with (#1048).
+		var orgOpportunityIds = dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.OrganizationId == organizationId)
+			.Select(vo => vo.Id);
+
+		var scopedQuery = dbContext.EngagementsQuery.Where(e => orgOpportunityIds.Contains(e.OpportunityId));
+
+		if (status is not null)
+			scopedQuery = scopedQuery.Where(e => e.Status == status.Value);
+
+		scopedQuery = ApplyVolunteerIdsFilter(scopedQuery, volunteerIds);
+
+		return await BuildPagedResultAsync(scopedQuery, pageNumber, pageSize, cancellationToken);
+	}
+
+	// Candidate ids as List<UserId?> (not .Value-unwrapped) so Contains stays
+	// translatable against the nullable value-object VolunteerId column - see
+	// the EF Core nullable-value-object gotcha this repository already has to
+	// work around for TimeSlotId.
+	private static IQueryable<Engagement> ApplyVolunteerIdsFilter(
+		IQueryable<Engagement> query,
+		IReadOnlyList<Guid>? volunteerIds)
+	{
+		if (volunteerIds is null)
+			return query;
+
+		var candidateIds = volunteerIds
+			.Select(id => (UserId?)UserId.Create(id).GetValueOrThrow())
+			.ToList();
+		return query.Where(e => candidateIds.Contains(e.VolunteerId));
+	}
+
+	private async Task<PagedList<EngagementSummary>> BuildPagedResultAsync(
+		IQueryable<Engagement> scopedQuery,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken)
+	{
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 
 		var raw = await scopedQuery

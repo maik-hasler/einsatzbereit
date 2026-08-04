@@ -101,8 +101,14 @@ function ToDoWidget({ organizationId, size }: Props) {
 				</div>
 			)}
 			<Link
-				to={`/app/${organizationId}/dashboard/opportunities`}
+				to={`/app/${organizationId}/dashboard/engagements?status=Pending`}
 				className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline"
+			>
+				{t("orgDashboard.viewPendingEngagements")}
+			</Link>
+			<Link
+				to={`/app/${organizationId}/dashboard/opportunities`}
+				className="mt-2 inline-block text-sm font-medium text-brand-700 hover:underline"
 			>
 				{t("orgDashboard.viewOpportunities")}
 			</Link>

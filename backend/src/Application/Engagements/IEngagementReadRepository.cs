@@ -1,5 +1,6 @@
 using Application.Common.Pagination;
 using Domain.Engagements;
+using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -17,6 +18,20 @@ public interface IEngagementReadRepository
 		int pageSize,
 		EngagementStatus? status = null,
 		TimeSlotId? timeSlotId = null,
+		IReadOnlyList<Guid>? volunteerIds = null,
+		CancellationToken cancellationToken = default);
+
+	/// <summary>
+	/// Engagements across every opportunity belonging to the organization
+	/// (#1048) - the aggregate queue the dashboard's "To-Do" widget count
+	/// links to, since <see cref="GetPagedByOpportunityAsync"/> only scopes
+	/// to a single opportunity.
+	/// </summary>
+	ValueTask<PagedList<EngagementSummary>> GetPagedByOrganizationAsync(
+		OrganizationId organizationId,
+		int pageNumber,
+		int pageSize,
+		EngagementStatus? status = null,
 		IReadOnlyList<Guid>? volunteerIds = null,
 		CancellationToken cancellationToken = default);
 
