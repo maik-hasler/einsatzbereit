@@ -11,11 +11,24 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	[Before(Test)]
 	public Task ResetAsync() => fixture.ResetAsync();
 
+	// Every anonymous request in this class gets its own X-Forwarded-For, same isolation
+	// technique RateLimitingTests.cs already uses. Without it, all of these share one
+	// anonymous-IP rate-limit bucket (60 req/60s, see IntegrationTestFixture) with the rest
+	// of the ~400-test suite - as the suite grows, cumulative anonymous traffic from
+	// unrelated tests can exhaust that shared bucket mid-run and 429 one of this class's two
+	// requests, which output caching then correctly never caches, so the "Age" header
+	// assertion fails even though caching itself works fine.
+	private static HttpClient WithForwardedFor(HttpClient client, string ip)
+	{
+		client.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
+		return client;
+	}
+
 	[Test]
 	public async Task GetBadgeCatalog_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
 	{
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.1");
 
 		await httpClient.GetAsync("/v1/badges", cancellationToken);
 		var second = await httpClient.GetAsync("/v1/badges", cancellationToken);
@@ -28,7 +41,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	public async Task GetSitemap_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
 	{
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.2");
 
 		await httpClient.GetAsync("/v1/sitemap.xml", cancellationToken);
 		var second = await httpClient.GetAsync("/v1/sitemap.xml", cancellationToken);
@@ -41,7 +54,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
 	{
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.3");
 		const string route = "/v1/volunteer-opportunities?pageNumber=1&pageSize=10";
 
 		await httpClient.GetAsync(route, cancellationToken);
@@ -61,7 +74,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	{
 		const string route = "/v1/volunteer-opportunities?pageNumber=1&pageSize=10";
 
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.4");
 		var before = await httpClient.GetAsync(route, cancellationToken);
 		var beforeBody = await before.Content.ReadAsStringAsync(cancellationToken);
 		beforeBody.Should().NotContain("Freshly published opportunity");
@@ -98,7 +111,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	public async Task GetHealth_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
 	{
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.5");
 
 		await httpClient.GetAsync("/health", cancellationToken);
 		var second = await httpClient.GetAsync("/health", cancellationToken);
@@ -117,7 +130,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		var firstOrgId = await CreateOrganizationAsync(authenticatedClient, "Org One", cancellationToken);
 		var secondOrgId = await CreateOrganizationAsync(authenticatedClient, "Org Two", cancellationToken);
 
-		using var httpClient = fixture.CreateHttpClient();
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.6");
 
 		await httpClient.GetAsync($"/v1/organizations/{firstOrgId}/profile", cancellationToken);
 		var firstResponse = await httpClient.GetAsync($"/v1/organizations/{firstOrgId}/profile", cancellationToken);
