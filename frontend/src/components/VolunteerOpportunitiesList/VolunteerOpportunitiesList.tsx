@@ -722,7 +722,7 @@ export default function VolunteerOpportunitiesList() {
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100"
+							className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:border-red-300 hover:bg-red-100"
 						>
 							<BroomIcon />
 							{t("opportunities.clearFilters")}
