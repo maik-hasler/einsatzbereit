@@ -101,14 +101,14 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	// anything about those tables' contents - AuthHelper's pinned-org
 	// navigation already makes which *org* every test lands on deterministic,
 	// independent of this reset. The only state that's genuinely global,
-	// shared, and something these classes depend on is vera's own Organizer-
-	// role membership/Keycloak role (she must never appear to organize
-	// anything), so that's the only thing restored here - scoped to her user
-	// id specifically, never touching another user's rows or any shared
-	// table at large.
+	// shared, and something these classes depend on is vera's own organization
+	// membership (any role)/Keycloak organisator role (she must never appear
+	// to organize or belong to anything), so that's the only thing restored
+	// here - scoped to her user id specifically, never touching another
+	// user's rows or any shared table at large.
 	public async Task ResetAsync()
 	{
-		await ResetVeraOrganizerMembershipAsync();
+		await ResetVeraOrganizationMembershipAsync();
 		await ResetVeraOrganisatorRoleAsync();
 	}
 
@@ -237,20 +237,25 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		return pinned;
 	}
 
-	// Vera never organizes anything in seed data (SeedOrg1Async/SeedOrg2Async
-	// only ever assign olaf as Organizer) - remove any Organizer-role
-	// membership row a test granted her, in any organization. Scoped to her
-	// user id only via the WHERE clause, so this can never touch another
-	// user's membership row or race a concurrently running test that isn't
-	// touching vera's own account.
-	private async Task ResetVeraOrganizerMembershipAsync()
+	// Vera never belongs to anything in seed data (SeedOrg1Async/SeedOrg2Async
+	// only ever assign olaf as Organizer) - remove any membership row a test
+	// granted her, in any organization and at any role. Used to be scoped to
+	// role='Organizer' only, back when a plain Member row was invisible to
+	// GetOrganizationsQueryHandler; it now also returns Member-only orgs
+	// (Members gained read access), so a leftover Member row - e.g. from
+	// AccessibilityTests' AddPlainMemberDirectlyAsync call, which never
+	// cleans up - is just as capable of breaking "vera organizes/belongs to
+	// nothing" as an Organizer row was. Scoped to her user id only via the
+	// WHERE clause, so this can never touch another user's membership row or
+	// race a concurrently running test that isn't touching vera's own account.
+	private async Task ResetVeraOrganizationMembershipAsync()
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);
 		await conn.OpenAsync();
 		await using var cmd = new NpgsqlCommand(
 			"""
 			DELETE FROM organization_membership
-			WHERE user_id = @userId AND role = 'Organizer'
+			WHERE user_id = @userId
 			""", conn);
 		cmd.Parameters.AddWithValue("userId", _veraUserId);
 		await cmd.ExecuteNonQueryAsync();
