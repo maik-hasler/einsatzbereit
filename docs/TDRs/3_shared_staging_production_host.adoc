@@ -20,9 +20,9 @@ Before issue #1344, `publish.yml` only had a `deploy-staging` job, gated on rele
 
 ==== Technical Impact
 
-- *Environment separation:* Staging and production share compute, database, and object storage. A bad RC deploy and a bad stable deploy are both one `docker compose up -d` away from affecting the same running site - there is no isolation between "testing a release candidate" and "serving real traffic."
+- *Environment separation:* Staging and production share compute, database, and object storage. A bad RC deploy and a bad stable deploy are both one `docker compose up -d` away from affecting the same running site - there is no isolation between "testing a release candidate" and "serving real traffic." Unchanged by the capacity upgrade below - a bigger box is still one box.
 - *Blast radius:* `reset-staging.yml`'s destructive Postgres/MinIO wipe, if ever run after real users exist, would delete real data, not just demo data - the workflow's current framing ("wipes staging test data") assumes no real production data has accumulated yet.
-- *Capacity:* The single host is sized for demo/QA load, not production traffic - see the host's own resource limits in `docker-compose.yml`.
+- *Capacity (updated 2026-08-05):* Moved to a Hetzner `cx43` (8 vCPU / 16 GB RAM / 40 GB disk - see `docs/Architecture/src/07_deployment_view.adoc`), well above the smaller box this stack had outgrown - the observability stack's (Prometheus/Grafana/Loki/Tempo/Alertmanager) resource limits, previously trimmed down for a memory-constrained box, have been removed now that headroom is no longer a concern. The host is now managed via Terraform (a separate, private infrastructure repository, brought in via `terraform import` rather than hand-clicked), and also runs Blogfolio and Traefik on the same box. The environment-separation and blast-radius concerns above are unchanged.
 
 ==== Business Impact
 

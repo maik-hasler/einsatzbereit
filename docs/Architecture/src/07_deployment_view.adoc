@@ -115,10 +115,10 @@ include::../images/deployment-staging.puml[]
 ....
 
 Motivation::
-The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host, behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). This is the environment every release candidate is verified against before a change is considered done.
+The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host (a Hetzner `cx43`: 8 vCPU / 16 GB RAM / 40 GB disk, provisioned via Terraform in a separate, private infrastructure repository), behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). The same host also runs Blogfolio, an unrelated personal site - the two stacks share the machine but are otherwise fully independent (separate repos, separate deploy pipelines, no shared services beyond Traefik). This is the environment every release candidate is verified against before a change is considered done.
 
 Quality and Performance Characteristics::
-All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention, and the MinIO bucket is backed up daily with a flat retention window (#1087) - both backups still live on the same host as the data they protect, since staging is a single server with no off-host target to replicate to; this covers accidental deletion/corruption but not loss of the host itself. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
+All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention, and the MinIO bucket is backed up daily with a flat retention window (#1087); `minio-backup` then also mirrors both local backup outputs off-host to a Hetzner Object Storage bucket (closing the off-host gap #1087 left open) - the local backups alone still guard only against accidental deletion/corruption, not loss of the host itself, which the offsite mirror now also covers. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
 
 .Service Allocation
 [cols="2,2,2,2" options="header"]
@@ -163,7 +163,7 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |minio-backup
 |`minio/mc`
 |internal
-|Daily mirror of the einsatzbereit bucket, retention 7 days
+|Daily mirror of the einsatzbereit bucket (retention 7 days), then mirrors its own and db-backup's local output to a Hetzner Object Storage bucket (#1087)
 
 |Grafana
 |`grafana/grafana`
