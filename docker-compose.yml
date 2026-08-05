@@ -210,12 +210,12 @@ services:
 
   # Daily snapshot of the "einsatzbereit" bucket (avatars/logos/banners) into
   # its own volume, mirroring db-backup's role for Postgres (#1087 - MinIO
-  # previously had no backup at all). Still same-host, same as db-backup
-  # today: this staging box is a single server with no S3/second host to
-  # replicate off-host to, so this is a local safety net against accidental
-  # deletion/corruption of minio_data, not disaster recovery for a lost host.
-  # Off-host replication is tracked separately and deliberately not attempted
-  # here.
+  # previously had no backup at all). Also mirrors both local backup volumes
+  # (this one's own output plus db-backup's postgres_backups) to a Hetzner
+  # Object Storage bucket on the same cadence - closes the off-host gap #1087
+  # originally left open, without a third backup container: this image
+  # already speaks S3 for the local mirror, so the offsite leg is one more
+  # `mc alias` and two more `mc mirror` calls in the same script.
   minio-backup:
     # Pinned for the same reason as minio's own image above.
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
@@ -224,11 +224,14 @@ services:
     entrypoint: ["/bin/sh", "/backup.sh"]
     networks:
       - proxy
+    logging: *default-logging
+    # Bumped from 128m/0.10 now that this handles both the local mirror and
+    # the offsite replication of two datasets in one process.
     deploy:
       resources:
         limits:
-          memory: 128m
-          cpus: "0.10"
+          memory: 256m
+          cpus: "0.20"
     depends_on:
       minio:
         condition: service_healthy
@@ -242,49 +245,16 @@ services:
       # retention window is proportionate rather than under-engineered.
       BACKUP_KEEP_DAYS: "7"
       BACKUP_INTERVAL_SECONDS: "86400"
-    volumes:
-      - minio_backups:/backups
-    configs:
-      - source: minio-backup-script
-        target: /backup.sh
-
-  # Closes the gap db-backup's and minio-backup's own comments both flag:
-  # their output (postgres_backups, minio_backups) never left this host, so
-  # losing the host lost the backups with it (#1087's suggested fix, left
-  # undone when that issue closed - "off-host replication is tracked
-  # separately"). Mirrors both local backup volumes to a Hetzner Object
-  # Storage bucket on the same daily cadence as minio-backup, read-only
-  # mounts since this container only ever reads what the two backup jobs
-  # already produced.
-  offsite-backup:
-    # Pinned for the same reason as minio-backup's image above.
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
-    container_name: offsite-backup
-    restart: unless-stopped
-    entrypoint: ["/bin/sh", "/offsite-backup.sh"]
-    # No explicit network: this container never talks to another container
-    # (it only reads local volumes and pushes to an external endpoint over
-    # the internet), so it gets the project's implicit default network
-    # rather than proxy/db/monitoring - no reason to give it reachability to
-    # Postgres/Keycloak/MinIO it never uses.
-    logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-          cpus: "0.10"
-    volumes:
-      - postgres_backups:/backup-sources/postgres:ro
-      - minio_backups:/backup-sources/minio:ro
-    environment:
       OFFSITE_S3_ENDPOINT: ${OFFSITE_S3_ENDPOINT:?set OFFSITE_S3_ENDPOINT in .env}
       OFFSITE_S3_ACCESS_KEY: ${OFFSITE_S3_ACCESS_KEY:?set OFFSITE_S3_ACCESS_KEY in .env}
       OFFSITE_S3_SECRET_KEY: ${OFFSITE_S3_SECRET_KEY:?set OFFSITE_S3_SECRET_KEY in .env}
       OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-einsatzbereit-backups}
-      BACKUP_INTERVAL_SECONDS: "86400"
+    volumes:
+      - minio_backups:/backups
+      - postgres_backups:/backup-sources/postgres:ro
     configs:
-      - source: offsite-backup-script
-        target: /offsite-backup.sh
+      - source: minio-backup-script
+        target: /backup.sh
 
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:${IMAGE_TAG:-staging}
@@ -436,14 +406,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    # Only a handful of scrape targets (itself, node-exporter, backend), so a
-    # low ceiling is plenty - trimmed down from 256m to leave more host
-    # headroom on a memory-constrained box (staging runs on a 4GB VM).
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-          cpus: "0.25"
     volumes:
       - prometheus_data:/prometheus
     configs:
@@ -469,11 +431,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 64m
-          cpus: "0.10"
     volumes:
       - alertmanager_data:/alertmanager
     configs:
@@ -497,11 +454,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 32m
-          cpus: "0.10"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -520,11 +472,6 @@ services:
       - proxy
       - monitoring
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 256m
-          cpus: "0.25"
     depends_on:
       prometheus:
         condition: service_healthy
@@ -560,15 +507,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    # Now scoped to just this stack's own ~6 containers (see alloy's
-    # discovery filter below), so log volume is small - trimmed down from
-    # 256m to leave more host headroom on a memory-constrained box
-    # (staging runs on a 4GB VM).
-    deploy:
-      resources:
-        limits:
-          memory: 160m
-          cpus: "0.25"
     volumes:
       - loki_data:/loki
     # No Docker healthcheck: confirmed on staging that grafana/loki has
@@ -593,11 +531,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 96m
-          cpus: "0.15"
     # Plain depends_on (wait for container start, not health): Alloy's Loki
     # writer retries and buffers on its own, so it doesn't need Loki to be
     # fully ready first. Deliberately not `condition: service_healthy` -
@@ -629,11 +562,6 @@ services:
     networks:
       - monitoring
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 160m
-          cpus: "0.25"
     volumes:
       - tempo_data:/var/tempo
     configs:
@@ -728,8 +656,10 @@ configs:
       BUCKET="$${MINIO_BUCKET_NAME:-einsatzbereit}"
       KEEP_DAYS="$${BACKUP_KEEP_DAYS:-7}"
       INTERVAL="$${BACKUP_INTERVAL_SECONDS:-86400}"
+      OFFSITE_BUCKET="$${OFFSITE_S3_BUCKET:-einsatzbereit-backups}"
 
       mc alias set source http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null
+      mc alias set offsite "$$OFFSITE_S3_ENDPOINT" "$$OFFSITE_S3_ACCESS_KEY" "$$OFFSITE_S3_SECRET_KEY" >/dev/null
 
       backup_once() {
         stamp="$$(date +%Y-%m-%d)"
@@ -755,31 +685,20 @@ configs:
         fi
       }
 
+      # --remove propagates deletions too, not just new/changed files - both
+      # sources above already get pruned to their own retention window, and
+      # without --remove the offsite bucket would never shed what they've
+      # pruned, growing unbounded instead of mirroring the same retention.
+      offsite_sync() {
+        echo "$$(date -Iseconds) mirroring local backups to offsite/$${OFFSITE_BUCKET}"
+        mc mirror --overwrite --remove --quiet /backups "offsite/$${OFFSITE_BUCKET}/minio"
+        mc mirror --overwrite --remove --quiet /backup-sources/postgres "offsite/$${OFFSITE_BUCKET}/postgres"
+      }
+
       while true; do
         backup_once
         prune_old
-        sleep "$$INTERVAL"
-      done
-  # Same `$$` escaping convention as minio-backup-script above.
-  offsite-backup-script:
-    content: |
-      #!/bin/sh
-      set -eu
-
-      BUCKET="$${OFFSITE_S3_BUCKET:-einsatzbereit-backups}"
-      INTERVAL="$${BACKUP_INTERVAL_SECONDS:-86400}"
-
-      mc alias set offsite "$$OFFSITE_S3_ENDPOINT" "$$OFFSITE_S3_ACCESS_KEY" "$$OFFSITE_S3_SECRET_KEY" >/dev/null
-
-      while true; do
-        echo "$$(date -Iseconds) mirroring local backups to offsite/$${BUCKET}"
-        # --remove propagates deletions too, not just new/changed files - db-backup
-        # and minio-backup already prune their own local output on their own
-        # retention windows, and without --remove the offsite bucket would never
-        # shed anything they've pruned, growing unbounded instead of mirroring
-        # the same retention.
-        mc mirror --overwrite --remove --quiet /backup-sources/postgres "offsite/$${BUCKET}/postgres"
-        mc mirror --overwrite --remove --quiet /backup-sources/minio "offsite/$${BUCKET}/minio"
+        offsite_sync
         sleep "$$INTERVAL"
       done
   prometheus-config:

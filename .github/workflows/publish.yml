@@ -488,7 +488,7 @@ jobs:
           # recipient address, but still per-environment so it isn't a
           # committed literal.
           ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
-          # Off-host mirror target for the offsite-backup service
+          # Off-host mirror target for minio-backup's offsite leg
           # (docker-compose.yml, #1087) - a Hetzner Object Storage bucket,
           # distinct from the MINIO_* secrets above (those are this stack's
           # own application storage, not a backup destination).
@@ -651,7 +651,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set +e
             cd /opt/einsatzbereit
-            for svc in backend keycloak postgres offsite-backup prometheus alertmanager node-exporter grafana loki alloy; do
+            for svc in backend keycloak postgres prometheus alertmanager node-exporter grafana loki alloy; do
               echo "::group::docker inspect ${svc} (state)"
               docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
               echo "::endgroup::"
@@ -990,7 +990,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
             set +e
             cd /opt/einsatzbereit
-            for svc in backend keycloak postgres offsite-backup prometheus alertmanager node-exporter grafana loki alloy; do
+            for svc in backend keycloak postgres prometheus alertmanager node-exporter grafana loki alloy; do
               echo "::group::docker inspect ${svc} (state)"
               docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
               echo "::endgroup::"

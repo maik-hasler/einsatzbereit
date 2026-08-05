@@ -131,7 +131,7 @@ Rotating the staging host's SSH host key (a fresh box, a reinstall) requires upd
 
 **Required `staging` Environment secrets:** `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` - a generated (not MinIO root) credential pair the `minio-init` compose service provisions on first deploy, scoped to only the `einsatzbereit` bucket. The backend authenticates with these instead of `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` (#1353) - a leaked value can then only read/write that one bucket, not administer the whole MinIO instance.
 
-**Required `staging`/`production` Environment secrets:** `OFFSITE_S3_ENDPOINT` / `OFFSITE_S3_ACCESS_KEY` / `OFFSITE_S3_SECRET_KEY` - point the `offsite-backup` compose service (#1087) at the `einsatzbereit-backups` Hetzner Object Storage bucket, mirroring `postgres_backups`/`minio_backups` off the host daily. A distinct S3-compatible bucket/credential pair from anything MinIO-related above - this is a backup destination, not application storage. Shared across both Environments since staging and production are the same host today (see "`deploy-staging` vs `deploy-production`" above).
+**Required `staging`/`production` Environment secrets:** `OFFSITE_S3_ENDPOINT` / `OFFSITE_S3_ACCESS_KEY` / `OFFSITE_S3_SECRET_KEY` - point `minio-backup`'s offsite leg (#1087) at the `einsatzbereit-backups` S3-compatible Object Storage bucket, mirroring `postgres_backups`/`minio_backups` off the host daily. A distinct bucket/credential pair from anything MinIO-related above - this is a backup destination, not application storage. Shared across both Environments since staging and production are the same host today (see "`deploy-staging` vs `deploy-production`" above).
 
 ## Reset Workflow (manual)
 
