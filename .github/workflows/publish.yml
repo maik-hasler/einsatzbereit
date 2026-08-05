@@ -490,12 +490,16 @@ jobs:
           ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
         run: |
           umask 077
-          # Wrap each value in double quotes and escape \ and " so secrets that
-          # contain quotes, hashes, leading apostrophes or other compose .env
-          # metacharacters do not break the parser.
+          # Escape \, " and $ so secrets that contain quotes, hashes, leading
+          # apostrophes, or a literal $ (which Compose's .env parser would
+          # otherwise treat as a self-referential ${VAR} lookup, silently
+          # dropping everything from the $ onward - see docker-compose.yml's
+          # minio-init-script comment on the same Compose behavior) don't
+          # break the parser or corrupt the value.
           escape() {
             local v="$1"
             v="${v//\\/\\\\}"
+            v="${v//\$/\$\$}"
             v="${v//\"/\\\"}"
             printf '%s' "$v"
           }
@@ -844,9 +848,12 @@ jobs:
           ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
         run: |
           umask 077
+          # Escape \, " and $ - see deploy-staging's "Render .env" step for
+          # why $ needs escaping too (Compose's .env self-interpolation).
           escape() {
             local v="$1"
             v="${v//\\/\\\\}"
+            v="${v//\$/\$\$}"
             v="${v//\"/\\\"}"
             printf '%s' "$v"
           }

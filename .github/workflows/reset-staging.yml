@@ -60,11 +60,23 @@ jobs:
           SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          # Where Alertmanager sends alert emails (docker-compose.yml's
+          # alertmanager-config, #1081) - required (":?" guard), so a restart
+          # without it fails rendering the compose config entirely, same as
+          # deploy-staging.
+          ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
         run: |
           umask 077
+          # Escape \, " and $ so secrets that contain quotes, hashes, leading
+          # apostrophes, or a literal $ (which Compose's .env parser would
+          # otherwise treat as a self-referential ${VAR} lookup, silently
+          # dropping everything from the $ onward - see docker-compose.yml's
+          # minio-init-script comment on the same Compose behavior) don't
+          # break the parser or corrupt the value.
           escape() {
             local v="$1"
             v="${v//\\/\\\\}"
+            v="${v//\$/\$\$}"
             v="${v//\"/\\\"}"
             printf '%s' "$v"
           }
@@ -86,6 +98,12 @@ jobs:
             printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
             printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
             printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
+            printf 'ALERT_NOTIFICATION_EMAIL="%s"\n' "$(escape "$ALERT_NOTIFICATION_EMAIL")"
+            # Not a secret - restarting after a reset should come back seeded
+            # with demo organizations/opportunities, same as deploy-staging
+            # (see publish.yml's "Render .env" step and this workflow's
+            # header comment on SeedAsync's idempotency).
+            printf 'DATABASE_SEED_ON_STARTUP="true"\n'
           } > .env
 
       - name: Copy .env
