@@ -100,10 +100,9 @@ function getLongDateFormatter(lng: string): Intl.DateTimeFormat {
 /** Long-form date-only formatting (e.g. "25. Juli 2026") - for lower-frequency
  * "created on"/"sent on" timestamps where a spelled-out month reads better
  * than the compact numeric style `formatDate` uses. `lng` is i18n.language
- * ("de"/"en"), not an Intl locale (see formatDateTime). Previously each call
- * site re-derived this with its own inline `toLocaleDateString(locale, {...})`
- * options object, which is how it ended up coexisting with two other date
- * formats across the app (#986) - centralizing it here is the fix. */
+ * ("de"/"en"), not an Intl locale (see formatDateTime). Centralized here so
+ * call sites don't each re-derive their own `toLocaleDateString` options and
+ * drift into a third date format alongside formatDate/formatDateTime (#986). */
 export function formatDateLong(dt: string, lng: string): string {
 	return getLongDateFormatter(lng).format(new Date(dt));
 }

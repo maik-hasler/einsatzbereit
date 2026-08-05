@@ -106,7 +106,6 @@ internal sealed class NotificationReadRepository(
 			.Take(limit)
 			.ToList();
 
-		// Collect entity IDs by type
 		var engagementIds = notifications
 			.Where(n => EngagementKinds.Contains(n.Kind))
 			.Select(n => n.RelatedEntityId)
@@ -148,7 +147,6 @@ internal sealed class NotificationReadRepository(
 			invitationOrganizationIds = invitationRows.ToDictionary(x => x.Id.Value, x => x.OrganizationId.Value);
 		}
 
-		// Batch-fetch engagements and compute opportunity IDs from them
 		Dictionary<Guid, Guid> engagementToOpportunity = [];
 		if (engagementIds.Count > 0)
 		{
@@ -163,9 +161,8 @@ internal sealed class NotificationReadRepository(
 		var opportunityIdsFromEngagements = engagementToOpportunity.Values.ToHashSet();
 		var allOpportunityIds = opportunityIdsFromEngagements.Union(directOpportunityIds).ToHashSet();
 
-		// Batch-fetch opportunity titles and their owning organization (the
-		// latter is needed to build the org-app deep link below; both are
-		// null for a since-deleted opportunity).
+		// Organization id is also needed for the org-app deep link below; both
+		// are null once the opportunity is deleted.
 		Dictionary<Guid, string> opportunityTitles = [];
 		Dictionary<Guid, Guid> opportunityOrganizations = [];
 		if (allOpportunityIds.Count > 0)

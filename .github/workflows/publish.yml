@@ -556,7 +556,6 @@ jobs:
           KC_URL="https://login.maik-hasler.de"
           KC_REALM="einsatzbereit"
 
-          # Attempt to get admin token from the currently-running Keycloak.
           # If Keycloak is not yet running (first deploy), skip - the realm JSON
           # already contains the mapper and it will be imported on first start.
           TOKEN=$(curl -sf -X POST \
@@ -573,7 +572,6 @@ jobs:
             exit 0
           fi
 
-          # Verify the realm exists.
           REALM_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer $TOKEN" \
             "$KC_URL/admin/realms/$KC_REALM" 2>/dev/null || echo "000")
@@ -582,7 +580,6 @@ jobs:
             exit 0
           fi
 
-          # Get frontend client UUID.
           FRONTEND_ID=$(curl -sf \
             -H "Authorization: Bearer $TOKEN" \
             "$KC_URL/admin/realms/$KC_REALM/clients?clientId=frontend" \
@@ -592,7 +589,6 @@ jobs:
             exit 1
           fi
 
-          # Add mapper only if not already present (idempotent).
           EXISTING=$(curl -sf \
             -H "Authorization: Bearer $TOKEN" \
             "$KC_URL/admin/realms/$KC_REALM/clients/$FRONTEND_ID/protocol-mappers/models" \
@@ -695,7 +691,6 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set -euo pipefail
             cd /opt/einsatzbereit
-            # Re-tag staging-previous back to staging so compose uses the old images.
             for svc in backend frontend keycloak; do
               img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
               if docker image inspect "${img}:staging-previous" &>/dev/null; then
@@ -715,7 +710,6 @@ jobs:
           KC_URL="https://login.maik-hasler.de"
           KC_REALM="einsatzbereit"
 
-          # Get admin token from master realm
           TOKEN=$(curl -sf -X POST \
             "$KC_URL/realms/master/protocol/openid-connect/token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
@@ -727,9 +721,9 @@ jobs:
           [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] && { echo "::error::Keycloak admin auth failed"; exit 1; }
           echo "Admin token acquired."
 
-          # Ensure the single-step flow exists; create it if missing (e.g. first deploy
-          # or realm wipe). Keycloak 26 with organizationsEnabled overrides browserFlow
-          # after every import, so we always re-bind it at the end regardless.
+          # Keycloak 26 with organizationsEnabled overrides browserFlow after
+          # every import, so this always re-binds it below regardless of
+          # whether the flow already existed.
           FLOW_COUNT=$(curl -sf \
             -H "Authorization: Bearer $TOKEN" \
             "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
@@ -743,7 +737,6 @@ jobs:
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
               -d '{"alias":"einsatzbereit browser","providerId":"basic-flow","topLevel":true,"builtIn":false}'
 
-            # Add auth-cookie (set to ALTERNATIVE)
             curl -sf -X POST \
               -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/execution" \
@@ -757,7 +750,6 @@ jobs:
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
               -d "$(echo "$COOKIE_EXEC" | jq '.requirement = "ALTERNATIVE"')"
 
-            # Add sub-flow for the form (set to ALTERNATIVE)
             curl -sf -X POST \
               -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/flow" \
@@ -771,7 +763,6 @@ jobs:
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
               -d "$(echo "$SUBFLOW_EXEC" | jq '.requirement = "ALTERNATIVE"')"
 
-            # Add auth-username-password-form to sub-flow (set to REQUIRED)
             curl -sf -X POST \
               -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions/execution" \
@@ -790,7 +781,6 @@ jobs:
             echo "Flow already exists."
           fi
 
-          # Always re-bind - Keycloak organizations override this after every import
           REALM=$(curl -sf -H "Authorization: Bearer $TOKEN" "$KC_URL/admin/realms/$KC_REALM")
           curl -sf -X PUT \
             -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \

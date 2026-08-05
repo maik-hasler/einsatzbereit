@@ -128,8 +128,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetEngagements_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their organization's engagements -
-		// this used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -697,10 +695,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// Simulate the opportunity's row being gone without its engagements
-		// having been cancelled first - e.g. data predating the cancellation
-		// safeguard in DeleteVolunteerOpportunityCommandHandler. The engagement
-		// itself is left Pending, which the normal delete flow never produces.
+		// Leaves the engagement Pending, a state the normal delete flow never produces.
 		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
 
 		var upcoming = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
@@ -1013,7 +1008,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetEngagements_ShouldReturn403_WhenOrganisatorAccessesOtherOrgsOpportunity(
 		CancellationToken cancellationToken)
 	{
-		// olaf creates org1 with an opportunity
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -1060,7 +1054,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task ConfirmEngagement_ShouldReturn403_WhenOrganisatorConfirmsOtherOrgsEngagement(
 		CancellationToken cancellationToken)
 	{
-		// olaf creates org1 with an opportunity
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -1071,7 +1064,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		// vera (organisator of org2, NOT org1) tries to confirm org1's engagement
@@ -1085,7 +1077,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task CheckInEngagement_ShouldReturn403_WhenOrganisatorChecksInOtherOrgsEngagement(
 		CancellationToken cancellationToken)
 	{
-		// olaf creates org1 with an opportunity
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -1098,7 +1089,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		// the organisator role is a Keycloak realm role baked into the JWT at
@@ -1118,7 +1108,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task CheckInEngagement_ShouldReturn404_WhenOpportunityIsDeleted(
 		CancellationToken cancellationToken)
 	{
-		// olaf creates org1 with an opportunity and confirms vera's engagement
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -1142,10 +1131,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		// Simulate the opportunity's row being gone without its engagement having
-		// been cancelled first - e.g. data predating the cancellation safeguard in
-		// DeleteVolunteerOpportunityCommandHandler. The engagement itself is left
-		// Confirmed, which the normal delete flow never produces.
+		// Leaves the engagement Confirmed, a state the normal delete flow never produces.
 		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
 
 		// There's no API to observe the opportunity row directly - confirm the
@@ -1386,8 +1372,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetOpportunityFeedback_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their organization's opportunity
-		// feedback - this used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);

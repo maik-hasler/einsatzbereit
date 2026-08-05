@@ -21,17 +21,15 @@ public class RateLimitingClientIpTests
 	[Test]
 	public void GetClientIp_ShouldIgnoreXForwardedForHeader_AndUseTheRealConnectionAddress()
 	{
-		// Arrange: a caller pretending to be someone else on every request - exactly
+		// A caller pretending to be someone else on every request - exactly
 		// the bypass this issue describes - alongside the real (unspoofable)
 		// connection address a socket-level peer actually has.
 		var context = new DefaultHttpContext();
 		context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.7");
 		context.Request.Headers["X-Forwarded-For"] = "1.2.3.4";
 
-		// Act
 		var clientIp = RateLimitingExtensions.GetClientIp(context);
 
-		// Assert
 		clientIp.Should().Be("203.0.113.7",
 			"the client-supplied header must never be trusted directly - only " +
 			"ForwardedHeadersMiddleware, gated on a known trusted network, may " +

@@ -565,13 +565,12 @@ public class CreateEngagementCommandHandlerTests
 			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
-	// --- Organizer notifications moved off the request path (#1174) ---
+	// --- Organizer notifications (#1174) ---
 	//
-	// The organizer "New sign-up" email (subscription-gated per #1055) is no
-	// longer sent by this handler - it moves onto the outbox, delivered by
-	// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler.
-	// See those handlers' tests for the subscription-preference coverage that
-	// used to live here.
+	// The organizer "New sign-up" email (subscription-gated per #1055) is sent
+	// asynchronously via the outbox, by EngagementCreatedDomainEventHandler /
+	// EngagementReactivatedDomainEventHandler - see those handlers' tests for
+	// the subscription-preference coverage.
 
 	[Test]
 	public async Task Handle_ShouldNotEmailOrganizersSynchronously_RegardlessOfHowManyExist(

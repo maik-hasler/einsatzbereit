@@ -124,13 +124,11 @@ function UpcomingOpportunitiesWidget({
 			{items !== null && !error && items.length > 0 && (
 				<ul className="space-y-3">
 					{/* Every fetched item always renders - only the metadata line
-					is dropped at compact size, never the items themselves. An
-					earlier version instead truncated the list to fewer items at
-					compact, but size can change from a plain window resize
-					(outside edit mode, so the inert-content guard doesn't apply)
-					and unmounting an item a keyboard user had focus on would
-					silently drop focus to the document body - #771 follow-up
-					review feedback (adaptive layouts per size), a11y follow-up. */}
+					is dropped at compact size, never the items themselves. Size
+					can change from a plain window resize (outside edit mode, so
+					the inert-content guard doesn't apply), and unmounting an item
+					a keyboard user had focus on would silently drop focus to the
+					document body - #771 follow-up, a11y. */}
 					{items.map((item) => (
 						<li
 							key={item.id}

@@ -39,7 +39,6 @@ export default function OpportunityListItem({
 				aria-label={item.title}
 			/>
 			<div className="flex h-full flex-col">
-				{/* Banner image or category banner */}
 				<div
 					className={`relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden ${getOpportunityCategoryBannerClassName(item.category)}`}
 				>
@@ -75,7 +74,6 @@ export default function OpportunityListItem({
 					)}
 				</div>
 
-				{/* Content */}
 				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
 					<div className="mb-2 flex items-center gap-2">
 						<Chip tone="neutral" size="sm" className="shrink-0">

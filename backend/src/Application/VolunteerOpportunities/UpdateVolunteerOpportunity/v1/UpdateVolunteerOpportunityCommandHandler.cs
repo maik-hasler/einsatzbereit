@@ -55,7 +55,6 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 					"ParticipationType cannot be changed while any engagement exists for this opportunity."));
 		}
 
-		// Snapshot material fields before mutation to detect meaningful changes.
 		var prevIsRemote = opportunity.IsRemote;
 		var prevAddress = opportunity.Address;
 		var prevOccurrence = opportunity.Occurrence;

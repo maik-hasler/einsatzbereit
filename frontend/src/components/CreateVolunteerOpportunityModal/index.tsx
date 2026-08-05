@@ -978,7 +978,6 @@ export default function CreateVolunteerOpportunityModal({
 					: {stepTitles[step - 1]}
 				</div>
 
-				{/* Scrollable body */}
 				<div
 					ref={bodyRef}
 					className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-5"
@@ -1060,7 +1059,6 @@ export default function CreateVolunteerOpportunityModal({
 					)}
 				</div>
 
-				{/* Footer navigation */}
 				<div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
 					<Button
 						type="button"

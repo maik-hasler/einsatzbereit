@@ -276,7 +276,6 @@ internal sealed class KeycloakOrganizationService(
 				continue;
 			}
 
-			// Decompose and strip combining marks for other accented chars
 			var normalized = c.ToString().Normalize(NormalizationForm.FormD);
 			foreach (var nc in normalized)
 			{
@@ -289,7 +288,6 @@ internal sealed class KeycloakOrganizationService(
 
 		var alias = sb.ToString().ToLowerInvariant();
 
-		// Replace non-alphanumeric with hyphens, collapse, and trim
 		sb.Clear();
 		var prevHyphen = true; // treat start as hyphen to trim leading
 		foreach (var c in alias)
@@ -306,7 +304,6 @@ internal sealed class KeycloakOrganizationService(
 			}
 		}
 
-		// Trim trailing hyphen
 		return sb.Length > 0 && sb[^1] == '-'
 			? sb.ToString(0, sb.Length - 1)
 			: sb.ToString();

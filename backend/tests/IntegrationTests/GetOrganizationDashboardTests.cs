@@ -139,8 +139,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their organization's dashboard KPIs -
-		// this used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -158,8 +156,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetDashboardLayout_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their own dashboard widget layout for
-		// the organization - this used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);

@@ -11,7 +11,6 @@
 	<#elseif section = "form">
 		<form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
 
-			<#-- Email -->
 			<div class="form-group">
 				<div class="form-field">
 					<input
@@ -33,7 +32,6 @@
 				</#if>
 			</div>
 
-			<#-- Username -->
 			<#if !realm.registrationEmailAsUsername>
 				<div class="form-group">
 					<div class="form-field">
@@ -57,7 +55,6 @@
 				</div>
 			</#if>
 
-			<#-- Password -->
 			<#if passwordRequired??>
 				<div class="form-group">
 					<div class="form-field form-field--with-toggle">
@@ -126,7 +123,6 @@
 				</div>
 			</#if>
 
-			<#-- Terms of Use -->
 			<div class="form-group">
 				<div id="kc-registration-terms-text">
 					${kcSanitize(msg("termsText"))?no_esc}

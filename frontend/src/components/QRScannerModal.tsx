@@ -53,7 +53,6 @@ export default function QRScannerModal({
 		});
 	}, [success]);
 
-	// Check browser support
 	useEffect(() => {
 		const ok =
 			typeof BarcodeDetector !== "undefined" &&
@@ -61,7 +60,6 @@ export default function QRScannerModal({
 		setSupported(ok);
 	}, []);
 
-	// Start camera once support is confirmed
 	useEffect(() => {
 		if (supported !== true) return;
 		let alive = true;
@@ -86,7 +84,6 @@ export default function QRScannerModal({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [supported]);
 
-	// Scan loop
 	useEffect(() => {
 		if (supported !== true) return;
 		let alive = true;

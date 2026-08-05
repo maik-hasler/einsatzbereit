@@ -81,10 +81,6 @@ public static class AuthHelper
 	/// on) so the actual login round trip - and that parity - stay under real,
 	/// non-bypassed test coverage.
 	///
-	/// If oidc-client-ts's storage format ever changes (a version bump), this fails
-	/// loudly here rather than as a confusing downstream locator failure in whatever
-	/// the calling test actually checks.
-	///
 	/// Always returns <paramref name="username"/>'s seeded organizer org id
 	/// (per AspireFixture.GetPinnedOrganizerOrganizationId, captured once
 	/// before any test had a chance to create a throwaway org), or null for a
@@ -210,11 +206,9 @@ public static class AuthHelper
 	/// page's "Organization overview" hero CTA. That CTA only renders once
 	/// GET /v1/organizations has resolved *and* produced a non-empty list (see
 	/// resolveOrgAppPath in activeOrg.ts) - a single failed or slow org-list
-	/// request left the hero showing the fallback button with no retry, and
-	/// every caller of the old CTA-clicking helper then burned its full 30s
-	/// timeout waiting for a link that would never appear. Successive timeout
-	/// bumps here (15s -> 25s -> 30s) never fixed that, because the wait was
-	/// not actually short - the link was absent.
+	/// request leaves the hero showing the fallback button with no retry, so a
+	/// caller waiting on that link can time out even though the link itself is
+	/// simply absent.
 	/// </summary>
 	public static async Task GoToOrgAppDashboardAsync(IPage page, Uri frontendUrl, Guid organizationId)
 	{

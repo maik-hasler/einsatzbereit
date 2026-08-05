@@ -133,11 +133,9 @@ public class RemoveMemberCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange - the requesting user is the org's sole organizer, removing (leaving)
-		// themselves. This is the previously-unblocked regression: the org may well have
-		// other, non-organizer members (e.g. an accepted-but-never-promoted invitee) - the
-		// old guard only blocked when the org had exactly one member *in total*, so an
-		// organizer with company could still leave and permanently orphan the org. Only
-		// the organizer count - never the total headcount - may gate this.
+		// themselves, even though the org may have other, non-organizer members (e.g. an
+		// accepted-but-never-promoted invitee). Only the organizer count, never the total
+		// headcount, may gate this, or a sole organizer could leave and orphan the org.
 		var orgId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
 		SetOrganizerCount(orgId, 1);

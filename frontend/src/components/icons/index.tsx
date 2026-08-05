@@ -1,16 +1,11 @@
 import type { ReactNode } from "react";
 
-// Single source for every icon glyph used across the app (#1115). Before
-// this module existed, the same Heroicons path got hand-copied into up to
-// six different files, each pasted copy free to drift to its own stroke
-// weight or viewBox - a pin icon rendered at stroke 2 on one screen and
-// stroke 1.5 one click later, a 10x10 checkmark rendered ~3.6x heavier than
-// its 24x24 siblings, and so on. All stroke icons here share one 24x24
-// viewBox and one stroke weight via StrokeIcon so that can't happen again;
-// solid (filled) icons and the small drag-handle family are their own
-// natural size since they're a different rendering style, not a stroke
-// weight that can drift. Icons are decorative unless noted otherwise, so
-// they default to aria-hidden.
+// Single source for every icon glyph used across the app (#1115), so all
+// stroke icons share one 24x24 viewBox and stroke weight via StrokeIcon
+// instead of drifting apart across hand-copied paths. Solid (filled) icons
+// and the small drag-handle family keep their own native size since they're
+// a different rendering style, not a stroke weight that can drift. Icons are
+// decorative unless noted otherwise, so they default to aria-hidden.
 
 function StrokeIcon({
 	className = "h-5 w-5",

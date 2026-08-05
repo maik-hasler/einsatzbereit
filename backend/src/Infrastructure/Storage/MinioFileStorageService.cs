@@ -13,18 +13,12 @@ internal sealed class MinioFileStorageService : IFileStorageService
 	// upload) keeps caching effective without that staleness risk.
 	internal const string CacheControlHeaderValue = "public, max-age=3600";
 
-	// Everything this service stores today (avatars/logos/banners) is meant
-	// to be publicly viewable in an <img> tag, but the bucket policy only
-	// needs to cover this prefix, not the whole bucket - a future object type
-	// that isn't meant to be public (participant lists, ID scans) can then be
-	// stored outside this prefix without any policy change here at all.
-	// Transparent to every caller: GetPublicUrl(key) already returns the full
-	// URL, and nothing outside this class parses or reconstructs an object
-	// key by hand. Changing this prefix moves where new uploads land but does
-	// not relocate objects already stored under the old (whole-bucket-public)
-	// policy - acceptable on this repo's disposable, resettable staging
-	// environment (see reset-staging.yml), not something a one-time
-	// migration script is worth writing for pre-1.0.
+	// Bucket policy only grants public read under this prefix, not the whole bucket, so a
+	// future non-public object type (participant lists, ID scans) can be added outside it
+	// with no policy change. Transparent to callers - GetPublicUrl already returns the
+	// full URL - but changing this value only affects future uploads; existing objects
+	// stay under the old prefix, which is acceptable on this repo's disposable,
+	// resettable staging environment (not worth a migration script pre-1.0).
 	private const string PublicPrefix = "public/";
 
 	private readonly IMinioClient _minio;

@@ -172,8 +172,6 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their organization's opportunities -
-		// this used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		await CreatePublishedOpportunityAsync(olafClient, orgId, "Published 1", cancellationToken);

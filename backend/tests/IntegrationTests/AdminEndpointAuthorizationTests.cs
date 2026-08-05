@@ -6,8 +6,7 @@ namespace IntegrationTests;
 // Regression coverage for #1323: AuthorizationConventionTests only proved an
 // admin route carries *some* authorization decision, never that it is
 // specifically EinsatzbereitAdminPolicy. These prove the four previously
-// uncovered admin endpoints actually reject a non-admin (organizer) caller,
-// following the VerifyOrganization tests above as the template.
+// uncovered admin endpoints actually reject a non-admin (organizer) caller.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AdminEndpointAuthorizationTests(

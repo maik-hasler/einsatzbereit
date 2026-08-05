@@ -227,15 +227,6 @@ export default function OrgAppLayout() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
-	// einsatzbereit#1308: no page-title effect here anymore - it used to set
-	// the org name unconditionally and never again (its dependency doesn't
-	// change across a tab switch), so every tab under this layout showed the
-	// exact same document title. Each of the four tab pages (plus
-	// EngagementManagementPage for the nested engagements route) now calls
-	// usePageTitle itself with its own tab label, the same fix
-	// EngagementManagementPage already had - this layout no longer needs a
-	// fallback since every route it renders covers its own title.
-
 	// #9: every tab now lives under /dashboard/... (App.tsx's pathless
 	// "dashboard" parent route), so the segment right after "dashboard" -
 	// not the first segment, which is always "dashboard" itself - is what

@@ -54,10 +54,7 @@ public class DeleteReadNotificationsCommandHandlerTests
 	public async Task Handle_ShouldOnlyAffectTheRequestingUsersOwnNotifications(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the dbContext call itself is scoped to recipientId - this
-		// asserts the handler passes the command's own RecipientId through
-		// rather than some other identity, so a caller can never delete
-		// another user's notifications.
+		// Arrange
 		var recipientId = UserId.New();
 		var otherUsersId = UserId.New();
 		_dbContext.DeleteReadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>())
