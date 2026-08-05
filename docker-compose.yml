@@ -248,6 +248,44 @@ services:
       - source: minio-backup-script
         target: /backup.sh
 
+  # Closes the gap db-backup's and minio-backup's own comments both flag:
+  # their output (postgres_backups, minio_backups) never left this host, so
+  # losing the host lost the backups with it (#1087's suggested fix, left
+  # undone when that issue closed - "off-host replication is tracked
+  # separately"). Mirrors both local backup volumes to a Hetzner Object
+  # Storage bucket on the same daily cadence as minio-backup, read-only
+  # mounts since this container only ever reads what the two backup jobs
+  # already produced.
+  offsite-backup:
+    # Pinned for the same reason as minio-backup's image above.
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: offsite-backup
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/offsite-backup.sh"]
+    # No explicit network: this container never talks to another container
+    # (it only reads local volumes and pushes to an external endpoint over
+    # the internet), so it gets the project's implicit default network
+    # rather than proxy/db/monitoring - no reason to give it reachability to
+    # Postgres/Keycloak/MinIO it never uses.
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.10"
+    volumes:
+      - postgres_backups:/backup-sources/postgres:ro
+      - minio_backups:/backup-sources/minio:ro
+    environment:
+      OFFSITE_S3_ENDPOINT: ${OFFSITE_S3_ENDPOINT:?set OFFSITE_S3_ENDPOINT in .env}
+      OFFSITE_S3_ACCESS_KEY: ${OFFSITE_S3_ACCESS_KEY:?set OFFSITE_S3_ACCESS_KEY in .env}
+      OFFSITE_S3_SECRET_KEY: ${OFFSITE_S3_SECRET_KEY:?set OFFSITE_S3_SECRET_KEY in .env}
+      OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-einsatzbereit-backups}
+      BACKUP_INTERVAL_SECONDS: "86400"
+    configs:
+      - source: offsite-backup-script
+        target: /offsite-backup.sh
+
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:${IMAGE_TAG:-staging}
     # No container_name (#1392): a fixed name forbids `docker compose up --scale
@@ -720,6 +758,28 @@ configs:
       while true; do
         backup_once
         prune_old
+        sleep "$$INTERVAL"
+      done
+  # Same `$$` escaping convention as minio-backup-script above.
+  offsite-backup-script:
+    content: |
+      #!/bin/sh
+      set -eu
+
+      BUCKET="$${OFFSITE_S3_BUCKET:-einsatzbereit-backups}"
+      INTERVAL="$${BACKUP_INTERVAL_SECONDS:-86400}"
+
+      mc alias set offsite "$$OFFSITE_S3_ENDPOINT" "$$OFFSITE_S3_ACCESS_KEY" "$$OFFSITE_S3_SECRET_KEY" >/dev/null
+
+      while true; do
+        echo "$$(date -Iseconds) mirroring local backups to offsite/$${BUCKET}"
+        # --remove propagates deletions too, not just new/changed files - db-backup
+        # and minio-backup already prune their own local output on their own
+        # retention windows, and without --remove the offsite bucket would never
+        # shed anything they've pruned, growing unbounded instead of mirroring
+        # the same retention.
+        mc mirror --overwrite --remove --quiet /backup-sources/postgres "offsite/$${BUCKET}/postgres"
+        mc mirror --overwrite --remove --quiet /backup-sources/minio "offsite/$${BUCKET}/minio"
         sleep "$$INTERVAL"
       done
   prometheus-config:
