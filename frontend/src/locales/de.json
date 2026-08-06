@@ -25,7 +25,8 @@
       "signOut": "Abmelden",
       "signIn": "Anmelden",
       "register": "Registrieren",
-      "openMenu": "Menü öffnen"
+      "openMenu": "Menü öffnen",
+      "menu": "Menü"
     },
     "footer": {
       "platform": "Plattform",

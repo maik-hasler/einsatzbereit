@@ -142,7 +142,7 @@ function OrganizationsSection() {
 			<div className="mb-6 flex flex-wrap items-center gap-4">
 				<label
 					htmlFor="admin-org-flagged-only"
-					className="flex cursor-pointer items-center gap-2"
+					className="flex cursor-pointer items-center gap-2 py-1"
 				>
 					<input
 						type="checkbox"
@@ -157,7 +157,7 @@ function OrganizationsSection() {
 				</label>
 				<label
 					htmlFor="admin-org-deleted-only"
-					className="flex cursor-pointer items-center gap-2"
+					className="flex cursor-pointer items-center gap-2 py-1"
 				>
 					<input
 						type="checkbox"
@@ -409,7 +409,7 @@ function UsersSection() {
 												? t("administration.users.statusActive")
 												: t("administration.users.statusBlocked")}
 										</Chip>
-										<div className="flex shrink-0 items-center gap-2">
+										<div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
 											{isSelf ? (
 												<span
 													className="text-xs text-gray-500"
