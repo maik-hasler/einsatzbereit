@@ -264,6 +264,17 @@ public class IntegrationTestFixture
 	// organizations - so it leaks into later tests in the shared session and
 	// breaks assumptions that, for example, vera is not an organisator. Revoke it
 	// from every non-baseline user between tests to restore the imported baseline.
+	//
+	// #1677 made the role revocable mid-test too (RemoveMember/DeleteOrganization
+	// now call RevokeOrganizerRoleAsync once a user organizes nothing else). The
+	// local Postgres test DB - reset to empty by ResetDatabaseAsync before every
+	// test - carries no persistent baseline OrganizationMembership row for olaf
+	// the way the real seeded app database does, so any test that has olaf
+	// create-then-delete a throwaway sole organization now legitimately strips
+	// his Keycloak role via that same production code path. Nothing used to need
+	// to restore it, since revocation never happened before #1677. Re-grant it
+	// here if missing, so the baseline invariant "olaf is always an organisator"
+	// holds at the start of every test regardless of what the previous test did.
 	public async Task ResetKeycloakOrganisatorRolesAsync()
 	{
 		var adminToken = await GetAdminTokenAsync();
@@ -286,11 +297,15 @@ public class IntegrationTestFixture
 		await EnsureSuccessAsync(usersResponse);
 
 		var users = await usersResponse.Content.ReadFromJsonAsync<List<KeycloakUser>>() ?? [];
+		var hasBaselineOrganisator = false;
 
 		foreach (var user in users)
 		{
 			if (string.Equals(user.Username, BaselineOrganisator, StringComparison.OrdinalIgnoreCase))
+			{
+				hasBaselineOrganisator = true;
 				continue;
+			}
 
 			using var deleteRequest = new HttpRequestMessage(
 				HttpMethod.Delete, $"/admin/realms/{Realm}/users/{user.Id}/role-mappings/realm")
@@ -301,6 +316,30 @@ public class IntegrationTestFixture
 
 			var deleteResponse = await _keycloakClient.SendAsync(deleteRequest);
 			await EnsureSuccessAsync(deleteResponse);
+		}
+
+		if (!hasBaselineOrganisator)
+		{
+			using var lookupRequest = new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{Realm}/users?username={BaselineOrganisator}&exact=true");
+			lookupRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+			var lookupResponse = await _keycloakClient.SendAsync(lookupRequest);
+			await EnsureSuccessAsync(lookupResponse);
+
+			var matches = await lookupResponse.Content.ReadFromJsonAsync<List<KeycloakUser>>() ?? [];
+			var baselineUser = matches.SingleOrDefault(u => string.Equals(u.Username, BaselineOrganisator, StringComparison.OrdinalIgnoreCase))
+				?? throw new InvalidOperationException($"Keycloak user '{BaselineOrganisator}' not found.");
+
+			using var assignRequest = new HttpRequestMessage(
+				HttpMethod.Post, $"/admin/realms/{Realm}/users/{baselineUser.Id}/role-mappings/realm")
+			{
+				Content = JsonContent.Create(new[] { new { id = organisatorRole.Id, name = organisatorRole.Name } }),
+			};
+			assignRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+			var assignResponse = await _keycloakClient.SendAsync(assignRequest);
+			await EnsureSuccessAsync(assignResponse);
 		}
 	}
 
