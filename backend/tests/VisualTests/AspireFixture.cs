@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -295,14 +296,15 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
 	{
-		var content = new FormUrlEncodedContent([
-			new KeyValuePair<string, string>("grant_type", "client_credentials"),
-			new KeyValuePair<string, string>("client_id", BackendClientId),
-			new KeyValuePair<string, string>("client_secret", BackendClientSecret),
-		]);
-
-		var response = await _keycloakClient.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token", content, cancellationToken);
+		var response = await PostTokenRequestWithRetryAsync(
+			_keycloakClient,
+			$"/realms/{Realm}/protocol/openid-connect/token",
+			() => new FormUrlEncodedContent([
+				new KeyValuePair<string, string>("grant_type", "client_credentials"),
+				new KeyValuePair<string, string>("client_id", BackendClientId),
+				new KeyValuePair<string, string>("client_secret", BackendClientSecret),
+			]),
+			cancellationToken);
 
 		await EnsureSuccessAsync(response);
 
@@ -310,6 +312,37 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 			?? throw new InvalidOperationException("Keycloak returned no admin token.");
 
 		return token.AccessToken;
+	}
+
+	// Keycloak's own token endpoint occasionally answers with a transient 500
+	// under the sustained concurrent load this suite puts on it - every sign-in
+	// (SignInAsync) plus every admin-token mint used for the resets between
+	// tests (GetAdminTokenAsync) hits this exact endpoint, hundreds of times
+	// over a ~12 minute run. Not attributable to any request this suite sends -
+	// Keycloak owns the response entirely - and a bare re-run of just the
+	// failing test always passes. Retries a handful of times with a short
+	// backoff on a 5xx before surfacing whatever the final attempt returned,
+	// so one blip doesn't fail an otherwise-unrelated test outright. Never
+	// retries a 4xx (wrong credentials, bad client config) - that's a real
+	// failure, not a blip.
+	private static async Task<HttpResponseMessage> PostTokenRequestWithRetryAsync(
+		HttpClient client, string requestUri, Func<FormUrlEncodedContent> contentFactory,
+		CancellationToken cancellationToken = default)
+	{
+		const int maxAttempts = 3;
+		HttpResponseMessage response;
+		for (var attempt = 1; ; attempt++)
+		{
+			using var content = contentFactory();
+			response = await client.PostAsync(requestUri, content, cancellationToken);
+			if (response.StatusCode < HttpStatusCode.InternalServerError || attempt >= maxAttempts)
+				break;
+
+			response.Dispose();
+			await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
+		}
+
+		return response;
 	}
 
 	private static async Task EnsureSuccessAsync(HttpResponseMessage response)
@@ -329,17 +362,17 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	{
 		using var client = _app.CreateHttpClient("keycloak");
 
-		var content = new FormUrlEncodedContent([
-			new KeyValuePair<string, string>("grant_type", "password"),
-			new KeyValuePair<string, string>("client_id", FrontendTestClientId),
-			new KeyValuePair<string, string>("username", username),
-			new KeyValuePair<string, string>("password", password),
-			new KeyValuePair<string, string>("scope", "openid"),
-		]);
-
-		var response = await client.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token", content);
-		response.EnsureSuccessStatusCode();
+		var response = await PostTokenRequestWithRetryAsync(
+			client,
+			$"/realms/{Realm}/protocol/openid-connect/token",
+			() => new FormUrlEncodedContent([
+				new KeyValuePair<string, string>("grant_type", "password"),
+				new KeyValuePair<string, string>("client_id", FrontendTestClientId),
+				new KeyValuePair<string, string>("username", username),
+				new KeyValuePair<string, string>("password", password),
+				new KeyValuePair<string, string>("scope", "openid"),
+			]));
+		await EnsureSuccessAsync(response);
 
 		var token = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>()
 			?? throw new InvalidOperationException("Keycloak returned no token.");

@@ -391,17 +391,18 @@ export default function OrgOpportunitiesPage() {
 				</div>
 				<div className="mt-auto flex flex-wrap items-center gap-2">
 					{isOrganizer && status !== "Cancelled" && (
-						<button
+						<Button
 							type="button"
+							variant="outline"
+							size="sm"
 							onClick={() => void openEdit(item.id)}
 							disabled={editLoadingId === item.id}
 							data-testid="opportunity-edit"
-							className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
 						>
 							{editLoadingId === item.id
 								? t("orgOpportunities.editLoading")
 								: t("opportunities.edit")}
-						</button>
+						</Button>
 					)}
 					{isOrganizer && (
 						<Button
@@ -431,17 +432,18 @@ export default function OrgOpportunitiesPage() {
 						</Button>
 					)}
 					{isOrganizer && status === "Published" && (
-						<button
+						<Button
 							type="button"
+							variant="outline"
+							size="sm"
 							onClick={() => {
 								setUnpublishTargetId(item.id);
 								setUnpublishError(null);
 							}}
 							data-testid="opportunity-unpublish"
-							className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
 						>
 							{t("opportunities.unpublish")}
-						</button>
+						</Button>
 					)}
 					{isOrganizer &&
 						(status === "Published" || status === "Unpublished") && (

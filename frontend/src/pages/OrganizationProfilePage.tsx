@@ -11,6 +11,8 @@ import ReportContentModal, {
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import EmptyState from "../components/EmptyState";
+import Button from "../components/Button";
+import Chip from "../components/Chip";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -95,15 +97,16 @@ export default function OrganizationProfilePage() {
 				nameAs="h1"
 				actions={
 					auth.isAuthenticated && (
-						<button
+						<Button
+							variant="outline"
+							size="sm"
 							onClick={() => setShowReport(true)}
 							data-testid="report-organization"
 							aria-label={t("orgProfile.reportOrganization")}
-							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
 							<FlagIcon className="h-4 w-4" />
 							<span className="hidden sm:inline">{t("orgProfile.report")}</span>
-						</button>
+						</Button>
 					)
 				}
 			>
@@ -132,20 +135,20 @@ export default function OrganizationProfilePage() {
 									</p>
 								)}
 								<div className="mt-2 flex flex-wrap gap-2">
-									<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+									<Chip tone="neutral" size="sm">
 										{formatOccurrence(opp.occurrence, t)}
-									</span>
-									<span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+									</Chip>
+									<Chip tone="brand" size="sm">
 										{formatParticipationType(opp.participationType, t)}
-									</span>
+									</Chip>
 									{opp.isRemote ? (
-										<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+										<Chip tone="success" size="sm">
 											{t("opportunities.remote")}
-										</span>
+										</Chip>
 									) : opp.street ? (
-										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										<Chip tone="neutral" size="sm">
 											{opp.street} {opp.houseNumber}, {opp.zipCode} {opp.city}
-										</span>
+										</Chip>
 									) : null}
 								</div>
 							</li>

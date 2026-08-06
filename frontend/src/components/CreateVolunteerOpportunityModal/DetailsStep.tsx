@@ -5,6 +5,7 @@ import type { Control } from "react-hook-form";
 import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
+import Chip from "../Chip";
 import { formatDateTime } from "../../lib/format";
 import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
 import type { OpportunityFormValues } from "./schema";
@@ -362,7 +363,7 @@ export default function DetailsStep({
 												: slot.maxParticipants}
 											)
 											{slot.seriesId && slot.recurrenceCount && (
-												<span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+												<Chip tone="brand" size="sm" className="ml-2">
 													{t("timeSlots.seriesBadge", {
 														frequency: t(
 															`timeSlots.recurrence${slot.recurrenceFrequency}`,
@@ -370,7 +371,7 @@ export default function DetailsStep({
 														position: slot.seriesPosition,
 														count: slot.recurrenceCount,
 													})}
-												</span>
+												</Chip>
 											)}
 											{slot.bookedCount > 0 && (
 												<span className="ml-2 text-xs text-gray-500">

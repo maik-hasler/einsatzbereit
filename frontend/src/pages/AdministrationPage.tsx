@@ -12,6 +12,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
+import { cardSubtleClass } from "../lib/surfaceClasses";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -421,8 +422,10 @@ function UsersSection() {
 												</span>
 											) : (
 												<>
-													<button
+													<Button
 														type="button"
+														variant="outline"
+														size="sm"
 														disabled={isPending}
 														onClick={() =>
 															void toggleEnabled(row.id, !row.enabled)
@@ -436,14 +439,15 @@ function UsersSection() {
 																		name: displayName,
 																	})
 														}
-														className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
 													>
 														{row.enabled
 															? t("administration.users.block")
 															: t("administration.users.unblock")}
-													</button>
-													<button
+													</Button>
+													<Button
 														type="button"
+														variant="outline"
+														size="sm"
 														disabled={isPending}
 														onClick={() => void toggleAdmin(row.id, !isAdmin)}
 														aria-label={
@@ -455,12 +459,11 @@ function UsersSection() {
 																		name: displayName,
 																	})
 														}
-														className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
 													>
 														{isAdmin
 															? t("administration.users.demote")
 															: t("administration.users.promote")}
-													</button>
+													</Button>
 												</>
 											)}
 										</div>
@@ -684,27 +687,29 @@ function ReportsSection() {
 								</p>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
-								<button
+								<Button
 									type="button"
+									variant="outline"
+									size="sm"
 									onClick={() => setHistoryTarget(row)}
 									aria-label={t("administration.reports.viewHistoryNamed", {
 										name: targetName,
 									})}
-									className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 								>
 									{t("administration.reports.viewHistory")}
-								</button>
+								</Button>
 								{row.isDeleted ? (
-									<button
+									<Button
 										type="button"
+										variant="outline"
+										size="sm"
 										onClick={() => setConfirmAction({ row, kind: "restore" })}
 										aria-label={t("administration.reports.restoreNamed", {
 											name: targetName,
 										})}
-										className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 									>
 										{t("administration.reports.restore")}
-									</button>
+									</Button>
 								) : (
 									<button
 										type="button"
@@ -848,10 +853,7 @@ function ReportHistoryModal({
 			) : (
 				<ul className="max-h-96 space-y-3 overflow-y-auto">
 					{entries.map((entry) => (
-						<li
-							key={entry.id}
-							className="rounded-lg border border-gray-100 p-3"
-						>
+						<li key={entry.id} className={cardSubtleClass}>
 							<div className="flex items-center justify-between gap-2">
 								<span className="text-sm font-medium text-gray-900">
 									{t(`administration.reports.reason.${entry.reason}`)}
@@ -871,14 +873,15 @@ function ReportHistoryModal({
 									)}
 								</p>
 								{entry.status === "Open" && (
-									<button
+									<Button
 										type="button"
+										variant="outline"
+										size="sm"
 										disabled={pendingId === entry.id}
 										onClick={() => void dismiss(entry.id)}
-										className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
 									>
 										{t("administration.reports.dismiss")}
-									</button>
+									</Button>
 								)}
 							</div>
 						</li>

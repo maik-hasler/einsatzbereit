@@ -21,8 +21,10 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	// (border/radius/background/shadow/focus) without a text color so
 	// Dropdown's trigger button can reuse it, and inputClass appends
 	// text-gray-900 last rather than inline among the surface classes.
+	// einsatzbereit#1673: inputSurfaceClass gained a min-h-10 floor so a
+	// filter row's input/select/button trio shares one height baseline.
 	private const string ExpectedInputClass =
-		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 text-gray-900";
+		"mt-1 block min-h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 text-gray-900";
 
 	// Regression: ProfileOverviewPage and OrgSettingsPage also used to each
 	// define their own local "Field" helper component, each with its own

@@ -308,37 +308,40 @@ export default function VolunteerOpportunityDetailPage() {
 					)}
 				</div>
 				<div className="flex shrink-0 gap-2">
-					<button
+					<Button
+						variant="outline"
+						size="sm"
 						onClick={handleShare}
 						data-testid="share-opportunity"
 						aria-label={t("opportunities.shareOpportunity")}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 					>
 						<ShareIcon className="h-4 w-4" />
 						<span className="hidden sm:inline">{t("opportunities.share")}</span>
-					</button>
+					</Button>
 					{isAuthenticated && !isOwner && (
-						<button
+						<Button
+							variant="outline"
+							size="sm"
 							onClick={() => setShowReport(true)}
 							data-testid="report-opportunity"
 							aria-label={t("opportunities.reportOpportunity")}
-							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
 							<FlagIcon className="h-4 w-4" />
 							<span className="hidden sm:inline">
 								{t("opportunities.report")}
 							</span>
-						</button>
+						</Button>
 					)}
 					{isDraft && isOwner && (
 						<>
-							<button
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={() => setShowEditModal(true)}
 								data-testid="opportunity-detail-edit"
-								className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 							>
 								{t("opportunities.edit")}
-							</button>
+							</Button>
 							<Button
 								type="button"
 								size="sm"
@@ -543,8 +546,8 @@ export default function VolunteerOpportunityDetailPage() {
 								className={`text-sm font-medium ${
 									isFull
 										? "text-red-600"
-										: spotsLeft <= 3
-											? "text-orange-600"
+										: spotsLeft <= 5
+											? "text-orange-700"
 											: "text-gray-600"
 								}`}
 							>

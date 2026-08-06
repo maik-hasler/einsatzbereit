@@ -60,7 +60,7 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+					className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>

@@ -323,18 +323,20 @@ export default function OrgEngagementsPage() {
 									</span>
 									{e.status === "Pending" && (
 										<div className="flex gap-2">
-											<button
+											<Button
+												type="button"
+												variant="success"
+												size="sm"
 												onClick={() => void handleConfirm(e.id)}
 												disabled={confirming === e.id}
 												aria-label={t("orgEngagements.confirmNamed", {
 													name: volunteerDisplayName(e),
 												})}
-												className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
 											>
 												{confirming === e.id
 													? t("orgEngagements.processing")
 													: t("orgEngagements.confirm")}
-											</button>
+											</Button>
 											<Button
 												type="button"
 												variant="dangerOutline"

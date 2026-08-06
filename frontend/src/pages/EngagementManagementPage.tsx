@@ -15,6 +15,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import Button from "../components/Button";
+import Chip from "../components/Chip";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
@@ -799,10 +800,10 @@ export default function EngagementManagementPage() {
 											})}
 										</p>
 										{e.isCheckedIn && (
-											<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+											<Chip tone="success" size="sm" className="mt-2">
 												<CheckIconSolid className="h-3 w-3" />
 												{t("checkIn.checkedInLabel")}
-											</span>
+											</Chip>
 										)}
 									</div>
 									<div className="flex shrink-0 flex-col items-end gap-2">
@@ -813,18 +814,20 @@ export default function EngagementManagementPage() {
 										</span>
 										{isOrganizer && e.status === "Pending" && (
 											<div className="flex gap-2">
-												<button
+												<Button
+													type="button"
+													variant="success"
+													size="sm"
 													onClick={() => handleConfirm(e.id)}
 													disabled={confirming === e.id}
 													aria-label={t("engagementManagement.confirmNamed", {
 														name: volunteerDisplayName(e),
 													})}
-													className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
 												>
 													{confirming === e.id
 														? t("engagementManagement.processing")
 														: t("engagementManagement.confirm")}
-												</button>
+												</Button>
 												<Button
 													type="button"
 													variant="dangerOutline"

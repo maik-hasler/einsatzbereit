@@ -13,6 +13,7 @@ import { inputClass, labelClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
+import Chip from "../../components/Chip";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -351,9 +352,9 @@ export default function OrgMembersPage() {
 											<p className="truncate text-sm font-medium text-gray-900">
 												{invitation.inviteeName}
 												{invitation.intendedRole === "Organizer" && (
-													<span className="ml-2 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+													<Chip tone="brand" size="sm" className="ml-2">
 														{t("orgSettings.organisator")}
-													</span>
+													</Chip>
 												)}
 											</p>
 											<p className="truncate text-xs text-gray-500">
@@ -495,9 +496,9 @@ export default function OrgMembersPage() {
 										{member.email}
 									</p>
 									{member.isOrganisator && (
-										<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+										<Chip tone="brand" size="sm" className="mt-0.5">
 											{t("orgSettings.organisator")}
-										</span>
+										</Chip>
 									)}
 								</div>
 								{member.userId === currentUserId ? (

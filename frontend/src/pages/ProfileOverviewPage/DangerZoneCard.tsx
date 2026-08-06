@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 import ErrorBanner from "../../components/ErrorBanner";
+import { cardClass } from "../../lib/surfaceClasses";
 
 // Self-contained account-deletion card, split out of ProfileOverviewPage -
 // see #872. Needs no props: it owns its own dialog/loading/error state and
@@ -61,7 +62,7 @@ export default function DangerZoneCard() {
 
 	return (
 		<>
-			<div className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
+			<div className={`mb-6 ${cardClass}`}>
 				<h2 className="mb-1 text-base font-semibold text-gray-800">
 					{t("account.exportDataTitle")}
 				</h2>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
+import Button from "./Button";
 import { CalendarIcon } from "./icons";
 
 interface AddToCalendarMenuProps {
@@ -69,15 +70,16 @@ export default function AddToCalendarMenu({
 
 	return (
 		<div className="relative" ref={rootRef}>
-			<button
+			<Button
 				type="button"
+				variant="outline"
+				size="sm"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
-				className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
 			>
 				<CalendarIcon className="h-3.5 w-3.5" />
 				{t("myEngagements.addToCalendar")}
-			</button>
+			</Button>
 
 			{open && (
 				<ul className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal">
