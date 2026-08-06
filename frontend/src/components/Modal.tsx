@@ -31,15 +31,17 @@ export default function Modal({
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const hasFocusedRef = useRef(false);
 
-	useEffect(() => {
-		if (hasFocusedRef.current) return;
-		hasFocusedRef.current = true;
-		const scope = initialFocusRef?.current ?? dialogRef.current;
-		scope?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
-	}, [initialFocusRef]);
-
 	// Restore focus to whatever triggered the modal once it unmounts (close),
 	// per the WAI-ARIA Dialog pattern - otherwise focus falls back to <body>.
+	// Declared before the initial-focus effect below so activeElement is
+	// still the trigger when read here (React fires mount effects in
+	// declaration order) - declared second before, this instead captured
+	// whatever the other effect had just focused inside the dialog (#1670).
+	// The hasFocusedRef reset below is for React.StrictMode's dev-only double
+	// mount/cleanup/remount (VisualTests run against the Vite dev server):
+	// its interim cleanup fires this restore early, and clearing the guard
+	// lets the remount's initial-focus effect re-apply instead of leaving
+	// focus stranded on the trigger.
 	useEffect(() => {
 		const trigger =
 			document.activeElement instanceof HTMLElement
@@ -47,8 +49,16 @@ export default function Modal({
 				: null;
 		return () => {
 			if (trigger?.isConnected) trigger.focus();
+			hasFocusedRef.current = false;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (hasFocusedRef.current) return;
+		hasFocusedRef.current = true;
+		const scope = initialFocusRef?.current ?? dialogRef.current;
+		scope?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
+	}, [initialFocusRef]);
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
