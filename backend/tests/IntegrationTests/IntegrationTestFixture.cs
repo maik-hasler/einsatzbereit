@@ -304,6 +304,26 @@ public class IntegrationTestFixture
 		}
 	}
 
+	// Test-only escape hatch for asserting a user's realm-level role state
+	// directly against Keycloak (#1677): there's no EinsatzbereitApi surface that
+	// exposes another user's realm roles, so this mirrors
+	// ResetKeycloakOrganisatorRolesAsync's own GET call above.
+	public async Task<bool> UserHasOrganisatorRoleAsync(Guid userId, CancellationToken cancellationToken = default)
+	{
+		var adminToken = await GetAdminTokenAsync();
+
+		using var usersRequest = new HttpRequestMessage(
+			HttpMethod.Get, $"/admin/realms/{Realm}/roles/{OrganisatorRole}/users?max=1000");
+		usersRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var usersResponse = await _keycloakClient.SendAsync(usersRequest, cancellationToken);
+		await EnsureSuccessAsync(usersResponse);
+
+		var users = await usersResponse.Content.ReadFromJsonAsync<List<KeycloakUser>>(cancellationToken) ?? [];
+
+		return users.Any(u => Guid.Parse(u.Id) == userId);
+	}
+
 	// Test-only escape hatch replicating what the now-removed admin-only
 	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
 	// plain member, without granting the Organizer role. Accepting an

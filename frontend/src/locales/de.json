@@ -1116,7 +1116,12 @@
         "searchPlaceholder": "Nach Name suchen",
         "searchButton": "Suchen",
         "flaggedOnlyLabel": "Nur gemeldete",
-        "deletedOnlyLabel": "Nur gelöschte"
+        "deletedOnlyLabel": "Nur gelöschte",
+        "memberCount": "{{count}} Mitglieder",
+        "memberCount_one": "{{count}} Mitglied",
+        "memberCount_other": "{{count}} Mitglieder",
+        "createdOn": "Erstellt am {{date}}",
+        "flaggedBadge": "Gemeldet"
       },
       "users": {
         "loading": "Nutzer:innen werden geladen…",

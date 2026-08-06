@@ -6374,6 +6374,10 @@ export interface AdminOrganizationSummary {
     id: string;
     name: string;
     logoUrl: string | undefined;
+    isDeleted: boolean;
+    openReportCount: number;
+    memberCount: number;
+    createdOn: Date;
 
     [key: string]: any;
 }

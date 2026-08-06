@@ -3,4 +3,8 @@ namespace Application.Organizations.ListOrganizations.v1;
 public sealed record AdminOrganizationSummary(
 	Guid Id,
 	string Name,
-	string? LogoUrl);
+	string? LogoUrl,
+	bool IsDeleted,
+	int OpenReportCount,
+	int MemberCount,
+	DateTimeOffset CreatedOn);

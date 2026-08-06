@@ -64,7 +64,8 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 		var result = await adminClient.ListOrganizationsAsync(
 			1, 50, deleted: true, cancellationToken: cancellationToken);
 
-		result.Items.Should().ContainSingle(o => o.Id == deletedId);
+		var deletedOrg = result.Items.Should().ContainSingle(o => o.Id == deletedId).Which;
+		deletedOrg.IsDeleted.Should().BeTrue();
 	}
 
 	[Test]
@@ -88,7 +89,59 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 		var result = await adminClient.ListOrganizationsAsync(
 			1, 50, flagged: true, cancellationToken: cancellationToken);
 
-		result.Items.Should().ContainSingle(o => o.Id == flaggedId);
+		var flaggedOrg = result.Items.Should().ContainSingle(o => o.Id == flaggedId).Which;
+		flaggedOrg.OpenReportCount.Should().BeGreaterThan(0);
+	}
+
+	[Test]
+	public async Task ListOrganizations_ShouldPopulateMemberCount_ForOrganizationWithMultipleMembers(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - creating the org makes the creator its first (Organizer)
+		// member; inviting two more ephemeral users in as Members and having
+		// them accept brings the total membership count to 3.
+		var (_, organizerUsername, organizerPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var (memberOneId, memberOneUsername, memberOnePassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var (memberTwoId, memberTwoUsername, memberTwoPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+
+		var organizerClient = await CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
+		var orgName = $"Multi Member Org {Guid.NewGuid()}";
+		var org = await organizerClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = orgName }, cancellationToken);
+
+		// A fresh token is needed to invite: CreateInvitation is gated by the
+		// Organisator policy, a role claim baked into the JWT at mint time -
+		// organizerClient's original token predates the "organisator" role
+		// grant that just happened as a side effect of creating the
+		// organization (same reasoning as OrganizerRoleRevocationTests).
+		organizerClient = await CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
+
+		var invitationOne = await organizerClient.CreateInvitationAsync(
+			org.Id.Value,
+			new CreateInvitationRequest { InviteeId = memberOneId, Role = "Member" },
+			cancellationToken);
+		var memberOneClient = await CreateAuthenticatedClientAsync(memberOneUsername, memberOnePassword);
+		await memberOneClient.AcceptInvitationAsync(invitationOne.InvitationId, cancellationToken);
+
+		var invitationTwo = await organizerClient.CreateInvitationAsync(
+			org.Id.Value,
+			new CreateInvitationRequest { InviteeId = memberTwoId, Role = "Member" },
+			cancellationToken);
+		var memberTwoClient = await CreateAuthenticatedClientAsync(memberTwoUsername, memberTwoPassword);
+		await memberTwoClient.AcceptInvitationAsync(invitationTwo.InvitationId, cancellationToken);
+
+		// Act
+		var result = await adminClient.ListOrganizationsAsync(
+			1, 50, search: orgName, cancellationToken: cancellationToken);
+
+		// Assert
+		var summary = result.Items.Should().ContainSingle(o => o.Id == org.Id.Value).Which;
+		summary.MemberCount.Should().Be(3);
+		summary.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────

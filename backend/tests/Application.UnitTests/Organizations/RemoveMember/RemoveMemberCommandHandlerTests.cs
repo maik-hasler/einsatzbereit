@@ -22,6 +22,12 @@ public class RemoveMemberCommandHandlerTests
 
 	public RemoveMemberCommandHandlerTests()
 	{
+		// Default: the removed user organizes nothing else, matching the common
+		// case in tests that don't care about role revocation - tests for the
+		// #1677 fix override this via SetRemainingOrganizerOrganizations.
+		_dbContext
+			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Organization>());
 		_sut = new RemoveMemberCommandHandler(_dbContext, _keycloakService);
 	}
 
@@ -48,6 +54,11 @@ public class RemoveMemberCommandHandlerTests
 		_dbContext
 			.CountOrganizersAsync(OrganizationId.Create(orgId).GetValueOrThrow(), Arg.Any<CancellationToken>())
 			.Returns(count);
+
+	private void SetRemainingOrganizerOrganizations(Guid userId, params Organization[] organizations) =>
+		_dbContext
+			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), Arg.Any<CancellationToken>())
+			.Returns(organizations.ToList());
 
 	[Test]
 	public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
@@ -225,5 +236,70 @@ public class RemoveMemberCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRevokeKeycloakRole_WhenRemovedOrganizerHasNoRemainingOrganizations(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the removed user was an Organizer here and organizes nothing
+		// else once this org's membership row is gone, so the realm-wide role
+		// must come off (#1677).
+		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: true);
+		SetOrganizerCount(orgId, 2);
+		SetRemainingOrganizerOrganizations(userId);
+		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _keycloakService.Received(1).RevokeOrganizerRoleAsync(userId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotRevokeKeycloakRole_WhenRemovedOrganizerStillOrganizesAnotherOrganization(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the removed user is still Organizer of a different
+		// organization, so the realm-wide role (shared across every org they
+		// organize, #1386) must stay assigned.
+		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: true);
+		SetOrganizerCount(orgId, 2);
+		var otherOrg = Organization.Create(OrganizationId.New(), "Other Org").GetValueOrThrow();
+		SetRemainingOrganizerOrganizations(userId, otherOrg);
+		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotRevokeKeycloakRole_WhenRemovedMemberWasNotAnOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - removing a plain Member never touches the realm-wide
+		// organisator role, regardless of what other organizations exist.
+		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
+		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.DidNotReceive().GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }

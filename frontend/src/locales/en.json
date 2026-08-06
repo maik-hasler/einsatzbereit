@@ -1116,7 +1116,12 @@
         "searchPlaceholder": "Search by name",
         "searchButton": "Search",
         "flaggedOnlyLabel": "Flagged only",
-        "deletedOnlyLabel": "Deleted only"
+        "deletedOnlyLabel": "Deleted only",
+        "memberCount": "{{count}} members",
+        "memberCount_one": "{{count}} member",
+        "memberCount_other": "{{count}} members",
+        "createdOn": "Created on {{date}}",
+        "flaggedBadge": "Flagged"
       },
       "users": {
         "loading": "Loading users…",
