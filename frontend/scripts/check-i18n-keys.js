@@ -79,7 +79,7 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"engagementManagement.filterLabelStatus",
 		"orgEngagements.processing",
 		"orgEngagements.filterLabelStatus",
-		"privacyPolicy.section4Title",
+		"privacyPolicy.section8Title",
 		"language.de",
 		"language.en",
 		"report.detailsLabel",
