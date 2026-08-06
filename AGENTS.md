@@ -10,7 +10,6 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/AGENTS.md
 ├── keycloak/       Custom Keycloak image + realm config  → keycloak/AGENTS.md
 ├── docs/           arc42 architecture docs + ADRs        → docs/AGENTS.md
-├── wiki/           Project LLM wiki (informal knowledge)  → wiki/AGENTS.md
 └── .github/        CI/CD workflows + issue templates     → .github/AGENTS.md
 ```
 
@@ -83,8 +82,6 @@ edit on your own initiative):
   (personas, accessibility), code/comment complexity, or comment bloat -
   chosen by triage or named by the user. Report-only: files GitHub issues
   (label `lens`, capped at 5/run), never code or a PR.
-  `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
-  the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
   `.claude/skills/frontend-design/` (vendored from `anthropics/skills`,
   Apache-2.0, `LICENSE` alongside it) pushes frontend redesign work
   toward a deliberate, non-generic visual direction - typography, color
@@ -143,7 +140,7 @@ After every bug fix or feature implementation, **always** cut a release candidat
    git push -u origin release/vX.Y.Z-rc.N
    ```
 5. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
-6. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - see `wiki/bundle/decisions/scripts-folder-removed.md`) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
+6. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - there is no committed `scripts/` directory or root `package.json` anymore) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
 7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this. This is the durable, reviewable record of the fix; the scratch script from step 6 is not - it gets deleted once it has served its purpose.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.

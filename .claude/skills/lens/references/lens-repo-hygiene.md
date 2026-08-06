@@ -46,6 +46,5 @@ the concrete confusion they cause.
 `.claude/` is first-class content. docker-compose next to Aspire is not
 automatically redundant - find its consumer (CI? production?) before
 flagging. There is no root `package.json` anymore - live-verification
-Playwright scripts are scratch-only, installed ad hoc outside the repo
-(`wiki/bundle/decisions/scripts-folder-removed.md`); do not flag its
-absence as a gap.
+Playwright scripts are scratch-only, installed ad hoc outside the repo;
+do not flag its absence as a gap.

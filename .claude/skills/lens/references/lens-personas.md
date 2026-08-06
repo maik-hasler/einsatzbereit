@@ -29,11 +29,9 @@ for `browser_navigate` first; if nothing resolves, fall back to the
    label) - open a fresh context per persona instead.
 2. **Walk each persona's realistic flows end to end**, not a single screen.
    Anonymous visitor, Volunteer Vera (`vera/vera123`), Organizer Olaf
-   (`olaf/olaf123`), Platform Admin (`admin/admin123`) - see
-   `wiki/bundle/project/pre-launch-testing-event.md` for the role-card
-   framing these personas come from. Component/page names drift fast in
-   this repo; trust `frontend/src/App.tsx`'s routes over any name written
-   down here or in a previous report.
+   (`olaf/olaf123`), Platform Admin (`admin/admin123`). Component/page
+   names drift fast in this repo; trust `frontend/src/App.tsx`'s routes
+   over any name written down here or in a previous report.
 3. **Capture more than screenshots at every meaningful state:**
    full-page screenshot, `body.innerText` length (a cheap, surprisingly
    reliable sparse-content signal - compare it across pages of similar

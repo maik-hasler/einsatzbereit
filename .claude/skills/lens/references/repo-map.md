@@ -19,13 +19,13 @@ maintainer, German-named but English-documented.
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
 | `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via MediatR `ISender`. |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
-| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#). Live-staging Playwright scripts are scratch-only now - no root `package.json`, no committed `scripts/` (see `wiki/bundle/decisions/scripts-folder-removed.md`). |
+| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#). Live-staging Playwright scripts are scratch-only now - no root `package.json`, no committed `scripts/`. |
 | `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. No unit test runner - quality gate is `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
 | `.github/workflows` | 9 workflows; `publish.yml` alone is ~500 lines. |
-| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`, `ingest`/`query`/`lint` for `wiki/`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
+| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
 | `docker-compose.yml`, `.env.example`, `renovate.json` | Ops/dev support. docker-compose coexists with Aspire - do not assume one makes the other dead without checking who consumes which. |
 
 ## False-positive traps
@@ -59,15 +59,6 @@ codebases.
    configuration abstractions (`IConfiguration`, `import.meta.env`).
    Search both naming conventions (SCREAMING_SNAKE and colon-nested)
    before claiming a variable is unread.
-8. **Wiki staleness.** `wiki/` is informal knowledge, not a lagging formal
-   doc - `wiki/AGENTS.md`'s Ingest section claims completeness only for
-   the `notes/` channel, never for how current a page stays against
-   `docs/` or code. Unlike `docs/` or a `CLAUDE.md`, a wiki page falling
-   behind fast-moving source is expected, not drift. Keeping it current is
-   the `/lint` skill's job, on its own cadence, not something a repo-wide
-   lens should independently re-flag. Don't treat a stale wiki page as a
-   docs-drift or repo-hygiene finding (see issue #862, filed for exactly
-   this).
 
 ## Tooling quick reference
 
