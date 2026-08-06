@@ -53,3 +53,13 @@ it for ~5 kB gzip. */
 	color: rgb(55 65 81);
 	background: none;
 }
+
+/* ── Leaflet attribution link contrast ───────────────────────────────────── */
+/* Leaflet ships no color for its attribution links, so they render at
+~3.6:1 against the semi-transparent bar over the desaturated tiles above -
+below WCAG AA. Darkened to clear 4.5:1 (measures ~5.1:1) while staying the
+same blue; the ODbL-required attribution text itself stays untouched
+(einsatzbereit#1671). */
+.leaflet-control-attribution a {
+	color: #006086;
+}

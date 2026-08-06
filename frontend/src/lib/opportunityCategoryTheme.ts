@@ -17,6 +17,16 @@ export const OPPORTUNITY_CATEGORY_BANNER_CLASSES: Record<string, string> = {
 export const OPPORTUNITY_CATEGORY_BANNER_FALLBACK_CLASS =
 	"bg-gradient-to-br from-brand-500 to-brand-800";
 
+// White label text alone fails WCAG AA against several of the gradients above
+// (worst case ~2.1:1 on amber-500, einsatzbereit#1671) - a black/40 scrim
+// strip behind the text clears 4.5:1 against every category's lightest
+// ("from") stop with margin (worst case ~5.4:1 on amber-500), so the fix
+// works for any gradient here without per-category tuning. The class must
+// stay a literal string for Tailwind's content scanner to pick it up; keep
+// the opacity constant below in sync with it by hand.
+export const OPPORTUNITY_CATEGORY_LABEL_SCRIM_CLASS = "bg-black/40";
+export const OPPORTUNITY_CATEGORY_LABEL_SCRIM_OPACITY = 0.4;
+
 export function getOpportunityCategoryBannerClassName(
 	category: string | undefined,
 ): string {

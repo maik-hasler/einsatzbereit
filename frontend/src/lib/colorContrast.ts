@@ -26,7 +26,10 @@ function relativeLuminance(hex: string): number {
 	return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
-function contrastRatio(luminanceA: number, luminanceB: number): number {
+function luminanceContrastRatio(
+	luminanceA: number,
+	luminanceB: number,
+): number {
 	const lighter = Math.max(luminanceA, luminanceB);
 	const darker = Math.min(luminanceA, luminanceB);
 	return (lighter + 0.05) / (darker + 0.05);
@@ -35,7 +38,18 @@ function contrastRatio(luminanceA: number, luminanceB: number): number {
 /** Picks whichever of white/near-black clears more contrast against `backgroundHex`. */
 export function readableTextColor(backgroundHex: string): string {
 	const bgLuminance = relativeLuminance(backgroundHex);
-	const whiteContrast = contrastRatio(1, bgLuminance);
-	const darkContrast = contrastRatio(relativeLuminance(DARK_TEXT), bgLuminance);
+	const whiteContrast = luminanceContrastRatio(1, bgLuminance);
+	const darkContrast = luminanceContrastRatio(
+		relativeLuminance(DARK_TEXT),
+		bgLuminance,
+	);
 	return whiteContrast >= darkContrast ? "#ffffff" : DARK_TEXT;
+}
+
+/** WCAG contrast ratio (1:1 to 21:1) between two colors - the same formula SC 1.4.3 uses. */
+export function contrastRatio(hexA: string, hexB: string): number {
+	return luminanceContrastRatio(
+		relativeLuminance(hexA),
+		relativeLuminance(hexB),
+	);
 }
