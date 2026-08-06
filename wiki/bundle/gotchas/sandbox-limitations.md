@@ -42,6 +42,7 @@ The proxy blocks two push targets: `main` and any tag. Both blocks hold even whe
 - [release-workflow](/process/release-workflow.md) - the tag-push block is the reason releases go through a release/* branch
 - [live-playwright-scripts](/process/live-playwright-scripts.md) - the egress-proxy TLS trap the launch args work around is a sandbox effect
 - [backend-conventions](/reference/backend-conventions.md) - the IntegrationTests/VisualTests that need DCP orchestration are the ones that cannot run here
+- [frontend-component-tests-not-adopted](/decisions/frontend-component-tests-not-adopted.md) - names this page as the reason VisualTests gives no fast local signal for a frontend change
 
 # Citations
 - AGENTS.md (root, 'Sandbox Limitations')
