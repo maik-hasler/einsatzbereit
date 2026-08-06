@@ -81,19 +81,19 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this card can
-		// land past the first (10-item) page instead of being visible immediately.
-		// Click "Load more" until it shows up or there is nothing left to load. A
-		// fixed iteration count isn't reliable here - how many other no-time-slot
-		// engagements vera has accumulated by this point varies with test
-		// scheduling/parallelism across the ~50 VisualTests classes sharing this
-		// session, so bound by wall-clock time instead of a click count.
-		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
-		while (!await card.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
-		{
-			await loadMoreButton.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		}
+		// land past the first (10-item) page instead of being visible immediately,
+		// so page through to it. A fixed iteration count isn't reliable here - how
+		// many other no-time-slot engagements vera has accumulated by this point
+		// varies with test scheduling/parallelism across the ~50 VisualTests
+		// classes sharing this session, so LoadMoreUntilVisibleAsync bounds by
+		// wall-clock time instead of a click count.
+		//
+		// Wait for the first page before starting: the WaitForLoadStateAsync above
+		// can settle before the engagements fetch is even issued, since
+		// useLoadMore only requests from an effect after React commits.
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
 
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 

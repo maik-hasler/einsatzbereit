@@ -19,8 +19,15 @@ export default function LoadMoreButton({
 }: Props) {
 	return (
 		<div className="mt-6 flex justify-center">
+			{/* Stable hook for tests that page through a long list: the accessible
+			name below flips between `label` and `loadingLabel` ("Load more" ->
+			"Loading…") while a page is in flight, so a name-based locator matches
+			zero elements mid-load and a non-waiting IsVisible check on it reads
+			false. Pair with the disabled state above - Playwright's click
+			auto-waits for enabled, which is the load having finished. */}
 			<button
 				type="button"
+				data-testid="load-more"
 				onClick={onClick}
 				disabled={loading}
 				className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"

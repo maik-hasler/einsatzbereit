@@ -351,7 +351,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// Keyed [NotInParallel] shared with AvatarAndLogoDisplayTests - this is the
+	// third and last writer of vera's single avatar_url field, and its upload
+	// racing that class's upload/delete pair is what produced the intermittent
+	// "nav bar still shows initials" CI failure. See that file for the full
+	// mechanism.
 	[Test]
+	[NotInParallel("visualtests-vera-avatar")]
 	public async Task ProfileOverviewPage_EditModeWithAvatar_HasNoSeriousA11yViolations()
 	{
 		// #1063: the "Remove" button next to the avatar only renders once the
@@ -1787,7 +1793,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// Confirmed-but-not-checked-in, so this lands in the default "Current &
+		// Upcoming" scope - where this test's own slot-less engagement sorts last
+		// behind everything the rest of the suite has left on vera, several pages
+		// down. Page to it rather than assuming it is on page 1.
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await card.GetByRole(AriaRole.Button, new() { Name = "Check in" }).ClickAsync();

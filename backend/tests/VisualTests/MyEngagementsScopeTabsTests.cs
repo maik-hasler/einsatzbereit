@@ -45,16 +45,13 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		// Upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, it can land past
-		// the first (10-item) page. Click "Load more" until it shows up or there
-		// is nothing left to load - see MyEngagementsTests.cs.
+		// the first (10-item) page, so page through to it. Wait for the first page
+		// before starting - see LoadMoreUntilVisibleAsync for why the hand-rolled
+		// walk this replaces exited after a single click.
 		var upcomingText = Page.GetByText("ScopeTabsUpcoming").First;
-		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
-		while (!await upcomingText.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
-		{
-			await loadMoreButton.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		}
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(upcomingText);
 
 		await Expect(upcomingText).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByText("ScopeTabsPast")).Not.ToBeVisibleAsync();
