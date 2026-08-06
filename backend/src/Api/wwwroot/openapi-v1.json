@@ -8730,7 +8730,9 @@
           "logoUrl",
           "address",
           "createdOn",
-          "members"
+          "members",
+          "requestingUserRole",
+          "membersUnavailable"
         ],
         "type": "object",
         "properties": {
@@ -8790,6 +8792,12 @@
             "items": {
               "$ref": "#/components/schemas/OrganizationMemberDto"
             }
+          },
+          "requestingUserRole": {
+            "type": "string"
+          },
+          "membersUnavailable": {
+            "type": "boolean"
           }
         }
       },

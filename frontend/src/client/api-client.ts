@@ -6819,6 +6819,8 @@ export interface OrganizationDetailsResponse {
     address: AddressDto | undefined;
     createdOn: Date;
     members: OrganizationMemberDto[];
+    requestingUserRole: string;
+    membersUnavailable: boolean;
 
     [key: string]: any;
 }

@@ -1,7 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "react-oidc-context";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
@@ -65,13 +64,13 @@ function OrgAppShell({
 	useAchievementNotifier();
 	const { t } = useTranslation();
 	const location = useLocation();
-	const auth = useAuth();
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
-	const currentUserId = auth.user?.profile?.sub;
-	const isOrganizer = Boolean(
-		org.members.find((m) => m.userId === currentUserId)?.isOrganisator,
-	);
+	// Answered from organization_membership (see OrganizationDetailsResponse's
+	// requestingUserRole), not by scanning the Keycloak-sourced org.members roster
+	// below - so the shell's own nav/actions still know the caller's role even
+	// when that roster couldn't be loaded (#1709).
+	const isOrganizer = org.requestingUserRole === "Organizer";
 
 	// Now that the tab bar is gone (dashboard UX redesign), the breadcrumb is
 	// the only thing that shows an organizer where they are relative to the

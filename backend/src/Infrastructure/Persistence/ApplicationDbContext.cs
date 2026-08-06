@@ -181,6 +181,19 @@ internal sealed class ApplicationDbContext(
 		return userIds.Select(id => id.Value).ToHashSet();
 	}
 
+	public async Task<Dictionary<Guid, OrganizationMemberRole>> GetMembershipRolesAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		var memberships = await Set<OrganizationMembership>()
+			.AsNoTracking()
+			.Where(m => m.OrganizationId == organizationId)
+			.Select(m => new { m.UserId, m.Role })
+			.ToListAsync(cancellationToken);
+
+		return memberships.ToDictionary(m => m.UserId.Value, m => m.Role);
+	}
+
 	public async Task<OrganizationMembership?> GetMembershipAsync(
 		OrganizationId organizationId,
 		UserId userId,

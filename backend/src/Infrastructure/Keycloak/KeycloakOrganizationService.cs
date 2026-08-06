@@ -10,6 +10,7 @@ using Application.Common.Persistence;
 using Domain.Organizations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 
 namespace Infrastructure.Keycloak;
 
@@ -147,9 +148,26 @@ internal sealed class KeycloakOrganizationService(
 	{
 		await EnsureAuthenticatedAsync(cancellationToken);
 
-		var membersResponse = await httpClient.GetAsync(
-			$"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
-			cancellationToken);
+		HttpResponseMessage membersResponse;
+		try
+		{
+			membersResponse = await httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
+				cancellationToken);
+		}
+		catch (ExecutionRejectedException ex)
+		{
+			// AddStandardResilienceHandler's circuit breaker/timeout/rate limiter can
+			// reject the call outright under sustained failure - exactly the "sustained
+			// concurrent admin-API load" scenario #1709 traces the original 400 back
+			// to - before it ever reaches EnsureSuccessAsync below. Normalize to the
+			// same HttpRequestException that path throws, so
+			// GetOrganizationDetailsQueryHandler has a single exception type to catch
+			// regardless of which stage failed.
+			throw new HttpRequestException(
+				$"Keycloak organization members lookup for {organizationId} was rejected by the resilience pipeline: {ex.Message}",
+				ex);
+		}
 
 		await EnsureSuccessAsync(membersResponse, cancellationToken);
 
@@ -323,15 +341,16 @@ internal sealed class KeycloakOrganizationService(
 		// ever reaches the Error-level exception message that gets logged/exported.
 		var path = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path);
 
-		if (logger.IsEnabled(LogLevel.Debug))
-		{
-			var body = await response.Content.ReadAsStringAsync(cancellationToken);
-			logger.LogDebug(
-				"Keycloak error response body for {Method} {Path}: {Body}",
-				method,
-				path,
-				body);
-		}
+		// Logged unconditionally rather than gated behind Debug - a non-2xx here is
+		// always unexpected, and Debug logging being off in every environment that
+		// hit it is exactly what made #1709's unexplained 400 undiagnosable.
+		var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		logger.LogWarning(
+			"Keycloak responded with {StatusCode} for {Method} {Path}. Response body: {Body}",
+			(int)response.StatusCode,
+			method,
+			path,
+			body);
 
 		throw new HttpRequestException(
 			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} for {method} {path}",
