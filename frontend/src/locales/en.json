@@ -19,6 +19,8 @@
       "primaryLabel": "Main navigation",
       "userMenu": "User menu",
       "myProfile": "My Profile",
+      "myEngagements": "My Activity",
+      "profileSettings": "Notifications & Privacy",
       "accountSettings": "Account Settings",
       "administration": "Administration",
       "organization": "Organization",
@@ -986,6 +988,9 @@
     },
     "profile": {
       "title": "My Profile",
+      "subNavLabel": "Profile navigation",
+      "subNavProfile": "Profile",
+      "subNavSettings": "Settings",
       "sectionDetails": "Profile Details",
       "emptyStateTitle": "Your profile is still empty",
       "emptyStateMessage": "Add a bio, skills, or contact preferences so organizations know a bit about you.",
@@ -1018,6 +1023,12 @@
       "loadError": "Could not load profile.",
       "loading": "Loading…",
       "removeChip": "Remove"
+    },
+    "profileSettings": {
+      "title": "Settings"
+    },
+    "myEngagementsPage": {
+      "title": "My Activity"
     },
     "notificationPreferences": {
       "title": "Email notifications",

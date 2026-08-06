@@ -180,6 +180,20 @@ export default function MobileMenu({
 							>
 								{t("nav.myProfile")}
 							</Link>
+							<Link
+								to="/my-engagements"
+								onClick={onClose}
+								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+							>
+								{t("nav.myEngagements")}
+							</Link>
+							<Link
+								to="/profile/settings"
+								onClick={onClose}
+								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+							>
+								{t("nav.profileSettings")}
+							</Link>
 							<a
 								href={`${runtimeConfig.keycloakAuthorityUrl}/account`}
 								target="_blank"

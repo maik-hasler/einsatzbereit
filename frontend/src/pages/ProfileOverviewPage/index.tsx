@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
@@ -14,6 +14,7 @@ import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
+import ProfileSubNav from "../../components/ProfileSubNav";
 import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
@@ -22,9 +23,6 @@ import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
 import AchievementsSection from "./AchievementsSection";
-import ActivitySection from "./ActivitySection";
-import NotificationPreferencesSection from "./NotificationPreferencesSection";
-import DangerZoneCard from "./DangerZoneCard";
 import {
 	useProfileForm,
 	type ContactPref,
@@ -32,17 +30,26 @@ import {
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
 
-// Legacy ?tab= values - from the pre-#794 two-tab scheme (profile/activity)
-// and the older four-tab scheme still used by the /my-engagements and
-// /achievements redirects in App.tsx - resolve to the section that now
-// contains that content, scrolled into view instead of switching tabs.
-// "profile" has no entry: that content is already the top of the page.
-const LEGACY_TAB_SECTIONS: Record<string, string> = {
-	activity: "activity",
-	engagements: "activity",
-	invitations: "activity",
+// Legacy ?tab=achievements deep link - from the pre-#794 two-tab scheme
+// (profile/activity) and the older four-tab scheme still used by the
+// /achievements redirect in App.tsx - scrolls to the Badges section, which
+// still lives here, instead of switching tabs. "profile" has no entry: that
+// content is already the top of the page.
+const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
 };
+
+// Legacy ?tab= values for content that #1684 split off this page entirely -
+// "activity"/"engagements" are the older aliases the /my-engagements redirect
+// used to produce; "invitations" is what backend-generated notification
+// action URLs still send (NotificationReadRepository.cs). All three now
+// redirect to the dedicated page instead of scrolling to a section that no
+// longer exists on /profile.
+const LEGACY_REDIRECT_TABS = new Set([
+	"activity",
+	"engagements",
+	"invitations",
+]);
 
 function FireIcon({ className = "h-5 w-5" }: { className?: string }) {
 	return (
@@ -150,6 +157,7 @@ export default function ProfileOverviewPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
 	usePageToolbar([{ label: t("breadcrumb.profile") }]);
 
@@ -221,16 +229,27 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Legacy ?tab= deep links (App.tsx's /my-engagements and /achievements
-	// redirects still land here with ?tab=engagements/achievements) scroll to
-	// the section that now contains that content instead of switching tabs.
-	// Gated on profileLoading/streaks rather than firing once on mount ([]):
-	// the identity hero and "Profile details" section below it only render
-	// their full height once those finish loading, so scrolling before then
-	// targets a layout that's about to shift and never re-fires afterward.
+	// Legacy ?tab= deep links that #1684 moved off this page entirely
+	// (invitations/sign-ups now live at /my-engagements) redirect there
+	// immediately rather than waiting on profileLoading - there's no section
+	// left on this page to scroll to.
+	useEffect(() => {
+		if (LEGACY_REDIRECT_TABS.has(searchParams.get("tab") ?? "")) {
+			navigate("/my-engagements", { replace: true });
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams]);
+
+	// Legacy ?tab=achievements deep link (App.tsx's /achievements redirect
+	// still lands here with it) scrolls to the section that now contains that
+	// content instead of switching tabs. Gated on profileLoading/streaks
+	// rather than firing once on mount ([]): the identity hero and "Profile
+	// details" section below it only render their full height once those
+	// finish loading, so scrolling before then targets a layout that's about
+	// to shift and never re-fires afterward.
 	useEffect(() => {
 		if (profileLoading) return;
-		const sectionId = LEGACY_TAB_SECTIONS[searchParams.get("tab") ?? ""];
+		const sectionId = LEGACY_SCROLL_SECTIONS[searchParams.get("tab") ?? ""];
 		if (!sectionId) return;
 		const reduceMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
@@ -309,6 +328,8 @@ export default function ProfileOverviewPage() {
 			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
 				{t("profile.title")}
 			</h1>
+
+			<ProfileSubNav active="profile" />
 
 			{profileLoading && (
 				<div
@@ -662,16 +683,11 @@ export default function ProfileOverviewPage() {
 				</>
 			)}
 
-			{/* Mounted unconditionally (not gated behind profileLoading) so their
-			own independent data fetches start immediately, and so their
-			section ids exist right away for the legacy ?tab= scroll-to-section
+			{/* Mounted unconditionally (not gated behind profileLoading) so its own
+			independent data fetch starts immediately, and so its section id
+			exists right away for the legacy ?tab=achievements scroll-to-section
 			effect above regardless of how long the profile fetch takes. */}
 			<AchievementsSection />
-			<ActivitySection />
-
-			<NotificationPreferencesSection />
-
-			<DangerZoneCard />
 
 			{avatarUpload.croppingFile && (
 				<ImageCropModal

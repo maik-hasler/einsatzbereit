@@ -135,7 +135,8 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "InvitationReceived");
 		notification.RelatedTitle.Should().Be(organizationName);
-		notification.ActionUrl.Should().Be("/profile?tab=invitations");
+		// einsatzbereit#1684: invitations moved off /profile onto their own page.
+		notification.ActionUrl.Should().Be("/my-engagements");
 	}
 
 	[Test]

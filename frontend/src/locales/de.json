@@ -19,6 +19,8 @@
       "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
+      "myEngagements": "Meine Aktivitäten",
+      "profileSettings": "Benachrichtigungen & Datenschutz",
       "accountSettings": "Kontoeinstellungen",
       "administration": "Administration",
       "organization": "Organisation",
@@ -986,6 +988,9 @@
     },
     "profile": {
       "title": "Mein Profil",
+      "subNavLabel": "Profilnavigation",
+      "subNavProfile": "Profil",
+      "subNavSettings": "Einstellungen",
       "sectionDetails": "Profil-Details",
       "emptyStateTitle": "Dein Profil ist noch leer",
       "emptyStateMessage": "Füge eine Bio, Fähigkeiten oder Kontaktpräferenzen hinzu, damit Organisationen etwas über dich wissen.",
@@ -1018,6 +1023,12 @@
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
       "removeChip": "Entfernen"
+    },
+    "profileSettings": {
+      "title": "Einstellungen"
+    },
+    "myEngagementsPage": {
+      "title": "Meine Aktivitäten"
     },
     "notificationPreferences": {
       "title": "E-Mail-Benachrichtigungen",
