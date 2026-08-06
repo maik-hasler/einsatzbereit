@@ -123,6 +123,20 @@ internal sealed class ApplicationDbContext(
 		await Set<SearchAlert>()
 			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
 
+	public async Task DeleteSearchAlertForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<SearchAlert>()
+			.Where(s => s.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task DeleteReportsForReporterAsync(
+		UserId reporterId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Report>()
+			.Where(r => r.ReporterId == reporterId)
+			.ExecuteDeleteAsync(cancellationToken);
+
 	public async Task<List<VolunteerOpportunity>> GetVolunteerOpportunitiesByIdsAsync(
 		IReadOnlyCollection<VolunteerOpportunityId> opportunityIds,
 		CancellationToken cancellationToken = default) =>

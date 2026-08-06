@@ -4,11 +4,10 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { clearActiveOrgId } from "../../lib/activeOrg";
+import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
-import ErrorBanner from "../../components/ErrorBanner";
-import PageSectionHeading from "../../components/PageSectionHeading";
-import { cardClass } from "../../lib/surfaceClasses";
 
 // Self-contained account-deletion card, split out of ProfileOverviewPage -
 // see #872, relocated to ProfileSettingsPage - see #1684. Needs no props: it
@@ -23,14 +22,19 @@ export default function DangerZoneCard() {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const [exporting, setExporting] = useState(false);
-	const [exportError, setExportError] = useState<string | null>(null);
 
 	async function handleDeleteAccount() {
 		setDeleting(true);
 		setDeleteError(null);
 		try {
 			await api.deleteMyAccount();
+			// #1676: this account no longer exists, so browser storage tied to it
+			// (captured before removeUser() clears auth.user) has nothing left to
+			// point at - clear it the same way a plain sign-out does.
+			clearActiveOrgId();
+			clearSeenAchievements(auth.user?.profile?.sub);
+			localStorage.removeItem("i18nextLng");
+			localStorage.removeItem("einsatzbereit:language-explicit");
 			await auth.removeUser();
 			navigate("/");
 		} catch (err) {
@@ -39,49 +43,8 @@ export default function DangerZoneCard() {
 		}
 	}
 
-	async function handleExportData() {
-		setExporting(true);
-		setExportError(null);
-		try {
-			const data = await api.exportMyData();
-			const blob = new Blob([JSON.stringify(data, null, 2)], {
-				type: "application/json",
-			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = "my-data-export.json";
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-		} catch (err) {
-			setExportError(getApiErrorMessage(err, t("account.exportDataError")));
-		} finally {
-			setExporting(false);
-		}
-	}
-
 	return (
 		<>
-			<div className={`mb-6 ${cardClass}`}>
-				<PageSectionHeading>{t("account.exportDataTitle")}</PageSectionHeading>
-				<p className="mb-4 text-sm text-gray-600">
-					{t("account.exportDataDescription")}
-				</p>
-				<button
-					type="button"
-					onClick={handleExportData}
-					disabled={exporting}
-					className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					{exporting
-						? t("account.exportDataButtonLoading")
-						: t("account.exportDataButton")}
-				</button>
-				{exportError && <ErrorBanner message={exportError} className="mt-2" />}
-			</div>
-
 			<DangerZonePanel
 				title={t("account.dangerZoneTitle")}
 				description={t("account.dangerZoneDescription")}

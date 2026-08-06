@@ -2575,46 +2575,6 @@
         }
       }
     },
-    "/v1/users/me/export": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "operationId": "ExportMyData",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserDataExportResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/admin/users/{userId}": {
       "delete": {
         "tags": [
@@ -8884,26 +8844,6 @@
           }
         }
       },
-      "OrganizationMembershipSummary": {
-        "required": [
-          "organizationId",
-          "organizationName",
-          "role"
-        ],
-        "type": "object",
-        "properties": {
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "organizationName": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
       "OrganizationSummaryDto": {
         "required": [
           "id",
@@ -10334,125 +10274,6 @@
               "string"
             ],
             "format": "date-time"
-          }
-        }
-      },
-      "UserDataExportProfile": {
-        "required": [
-          "id",
-          "username",
-          "firstName",
-          "lastName",
-          "email",
-          "avatarUrl",
-          "bio",
-          "phone",
-          "skills",
-          "languages",
-          "preferredContact",
-          "preferredLanguage"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "username": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lastName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "email": {
-            "type": "string"
-          },
-          "avatarUrl": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "bio": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "phone": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "skills": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "languages": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "preferredContact": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "preferredLanguage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "UserDataExportResponse": {
-        "required": [
-          "profile",
-          "engagements",
-          "achievements",
-          "streak",
-          "organizationMemberships"
-        ],
-        "type": "object",
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/UserDataExportProfile"
-          },
-          "engagements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EngagementSummary"
-            }
-          },
-          "achievements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AchievementSummary"
-            }
-          },
-          "streak": {
-            "$ref": "#/components/schemas/StreakSummary"
-          },
-          "organizationMemberships": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrganizationMembershipSummary"
-            }
           }
         }
       },

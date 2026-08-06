@@ -42,6 +42,14 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task DeleteSearchAlertForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task DeleteReportsForReporterAsync(
+		UserId reporterId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<VolunteerOpportunity>> GetVolunteerOpportunitiesByIdsAsync(
 		IReadOnlyCollection<VolunteerOpportunityId> opportunityIds,
 		CancellationToken cancellationToken = default);

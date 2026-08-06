@@ -511,8 +511,7 @@ export default function EngagementManagementPage() {
 	// Not routed through useApiClient()/EinsatzbereitApi: NSwag has no typed
 	// response for a file-returning endpoint (see GetEngagementCalendar's
 	// generated client method, which discards the body and returns void), so
-	// this needs a raw authenticated fetch + blob download instead - the same
-	// pattern DangerZoneCard uses for the GDPR data export download.
+	// this needs a raw authenticated fetch + blob download instead.
 	async function handleExport() {
 		if (!opportunityId) return;
 		setExporting(true);

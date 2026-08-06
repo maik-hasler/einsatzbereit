@@ -8,7 +8,12 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useSharedOrgFetch } from "../../hooks/useSharedOrgFetch";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
-import { getActiveOrgId, resolveActiveOrg } from "../../lib/activeOrg";
+import {
+	clearActiveOrgId,
+	getActiveOrgId,
+	resolveActiveOrg,
+} from "../../lib/activeOrg";
+import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import type { BreadcrumbItem } from "../../contexts/ToolbarContext";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import type { QuickAction } from "../../contexts/QuickActionsContext";
@@ -97,6 +102,14 @@ export default function Header({
 	}
 
 	function handleSignOut() {
+		// #1676: none of this is needed for authentication itself (Keycloak's
+		// own session cookie is cleared by signoutRedirect below) - it's
+		// browser-stored data tied to this account that has no reason to
+		// outlive the session, per the privacy policy's cookies/storage section.
+		clearActiveOrgId();
+		clearSeenAchievements(user?.sub);
+		localStorage.removeItem("i18nextLng");
+		localStorage.removeItem("einsatzbereit:language-explicit");
 		auth.signoutRedirect();
 	}
 

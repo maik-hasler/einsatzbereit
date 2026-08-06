@@ -39,8 +39,11 @@ export default function PrivacyPolicyPage() {
 				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body2")}
 				</p>
-				<p className="leading-relaxed text-gray-700">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body3")}
+				</p>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section2Body4")}
 				</p>
 			</section>
 
@@ -139,8 +142,11 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section8Title")}
 				</h2>
+				<p className="mb-4 leading-relaxed text-gray-700">
+					{t("privacyPolicy.section8Body1")}
+				</p>
 				<p className="leading-relaxed text-gray-700">
-					{t("privacyPolicy.section8Body")}
+					{t("privacyPolicy.section8Body2")}
 				</p>
 			</section>
 
@@ -148,8 +154,11 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section9Title")}
 				</h2>
+				<p className="mb-4 leading-relaxed text-gray-700">
+					{t("privacyPolicy.section9Body1")}
+				</p>
 				<p className="leading-relaxed text-gray-700">
-					{t("privacyPolicy.section9Body")}
+					{t("privacyPolicy.section9Body2")}
 				</p>
 			</section>
 		</div>
