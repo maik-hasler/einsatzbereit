@@ -524,7 +524,11 @@ internal sealed class ApplicationDbContext(
 		IReadOnlyCollection<UserId> userIds,
 		CancellationToken cancellationToken = default)
 	{
+		// IgnoreQueryFilters() - a shadow-deleted user's row physically exists
+		// and must count as "existing", or this queues a duplicate-key INSERT
+		// against a row the global !IsDeleted filter merely hid (einsatzbereit#1666).
 		var existing = await Set<User>()
+			.IgnoreQueryFilters()
 			.Where(u => userIds.Contains(u.Id))
 			.ToListAsync(cancellationToken);
 
@@ -542,7 +546,12 @@ internal sealed class ApplicationDbContext(
 		string? preferredLanguage,
 		CancellationToken cancellationToken = default)
 	{
-		var existing = await Users.FindAsync(userId, cancellationToken);
+		// IgnoreQueryFilters() - same reasoning as GetOrCreateUsersAsync above:
+		// a shadow-deleted user's row must be found here, not re-inserted into
+		// (einsatzbereit#1666).
+		var existing = await Set<User>()
+			.IgnoreQueryFilters()
+			.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 		if (existing is not null)
 			return existing;
 
@@ -551,7 +560,9 @@ internal sealed class ApplicationDbContext(
 			VALUES ({userId.Value}, '[]', '[]', {preferredLanguage})
 			ON CONFLICT (id) DO NOTHING", cancellationToken);
 
-		return await Users.FindAsync(userId, cancellationToken)
+		return await Set<User>()
+			.IgnoreQueryFilters()
+			.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
 			?? throw new InvalidOperationException($"User '{userId.Value}' was not found immediately after being inserted.");
 	}
 
