@@ -19,4 +19,9 @@ public enum EmailTemplateKind
 	InvitationReceived,
 	OpportunityUpdated,
 	SearchAlertNewMatches,
+
+	// Body-only fragment appended to every outgoing notification email via
+	// EmailFooter.Append - same "render separately, splice in" pattern as
+	// EngagementCancelledReasonSuffix above.
+	EmailFooter,
 }

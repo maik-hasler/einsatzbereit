@@ -4,14 +4,12 @@ import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
-import { runtimeConfig } from "../../lib/runtimeConfig";
 import NotificationDropdown from "./NotificationDropdown";
 import {
 	ArrowRightOnRectangleIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
 	Cog6ToothIcon,
-	KeyIcon,
 	Squares2x2Icon,
 	UserCircleIcon,
 } from "../icons";
@@ -96,15 +94,6 @@ export default function AccountControls({
 								<UserCircleIcon className="h-4 w-4" />
 								{t("nav.myProfile")}
 							</Link>
-							<a
-								href={`${runtimeConfig.keycloakAuthorityUrl}/account`}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
-							>
-								<KeyIcon className="h-4 w-4" />
-								{t("nav.accountSettings")}
-							</a>
 							{isAdmin && (
 								<Link
 									to="/administration"

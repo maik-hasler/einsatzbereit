@@ -18,7 +18,7 @@ internal sealed class UnsubscribeEndpoint
 		app.MapGet("/users/{userId:guid}/unsubscribe", UnsubscribeAsync)
 			.WithName("Unsubscribe")
 			.WithTags("Users")
-			.Produces(StatusCodes.Status200OK, contentType: "text/html")
+			.Produces(StatusCodes.Status302Found)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
@@ -26,11 +26,18 @@ internal sealed class UnsubscribeEndpoint
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 
+	// Redirects into a branded, localized frontend route rather than returning raw
+	// HTML directly (#1675) - this endpoint has no locale of its own to render in,
+	// so the frontend's own i18n (German-default) takes over from here. Reuses the
+	// same Cors:Origins-derived frontend base URL as GetSitemapEndpoint/
+	// GetEngagementCalendarEndpoint, since there's no dedicated "frontend base URL"
+	// setting in this codebase.
 	private static async Task<IResult> UnsubscribeAsync(
 		[FromRoute] Guid userId,
 		[FromQuery] string type,
 		[FromQuery] Guid token,
 		[FromServices] ISender sender,
+		[FromServices] IConfiguration configuration,
 		CancellationToken cancellationToken)
 	{
 		if (!Enum.TryParse<EmailNotificationType>(type, out var notificationType))
@@ -42,10 +49,9 @@ internal sealed class UnsubscribeEndpoint
 			new UnsubscribeCommand(UserId.Create(userId).GetValueOrThrow(), token, notificationType),
 			cancellationToken);
 
-		return Results.Content(
-			"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Unsubscribed</title></head>" +
-			"<body><p>You have been unsubscribed from this type of email. You can re-enable it any time " +
-			"from your notification preferences in your profile.</p></body></html>",
-			"text/html");
+		var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+		var frontendBaseUrl = origins.Length > 0 ? origins[0].TrimEnd('/') : "";
+
+		return Results.Redirect($"{frontendBaseUrl}/unsubscribed?type={Uri.EscapeDataString(type)}");
 	}
 }

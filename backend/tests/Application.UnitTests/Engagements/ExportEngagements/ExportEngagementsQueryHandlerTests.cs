@@ -42,6 +42,17 @@ public class ExportEngagementsQueryHandlerTests
 		_keycloakUserService
 			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
 			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
+		// Defaults the requesting organizer to English so every test not
+		// specifically about localization keeps asserting the English labels
+		// below - Handle_ShouldLocalizeHeaderStatusAndLabels_... below is the
+		// one exercising the German branch.
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call =>
+			{
+				var requestingUser = User.Create(((IReadOnlyCollection<UserId>)call[0]!).First());
+				requestingUser.SetPreferredLanguage("en");
+				return new List<User> { requestingUser };
+			});
 		_sut = new ExportEngagementsQueryHandler(_readRepository, _dbContext, _keycloakUserService);
 	}
 
@@ -89,14 +100,17 @@ public class ExportEngagementsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnHeaderOnly_WhenNoEngagements(
+	public async Task Handle_ShouldReturnSepDirectiveAndHeaderOnly_WhenNoEngagements(
 		CancellationToken cancellationToken)
 	{
 		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Be("Name,Status,Time Slot,Check-in Status,Feedback Rating\r\n");
+		// The leading "sep=;" line (#1675) tells Excel to use ";" as the column
+		// delimiter regardless of the running install's own regional settings.
+		file.Content.Should().Be(
+			"sep=;\r\nName;Status;Time Slot (Europe/Berlin);Check-in Status;Feedback Rating\r\n");
 	}
 
 	[Test]
@@ -137,7 +151,43 @@ public class ExportEngagementsQueryHandlerTests
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Contain("Vera Volunteer,Confirmed,2026-08-10 09:00 - 2026-08-10 12:00 UTC,Checked in,5");
+		// 09:00-12:00 UTC on an August date is 11:00-14:00 in Europe/Berlin (CEST, UTC+2).
+		file.Content.Should().Contain("Vera Volunteer;Confirmed;2026-08-10 11:00 - 2026-08-10 14:00;Checked in;5");
+	}
+
+	[Test]
+	public async Task Handle_ShouldConvertTimeSlotStart_FromUtcToEuropeBerlin_NotLeaveItRawUtc(
+		CancellationToken cancellationToken)
+	{
+		// A winter instant makes Europe/Berlin deterministically UTC+1 (CET, no
+		// DST) regardless of when this test runs - mirrors
+		// EngagementReminderDueHandlerTests' own approach to the same fallback.
+		var start = new DateTimeOffset(2027, 1, 15, 12, 0, 0, TimeSpan.Zero);
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			VolunteerId: null,
+			TimeSlotId: null,
+			Message: null,
+			"Confirmed",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow,
+			TimeSlotStartDateTime: start,
+			TimeSlotEndDateTime: null);
+
+		_readRepository
+			.GetForExportAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([engagement]);
+
+		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
+
+		var file = await _sut.Handle(query, cancellationToken);
+
+		file.Content.Should().Contain("2027-01-15 13:00").And.NotContain("12:00");
 	}
 
 	[Test]
@@ -173,7 +223,7 @@ public class ExportEngagementsQueryHandlerTests
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Contain("vera,Pending");
+		file.Content.Should().Contain("vera;Pending");
 	}
 
 	[Test]
@@ -232,7 +282,7 @@ public class ExportEngagementsQueryHandlerTests
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Contain("Anonymized volunteer,Cancelled");
+		file.Content.Should().Contain("Anonymized volunteer;Cancelled");
 	}
 
 	[Test]
@@ -261,11 +311,11 @@ public class ExportEngagementsQueryHandlerTests
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Contain("Anonymized volunteer,Pending,,Not checked in,\r\n");
+		file.Content.Should().Contain("Anonymized volunteer;Pending;;Not checked in;\r\n");
 	}
 
 	[Test]
-	public async Task Handle_ShouldQuoteAndEscapeName_WhenItContainsACommaAndQuote(
+	public async Task Handle_ShouldQuoteAndEscapeName_WhenItContainsAQuote(
 		CancellationToken cancellationToken)
 	{
 		var volunteerId = Guid.NewGuid();
@@ -297,7 +347,118 @@ public class ExportEngagementsQueryHandlerTests
 
 		var file = await _sut.Handle(query, cancellationToken);
 
-		file.Content.Should().Contain("\"Vera \"\"The Helper\"\" Doe, Jr.\",Pending");
+		// The embedded quote still forces quoting/escaping - the embedded comma
+		// rides along inside those quotes but, unlike before #1675, no longer
+		// needs escaping on its own since ";" (not ",") is now the delimiter.
+		file.Content.Should().Contain("\"Vera \"\"The Helper\"\" Doe, Jr.\";Pending");
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotEscapeAPlainComma_SinceSemicolonIsTheDelimiterNow(
+		CancellationToken cancellationToken)
+	{
+		var volunteerId = Guid.NewGuid();
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			volunteerId,
+			null,
+			null,
+			"Pending",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow);
+
+		_readRepository
+			.GetForExportAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([engagement]);
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>
+			{
+				[volunteerId] = new KeycloakUserProfile(volunteerId, "vera", "Doe, Jane", null, "vera@example.com"),
+			});
+
+		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
+
+		var file = await _sut.Handle(query, cancellationToken);
+
+		file.Content.Should().Contain("Doe, Jane;Pending").And.NotContain("\"Doe, Jane\"");
+	}
+
+	[Test]
+	public async Task Handle_ShouldQuoteAndEscapeName_WhenItContainsTheSemicolonDelimiter(
+		CancellationToken cancellationToken)
+	{
+		var volunteerId = Guid.NewGuid();
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			volunteerId,
+			null,
+			null,
+			"Pending",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow);
+
+		_readRepository
+			.GetForExportAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([engagement]);
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>
+			{
+				[volunteerId] = new KeycloakUserProfile(volunteerId, "vera", "Vera; The Helper", null, "vera@example.com"),
+			});
+
+		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
+
+		var file = await _sut.Handle(query, cancellationToken);
+
+		file.Content.Should().Contain("\"Vera; The Helper\";Pending");
+	}
+
+	[Test]
+	public async Task Handle_ShouldLocalizeHeaderStatusAndLabels_InRequestingOrganizersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		var organizer = User.Create(DefaultRequestingUserId);
+		organizer.SetPreferredLanguage("de");
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([organizer]);
+
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			VolunteerId: null,
+			null,
+			null,
+			"Confirmed",
+			IsCheckedIn: true,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow);
+
+		_readRepository
+			.GetForExportAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([engagement]);
+
+		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
+
+		var file = await _sut.Handle(query, cancellationToken);
+
+		file.Content.Should().StartWith(
+			"sep=;\r\nName;Status;Zeitslot (Europe/Berlin);Check-in-Status;Feedback-Bewertung\r\n");
+		file.Content.Should().Contain("Anonymisierte:r Freiwillige:r;Bestätigt;;Eingecheckt;\r\n");
 	}
 
 	private static VolunteerOpportunity CreateDefaultOpportunity() =>
