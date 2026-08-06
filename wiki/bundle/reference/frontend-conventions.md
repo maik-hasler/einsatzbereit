@@ -47,6 +47,7 @@ The Register button must not call `auth.signinRedirect()` - that hits Keycloak's
 - [nswag-generated-clients](/gotchas/nswag-generated-clients.md) - api-client.ts is consumed via useApiClient() and must not be hand-edited
 - [claude-check-setup](/decisions/claude-check-setup.md) - the a11y-check and i18n-check agents exist precisely to cover these lint gaps
 - [pre-launch-testing-event](/project/pre-launch-testing-event.md) - the 'unfamiliar with technology' role card exercises exactly these a11y patterns
+- [frontend-component-tests-not-adopted](/decisions/frontend-component-tests-not-adopted.md) - why this stack has no `*.test.tsx`/Testing Library layer and never will by default
 
 # Citations
 

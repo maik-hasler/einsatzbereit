@@ -20,8 +20,7 @@
       "userMenu": "User menu",
       "myProfile": "My Profile",
       "myEngagements": "My Activity",
-      "profileSettings": "Notifications & Privacy",
-      "accountSettings": "Account Settings",
+      "profileSettings": "Settings",
       "administration": "Administration",
       "organization": "Organization",
       "signOut": "Sign out",
@@ -185,6 +184,7 @@
       "loginPrompt": "Sign in to sign up for this opportunity.",
       "yourApplication": "Your sign-up",
       "aboutOrganization": "About this organization",
+      "aboutOrganizationLoadError": "Couldn't load this organization's contact details.",
       "moreFromOrganization": "More from this organization",
       "postedToday": "Posted today",
       "postedDaysAgo": "Posted {{count}} days ago",
@@ -341,12 +341,14 @@
       "create": "Create organization",
       "switchLabel": "Switch organization",
       "selectPlaceholder": "Select organization",
+      "loadError": "Couldn't load your organizations.",
       "nameLabel": "Name",
       "namePlaceholder": "e.g. Volunteer Fire Department",
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
+      "logoUploadFailedWarning": "Organization created, but the logo couldn't be uploaded - you can add it later in Settings.",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this organization. If you close now, they will be lost.",
       "discardChanges": "Discard changes"
@@ -482,6 +484,7 @@
       "inviteError": "Could not send invitation.",
       "inviteSent": "Invitation sent.",
       "pendingInvitations": "Pending Invitations",
+      "pendingInvitationsLoadError": "Couldn't load pending invitations.",
       "declinedInvitations": "Declined Invitations",
       "expiredInvitations": "Expired Invitations",
       "dismissInvitation": "Dismiss",
@@ -529,6 +532,7 @@
       "submit": "Submit feedback",
       "submitting": "Submitting…",
       "cancel": "Cancel",
+      "error": "Error: {{message}}",
       "submitError": "Could not submit feedback. Please try again.",
       "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
       "itemRatingLabel": "{{rating}} out of 5 stars",
@@ -601,7 +605,6 @@
       "addToCalendarOutlook": "Outlook.com",
       "addToCalendarApple": "Apple Calendar",
       "addToCalendarDownload": "Download .ics",
-      "viewRecord": "View engagement record",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",
@@ -613,6 +616,8 @@
       "title": "Manage sign-ups",
       "loading": "Loading…",
       "error": "Error: {{message}}",
+      "opportunityLoadError": "Couldn't load this opportunity's details.",
+      "checkInPinLoadError": "Couldn't load the check-in PIN.",
       "noApplications": "No sign-ups yet.",
       "noApplicationsHint": "Once volunteers sign up for this opportunity, their sign-ups will appear here.",
       "noResults": "No sign-ups match your filters.",
@@ -798,6 +803,7 @@
       "markAllRead": "Mark all as read",
       "clearRead": "Clear read",
       "clearReadError": "Failed to clear read notifications.",
+      "loadError": "Couldn't load notifications.",
       "empty": "No notifications.",
       "loadMore": "Load more",
       "loadingMore": "Loading…",
@@ -819,7 +825,8 @@
         "InvitationReceived": "You've been invited to join {{title}}",
         "InvitationAccepted": "Your invitation to join {{title}} was accepted",
         "InvitationDeclined": "Your invitation to join {{title}} was declined",
-        "FeedbackSubmitted": "New feedback received for {{title}}"
+        "FeedbackSubmitted": "New feedback received for {{title}}",
+        "NewMatchingOpportunity": "A new opportunity matches your saved search: {{title}}"
       }
     },
     "language": {
@@ -836,6 +843,11 @@
       "title": "Page not found",
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
+    },
+    "unsubscribe": {
+      "title": "You've been unsubscribed",
+      "description": "You have been unsubscribed from this type of email. You can re-enable it any time from your notification preferences in your profile.",
+      "manageInProfile": "Manage notification preferences"
     },
     "report": {
       "title": "Report content",
@@ -960,21 +972,6 @@
     },
     "profileOverview": {
       "invitationsHeading": "Open Invitations"
-    },
-    "engagementRecord": {
-      "title": "Engagement Record",
-      "subtitle": "A record of your checked-in volunteer engagements - print or save as PDF for your own records.",
-      "backToProfile": "Back to profile",
-      "printButton": "Print / Save as PDF",
-      "loading": "Loading…",
-      "loadError": "Could not load your engagement record.",
-      "noEntries": "No checked-in engagements yet.",
-      "noEntriesHint": "Once you check in for a shift, it will appear here.",
-      "columnDate": "Date",
-      "columnOrganization": "Organization",
-      "columnOpportunity": "Opportunity",
-      "columnHours": "Hours",
-      "totalHours": "Total hours: {{hours}}"
     },
     "invitations": {
       "loadError": "Could not load invitations.",

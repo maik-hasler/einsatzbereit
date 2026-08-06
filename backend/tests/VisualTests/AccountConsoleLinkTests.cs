@@ -3,39 +3,37 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// #1098: users had no in-app way to change their password or email - the
-/// account dropdown (desktop) and mobile burger menu only ever linked to
-/// /profile and (admins only) /administration. This adds an "Account
-/// Settings" entry in both menus pointing at Keycloak's own account console
-/// (`${authority}/account`), which already supports password/email changes,
-/// rather than building that functionality natively.
+/// #1675: the "Account Settings" entry (added by #1098) linked out to
+/// Keycloak's own, unbranded account console (`${authority}/account`), which
+/// the realm never actually provisions a client for and which currently
+/// errors on staging. Everything it uniquely offered is either already
+/// reachable branded (password reset, profile editing at /profile) or not
+/// configured in the realm at all (2FA, session management) - so the entry
+/// point itself is removed rather than themed. This guards against it
+/// reappearing in either menu.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class AccountConsoleLinkTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task AccountDropdown_AuthenticatedUser_LinksToKeycloakAccountConsole()
+	public async Task AccountDropdown_AuthenticatedUser_HasNoKeycloakAccountConsoleLink()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var authority = $"{Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/')}/realms/einsatzbereit";
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "User menu" }).ClickAsync();
 
-		var link = Page.GetByRole(AriaRole.Link, new() { Name = "Account Settings" });
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(link).ToHaveAttributeAsync("href", $"{authority}/account");
-		await Expect(link).ToHaveAttributeAsync("target", "_blank");
-		await Expect(link).ToHaveAttributeAsync("rel", "noopener noreferrer");
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Account Settings" })).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
-	public async Task MobileMenu_AuthenticatedUser_LinksToKeycloakAccountConsole()
+	public async Task MobileMenu_AuthenticatedUser_HasNoKeycloakAccountConsoleLink()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var authority = $"{Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/')}/realms/einsatzbereit";
 
 		// FastSignInAsync's own "User menu" wait needs the desktop-width nav
 		// visible (DesktopHeader.tsx's "hidden md:flex") - sign in at the
@@ -48,10 +46,8 @@ public class AccountConsoleLinkTests(AspireFixture fixture) : VisualTestBase(fix
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		var link = Page.GetByRole(AriaRole.Link, new() { Name = "Account Settings" });
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(link).ToHaveAttributeAsync("href", $"{authority}/account");
-		await Expect(link).ToHaveAttributeAsync("target", "_blank");
-		await Expect(link).ToHaveAttributeAsync("rel", "noopener noreferrer");
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Account Settings" })).Not.ToBeVisibleAsync();
 	}
 }

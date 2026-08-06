@@ -7,7 +7,6 @@ import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
-import { runtimeConfig } from "../../lib/runtimeConfig";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { ChevronDownIcon } from "../icons";
 
@@ -194,15 +193,6 @@ export default function MobileMenu({
 							>
 								{t("nav.profileSettings")}
 							</Link>
-							<a
-								href={`${runtimeConfig.keycloakAuthorityUrl}/account`}
-								target="_blank"
-								rel="noopener noreferrer"
-								onClick={onClose}
-								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
-							>
-								{t("nav.accountSettings")}
-							</a>
 							{isAdmin && (
 								<Link
 									to="/administration"

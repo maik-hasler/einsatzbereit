@@ -17,7 +17,7 @@ import ProfileFieldsView from "../../components/ProfileFieldsView";
 import ProfileSubNav from "../../components/ProfileSubNav";
 import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
-import ErrorBanner from "../../components/ErrorBanner";
+import LoadMoreError from "../../components/LoadMoreError";
 import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
@@ -165,11 +165,18 @@ export default function ProfileOverviewPage() {
 	const [profileLoading, setProfileLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [profileError, setProfileError] = useState<string | null>(null);
+	// Manual retry after the mount effect's own automatic backoff (below) is
+	// exhausted - distinct from profileLoading so retrying doesn't flip the
+	// page back to the full-page skeleton (see LoadMoreError.tsx's rationale).
+	const [retryingProfileLoad, setRetryingProfileLoad] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const formRef = useRef<HTMLFormElement>(null);
+	// Guards state updates from a stale in-flight request (initial load or a
+	// later manual retry) after the component has unmounted.
+	const profileLoadCancelledRef = useRef(false);
 
 	const form = useProfileForm(profile);
 	const avatarUpload = useAvatarUpload(setAvatarUrl);
@@ -181,43 +188,53 @@ export default function ProfileOverviewPage() {
 	// re-triggering form.reset() and discarding whatever the user was mid-typing.
 	// ProtectedRoute only ever mounts this page while isAuthenticated is already
 	// true, so in practice this now runs once per mount.
-	useEffect(() => {
-		let cancelled = false;
+	// Retries with backoff (attempt starts fresh at 0 on every call, so a
+	// manual retry - see handleRetryProfileLoad below - re-runs the full
+	// backoff sequence from attempt 1 same as the initial mount fetch) before
+	// giving up and setting profileError.
+	async function loadProfile() {
 		const retryDelaysMs = [500, 1000, 2000];
-
-		async function loadProfile() {
-			setProfileLoading(true);
-			for (let attempt = 0; ; attempt++) {
-				try {
-					const data = await api.getUserProfile();
-					if (cancelled) return;
-					setProfile(data);
-					form.reset(data);
-					setAvatarUrl(data.avatarUrl ?? null);
-					setProfileError(null);
+		for (let attempt = 0; ; attempt++) {
+			try {
+				const data = await api.getUserProfile();
+				if (profileLoadCancelledRef.current) return;
+				setProfile(data);
+				form.reset(data);
+				setAvatarUrl(data.avatarUrl ?? null);
+				setProfileError(null);
+				return;
+			} catch {
+				if (profileLoadCancelledRef.current) return;
+				if (attempt >= retryDelaysMs.length) {
+					setProfileError(t("profile.loadError"));
 					return;
-				} catch {
-					if (cancelled) return;
-					if (attempt >= retryDelaysMs.length) {
-						setProfileError(t("profile.loadError"));
-						return;
-					}
-					await new Promise<void>((resolve) =>
-						setTimeout(resolve, retryDelaysMs[attempt]),
-					);
 				}
+				await new Promise<void>((resolve) =>
+					setTimeout(resolve, retryDelaysMs[attempt]),
+				);
 			}
 		}
+	}
 
+	useEffect(() => {
+		profileLoadCancelledRef.current = false;
+		setProfileLoading(true);
 		loadProfile().finally(() => {
-			if (!cancelled) setProfileLoading(false);
+			if (!profileLoadCancelledRef.current) setProfileLoading(false);
 		});
 
 		return () => {
-			cancelled = true;
+			profileLoadCancelledRef.current = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.isAuthenticated]);
+
+	// Manual retry once the automatic backoff above has given up and
+	// profileError is set - re-runs the whole load sequence from attempt 1.
+	function handleRetryProfileLoad() {
+		setRetryingProfileLoad(true);
+		loadProfile().finally(() => setRetryingProfileLoad(false));
+	}
 
 	// Streak chips in the identity hero - a lightweight, non-critical stat
 	// display, so a failed fetch is silently ignored rather than surfaced.
@@ -348,7 +365,11 @@ export default function ProfileOverviewPage() {
 			{!profileLoading && (
 				<>
 					{profileError && (
-						<ErrorBanner message={profileError} className="mb-4" />
+						<LoadMoreError
+							message={profileError}
+							retrying={retryingProfileLoad}
+							onRetry={handleRetryProfileLoad}
+						/>
 					)}
 					{/* Always mounted (not conditional on `successMessage`) so the live
 					region is registered before it ever gets content - see

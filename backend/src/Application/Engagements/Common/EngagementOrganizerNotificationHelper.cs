@@ -113,7 +113,7 @@ internal static class EngagementOrganizerNotificationHelper
 			await emailService.SendAsync(
 				organizer.Email,
 				content.Subject,
-				EmailFooter.Append(content.Body, unsubscribeUrl),
+				EmailFooter.Append(emailTemplateRenderer, organizerLanguage, content.Body, unsubscribeUrl),
 				engagementId.Value.ToString(),
 				cancellationToken);
 		}

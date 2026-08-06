@@ -9,7 +9,7 @@ import ReportContentModal, {
 	type ReportReason,
 } from "../components/ReportContentModal";
 import Skeleton from "../components/Skeleton";
-import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import Chip from "../components/Chip";
@@ -32,6 +32,7 @@ export default function OrganizationProfilePage() {
 		useState<PublicOrganizationProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [retrying, setRetrying] = useState(false);
 	const [showReport, setShowReport] = useState(false);
 
 	usePageTitle(profile?.name ?? t("orgProfile.loading"));
@@ -40,15 +41,28 @@ export default function OrganizationProfilePage() {
 		{ label: profile?.name ?? t("orgProfile.loading") },
 	]);
 
-	useEffect(() => {
+	function load() {
 		if (!organizationId) return;
-		api
+		return api
 			.getPublicOrganizationProfile(organizationId)
-			.then(setProfile)
+			.then((data) => {
+				setProfile(data);
+				setError(null);
+			})
 			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
+	}
+
+	useEffect(() => {
+		load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
+
+	async function retryLoad() {
+		setRetrying(true);
+		await load();
+		setRetrying(false);
+	}
 
 	if (loading)
 		return (
@@ -71,7 +85,13 @@ export default function OrganizationProfilePage() {
 			</div>
 		);
 	if (error)
-		return <ErrorBanner message={t("orgProfile.error", { message: error })} />;
+		return (
+			<LoadMoreError
+				message={t("orgProfile.error", { message: error })}
+				retrying={retrying}
+				onRetry={retryLoad}
+			/>
+		);
 	if (!profile)
 		return <p className="text-gray-500">{t("orgProfile.notFound")}</p>;
 

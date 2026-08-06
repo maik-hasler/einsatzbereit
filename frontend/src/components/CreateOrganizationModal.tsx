@@ -6,6 +6,7 @@ import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
+import { dispatchToast } from "../lib/toastBus";
 import {
 	buildOrganizationFormSchema,
 	ORGANIZATION_FORM_DEFAULT_VALUES,
@@ -124,6 +125,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				} catch {
 					// Non-fatal: the organization was created successfully - the
 					// logo can still be added later from the Settings tab.
+					dispatchToast("warning", t("organization.logoUploadFailedWarning"));
 				}
 			}
 			onSuccess(organization);

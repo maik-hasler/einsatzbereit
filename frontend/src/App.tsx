@@ -34,6 +34,7 @@ const ImprintPage = lazy(() => import("./pages/ImprintPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const VolunteerOpportunityDetailPage = lazy(
 	() => import("./pages/VolunteerOpportunityDetailPage"),
 );
@@ -43,7 +44,6 @@ const EngagementManagementPage = lazy(
 const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
 const ProfileSettingsPage = lazy(() => import("./pages/ProfileSettingsPage"));
 const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
-const EngagementRecordPage = lazy(() => import("./pages/EngagementRecordPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
@@ -110,16 +110,6 @@ export default function App() {
 	return (
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
-			{/* Bare route (no AppLayout) so the header/footer chrome never
-			prints alongside the record itself - see EngagementRecordPage.tsx. */}
-			<Route
-				path="/profile/engagement-record"
-				element={
-					<ProtectedRoute>
-						<EngagementRecordPage />
-					</ProtectedRoute>
-				}
-			/>
 			<Route
 				path="/app/:organizationId"
 				element={
@@ -155,6 +145,7 @@ export default function App() {
 				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
 				<Route path="/contact" element={<ContactPage />} />
 				<Route path="/help" element={<HelpPage />} />
+				<Route path="/unsubscribed" element={<UnsubscribePage />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}

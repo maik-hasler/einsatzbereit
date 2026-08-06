@@ -14,7 +14,6 @@ import { pageTitleClass } from "../lib/headingClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
-import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ReportFlagButton from "../components/ReportFlagButton";
@@ -149,8 +148,10 @@ export default function OrganizationsPage() {
 						))}
 					</div>
 				) : error ? (
-					<ErrorBanner
+					<LoadMoreError
 						message={t("organizationsPage.error", { message: error })}
+						retrying={loading}
+						onRetry={retryLoadMore}
 					/>
 				) : items.length === 0 ? (
 					<EmptyState

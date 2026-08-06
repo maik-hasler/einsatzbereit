@@ -10,6 +10,10 @@ dates and a bold action-word prefix, e.g. `**Added**`, `**Updated**`,
 - **Added** - <one-line description of what changed and why>
 ```
 
+## 2026-08-06
+
+- **Added** - `decisions/frontend-component-tests-not-adopted.md`: #1682 (a 1.0-readiness test-coverage audit) asked to make explicit the already-implicit choice not to test frontend components with Vitest/Testing Library, since `frontend/AGENTS.md` only said VisualTests covers that layer without spelling out the trade-off. Backlinked from `reference/frontend-conventions.md`, `reference/backend-conventions.md`, and `gotchas/sandbox-limitations.md`.
+
 ## 2026-08-02
 
 - **Fixed** - `reference/keycloak-realm-config.md`: `frontend-test`'s ROPC access was documented as always-on, but #1167 found it shipping enabled in the same realm baked into the staging/production image, letting anyone mint a real `backend`-audience access token via a single `grant_type=password` HTTP call with no browser or PKCE. Fixed by shipping the client `enabled: false` in the committed realm and having `AppHost.cs` flip it back to `enabled: true` only in the dev-only realm copy it writes before import for local Aspire runs and the IntegrationTests/VisualTests fixtures, which both boot Keycloak through the AppHost rather than the baked image.

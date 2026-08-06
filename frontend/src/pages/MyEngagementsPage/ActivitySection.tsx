@@ -314,15 +314,7 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<SectionHeading>{t("myEngagements.title")}</SectionHeading>
-				<Link
-					to="/profile/engagement-record"
-					className="mb-3 text-xs font-medium text-brand-700 hover:underline"
-				>
-					{t("myEngagements.viewRecord")}
-				</Link>
-			</div>
+			<SectionHeading>{t("myEngagements.title")}</SectionHeading>
 
 			<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
 				<button
