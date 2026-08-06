@@ -31,6 +31,9 @@ internal sealed class VolunteerOpportunityConfiguration
 			t.HasCheckConstraint(
 				"ck_volunteer_opportunity_status_valid",
 				"status IN ('Draft', 'Published', 'Unpublished', 'Cancelled')");
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_tags_count",
+				$"cardinality(tags) <= {VolunteerOpportunity.MaxTagsCount}");
 		});
 
 		builder.Property(vo => vo.Id)
@@ -107,8 +110,13 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.Property(vo => vo.Color);
 
+		// Per-element length capped via ElementType (#1678) so the store type
+		// becomes character varying(MaxTagLength)[] instead of unbounded text[] -
+		// EF's collection facets have no equivalent for capping the array's
+		// cardinality, so that cap is the raw CHECK constraint below
+		// (ck_volunteer_opportunity_tags_count).
 		builder.PrimitiveCollection(vo => vo.Tags)
-			.HasColumnType("text[]");
+			.ElementType(e => e.HasMaxLength(VolunteerOpportunity.MaxTagLength));
 
 		builder.Property(vo => vo.CheckInPin);
 

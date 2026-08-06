@@ -47,8 +47,9 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => callInfo.Arg<IReadOnlyList<Guid>>()!
+				.ToDictionary(id => id, id => new KeycloakUserProfile(id, "user", null, null, "user@example.com")));
 		_emailService
 			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
@@ -484,6 +485,70 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert - no notification and no email should be sent
 		await _notifRepo.DidNotReceive().AddAsync(
 			Arg.Any<Notification>(),
+			cancellationToken);
+		await _emailService.DidNotReceive().SendBatchAsync(
+			Arg.Any<IReadOnlyList<EmailMessage>>(),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenTooManyTags(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var tooManyTags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, tooManyTags, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*cannot have more than*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldSkipVolunteer_WhenKeycloakProfileLookupFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - GetUserProfilesAsync (#1678) silently drops a volunteer it
+		// couldn't resolve (e.g. deleted in Keycloak) instead of throwing and
+		// aborting the whole notification batch, unlike the old per-volunteer
+		// GetUserAsync loop.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([activeVolunteer]);
+
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
+
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - the in-app notification still gets created, only the email is skipped.
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
 		await _emailService.DidNotReceive().SendBatchAsync(
 			Arg.Any<IReadOnlyList<EmailMessage>>(),

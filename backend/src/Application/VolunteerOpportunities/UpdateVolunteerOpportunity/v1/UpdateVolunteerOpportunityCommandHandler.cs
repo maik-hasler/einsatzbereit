@@ -69,7 +69,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		// out-of-band geocoding attempt this triggers - #1388).
 		opportunity.Relocate(request.IsRemote, request.Address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);
-		opportunity.Recategorize(request.Category, request.Tags);
+		opportunity.Recategorize(request.Category, request.Tags).ThrowIfFailure();
 		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();
 		opportunity.SwitchParticipationType(request.ParticipationType);
 		opportunity.SetValidUntil(request.ValidUntil, DateTimeOffset.UtcNow).ThrowIfFailure();

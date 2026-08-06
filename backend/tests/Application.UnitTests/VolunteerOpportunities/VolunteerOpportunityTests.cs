@@ -226,6 +226,153 @@ public class VolunteerOpportunityTests
 		result.IsSuccess.Should().BeTrue();
 	}
 
+	// --- Tags (#1678) ---
+
+	[Test]
+	public void Create_ShouldFail_WhenTooManyTags()
+	{
+		// Arrange
+		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			tags: tags);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"An opportunity cannot have more than {VolunteerOpportunity.MaxTagsCount} tags.");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_TagsCountAtMax()
+	{
+		// Arrange
+		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount).Select(i => $"tag{i}").ToList();
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			tags: tags);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		result.Value.Tags.Should().HaveCount(VolunteerOpportunity.MaxTagsCount);
+	}
+
+	[Test]
+	public void Create_ShouldFail_WhenATagExceedsMaxLength()
+	{
+		// Arrange
+		var tag = new string('a', VolunteerOpportunity.MaxTagLength + 1);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			tags: [tag]);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Each tag must not exceed {VolunteerOpportunity.MaxTagLength} characters.");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_TagAtMaxLength()
+	{
+		// Arrange
+		var tag = new string('a', VolunteerOpportunity.MaxTagLength);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			tags: [tag]);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+	}
+
+	[Test]
+	public void Recategorize_ShouldFail_WhenTooManyTags()
+	{
+		// Arrange
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
+
+		// Act
+		var result = opportunity.Recategorize(null, tags);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"An opportunity cannot have more than {VolunteerOpportunity.MaxTagsCount} tags.");
+		opportunity.Tags.Should().BeEmpty();
+	}
+
+	[Test]
+	public void Recategorize_ShouldFail_WhenATagExceedsMaxLength()
+	{
+		// Arrange
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+		var tag = new string('a', VolunteerOpportunity.MaxTagLength + 1);
+
+		// Act
+		var result = opportunity.Recategorize(null, [tag]);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Each tag must not exceed {VolunteerOpportunity.MaxTagLength} characters.");
+	}
+
+	[Test]
+	public void Recategorize_ShouldUpdateCategoryAndTags_WhenValid()
+	{
+		// Arrange
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		// Act
+		var result = opportunity.Recategorize(Category.Environment, ["gardening", "cleanup"]);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Category.Should().Be(Category.Environment);
+		opportunity.Tags.Should().BeEquivalentTo(["gardening", "cleanup"]);
+	}
+
 	[Test]
 	public void Create_ShouldFail_WhenNotRemoteAndAddressIsNull()
 	{

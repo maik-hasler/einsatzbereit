@@ -13,6 +13,10 @@ public sealed class VolunteerOpportunity
 
 	public const int MaxDescriptionLength = 5000;
 
+	public const int MaxTagsCount = 20;
+
+	public const int MaxTagLength = 50;
+
 	private readonly List<TimeSlot> _timeSlots = [];
 
 	private List<string> _tags = [];
@@ -145,6 +149,21 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
+	// Tags was the one free-text field with no bound anywhere - unlike
+	// Title/Description above, a self-registered organizer could push
+	// unbounded tag strings/counts straight into the row and the GIN index
+	// on it (#1678).
+	private static Result EnsureValidTags(IReadOnlyCollection<string> tags)
+	{
+		if (tags.Count > MaxTagsCount)
+			return Result.Failure(Error.Validation("VolunteerOpportunity.TooManyTags", $"An opportunity cannot have more than {MaxTagsCount} tags."));
+
+		if (tags.Any(tag => tag.Length > MaxTagLength))
+			return Result.Failure(Error.Validation("VolunteerOpportunity.TagTooLong", $"Each tag must not exceed {MaxTagLength} characters."));
+
+		return Result.Success();
+	}
+
 	private static Result EnsureValidValidUntil(ParticipationType participationType, DateTimeOffset? validUntil, DateTimeOffset now)
 	{
 		if (validUntil is null)
@@ -195,6 +214,10 @@ public sealed class VolunteerOpportunity
 		var validDescriptionLength = EnsureValidDescriptionLength(description);
 		if (validDescriptionLength.IsFailure)
 			return Result.Failure<VolunteerOpportunity>(validDescriptionLength.Error);
+
+		var validTags = EnsureValidTags(tags ?? []);
+		if (validTags.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validTags.Error);
 
 		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
 		{
@@ -453,10 +476,15 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 	}
 
-	public void Recategorize(Category? category, IReadOnlyCollection<string> tags)
+	public Result Recategorize(Category? category, IReadOnlyCollection<string> tags)
 	{
+		var validTags = EnsureValidTags(tags);
+		if (validTags.IsFailure)
+			return validTags;
+
 		Category = category;
 		_tags = new List<string>(tags);
+		return Result.Success();
 	}
 
 	public Result ChangeCheckInMethod(CheckInMethod checkInMethod, IPinGenerator pinGenerator, string? checkInPin = null)

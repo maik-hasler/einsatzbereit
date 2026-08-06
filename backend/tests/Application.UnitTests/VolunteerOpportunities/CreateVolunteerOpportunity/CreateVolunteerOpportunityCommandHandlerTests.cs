@@ -238,6 +238,38 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenTooManyTags(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var tooManyTags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title",
+			"Description",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			null,
+			tooManyTags,
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*cannot have more than*");
+		await _dbContext
+			.VolunteerOpportunities
+			.DidNotReceive()
+			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldThrow_WhenValidUntilGiven_ForScheduledSlots(
 		CancellationToken cancellationToken)
 	{
