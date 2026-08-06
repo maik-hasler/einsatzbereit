@@ -93,11 +93,21 @@ export default function Modal({
 	// mode is entered while the modal is open. `inert` only reaches real DOM
 	// descendants, so portaling out from under it keeps the modal interactive
 	// regardless of the widget's own edit-mode state.
+	// items-start (rather than items-center) plus overflow-y-auto keeps the
+	// dialog's top edge inside the scrollable range - centering vertically
+	// with overflow-hidden clips whatever doesn't fit at *both* edges, and
+	// scrollTop can never go negative to recover the top half (#1663).
+	// items-center only kicks back in from sm: up, where dialogs reliably fit.
 	return createPortal(
-		<div className="fixed inset-0 z-2000 flex items-center justify-center overflow-hidden p-3 sm:p-4">
+		<div className="fixed inset-0 z-2000 flex max-h-dvh items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4">
 			<button
 				type="button"
-				className={`absolute inset-0 ${backdropClassName}`}
+				// fixed (not absolute) so it keeps covering the full viewport as the
+				// wrapper scrolls - an absolutely positioned inset-0 only matches the
+				// wrapper's own (viewport-sized) box at scrollTop 0 and would scroll
+				// away with the rest of the content otherwise, uncovering whatever's
+				// behind the dialog once scrolled.
+				className={`fixed inset-0 ${backdropClassName}`}
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"

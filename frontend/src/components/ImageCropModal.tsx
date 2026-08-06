@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	blobToFile,
@@ -41,8 +41,13 @@ export default function ImageCropModal({
 	onCropped,
 }: ImageCropModalProps) {
 	const { t } = useTranslation();
-	const frameWidth = FRAME_MAX_WIDTH;
-	const frameHeight = FRAME_MAX_WIDTH / aspectRatio;
+	const frameRef = useRef<HTMLButtonElement>(null);
+	// FRAME_MAX_WIDTH is only the upper bound now - the frame's actual CSS box
+	// (`w-full max-w-80`) shrinks to whatever the dialog has room for on narrow
+	// viewports, and this state tracks the real measured size so the drag/zoom
+	// math below stays pixel-accurate to what's rendered (#1663).
+	const [frameWidth, setFrameWidth] = useState(FRAME_MAX_WIDTH);
+	const frameHeight = frameWidth / aspectRatio;
 
 	const [image, setImage] = useState<HTMLImageElement | null>(null);
 	const [loadError, setLoadError] = useState(false);
@@ -54,6 +59,51 @@ export default function ImageCropModal({
 		start: { x: number; y: number };
 		offset: Offset;
 	} | null>(null);
+
+	// Layout effect (not a regular one) so the measurement is committed before
+	// the image-load effect below ever reads `frameWidth` - that effect only
+	// depends on `[file]`, so whatever `frameWidth` is by the time it runs
+	// becomes the crop's initial centering. `[image]` re-runs this once the
+	// frame button actually mounts (it doesn't exist yet during the loading
+	// state) and again for a freshly picked file.
+	useLayoutEffect(() => {
+		const el = frameRef.current;
+		if (!el) return;
+		const measure = () => {
+			const width = el.getBoundingClientRect().width;
+			if (width > 0) setFrameWidth(Math.min(FRAME_MAX_WIDTH, width));
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [image]);
+
+	// Re-clamps (without recentering) whenever the measured frame size itself
+	// changes after the image has already loaded - e.g. a viewport
+	// resize/orientation change while the modal is open. Drag/zoom already
+	// clamp on every change of their own, so this intentionally doesn't
+	// depend on `image`/`zoom` too - it would otherwise fight them.
+	useEffect(() => {
+		if (!image) return;
+		setOffset((prev) => {
+			const scale =
+				coverScale(
+					image.naturalWidth,
+					image.naturalHeight,
+					frameWidth,
+					frameHeight,
+				) * zoom;
+			return clampOffset(
+				prev,
+				image.naturalWidth * scale,
+				image.naturalHeight * scale,
+				frameWidth,
+				frameHeight,
+			);
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [frameWidth, frameHeight]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -238,10 +288,11 @@ export default function ImageCropModal({
 			<p className="mt-1 text-xs text-gray-500">{t("imageCrop.dragHint")}</p>
 
 			<button
+				ref={frameRef}
 				type="button"
 				aria-label={t("imageCrop.frameLabel")}
-				className="relative mt-4 block touch-none overflow-hidden rounded-card border-0 bg-gray-100 p-0"
-				style={{ width: frameWidth, height: frameHeight }}
+				className="relative mt-4 block w-full max-w-80 touch-none overflow-hidden rounded-card border-0 bg-gray-100 p-0"
+				style={{ aspectRatio }}
 				onPointerDown={handlePointerDown}
 				onPointerMove={handlePointerMove}
 				onPointerUp={handlePointerUp}
