@@ -1039,11 +1039,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/engagements?status=Pending");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "engagements" isn't a tab in ORG_TABS, so the h1 depends on
-		// useSetOrgBreadcrumbExtra rather than the parent tab's own label -
-		// the same #973 pageTitle mechanism EngagementManagementPage_AsOlaf_...
-		// above guards for its own nested route.
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Sign-up queue");
+		// einsatzbereit#1680: "engagements" became a real ORG_TABS entry, so the
+		// h1 now comes from OrgAppLayout's own tab-label lookup (orgOverview.tabEngagements)
+		// like every other tab, rather than from a page-local useSetOrgBreadcrumbExtra call.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Sign-ups");
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Confirm" })).ToBeVisibleAsync();
 

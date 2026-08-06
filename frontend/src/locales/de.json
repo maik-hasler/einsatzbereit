@@ -672,7 +672,6 @@
       }
     },
     "orgEngagements": {
-      "title": "Anmeldewarteschlange",
       "pageDescription": "Ausstehende und bearbeitete Anmeldungen über alle Einsätze deiner Organisation hinweg, an einem Ort.",
       "loading": "Wird geladen…",
       "error": "{{message}}",
@@ -1248,6 +1247,7 @@
     "orgOverview": {
       "tabDashboard": "Dashboard",
       "tabOpportunities": "Einsätze",
+      "tabEngagements": "Anmeldungen",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
       "calendarLoading": "Kalender wird geladen…",
