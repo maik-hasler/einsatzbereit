@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Deque.AxeCore.Commons;
@@ -187,6 +188,88 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var editModalResult = await Page.RunAxe();
 		AssertNoViolations(editModalResult);
+	}
+
+	[Test]
+	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
+	{
+		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an
+		// unnamed role="button" tab stop (WCAG 4.1.2) - axe's button-name rule
+		// would flag this (impact "critical"), but no seeded opportunity here
+		// ever gets real coordinates (VisualTests always runs against
+		// FakeGeocodingService, which reports TransientFailure - see
+		// SingleMarkerMapTouchScrollTests.cs), so the map - and this entire bug
+		// class - was structurally unreachable by any existing scan, including
+		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above.
+		// Patch coordinates the same way SingleMarkerMapTouchScrollTests does
+		// to actually exercise it, and assert the fix (Marker's title prop)
+		// directly rather than relying only on the axe scan.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Marker A11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var title = $"Marker A11y Test {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Seeded for the map marker accessible-name regression (#1681).",
+			organizationId,
+			isRemote = false,
+			street = "Teststrasse",
+			houseNumber = "1",
+			zipCode = "12345",
+			city = "Musterstadt",
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
+		{
+			if (route.Request.Method != "GET")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			var response = await route.FetchAsync();
+			var body = JsonNode.Parse(await response.TextAsync())!.AsObject();
+			body["latitude"] = JsonValue.Create(52.52);
+			body["longitude"] = JsonValue.Create(13.405);
+
+			await route.FulfillAsync(new()
+			{
+				Response = response,
+				ContentType = "application/json",
+				Body = body.ToJsonString(),
+			});
+		});
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(title, new() { Timeout = 15_000 });
+
+		var marker = Page.Locator(".leaflet-marker-icon");
+		await Expect(marker).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(marker).ToHaveAttributeAsync("role", "button");
+		await Expect(marker).ToHaveAttributeAsync("title", "Teststrasse 1, 12345 Musterstadt");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
 	}
 
 	[Test]

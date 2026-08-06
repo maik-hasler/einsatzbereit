@@ -179,7 +179,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 									accept="image/jpeg,image/png,image/webp"
 									onChange={handleLogoChange}
 									inputRef={logoInputRef}
-									aria-describedby={
+									ariaDescribedBy={
 										logoError ? "create-org-logo-upload-error" : undefined
 									}
 								/>

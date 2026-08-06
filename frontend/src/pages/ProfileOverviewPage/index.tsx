@@ -468,7 +468,7 @@ export default function ProfileOverviewPage() {
 																avatarUpload.uploading || avatarUpload.removing
 															}
 															inputRef={avatarUpload.inputRef}
-															aria-describedby={
+															ariaDescribedBy={
 																avatarUpload.error
 																	? "avatar-upload-error"
 																	: undefined

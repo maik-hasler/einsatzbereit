@@ -308,7 +308,7 @@ export default function OrgSettingsPage() {
 												onChange={handleLogoChange}
 												disabled={uploadingLogo || removingLogo}
 												inputRef={logoInputRef}
-												aria-describedby={
+												ariaDescribedBy={
 													logoError ? "logo-upload-error" : undefined
 												}
 											/>

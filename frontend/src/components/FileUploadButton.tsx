@@ -15,7 +15,7 @@ interface Props {
 	disabled?: boolean;
 	inputRef?: RefObject<HTMLInputElement | null>;
 	/** Id of a `role="alert"` element describing the current validation error, if any. */
-	"aria-describedby"?: string;
+	ariaDescribedBy?: string;
 }
 
 export default function FileUploadButton({
@@ -25,7 +25,7 @@ export default function FileUploadButton({
 	onChange,
 	disabled = false,
 	inputRef,
-	"aria-describedby": ariaDescribedBy,
+	ariaDescribedBy,
 }: Props) {
 	return (
 		<>
