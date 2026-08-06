@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
-import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCategoryTheme";
+import {
+	getOpportunityCategoryBannerClassName,
+	OPPORTUNITY_CATEGORY_LABEL_SCRIM_CLASS,
+} from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
 import Chip from "../Chip";
 import ReportFlagButton from "../ReportFlagButton";
@@ -65,7 +68,9 @@ export default function OpportunityListItem({
 								category={item.category}
 								className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
 							/>
-							<span className="absolute right-0 bottom-2 left-0 px-2 text-center text-xs font-semibold tracking-wider text-white/80 uppercase">
+							<span
+								className={`absolute right-0 bottom-2 left-0 px-2 py-0.5 text-center text-xs font-semibold tracking-wider text-white uppercase ${OPPORTUNITY_CATEGORY_LABEL_SCRIM_CLASS}`}
+							>
 								{item.category
 									? t(`opportunities.category.${item.category}`)
 									: t("opportunities.category.Other")}
