@@ -176,6 +176,7 @@ export default function OpportunityListItem({
 					<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
 						<Link
 							to={`/organizations/${item.organizationId}`}
+							data-testid="opportunity-org-link"
 							className="group/org relative z-20 inline-flex items-center gap-2"
 						>
 							{item.organizationLogoUrl ? (

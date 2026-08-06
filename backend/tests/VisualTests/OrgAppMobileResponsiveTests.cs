@@ -82,9 +82,20 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
+		// #1708: wait for the switcher panel's rows to actually render before
+		// deciding this org is missing - a bare CountAsync() right after the
+		// click above raced the panel's own mount, which could misreport "not
+		// found" even when the seeded org is there, just not painted yet.
 		var animalWelfareRow = Page.GetByTestId("org-switch-row")
 			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
-		Skip.When(await animalWelfareRow.CountAsync() == 0, "seed data changed - nothing to compare against");
+		try
+		{
+			await animalWelfareRow.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("seed data changed - nothing to compare against");
+		}
 
 		await animalWelfareRow.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
