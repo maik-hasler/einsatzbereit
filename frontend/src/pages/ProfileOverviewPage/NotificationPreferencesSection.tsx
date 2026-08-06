@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { NotificationPreferencesResponse } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { cardSubtleClass } from "../../lib/surfaceClasses";
 import Button from "../../components/Button";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
@@ -98,7 +99,7 @@ export default function NotificationPreferencesSection() {
 	}
 
 	return (
-		<section className="mb-6 rounded-lg border border-gray-100 bg-gray-50 p-6">
+		<section className={`mb-6 ${cardSubtleClass}`}>
 			<h2 className="mb-1 text-base font-semibold text-gray-900">
 				{t("notificationPreferences.title")}
 			</h2>

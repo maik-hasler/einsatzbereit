@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { formatDateLong, resolveDateLocale } from "../lib/format";
+import { pageTitleClass } from "../lib/headingClasses";
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
 import ErrorBanner from "../components/ErrorBanner";
@@ -66,7 +67,7 @@ export default function EngagementRecordPage() {
 				)}
 			</div>
 
-			<h1 className="text-2xl font-bold text-gray-900">
+			<h1 className={`text-gray-900 ${pageTitleClass}`}>
 				{t("engagementRecord.title")}
 			</h1>
 			<p className="mt-1 text-sm text-gray-500 print:hidden">

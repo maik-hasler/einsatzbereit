@@ -12,8 +12,10 @@ export default function TermsOfUsePage() {
 	const linkClass = "text-brand-700 underline";
 
 	return (
-		<>
-			<h1 className={`mb-8 ${pageTitleClass}`}>{t("termsOfUse.title")}</h1>
+		<div data-content-wrapper className="max-w-2xl">
+			<h1 className={`mb-8 text-gray-900 ${pageTitleClass}`}>
+				{t("termsOfUse.title")}
+			</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
@@ -92,6 +94,6 @@ export default function TermsOfUsePage() {
 					/>
 				</p>
 			</section>
-		</>
+		</div>
 	);
 }

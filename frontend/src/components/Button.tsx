@@ -7,7 +7,12 @@ import { Link, type LinkProps } from "react-router";
 
 const SIZE_CLASSES = {
 	sm: "px-3 py-1.5 text-xs",
-	md: "px-4 py-2 text-sm",
+	// min-h-10 (not a fixed h-10) matches the 40px height inputSurfaceClass
+	// now guarantees for text inputs and selects (see formClasses.ts) so a
+	// filter row's input/select/button trio lines up on one baseline instead
+	// of drifting across three different heights (issue #1673) - min, not
+	// fixed, so label text that wraps to two lines never gets clipped.
+	md: "min-h-10 px-4 py-2 text-sm",
 	lg: "px-6 py-3 text-base",
 } as const;
 
@@ -32,6 +37,12 @@ const BASE_CLASSES =
 // bordered destructive action, for in-row/panel destructive actions (see
 // issue #1105: eight different visual treatments for delete/withdraw/
 // cancel/revoke actions before these two existed).
+// success: solid positive-confirmation action (e.g. "Confirm" an engagement
+// request), for the row-level counterpart to dangerOutline's cancel/revoke -
+// built on the brand ramp like every other variant here rather than raw
+// Tailwind green, since brand-700 (#226947) already reads as "confirming
+// green" (see issue #1673: two visibly different greens side by side in the
+// organizer's core workflow before this existed).
 // outline: outlined, muted action for a light background - the
 // action-bar/breadcrumb secondary buttons (Cancel etc.) and header
 // sign-in/register pair. onDark/outlineOnDark: solid/outlined counterparts
@@ -43,6 +54,7 @@ const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
+	success: "bg-brand-600 font-semibold text-white hover:bg-brand-700",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
 	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
 	outline: "border border-gray-200 font-medium text-gray-700 hover:bg-gray-50",

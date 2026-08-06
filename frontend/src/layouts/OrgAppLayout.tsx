@@ -7,7 +7,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
-import { statusTitleClass } from "../lib/headingClasses";
+import { pageTitleClass, statusTitleClass } from "../lib/headingClasses";
 import {
 	getApiErrorMessage,
 	isApiForbiddenError,
@@ -122,7 +122,7 @@ function OrgAppShell({
 				tabIndex={-1}
 				className="mx-auto w-full max-w-7xl flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
 			>
-				<h1 className="mb-6 text-2xl font-bold text-gray-900">{pageTitle}</h1>
+				<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>{pageTitle}</h1>
 				{/* Scoped to this route (remounts, clearing any caught error, whenever
 				the location changes) so a render crash in a single tab replaces just
 				the content below Header/Footer instead of the whole app - see the

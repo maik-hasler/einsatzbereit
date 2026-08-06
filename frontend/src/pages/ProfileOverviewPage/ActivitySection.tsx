@@ -13,6 +13,7 @@ import { isFeedbackEditable } from "../../lib/feedback";
 import { formatDate, formatDateTime } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
+import Chip from "../../components/Chip";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
@@ -457,10 +458,10 @@ export default function ActivitySection() {
 										})}
 									</p>
 									{e.isCheckedIn && (
-										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+										<Chip tone="success" size="sm" className="mt-2">
 											<CheckIconSolid className="h-3 w-3" />
 											{t("checkIn.checkedInLabel")}
-										</span>
+										</Chip>
 									)}
 								</div>
 								<span
@@ -497,9 +498,9 @@ export default function ActivitySection() {
 								)}
 								{e.isCheckedIn && e.hasFeedback && (
 									<>
-										<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
+										<Chip tone="warning" size="sm">
 											{t("feedback.submitted")}
-										</span>
+										</Chip>
 										{isFeedbackEditable(e.feedbackSubmittedAt) && (
 											<>
 												<button

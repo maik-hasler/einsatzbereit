@@ -10,8 +10,10 @@ export default function ContactPage() {
 	usePageToolbar([{ label: t("contact.title") }]);
 
 	return (
-		<>
-			<h1 className={`mb-8 ${pageTitleClass}`}>{t("contact.title")}</h1>
+		<div data-content-wrapper className="max-w-2xl">
+			<h1 className={`mb-8 text-gray-900 ${pageTitleClass}`}>
+				{t("contact.title")}
+			</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
@@ -43,6 +45,6 @@ export default function ContactPage() {
 					{t("contact.otherSectionBody")}
 				</p>
 			</section>
-		</>
+		</div>
 	);
 }
