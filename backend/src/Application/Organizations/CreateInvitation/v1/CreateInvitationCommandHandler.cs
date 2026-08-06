@@ -8,7 +8,6 @@ using Application.Common.Persistence;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
-using Domain.Users;
 
 namespace Application.Organizations.CreateInvitation.v1;
 

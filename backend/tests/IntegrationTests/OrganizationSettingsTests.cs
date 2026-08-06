@@ -3,7 +3,6 @@ using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
 using Infrastructure.BackgroundJobs;
-using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 

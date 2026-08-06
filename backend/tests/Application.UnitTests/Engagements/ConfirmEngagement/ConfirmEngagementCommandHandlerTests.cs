@@ -1,5 +1,4 @@
 using Application.Achievements.AwardAchievement.v1;
-using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -9,7 +8,6 @@ using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
-using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;

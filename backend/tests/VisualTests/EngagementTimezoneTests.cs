@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Microsoft.Playwright;
 
 namespace VisualTests;
 

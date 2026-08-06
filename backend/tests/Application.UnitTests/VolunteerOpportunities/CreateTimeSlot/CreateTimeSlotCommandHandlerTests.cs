@@ -4,7 +4,6 @@ using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
-using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;

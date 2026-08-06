@@ -3,7 +3,6 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
-using Domain.Users;
 using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.CreateTimeSlot.v1;

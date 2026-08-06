@@ -4,14 +4,12 @@
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 	</PropertyGroup>
 	<ItemGroup>
-		<!-- API -->
 		<PackageVersion Include="Asp.Versioning.Http" Version="[10.0.1]" />
 		<PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="[10.0.1]" />
 		<PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[10.0.10]" />
 		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.10]" />
 		<PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="[10.0.10]" PrivateAssets="All" />
 		<PackageVersion Include="NSwag.MSBuild" Version="[14.7.1]" PrivateAssets="All" />
-		<!-- Infrastructure -->
 		<PackageVersion Include="Minio" Version="[7.0.0]" />
 		<PackageVersion Include="MailKit" Version="[4.17.0]" />
 		<PackageVersion Include="MimeKit" Version="[4.17.0]" />
@@ -28,7 +26,6 @@
 		<PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="[10.0.10]" />
 		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.10]" />
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.3]" />
-		<!-- Aspire: ServiceDefaults -->
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="[10.8.0]" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="[10.8.0]" />
 		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="[1.17.0]" />
@@ -37,16 +34,12 @@
 		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.17.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.17.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.17.0]" />
-		<!-- Transitive pinning: override vulnerable transitive deps -->
 		<PackageVersion Include="MessagePack" Version="3.1.8" />
 		<PackageVersion Include="MessagePack.Annotations" Version="3.1.8" />
-		<!-- GHSA-v5pm-xwqc-g5wc: Microsoft.OpenApi 2.0.0 (pulled in by Microsoft.AspNetCore.OpenApi) has a high severity DoS vulnerability -->
 		<PackageVersion Include="Microsoft.OpenApi" Version="2.11.0" />
-		<!-- Aspire: AppHost + Tests -->
 		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.4.6]" />
 		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.4.6]" />
 		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.4.6]" />
-		<!-- Tests -->
 		<PackageVersion Include="AwesomeAssertions" Version="[9.5.0]" />
 		<PackageVersion Include="Deque.AxeCore.Playwright" Version="[4.12.0]" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="[10.0.10]" />

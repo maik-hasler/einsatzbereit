@@ -39,7 +39,7 @@ public static class ServiceDefaultsExtensions
 		return builder;
 	}
 
-	public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+	private static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
 	{
 		builder.Logging.AddOpenTelemetry(logging =>
 		{
@@ -80,7 +80,7 @@ public static class ServiceDefaultsExtensions
 		return builder;
 	}
 
-	public static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+	private static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
 	{
 		builder.Services.AddHealthChecks()
 			.AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
@@ -133,13 +133,6 @@ public static class ServiceDefaultsExtensions
 		Action<IEndpointConventionBuilder>? configureHealthEndpoint = null,
 		Action<IEndpointConventionBuilder>? configureAliveEndpoint = null)
 	{
-		// Exposed in all environments so deployment health checks and live smoke
-		// tests have a target.
-		//
-		// /health  = readiness: critical dependencies (database, Keycloak) must be
-		//            reachable. Returns non-200 when a dependency is down so uptime
-		//            monitors and the docker-compose healthcheck see the real state.
-		// /alive   = liveness: the process is up. Stays 200 regardless of deps.
 		var healthEndpoint = app.MapHealthChecks("/health", new HealthCheckOptions
 		{
 			Predicate = r => r.Tags.Contains("ready")
