@@ -189,7 +189,11 @@ function OrganizationsSection() {
 					</div>
 				</div>
 			) : error ? (
-				<ErrorBanner message={error} />
+				<LoadMoreError
+					message={error}
+					retrying={loading}
+					onRetry={retryLoadMore}
+				/>
 			) : rows.length === 0 ? (
 				<EmptyState title={t("administration.organizations.noOrganizations")} />
 			) : (
@@ -367,7 +371,11 @@ function UsersSection() {
 					</div>
 				</div>
 			) : error ? (
-				<ErrorBanner message={error} />
+				<LoadMoreError
+					message={error}
+					retrying={loading}
+					onRetry={retryLoadMore}
+				/>
 			) : rows.length === 0 ? (
 				<EmptyState title={t("administration.users.noUsers")} />
 			) : (
@@ -640,7 +648,14 @@ function ReportsSection() {
 			</div>
 		);
 	}
-	if (error) return <ErrorBanner message={error} />;
+	if (error)
+		return (
+			<LoadMoreError
+				message={error}
+				retrying={loading}
+				onRetry={retryLoadMore}
+			/>
+		);
 	if (rows.length === 0)
 		return <EmptyState title={t("administration.reports.noReports")} />;
 
@@ -968,7 +983,14 @@ function AuditLogSection() {
 			</div>
 		);
 	}
-	if (error) return <ErrorBanner message={error} />;
+	if (error)
+		return (
+			<LoadMoreError
+				message={error}
+				retrying={loading}
+				onRetry={retryLoadMore}
+			/>
+		);
 	if (rows.length === 0)
 		return <EmptyState title={t("administration.auditLog.noEntries")} />;
 

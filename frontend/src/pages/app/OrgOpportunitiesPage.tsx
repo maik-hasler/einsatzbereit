@@ -18,7 +18,6 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
-import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import PageSectionHeading from "../../components/PageSectionHeading";
@@ -546,23 +545,31 @@ export default function OrgOpportunitiesPage() {
 			)}
 
 			{draftsError && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("orgOpportunities.error", { message: draftsError })}
+					retrying={draftsLoading}
+					onRetry={retryLoadMoreDrafts}
 				/>
 			)}
 			{publishedError && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("orgOpportunities.error", { message: publishedError })}
+					retrying={publishedLoading}
+					onRetry={retryLoadMorePublished}
 				/>
 			)}
 			{unpublishedError && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("orgOpportunities.error", { message: unpublishedError })}
+					retrying={unpublishedLoading}
+					onRetry={retryLoadMoreUnpublished}
 				/>
 			)}
 			{cancelledError && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("orgOpportunities.error", { message: cancelledError })}
+					retrying={cancelledLoading}
+					onRetry={retryLoadMoreCancelled}
 				/>
 			)}
 

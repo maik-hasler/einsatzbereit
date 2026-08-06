@@ -1,8 +1,10 @@
-import { useState, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { NotificationSummary } from "../../client/api-client";
 import EmptyState from "../EmptyState";
+import ErrorBanner from "../ErrorBanner";
+import Skeleton from "../Skeleton";
 import ConfirmDialog from "../ConfirmDialog";
 import NotificationItem from "./NotificationItem";
 import { BellIcon } from "../icons";
@@ -37,6 +39,9 @@ export default function NotificationDropdown({
 		notifHasMore,
 		notifLoadingMore,
 		loadMoreNotifications,
+		notifError,
+		notifLoading,
+		retryNotifications,
 		notifOpen,
 		setNotifOpen,
 		markAllRead,
@@ -48,6 +53,10 @@ export default function NotificationDropdown({
 	} = menu;
 	const [showClearReadConfirm, setShowClearReadConfirm] = useState(false);
 	const panelId = mobile ? "notification-panel-mobile" : "notification-panel";
+	// useId (not a fixed string) - this component renders twice at once
+	// (desktop nav copy + mobile burger-menu copy), which would otherwise
+	// collide (same reasoning as LoadMoreError's own errorId).
+	const notifErrorId = useId();
 	const bellLabel =
 		unreadCount > 0
 			? t("notifications.bellLabelWithCount", { count: unreadCount })
@@ -132,7 +141,39 @@ export default function NotificationDropdown({
 						</div>
 					</div>
 					<ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
-						{notifications.length === 0 ? (
+						{notifLoading && notifications.length === 0 ? (
+							<>
+								{[0, 1, 2].map((i) => (
+									<li
+										key={i}
+										className="space-y-2 px-4 py-3"
+										aria-hidden="true"
+									>
+										<Skeleton className="h-3.5 w-3/4" />
+										<Skeleton className="h-3 w-1/3" />
+									</li>
+								))}
+							</>
+						) : notifError ? (
+							<li className="px-4 py-3">
+								<ErrorBanner id={notifErrorId} message={notifError} />
+								{/* aria-describedby ties this to the error text above - its own
+								accessible name ("Retry") says nothing about what it's
+								retrying (same reasoning as LoadMoreError's retry button). */}
+								<button
+									type="button"
+									data-testid={
+										mobile ? "notification-retry-mobile" : "notification-retry"
+									}
+									onClick={() => void retryNotifications()}
+									disabled={notifLoading}
+									aria-describedby={notifErrorId}
+									className="mt-2 w-full cursor-pointer rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									{notifLoading ? t("common.retrying") : t("common.retry")}
+								</button>
+							</li>
+						) : notifications.length === 0 ? (
 							<li className="px-4">
 								<EmptyState compact title={t("notifications.empty")} />
 							</li>
