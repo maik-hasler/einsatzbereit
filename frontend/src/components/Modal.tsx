@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode, RefObject } from "react";
 
-const FOCUSABLE_SELECTOR =
+// Exported so other hand-rolled dialogs (e.g. MobileMenu.tsx, which can't use
+// this component itself since it's anchored under the header instead of
+// centered/portaled) can share the same focus-trap boundary instead of
+// hand-rolling a narrower copy that silently drifts out of sync.
+export const FOCUSABLE_SELECTOR =
 	'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 interface ModalProps {

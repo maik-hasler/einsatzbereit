@@ -11,15 +11,18 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 	if (compact) {
 		return (
 			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-				<Link to="/help" className="hover:text-gray-600">
+				<Link to="/help" className="inline-block py-1 hover:text-gray-600">
 					{t("footer.help")}
 				</Link>
 				<span className="mx-2">&middot;</span>
-				<Link to="/imprint" className="hover:text-gray-600">
+				<Link to="/imprint" className="inline-block py-1 hover:text-gray-600">
 					{t("footer.imprint")}
 				</Link>
 				<span className="mx-2">&middot;</span>
-				<Link to="/privacy-policy" className="hover:text-gray-600">
+				<Link
+					to="/privacy-policy"
+					className="inline-block py-1 hover:text-gray-600"
+				>
 					{t("footer.privacy")}
 				</Link>
 			</footer>
@@ -45,14 +48,17 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 						</h2>
 						<ul className="space-y-2 text-sm">
 							<li>
-								<Link to="/" className="transition-colors hover:text-white">
+								<Link
+									to="/"
+									className="inline-block py-0.5 transition-colors hover:text-white"
+								>
 									{t("footer.findOpportunities")}
 								</Link>
 							</li>
 							<li>
 								<a
 									href="/#opportunities"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.participate")}
 								</a>
@@ -60,7 +66,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							<li>
 								<Link
 									to="/organizations"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.browseOrganizations")}
 								</Link>
@@ -74,7 +80,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							<li>
 								<Link
 									to="/imprint"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.imprint")}
 								</Link>
@@ -82,7 +88,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							<li>
 								<Link
 									to="/terms-of-use"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.terms")}
 								</Link>
@@ -90,7 +96,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							<li>
 								<Link
 									to="/privacy-policy"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.privacy")}
 								</Link>
@@ -98,13 +104,16 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							<li>
 								<Link
 									to="/contact"
-									className="transition-colors hover:text-white"
+									className="inline-block py-0.5 transition-colors hover:text-white"
 								>
 									{t("footer.contact")}
 								</Link>
 							</li>
 							<li>
-								<Link to="/help" className="transition-colors hover:text-white">
+								<Link
+									to="/help"
+									className="inline-block py-0.5 transition-colors hover:text-white"
+								>
 									{t("footer.help")}
 								</Link>
 							</li>
@@ -155,7 +164,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 										href="https://github.com/maik-hasler/einsatzbereit/blob/main/LICENSE"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="underline hover:text-white"
+										className="inline-block py-1 underline hover:text-white"
 									/>
 								),
 							}}

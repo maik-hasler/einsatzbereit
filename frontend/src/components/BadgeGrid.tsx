@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
 	AchievementSummary,
@@ -6,6 +7,15 @@ import type {
 import Skeleton from "./Skeleton";
 import { formatDate } from "../lib/format";
 import { achievementTypeLabel } from "../lib/achievementType";
+
+// Mirrors FilterDropdown.tsx's edge margin - keeps a clamped tooltip from
+// touching the viewport edge exactly, not just staying inside it.
+const EDGE_MARGIN = 8;
+// Matches the tooltip's own w-48 - fixed, so unlike FilterDropdown's
+// dynamically-sized panel this doesn't need to be measured (and can't be:
+// the tooltip is display:none via the `hidden` class until hovered/focused,
+// so getBoundingClientRect/offsetWidth would read 0 anyway).
+const TOOLTIP_WIDTH = 192;
 
 function AchievementTypeIcon({
 	type,
@@ -81,9 +91,36 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 		: achievementTypeLabel(catalog.type);
 	const tooltipId = `badge-tooltip-${catalog.key}`;
 	const nameId = `badge-name-${catalog.key}`;
+	const cardRef = useRef<HTMLDivElement>(null);
+	// Centered on the badge by default (see the tooltip's left-1/2 below) -
+	// shifted only far enough to keep it on-screen for badges near the edge
+	// of the grid's outer columns (#1672). Recomputed on resize since which
+	// columns are "outer" depends on the grid's current column count.
+	const [tooltipShift, setTooltipShift] = useState(0);
+
+	useLayoutEffect(() => {
+		function updatePosition() {
+			const card = cardRef.current;
+			if (!card) return;
+			const cardRect = card.getBoundingClientRect();
+			const cardCenter = cardRect.left + cardRect.width / 2;
+			const halfTooltipWidth = TOOLTIP_WIDTH / 2;
+			const minCenter = EDGE_MARGIN + halfTooltipWidth;
+			const maxCenter = window.innerWidth - EDGE_MARGIN - halfTooltipWidth;
+			const clampedCenter = Math.min(
+				Math.max(cardCenter, minCenter),
+				maxCenter,
+			);
+			setTooltipShift(clampedCenter - cardCenter);
+		}
+		updatePosition();
+		window.addEventListener("resize", updatePosition);
+		return () => window.removeEventListener("resize", updatePosition);
+	}, []);
 
 	return (
 		<div
+			ref={cardRef}
 			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
 				isEarned
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"
@@ -143,7 +180,8 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				<div
 					id={tooltipId}
 					role="tooltip"
-					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block group-focus:block"
+					style={{ transform: `translateX(calc(-50% + ${tooltipShift}px))` }}
+					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block group-focus:block"
 				>
 					<p className="font-semibold">
 						{t(`achievements.badges.${catalog.key}.name`, {

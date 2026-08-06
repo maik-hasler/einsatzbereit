@@ -132,7 +132,7 @@ export default function NotificationPreferencesSection() {
 							<label
 								key={row.key}
 								htmlFor={row.key}
-								className="flex cursor-pointer items-start gap-3"
+								className="flex cursor-pointer items-start gap-3 py-1"
 							>
 								<input
 									type="checkbox"

@@ -485,13 +485,15 @@ export default function OrgMembersPage() {
 								key={member.userId}
 								className="flex items-center justify-between py-3"
 							>
-								<div>
-									<p className="text-sm font-medium text-gray-900">
+								<div className="min-w-0">
+									<p className="truncate text-sm font-medium text-gray-900">
 										{member.firstName && member.lastName
 											? `${member.firstName} ${member.lastName}`
 											: member.username}
 									</p>
-									<p className="text-xs text-gray-500">{member.email}</p>
+									<p className="truncate text-xs text-gray-500">
+										{member.email}
+									</p>
 									{member.isOrganisator && (
 										<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
 											{t("orgSettings.organisator")}

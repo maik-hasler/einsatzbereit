@@ -38,7 +38,7 @@ export default function BreadcrumbBar({
 					<Link
 						to={homeHref}
 						aria-label={t("breadcrumb.home")}
-						className="flex shrink-0 items-center text-gray-600 transition-colors hover:text-brand-700"
+						className="-m-1 flex shrink-0 items-center p-1 text-gray-600 transition-colors hover:text-brand-700"
 					>
 						<HomeIcon className="h-4 w-4" />
 					</Link>
@@ -59,12 +59,12 @@ export default function BreadcrumbBar({
 								) : item.href !== undefined ? (
 									<Link
 										to={item.href}
-										className="shrink-0 truncate font-medium text-gray-500 transition-colors hover:text-brand-700"
+										className="truncate py-0.5 font-medium text-gray-500 transition-colors hover:text-brand-700"
 									>
 										{item.label}
 									</Link>
 								) : (
-									<span className="shrink-0 truncate font-medium text-gray-500">
+									<span className="truncate font-medium text-gray-500">
 										{item.label}
 									</span>
 								)}
