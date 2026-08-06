@@ -9,7 +9,7 @@ import { formatDateLong, resolveDateLocale } from "../lib/format";
 import { pageTitleClass } from "../lib/headingClasses";
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
-import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import Skeleton from "../components/Skeleton";
 
 function formatHours(hours: number, locale: string): string {
@@ -27,23 +27,29 @@ export default function EngagementRecordPage() {
 
 	const [entries, setEntries] = useState<EngagementRecordEntry[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [retrying, setRetrying] = useState(false);
 
-	useEffect(() => {
-		let cancelled = false;
-		api
+	function load() {
+		return api
 			.getMyEngagementRecord()
 			.then((data) => {
-				if (!cancelled) setEntries(data);
+				setEntries(data);
+				setError(null);
 			})
 			.catch((err) => {
-				if (!cancelled)
-					setError(getApiErrorMessage(err, t("engagementRecord.loadError")));
+				setError(getApiErrorMessage(err, t("engagementRecord.loadError")));
 			});
-		return () => {
-			cancelled = true;
-		};
+	}
+
+	useEffect(() => {
+		void load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	function retryLoad() {
+		setRetrying(true);
+		void load().finally(() => setRetrying(false));
+	}
 
 	const locale = resolveDateLocale(i18n.language);
 	const totalHours = (entries ?? []).reduce((sum, e) => sum + e.hours, 0);
@@ -83,7 +89,13 @@ export default function EngagementRecordPage() {
 				</div>
 			)}
 
-			{error && <ErrorBanner message={error} className="mt-6" />}
+			{error && (
+				<LoadMoreError
+					message={error}
+					retrying={retrying}
+					onRetry={retryLoad}
+				/>
+			)}
 
 			{entries && entries.length === 0 && !error && (
 				<div className="mt-6">

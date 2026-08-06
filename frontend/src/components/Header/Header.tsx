@@ -140,6 +140,7 @@ export default function Header({
 									currentTab={orgSwitcher.currentTab}
 									orgs={orgs}
 									loading={orgsLoading}
+									error={orgsError}
 								/>
 							</div>
 						)}

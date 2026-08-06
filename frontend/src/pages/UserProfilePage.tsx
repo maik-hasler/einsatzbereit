@@ -11,7 +11,7 @@ import ProfileFieldsView from "../components/ProfileFieldsView";
 import ReportFlagButton from "../components/ReportFlagButton";
 import SectionHeading from "../components/SectionHeading";
 import Skeleton from "../components/Skeleton";
-import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { pageTitleClass } from "../lib/headingClasses";
@@ -30,21 +30,35 @@ export default function UserProfilePage() {
 	const [catalog, setCatalog] = useState<BadgeCatalogEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [retrying, setRetrying] = useState(false);
 
 	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
 	usePageToolbar([{ label: profile?.displayName ?? t("userProfile.loading") }]);
 
-	useEffect(() => {
-		if (!userId) return;
-		Promise.all([api.getPublicUserProfile(userId), api.getBadgeCatalog()])
+	function load() {
+		if (!userId) return Promise.resolve();
+		return Promise.all([
+			api.getPublicUserProfile(userId),
+			api.getBadgeCatalog(),
+		])
 			.then(([prof, cat]) => {
 				setProfile(prof);
 				setCatalog(cat);
+				setError(null);
 			})
 			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
+	}
+
+	useEffect(() => {
+		void load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [userId]);
+
+	function retryLoad() {
+		setRetrying(true);
+		void load().finally(() => setRetrying(false));
+	}
 
 	if (loading)
 		return (
@@ -65,7 +79,10 @@ export default function UserProfilePage() {
 				</div>
 			</div>
 		);
-	if (error) return <ErrorBanner message={error} />;
+	if (error)
+		return (
+			<LoadMoreError message={error} retrying={retrying} onRetry={retryLoad} />
+		);
 	if (!profile)
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 

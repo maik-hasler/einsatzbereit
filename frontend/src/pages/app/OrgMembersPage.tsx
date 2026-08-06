@@ -118,7 +118,11 @@ export default function OrgMembersPage() {
 		api
 			.getOrgInvitations(org.id)
 			.then(setInvitations)
-			.catch(() => {});
+			.catch((err) => {
+				setSettingsError(
+					getApiErrorMessage(err, t("orgSettings.pendingInvitationsLoadError")),
+				);
+			});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [org.id, isOrganizer]);
 
