@@ -1269,6 +1269,44 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1672: MobileMenu gained a scrim, role="dialog"/aria-modal, a Tab
+		// focus trap, and a body scroll lock - none of that markup existed
+		// when this suite's other scans ran, and every other scan here runs
+		// at the default desktop viewport (the panel is md:hidden), so
+		// nothing has ever axe-scanned it. Olaf, not Vera, so the org
+		// submenu (issue #775) is also present and gets expanded below -
+		// the whole panel's markup exercised in one scan, not just the
+		// anonymous/no-org subset.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		// FastSignInAsync verifies auth via the desktop "User menu" button,
+		// which is CSS-hidden below the md breakpoint (see
+		// OrganizationDashboardNavLinkTests) - sign in before shrinking to a
+		// mobile viewport, not after.
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(375, 812);
+
+		var banner = Page.GetByRole(AriaRole.Banner);
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+
+		var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Menu" });
+		await Expect(dialog).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
+			.ClickAsync();
+		await Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task AdministrationPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

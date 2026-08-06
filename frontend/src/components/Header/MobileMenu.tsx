@@ -3,6 +3,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import Button from "../Button";
+import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
@@ -68,9 +69,7 @@ export default function MobileMenu({
 	// focused on the (now expanded) hamburger button and has to Tab past it
 	// again to reach the first item.
 	useEffect(() => {
-		panelRef.current
-			?.querySelector<HTMLElement>("a[href], button:not([disabled])")
-			?.focus();
+		panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
 	}, []);
 
 	// Body scroll lock - without this, the page behind the scrim (#1672) keeps
@@ -92,9 +91,7 @@ export default function MobileMenu({
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Tab" || !panelRef.current) return;
 			const focusables = Array.from(
-				panelRef.current.querySelectorAll<HTMLElement>(
-					'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-				),
+				panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
 			).filter((el) => el.offsetParent !== null);
 			if (focusables.length === 0) return;
 			const first = focusables[0];
@@ -132,7 +129,13 @@ export default function MobileMenu({
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				className={`absolute top-full right-0 left-0 z-30 border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
+				// max-h + overflow-y-auto so the body scroll lock above doesn't
+				// strand content taller than the viewport with no way to reach it
+				// (e.g. an organizer with the org submenu expanded on a short
+				// landscape-phone viewport) - overscroll-contain keeps a drag past
+				// this panel's own scroll bounds from rubber-banding the (locked)
+				// body underneath.
+				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{isTransparent && (
 					<div
