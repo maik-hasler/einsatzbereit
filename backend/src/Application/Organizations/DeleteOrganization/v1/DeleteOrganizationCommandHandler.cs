@@ -54,6 +54,21 @@ internal sealed class DeleteOrganizationCommandHandler(
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
 
+		// The role is realm-wide, not per-organization (see #1386), so it can only
+		// be revoked once the requesting user organizes no other organization
+		// (#1677) - otherwise this deletion would also lock them out of that other
+		// org. The sole-member guard above already confirmed the requesting user is
+		// this organization's only (and therefore only Organizer) member, and
+		// RemoveMembershipsForOrganizationAsync above already deleted that
+		// membership row, so - like RemoveMemberCommandHandler, unlike
+		// ChangeMemberRoleCommandHandler's still-in-memory demotion - no exclusion
+		// filter is needed here.
+		var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(
+			request.RequestingUserId, cancellationToken);
+
+		if (remainingOrganizerOrgs.Count == 0)
+			await keycloakOrganizationService.RevokeOrganizerRoleAsync(request.RequestingUserId.Value, cancellationToken);
+
 		// Without this, opportunities survive as orphan rows with a dangling
 		// organization_id - there is no FK to cascade the delete at the DB level
 		// (#1153). Only opportunities with no future slots and no active

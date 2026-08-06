@@ -13,12 +13,10 @@ public class GetPublicUserProfileQueryHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAchievementReadRepository _achievementReadRepository = Substitute.For<IAchievementReadRepository>();
-	private readonly IAggregateRepository<User, UserId> _userRepo = Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly GetPublicUserProfileQueryHandler _sut;
 
 	public GetPublicUserProfileQueryHandlerTests()
 	{
-		_dbContext.Users.Returns(_userRepo);
 		_achievementReadRepository
 			.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -39,7 +37,7 @@ public class GetPublicUserProfileQueryHandlerTests
 		user.ChangeBio("Loves helping out");
 		user.UpdateSkills(["First aid"]);
 		user.UpdateLanguages(["German", "English"]);
-		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
 
 		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
@@ -67,7 +65,7 @@ public class GetPublicUserProfileQueryHandlerTests
 		var user = User.Create(userId);
 		user.SetPreferredContact(PreferredContact.Phone);
 		user.SetPhone("+49 555 1234567");
-		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
 
 		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
@@ -82,21 +80,46 @@ public class GetPublicUserProfileQueryHandlerTests
 	public async Task Handle_ShouldReturnEmptyProfileFields_WhenNoUserRowExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// A missing local row (never lazily created - see GetOrCreateUserAsync's
+		// callers) is not the same as a shadow-deleted user: it just means this
+		// person never touched their own profile/settings yet. The profile still
+		// resolves via Keycloak, with Bio/Skills/Languages/AvatarUrl defaulted.
 		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
 			.Returns(new KeycloakUserProfile(userId.Value, "vera", "Vera", "Volunteer", "vera@test.de"));
-
-		_userRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
+		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns((User?)null);
 
 		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
 
 		// Assert
 		result.Should().NotBeNull();
-		result!.Bio.Should().BeNull();
+		result!.AvatarUrl.Should().BeNull();
+		result.Bio.Should().BeNull();
 		result.Skills.Should().BeEmpty();
 		result.Languages.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnNull_AndNotCallKeycloak_WhenUserIsShadowDeleted(
+		CancellationToken cancellationToken)
+	{
+		// #1677 bug #1: a shadow-deleted user's public profile must 404 outright,
+		// not fall back to default Bio/Skills/Languages while still calling
+		// Keycloak and returning a fully populated response.
+		var userId = UserId.New();
+		var user = User.Create(userId);
+		user.MarkDeleted(DateTimeOffset.UtcNow);
+		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
+
+		// Act
+		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
+
+		// Assert
+		result.Should().BeNull();
+		await _keycloakUserService
+			.DidNotReceive()
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }
