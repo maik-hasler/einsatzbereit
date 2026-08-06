@@ -665,7 +665,6 @@
       }
     },
     "orgEngagements": {
-      "title": "Sign-up queue",
       "pageDescription": "Pending and processed sign-ups across every one of your organization's opportunities, in one place.",
       "loading": "Loading…",
       "error": "Error: {{message}}",
@@ -1240,6 +1239,7 @@
     "orgOverview": {
       "tabDashboard": "Dashboard",
       "tabOpportunities": "Opportunities",
+      "tabEngagements": "Sign-ups",
       "tabMembers": "Members",
       "tabSettings": "Settings",
       "calendarLoading": "Loading calendar…",

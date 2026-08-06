@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import { ORG_TABS, orgTabPath } from "./orgTabs";
 
 describe("ORG_TABS", () => {
-	it("declares the dashboard, opportunities, settings and members tabs in order", () => {
+	it("declares the dashboard, opportunities, engagements, settings and members tabs in order", () => {
 		expect(ORG_TABS.map((tab) => tab.key)).toEqual([
 			"dashboard",
 			"opportunities",
+			"engagements",
 			"settings",
 			"members",
 		]);
@@ -27,6 +28,9 @@ describe("orgTabPath", () => {
 		expect(orgTabPath("org-1", "members")).toBe("/app/org-1/dashboard/members");
 		expect(orgTabPath("org-1", "opportunities")).toBe(
 			"/app/org-1/dashboard/opportunities",
+		);
+		expect(orgTabPath("org-1", "engagements")).toBe(
+			"/app/org-1/dashboard/engagements",
 		);
 		expect(orgTabPath("org-1", "settings")).toBe(
 			"/app/org-1/dashboard/settings",
