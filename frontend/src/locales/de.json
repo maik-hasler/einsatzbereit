@@ -1117,7 +1117,6 @@
         "searchButton": "Suchen",
         "flaggedOnlyLabel": "Nur gemeldete",
         "deletedOnlyLabel": "Nur gelöschte",
-        "memberCount": "{{count}} Mitglieder",
         "memberCount_one": "{{count}} Mitglied",
         "memberCount_other": "{{count}} Mitglieder",
         "createdOn": "Erstellt am {{date}}",
