@@ -504,11 +504,6 @@
       "emailHint": "E-Mail-Adresse kann nicht geändert werden.",
       "fieldFirstName": "Vorname",
       "fieldLastName": "Nachname",
-      "exportDataTitle": "Meine Daten exportieren",
-      "exportDataDescription": "Lade eine Kopie deiner persönlichen Daten herunter, einschließlich deines Profils, deiner Engagements, Erfolge, Streaks und Organisationsmitgliedschaften, als JSON-Datei.",
-      "exportDataButton": "Meine Daten exportieren",
-      "exportDataButtonLoading": "Export wird vorbereitet...",
-      "exportDataError": "Deine Daten konnten nicht exportiert werden. Bitte versuche es erneut oder kontaktiere den Support.",
       "dangerZoneTitle": "Gefahrenzone",
       "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft löschen. Diese Aktion ist unwiderruflich. Engagements werden anonymisiert und dein Konto wird gelöscht.",
       "deleteAccountButton": "Mein Konto löschen",
@@ -704,9 +699,10 @@
       "section1Title": "Verantwortliche Stelle",
       "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg\nE-Mail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
-      "section2Body1": "Beim Besuch dieser Website werden automatisch Informationen allgemeiner Natur erfasst (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs). Diese Daten lassen keine Rückschlüsse auf Ihre Person zu und werden zur Sicherstellung des Betriebs ausgewertet.",
+      "section2Body1": "Beim Besuch dieser Website werden automatisch allgemeine technische Informationen verarbeitet (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs), um einen sicheren und zuverlässigen Betrieb sicherzustellen. Auch wenn wir diese Daten nicht anderweitig mit Ihrer Identität verknüpfen, können sie personenbezogene Daten darstellen - einschließlich Ihrer IP-Adresse, entsprechend dem Breyer-Urteil des EuGH (C-582/14).",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von Ihnen eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um Ihnen die Nutzung der Plattform zu ermöglichen.",
       "section2Body3": "Darüber hinaus können Sie in Ihrem Profil freiwillig weitere Angaben hinterlegen, etwa eine Telefonnummer, unter der Organisationen Sie erreichen können, ein Profilbild, einen Text im Feld „Über mich“ sowie Fähigkeiten und Sprachen. An wen diese Angaben weitergegeben oder für wen sie sichtbar werden, ist in den folgenden Abschnitten beschrieben.",
+      "section2Body4": "Rechtsgrundlage für die oben beschriebenen technischen Zugriffsinformationen ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einem sicheren und zuverlässigen Betrieb; Ihre IP-Adresse wird dabei ausschließlich vorübergehend im Arbeitsspeicher zur Durchsetzung von Anfragebegrenzungen verwendet und nicht gespeichert. Rechtsgrundlage für Ihre Registrierungs- und Kontodaten, einschließlich optionaler Angaben, die Sie freiwillig in Ihrem Profil hinterlegen, ist die Erfüllung des Nutzungsvertrags mit Ihnen (Art. 6 Abs. 1 lit. b DSGVO). Wir speichern Ihre Konto- und Profildaten, solange Ihr Konto besteht; löschen Sie Ihr Konto - das können Sie jederzeit in Ihren Profileinstellungen tun -, werden diese Daten unmittelbar gelöscht oder anonymisiert. Benachrichtigungen werden automatisch 90 Tage nach dem Lesen gelöscht, ungelesene nach 180 Tagen. Protokolle sicherheitsrelevanter Aktionen (siehe unten) werden ohne automatische Löschfrist aufbewahrt.",
       "section3Title": "Weitergabe von Daten",
       "section3Body": "Personenbezogene Daten werden nur in den in diesem Abschnitt und den folgenden Unterabschnitten beschriebenen Fällen an Dritte weitergegeben oder öffentlich zugänglich gemacht: bei Ihrer Anmeldung zu einem Einsatz, im Rahmen Ihres öffentlichen Profils sowie im Rahmen der eingebundenen Drittdienste zur Kartendarstellung und Ortssuche. Eine darüber hinausgehende Übermittlung findet nur statt, wenn Sie ausdrücklich eingewilligt haben oder wir gesetzlich dazu verpflichtet sind.",
       "section3aTitle": "Anmeldung zu einem Einsatz",
@@ -714,7 +710,7 @@
       "section3bTitle": "Öffentliche Profile",
       "section3bBody": "Ihr Profil - Anzeigename, Profilbild, der Text im Feld „Über mich“, angegebene Fähigkeiten und Sprachen, erzielte Abzeichen und die Anzahl Ihrer bestätigten Einsätze - ist über eine öffentliche Profilseite ohne Anmeldung für jede Person im Internet einsehbar. Ihre E-Mail-Adresse und Telefonnummer werden auf dieser Seite nicht angezeigt. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) daran, Organisationen und anderen Nutzerinnen und Nutzern sichtbar zu machen, wer sich als Freiwillige oder Freiwilliger engagiert.",
       "section3cTitle": "Kartendarstellung und Ortssuche (OpenStreetMap, Nominatim)",
-      "section3cBody": "Zur Darstellung von Karten binden wir den Kartenkachel-Dienst von OpenStreetMap ein; beim Laden einer Karte wird Ihre IP-Adresse an die Server der OpenStreetMap Foundation übertragen. Die Ortssuche im Filter der Einsatzliste nutzt den öffentlichen Geocoding-Dienst Nominatim (ebenfalls von der OpenStreetMap Foundation betrieben); bei jeder Eingabe wird Ihre IP-Adresse zusammen mit dem eingegebenen Suchbegriff an dessen Server übermittelt. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einer funktionsfähigen Karten- und Ortssuche. Es handelt sich hierbei nicht um eine Auftragsverarbeitung im Sinne von Art. 28 DSGVO; die OpenStreetMap Foundation verarbeitet diese Daten als eigenständig Verantwortliche.",
+      "section3cBody": "Zur Darstellung von Karten fragt Ihr Browser Kartenkacheln bei unserem eigenen Backend an, das diese seinerseits vom Kartenkachel-Dienst von OpenStreetMap abruft; die Ortssuche im Filter der Einsatzliste läuft auf dieselbe Weise über unser Backend, das den öffentlichen Geocoding-Dienst Nominatim (ebenfalls von der OpenStreetMap Foundation betrieben) abfragt. In beiden Fällen wird ausschließlich die IP-Adresse unseres Backend-Servers an die OpenStreetMap Foundation übermittelt - Ihre eigene IP-Adresse und die von Ihnen eingegebenen Suchbegriffe werden ihr nicht direkt übermittelt. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einer funktionsfähigen Karten- und Ortssuche, ohne Ihre IP-Adresse gegenüber einem Dritten offenzulegen. Es handelt sich hierbei nicht um eine Auftragsverarbeitung im Sinne von Art. 28 DSGVO; die OpenStreetMap Foundation erhält Anfragen ausschließlich von unserer eigenen Infrastruktur, nicht von Ihnen.",
       "section3cLinksIntro": "Weitere Informationen:",
       "section3cLinkOsm": "Datenschutzerklärung der OpenStreetMap Foundation",
       "section3cLinkNominatim": "Nutzungsrichtlinie von Nominatim",
@@ -726,10 +722,12 @@
       "section6Body": "Diese Plattform - einschließlich Datenbank und Objektspeicher - wird auf einem Server der Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Deutschland, betrieben. Datenbank und Objektspeicher werden zusätzlich täglich lokal gesichert; diese Sicherungen werden zur Wiederherstellbarkeit im Fall eines Ausfalls oder Verlusts des Servers zusätzlich in einen separaten Objektspeicher-Bucket der Hetzner Online GmbH gespiegelt. Hetzner verarbeitet diese Daten als unser Auftragsverarbeiter im Sinne von Art. 28 DSGVO; mit Hetzner besteht ein entsprechender Auftragsverarbeitungsvertrag (AVV). Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) am zuverlässigen Betrieb und an der Ausfallsicherheit der Plattform.",
       "section7Title": "Protokollierung sicherheitsrelevanter Aktionen",
       "section7Body": "Bestimmte administrative Maßnahmen - etwa die Vergabe oder der Entzug von Administratorrechten, das Sperren oder Entsperren eines Kontos, das Entfernen oder Wiederherstellen von Inhalten sowie das administrative Absagen einer Anmeldung - werden mit der ausführenden Nutzer-ID, der Art der Maßnahme, dem betroffenen Objekt, einem optionalen Grund und dem Zeitpunkt protokolliert. Dieses Protokoll ist ausschließlich für Administratorinnen und Administratoren einsehbar und dient der Nachvollziehbarkeit von Verwaltungsmaßnahmen sowie dem Schutz vor Missbrauch. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an der Sicherheit und Integrität der Plattform.",
-      "section8Title": "Cookies",
-      "section8Body": "Diese Website verwendet technisch notwendige Cookies für die Authentifizierung (Session-Cookies). Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
+      "section8Title": "Cookies und Speicherung im Browser",
+      "section8Body1": "Diese Website verwendet ein technisch notwendiges Cookie für die Authentifizierung (ein Session-Cookie, gesetzt von unserem Authentifizierungsdienst Keycloak) sowie ein weiteres Cookie, active-org, das sich merkt, welche Organisation Sie zuletzt geöffnet haben, damit Sie zum richtigen Dashboard zurückkehren; es dient nicht der Authentifizierung und wird für bis zu ein Jahr gespeichert. Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
+      "section8Body2": "Darüber hinaus speichern wir einige Werte im lokalen Speicher (Local Storage) Ihres Browsers: Ihre gewählte Oberflächensprache, ob Sie diese Sprache bewusst selbst gewählt haben statt sie automatisch erkennen zu lassen, sowie welche Erfolgs-Benachrichtigungen Sie bereits gesehen haben (kontobezogen gespeichert). Diese Werte verlassen Ihren Browser nie. Das active-org-Cookie und diese lokalen Speicherwerte werden bei der Abmeldung gelöscht.",
       "section9Title": "Ihre Rechte",
-      "section9Body": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Wenden Sie sich dazu an die oben genannte verantwortliche Stelle."
+      "section9Body1": "Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO) und Einschränkung der Verarbeitung (Art. 18 DSGVO) Ihrer personenbezogenen Daten sowie das Recht auf Datenübertragbarkeit (Art. 20 DSGVO) und das Recht, der auf unserem berechtigten Interesse beruhenden Verarbeitung zu widersprechen (Art. 21 DSGVO). Ihr eigenes Konto und die meisten damit verbundenen Daten können Sie jederzeit selbst in Ihren Profileinstellungen löschen; für alle anderen Anliegen, einschließlich einer Kopie Ihrer Daten oder eines Widerspruchs, wenden Sie sich an die im Abschnitt „Verantwortliche Stelle“ oben genannte Adresse oder E-Mail-Adresse. Wir sind bemüht, innerhalb eines Monats zu antworten, wie es Art. 12 Abs. 3 DSGVO vorsieht.",
+      "section9Body2": "Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Bundesland, in dem Sie wohnen, arbeiten oder in dem der mutmaßliche Verstoß erfolgt ist. Die für uns zuständige Aufsichtsbehörde ist: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover."
     },
     "imprint": {
       "title": "Impressum",
@@ -1307,8 +1305,19 @@
       "ReportId": {
         "Empty": "ReportId darf nicht leer sein."
       },
+      "AuditLogId": {
+        "Empty": "AuditLogId darf nicht leer sein."
+      },
+      "SearchAlertId": {
+        "Empty": "SearchAlertId darf nicht leer sein."
+      },
       "User": {
-        "InvalidId": "Ungültige:r Nutzer:in."
+        "InvalidId": "Ungültige:r Nutzer:in.",
+        "NotFound": "Nutzer:in nicht gefunden.",
+        "AlreadyDeleted": "Nutzer:in ist bereits schattengelöscht.",
+        "NotDeleted": "Nutzer:in ist nicht schattengelöscht.",
+        "InvalidUnsubscribeToken": "Der Abmelde-Link ist ungültig oder wurde bereits mit einem anderen Token verwendet.",
+        "SoleOrganizerOfOrganizations": "Du bist die:der einzige Organisator:in mindestens einer Organisation. Übertrage die Leitung an eine andere Person oder lösche diese Organisationen, bevor du dein Konto löschst."
       },
       "Users": {
         "CannotModifyServiceAccount": "Das interne Service-Konto des Systems kann nicht geändert werden.",
@@ -1331,17 +1340,23 @@
         "HasBlockingOpportunities": "Diese Organisation hat noch Einsätze mit zukünftigen Zeitslots oder aktiven Engagements. Bitte löse das zuerst auf.",
         "SoleOrganizer": "Du bist der:die einzige Organisator:in dieser Organisation. Lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
         "SoleOrganizerDemote": "Der:die einzige Organisator:in dieser Organisation kann nicht zurückgestuft werden. Befördere zuerst ein anderes Mitglied oder lösche die Organisation.",
-        "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern."
+        "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern.",
+        "NotMember": "Du hast keine Berechtigung, diese Ressource einzusehen.",
+        "WebsiteInvalid": "Die Website muss eine gültige http- oder https-URL sein.",
+        "WebsiteTooLong": "Die Website darf 500 Zeichen nicht überschreiten.",
+        "AlreadyDeleted": "Organisation ist bereits schattengelöscht.",
+        "NotDeleted": "Organisation ist nicht schattengelöscht."
       },
       "OrganizationInvitation": {
         "NotPending": "Die Einladung ist nicht mehr ausstehend.",
         "NotFound": "Einladung nicht gefunden.",
         "NotRecipient": "Du bist nicht der Empfänger dieser Einladung.",
         "WrongOrganization": "Diese Einladung gehört nicht zu dieser Organisation.",
-        "NotDeclined": "Nur abgelehnte oder abgelaufene Einladungen können verworfen werden.",
         "NotExpired": "Nur abgelaufene Einladungen können erneut gesendet werden.",
+        "NotYetExpired": "Die Einladung ist noch nicht abgelaufen.",
         "AlreadyMember": "Der:die Nutzer:in ist bereits Mitglied dieser Organisation.",
         "AlreadyInvited": "Für diese:n Nutzer:in besteht bereits eine ausstehende Einladung.",
+        "AlreadyAccepted": "Angenommene Einladungen können nicht verworfen werden.",
         "InvalidRole": "Ungültige Rolle."
       },
       "OrganizationMembership": {
@@ -1368,13 +1383,35 @@
         "TimeSlotCapacityBelowActive": "Die Kapazität kann nicht unter die Anzahl der aktuell aktiven Anmeldungen gesenkt werden.",
         "TimeSlotHasActiveEngagements": "Ein Zeitslot mit aktiven Anmeldungen kann nicht gelöscht werden. Sage zuerst die betroffenen Anmeldungen ab.",
         "InvalidColor": "Die Farbe muss ein #rrggbb-Hexwert sein.",
-        "ColorContrastTooLow": "Diese Farbe ist zu nah an Weiß, um lesbar zu bleiben - wähle eine dunklere oder kräftigere Farbe."
+        "ColorContrastTooLow": "Diese Farbe ist zu nah an Weiß, um lesbar zu bleiben - wähle eine dunklere oder kräftigere Farbe.",
+        "AlreadyCancelled": "Der Einsatz ist bereits abgesagt.",
+        "CannotCancelDraft": "Ein Entwurf kann nicht abgesagt werden - lösche ihn stattdessen.",
+        "CannotPublishCancelled": "Ein abgesagter Einsatz kann nicht erneut veröffentlicht werden.",
+        "NotPublished": "Nur ein veröffentlichter Einsatz kann depubliziert werden.",
+        "AlreadyDeleted": "Der Einsatz ist bereits schattengelöscht.",
+        "NotDeleted": "Der Einsatz ist nicht schattengelöscht.",
+        "ValidUntilMustBeFuture": "Die Frist muss in der Zukunft liegen.",
+        "ValidUntilNotAllowed": "Eine Frist kann nur bei Einsätzen mit Teilnahmeart „Einzelkontakt“ gesetzt werden.",
+        "IndividualContactRequiresValidUntil": "Ein Einsatz mit Teilnahmeart „Einzelkontakt“ benötigt eine Frist, bevor er veröffentlicht werden kann.",
+        "TimeSlotDatesRequired": "Start- und Endzeitpunkt sind erforderlich, wenn nur dieser Termin geändert wird.",
+        "TimeSlotNotPartOfSeries": "Dieser Zeitslot ist nicht Teil einer wiederkehrenden Serie."
       },
       "Report": {
         "NotFound": "Meldung nicht gefunden.",
         "AlreadyResolved": "Diese Meldung wurde bereits bearbeitet.",
         "AlreadyReported": "Du hast dies bereits gemeldet.",
-        "DetailsTooLong": "Details dürfen 1000 Zeichen nicht überschreiten."
+        "DetailsTooLong": "Details dürfen 1000 Zeichen nicht überschreiten.",
+        "CannotReportSelf": "Du kannst dich nicht selbst melden."
+      },
+      "SearchAlert": {
+        "NotFound": "Für diese:n Nutzer:in besteht kein aktiver Suchauftrag.",
+        "IncompleteLocation": "Breiten- und Längengrad des Mittelpunkts müssen zusammen angegeben werden.",
+        "InvalidLatitude": "Der Breitengrad des Mittelpunkts muss zwischen -90 und 90 liegen.",
+        "InvalidLongitude": "Der Längengrad des Mittelpunkts muss zwischen -180 und 180 liegen.",
+        "InvalidRadius": "Der Radius muss zwischen 1 und 500 km liegen.",
+        "InvalidOccurrence": "Unbekannter Häufigkeitstyp.",
+        "InvalidParticipationType": "Unbekannte Teilnahmeart.",
+        "InvalidCategory": "Unbekannte Kategorie."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",
@@ -1402,7 +1439,15 @@
         "OpportunityNotPublished": "Für diesen Einsatz kann man sich nur anmelden, wenn er veröffentlicht ist.",
         "TimeSlotFull": "Dieser Zeitslot hat seine Kapazität erreicht und kann keine weiteren Anmeldungen annehmen.",
         "InvalidPin": "Falsche PIN. Bitte erneut versuchen.",
-        "CheckInLocked": "Zu viele fehlgeschlagene PIN-Versuche. Bitte versuche es später erneut."
+        "CheckInLocked": "Zu viele fehlgeschlagene PIN-Versuche. Bitte versuche es später erneut.",
+        "AlreadyCheckedIn": "Engagement ist bereits eingecheckt.",
+        "Anonymized": "Der:die Freiwillige dieses Engagements hat das eigene Konto gelöscht und kann nicht mehr bearbeitet werden.",
+        "CheckInMethodNotPin": "Dieser Einsatz verwendet keinen PIN-Check-in.",
+        "PinRequired": "PIN ist erforderlich.",
+        "ReactivationLimitReached": "Dieses Engagement wurde bereits zu oft zurückgezogen und erneut angemeldet. Bitte wende dich direkt an die Organisation.",
+        "TimeSlotEnded": "Dieser Zeitslot ist bereits beendet.",
+        "TimeSlotNotAllowed": "Dieser Einsatz verwendet keine Zeitslots.",
+        "TimeSlotRequired": "Für die Anmeldung zu diesem Einsatz ist ein Zeitslot erforderlich."
       },
       "DashboardLayout": {
         "InvalidWidgetKey": "Unbekanntes Widget.",

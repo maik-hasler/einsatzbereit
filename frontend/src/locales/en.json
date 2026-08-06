@@ -504,11 +504,6 @@
       "emailHint": "Email address cannot be changed.",
       "fieldFirstName": "First name",
       "fieldLastName": "Last name",
-      "exportDataTitle": "Export my data",
-      "exportDataDescription": "Download a copy of your personal data, including your profile, engagements, achievements, streaks, and organization memberships, as a JSON file.",
-      "exportDataButton": "Export my data",
-      "exportDataButtonLoading": "Preparing export...",
-      "exportDataError": "Failed to export your data. Please try again or contact support.",
       "dangerZoneTitle": "Danger zone",
       "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your account will be deleted.",
       "deleteAccountButton": "Delete my account",
@@ -704,9 +699,10 @@
       "section1Title": "Responsible party",
       "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg, Germany\nEmail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Collection and storage of personal data",
-      "section2Body1": "When visiting this website, general information is automatically collected (e.g. IP address, browser type, time of access). This data does not allow conclusions about your person and is evaluated to ensure operation.",
+      "section2Body1": "When visiting this website, general technical information is automatically processed (e.g. IP address, browser type, time of access) to ensure secure and reliable operation. This data can constitute personal data - including your IP address, per the Court of Justice of the EU's Breyer ruling (C-582/14) - even though we do not otherwise link it to your identity.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
       "section2Body3": "You may also voluntarily add further details to your profile, such as a phone number organizations can reach you on, a profile picture, a short bio, and your skills and languages. Who this information is shared with or visible to is described in the following sections.",
+      "section2Body4": "The legal basis for the technical access information described above is our legitimate interest (Art. 6(1)(f) GDPR) in secure and reliable operation; your IP address is used only transiently, in memory, to enforce request rate limits, and is never stored. The legal basis for your registration and account data, including any optional profile fields you choose to add, is performance of the usage agreement with you (Art. 6(1)(b) GDPR). We retain your account and profile data for as long as your account exists; deleting your account, which you can do at any time from your profile settings, erases or anonymizes this data immediately. Notifications are deleted automatically 90 days after being read, or after 180 days if never read. Audit logs of security-relevant actions (see below) are retained without an automatic deletion period.",
       "section3Title": "Data sharing",
       "section3Body": "Personal data is only shared with third parties or made publicly accessible in the cases described in this section and its subsections below: when you sign up for an opportunity, as part of your public profile, and through the embedded third-party services for map display and location search. Any transfer beyond that only takes place if you have expressly consented or we are legally required to do so.",
       "section3aTitle": "Signing up for an opportunity",
@@ -714,7 +710,7 @@
       "section3bTitle": "Public profiles",
       "section3bBody": "Your profile - display name, profile picture, bio, listed skills and languages, earned badges, and your number of confirmed engagements - is visible on a public profile page, without login, to anyone on the internet. Your email address and phone number are never shown on this page. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in making visible to organizations and other users who is active as a volunteer.",
       "section3cTitle": "Map display and location search (OpenStreetMap, Nominatim)",
-      "section3cBody": "To display maps we embed the map-tile service provided by OpenStreetMap; when a map loads, your IP address is transmitted to the OpenStreetMap Foundation's servers. The city search in the opportunity list filter uses the public Nominatim geocoding service (also operated by the OpenStreetMap Foundation); with every keystroke, your IP address is transmitted to its servers together with the search term you entered. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in providing functioning map and location-search features. This is not data processing under Art. 28 GDPR; the OpenStreetMap Foundation processes this data as an independent controller.",
+      "section3cBody": "To display maps, your browser requests map tiles from our own backend, which in turn fetches them from the map-tile service provided by OpenStreetMap; the city search in the opportunity list filter is proxied the same way, through our backend, which queries the public Nominatim geocoding service (also operated by the OpenStreetMap Foundation). In both cases, only our backend server's IP address is transmitted to the OpenStreetMap Foundation - your own IP address and the search terms you type are never sent to it directly. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in providing functioning map and location-search features without disclosing your IP address to a third party. This is not data processing under Art. 28 GDPR; the OpenStreetMap Foundation only ever receives requests from our own infrastructure, not from you.",
       "section3cLinksIntro": "Further information:",
       "section3cLinkOsm": "OpenStreetMap Foundation Privacy Policy",
       "section3cLinkNominatim": "Nominatim Usage Policy",
@@ -726,10 +722,12 @@
       "section6Body": "This platform - including its database and object storage - runs on a server operated by Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany. The database and object storage are additionally backed up locally every day; these backups are further mirrored to a separate Hetzner Online GmbH object storage bucket so the platform can be restored if the server fails or is lost. Hetzner processes this data as our processor under Art. 28 GDPR; a corresponding data processing agreement (DPA) is in place with Hetzner. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in operating the platform reliably and being able to recover from data loss.",
       "section7Title": "Logging of security-relevant actions",
       "section7Body": "Certain administrative actions - such as granting or revoking administrator rights, disabling or re-enabling an account, removing or restoring content, and administratively cancelling a sign-up - are logged with the acting user's ID, the type of action, the affected item, an optional reason, and the timestamp. This log is only accessible to platform administrators and serves to make administrative actions traceable and to protect against abuse. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in the security and integrity of the platform.",
-      "section8Title": "Cookies",
-      "section8Body": "This website uses technically necessary cookies for authentication (session cookies). No tracking or advertising cookies are used.",
+      "section8Title": "Cookies and browser storage",
+      "section8Body1": "This website uses one technically necessary cookie for authentication (a session cookie, set by our authentication service, Keycloak), and one further cookie, active-org, which remembers the organization you last opened so you return to the right dashboard; it is not used for authentication and is stored for up to one year. No tracking or advertising cookies are used.",
+      "section8Body2": "We also store a small number of values in your browser's local storage: your selected interface language, whether you explicitly chose that language yourself rather than it being detected automatically, and which achievement notifications you have already seen (stored per account). These values never leave your browser. The active-org cookie and these local storage values are cleared when you sign out.",
       "section9Title": "Your rights",
-      "section9Body": "You have the right to access, rectification, erasure and restriction of processing of your personal data. Please contact the responsible party listed above."
+      "section9Body1": "You have the right to access (Art. 15 GDPR), rectification (Art. 16 GDPR), erasure (Art. 17 GDPR), and restriction of processing (Art. 18 GDPR) of your personal data, as well as the right to data portability (Art. 20 GDPR) and the right to object to processing carried out on the basis of our legitimate interest (Art. 21 GDPR). You can delete your own account and most associated data at any time from your profile settings; for any other request, including a copy of your data or an objection, contact us using the address or email given in the \"Responsible party\" section above. We aim to respond within one month, as required by Art. 12(3) GDPR.",
+      "section9Body2": "You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the German state where you live, work, or where an alleged infringement occurred. The authority responsible for us is: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover, Germany."
     },
     "imprint": {
       "title": "Imprint",
@@ -1307,8 +1305,19 @@
       "ReportId": {
         "Empty": "ReportId must not be empty."
       },
+      "AuditLogId": {
+        "Empty": "AuditLogId must not be empty."
+      },
+      "SearchAlertId": {
+        "Empty": "SearchAlertId must not be empty."
+      },
       "User": {
-        "InvalidId": "Invalid user."
+        "InvalidId": "Invalid user.",
+        "NotFound": "User not found.",
+        "AlreadyDeleted": "User is already shadow-deleted.",
+        "NotDeleted": "User is not shadow-deleted.",
+        "InvalidUnsubscribeToken": "The unsubscribe link is invalid or has already been used with a different token.",
+        "SoleOrganizerOfOrganizations": "You are the sole organizer of one or more organizations. Transfer ownership to another organizer or delete these organizations before deleting your account."
       },
       "Users": {
         "CannotModifyServiceAccount": "The backend's own service account cannot be modified.",
@@ -1331,17 +1340,23 @@
         "HasBlockingOpportunities": "This organization has opportunities with future time slots or active engagements. Resolve or cancel these first.",
         "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
         "SoleOrganizerDemote": "You cannot demote the only organizer of this organization. Promote another member first, or delete the organization.",
-        "NotOrganizer": "You do not have permission to modify this resource."
+        "NotOrganizer": "You do not have permission to modify this resource.",
+        "NotMember": "You do not have permission to view this resource.",
+        "WebsiteInvalid": "Website must be a valid http or https URL.",
+        "WebsiteTooLong": "Website must not exceed 500 characters.",
+        "AlreadyDeleted": "Organization is already shadow-deleted.",
+        "NotDeleted": "Organization is not shadow-deleted."
       },
       "OrganizationInvitation": {
         "NotPending": "Invitation is not pending.",
         "NotFound": "Invitation not found.",
         "NotRecipient": "You are not the recipient of this invitation.",
         "WrongOrganization": "Invitation does not belong to this organization.",
-        "NotDeclined": "Only declined or expired invitations can be dismissed.",
         "NotExpired": "Only expired invitations can be resent.",
+        "NotYetExpired": "Invitation has not reached its expiry date yet.",
         "AlreadyMember": "User is already a member of this organization.",
         "AlreadyInvited": "A pending invitation already exists for this user.",
+        "AlreadyAccepted": "Accepted invitations cannot be dismissed.",
         "InvalidRole": "Invalid role."
       },
       "OrganizationMembership": {
@@ -1368,13 +1383,35 @@
         "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
         "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first.",
         "InvalidColor": "Color must be a #rrggbb hex value.",
-        "ColorContrastTooLow": "This color is too close to white to stay readable - choose a darker or more saturated one."
+        "ColorContrastTooLow": "This color is too close to white to stay readable - choose a darker or more saturated one.",
+        "AlreadyCancelled": "Opportunity is already cancelled.",
+        "CannotCancelDraft": "A draft opportunity cannot be cancelled - delete it instead.",
+        "CannotPublishCancelled": "A cancelled opportunity cannot be published again.",
+        "NotPublished": "Only a published opportunity can be unpublished.",
+        "AlreadyDeleted": "Opportunity is already shadow-deleted.",
+        "NotDeleted": "Opportunity is not shadow-deleted.",
+        "ValidUntilMustBeFuture": "Deadline must be in the future.",
+        "ValidUntilNotAllowed": "A deadline can only be set for Individual contact opportunities.",
+        "IndividualContactRequiresValidUntil": "An Individual contact opportunity must have a deadline before it can be published.",
+        "TimeSlotDatesRequired": "Start and end date/time are required when updating only this occurrence.",
+        "TimeSlotNotPartOfSeries": "This time slot is not part of a recurring series."
       },
       "Report": {
         "NotFound": "Report not found.",
         "AlreadyResolved": "This report has already been resolved.",
         "AlreadyReported": "You have already reported this.",
-        "DetailsTooLong": "Details must not exceed 1000 characters."
+        "DetailsTooLong": "Details must not exceed 1000 characters.",
+        "CannotReportSelf": "You cannot report yourself."
+      },
+      "SearchAlert": {
+        "NotFound": "No active search alert exists for this user.",
+        "IncompleteLocation": "Center latitude and longitude must both be supplied together.",
+        "InvalidLatitude": "Center latitude must be between -90 and 90.",
+        "InvalidLongitude": "Center longitude must be between -180 and 180.",
+        "InvalidRadius": "Radius must be between 1 and 500 km.",
+        "InvalidOccurrence": "Unknown occurrence type.",
+        "InvalidParticipationType": "Unknown participation type.",
+        "InvalidCategory": "Unknown category."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",
@@ -1402,7 +1439,15 @@
         "TimeSlotFull": "This time slot has reached its capacity and cannot accept more sign-ups.",
         "InvalidPin": "Invalid PIN. Please try again.",
         "CheckInLocked": "Too many failed PIN attempts. Try again later.",
-        "OpportunityNotPublished": "Only a published opportunity can be signed up for."
+        "OpportunityNotPublished": "Only a published opportunity can be signed up for.",
+        "AlreadyCheckedIn": "Engagement is already checked in.",
+        "Anonymized": "This engagement's volunteer has deleted their account and can no longer be acted on.",
+        "CheckInMethodNotPin": "This opportunity does not use PIN check-in.",
+        "PinRequired": "PIN is required.",
+        "ReactivationLimitReached": "This engagement has been withdrawn and re-applied for too many times. Please contact the organizer directly.",
+        "TimeSlotEnded": "This time slot has already ended.",
+        "TimeSlotNotAllowed": "This opportunity does not use time slots.",
+        "TimeSlotRequired": "A time slot is required to sign up for this opportunity."
       },
       "DashboardLayout": {
         "InvalidWidgetKey": "Unknown widget.",

@@ -345,6 +345,37 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldDeleteTheSearchAlertForTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1676: an orphaned SearchAlert survived deletion and let the
+		// digest job resurrect the user row via GetOrCreateUsersAsync.
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteSearchAlertForUserAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteReportsFiledByTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1676: reports the user filed (as reporter) survived deletion,
+		// including up to 1000 chars of free text. Reports where the deleted user is the
+		// *subject* are moderation history and are intentionally left alone.
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteReportsForReporterAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
 	public async Task Handle_ShouldThrowConflict_AndPerformNoOtherAction_WhenSoleOrganizerOfAnOrganization(
 		CancellationToken cancellationToken)
 	{
@@ -367,6 +398,8 @@ public class DeleteMyAccountCommandHandlerTests
 		await _dbContext.DidNotReceive().DeleteNotificationsForRecipientAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _dbContext.DidNotReceive().RemoveMembershipsForUserAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _dbContext.DidNotReceive().DeleteUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteSearchAlertForUserAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteReportsForReporterAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}

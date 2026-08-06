@@ -3,6 +3,7 @@ import type { OrganizationSummaryDto } from "../client/api-client";
 import {
 	getActiveOrgId,
 	setActiveOrgId,
+	clearActiveOrgId,
 	resolveActiveOrg,
 	resolveOrgAppPath,
 } from "./activeOrg";
@@ -44,6 +45,30 @@ describe("getActiveOrgId / setActiveOrgId", () => {
 		setActiveOrgId("org-456");
 		document.cookie = "baz=qux";
 		expect(getActiveOrgId()).toBe("org-456");
+	});
+});
+
+describe("clearActiveOrgId", () => {
+	beforeEach(() => {
+		clearCookies();
+	});
+
+	it("removes a previously-set cookie", () => {
+		setActiveOrgId("org-789");
+		clearActiveOrgId();
+		expect(getActiveOrgId()).toBeNull();
+	});
+
+	it("is a no-op when no cookie was set", () => {
+		clearActiveOrgId();
+		expect(getActiveOrgId()).toBeNull();
+	});
+
+	it("leaves unrelated cookies untouched", () => {
+		document.cookie = "foo=bar";
+		setActiveOrgId("org-789");
+		clearActiveOrgId();
+		expect(document.cookie).toContain("foo=bar");
 	});
 });
 

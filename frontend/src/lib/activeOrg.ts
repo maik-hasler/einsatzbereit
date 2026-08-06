@@ -14,6 +14,10 @@ export function setActiveOrgId(organizationId: string): void {
 	document.cookie = `${COOKIE_NAME}=${encodeURIComponent(organizationId)}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
 }
 
+export function clearActiveOrgId(): void {
+	document.cookie = `${COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+}
+
 // Resolves which organization the org app shell (and any org-scoped nav
 // link) should open without ever showing an intermediate picker: the
 // last-opened org (active-org cookie) if the user still belongs to it,

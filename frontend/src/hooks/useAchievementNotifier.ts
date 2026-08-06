@@ -35,6 +35,14 @@ function markSeen(key: string, ids: string[]): void {
 	}
 }
 
+export function clearSeenAchievements(userId: string | undefined): void {
+	try {
+		localStorage.removeItem(seenKeyFor(userId));
+	} catch {
+		// ignore storage errors
+	}
+}
+
 export function useAchievementNotifier() {
 	const auth = useAuth();
 	const api = useApiClient();

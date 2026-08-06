@@ -39,6 +39,8 @@ internal sealed class DeleteMyAccountCommandHandler(
 		await dbContext.RemoveMembershipsForUserAsync(request.UserId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteInvitationsForUserAsync(request.UserId, cancellationToken);
+		await dbContext.DeleteSearchAlertForUserAsync(request.UserId, cancellationToken);
+		await dbContext.DeleteReportsForReporterAsync(request.UserId, cancellationToken);
 
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 		if (user is not null)
