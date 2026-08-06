@@ -31,7 +31,7 @@ void i18next
 	.use(LanguageDetector)
 	.use(initReactI18next)
 	.init({
-		fallbackLng: "en",
+		fallbackLng: "de",
 		supportedLngs: ["de", "en"],
 		detection: {
 			order: ["localStorage", "navigator"],
