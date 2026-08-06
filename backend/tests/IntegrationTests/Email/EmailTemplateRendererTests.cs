@@ -32,6 +32,7 @@ public class EmailTemplateRendererTests
 				["OrganizationName"] = "Beach Cleanup Crew",
 				["Count"] = "2",
 				["OpportunitiesList"] = "- Beach Cleanup\n- Park Cleanup",
+				["UnsubscribeUrl"] = "https://example.com/unsubscribe",
 			};
 
 			var content = _sut.Render(kind, language, placeholders);

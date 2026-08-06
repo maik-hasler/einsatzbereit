@@ -1770,9 +1770,6 @@ export class EinsatzbereitApi {
         return Promise.resolve<NotificationPreferencesResponse>(null as any);
     }
 
-    /**
-     * @return OK
-     */
     unsubscribe(userId: string, type: string, token: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/users/{userId}/unsubscribe?";
         if (userId === undefined || userId === null)
@@ -1803,9 +1800,9 @@ export class EinsatzbereitApi {
     protected processUnsubscribe(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 302) {
             return response.text().then((_responseText) => {
-            return;
+            return throwException("Found", status, _responseText, _headers);
             });
         } else if (status === 400) {
             return response.text().then((_responseText) => {

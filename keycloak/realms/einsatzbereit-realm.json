@@ -1,6 +1,8 @@
 {
   "realm": "einsatzbereit",
   "enabled": true,
+  "displayName": "Einsatzbereit",
+  "displayNameHtml": "<b>Einsatzbereit</b>",
   "organizationsEnabled": true,
   "sslRequired": "external",
   "loginTheme": "einsatzbereit",

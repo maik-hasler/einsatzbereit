@@ -19,7 +19,6 @@
       "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
-      "accountSettings": "Kontoeinstellungen",
       "administration": "Administration",
       "organization": "Organisation",
       "signOut": "Abmelden",
@@ -817,7 +816,8 @@
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",
         "InvitationAccepted": "Deine Einladung, {{title}} beizutreten, wurde angenommen",
         "InvitationDeclined": "Deine Einladung, {{title}} beizutreten, wurde abgelehnt",
-        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}"
+        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}",
+        "NewMatchingOpportunity": "Ein neuer Einsatz passt zu deiner gespeicherten Suche: {{title}}"
       }
     },
     "language": {
@@ -834,6 +834,11 @@
       "title": "Seite nicht gefunden",
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
+    },
+    "unsubscribe": {
+      "title": "Du wurdest abgemeldet",
+      "description": "Du hast diese Art von E-Mail abbestellt. Du kannst sie jederzeit in deinen Benachrichtigungseinstellungen im Profil wieder aktivieren.",
+      "manageInProfile": "Benachrichtigungseinstellungen verwalten"
     },
     "report": {
       "title": "Inhalt melden",

@@ -59,7 +59,7 @@ internal sealed class EngagementConfirmedNotificationHandler(
 		await emailService.SendAsync(
 			volunteer.Email,
 			content.Subject,
-			EmailFooter.Append(content.Body, unsubscribeUrl),
+			EmailFooter.Append(emailTemplateRenderer, volunteerLanguage, content.Body, unsubscribeUrl),
 			notification.EngagementId.Value.ToString(),
 			cancellationToken);
 	}

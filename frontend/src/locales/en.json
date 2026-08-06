@@ -19,7 +19,6 @@
       "primaryLabel": "Main navigation",
       "userMenu": "User menu",
       "myProfile": "My Profile",
-      "accountSettings": "Account Settings",
       "administration": "Administration",
       "organization": "Organization",
       "signOut": "Sign out",
@@ -817,7 +816,8 @@
         "InvitationReceived": "You've been invited to join {{title}}",
         "InvitationAccepted": "Your invitation to join {{title}} was accepted",
         "InvitationDeclined": "Your invitation to join {{title}} was declined",
-        "FeedbackSubmitted": "New feedback received for {{title}}"
+        "FeedbackSubmitted": "New feedback received for {{title}}",
+        "NewMatchingOpportunity": "A new opportunity matches your saved search: {{title}}"
       }
     },
     "language": {
@@ -834,6 +834,11 @@
       "title": "Page not found",
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
+    },
+    "unsubscribe": {
+      "title": "You've been unsubscribed",
+      "description": "You have been unsubscribed from this type of email. You can re-enable it any time from your notification preferences in your profile.",
+      "manageInProfile": "Manage notification preferences"
     },
     "report": {
       "title": "Report content",
