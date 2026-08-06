@@ -115,7 +115,9 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
 		// Created as a draft: a ScheduledSlots opportunity can't be published
-		// until it has at least one time slot.
+		// until it has at least one time slot. ValidUntil is omitted - it is
+		// only allowed for IndividualContact opportunities (VolunteerOpportunity.
+		// Create rejects a non-null ValidUntil for any other participation type).
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
 			title = $"{label} {suffix}",
@@ -125,7 +127,6 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 			occurrence = "OneTime",
 			participationType = "ScheduledSlots",
 			checkInMethod = "None",
-			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = true,
 		});
 		oppResponse.EnsureSuccessStatusCode();
