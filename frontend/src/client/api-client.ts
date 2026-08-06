@@ -1770,9 +1770,6 @@ export class EinsatzbereitApi {
         return Promise.resolve<NotificationPreferencesResponse>(null as any);
     }
 
-    /**
-     * @return OK
-     */
     unsubscribe(userId: string, type: string, token: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/users/{userId}/unsubscribe?";
         if (userId === undefined || userId === null)
@@ -1803,9 +1800,9 @@ export class EinsatzbereitApi {
     protected processUnsubscribe(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 302) {
             return response.text().then((_responseText) => {
-            return;
+            return throwException("Found", status, _responseText, _headers);
             });
         } else if (status === 400) {
             return response.text().then((_responseText) => {
@@ -2363,8 +2360,8 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getMyEngagementRecord(signal?: AbortSignal): Promise<EngagementRecordEntry[]> {
-        let url_ = this.baseUrl + "/v1/users/me/engagement-record";
+    exportMyData(signal?: AbortSignal): Promise<UserDataExportResponse> {
+        let url_ = this.baseUrl + "/v1/users/me/export";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -2376,17 +2373,17 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetMyEngagementRecord(_response);
+            return this.processExportMyData(_response);
         });
     }
 
-    protected processGetMyEngagementRecord(response: Response): Promise<EngagementRecordEntry[]> {
+    protected processExportMyData(response: Response): Promise<UserDataExportResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementRecordEntry[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as UserDataExportResponse;
             return result200;
             });
         } else if (status === 401) {
@@ -2406,7 +2403,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<EngagementRecordEntry[]>(null as any);
+        return Promise.resolve<UserDataExportResponse>(null as any);
     }
 
     /**
@@ -6597,17 +6594,6 @@ export interface DomainEvent {
     [key: string]: any;
 }
 
-export interface EngagementRecordEntry {
-    engagementId: string;
-    opportunityTitle: string | undefined;
-    organizationName: string | undefined;
-    startDateTime: Date;
-    endDateTime: Date;
-    hours: number;
-
-    [key: string]: any;
-}
-
 export interface EngagementStatusResponse {
     id: string;
     status: string;
@@ -6797,6 +6783,14 @@ export interface OrganizationMemberDto {
     lastName: string | undefined;
     email: string;
     isOrganisator: boolean;
+    role: string;
+
+    [key: string]: any;
+}
+
+export interface OrganizationMembershipSummary {
+    organizationId: string;
+    organizationName: string;
     role: string;
 
     [key: string]: any;
@@ -7158,6 +7152,33 @@ export interface UpdateVolunteerOpportunityRequest {
     tags: string[] | undefined;
     checkInPin: string | undefined;
     validUntil: Date | undefined;
+
+    [key: string]: any;
+}
+
+export interface UserDataExportProfile {
+    id: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
+    avatarUrl: string | undefined;
+    bio: string | undefined;
+    phone: string | undefined;
+    skills: string[];
+    languages: string[];
+    preferredContact: string | undefined;
+    preferredLanguage: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface UserDataExportResponse {
+    profile: UserDataExportProfile;
+    engagements: EngagementSummary[];
+    achievements: AchievementSummary[];
+    streak: StreakSummary;
+    organizationMemberships: OrganizationMembershipSummary[];
 
     [key: string]: any;
 }

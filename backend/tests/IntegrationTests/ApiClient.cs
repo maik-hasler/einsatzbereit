@@ -168,7 +168,6 @@ namespace IntegrationTests
         System.Threading.Tasks.Task<NotificationPreferencesResponse> GetNotificationPreferencesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task UnsubscribeAsync(System.Guid userId, string type, System.Guid token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
@@ -220,7 +219,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<EngagementRecordEntry>> GetMyEngagementRecordAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<UserDataExportResponse> ExportMyDataAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
@@ -3665,7 +3664,6 @@ namespace IntegrationTests
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task UnsubscribeAsync(System.Guid userId, string type, System.Guid token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
@@ -3720,9 +3718,10 @@ namespace IntegrationTests
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
+                        if (status_ == 302)
                         {
-                            return;
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Found", status_, responseText_, headers_, null);
                         }
                         else
                         if (status_ == 400)
@@ -3753,6 +3752,13 @@ namespace IntegrationTests
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+
+                        if (status_ == 200 || status_ == 204)
+                        {
+
+                            return;
                         }
                         else
                         {
@@ -4728,7 +4734,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<EngagementRecordEntry>> GetMyEngagementRecordAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<UserDataExportResponse> ExportMyDataAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4741,8 +4747,8 @@ namespace IntegrationTests
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "v1/users/me/engagement-record"
-                    urlBuilder_.Append("v1/users/me/engagement-record");
+                    // Operation Path: "v1/users/me/export"
+                    urlBuilder_.Append("v1/users/me/export");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -4769,7 +4775,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<EngagementRecordEntry>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<UserDataExportResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -12912,44 +12918,6 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class EngagementRecordEntry
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("engagementId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid EngagementId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("opportunityTitle")]
-        public string? OpportunityTitle { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
-        public string? OrganizationName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("startDateTime")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset StartDateTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("endDateTime")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset EndDateTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("hours")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
-        public double Hours { get; set; } = default!;
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EngagementStatusResponse
     {
 
@@ -13568,6 +13536,33 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("isOrganisator")]
         public bool IsOrganisator { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("role")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Role { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OrganizationMembershipSummary
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid OrganizationId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OrganizationName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("role")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -14766,6 +14761,97 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
         public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UserDataExportProfile
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("username")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Username { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("firstName")]
+        public string? FirstName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("lastName")]
+        public string? LastName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Email { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("avatarUrl")]
+        public string? AvatarUrl { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("bio")]
+        public string? Bio { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("phone")]
+        public string? Phone { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("skills")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Skills { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("languages")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Languages { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("preferredContact")]
+        public string? PreferredContact { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("preferredLanguage")]
+        public string? PreferredLanguage { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UserDataExportResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("profile")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public UserDataExportProfile Profile { get; set; } = new UserDataExportProfile();
+
+        [System.Text.Json.Serialization.JsonPropertyName("engagements")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<EngagementSummary> Engagements { get; set; } = new System.Collections.ObjectModel.Collection<EngagementSummary>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("achievements")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<AchievementSummary> Achievements { get; set; } = new System.Collections.ObjectModel.Collection<AchievementSummary>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("streak")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public StreakSummary Streak { get; set; } = new StreakSummary();
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationMemberships")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<OrganizationMembershipSummary> OrganizationMemberships { get; set; } = new System.Collections.ObjectModel.Collection<OrganizationMembershipSummary>();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

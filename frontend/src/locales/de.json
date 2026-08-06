@@ -19,7 +19,6 @@
       "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
-      "accountSettings": "Kontoeinstellungen",
       "administration": "Administration",
       "organization": "Organisation",
       "signOut": "Abmelden",
@@ -183,6 +182,7 @@
       "loginPrompt": "Melde dich an, um dich für diesen Einsatz anzumelden.",
       "yourApplication": "Deine Anmeldung",
       "aboutOrganization": "Über diese Organisation",
+      "aboutOrganizationLoadError": "Die Kontaktdaten dieser Organisation konnten nicht geladen werden.",
       "moreFromOrganization": "Weitere Angebote dieser Organisation",
       "postedToday": "Heute veröffentlicht",
       "postedDaysAgo": "Vor {{count}} Tagen veröffentlicht",
@@ -339,12 +339,14 @@
       "create": "Organisation erstellen",
       "switchLabel": "Organisation wechseln",
       "selectPlaceholder": "Organisation wählen",
+      "loadError": "Deine Organisationen konnten nicht geladen werden.",
       "nameLabel": "Name",
       "namePlaceholder": "z.B. Freiwillige Feuerwehr Musterstadt",
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
+      "logoUploadFailedWarning": "Organisation erstellt, Logo konnte nicht hochgeladen werden - du kannst es in den Einstellungen nachtragen.",
       "unsavedChangesTitle": "Nicht gespeicherte Änderungen verwerfen?",
       "unsavedChangesMessage": "Du hast nicht gespeicherte Änderungen an dieser Organisation. Wenn du jetzt schließt, gehen sie verloren.",
       "discardChanges": "Änderungen verwerfen"
@@ -480,6 +482,7 @@
       "inviteError": "Einladung konnte nicht gesendet werden.",
       "inviteSent": "Einladung gesendet.",
       "pendingInvitations": "Ausstehende Einladungen",
+      "pendingInvitationsLoadError": "Ausstehende Einladungen konnten nicht geladen werden.",
       "declinedInvitations": "Abgelehnte Einladungen",
       "expiredInvitations": "Abgelaufene Einladungen",
       "dismissInvitation": "Entfernen",
@@ -522,6 +525,7 @@
       "submit": "Feedback absenden",
       "submitting": "Wird gesendet…",
       "cancel": "Abbrechen",
+      "error": "{{message}}",
       "submitError": "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
       "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
       "itemRatingLabel": "{{rating}} von 5 Sternen",
@@ -594,7 +598,6 @@
       "addToCalendarOutlook": "Outlook.com",
       "addToCalendarApple": "Apple Kalender",
       "addToCalendarDownload": ".ics herunterladen",
-      "viewRecord": "Nachweis ansehen",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",
@@ -606,6 +609,8 @@
       "title": "Anmeldungen verwalten",
       "loading": "Wird geladen…",
       "error": "{{message}}",
+      "opportunityLoadError": "Die Details zu diesem Einsatz konnten nicht geladen werden.",
+      "checkInPinLoadError": "Die Check-in-PIN konnte nicht geladen werden.",
       "noApplications": "Noch keine Anmeldungen.",
       "noApplicationsHint": "Sobald sich Freiwillige für diesen Einsatz anmelden, erscheinen sie hier.",
       "noResults": "Keine Anmeldungen entsprechen den Filtern.",
@@ -794,6 +799,7 @@
       "markAllRead": "Alle als gelesen markieren",
       "clearRead": "Gelesene löschen",
       "clearReadError": "Gelesene Benachrichtigungen konnten nicht gelöscht werden.",
+      "loadError": "Benachrichtigungen konnten nicht geladen werden.",
       "empty": "Keine Benachrichtigungen.",
       "loadMore": "Mehr laden",
       "loadingMore": "Lädt…",
@@ -815,7 +821,8 @@
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",
         "InvitationAccepted": "Deine Einladung, {{title}} beizutreten, wurde angenommen",
         "InvitationDeclined": "Deine Einladung, {{title}} beizutreten, wurde abgelehnt",
-        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}"
+        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}",
+        "NewMatchingOpportunity": "Ein neuer Einsatz passt zu deiner gespeicherten Suche: {{title}}"
       }
     },
     "language": {
@@ -832,6 +839,11 @@
       "title": "Seite nicht gefunden",
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
+    },
+    "unsubscribe": {
+      "title": "Du wurdest abgemeldet",
+      "description": "Du hast diese Art von E-Mail abbestellt. Du kannst sie jederzeit in deinen Benachrichtigungseinstellungen im Profil wieder aktivieren.",
+      "manageInProfile": "Benachrichtigungseinstellungen verwalten"
     },
     "report": {
       "title": "Inhalt melden",
@@ -956,21 +968,6 @@
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
-    },
-    "engagementRecord": {
-      "title": "Engagement-Nachweis",
-      "subtitle": "Ein Nachweis deiner bestätigten Einsätze - zum Ausdrucken oder als PDF speichern.",
-      "backToProfile": "Zurück zum Profil",
-      "printButton": "Drucken / Als PDF speichern",
-      "loading": "Wird geladen…",
-      "loadError": "Dein Engagement-Nachweis konnte nicht geladen werden.",
-      "noEntries": "Noch keine bestätigten Einsätze.",
-      "noEntriesHint": "Sobald du bei einem Einsatz eingecheckt hast, erscheint er hier.",
-      "columnDate": "Datum",
-      "columnOrganization": "Organisation",
-      "columnOpportunity": "Einsatz",
-      "columnHours": "Stunden",
-      "totalHours": "Gesamtstunden: {{hours}}"
     },
     "invitations": {
       "loadError": "Einladungen konnten nicht geladen werden.",

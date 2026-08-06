@@ -15,7 +15,6 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
-import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -228,7 +227,11 @@ export default function OrgEngagementsPage() {
 				</div>
 			)}
 			{error && (
-				<ErrorBanner message={t("orgEngagements.error", { message: error })} />
+				<LoadMoreError
+					message={t("orgEngagements.error", { message: error })}
+					retrying={loading}
+					onRetry={retryLoadMore}
+				/>
 			)}
 
 			{!loading &&

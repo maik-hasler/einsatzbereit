@@ -104,6 +104,9 @@ const EMAIL_TEMPLATE_ALLOWED_IDENTICAL_KEYS = new Set([
 	// A reason suffix appended into another template's body - it has no
 	// subject line of its own, so both languages leave it empty.
 	"EngagementCancelledReasonSuffix.subject",
+	// Same as above - a body-only fragment (the unsubscribe line) spliced into
+	// every other outgoing template, with no subject line of its own.
+	"EmailFooter.subject",
 ]);
 
 // Keys that interpolate {{count}} but never need a plural form: the

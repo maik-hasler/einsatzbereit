@@ -53,6 +53,8 @@ export default function EngagementManagementPage() {
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
+	const [opportunityError, setOpportunityError] = useState<string | null>(null);
+	const [retryingOpportunity, setRetryingOpportunity] = useState(false);
 	usePageTitle(
 		opportunity?.title
 			? `${t("engagementManagement.title")} - ${opportunity.title}`
@@ -82,6 +84,8 @@ export default function EngagementManagementPage() {
 		feedbackCount: number;
 	} | null>(null);
 	const [checkInPin, setCheckInPin] = useState<string | null>(null);
+	const [checkInPinError, setCheckInPinError] = useState<string | null>(null);
+	const [retryingCheckInPin, setRetryingCheckInPin] = useState(false);
 	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
@@ -304,6 +308,7 @@ export default function EngagementManagementPage() {
 		error: feedbackError,
 		hasMore: hasMoreFeedback,
 		loadMore: loadMoreFeedback,
+		retryLoadMore: retryLoadMoreFeedback,
 	} = useLoadMore<FeedbackItemDto>(async (page) => {
 		if (!opportunityId) return { items: [], pageCount: 0 };
 		const result = await api.getOpportunityFeedback(
@@ -318,16 +323,35 @@ export default function EngagementManagementPage() {
 		return { items: result.items.items, pageCount: result.items.pageCount };
 	});
 
-	useEffect(() => {
-		if (!opportunityId) return;
-		api
+	function loadOpportunity() {
+		if (!opportunityId) return Promise.resolve();
+		return api
 			.getVolunteerOpportunityDetails(opportunityId)
-			.then(setOpportunity)
-			.catch(() => undefined);
+			.then((data) => {
+				setOpportunity(data);
+				setOpportunityError(null);
+			})
+			.catch((err) => {
+				setOpportunityError(
+					getApiErrorMessage(
+						err,
+						t("engagementManagement.opportunityLoadError"),
+					),
+				);
+			});
+	}
+
+	useEffect(() => {
+		loadOpportunity();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
 
-	useEffect(() => {
+	function retryLoadOpportunity() {
+		setRetryingOpportunity(true);
+		loadOpportunity().finally(() => setRetryingOpportunity(false));
+	}
+
+	function loadCheckInPin() {
 		// The check-in PIN is an organizer tool for admitting volunteers - a
 		// plain Member would just get a 403 here, so skip the doomed request.
 		if (
@@ -335,13 +359,32 @@ export default function EngagementManagementPage() {
 			!isOrganizer ||
 			opportunity?.checkInMethod !== "PINCode"
 		)
-			return;
-		api
+			return Promise.resolve();
+		return api
 			.getOpportunityCheckInPin(opportunityId)
-			.then(setCheckInPin)
-			.catch(() => undefined);
+			.then((pin) => {
+				setCheckInPin(pin);
+				setCheckInPinError(null);
+			})
+			.catch((err) => {
+				setCheckInPinError(
+					getApiErrorMessage(
+						err,
+						t("engagementManagement.checkInPinLoadError"),
+					),
+				);
+			});
+	}
+
+	useEffect(() => {
+		loadCheckInPin();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId, isOrganizer, opportunity?.checkInMethod]);
+
+	function retryLoadCheckInPin() {
+		setRetryingCheckInPin(true);
+		loadCheckInPin().finally(() => setRetryingCheckInPin(false));
+	}
 
 	// Confirming/checking a volunteer in swaps the row's button pair for a
 	// different one (Pending's Confirm/Cancel -> Confirmed's Revoke, or
@@ -515,6 +558,14 @@ export default function EngagementManagementPage() {
 
 	return (
 		<>
+			{opportunityError && (
+				<LoadMoreError
+					message={opportunityError}
+					retrying={retryingOpportunity}
+					onRetry={retryLoadOpportunity}
+				/>
+			)}
+
 			{checkInMethod === "PINCode" && checkInPin && (
 				<div className="mb-6 rounded-card border border-brand-200 bg-brand-50 p-4">
 					<p className="text-sm font-medium text-brand-900">
@@ -527,6 +578,14 @@ export default function EngagementManagementPage() {
 						{t("checkIn.organizerPinHint")}
 					</p>
 				</div>
+			)}
+
+			{checkInMethod === "PINCode" && !checkInPin && checkInPinError && (
+				<LoadMoreError
+					message={checkInPinError}
+					retrying={retryingCheckInPin}
+					onRetry={retryLoadCheckInPin}
+				/>
 			)}
 
 			{showQrScanner && (
@@ -640,8 +699,10 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 			{error && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("engagementManagement.error", { message: error })}
+					retrying={loading}
+					onRetry={retryLoadMoreEngagements}
 				/>
 			)}
 
@@ -989,7 +1050,7 @@ export default function EngagementManagementPage() {
 				</ConfirmDialog>
 			)}
 
-			{feedbackStats !== null && (
+			{feedbackStats !== null ? (
 				<section className="mt-8">
 					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
 					{feedbackStats.feedbackCount === 0 ? (
@@ -1051,7 +1112,16 @@ export default function EngagementManagementPage() {
 						</>
 					)}
 				</section>
-			)}
+			) : feedbackError ? (
+				<section className="mt-8">
+					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
+					<LoadMoreError
+						message={t("feedback.error", { message: feedbackError })}
+						retrying={feedbackLoading}
+						onRetry={retryLoadMoreFeedback}
+					/>
+				</section>
+			) : null}
 		</>
 	);
 }

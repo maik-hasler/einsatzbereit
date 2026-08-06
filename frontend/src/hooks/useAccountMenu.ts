@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,9 @@ export interface AccountMenuState {
 	notifHasMore: boolean;
 	notifLoadingMore: boolean;
 	loadMoreNotifications: () => Promise<void>;
+	notifError: string | null;
+	notifLoading: boolean;
+	retryNotifications: () => Promise<void>;
 	notifOpen: boolean;
 	setNotifOpen: Dispatch<SetStateAction<boolean>>;
 	notifRef: RefObject<HTMLDivElement | null>;
@@ -51,6 +54,8 @@ export function useAccountMenu(
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
 	const [notifHasMore, setNotifHasMore] = useState(false);
 	const [notifLoadingMore, setNotifLoadingMore] = useState(false);
+	const [notifError, setNotifError] = useState<string | null>(null);
+	const [notifLoading, setNotifLoading] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [deletingAllRead, setDeletingAllRead] = useState(false);
 	const dropdownRef = useDismissableOverlay<HTMLDivElement>(dropdownOpen, () =>
@@ -144,25 +149,36 @@ export function useAccountMenu(
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 
+	// Guards against a stale request (e.g. the dropdown was closed and
+	// reopened while the first fetch was still in flight) overwriting a
+	// fresher one that resolved first.
+	const notifRequestRef = useRef(0);
+
+	async function loadNotifications() {
+		const requestId = ++notifRequestRef.current;
+		setNotifLoading(true);
+		setNotifError(null);
+		try {
+			const result = await api.getMyNotifications(undefined, undefined);
+			if (requestId !== notifRequestRef.current) return;
+			setNotifications(result.items);
+			setNotifHasMore(result.hasMore);
+			setNotifError(null);
+		} catch (err) {
+			if (requestId !== notifRequestRef.current) return;
+			setNotifError(getApiErrorMessage(err, t("notifications.loadError")));
+		} finally {
+			if (requestId === notifRequestRef.current) setNotifLoading(false);
+		}
+	}
+
 	useEffect(() => {
 		if (!notifOpen || !isLoggedIn) return;
-		let cancelled = false;
-		void (async () => {
-			try {
-				const result = await api.getMyNotifications(undefined, undefined);
-				if (!cancelled) {
-					setNotifications(result.items);
-					setNotifHasMore(result.hasMore);
-				}
-			} catch {
-				// silently ignore fetch errors
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
+		void loadNotifications();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [notifOpen, isLoggedIn]);
+
+	const retryNotifications = loadNotifications;
 
 	async function loadMoreNotifications() {
 		if (notifications.length === 0 || notifLoadingMore) return;
@@ -263,6 +279,9 @@ export function useAccountMenu(
 		notifHasMore,
 		notifLoadingMore,
 		loadMoreNotifications,
+		notifError,
+		notifLoading,
+		retryNotifications,
 		notifOpen,
 		setNotifOpen,
 		notifRef,

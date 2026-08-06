@@ -42,8 +42,13 @@ internal sealed class ExportEngagementsEndpoint : IEndpoint
 			new ExportEngagementsQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId),
 			cancellationToken);
 
+		// A UTF-8 BOM (#1675) - without it, Excel on a German Windows install
+		// guesses the ANSI codepage instead of UTF-8 and mangles every umlaut
+		// ("Müller" -> "MÃ¼ller") in a volunteer's name.
+		byte[] bytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(file.Content)];
+
 		return Results.File(
-			Encoding.UTF8.GetBytes(file.Content),
+			bytes,
 			contentType: "text/csv; charset=utf-8",
 			fileDownloadName: file.FileName);
 	}

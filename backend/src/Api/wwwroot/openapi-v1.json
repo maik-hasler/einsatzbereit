@@ -1999,8 +1999,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "302": {
+            "description": "Found"
           },
           "400": {
             "description": "Bad Request",
@@ -2575,22 +2575,19 @@
         }
       }
     },
-    "/v1/users/me/engagement-record": {
+    "/v1/users/me/export": {
       "get": {
         "tags": [
           "Users"
         ],
-        "operationId": "GetMyEngagementRecord",
+        "operationId": "ExportMyData",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EngagementRecordEntry"
-                  }
+                  "$ref": "#/components/schemas/UserDataExportResponse"
                 }
               }
             }
@@ -8015,51 +8012,6 @@
       "DomainEvent": {
         "type": "object"
       },
-      "EngagementRecordEntry": {
-        "required": [
-          "engagementId",
-          "opportunityTitle",
-          "organizationName",
-          "startDateTime",
-          "endDateTime",
-          "hours"
-        ],
-        "type": "object",
-        "properties": {
-          "engagementId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "opportunityTitle": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "organizationName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "startDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "hours": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          }
-        }
-      },
       "EngagementStatusResponse": {
         "required": [
           "id",
@@ -8811,6 +8763,26 @@
           },
           "isOrganisator": {
             "type": "boolean"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationMembershipSummary": {
+        "required": [
+          "organizationId",
+          "organizationName",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationName": {
+            "type": "string"
           },
           "role": {
             "type": "string"
@@ -10247,6 +10219,125 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "UserDataExportProfile": {
+        "required": [
+          "id",
+          "username",
+          "firstName",
+          "lastName",
+          "email",
+          "avatarUrl",
+          "bio",
+          "phone",
+          "skills",
+          "languages",
+          "preferredContact",
+          "preferredLanguage"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredContact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "preferredLanguage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UserDataExportResponse": {
+        "required": [
+          "profile",
+          "engagements",
+          "achievements",
+          "streak",
+          "organizationMemberships"
+        ],
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/UserDataExportProfile"
+          },
+          "engagements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EngagementSummary"
+            }
+          },
+          "achievements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementSummary"
+            }
+          },
+          "streak": {
+            "$ref": "#/components/schemas/StreakSummary"
+          },
+          "organizationMemberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipSummary"
+            }
           }
         }
       },

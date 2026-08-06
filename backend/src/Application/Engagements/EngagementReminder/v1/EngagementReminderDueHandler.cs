@@ -79,7 +79,7 @@ internal sealed class EngagementReminderDueHandler(
 			notification.VolunteerId, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementReminder);
 
 		var subject = content.Subject;
-		var body = EmailFooter.Append(content.Body, unsubscribeUrl);
+		var body = EmailFooter.Append(emailTemplateRenderer, language, content.Body, unsubscribeUrl);
 
 		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
 		// is observable as a bool - SendAsync never throws and never reports outcome,
