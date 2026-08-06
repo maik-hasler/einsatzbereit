@@ -285,13 +285,11 @@ export function useWidgetPlacement({
 
 		// #1402: a real pointer/mouse can fire pointermove far more often than
 		// the browser actually paints (well past 60-120Hz on a high-polling-
-		// rate mouse or trackpad), and each call used to setDragPreview
-		// synchronously - re-rendering OrgDashboardPage, and with it every one
-		// of the up to 832 grid-guide backdrop cells, once per raw event
-		// instead of once per displayed frame. rafId batches every pointermove
-		// that arrives between two frames into a single state update, so the
-		// preview still tracks the pointer smoothly but the backdrop only
-		// re-renders as often as the screen can actually show it.
+		// rate mouse or trackpad). rafId batches every pointermove that arrives
+		// between two frames into a single state update, so the preview still
+		// tracks the pointer smoothly but OrgDashboardPage - and with it every
+		// one of the up to 832 grid-guide backdrop cells - only re-renders as
+		// often as the screen can actually show it.
 		let rafId: number | null = null;
 		let pendingRect: PlacedWidget | null = null;
 

@@ -48,10 +48,9 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserHasNoRelationToTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// #1024: GetOrganizationDetails is readable by any member (Organizer or
-		// Member), not just organizers - so this proves the true "stranger" case
-		// against a real org, rather than the old role-claim gate (removed) that
-		// used to reject every non-organizer before the handler even ran.
+		// #1024: GetOrganizationDetails is readable by any org member, not just
+		// organizers - vera has no relation to the org at all here, to prove
+		// the true "stranger" 403 case.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
@@ -68,9 +67,6 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldSucceed_WhenRequestingUserIsAPlainMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their own organization's details -
-		// this used to 403 (only Organizer could), locking Members out of the
-		// org entirely with no way to even see it.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -265,11 +261,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
 
 		// olaf's org gains vera as a plain member - never promoted to Organizer
-		// of this specific org. (Accepting an invitation now also grants
-		// Organizer capability on the invited org - #826 - so that flow no
-		// longer produces a plain-member-only state and can't be used to set
-		// this scenario up anymore; the admin-only AddMember endpoint that
-		// used to fill this gap was removed as dead code - #810.)
+		// of this specific org.
 		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var act = () => veraClient.UpdateOrganizationAsync(
@@ -885,12 +877,7 @@ public class OrganizationSettingsTests(
 		// Organizer. The old guard only blocked removal when the org had
 		// exactly one member in total, so the organizer here could leave and
 		// permanently orphan the org, since no path exists to promote the
-		// remaining member. (Accepting an invitation now also grants
-		// Organizer capability - #826 - so that flow no longer produces a
-		// plain-member-only state; the fixture's direct Keycloak escape hatch
-		// is used here instead to reconstruct it, since the admin-only
-		// AddMember endpoint that used to fill this gap was removed as dead
-		// code - #810.)
+		// remaining member.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);

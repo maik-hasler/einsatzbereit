@@ -61,9 +61,8 @@ public class UpdateUserProfileCommandHandlerTests
 	public async Task Handle_ShouldSetPhone_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
-		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync
-		// rather than a check-then-Add the handler used to do itself - the handler
-		// doesn't know or care whether the returned row was just created.
+		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync -
+		// the handler doesn't know or care whether the returned row was just created.
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);

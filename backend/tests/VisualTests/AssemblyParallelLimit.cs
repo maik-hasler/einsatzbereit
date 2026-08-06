@@ -1,53 +1,19 @@
 using TUnit.Core.Interfaces;
 
-// Root cause of a class of flaky VisualTests failures (e.g. #1339): with no
-// parallelism limit anywhere in this project (AccessibilityTests alone has
-// ~50 test methods, none tagged [NotInParallel]), TUnit's default - "every
-// test is eligible to run concurrently, the .NET thread pool decides how many
-// at once" - let a standard CI runner spin up 16+ concurrent Chromium/
-// Playwright instances, each driving axe-core's CPU-heavy DOM scan, all
-// against one shared Aspire-hosted stack (SharedType.PerTestSession). That
-// sustained contention, not a brief blip, is what made individual tests
-// intermittently time out waiting on UI state - a problem retrying a failed
-// test can't fix, since a retry lands in the same still-contended run.
+// All VisualTests classes share one Aspire-hosted stack (SharedType.PerTestSession);
+// without a cap, TUnit runs every test concurrently and CPU contention among the
+// Playwright/axe-core sessions (not backend slowness) causes intermittent timeouts
+// that retries can't fix. Environment.ProcessorCount - 2 rather than ProcessorCount:
+// the same cores also have to service the stack itself (Postgres, Keycloak, API,
+// frontend dev server) that every concurrent session calls into, so headroom must
+// stay reserved for it. ProcessorCount rather than a hardcoded number so this scales
+// with whatever runner or dev machine it runs on.
 //
-// suite. Capping at exactly Environment.ProcessorCount (as this used to)
-// still starves the Aspire-hosted stack itself: dotnet.yml's visual-tests
-// job runs on ubuntu-latest (4 vCPUs), and those same cores also have to
-// service the stack (Postgres, Keycloak, backend API, frontend dev server)
-// that every one of the N concurrent Playwright sessions is calling into,
-// not just the N browser/axe-core processes - e.g.
-// AccessibilityTests.OrgDashboardPage_PlacingAWidget_AsOlaf and
-// EngagementManagementPage_AsOlaf both timed out waiting on the same
-// GET /v1/organizations round trip in the same CI run (2026-07-28). Reserving
-// one core for the stack itself is a structural fix for that class of flake,
-// as opposed to the timeout bumps this file's sibling comments already flag
-// as running out of headroom. Environment.ProcessorCount rather than a
-// hardcoded number so this scales with whatever runner size CI happens to
-// use, and with a larger local dev machine.
-//
-// Reserving just one core still wasn't enough: on 2026-07-29, three
-// AccessibilityTests methods (OrgDashboardPage_PlacingAWidget_AsOlaf,
-// EngagementManagementPage_AsOlaf, OrganizationSettingsPage_
-// EditModeValidationError_AsOlaf - the single heaviest class in the suite,
-// every method paying for a Page.RunAxe() DOM scan on top of the Chromium
-// work every other test already does) hit this limit's cap of 3 concurrently
-// and all three sat in the runner's "[slow] still running after 1m 00s" log
-// at once; one blew past a 30s Playwright action timeout on a plain input
-// fill (no network call involved), meaning it was CPU-starved, not
-// backend-starved. The obvious-looking fix - give AccessibilityTests its own,
-// tighter [ParallelLimiter<T>] at the class level on top of this assembly-wide
-// one - does NOT work: verified empirically (throwaway TUnit project, two
-// classes, one assembly-level limiter plus one class-level limiter on the
-// second class, tests recording their own peak concurrency) that when both an
-// assembly-level and a class-level ParallelLimiter apply to the same test,
-// TUnit 1.34.5 honors only the assembly-level one - the class-level cap is
-// silently ignored, in both directions (a looser assembly limit lets the
-// class exceed its own tighter one; a tighter assembly limit overrides a
-// looser class one). A class-level-only fix would have shipped as a
-// no-op that still passes the build. Reduce the shared limit itself instead -
-// this does cost the whole suite a slightly lower ceiling, not just the
-// heaviest class, but it's the one lever that's actually proven to work.
+// Do not add a class-level [ParallelLimiter<T>] (e.g. on AccessibilityTests) expecting
+// it to layer a tighter cap on top of this one: TUnit 1.34.5 honors only the
+// assembly-level limiter when both apply to the same test, silently ignoring the
+// class-level one (verified empirically). Lower this shared limit instead if a
+// particular suite needs more headroom.
 [assembly: ParallelLimiter<VisualTestsParallelLimit>]
 
 public sealed class VisualTestsParallelLimit : IParallelLimit

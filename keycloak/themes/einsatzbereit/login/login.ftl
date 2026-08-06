@@ -10,7 +10,6 @@
 		<#if realm.password>
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
-				<#-- Username / Email -->
 				<div class="form-group">
 					<div class="form-field">
 						<input
@@ -42,7 +41,6 @@
 					</#if>
 				</div>
 
-				<#-- Password -->
 				<div class="form-group">
 					<div class="form-field form-field--with-toggle">
 						<input
@@ -72,7 +70,6 @@
 					</div>
 				</div>
 
-				<#-- Remember me + forgot password -->
 				<div id="kc-form-options" class="form-options">
 					<div class="form-options-wrapper">
 						<#if realm.rememberMe>
@@ -87,7 +84,6 @@
 					</#if>
 				</div>
 
-				<#-- Submit button -->
 				<div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
 					<input
 						tabindex="7"

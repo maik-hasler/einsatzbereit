@@ -1,9 +1,7 @@
 // asciidoc settings for EN (English)
-// =====================================
 // toc-title definition MUST follow document title without blank line!
 :toc-title: Table of Contents
 
-// enable table-of-contents
 :toc:
 
 :caution-caption: Caution
@@ -17,6 +15,5 @@
 :figure-caption: Figure
 :table-caption: Table
 
-// where are images located?
 :imagesdir: {docdir}/images
 :arc42help:

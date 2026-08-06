@@ -63,10 +63,7 @@ public class MarkAllNotificationsReadCommandHandlerTests
 	public async Task Handle_ShouldOnlyAffectTheRequestingUsersOwnNotifications(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the repository query itself is scoped to recipientId - this
-		// asserts the handler passes the command's own RecipientId through
-		// rather than some other identity, so a caller can never mark another
-		// user's notifications as read.
+		// Arrange
 		var recipientId = UserId.New();
 		var otherUsersId = UserId.New();
 		_dbContext.GetUnreadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>())

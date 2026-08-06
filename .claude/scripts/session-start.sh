@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install .NET 10 SDK if dotnet is not on PATH
 if ! command -v dotnet &>/dev/null; then
 	DOTNET_SDK_VERSION=$(grep -o '"version": *"[^"]*"' backend/global.json | head -1 | sed -E 's/.*"([0-9.]+)".*/\1/')
 	echo "[SessionStart] dotnet not found - installing .NET SDK $DOTNET_SDK_VERSION..."

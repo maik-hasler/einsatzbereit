@@ -374,15 +374,11 @@ export default function OrgDashboardPage() {
 		? Math.min(GRID_MAX_ROWS + 4, rawGuideRows)
 		: GRID_MAX_ROWS + 4;
 
-	// #1402: previously rebuilt with a fresh onClick/onPointerEnter closure
-	// per cell on every render - up to 832 cells at GRID_MAX_ROWS, so up to
-	// 1664 throwaway closures per pointermove while dragging (see
-	// useWidgetPlacement's rAF throttle for the other half of that fix).
-	// Handlers now live once on the grid container (see handleGuideCellClick/
-	// handleGuideCellPointerOver below) and read data-col/data-row off the
-	// event target instead, and the array itself is memoized so an unrelated
-	// re-render (e.g. `saving` toggling) doesn't recompute all 832 cells for
-	// no reason.
+	// #1402: up to 832 cells at GRID_MAX_ROWS, so handlers live once on the
+	// grid container (see handleGuideCellClick/handleGuideCellPointerOver
+	// below) reading data-col/data-row off the event target, rather than a
+	// closure per cell. Memoized so an unrelated re-render (e.g. `saving`
+	// toggling) doesn't recompute all 832 cells for no reason.
 	const guideCells = useMemo(() => {
 		if (!editing || !isLargeViewport) return null;
 		return Array.from({ length: guideRows * GRID_COLUMNS }, (_, i) => {
@@ -464,22 +460,19 @@ export default function OrgDashboardPage() {
 			data-testid="dashboard-widget-grid"
 			// Uniform (not minmax(64px, auto)) row height: CSS Grid auto-rows
 			// apply to the whole row band across every column, not just the cell
-			// whose content demanded the extra height - so a single tall widget
-			// used to stretch its ENTIRE row, including the plain green backdrop
-			// guide cells and any other widget sharing that row, making edit mode
-			// look like an inconsistent, randomly-sized grid instead of the
-			// uniform one it's meant to convey. A widget whose content exceeds
-			// its allotted rows scrolls internally instead (see WidgetCard).
+			// whose content demanded the extra height - a minmax row would let a
+			// single tall widget stretch its entire row, including the backdrop
+			// guide cells and any other widget sharing that row. A widget whose
+			// content exceeds its allotted rows scrolls internally instead (see
+			// WidgetCard).
 			//
 			// The row height itself (see .dashboard-widget-grid in global.css)
 			// tracks the actual rendered column width via a container query,
 			// rather than a flat pixel constant - width already scales with the
-			// viewport (grid-cols-8's 1fr tracks), so a fixed row height meant a
-			// widget's on-screen shape (short-and-wide vs. tall-and-narrow)
-			// warped between a wide monitor and a narrower one even though its
-			// stored cell width/height never changed. Matching the two keeps
-			// every cell roughly square, and a widget's proportions consistent,
-			// on any screen the organizer views it on.
+			// viewport (grid-cols-8's 1fr tracks), and matching row height to it
+			// keeps a widget's on-screen proportions (short-and-wide vs.
+			// tall-and-narrow) consistent across screen sizes instead of warping
+			// while its stored cell width/height stays the same.
 			className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
 			// role="presentation": this delegated onClick/onPointerOver only ever
 			// acts on a bubbled event that actually originated on one of the
@@ -503,8 +496,7 @@ export default function OrgDashboardPage() {
 			{/* Light green cell backdrop behind the whole grid while editing, so
 			an organizer can see the underlying 8-column structure. These cells
 			double as the corner-to-corner placement surface: while a widget is
-			being placed, they become clickable (see handleGuideCellClick above -
-			delegated once at the container instead of a listener per cell, #1402)
+			being placed, they become clickable (see handleGuideCellClick above)
 			and are tinted blue/red to preview whether the current selection is a
 			valid placement. Gated on isLargeViewport since the grid itself
 			collapses to a single stacked column below `lg`, where this wouldn't

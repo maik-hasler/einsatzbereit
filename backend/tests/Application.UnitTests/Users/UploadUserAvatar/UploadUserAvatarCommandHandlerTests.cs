@@ -54,11 +54,9 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldCreateUserAndSetAvatarUrl_WhenUserDoesNotExistYet(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: RecordActivity/UploadUserAvatar can be the very first write for a
-		// user who has only ever authenticated via Keycloak - there is no
-		// registration step that creates the local User row up front.
-		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync
-		// rather than a check-then-Add the handler used to do itself.
+		// Arrange: a user who has only ever authenticated via Keycloak has no local
+		// User row yet (no upfront registration step) - GetOrCreateUserAsync creates
+		// it idempotently instead of a racy check-then-add (#1148).
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);

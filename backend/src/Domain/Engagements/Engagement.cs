@@ -14,14 +14,11 @@ public sealed class Engagement
 
 	public TimeSlotId? TimeSlotId { get; private set; }
 
-	// Snapshotted from the TimeSlot at sign-up/reactivation time (#1203) so a
-	// volunteer's past-engagement history keeps showing when a shift was, even
-	// after the opportunity/time slot it pointed at is later hard-deleted -
-	// which nulls TimeSlotId out via engagement.time_slot_id's ON DELETE SET
-	// NULL and would otherwise erase the date along with it. Read code should
-	// still prefer a live join to TimeSlot when TimeSlotId is present (it may
-	// have been legitimately rescheduled since), falling back to these only
-	// once the slot is gone.
+	// Snapshotted from the TimeSlot at sign-up/reactivation time (#1203): TimeSlotId gets
+	// nulled by engagement.time_slot_id's ON DELETE SET NULL once the slot is hard-deleted,
+	// so this is what keeps a volunteer's past-engagement history showing when a shift was.
+	// Prefer a live join to TimeSlot when TimeSlotId is present (it may have been
+	// rescheduled since) - fall back to these only once the slot is gone.
 	public DateTimeOffset? TimeSlotStartDateTime { get; private set; }
 
 	public DateTimeOffset? TimeSlotEndDateTime { get; private set; }

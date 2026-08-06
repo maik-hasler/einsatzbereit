@@ -225,8 +225,8 @@ services:
     networks:
       - proxy
     logging: *default-logging
-    # Bumped from 128m/0.10 now that this handles both the local mirror and
-    # the offsite replication of two datasets in one process.
+    # Higher than a single-purpose mirror needs - this process handles both
+    # the local mirror and the offsite replication of two datasets.
     deploy:
       resources:
         limits:
@@ -601,12 +601,6 @@ configs:
     content: |
       SELECT 'CREATE DATABASE einsatzbereit' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'einsatzbereit')\gexec
       SELECT 'CREATE DATABASE keycloak' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak')\gexec
-  # Backs up the einsatzbereit bucket to /backups/<YYYY-MM-DD>, once per
-  # BACKUP_INTERVAL_SECONDS, pruning down to BACKUP_KEEP_DAYS snapshots after
-  # each run. `find` is not available in the minio/mc image (RHEL9-UBI-based,
-  # no findutils) - the directory listing/pruning below deliberately uses
-  # only shell globbing plus sort/wc/head/rm, all confirmed present in that
-  # image, instead.
   # Bootstraps the bucket-scoped app service account (#1353) - see the
   # minio-init service above. Idempotent: safe to re-run on every deploy.
   # Same `$$` escaping convention as minio-backup-script below.
@@ -642,6 +636,12 @@ configs:
       mc admin policy attach local einsatzbereit-app --user "$$MINIO_APP_ACCESS_KEY" 2>/dev/null || true
 
       echo "MinIO app service account ready (bucket: $${MINIO_BUCKET_NAME})."
+  # Backs up the einsatzbereit bucket to /backups/<YYYY-MM-DD>, once per
+  # BACKUP_INTERVAL_SECONDS, pruning down to BACKUP_KEEP_DAYS snapshots after
+  # each run. `find` is not available in the minio/mc image (RHEL9-UBI-based,
+  # no findutils) - the directory listing/pruning below deliberately uses
+  # only shell globbing plus sort/wc/head/rm, all confirmed present in that
+  # image, instead.
   # Every `$` below is doubled (`$$`) - compose interpolates `${...}`/`$VAR`
   # in config content the same as anywhere else in this file, so a single `$`
   # here would be silently resolved (usually to blank, since these are

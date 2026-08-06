@@ -185,8 +185,6 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		// #1024: a plain Member can now view their organization's calendar - this
-		// used to 403 (only Organizer could).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);

@@ -6,21 +6,16 @@ namespace VisualTests;
 
 /// <summary>
 /// Visual tests for #750: the org app header had no responsive breakpoints at
-/// all, so controls overlapped or got squeezed below the 768px `md`
-/// breakpoint. Per the #755 follow-up review, the org app header is no longer
-/// a bespoke duplicate - it's the same shared <c>Header.tsx</c> component the
-/// public site uses, just grown an optional org-switcher slot, so its mobile
+/// all, so controls overlapped or got squeezed below the 768px `md` breakpoint.
+/// The org app header is the same shared <c>Header.tsx</c> component the public
+/// site uses (grown an optional org-switcher slot per #755), so its mobile
 /// behavior (bell/hamburger always visible, avatar/profile/sign-out/language
 /// collapsed behind the hamburger) is identical to the public site's and
-/// already covered by <c>MobileHeaderTests</c>. What's specific to the org
-/// app here is that the org switcher's own name must not overflow onto the
-/// bell/hamburger. #771 removed the tab bar and the per-page org-name
-/// heading; #775/#777 brought the tab bar back for a time (shared ORG_TABS,
-/// also reused by the burger menu's org submenu), but the dashboard UX
-/// redesign removed it again in favor of the dashboard's own widget links
-/// plus the burger menu's org submenu as the sole way to reach opportunities/
-/// members/settings - see <c>OrganizationDashboardNavLinkTests</c> for that
-/// submenu's own coverage.
+/// already covered by <c>MobileHeaderTests</c>. What's specific to the org app
+/// here is that the org switcher's own name must not overflow onto the
+/// bell/hamburger. There is no tab bar in the current org app UX - opportunities/
+/// members/settings are reached via the dashboard's own widget links and the
+/// burger menu's org submenu (see <c>OrganizationDashboardNavLinkTests</c>).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -31,10 +26,10 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task MobileHeader_OrgSwitcherDoesNotBlockControls_HamburgerRevealsProfileAndLanguage()
 	{
-		// Log in at the default (desktop) viewport - AuthHelper.LoginAsync looks
-		// for the "Sign in" button that only exists in the public header's
-		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
-		// header's own hamburger instead. Resize only after landing in the app.
+		// Sign in at the default (desktop) viewport - FastSignInAsync's own success
+		// check waits for the "User menu" button, which only exists in the header's
+		// desktop nav (`hidden md:flex`); at mobile width it stays hidden until the
+		// hamburger menu is opened. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);

@@ -220,15 +220,13 @@ public class WithdrawEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*checked-in*");
 	}
 
-	// --- Organizer notifications moved off the request path (#1174) ---
+	// --- Organizer notifications (#1174) ---
 	//
-	// The organizer withdrawal email (subscription-gated per #1055) is no
-	// longer sent by this handler - IEmailService isn't even a dependency of
-	// it any more, so a rapid create/withdraw loop can no longer hold this
-	// request's DB transaction open across one synchronous SMTP send per
-	// organizer. It moves onto the outbox, delivered by
-	// EngagementWithdrawnDomainEventHandler; see that handler's tests for the
-	// subscription-preference/localization coverage that used to live here.
+	// The organizer withdrawal email (subscription-gated per #1055) is sent
+	// asynchronously via the outbox (EngagementWithdrawnDomainEventHandler), not
+	// synchronously here, so a create/withdraw loop never holds this request's
+	// DB transaction open across one SMTP send per organizer - see that
+	// handler's tests for the subscription-preference/localization coverage.
 	// The in-app bell-icon Notification row (unconditional, not
 	// subscription-gated) stays synchronous.
 
