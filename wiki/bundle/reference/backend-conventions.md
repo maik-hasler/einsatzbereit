@@ -85,6 +85,7 @@ Never `.Result` or `.Wait()`. Await instead.
 - [adr-tdr-index](/reference/adr-tdr-index.md) - rate limiting is TDR-1 and the layering choices trace to the ADRs
 - [keycloak-realm-config](/reference/keycloak-realm-config.md) - auth policies depend on the realm claim and backend audience in the token
 - [domain-events-noop](/gotchas/domain-events-noop.md) - the transaction pipeline behavior governs domain-event handler timing
+- [frontend-component-tests-not-adopted](/decisions/frontend-component-tests-not-adopted.md) - the frontend's mirror-image decision: VisualTests, not a frontend unit-test layer, covers component/page behavior
 
 # Citations
 
