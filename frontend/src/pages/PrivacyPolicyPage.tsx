@@ -1,4 +1,5 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { pageTitleClass } from "../lib/headingClasses";
@@ -7,6 +8,8 @@ export default function PrivacyPolicyPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("privacyPolicy.title"));
 	usePageToolbar([{ label: t("privacyPolicy.title") }]);
+
+	const linkClass = "text-brand-700 underline";
 
 	return (
 		<div data-content-wrapper className="max-w-2xl">
@@ -33,8 +36,11 @@ export default function PrivacyPolicyPage() {
 				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body1")}
 				</p>
-				<p className="leading-relaxed text-gray-700">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body2")}
+				</p>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section2Body3")}
 				</p>
 			</section>
 
@@ -45,21 +51,41 @@ export default function PrivacyPolicyPage() {
 				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section3Body")}
 				</p>
+
+				<h3 className="mb-1 text-lg font-medium">
+					{t("privacyPolicy.section3aTitle")}
+				</h3>
+				<p className="mb-4 leading-relaxed text-gray-700">
+					<Trans
+						i18nKey="privacyPolicy.section3aBody"
+						components={{
+							termsLink: <Link to="/terms-of-use" className={linkClass} />,
+						}}
+					/>
+				</p>
+
 				<h3 className="mb-1 text-lg font-medium">
 					{t("privacyPolicy.section3bTitle")}
 				</h3>
-				<p className="mb-2 leading-relaxed text-gray-700">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section3bBody")}
 				</p>
+
+				<h3 className="mb-1 text-lg font-medium">
+					{t("privacyPolicy.section3cTitle")}
+				</h3>
+				<p className="mb-2 leading-relaxed text-gray-700">
+					{t("privacyPolicy.section3cBody")}
+				</p>
 				<p className="leading-relaxed text-gray-700">
-					{t("privacyPolicy.section3bLinksIntro")}{" "}
+					{t("privacyPolicy.section3cLinksIntro")}{" "}
 					<a
 						href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 					>
-						{t("privacyPolicy.section3bLinkOsm")}
+						{t("privacyPolicy.section3cLinkOsm")}
 					</a>
 					{", "}
 					<a
@@ -68,7 +94,7 @@ export default function PrivacyPolicyPage() {
 						rel="noopener noreferrer"
 						className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 					>
-						{t("privacyPolicy.section3bLinkNominatim")}
+						{t("privacyPolicy.section3cLinkNominatim")}
 					</a>
 				</p>
 			</section>
@@ -88,6 +114,42 @@ export default function PrivacyPolicyPage() {
 				</h2>
 				<p className="leading-relaxed text-gray-700">
 					{t("privacyPolicy.section5Body")}
+				</p>
+			</section>
+
+			<section className="mb-8">
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("privacyPolicy.section6Title")}
+				</h2>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section6Body")}
+				</p>
+			</section>
+
+			<section className="mb-8">
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("privacyPolicy.section7Title")}
+				</h2>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section7Body")}
+				</p>
+			</section>
+
+			<section className="mb-8">
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("privacyPolicy.section8Title")}
+				</h2>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section8Body")}
+				</p>
+			</section>
+
+			<section className="mb-8">
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("privacyPolicy.section9Title")}
+				</h2>
+				<p className="leading-relaxed text-gray-700">
+					{t("privacyPolicy.section9Body")}
 				</p>
 			</section>
 		</div>

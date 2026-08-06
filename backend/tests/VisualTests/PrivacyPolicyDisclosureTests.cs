@@ -24,8 +24,9 @@ public class PrivacyPolicyDisclosureTests(AspireFixture fixture) : VisualTestBas
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Map display and location search (OpenStreetMap, Nominatim)" }))
 			.ToBeVisibleAsync();
-		await Expect(Page.GetByText("legitimate interest", new() { Exact = false }))
-			.ToBeVisibleAsync();
+		await Expect(Page.GetByText(
+			"legitimate interest (Art. 6(1)(f) GDPR) in providing functioning map and location-search features",
+			new() { Exact = false })).ToBeVisibleAsync();
 
 		var osmLink = Page.GetByRole(AriaRole.Link,
 			new() { Name = "OpenStreetMap Foundation Privacy Policy" });
@@ -64,8 +65,9 @@ public class PrivacyPolicyDisclosureTests(AspireFixture fixture) : VisualTestBas
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Kartendarstellung und Ortssuche (OpenStreetMap, Nominatim)" }))
 			.ToBeVisibleAsync();
-		await Expect(Page.GetByText("berechtigtes Interesse", new() { Exact = false }))
-			.ToBeVisibleAsync();
+		await Expect(Page.GetByText(
+			"berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einer funktionsfähigen Karten- und Ortssuche",
+			new() { Exact = false })).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Link,
 			new() { Name = "Datenschutzerklärung der OpenStreetMap Foundation" }))
 			.ToBeVisibleAsync();
