@@ -568,7 +568,11 @@ export default function DetailsStep({
 								</div>
 							</div>
 						)}
-						{slotError && <p className="text-xs text-red-600">{slotError}</p>}
+						{slotError && (
+							<p className="text-xs text-red-600" role="alert">
+								{slotError}
+							</p>
+						)}
 						<button
 							type="button"
 							disabled={

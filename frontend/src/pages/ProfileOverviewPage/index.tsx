@@ -468,6 +468,11 @@ export default function ProfileOverviewPage() {
 																avatarUpload.uploading || avatarUpload.removing
 															}
 															inputRef={avatarUpload.inputRef}
+															aria-describedby={
+																avatarUpload.error
+																	? "avatar-upload-error"
+																	: undefined
+															}
 														/>
 														{avatarUrl && (
 															<button
@@ -490,7 +495,11 @@ export default function ProfileOverviewPage() {
 														{t("profile.avatarHint")}
 													</p>
 													{avatarUpload.error && (
-														<p className="mt-1 text-xs text-red-600">
+														<p
+															id="avatar-upload-error"
+															className="mt-1 text-xs text-red-600"
+															role="alert"
+														>
 															{avatarUpload.error}
 														</p>
 													)}

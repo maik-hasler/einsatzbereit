@@ -179,12 +179,21 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 									accept="image/jpeg,image/png,image/webp"
 									onChange={handleLogoChange}
 									inputRef={logoInputRef}
+									aria-describedby={
+										logoError ? "create-org-logo-upload-error" : undefined
+									}
 								/>
 								<p className="mt-1 text-xs text-gray-500">
 									{t("orgSettings.logoHint")}
 								</p>
 								{logoError && (
-									<p className="mt-1 text-xs text-red-600">{logoError}</p>
+									<p
+										id="create-org-logo-upload-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{logoError}
+									</p>
 								)}
 							</div>
 						</div>

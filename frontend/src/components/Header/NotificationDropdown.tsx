@@ -87,7 +87,6 @@ export default function NotificationDropdown({
 				onClick={() => setNotifOpen((o) => !o)}
 				className={`relative cursor-pointer rounded-lg p-2 transition-colors ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={bellLabel}
-				aria-haspopup="menu"
 				aria-controls={panelId}
 				aria-expanded={notifOpen}
 			>
