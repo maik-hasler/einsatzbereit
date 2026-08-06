@@ -24,7 +24,7 @@ import ReportContentModal, {
 import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
 import Skeleton from "../components/Skeleton";
-import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -109,15 +109,34 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const [orgProfile, setOrgProfile] =
 		useState<PublicOrganizationProfileResponse | null>(null);
+	const [orgProfileError, setOrgProfileError] = useState<string | null>(null);
+	const [retryingOrgProfile, setRetryingOrgProfile] = useState(false);
 
-	useEffect(() => {
-		if (!opportunity?.organizationId) return;
-		api
+	function loadOrgProfile() {
+		if (!opportunity?.organizationId) return Promise.resolve();
+		setOrgProfileError(null);
+		return api
 			.getPublicOrganizationProfile(opportunity.organizationId)
 			.then(setOrgProfile)
-			.catch(() => {});
+			.catch((err) => {
+				setOrgProfileError(
+					getApiErrorMessage(
+						err,
+						t("opportunities.aboutOrganizationLoadError"),
+					),
+				);
+			});
+	}
+
+	useEffect(() => {
+		loadOrgProfile();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunity?.organizationId]);
+
+	function retryLoadOrgProfile() {
+		setRetryingOrgProfile(true);
+		loadOrgProfile().finally(() => setRetryingOrgProfile(false));
+	}
 
 	const latestRequestRef = useRef(0);
 
@@ -128,6 +147,7 @@ export default function VolunteerOpportunityDetailPage() {
 		// otherwise tied to opportunityId and would only refresh once the
 		// organizationId effect below notices it changed.
 		setOrgProfile(null);
+		setOrgProfileError(null);
 		load();
 		// `auth.isAuthenticated`, not `api` itself (#1237): useApiClient() memoizes
 		// on user.access_token, which automaticSilentRenew replaces every ~4
@@ -237,7 +257,16 @@ export default function VolunteerOpportunityDetailPage() {
 		);
 	if (error)
 		return (
-			<ErrorBanner message={t("opportunities.error", { message: error })} />
+			<LoadMoreError
+				message={t("opportunities.error", { message: error })}
+				// load() unconditionally flips `loading` back to true, so the
+				// `if (loading)` skeleton above always pre-empts this branch the
+				// instant a retry starts - there's no in-between state where this
+				// button would be visible mid-request, so it can never actually be
+				// clicked twice.
+				retrying={false}
+				onRetry={load}
+			/>
 		);
 	if (!opportunity)
 		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
@@ -590,6 +619,18 @@ export default function VolunteerOpportunityDetailPage() {
 			)}
 
 			{/* About this organization */}
+			{orgProfileError && !orgProfile && (
+				<div className="mb-6" data-testid="about-organization">
+					<SectionHeading>
+						{t("opportunities.aboutOrganization")}
+					</SectionHeading>
+					<LoadMoreError
+						message={orgProfileError}
+						retrying={retryingOrgProfile}
+						onRetry={retryLoadOrgProfile}
+					/>
+				</div>
+			)}
 			{orgProfile &&
 				(orgProfile.description ||
 					orgProfile.contactEmail ||

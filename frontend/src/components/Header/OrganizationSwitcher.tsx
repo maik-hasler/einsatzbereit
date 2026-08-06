@@ -16,6 +16,7 @@ export default function OrganizationSwitcher({
 	currentTab,
 	orgs,
 	loading,
+	error,
 }: {
 	currentOrgId: string;
 	currentTab: string;
@@ -24,6 +25,9 @@ export default function OrganizationSwitcher({
 	// getOrganizations() request on every org-app-shell page load.
 	orgs: OrganizationSummaryDto[];
 	loading: boolean;
+	// Set when the shared organizations fetch failed, so this can be told
+	// apart from a genuine "user has zero organizations" empty list.
+	error: string | null;
 }) {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
@@ -60,34 +64,41 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+					className={`flex w-full min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors ${
+						error
+							? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+							: "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+					}`}
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
-					{currentOrg?.logoUrl ? (
-						<img
-							src={currentOrg.logoUrl}
-							alt=""
-							width={24}
-							height={24}
-							className="h-6 w-6 shrink-0 rounded-md object-cover"
-						/>
-					) : (
-						<span
-							className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
-							aria-hidden="true"
-							data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
-						/>
-					)}
+					{!error &&
+						(currentOrg?.logoUrl ? (
+							<img
+								src={currentOrg.logoUrl}
+								alt=""
+								width={24}
+								height={24}
+								className="h-6 w-6 shrink-0 rounded-md object-cover"
+							/>
+						) : (
+							<span
+								className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
+								aria-hidden="true"
+								data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
+							/>
+						))}
 					<span
 						data-testid="org-switcher-current-name"
 						className="max-w-50 flex-1 truncate sm:min-w-24"
 					>
-						{currentOrg?.name ?? t("organization.selectPlaceholder")}
+						{error
+							? t("organization.loadError")
+							: (currentOrg?.name ?? t("organization.selectPlaceholder"))}
 					</span>
 					<ChevronDownIcon
 						open={open}
-						className="h-3.5 w-3.5 shrink-0 text-gray-400"
+						className={`h-3.5 w-3.5 shrink-0 ${error ? "text-red-400" : "text-gray-400"}`}
 					/>
 				</button>
 
