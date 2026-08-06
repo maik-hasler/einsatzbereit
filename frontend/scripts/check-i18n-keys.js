@@ -117,7 +117,6 @@ const PLURAL_EXEMPT_KEYS = new Set(
 		"opportunities.radiusKmValue",
 		"timeSlots.bookedCount",
 		"timeSlots.seriesBadge",
-		"timeSlots.editPartialSkip",
 		"signUp.spotsLeft",
 		"orgOverview.calendarShowMore",
 	].map((k) => `translation.${k}`),

@@ -63,6 +63,8 @@
 								data-password-toggle
 								data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}"
 								data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
+								data-label-show="${msg('showPassword')}"
+								data-label-hide="${msg('hidePassword')}"
 							>
 								<i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
 							</button>

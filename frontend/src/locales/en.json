@@ -300,7 +300,9 @@
       "recurrenceMonthly": "Monthly",
       "recurrenceCount": "Number of sessions",
       "seriesBadge": "{{frequency}} · {{position}}/{{count}}",
-      "editPartialSkip": "{{count}} occurrence(s) were left unchanged because their current sign-ups already exceed the new capacity.",
+      "editPartialSkip": "{{count}} occurrences were left unchanged because their current sign-ups already exceed the new capacity.",
+      "editPartialSkip_one": "{{count}} occurrence was left unchanged because its current sign-ups already exceed the new capacity.",
+      "editPartialSkip_other": "{{count}} occurrences were left unchanged because their current sign-ups already exceed the new capacity.",
       "editScope": {
         "legend": "Apply this change to",
         "Only": "Only this occurrence",
