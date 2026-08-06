@@ -60,6 +60,20 @@ internal sealed class RemoveMemberCommandHandler(
 			userId,
 			cancellationToken);
 
+		if (isOrganizer)
+		{
+			// The role is realm-wide, not per-organization (see #1386), so it can
+			// only be revoked once the removed user organizes no other
+			// organization (#1677) - otherwise this removal would also lock them
+			// out of that other org. RemoveMembershipAsync above already deleted
+			// this org's membership row, so unlike ChangeMemberRoleCommandHandler's
+			// still-in-memory demotion, no exclusion filter is needed here.
+			var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(userId, cancellationToken);
+
+			if (remainingOrganizerOrgs.Count == 0)
+				await keycloakOrganizationService.RevokeOrganizerRoleAsync(userId.Value, cancellationToken);
+		}
+
 		return true;
 	}
 }

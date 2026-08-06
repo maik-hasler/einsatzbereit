@@ -5,6 +5,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { cardSubtleClass } from "../../lib/surfaceClasses";
 import Button from "../../components/Button";
+import PageSectionHeading from "../../components/PageSectionHeading";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
@@ -34,8 +35,9 @@ const PREFERENCE_ROWS: { key: PreferenceKey; labelKey: string }[] = [
 ];
 
 // Self-contained email-notification-preferences card (#1055), split out of
-// ProfileOverviewPage in the same style as DangerZoneCard - owns its own
-// fetch/save/error state and API calls independently of the profile form.
+// ProfileOverviewPage in the same style as DangerZoneCard, relocated to
+// ProfileSettingsPage - see #1684. Owns its own fetch/save/error state and
+// API calls independently of the profile form.
 export default function NotificationPreferencesSection() {
 	const api = useApiClient();
 	const { t } = useTranslation();
@@ -100,9 +102,9 @@ export default function NotificationPreferencesSection() {
 
 	return (
 		<section className={`mb-6 ${cardSubtleClass}`}>
-			<h2 className="mb-1 text-base font-semibold text-gray-900">
+			<PageSectionHeading>
 				{t("notificationPreferences.title")}
-			</h2>
+			</PageSectionHeading>
 			<p className="mb-4 text-sm text-gray-600">
 				{t("notificationPreferences.description")}
 			</p>

@@ -15,6 +15,16 @@ map $host $csp_header {
 	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: ${CSP_API_ORIGIN} ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 }
 
+# Recognizes social-preview and search-engine crawlers by User-Agent so a shared or
+# crawled deep link to a specific opportunity/organization gets that entity's own
+# title/description/image instead of the site-wide metadata frontend/index.html
+# hardcodes (einsatzbereit#1680) - real browsers never match this and are served the
+# unmodified SPA shell below, same as today.
+map $http_user_agent $is_social_bot {
+	default 0;
+	"~*(facebookexternalhit|Twitterbot|Slackbot|LinkedInBot|TelegramBot|Discordbot|WhatsApp|SkypeUriPreview|Googlebot|bingbot|Applebot|redditbot|Pinterest|Baiduspider|YandexBot)" 1;
+}
+
 server {
 	listen 80;
 	server_name _;
@@ -65,6 +75,32 @@ server {
 		add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
+	}
+
+	# Shared/crawled deep links to a specific opportunity or organization
+	# (einsatzbereit#1680) - a social-preview crawler or search engine (see
+	# $is_social_bot above) gets rewritten to the internal /__meta/... location
+	# below instead, which proxies to the backend's per-entity HTML. Everyone
+	# else (i.e. every real browser) falls through to try_files exactly as
+	# before, so the SPA experience here is unchanged.
+	location ~ ^/(volunteer-opportunities|organizations)/[0-9a-fA-F-]+$ {
+		if ($is_social_bot) {
+			rewrite ^ /__meta$uri last;
+		}
+		try_files $uri $uri/ /index.html;
+	}
+
+	# Internal-only rewrite target for the bot branch above - proxied rather than
+	# served as a static file since it needs the opportunity/organization's
+	# current title/description/banner from the database. Same cross-subdomain
+	# proxy rationale as /sitemap.xml below (einsatzbereit#1092).
+	location ~ ^/__meta/(volunteer-opportunities|organizations)/([0-9a-fA-F-]+)$ {
+		internal;
+		resolver 127.0.0.11 valid=10s;
+		set $backend_upstream http://backend:8080;
+		set $meta_entity_type $1;
+		set $meta_entity_id $2;
+		proxy_pass $backend_upstream/v1/meta/$meta_entity_type/$meta_entity_id;
 	}
 
 	# A sitemap must be served from the same host as the URLs it lists, or crawlers

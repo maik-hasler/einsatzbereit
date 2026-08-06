@@ -42,6 +42,8 @@ const EngagementManagementPage = lazy(
 	() => import("./pages/EngagementManagementPage"),
 );
 const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
+const ProfileSettingsPage = lazy(() => import("./pages/ProfileSettingsPage"));
+const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
@@ -152,15 +154,30 @@ export default function App() {
 					path="/organizations/:organizationId"
 					element={<OrganizationProfilePage />}
 				/>
+				{/* #1684: previously just redirected into /profile?tab=engagements -
+				now the real destination for engagement notifications and the
+				header's notification-bell fallback, which already pointed here. */}
 				<Route
 					path="/my-engagements"
-					element={<Navigate to="/profile?tab=engagements" replace />}
+					element={
+						<ProtectedRoute>
+							<MyEngagementsPage />
+						</ProtectedRoute>
+					}
 				/>
 				<Route
 					path="/profile"
 					element={
 						<ProtectedRoute>
 							<ProfileOverviewPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/profile/settings"
+					element={
+						<ProtectedRoute>
+							<ProfileSettingsPage />
 						</ProtectedRoute>
 					}
 				/>

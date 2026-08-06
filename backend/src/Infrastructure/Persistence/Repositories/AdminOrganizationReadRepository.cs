@@ -51,6 +51,30 @@ internal sealed class AdminOrganizationReadRepository(
 			.ThenBy(o => o.Id)
 			.ToPagedListAsync(pageNumber, pageSize, cancellationToken);
 
-		return paged.Map(o => new AdminOrganizationSummary(o.Id.Value, o.Name, o.LogoUrl));
+		var organizationIds = paged.Items.Select(o => o.Id).ToList();
+		var organizationGuidIds = organizationIds.Select(id => id.Value).ToList();
+
+		var openReportCounts = await dbContext.ReportsQuery
+			.Where(r => r.TargetType == ReportTargetType.Organization
+				&& r.Status == ReportStatus.Open
+				&& organizationGuidIds.Contains(r.TargetId))
+			.GroupBy(r => r.TargetId)
+			.Select(g => new { OrganizationId = g.Key, Count = g.Count() })
+			.ToDictionaryAsync(x => x.OrganizationId, x => x.Count, cancellationToken);
+
+		var memberCounts = await dbContext.OrganizationMembershipsQuery
+			.Where(m => organizationIds.Contains(m.OrganizationId))
+			.GroupBy(m => m.OrganizationId)
+			.Select(g => new { OrganizationId = g.Key, Count = g.Count() })
+			.ToDictionaryAsync(x => x.OrganizationId, x => x.Count, cancellationToken);
+
+		return paged.Map(o => new AdminOrganizationSummary(
+			o.Id.Value,
+			o.Name,
+			o.LogoUrl,
+			o.IsDeleted,
+			openReportCounts.GetValueOrDefault(o.Id.Value, 0),
+			memberCounts.GetValueOrDefault(o.Id, 0),
+			o.CreatedOn));
 	}
 }

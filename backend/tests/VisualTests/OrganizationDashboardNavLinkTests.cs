@@ -121,6 +121,19 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 
+		// Regression coverage for #1680: the org-wide engagement queue
+		// ("Sign-ups") previously had exactly one entry point (the dashboard's
+		// To-Do widget) - it must now be reachable from ORG_TABS like every
+		// other tab, the same way this test already exercises Members/Settings.
+		await banner.GetByRole(AriaRole.Link, new() { Name = "Sign-ups", Exact = true })
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/engagements"), new() { Timeout = 15_000 });
+
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
+			.ClickAsync(new() { Timeout = 10_000 });
+
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/settings"), new() { Timeout = 15_000 });

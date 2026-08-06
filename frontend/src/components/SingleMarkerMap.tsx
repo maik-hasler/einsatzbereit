@@ -28,7 +28,7 @@ export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 	const brandMarker = useMemo(
 		() =>
 			L.divIcon({
-				html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36" style="display:block"><path d="M14 1C7.9 1 3 5.9 3 12c0 8.5 11 23 11 23S25 20.5 25 12C25 5.9 20.1 1 14 1z" fill="${brandColor("600")}" stroke="white" stroke-width="1.5"/><circle cx="14" cy="12" r="5" fill="white"/></svg>`,
+				html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36" style="display:block" aria-hidden="true"><path d="M14 1C7.9 1 3 5.9 3 12c0 8.5 11 23 11 23S25 20.5 25 12C25 5.9 20.1 1 14 1z" fill="${brandColor("600")}" stroke="white" stroke-width="1.5"/><circle cx="14" cy="12" r="5" fill="white"/></svg>`,
 				className: "",
 				iconSize: [28, 36],
 				iconAnchor: [14, 36],
@@ -54,7 +54,15 @@ export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 				className="h-full w-full"
 			>
 				<TileLayer attribution={ATTRIBUTION} url={TILE_URL} />
-				<Marker position={[latitude, longitude]} icon={brandMarker}>
+				{/* Leaflet gives the marker's role="button" focus stop this as its
+				accessible name (icon.title, works on any element - unlike `alt`,
+				which Leaflet only applies to <img> icons, never a DivIcon's <div>) -
+				without it the marker was an unnamed tab stop (WCAG 4.1.2, #1681). */}
+				<Marker
+					position={[latitude, longitude]}
+					icon={brandMarker}
+					title={label}
+				>
 					<Popup>
 						<div className="px-3 py-2.5 pr-6 text-sm font-medium text-gray-800">
 							{label}

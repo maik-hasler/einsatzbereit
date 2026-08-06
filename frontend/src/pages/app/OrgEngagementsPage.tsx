@@ -5,7 +5,6 @@ import type { EngagementSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { useSetOrgBreadcrumbExtra } from "../../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { formatDate } from "../../lib/format";
@@ -31,13 +30,7 @@ export default function OrgEngagementsPage() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;
-	usePageTitle(`${t("orgEngagements.title")} - ${org.name}`);
-	// "engagements" isn't a tab in ORG_TABS (it's a dashboard-widget-linked
-	// page, not a persistent nav destination, mirroring how
-	// EngagementManagementPage nests under "opportunities" rather than
-	// getting its own tab) - OrgAppLayout's h1/breadcrumb would otherwise
-	// fall back to "Dashboard" for an unrecognized tab segment.
-	useSetOrgBreadcrumbExtra(t("orgEngagements.title"));
+	usePageTitle(`${t("orgOverview.tabEngagements")} - ${org.name}`);
 
 	const [searchParams, setSearchParams] = useSearchParams();
 	const statusFilter = searchParams.get("status") ?? "";

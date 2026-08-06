@@ -10,6 +10,7 @@ import {
 	ChevronDownIcon,
 	ChevronRightIcon,
 	Cog6ToothIcon,
+	HandRaisedIcon,
 	Squares2x2Icon,
 	UserCircleIcon,
 } from "../icons";
@@ -94,6 +95,20 @@ export default function AccountControls({
 								<UserCircleIcon className="h-4 w-4" />
 								{t("nav.myProfile")}
 							</Link>
+							<Link
+								to="/my-engagements"
+								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
+							>
+								<HandRaisedIcon className="h-4 w-4" />
+								{t("nav.myEngagements")}
+							</Link>
+							<Link
+								to="/profile/settings"
+								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
+							>
+								<Cog6ToothIcon className="h-4 w-4" />
+								{t("nav.profileSettings")}
+							</Link>
 							{isAdmin && (
 								<Link
 									to="/administration"
@@ -109,7 +124,6 @@ export default function AccountControls({
 										type="button"
 										onClick={() => setOrgMenuOpen((o) => !o)}
 										aria-expanded={orgMenuOpen}
-										aria-haspopup="true"
 										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 									>
 										<span className="flex items-center gap-3">

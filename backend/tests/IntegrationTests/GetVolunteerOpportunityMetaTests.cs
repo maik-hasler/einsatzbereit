@@ -1,0 +1,103 @@
+using System.Net;
+using System.Net.Http.Headers;
+using AwesomeAssertions;
+
+namespace IntegrationTests;
+
+// Regression coverage for einsatzbereit#1680: a shared or crawled deep link to a
+// specific opportunity previously got the site-wide metadata baked into
+// frontend/index.html - GetVolunteerOpportunityMetaEndpoint (proxied to by
+// frontend/nginx.conf.template for recognized bot User-Agents) must return that
+// opportunity's own title/description/image instead. Hits the versioned API route
+// directly, the same way GetSitemapTests does for its own nginx-proxied endpoint -
+// the bot-User-Agent rewrite itself lives in nginx, which this suite doesn't run.
+[ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
+public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
+{
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
+
+	[Test]
+	public async Task GetVolunteerOpportunityMeta_ShouldReturnNotFound_WhenOpportunityDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = fixture.CreateHttpClient();
+
+		var response = await httpClient.GetAsync(
+			$"/v1/meta/volunteer-opportunities/{Guid.NewGuid()}", cancellationToken);
+
+		response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunityMeta_ShouldReturnNotFound_WhenOpportunityIsDraft(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+		var draft = await CreateOpportunityAsync(authenticatedClient, orgId, isDraft: true, cancellationToken);
+
+		using var httpClient = fixture.CreateHttpClient();
+		var response = await httpClient.GetAsync(
+			$"/v1/meta/volunteer-opportunities/{draft.Id}", cancellationToken);
+
+		response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunityMeta_ShouldReturnHtml_WithOpportunityTitleAndDescription(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(authenticatedClient, orgId, isDraft: false, cancellationToken);
+
+		using var httpClient = fixture.CreateHttpClient();
+		var response = await httpClient.GetAsync(
+			$"/v1/meta/volunteer-opportunities/{opportunity.Id}", cancellationToken);
+		var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+		response.EnsureSuccessStatusCode();
+		response.Content.Headers.ContentType!.MediaType.Should().Be("text/html");
+		html.Should().Contain("Strandreinigung Musterstadt");
+		html.Should().Contain("Gemeinsam sammeln wir Müll am Strand ein.");
+		html.Should().Contain($"/volunteer-opportunities/{opportunity.Id}");
+		// No banner uploaded - falls back to the site's own share image rather
+		// than omitting og:image entirely.
+		html.Should().Contain("/og-image.png");
+	}
+
+	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
+	{
+		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
+		var httpClient = fixture.CreateHttpClient();
+		httpClient.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", token);
+		return new EinsatzbereitApi(httpClient);
+	}
+
+	private static async Task<Guid> CreateOrganizationAsync(
+		EinsatzbereitApi client, CancellationToken cancellationToken)
+	{
+		var uniqueName = $"Testorg_{Guid.NewGuid()}";
+		var organization = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = uniqueName }, cancellationToken);
+		return organization.Id.Value;
+	}
+
+	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
+		EinsatzbereitApi client, Guid orgId, bool isDraft, CancellationToken cancellationToken) =>
+		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Strandreinigung Musterstadt",
+			Description = "Gemeinsam sammeln wir Müll am Strand ein.",
+			OrganizationId = orgId,
+			IsRemote = true,
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
+			IsDraft = isDraft,
+		}, cancellationToken);
+}

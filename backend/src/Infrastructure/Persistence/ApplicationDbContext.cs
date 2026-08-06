@@ -85,6 +85,8 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationMembership>(),
 			m => m.Id);
 
+	internal IQueryable<OrganizationMembership> OrganizationMembershipsQuery => Set<OrganizationMembership>().AsNoTracking();
+
 	public IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts
 		=> new AggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId>(
 			Set<OrganizationDashboardLayout>(),

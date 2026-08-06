@@ -19,6 +19,8 @@
       "primaryLabel": "Main navigation",
       "userMenu": "User menu",
       "myProfile": "My Profile",
+      "myEngagements": "My Activity",
+      "profileSettings": "Notifications & Privacy",
       "administration": "Administration",
       "organization": "Organization",
       "signOut": "Sign out",
@@ -665,7 +667,6 @@
       }
     },
     "orgEngagements": {
-      "title": "Sign-up queue",
       "pageDescription": "Pending and processed sign-ups across every one of your organization's opportunities, in one place.",
       "loading": "Loading…",
       "error": "Error: {{message}}",
@@ -981,6 +982,9 @@
     },
     "profile": {
       "title": "My Profile",
+      "subNavLabel": "Profile navigation",
+      "subNavProfile": "Profile",
+      "subNavSettings": "Settings",
       "sectionDetails": "Profile Details",
       "emptyStateTitle": "Your profile is still empty",
       "emptyStateMessage": "Add a bio, skills, or contact preferences so organizations know a bit about you.",
@@ -1013,6 +1017,12 @@
       "loadError": "Could not load profile.",
       "loading": "Loading…",
       "removeChip": "Remove"
+    },
+    "profileSettings": {
+      "title": "Settings"
+    },
+    "myEngagementsPage": {
+      "title": "My Activity"
     },
     "notificationPreferences": {
       "title": "Email notifications",
@@ -1111,7 +1121,11 @@
         "searchPlaceholder": "Search by name",
         "searchButton": "Search",
         "flaggedOnlyLabel": "Flagged only",
-        "deletedOnlyLabel": "Deleted only"
+        "deletedOnlyLabel": "Deleted only",
+        "memberCount_one": "{{count}} member",
+        "memberCount_other": "{{count}} members",
+        "createdOn": "Created on {{date}}",
+        "flaggedBadge": "Flagged"
       },
       "users": {
         "loading": "Loading users…",
@@ -1235,6 +1249,7 @@
     "orgOverview": {
       "tabDashboard": "Dashboard",
       "tabOpportunities": "Opportunities",
+      "tabEngagements": "Sign-ups",
       "tabMembers": "Members",
       "tabSettings": "Settings",
       "calendarLoading": "Loading calendar…",

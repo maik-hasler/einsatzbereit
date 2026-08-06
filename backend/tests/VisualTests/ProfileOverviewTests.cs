@@ -13,6 +13,8 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
 		// into a single cohesive page - no tab bar, all content on one page.
+		// #1684: invitations/sign-ups (formerly also on this page) moved to
+		// their own page at /my-engagements - see MyEngagementsTests.cs.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -24,8 +26,6 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Profile Details" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" }))
-			.ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Profile", Exact = true }))
@@ -56,20 +56,21 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
-	public async Task MyEngagements_Redirects_ToProfileEngagementsTab()
+	public async Task ProfileEngagementsTabDeepLink_RedirectsToMyEngagementsPage()
 	{
+		// #1684: /profile?tab=engagements used to be where /my-engagements
+		// redirected *to* - now it's the other way around, so old links using
+		// this legacy query param (and backend-generated notification action
+		// URLs still using ?tab=invitations) keep working.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
-		await Page.GotoAsync($"{origin}/my-engagements");
+		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Should land on /profile?tab=engagements
-		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/profile\?tab=engagements"));
-
-		// The page heading (h1) must still be visible after redirect
+		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/my-engagements$"));
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
@@ -127,38 +128,6 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
-	public async Task ProfilePage_RendersAchievementsAboveAccountActionCards()
-	{
-		// #706: achievements used to render last on the Profile tab, below the
-		// "Create organization" and "Danger zone" cards, in a full-width block
-		// that visually broke away from the narrower profile column above it.
-		// They should now render above the account-action card. (The
-		// "Organizations" card itself was later removed entirely - org
-		// management now only happens via the /app entry point.)
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-
-		await Page.GotoAsync($"{origin}/profile");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
-		var dangerZoneHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" });
-
-		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(dangerZoneHeading).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		var badgesBox = await badgesHeading.BoundingBoxAsync();
-		var dangerZoneBox = await dangerZoneHeading.BoundingBoxAsync();
-
-		badgesBox.Should().NotBeNull();
-		dangerZoneBox.Should().NotBeNull();
-
-		badgesBox!.Y.Should().BeLessThan(dangerZoneBox!.Y, "achievements must render above the account cards");
-	}
-
-	[Test]
 	public async Task PublicUserProfile_ShowsBioSkillsAndLanguagesButNotPreferredContact()
 	{
 		// #576: bio/skills/languages were captured on the owner's own profile but
@@ -203,8 +172,6 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.Locator("#preferred-contact").ClickAsync();
 		await Page.GetByRole(AriaRole.Option, new() { Name = "Email" }).ClickAsync();
 
-		// Exact: true - substring matching would also hit NotificationPreferencesSection's
-		// "Save preferences" button, elsewhere on this same page.
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
@@ -456,7 +423,9 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -499,7 +468,9 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 

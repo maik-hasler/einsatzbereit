@@ -14,6 +14,8 @@ interface Props {
 	onChange: ChangeEventHandler<HTMLInputElement>;
 	disabled?: boolean;
 	inputRef?: RefObject<HTMLInputElement | null>;
+	/** Id of a `role="alert"` element describing the current validation error, if any. */
+	ariaDescribedBy?: string;
 }
 
 export default function FileUploadButton({
@@ -23,6 +25,7 @@ export default function FileUploadButton({
 	onChange,
 	disabled = false,
 	inputRef,
+	ariaDescribedBy,
 }: Props) {
 	return (
 		<>
@@ -40,6 +43,8 @@ export default function FileUploadButton({
 				className="sr-only"
 				onChange={onChange}
 				disabled={disabled}
+				aria-invalid={ariaDescribedBy ? true : undefined}
+				aria-describedby={ariaDescribedBy}
 			/>
 		</>
 	);

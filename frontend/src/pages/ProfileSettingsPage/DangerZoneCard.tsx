@@ -10,8 +10,9 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 
 // Self-contained account-deletion card, split out of ProfileOverviewPage -
-// see #872. Needs no props: it owns its own dialog/loading/error state and
-// drives navigation itself on success.
+// see #872, relocated to ProfileSettingsPage - see #1684. Needs no props: it
+// owns its own dialog/loading/error state and drives navigation itself on
+// success.
 export default function DangerZoneCard() {
 	const auth = useAuth();
 	const api = useApiClient();

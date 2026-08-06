@@ -13,7 +13,8 @@ import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
 import { cardSubtleClass } from "../lib/surfaceClasses";
-import { formatDateTime } from "../lib/format";
+import { formatDateLong, formatDateTime } from "../lib/format";
+import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Chip from "../components/Chip";
@@ -32,6 +33,11 @@ const PAGE_SIZE = 10;
 interface OrgRow {
 	id: string;
 	name: string;
+	logoUrl: string | undefined;
+	isDeleted: boolean;
+	openReportCount: number;
+	memberCount: number;
+	createdOn: string;
 }
 
 export default function AdministrationPage() {
@@ -73,16 +79,23 @@ export default function AdministrationPage() {
 }
 
 function OrganizationsSection() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
 	const [search, setSearch] = useState("");
 	const [appliedSearch, setAppliedSearch] = useState("");
 	const [flaggedOnly, setFlaggedOnly] = useState(false);
 	const [deletedOnly, setDeletedOnly] = useState(false);
+	const [confirmAction, setConfirmAction] = useState<{
+		row: OrgRow;
+		kind: "delete" | "restore";
+	} | null>(null);
+	const [actioning, setActioning] = useState(false);
+	const [actionError, setActionError] = useState<string | null>(null);
 
 	const {
 		items: rows,
+		setItems: setRows,
 		loading,
 		loadingMore,
 		error,
@@ -105,6 +118,11 @@ function OrganizationsSection() {
 					items: result.items.map((o) => ({
 						id: o.id,
 						name: o.name,
+						logoUrl: o.logoUrl,
+						isDeleted: o.isDeleted,
+						openReportCount: o.openReportCount,
+						memberCount: o.memberCount,
+						createdOn: o.createdOn as unknown as string,
 					})),
 					pageCount: result.pageCount,
 				})),
@@ -118,6 +136,39 @@ function OrganizationsSection() {
 		e.preventDefault();
 		setAppliedSearch(search);
 		reset();
+	}
+
+	async function confirmActionSubmit() {
+		if (!confirmAction) return;
+		const { row, kind } = confirmAction;
+		setActioning(true);
+		setActionError(null);
+		try {
+			if (kind === "delete") {
+				await api.adminShadowDeleteOrganization(row.id);
+				dispatchToast("success", t("administration.reports.deleteSuccess"));
+			} else {
+				await api.adminRestoreOrganization(row.id);
+				dispatchToast("success", t("administration.reports.restoreSuccess"));
+			}
+			setRows((prev) =>
+				prev.map((r) =>
+					r.id === row.id ? { ...r, isDeleted: kind === "delete" } : r,
+				),
+			);
+			setConfirmAction(null);
+		} catch (err) {
+			setActionError(
+				getApiErrorMessage(
+					err,
+					kind === "delete"
+						? t("administration.reports.deleteError")
+						: t("administration.reports.restoreError"),
+				),
+			);
+		} finally {
+			setActioning(false);
+		}
 	}
 
 	return (
@@ -199,15 +250,98 @@ function OrganizationsSection() {
 			) : (
 				<>
 					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
-						{rows.map((row) => (
-							<li key={row.id} className="flex items-center gap-4 px-4 py-3">
-								<div className="min-w-0 flex-1">
-									<p className="truncate font-medium text-gray-900">
-										{row.name}
-									</p>
-								</div>
-							</li>
-						))}
+						{rows.map((row) => {
+							const avatarColor = avatarColorClasses(row.id);
+							return (
+								<li
+									key={row.id}
+									className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div className="flex min-w-0 flex-1 items-center gap-3">
+										{row.logoUrl ? (
+											<img
+												src={row.logoUrl}
+												alt=""
+												width={40}
+												height={40}
+												loading="lazy"
+												className="h-10 w-10 shrink-0 rounded-full object-cover"
+											/>
+										) : (
+											<span
+												aria-hidden="true"
+												className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor.bg} ${avatarColor.text}`}
+											>
+												{row.name.charAt(0).toUpperCase()}
+											</span>
+										)}
+										<div className="min-w-0 flex-1">
+											<div className="flex flex-wrap items-center gap-2">
+												<Link
+													to={`/organizations/${row.id}`}
+													className="truncate font-medium text-brand-700 hover:underline"
+												>
+													{row.name}
+												</Link>
+												<Chip
+													tone={row.isDeleted ? "danger" : "success"}
+													size="sm"
+												>
+													{row.isDeleted
+														? t("administration.reports.statusDeleted")
+														: t("administration.reports.statusActive")}
+												</Chip>
+												{row.openReportCount > 0 && (
+													<Chip tone="warning" size="sm">
+														{t("administration.organizations.flaggedBadge")}
+													</Chip>
+												)}
+											</div>
+											<p className="mt-1 truncate text-xs text-gray-500">
+												{t("administration.organizations.memberCount", {
+													count: row.memberCount,
+												})}
+												{" · "}
+												{t("administration.organizations.createdOn", {
+													date: formatDateLong(row.createdOn, i18n.language),
+												})}
+											</p>
+										</div>
+									</div>
+									<div className="flex shrink-0 items-center gap-2 sm:justify-end">
+										{row.isDeleted ? (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={() =>
+													setConfirmAction({ row, kind: "restore" })
+												}
+												aria-label={t("administration.reports.restoreNamed", {
+													name: row.name,
+												})}
+											>
+												{t("administration.reports.restore")}
+											</Button>
+										) : (
+											<button
+												type="button"
+												onClick={() =>
+													setConfirmAction({ row, kind: "delete" })
+												}
+												aria-label={t(
+													"administration.reports.shadowDeleteNamed",
+													{ name: row.name },
+												)}
+												className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+											>
+												{t("administration.reports.shadowDelete")}
+											</button>
+										)}
+									</div>
+								</li>
+							);
+						})}
 					</ul>
 					{hasMore &&
 						(loadMoreError ? (
@@ -224,6 +358,34 @@ function OrganizationsSection() {
 								onClick={loadMore}
 							/>
 						))}
+					{confirmAction && (
+						<ConfirmDialog
+							title={t(
+								confirmAction.kind === "delete"
+									? "confirmDialog.adminShadowDelete.title"
+									: "confirmDialog.adminRestore.title",
+							)}
+							message={t(
+								confirmAction.kind === "delete"
+									? "confirmDialog.adminShadowDelete.message"
+									: "confirmDialog.adminRestore.message",
+								{ name: confirmAction.row.name },
+							)}
+							confirmLabel={t(
+								confirmAction.kind === "delete"
+									? "confirmDialog.adminShadowDelete.confirm"
+									: "confirmDialog.adminRestore.confirm",
+							)}
+							onConfirm={() => void confirmActionSubmit()}
+							onClose={() => {
+								if (actioning) return;
+								setConfirmAction(null);
+								setActionError(null);
+							}}
+							loading={actioning}
+							error={actionError}
+						/>
+					)}
 				</>
 			)}
 		</>

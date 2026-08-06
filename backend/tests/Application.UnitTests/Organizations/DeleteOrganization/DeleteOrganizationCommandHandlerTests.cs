@@ -43,6 +43,12 @@ public class DeleteOrganizationCommandHandlerTests
 		_dbContext
 			.GetActiveEngagementsForOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Domain.Engagements.Engagement>());
+		// Default: the requesting user organizes nothing else, matching the common
+		// case (a fresh test user whose only org is the one being deleted) - tests
+		// for the #1677 fix override this via SetRemainingOrganizerOrganizations.
+		_dbContext
+			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Organization>());
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Guid>());
@@ -60,6 +66,11 @@ public class DeleteOrganizationCommandHandlerTests
 			.Returns((IReadOnlyList<KeycloakOrganizationMember>)memberIds
 				.Select(id => new KeycloakOrganizationMember(id, "user", "First", "Last", "user@example.com", false))
 				.ToList());
+
+	private void SetRemainingOrganizerOrganizations(params Organization[] organizations) =>
+		_dbContext
+			.GetOrganizerOrganizationsAsync(DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(organizations.ToList());
 
 	private static Organization CreateOrganization(Guid id) =>
 		Organization.Create(OrganizationId.Create(id).GetValueOrThrow(), "Test Org").Value;
@@ -239,5 +250,51 @@ public class DeleteOrganizationCommandHandlerTests
 			.WithMessage("*Titel*");
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
 		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRevokeKeycloakRole_WhenRequestingUserHasNoRemainingOrganizations(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the sole-member guard above already forces the requesting user
+		// to be this organization's only (and therefore only Organizer) member, so
+		// deleting it and organizing nothing else must revoke the realm-wide role
+		// (#1677).
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		SetRemainingOrganizerOrganizations();
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _keycloakService.Received(1).RevokeOrganizerRoleAsync(DefaultRequestingUserId.Value, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotRevokeKeycloakRole_WhenRequestingUserStillOrganizesAnotherOrganization(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the requesting user still organizes a different organization,
+		// so the realm-wide role (shared across every org they organize, #1386)
+		// must stay assigned.
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		var otherOrg = Organization.Create(OrganizationId.New(), "Other Org").GetValueOrThrow();
+		SetRemainingOrganizerOrganizations(otherOrg);
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }

@@ -19,6 +19,8 @@
       "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
+      "myEngagements": "Meine Aktivitäten",
+      "profileSettings": "Benachrichtigungen & Datenschutz",
       "administration": "Administration",
       "organization": "Organisation",
       "signOut": "Abmelden",
@@ -665,7 +667,6 @@
       }
     },
     "orgEngagements": {
-      "title": "Anmeldewarteschlange",
       "pageDescription": "Ausstehende und bearbeitete Anmeldungen über alle Einsätze deiner Organisation hinweg, an einem Ort.",
       "loading": "Wird geladen…",
       "error": "{{message}}",
@@ -981,6 +982,9 @@
     },
     "profile": {
       "title": "Mein Profil",
+      "subNavLabel": "Profilnavigation",
+      "subNavProfile": "Profil",
+      "subNavSettings": "Einstellungen",
       "sectionDetails": "Profil-Details",
       "emptyStateTitle": "Dein Profil ist noch leer",
       "emptyStateMessage": "Füge eine Bio, Fähigkeiten oder Kontaktpräferenzen hinzu, damit Organisationen etwas über dich wissen.",
@@ -1013,6 +1017,12 @@
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
       "removeChip": "Entfernen"
+    },
+    "profileSettings": {
+      "title": "Einstellungen"
+    },
+    "myEngagementsPage": {
+      "title": "Meine Aktivitäten"
     },
     "notificationPreferences": {
       "title": "E-Mail-Benachrichtigungen",
@@ -1111,7 +1121,11 @@
         "searchPlaceholder": "Nach Name suchen",
         "searchButton": "Suchen",
         "flaggedOnlyLabel": "Nur gemeldete",
-        "deletedOnlyLabel": "Nur gelöschte"
+        "deletedOnlyLabel": "Nur gelöschte",
+        "memberCount_one": "{{count}} Mitglied",
+        "memberCount_other": "{{count}} Mitglieder",
+        "createdOn": "Erstellt am {{date}}",
+        "flaggedBadge": "Gemeldet"
       },
       "users": {
         "loading": "Nutzer:innen werden geladen…",
@@ -1235,6 +1249,7 @@
     "orgOverview": {
       "tabDashboard": "Dashboard",
       "tabOpportunities": "Einsätze",
+      "tabEngagements": "Anmeldungen",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
       "calendarLoading": "Kalender wird geladen…",

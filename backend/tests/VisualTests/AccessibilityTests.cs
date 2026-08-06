@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Deque.AxeCore.Commons;
@@ -190,11 +191,95 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
+	{
+		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an
+		// unnamed role="button" tab stop (WCAG 4.1.2) - axe's button-name rule
+		// would flag this (impact "critical"), but no seeded opportunity here
+		// ever gets real coordinates (VisualTests always runs against
+		// FakeGeocodingService, which reports TransientFailure - see
+		// SingleMarkerMapTouchScrollTests.cs), so the map - and this entire bug
+		// class - was structurally unreachable by any existing scan, including
+		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above.
+		// Patch coordinates the same way SingleMarkerMapTouchScrollTests does
+		// to actually exercise it, and assert the fix (Marker's title prop)
+		// directly rather than relying only on the axe scan.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Marker A11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var title = $"Marker A11y Test {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Seeded for the map marker accessible-name regression (#1681).",
+			organizationId,
+			isRemote = false,
+			street = "Teststrasse",
+			houseNumber = "1",
+			zipCode = "12345",
+			city = "Musterstadt",
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
+		{
+			if (route.Request.Method != "GET")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			var response = await route.FetchAsync();
+			var body = JsonNode.Parse(await response.TextAsync())!.AsObject();
+			body["latitude"] = JsonValue.Create(52.52);
+			body["longitude"] = JsonValue.Create(13.405);
+
+			await route.FulfillAsync(new()
+			{
+				Response = response,
+				ContentType = "application/json",
+				Body = body.ToJsonString(),
+			});
+		});
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(title, new() { Timeout = 15_000 });
+
+		var marker = Page.Locator(".leaflet-marker-icon");
+		await Expect(marker).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(marker).ToHaveAttributeAsync("role", "button");
+		await Expect(marker).ToHaveAttributeAsync("title", "Teststrasse 1, 12345 Musterstadt");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
-		// into a single page - Profile Details, Badges, and My Sign-ups all
-		// render together here.
+		// into a single page. #1684: it was later split again - Profile
+		// Details and Badges render here; invitations/sign-ups moved to
+		// /my-engagements and notifications/export/deletion moved to
+		// /profile/settings (both scanned separately below).
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -210,9 +295,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #794: Edit/Save/Cancel moved from inline buttons into the header's
 		// quick actions - the read-only scan above never opens the edit form,
-		// so scan it separately here. Also asserts the Badges/My Sign-ups
-		// sections stay mounted and visible alongside the open edit form,
-		// since they no longer live behind a separate tab.
+		// so scan it separately here. Also asserts the Badges section stays
+		// mounted and visible alongside the open edit form, since it doesn't
+		// live behind a separate tab. #1684: My Sign-ups no longer lives on
+		// this page - see MyEngagementsPage_HasNoSeriousA11yViolations below.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -223,7 +309,43 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task MyEngagementsPage_HasNoSeriousA11yViolations()
+	{
+		// #1684: invitations/sign-ups split out of /profile onto their own
+		// page - this scan is what ProfileOverviewPage_EditMode's "My
+		// Sign-ups" heading assertion used to (indirectly) cover.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task ProfileSettingsPage_HasNoSeriousA11yViolations()
+	{
+		// #1684: email notification preferences, data export and account
+		// deletion split out of /profile onto their own page.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -917,11 +1039,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/engagements?status=Pending");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "engagements" isn't a tab in ORG_TABS, so the h1 depends on
-		// useSetOrgBreadcrumbExtra rather than the parent tab's own label -
-		// the same #973 pageTitle mechanism EngagementManagementPage_AsOlaf_...
-		// above guards for its own nested route.
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Sign-up queue");
+		// einsatzbereit#1680: "engagements" became a real ORG_TABS entry, so the
+		// h1 now comes from OrgAppLayout's own tab-label lookup (orgOverview.tabEngagements)
+		// like every other tab, rather than from a page-local useSetOrgBreadcrumbExtra call.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Sign-ups");
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Confirm" })).ToBeVisibleAsync();
 
@@ -1556,13 +1677,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1305/#1297: the "Leave feedback" button (white text on
 		// yellow-500) only renders for a checked-in-without-feedback engagement -
-		// vera's seeded data never has one, so the existing ProfileOverviewPage
-		// scan never actually rendered this control. Also exercises
-		// SubmitFeedbackModal (einsatzbereit#1287's star-rating contrast fix).
+		// vera's seeded data never has one, so the base MyEngagementsPage scan
+		// never actually rendered this control. Also exercises SubmitFeedbackModal
+		// (einsatzbereit#1287's star-rating contrast fix).
 		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("Manual", "FeedbackA11y");
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -1573,7 +1694,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -1595,7 +1718,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1069: the axe gate above only ever renders the
 		// create-mode "Leave feedback" state - it never opens the edit-mode
@@ -1618,7 +1741,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
@@ -1645,7 +1770,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297: CheckInModal's PIN-entry state (and its
 		// einsatzbereit#1289 success announcement) never had axe coverage.
@@ -1653,7 +1778,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
