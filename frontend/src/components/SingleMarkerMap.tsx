@@ -43,6 +43,14 @@ export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 				center={[latitude, longitude]}
 				zoom={14}
 				scrollWheelZoom={false}
+				// Mirrors the scrollWheelZoom trap above, for touch: leaving
+				// dragging on unconditionally makes Leaflet claim every touch
+				// gesture that starts on the map (touch-action: none), which
+				// blocks the page's own vertical swipe-to-scroll. Disabling it
+				// on mobile drops the container to touch-action: pan-x pan-y so
+				// a swipe passes through to the page; pinch-zoom and desktop
+				// mouse-drag panning are unaffected (#1664).
+				dragging={!L.Browser.mobile}
 				className="h-full w-full"
 			>
 				<TileLayer attribution={ATTRIBUTION} url={TILE_URL} />
