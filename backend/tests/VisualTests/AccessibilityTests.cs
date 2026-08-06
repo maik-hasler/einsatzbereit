@@ -276,8 +276,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
-		// into a single page - Profile Details, Badges, and My Sign-ups all
-		// render together here.
+		// into a single page. #1684: it was later split again - Profile
+		// Details and Badges render here; invitations/sign-ups moved to
+		// /my-engagements and notifications/export/deletion moved to
+		// /profile/settings (both scanned separately below).
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -293,9 +295,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #794: Edit/Save/Cancel moved from inline buttons into the header's
 		// quick actions - the read-only scan above never opens the edit form,
-		// so scan it separately here. Also asserts the Badges/My Sign-ups
-		// sections stay mounted and visible alongside the open edit form,
-		// since they no longer live behind a separate tab.
+		// so scan it separately here. Also asserts the Badges section stays
+		// mounted and visible alongside the open edit form, since it doesn't
+		// live behind a separate tab. #1684: My Sign-ups no longer lives on
+		// this page - see MyEngagementsPage_HasNoSeriousA11yViolations below.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -306,7 +309,43 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task MyEngagementsPage_HasNoSeriousA11yViolations()
+	{
+		// #1684: invitations/sign-ups split out of /profile onto their own
+		// page - this scan is what ProfileOverviewPage_EditMode's "My
+		// Sign-ups" heading assertion used to (indirectly) cover.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task ProfileSettingsPage_HasNoSeriousA11yViolations()
+	{
+		// #1684: email notification preferences, data export and account
+		// deletion split out of /profile onto their own page.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -1639,13 +1678,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1305/#1297: the "Leave feedback" button (white text on
 		// yellow-500) only renders for a checked-in-without-feedback engagement -
-		// vera's seeded data never has one, so the existing ProfileOverviewPage
-		// scan never actually rendered this control. Also exercises
-		// SubmitFeedbackModal (einsatzbereit#1287's star-rating contrast fix).
+		// vera's seeded data never has one, so the base MyEngagementsPage scan
+		// never actually rendered this control. Also exercises SubmitFeedbackModal
+		// (einsatzbereit#1287's star-rating contrast fix).
 		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("Manual", "FeedbackA11y");
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -1656,7 +1695,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -1678,7 +1719,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1069: the axe gate above only ever renders the
 		// create-mode "Leave feedback" state - it never opens the edit-mode
@@ -1701,7 +1742,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
@@ -1728,7 +1771,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ProfileOverviewPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
+	public async Task MyEngagementsPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297: CheckInModal's PIN-entry state (and its
 		// einsatzbereit#1289 success announcement) never had axe coverage.
@@ -1736,7 +1779,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		// #1684: ActivitySection (and this data-testid) moved from /profile to
+		// its own page at /my-engagements.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");

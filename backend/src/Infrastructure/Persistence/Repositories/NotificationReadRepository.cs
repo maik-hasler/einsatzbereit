@@ -196,7 +196,9 @@ internal sealed class NotificationReadRepository(
 			{
 				invitationOrganizationNames.TryGetValue(n.RelatedEntityId, out relatedTitle);
 				actionUrl = n.Kind == NotificationKind.InvitationReceived
-					? "/profile?tab=invitations"
+					// einsatzbereit#1684: invitations moved off /profile onto their own
+					// page at /my-engagements.
+					? "/my-engagements"
 					: (invitationOrganizationIds.TryGetValue(n.RelatedEntityId, out var invitationOrganizationId)
 						? $"/app/{invitationOrganizationId}/dashboard/members"
 						: null);
