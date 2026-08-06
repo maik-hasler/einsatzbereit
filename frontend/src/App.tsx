@@ -41,7 +41,6 @@ const EngagementManagementPage = lazy(
 	() => import("./pages/EngagementManagementPage"),
 );
 const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
-const EngagementRecordPage = lazy(() => import("./pages/EngagementRecordPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
@@ -108,16 +107,6 @@ export default function App() {
 	return (
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
-			{/* Bare route (no AppLayout) so the header/footer chrome never
-			prints alongside the record itself - see EngagementRecordPage.tsx. */}
-			<Route
-				path="/profile/engagement-record"
-				element={
-					<ProtectedRoute>
-						<EngagementRecordPage />
-					</ProtectedRoute>
-				}
-			/>
 			<Route
 				path="/app/:organizationId"
 				element={
