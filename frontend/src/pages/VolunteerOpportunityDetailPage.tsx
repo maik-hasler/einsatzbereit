@@ -547,7 +547,7 @@ export default function VolunteerOpportunityDetailPage() {
 									isFull
 										? "text-red-600"
 										: spotsLeft <= 5
-											? "text-orange-600"
+											? "text-orange-700"
 											: "text-gray-600"
 								}`}
 							>

@@ -42,7 +42,11 @@ const BASE_CLASSES =
 // built on the brand ramp like every other variant here rather than raw
 // Tailwind green, since brand-700 (#226947) already reads as "confirming
 // green" (see issue #1673: two visibly different greens side by side in the
-// organizer's core workflow before this existed).
+// organizer's core workflow before this existed). Same brand-700/800 pair as
+// primary, not a lighter brand-600 - brand-600 under white text-xs text
+// measures ~4.3:1, under axe-core's WCAG AA 4.5:1 floor (caught by
+// AccessibilityTests.cs), while brand-700 (already proven at every primary
+// button site) clears it comfortably.
 // outline: outlined, muted action for a light background - the
 // action-bar/breadcrumb secondary buttons (Cancel etc.) and header
 // sign-in/register pair. onDark/outlineOnDark: solid/outlined counterparts
@@ -54,7 +58,7 @@ const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
-	success: "bg-brand-600 font-semibold text-white hover:bg-brand-700",
+	success: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
 	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
 	outline: "border border-gray-200 font-medium text-gray-700 hover:bg-gray-50",
