@@ -132,7 +132,6 @@ export default function FilterDropdown({
 					data-testid={testId}
 					onClick={onToggle}
 					aria-expanded={isOpen}
-					aria-haspopup="true"
 					aria-controls={panelId}
 					className={`flex items-center gap-1.5 py-1.5 text-sm whitespace-nowrap transition-colors ${
 						active

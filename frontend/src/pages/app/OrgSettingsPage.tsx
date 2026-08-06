@@ -308,6 +308,9 @@ export default function OrgSettingsPage() {
 												onChange={handleLogoChange}
 												disabled={uploadingLogo || removingLogo}
 												inputRef={logoInputRef}
+												ariaDescribedBy={
+													logoError ? "logo-upload-error" : undefined
+												}
 											/>
 											{logoUrl && (
 												<button
@@ -327,7 +330,13 @@ export default function OrgSettingsPage() {
 											{t("orgSettings.logoHint")}
 										</p>
 										{logoError && (
-											<p className="mt-1 text-xs text-red-600">{logoError}</p>
+											<p
+												id="logo-upload-error"
+												className="mt-1 text-xs text-red-600"
+												role="alert"
+											>
+												{logoError}
+											</p>
 										)}
 									</div>
 								</div>

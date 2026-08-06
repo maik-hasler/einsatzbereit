@@ -41,12 +41,29 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		var response = await http.PutAsync("/v1/users/me/avatar", content);
 		response.EnsureSuccessStatusCode();
 
-		// Header only fetches the profile once on mount, so a full navigation
-		// is needed to pick up the freshly uploaded avatar.
-		await Page.GotoAsync(origin);
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
+		// Header only fetches the profile once on mount, so a full navigation is
+		// needed to pick up the freshly uploaded avatar - observed failing
+		// consistently (not just occasionally) on the very first such
+		// navigation in CI, still showing initials. Ruled out both output
+		// caching (GetUserProfile isn't .CacheOutput-decorated - only
+		// AllowAnonymous, response-invariant endpoints opt in, see
+		// OutputCachingExtensions's #1391 comment) and browser HTTP caching
+		// (Program.cs sets Cache-Control: no-store on every authenticated
+		// response, so a stale cached GET isn't possible either). Whatever the
+		// remaining timing gap is between the upload's HTTP connection and the
+		// page's own, poll via fresh navigations instead of asserting on a
+		// single one - the same fix already applied to this file's DELETE-flow
+		// tests below for the identical class of issue (#946).
 		var userMenu = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
+		for (var attempt = 0; ; attempt++)
+		{
+			await Page.GotoAsync(origin);
+			await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+			userMenu = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
+			if (await userMenu.Locator("img").IsVisibleAsync() || attempt >= 5)
+				break;
+			await Task.Delay(500);
+		}
 		await Expect(userMenu.Locator("img")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 

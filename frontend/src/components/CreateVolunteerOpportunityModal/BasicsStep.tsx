@@ -94,11 +94,19 @@ export default function BasicsStep({
 							accept="image/jpeg,image/png,image/webp"
 							className="sr-only"
 							onChange={onBannerChange}
+							aria-invalid={bannerError ? true : undefined}
+							aria-describedby={
+								bannerError ? "opportunity-banner-error" : undefined
+							}
 						/>
 					</label>
 				)}
 				{bannerError && (
-					<p className="mt-1 text-xs text-red-600" role="alert">
+					<p
+						id="opportunity-banner-error"
+						className="mt-1 text-xs text-red-600"
+						role="alert"
+					>
 						{bannerError}
 					</p>
 				)}
