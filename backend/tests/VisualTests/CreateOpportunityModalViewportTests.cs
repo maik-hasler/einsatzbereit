@@ -61,20 +61,37 @@ public class CreateOpportunityModalViewportTests(AspireFixture fixture) : Visual
 		// overflow-hidden wrapper) is what the bug report showed staying
 		// stuck at scrollTop 0. Hover over the stepper first - already
 		// visible without any scrolling - purely to position the mouse before
-		// dispatching the wheel event at that point.
+		// dispatching wheel events at that point.
 		await Page.GetByTestId("wizard-stepper-1").HoverAsync();
-		await Page.Mouse.WheelAsync(0, 2000);
 
-		foreach (var testId in new[] { "modal-cancel", "modal-save-draft", "modal-next" })
+		// Dispatch repeated, modest wheel ticks (closer to real trackpad/wheel
+		// input than one giant delta) and poll rather than reading geometry
+		// once right after a single dispatch - under this suite's own CPU
+		// contention (AssemblyParallelLimit.cs runs many Playwright sessions
+		// concurrently), a single wheel event's resulting scroll is not
+		// guaranteed to already be reflected in the very next BoundingBoxAsync
+		// call. See VisualTestBase.PollUntilAsync's doc comment.
+		var footerTestIds = new[] { "modal-cancel", "modal-save-draft", "modal-next" };
+		var lastObserved = new Dictionary<string, string>();
+		await PollUntilAsync(async () =>
 		{
-			var button = Page.GetByTestId(testId);
-			await Expect(button).ToBeVisibleAsync();
-			var box = await button.BoundingBoxAsync();
-			box.Should().NotBeNull();
-			box!.Y.Should().BeGreaterThanOrEqualTo(0,
-				$"{testId} top edge must be within the viewport after scrolling");
-			(box.Y + box.Height).Should().BeLessThanOrEqualTo(ViewportHeight,
-				$"{testId} bottom edge must be within the {ViewportHeight}px-tall viewport after scrolling");
-		}
+			await Page.Mouse.WheelAsync(0, 400);
+			var allWithinViewport = true;
+			foreach (var testId in footerTestIds)
+			{
+				var box = await Page.GetByTestId(testId).BoundingBoxAsync();
+				var withinViewport = box is not null && box.Y >= 0 && box.Y + box.Height <= ViewportHeight;
+				lastObserved[testId] = box is null
+					? "<no box>"
+					: $"top={box.Y:F0} bottom={box.Y + box.Height:F0}";
+				if (!withinViewport)
+					allWithinViewport = false;
+			}
+			return allWithinViewport;
+		}, () => "footer buttons never became fully visible within the "
+			+ $"{ViewportHeight}px viewport after repeated wheel scrolling (last observed: "
+			+ string.Join(", ", footerTestIds.Select(id => $"{id}: {lastObserved.GetValueOrDefault(id, "<none>")}"))
+			+ ")",
+			timeoutMs: 10_000);
 	}
 }
