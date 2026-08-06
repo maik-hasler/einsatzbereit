@@ -73,6 +73,33 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(main.Locator("a[href='/imprint']")).ToBeVisibleAsync();
 	}
 
+	// #1665: section4Body claimed organizations get a verification badge that
+	// confirms we reviewed their identity - no such feature exists anywhere
+	// in the product. Pins the sentence's removal in both locales so it can't
+	// silently come back before the feature does.
+	[Test]
+	public async Task TermsOfUsePage_DoesNotDescribeNonExistentVerificationBadge()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/terms-of-use");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading,
+			new() { Name = "Organizations and volunteer opportunities" })).ToBeVisibleAsync();
+		await Expect(Page.GetByText("verification badge", new() { Exact = false }))
+			.Not.ToBeVisibleAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Heading,
+			new() { Name = "Organisationen und Einsätze" })).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Verifizierungs-Badge", new() { Exact = false }))
+			.Not.ToBeVisibleAsync();
+	}
+
 	[Test]
 	public async Task Footer_LegalLinks_IncludeTermsOfUse()
 	{
