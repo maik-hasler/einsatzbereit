@@ -6,10 +6,10 @@ import ProfileSubNav from "../../components/ProfileSubNav";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import DangerZoneCard from "./DangerZoneCard";
 
-// Mail notifications, data export and account deletion - split out of the
-// overloaded /profile into their own page (#1684). Every section here is
-// already self-contained (owns its own fetch/save/error state), so this
-// shell only supplies the page chrome (h1, breadcrumb, sub-nav).
+// Mail notifications and account deletion - split out of the overloaded
+// /profile into their own page (#1684). Every section here is already
+// self-contained (owns its own fetch/save/error state), so this shell only
+// supplies the page chrome (h1, breadcrumb, sub-nav).
 export default function ProfileSettingsPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("profileSettings.title"));
