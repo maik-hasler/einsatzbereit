@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.Reports;
 using Domain.Users;
