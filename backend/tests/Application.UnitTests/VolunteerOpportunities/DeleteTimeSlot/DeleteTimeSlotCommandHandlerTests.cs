@@ -9,6 +9,7 @@ using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.DeleteTimeSlot;
@@ -39,7 +40,7 @@ public class DeleteTimeSlotCommandHandlerTests
 		_dbContext
 			.GetActiveEngagementsForTimeSlotsAsync(Arg.Any<IReadOnlyCollection<TimeSlotId>>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Engagement>());
-		_sut = new DeleteTimeSlotCommandHandler(_dbContext);
+		_sut = new DeleteTimeSlotCommandHandler(_dbContext, NullLogger<DeleteTimeSlotCommandHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateOpportunityWithTimeSlot(out TimeSlot timeSlot)

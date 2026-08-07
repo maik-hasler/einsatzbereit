@@ -104,9 +104,21 @@ internal sealed class EngagementConfiguration
 		// Individual-contact engagements have no time slot, so the index above
 		// doesn't constrain them (Postgres treats every NULL as distinct) - keep the
 		// original one-engagement-per-opportunity rule for that case explicitly.
+		//
+		// The "AND status NOT IN (...)" half of the filter (einsatzbereit#1724) matters
+		// for a *time-slot* signup, not an individual-contact one: a volunteer can
+		// legitimately hold two Engagement rows for the same opportunity (differing only
+		// by time_slot_id) by signing up for two slots of the same recurring series
+		// (#1067). Deleting both slots at once cancels their engagements first, then
+		// hard-deletes the TimeSlot rows, which nulls time_slot_id on both engagements via
+		// its ON DELETE SET NULL FK below - without the status half of this filter, both
+		// now-Cancelled rows would land in this partial index at the same
+		// (volunteer_id, opportunity_id) and collide, 500ing the whole deletion.
+		// Excluding terminal engagements keeps only a genuinely-live individual-contact
+		// engagement covered, which is all this index ever needed to constrain.
 		builder.HasIndex(e => new { e.VolunteerId, e.OpportunityId })
 			.IsUnique()
-			.HasFilter("time_slot_id IS NULL");
+			.HasFilter("time_slot_id IS NULL AND status NOT IN ('Cancelled', 'Withdrawn')");
 
 		builder.HasOne<TimeSlot>()
 			.WithMany()

@@ -1846,6 +1846,103 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		secondAfter.Id.Should().NotBe(firstEngagement.Id);
 	}
 
+	// ── Multi-slot signup deletion cascade (#1724) ───────────────────────────
+
+	[Test]
+	public async Task DeleteVolunteerOpportunity_ShouldSucceed_WhenOneVolunteerHasEngagementsForMultipleTimeSlots(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1724: a volunteer signing up for two slots of the same
+		// recurring opportunity legitimately holds two Engagement rows sharing
+		// (volunteer_id, opportunity_id), differing only by time_slot_id (#1067).
+		// Deleting the opportunity cancels both engagements, then hard-deletes
+		// their time slots, which nulls time_slot_id on both via its ON DELETE
+		// SET NULL FK - the two now-null rows used to collide on the
+		// (volunteer_id, opportunity_id) partial unique index and 500 the whole
+		// deletion.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
+
+		var deleteOpportunity = () => olafClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+		await deleteOpportunity.Should().NotThrowAsync(
+			"two engagements sharing (volunteer_id, opportunity_id) must not collide once their time slots are hard-deleted (#1724)");
+
+		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id))
+			.Should().Be(0);
+	}
+
+	[Test]
+	public async Task DeleteTimeSlot_EntireSeries_ShouldSucceed_WhenOneVolunteerHasEngagementsForMultipleTimeSlots(
+		CancellationToken cancellationToken)
+	{
+		// Same regression as above (#1724), exercised via the "entire series"
+		// delete scope instead of a full opportunity delete -
+		// DeleteTimeSlotCommandHandler.DeleteSeriesAsync force-cancels active
+		// engagements for every affected slot before removing the slots
+		// themselves, hitting the same partial-index collision.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var firstEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
+		var secondEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
+
+		var deleteSeries = () => olafClient.DeleteTimeSlotAsync(
+			opportunity.Id, firstSlotId, "EntireSeries", cancellationToken);
+		await deleteSeries.Should().NotThrowAsync(
+			"two engagements sharing (volunteer_id, opportunity_id) must not collide once their time slots are hard-deleted (#1724)");
+
+		var firstEngagementId = EngagementId.Create(firstEngagement.Id).GetValueOrThrow();
+		var secondEngagementId = EngagementId.Create(secondEngagement.Id).GetValueOrThrow();
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagements = await dbContext.Set<Engagement>()
+			.AsNoTracking()
+			.Where(e => e.Id == firstEngagementId || e.Id == secondEngagementId)
+			.ToListAsync(cancellationToken);
+		engagements.Should().HaveCount(2);
+		engagements.Should().OnlyContain(e => e.Status == EngagementStatus.Cancelled);
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(

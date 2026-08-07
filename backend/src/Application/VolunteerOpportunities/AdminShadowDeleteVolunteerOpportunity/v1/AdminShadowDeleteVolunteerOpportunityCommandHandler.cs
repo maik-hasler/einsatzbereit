@@ -6,6 +6,7 @@ using Application.VolunteerOpportunities.Common;
 using Domain.AuditLogs;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.AdminShadowDeleteVolunteerOpportunity.v1;
 
@@ -18,7 +19,8 @@ namespace Application.VolunteerOpportunities.AdminShadowDeleteVolunteerOpportuni
 /// </summary>
 internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository)
+	IEngagementReadRepository engagementReadRepository,
+	ILogger<AdminShadowDeleteVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<AdminShadowDeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -38,6 +40,7 @@ internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 			opportunityId,
 			request.AdminUserId,
 			DateTimeOffset.UtcNow,
+			logger,
 			cancellationToken);
 
 		var auditLog = AuditLog.Create(

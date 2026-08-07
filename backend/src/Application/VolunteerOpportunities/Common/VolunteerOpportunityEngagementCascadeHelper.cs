@@ -4,6 +4,7 @@ using Application.Engagements.Common;
 using Application.Notifications;
 using Domain.Notifications;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.Common;
 
@@ -24,6 +25,7 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 		string opportunityTitle,
 		NotificationKind opportunityNotificationKind,
 		string engagementCancellationReason,
+		ILogger logger,
 		CancellationToken cancellationToken)
 	{
 		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
@@ -33,6 +35,9 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 			opportunityNotificationKind,
 			cancellationToken);
 
+		// GetActiveEngagementsForOpportunityAsync already excludes anonymized
+		// engagements (einsatzbereit#1724), so CancelAndNotifyAsync's own guard below
+		// is defense in depth here, not the primary fix.
 		var activeEngagements = await dbContext.GetActiveEngagementsForOpportunityAsync(
 			opportunityId, cancellationToken);
 		foreach (var engagement in activeEngagements)
@@ -45,6 +50,7 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 				engagement,
 				engagementCancellationReason,
 				opportunityTitle,
+				logger,
 				cancellationToken);
 		}
 	}

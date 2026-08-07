@@ -5,6 +5,7 @@ using Domain.Notifications;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.Common;
 
@@ -23,10 +24,11 @@ internal static class VolunteerOpportunityDeletionHelper
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
 		DateTimeOffset now,
+		ILogger logger,
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, cancellationToken);
+			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, logger, cancellationToken);
 
 		dbContext.VolunteerOpportunities.Delete(opportunity);
 	}
@@ -45,10 +47,11 @@ internal static class VolunteerOpportunityDeletionHelper
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
 		DateTimeOffset now,
+		ILogger logger,
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, cancellationToken);
+			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, logger, cancellationToken);
 
 		opportunity.MarkDeleted(now).ThrowIfFailure();
 	}
@@ -60,6 +63,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
 		DateTimeOffset now,
+		ILogger logger,
 		CancellationToken cancellationToken)
 	{
 		await VolunteerOpportunityEngagementCascadeHelper.NotifyAndCancelActiveEngagementsAsync(
@@ -69,6 +73,7 @@ internal static class VolunteerOpportunityDeletionHelper
 			opportunity.Title,
 			NotificationKind.OpportunityDeleted,
 			"Opportunity was deleted.",
+			logger,
 			cancellationToken);
 
 		var openReports = await dbContext.GetOpenReportsForTargetAsync(

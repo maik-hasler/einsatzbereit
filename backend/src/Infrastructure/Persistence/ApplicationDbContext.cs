@@ -437,11 +437,19 @@ internal sealed class ApplicationDbContext(
 				FOR UPDATE")
 			.ToListAsync(cancellationToken);
 
+	// VolunteerId != null excludes an anonymized-but-active engagement (a checked-in
+	// engagement left non-terminal on purpose when its volunteer deleted their account,
+	// see DeleteMyAccountCommandHandler) - Engagement.Cancel() refuses to act on an
+	// anonymized aggregate, so an unfiltered read here would hand one to
+	// EngagementCancellationHelper.CancelAndNotifyAsync and permanently 409 the whole
+	// deletion cascade (einsatzbereit#1724). Mirrors the same predicate already used by
+	// EngagementReadRepository.GetActiveVolunteerIdsByOpportunityAsync.
 	public async Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Engagement>()
 			.Where(e => e.OpportunityId == opportunityId
+				&& e.VolunteerId != null
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.ToListAsync(cancellationToken);
 
@@ -455,8 +463,11 @@ internal sealed class ApplicationDbContext(
 		// mirrors elsewhere in this class.
 		var nullableIds = timeSlotIds.Select(id => (TimeSlotId?)id).ToList();
 
+		// VolunteerId != null - see GetActiveEngagementsForOpportunityAsync above
+		// (einsatzbereit#1724).
 		return await Set<Engagement>()
 			.Where(e => nullableIds.Contains(e.TimeSlotId)
+				&& e.VolunteerId != null
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.ToListAsync(cancellationToken);
 	}
@@ -475,8 +486,14 @@ internal sealed class ApplicationDbContext(
 
 		var now = DateTimeOffset.UtcNow;
 
+		// VolunteerId != null - same reasoning as GetActiveEngagementsForOpportunityAsync
+		// above: without it, an anonymized-but-active engagement (checked-in, volunteer
+		// account deleted) permanently trips this guard and the organization can never be
+		// deleted, since the deletion this guard gates for is what would otherwise resolve
+		// it (einsatzbereit#1724).
 		var opportunityIdsWithActiveEngagements = await Set<Engagement>()
 			.Where(e => opportunityIds.Contains(e.OpportunityId)
+				&& e.VolunteerId != null
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.Select(e => e.OpportunityId)
 			.Distinct()
