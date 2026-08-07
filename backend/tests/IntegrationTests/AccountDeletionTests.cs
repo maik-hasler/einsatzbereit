@@ -180,6 +180,62 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task DeleteMyAccount_ShouldRemoveAccountAcrossAllSubsystems_WhenCallerWasPreviouslyShadowDeleted(
+		CancellationToken cancellationToken)
+	{
+		// #1725: DeleteMyAccount used to resolve the local user row through the
+		// filtered dbContext.Users.FindAsync, which respects the global
+		// !IsDeleted query filter - so a user an admin had already shadow-deleted
+		// (login deliberately left intact, AdminShadowDeleteUserCommandHandler)
+		// got a 204 back with the entire identity-erasing block silently
+		// skipped: no MarkAccountDeleted (the only thing that raises
+		// UserAccountDeletedDomainEvent), so Keycloak was never told either.
+		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
+		// Lazily creates the local `user` row before it gets shadow-deleted below.
+		await ephemeralClient.GetUserProfileAsync(cancellationToken);
+
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		await adminClient.AdminShadowDeleteUserAsync(ephemeralUserId, cancellationToken);
+
+		// Shadow-delete deliberately leaves login intact, so the same account can
+		// still reach DeleteMyAccount itself.
+		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Users.UserAccountDeletedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue(
+			"MarkAccountDeleted must still run for a shadow-deleted user, so UserAccountDeletedDomainEventHandler deletes the Keycloak user");
+
+		var reLogin = () => fixture.GetAccessTokenAsync(ephemeralUsername, ephemeralPassword);
+		await reLogin.Should().ThrowAsync<Exception>();
+
+		(await fixture.CountRowsWhereAsync("user", "id", ephemeralUserId))
+			.Should().Be(0, "the local row must be hard-deleted, not left behind hidden under IsDeleted=true");
+	}
+
+	[Test]
+	public async Task DeleteMyAccount_ShouldReturn404_WhenLocalUserRowDoesNotExistAtAll(
+		CancellationToken cancellationToken)
+	{
+		// #1725: a missing row (as opposed to a shadow-deleted-but-present one)
+		// must now surface as an error rather than being reported as a
+		// successful erasure - a silent no-op for a legally mandated right is
+		// materially worse than an error.
+		var (_, ephemeralUsername, ephemeralPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
+		// Deliberately skip GetUserProfileAsync - no local `user` row is ever created.
+		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
+
+		var ex = await deleteAccount.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
 	public async Task DeleteMyAccount_ShouldBeBlocked_WhenUserIsSoleOrganizerOfAnOrganization(
 		CancellationToken cancellationToken)
 	{
@@ -225,6 +281,13 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
+		// #1725: CreateEngagementCommandHandler only does a nullable lookup on the
+		// local `user` row, it doesn't lazily create it (unlike GetUserProfile) - and
+		// DeleteMyAccount now 404s instead of silently no-op'ing when that row is
+		// missing entirely, so it must exist before this test's own DeleteMyAccount
+		// call below.
+		await ephemeralClient.GetUserProfileAsync(cancellationToken);
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(

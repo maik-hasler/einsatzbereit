@@ -4,6 +4,7 @@ using Application.Common.Persistence;
 using Application.Common.Storage;
 using Domain.Engagements;
 using Domain.Primitives;
+using Domain.Reports;
 using Domain.Users;
 
 namespace Application.Users.DeleteMyAccount.v1;
@@ -42,31 +43,43 @@ internal sealed class DeleteMyAccountCommandHandler(
 		await dbContext.DeleteSearchAlertForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteReportsForReporterAsync(request.UserId, cancellationToken);
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-		if (user is not null)
+		// Reports where this user is the *target* (not the reporter) are
+		// moderation history and intentionally survive - but they need a
+		// deletion timestamp of their own so AbuseReportRetentionJob has
+		// something to measure retention from (#1725).
+		var reportsAgainstUser = await dbContext.GetReportHistoryForTargetAsync(
+			ReportTargetType.User, request.UserId.Value, cancellationToken);
+		foreach (var report in reportsAgainstUser)
+			report.MarkTargetDeleted(DateTimeOffset.UtcNow);
+
+		// Must use FindUserIncludingDeletedAsync (IgnoreQueryFilters), not
+		// dbContext.Users.FindAsync - a shadow-deleted user's row is hidden by
+		// the global !IsDeleted filter and would otherwise silently skip avatar
+		// deletion, MarkAccountDeleted, and the Keycloak deletion it triggers (#1725).
+		var user = await dbContext.FindUserIncludingDeletedAsync(request.UserId, cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("User.NotFound", "User not found."));
+
+		// The avatar's random object key (issue #1175) can't be reconstructed
+		// from the user id, so it has to come from the stored AvatarUrl instead
+		// of a guessed extension.
+		var avatarObjectKey = user.AvatarUrl is not null
+			? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
+			: null;
+
+		if (avatarObjectKey is not null)
 		{
-			// The avatar's random object key (issue #1175) can't be reconstructed
-			// from the user id, so it has to come from the stored AvatarUrl instead
-			// of a guessed extension.
-			var avatarObjectKey = user.AvatarUrl is not null
-				? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
-				: null;
-
-			if (avatarObjectKey is not null)
+			try
 			{
-				try
-				{
-					await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
-				}
-				catch
-				{
-					// Object may already be gone or storage may be transiently unavailable; continue.
-				}
+				await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
 			}
-
-			user.MarkAccountDeleted();
-			dbContext.Users.Delete(user);
+			catch
+			{
+				// Object may already be gone or storage may be transiently unavailable; continue.
+			}
 		}
+
+		user.MarkAccountDeleted();
+		dbContext.Users.Delete(user);
 
 		return true;
 	}

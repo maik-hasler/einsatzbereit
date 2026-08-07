@@ -15,6 +15,12 @@ public sealed class Notification
 
 	public bool IsRead { get; private set; }
 
+	// Retention (NotificationRetentionJob) prunes read notifications relative to
+	// when they were actually read, not CreatedOn - a notification read the
+	// instant it arrived and one read 89 days later must not be pruned at the
+	// same moment (#1725).
+	public DateTimeOffset? ReadOn { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -46,13 +52,15 @@ public sealed class Notification
 			kind,
 			relatedEntityId);
 
-	public void MarkRead()
+	public void MarkRead(DateTimeOffset readOn)
 	{
 		IsRead = true;
+		ReadOn = readOn;
 	}
 
 	public void MarkUnread()
 	{
 		IsRead = false;
+		ReadOn = null;
 	}
 }

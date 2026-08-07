@@ -5,6 +5,7 @@ using Application.Users.DeleteMyAccount.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
@@ -31,6 +32,18 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Organization>());
+		_dbContext
+			.GetReportHistoryForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Report>());
+		// #1725: FindUserIncludingDeletedAsync now must return non-null for the many
+		// tests below that only care about a different side effect (search alert
+		// deletion, achievement deletion, etc.) - the handler throws when it's null,
+		// where the old dbContext.Users.FindAsync-based code silently tolerated it.
+		// Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing overrides this back to
+		// null to exercise that exact case.
+		_dbContext
+			.FindUserIncludingDeletedAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => User.Create(callInfo.ArgAt<UserId>(0)));
 		_sut = new DeleteMyAccountCommandHandler(_dbContext, _fileStorage);
 	}
 
@@ -164,7 +177,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// Arrange
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage
 			.GetObjectKeyFromPublicUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png")
 			.Returns($"user-avatars/{DefaultUserId.Value}/abc123.png");
@@ -188,7 +201,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -208,7 +221,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// return type is string?.
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl("not-a-valid-storage-url");
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
@@ -225,7 +238,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -236,18 +249,45 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSkipAvatarDeletionAndUserRowDelete_WhenLocalUserRowIsMissing(
+	public async Task Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - FindAsync is unconfigured and defaults to null, simulating a missing local user row.
+		// Arrange - issue #1725: explicitly override the constructor's default back to
+		// null, simulating a row that genuinely doesn't exist. Reporting success here
+		// would mean a legally-mandated erasure request silently no-ops.
+		_dbContext
+			.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken)
+			.Returns((User?)null);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>();
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteTheUserRow_WhenUserIsShadowDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1725: a shadow-deleted user (IsDeleted=true) is hidden by the global
+		// !IsDeleted query filter but must still be found and fully erased here, not silently
+		// skipped - the account is still reachable and this is the only path that raises
+		// UserAccountDeletedDomainEvent, which is what deletes the Keycloak identity.
+		var user = User.Create(DefaultUserId);
+		user.MarkDeleted(DateTimeOffset.UtcNow);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
+		_usersRepo.Received(1).Delete(user);
+		user.Events.Should().ContainSingle().Which.Should().BeOfType<UserAccountDeletedDomainEvent>();
 	}
 
 	[Test]
@@ -259,7 +299,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// UserAccountDeletedDomainEventHandler). The handler's only job is to raise that event
 		// on the aggregate once the local row is actually about to be deleted.
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -277,7 +317,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -365,7 +405,8 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange - issue #1676: reports the user filed (as reporter) survived deletion,
 		// including up to 1000 chars of free text. Reports where the deleted user is the
-		// *subject* are moderation history and are intentionally left alone.
+		// *subject* are moderation history and are intentionally kept, not deleted here -
+		// see Handle_ShouldStampTargetDeletedOn_ForReportsAgainstTheUser below (#1725).
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -373,6 +414,28 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await _dbContext.Received(1).DeleteReportsForReporterAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldStampTargetDeletedOn_ForReportsAgainstTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1725: a report where this user is the *target* (as
+		// opposed to the reporter) survives account deletion as moderation
+		// history, but had no retention limit at all - stamping TargetDeletedOn
+		// here is what lets AbuseReportRetentionJob eventually prune it.
+		var report = Report.Create(
+			ReportTargetType.User, DefaultUserId.Value, UserId.New(), ReportReason.Harassment, details: null).Value;
+		_dbContext
+			.GetReportHistoryForTargetAsync(ReportTargetType.User, DefaultUserId.Value, cancellationToken)
+			.Returns([report]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		report.TargetDeletedOn.Should().NotBeNull();
 	}
 
 	[Test]
@@ -400,6 +463,8 @@ public class DeleteMyAccountCommandHandlerTests
 		await _dbContext.DidNotReceive().DeleteUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _dbContext.DidNotReceive().DeleteSearchAlertForUserAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _dbContext.DidNotReceive().DeleteReportsForReporterAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().GetReportHistoryForTargetAsync(
+			Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}

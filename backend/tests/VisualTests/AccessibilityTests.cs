@@ -1189,6 +1189,31 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task UnsubscribeConfirmPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/unsubscribe?userId={Guid.NewGuid()}&type=EngagementReminder&token={Guid.NewGuid()}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task UnsubscribeConfirmPage_HasNoSeriousA11yViolations_WhenLinkIsInvalid()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/unsubscribe");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task SignUpModal_OpenTimeSlotDropdown_HasNoSeriousA11yViolations()
 	{
 		// #573: the native time slot <select> was replaced with a custom

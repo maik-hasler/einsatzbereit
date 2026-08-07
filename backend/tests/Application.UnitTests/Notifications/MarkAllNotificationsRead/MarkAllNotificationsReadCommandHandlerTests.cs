@@ -39,6 +39,7 @@ public class MarkAllNotificationsReadCommandHandlerTests
 		// Assert
 		result.Should().Be(3);
 		unread.Should().OnlyContain(n => n.IsRead);
+		unread.Should().OnlyContain(n => n.ReadOn != null);
 	}
 
 	[Test]

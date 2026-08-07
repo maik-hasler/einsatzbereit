@@ -28,7 +28,7 @@ public class MarkNotificationUnreadCommandHandlerTests
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
-		notification.MarkRead();
+		notification.MarkRead(DateTimeOffset.UtcNow);
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationUnreadCommand(notification.Id, recipientUserId.Value);
 
@@ -38,6 +38,7 @@ public class MarkNotificationUnreadCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		notification.IsRead.Should().BeFalse();
+		notification.ReadOn.Should().BeNull();
 	}
 
 	[Test]
@@ -64,7 +65,7 @@ public class MarkNotificationUnreadCommandHandlerTests
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
-		notification.MarkRead();
+		notification.MarkRead(DateTimeOffset.UtcNow);
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationUnreadCommand(notification.Id, Guid.NewGuid());
 

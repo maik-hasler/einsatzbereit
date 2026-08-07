@@ -17,7 +17,7 @@ internal sealed class MarkNotificationReadCommandHandler(
 		if (notification is null || notification.RecipientId.Value != request.RequestingUserId)
 			return false;
 
-		notification.MarkRead();
+		notification.MarkRead(DateTimeOffset.UtcNow);
 		return true;
 	}
 }

@@ -37,6 +37,7 @@ public class MarkNotificationReadCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		notification.IsRead.Should().BeTrue();
+		notification.ReadOn.Should().NotBeNull();
 	}
 
 	[Test]
@@ -85,7 +86,7 @@ public class MarkNotificationReadCommandHandlerTests
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
-		notification.MarkRead();
+		notification.MarkRead(DateTimeOffset.UtcNow);
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationReadCommand(notification.Id, recipientUserId.Value);
 
