@@ -16,6 +16,11 @@ import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
+// Eager, not lazy: OrgAppLayout (eager, above) and EngagementManagementPage
+// both statically import this too, so it always lands in the entry chunk
+// regardless - a lazy() wrapper here just contradicted that and tripped
+// Vite's INEFFECTIVE_DYNAMIC_IMPORT warning on every build.
+import NotFoundPage from "./pages/NotFoundPage";
 
 // Route pages are lazy-loaded so each one becomes its own build chunk instead
 // of all being bundled (and precached by the PWA service worker) as a single
@@ -44,7 +49,6 @@ const EngagementManagementPage = lazy(
 const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
 const ProfileSettingsPage = lazy(() => import("./pages/ProfileSettingsPage"));
 const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
-const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
