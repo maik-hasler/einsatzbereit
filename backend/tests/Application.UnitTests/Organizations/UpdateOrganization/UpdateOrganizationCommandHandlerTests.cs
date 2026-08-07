@@ -2,12 +2,9 @@ using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Application.Organizations.UpdateOrganization.v1;
 using AwesomeAssertions;
-using Domain.Common;
 using Domain.Organizations;
-using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 
 namespace Application.UnitTests.Organizations.UpdateOrganization;

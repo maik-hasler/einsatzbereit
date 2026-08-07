@@ -6,7 +6,6 @@ using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 

@@ -5,7 +5,6 @@ using Application.Engagements;
 using Application.Organizations.DeleteOrganization.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
-using Domain.Primitives;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;

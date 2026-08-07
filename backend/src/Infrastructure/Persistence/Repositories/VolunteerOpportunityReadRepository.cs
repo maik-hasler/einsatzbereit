@@ -9,7 +9,6 @@ using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
-using Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;

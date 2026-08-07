@@ -3,7 +3,6 @@ using Application.Common.Persistence;
 using Application.Organizations.DismissInvitation.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
-using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
 

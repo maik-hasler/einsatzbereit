@@ -3,7 +3,6 @@ using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
-using TUnit.Core.Interfaces;
 // ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
 // "OrganizationId" and "Address" DTO types, which would otherwise shadow the
 // domain types of the same name.
