@@ -112,4 +112,25 @@ public class UserTests
 		result.IsSuccess.Should().BeTrue();
 		user.NotifyOnWithdrawal.Should().BeFalse();
 	}
+
+	[Test]
+	public void Unsubscribe_ShouldMakeIsSubscribedToFalse_ForEveryKnownEmailNotificationType()
+	{
+		// Data-driven regression guard for issue #1725: Unsubscribe's switch used
+		// to have no default arm, so a future EmailNotificationType member would
+		// fall through returning Result.Success() while leaving IsSubscribedTo
+		// true - a silently-failed opt-out. Iterating Enum.GetValues() means this
+		// test starts failing the moment a new member is added without also
+		// wiring up Unsubscribe for it, rather than only when someone remembers
+		// to hand-write a case for it.
+		foreach (var type in Enum.GetValues<EmailNotificationType>())
+		{
+			var user = User.Create(UserId.New());
+
+			var result = user.Unsubscribe(type, user.UnsubscribeToken);
+
+			result.IsSuccess.Should().BeTrue($"Unsubscribe should succeed for {type}");
+			user.IsSubscribedTo(type).Should().BeFalse($"IsSubscribedTo({type}) should be false after unsubscribing");
+		}
+	}
 }

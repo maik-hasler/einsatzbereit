@@ -141,6 +141,14 @@ public sealed class User
 			case EmailNotificationType.EngagementReminder:
 				NotifyOnEngagementReminder = false;
 				break;
+			default:
+				// Fail closed (#1725): without this arm, a future EmailNotificationType
+				// member falls through doing nothing while still returning
+				// Result.Success() below, reporting a successful opt-out that
+				// silently never took effect.
+				return Result.Failure(Error.Validation(
+					"User.UnknownEmailNotificationType",
+					$"Unknown email notification type '{type}'."));
 		}
 
 		return Result.Success();
