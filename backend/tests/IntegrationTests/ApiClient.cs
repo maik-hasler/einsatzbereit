@@ -13592,6 +13592,13 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<OrganizationMemberDto> Members { get; set; } = new System.Collections.ObjectModel.Collection<OrganizationMemberDto>();
 
+        [System.Text.Json.Serialization.JsonPropertyName("requestingUserRole")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string RequestingUserRole { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("membersUnavailable")]
+        public bool MembersUnavailable { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

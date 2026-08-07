@@ -461,6 +461,7 @@
       "saveError": "Failed to save.",
       "noMembers": "No members yet.",
       "noMembersHint": "Members who join this organization will appear here.",
+      "membersUnavailable": "Member profiles couldn't be loaded right now, so names and emails are missing below. Roles are still accurate - try reloading to see full profiles.",
       "organisator": "Organizer",
       "roleMember": "Member",
       "promoteToOrganizer": "Promote to Organizer",

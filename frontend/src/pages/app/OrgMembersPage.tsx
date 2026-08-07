@@ -478,6 +478,13 @@ export default function OrgMembersPage() {
 					</div>
 				)}
 
+				{org.membersUnavailable && (
+					<ErrorBanner
+						message={t("orgSettings.membersUnavailable")}
+						className="mb-4"
+					/>
+				)}
+
 				{members.length === 0 ? (
 					<EmptyState
 						title={t("orgSettings.noMembers")}

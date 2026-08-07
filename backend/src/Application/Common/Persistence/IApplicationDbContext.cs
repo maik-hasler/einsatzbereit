@@ -72,6 +72,15 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	// Every member's role, sourced entirely from organization_membership - unlike
+	// GetOrganizerUserIdsAsync (organizers only), this covers plain Members too.
+	// GetOrganizationDetailsQueryHandler falls back to this when Keycloak's member
+	// lookup fails (#1709), so the org app shell can still render a roster (ids +
+	// roles only, no Keycloak-sourced username/email/name) instead of 500ing.
+	Task<Dictionary<Guid, OrganizationMemberRole>> GetMembershipRolesAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task<OrganizationMembership?> GetMembershipAsync(
 		OrganizationId organizationId,
 		UserId userId,

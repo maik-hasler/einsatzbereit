@@ -7,6 +7,7 @@ using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 
@@ -29,7 +30,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_dbContext
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
+		_sut = new GetOrganizationDetailsQueryHandler(
+			_dbContext, _keycloakService, NullLogger<GetOrganizationDetailsQueryHandler>.Instance);
 	}
 
 	[Test]
@@ -73,6 +75,73 @@ public class GetOrganizationDetailsQueryHandlerTests
 		result.Members.Should().HaveCount(1);
 		result.Members[0].UserId.Should().Be(userId);
 		result.Members[0].IsOrganisator.Should().BeTrue();
+		result.MembersUnavailable.Should().BeFalse();
+	}
+
+	[Test]
+	[Arguments(true, "Organizer")]
+	[Arguments(false, "Member")]
+	public async Task Handle_ShouldSetRequestingUserRole_FromLocalMembership(
+		bool isOrganizer,
+		string expectedRole,
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the requesting user's own role must come from
+		// organization_membership, not from scanning the Keycloak-sourced Members
+		// roster below - the org app shell needs it even when that roster can't be
+		// loaded (#1709).
+		var orgId = DefaultOrgId;
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
+
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
+		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
+		_dbContext
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, cancellationToken)
+			.Returns(isOrganizer);
+
+		// Act
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		result!.RequestingUserRole.Should().Be(expectedRole);
+	}
+
+	[Test]
+	public async Task Handle_ShouldFallBackToLocalRoster_WhenKeycloakMemberLookupFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: any transient Keycloak failure on the members lookup used to
+		// throw and take down the whole org app shell along with it (#1709) - it
+		// should degrade to what organization_membership already knows locally
+		// instead.
+		var orgId = DefaultOrgId;
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
+		var organizerId = Guid.NewGuid();
+		var memberId = Guid.NewGuid();
+
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
+		_keycloakService.GetMembersAsync(orgId, cancellationToken)
+			.Returns<IReadOnlyList<KeycloakOrganizationMember>>(_ => throw new HttpRequestException(
+				"Keycloak responded with 400 BadRequest for GET /organizations/.../members",
+				inner: null,
+				System.Net.HttpStatusCode.BadRequest));
+		_dbContext
+			.GetMembershipRolesAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken)
+			.Returns(new Dictionary<Guid, OrganizationMemberRole>
+			{
+				[organizerId] = OrganizationMemberRole.Organizer,
+				[memberId] = OrganizationMemberRole.Member,
+			});
+
+		// Act
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		result.Should().NotBeNull();
+		result!.MembersUnavailable.Should().BeTrue();
+		result.Members.Should().HaveCount(2);
+		result.Members.Should().Contain(m => m.UserId == organizerId && m.IsOrganisator);
+		result.Members.Should().Contain(m => m.UserId == memberId && !m.IsOrganisator);
 	}
 
 	[Test]

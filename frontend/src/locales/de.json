@@ -461,6 +461,7 @@
       "saveError": "Speichern fehlgeschlagen.",
       "noMembers": "Noch keine Mitglieder.",
       "noMembersHint": "Mitglieder, die dieser Organisation beitreten, erscheinen hier.",
+      "membersUnavailable": "Mitgliedsprofile konnten gerade nicht geladen werden, daher fehlen unten Namen und E-Mail-Adressen. Die Rollen sind weiterhin korrekt - lade die Seite neu, um die vollständigen Profile zu sehen.",
       "organisator": "Organisator:in",
       "roleMember": "Mitglied",
       "promoteToOrganizer": "Zu Organisator:in befördern",
