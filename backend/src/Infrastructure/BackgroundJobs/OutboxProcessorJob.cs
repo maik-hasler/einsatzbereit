@@ -131,6 +131,15 @@ internal sealed class OutboxProcessorJob(
 				message.AttemptCount++;
 				metrics.RecordFailed();
 
+				// Release the claim on a failed (but not yet dead-lettered) attempt so
+				// the very next poll tick can immediately reclaim and retry it - the
+				// pre-existing retry contract this job has always had. Leaving
+				// ClaimedOnUtc stamped would otherwise gate the retry behind
+				// ClaimTimeoutSeconds (a stuck-worker recovery timeout, not a normal
+				// per-attempt backoff), turning "retry next tick" into "retry every few
+				// minutes at best" (#1729).
+				message.ClaimedOnUtc = null;
+
 				logger.LogError(
 					ex,
 					"Failed to dispatch outbox message {OutboxMessageId} of type {OutboxMessageType} (attempt {AttemptCount}/{MaxAttempts})",
