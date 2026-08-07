@@ -14,7 +14,7 @@ RUN VITE_KEYCLOAK_AUTHORITY_URL=$VITE_KEYCLOAK_AUTHORITY_URL \
 	VITE_API_URL=$VITE_API_URL \
 	pnpm run build
 
-FROM nginx:1.29-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY docker-entrypoint.d/99-runtime-config.sh /docker-entrypoint.d/99-runtime-config.sh
