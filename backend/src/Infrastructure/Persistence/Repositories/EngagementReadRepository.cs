@@ -3,6 +3,7 @@ using Application.Common.Pagination;
 using Application.Engagements;
 using Domain.Common;
 using Domain.Engagements;
+using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;

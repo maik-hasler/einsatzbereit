@@ -8,6 +8,7 @@ using AwesomeAssertions;
 using Domain.Common;
 using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
