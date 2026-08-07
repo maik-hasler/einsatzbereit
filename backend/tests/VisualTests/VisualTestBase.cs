@@ -252,14 +252,15 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 			{
 				await loadMoreButton.ClickAsync(new() { Timeout = (float)remainingMs });
 			}
-			// Fully qualified because a bare TimeoutException here resolves to
-			// Playwright's only by virtue of this file's using shadowing the
-			// implicit global System one - too subtle to rely on silently.
-			// Deliberately narrower than PlaywrightException: a strict-mode
-			// violation or a protocol error is a real defect that should surface
-			// with its own message, not vanish into a silent return that fails
-			// confusingly further down.
-			catch (Microsoft.Playwright.TimeoutException)
+			// Both types are needed, and neither alone is enough. There is no
+			// Microsoft.Playwright.TimeoutException in this version (CS0234 if
+			// you try) - Playwright raises a *System*.TimeoutException for
+			// "Timeout Nms exceeded", which does not derive from
+			// PlaywrightException, so catching only the latter would miss the
+			// timeout this clause primarily exists for. PlaywrightException
+			// still covers the non-timeout action failures (a button detached
+			// between the state read above and this click).
+			catch (Exception ex) when (ex is PlaywrightException or TimeoutException)
 			{
 				// The button was unmounted between the read above and the click,
 				// or the budget ran out mid-click. Either way there is nothing
