@@ -60,7 +60,7 @@ export default function AccountControls({
 				<button
 					type="button"
 					onClick={() => setDropdownOpen((o) => !o)}
-					className="flex cursor-pointer items-center gap-1.5 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-brand-200"
+					className={`flex cursor-pointer items-center gap-1.5 rounded-full border p-0.5 transition-all ${transparent ? "border-white/30 hover:bg-white/10" : "border-transparent hover:ring-2 hover:ring-brand-200"}`}
 					aria-label={t("nav.userMenu")}
 					aria-expanded={dropdownOpen}
 				>
