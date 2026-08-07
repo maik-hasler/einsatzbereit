@@ -9,12 +9,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
-// Consumer of EngagementReactivatedDomainEvent (#1174): a withdrawn/cancelled
-// engagement is reused via Engagement.Reactivate (called from
-// CreateEngagementCommandHandler) rather than inserting a new row, but it still
-// deserves the same organizer "New sign-up" email a genuinely new engagement
-// gets. Mirrors EngagementCreatedDomainEventHandler - see
-// EngagementOrganizerNotificationHelper for the full rationale.
+// Consumer of EngagementReactivatedDomainEvent: a withdrawn/cancelled engagement
+// is reused via Engagement.Reactivate (called from CreateEngagementCommandHandler)
+// rather than inserting a new row, but it still deserves the same organizer
+// "New sign-up" email (#1174) and volunteer receipt (#1729) a genuinely new
+// engagement gets. Mirrors EngagementCreatedDomainEventHandler - see
+// EngagementOrganizerNotificationHelper and EngagementVolunteerConfirmationHelper
+// for the full rationale.
 internal sealed class EngagementReactivatedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
@@ -42,6 +43,18 @@ internal sealed class EngagementReactivatedDomainEventHandler(
 			notification.VolunteerId,
 			EmailTemplateKind.EngagementSignupNotifyOrganizer,
 			EmailNotificationType.NewSignUp,
+			logger,
+			cancellationToken);
+
+		await EngagementVolunteerConfirmationHelper.NotifyAsync(
+			dbContext,
+			keycloakUserService,
+			emailService,
+			emailTemplateRenderer,
+			notification.EngagementId,
+			notification.OpportunityId,
+			notification.VolunteerId,
+			notification.IsSlotSignUp,
 			logger,
 			cancellationToken);
 

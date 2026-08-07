@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260807175910_AddOutboxMessageClaimedOnUtc")]
+	partial class AddOutboxMessageClaimedOnUtc
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -243,10 +246,6 @@ namespace Infrastructure.Persistence.Migrations
 						.IsUnique()
 						.HasDatabaseName("ix_engagement_volunteer_id_time_slot_id");
 
-					b.HasIndex(new[] { "TimeSlotId" }, "IX_Engagement_TimeSlotId_PendingAutoCheckIn")
-						.HasDatabaseName("ix_engagement_time_slot_id_pending_auto_check_in")
-						.HasFilter("status = 'Confirmed' AND is_checked_in = false AND time_slot_id IS NOT NULL");
-
 					b.ToTable("engagement", null, t =>
 						{
 							t.HasCheckConstraint("CK_engagement_feedback_rating_range", "feedback_rating IS NULL OR feedback_rating BETWEEN 1 AND 5");
@@ -278,10 +277,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("modified_on");
 
-					b.Property<DateTimeOffset?>("ReadOn")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("read_on");
-
 					b.Property<Guid>("RecipientId")
 						.HasColumnType("uuid")
 						.HasColumnName("recipient_id");
@@ -298,9 +293,6 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.HasIndex("IsRead", "CreatedOn")
 						.HasDatabaseName("ix_notification_is_read_created_on");
-
-					b.HasIndex("IsRead", "ReadOn")
-						.HasDatabaseName("ix_notification_is_read_read_on");
 
 					b.HasIndex("RecipientId", "CreatedOn")
 						.HasDatabaseName("ix_notification_recipient_id_created_on");
@@ -569,10 +561,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("text")
 						.HasColumnName("status");
 
-					b.Property<DateTimeOffset?>("TargetDeletedOn")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("target_deleted_on");
-
 					b.Property<Guid>("TargetId")
 						.HasColumnType("uuid")
 						.HasColumnName("target_id");
@@ -587,9 +575,6 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.HasIndex("Status")
 						.HasDatabaseName("ix_report_status");
-
-					b.HasIndex("TargetDeletedOn")
-						.HasDatabaseName("ix_report_target_deleted_on");
 
 					b.HasIndex("TargetType", "TargetId")
 						.HasDatabaseName("ix_report_target_type_target_id");

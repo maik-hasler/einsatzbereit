@@ -75,12 +75,11 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
-		await _emailService.Received(1).SendAsync(
-			"olaf@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			Arg.Any<string>(),
+		// Assert - organizer emails go out as a single batch (#1729), not one
+		// SendAsync call per organizer.
+		await _emailService.Received(1).SendBatchAsync(
+			Arg.Is<IReadOnlyList<EmailMessage>>(messages => messages!.Any(m =>
+				m.To == "olaf@example.com" && m.Body.Contains("https://example.com/unsubscribe"))),
 			cancellationToken);
 	}
 
@@ -110,9 +109,9 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		// Assert - the only organizer opted out, so the batch is never sent at all.
+		await _emailService.DidNotReceive().SendBatchAsync(
+			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -167,6 +166,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await _emailService.DidNotReceive().SendBatchAsync(
+			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -185,6 +186,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await _emailService.DidNotReceive().SendBatchAsync(
+			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

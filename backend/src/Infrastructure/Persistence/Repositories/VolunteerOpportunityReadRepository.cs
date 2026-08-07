@@ -99,13 +99,19 @@ internal sealed class VolunteerOpportunityReadRepository(
 		// selector or read back off an already-projected anonymous property) defeats
 		// the Npgsql provider's translation of the whole query ("could not be
 		// translated"). Ordering by the value object (vo.Id) instead translates
-		// cleanly, since EF already has a converter registered for it.
+		// cleanly, since EF already has a converter registered for it. For the same
+		// reason, Id is kept as VolunteerOpportunityId (not unwrapped to .Value) all
+		// the way through this projection and the radius branch's below - the radius
+		// branch's own ThenBy(s => s.Id) tie-breaker re-derives whatever expression
+		// backs s.Id from the original entity, so unwrapping here would resurface the
+		// exact same translation failure one layer down. Callers below unwrap to
+		// .Value only after materialization (ToListAsync), in memory.
 		var baseQuery = query
 			.OrderByDescending(vo => vo.CreatedOn)
 			.ThenBy(vo => vo.Id)
 			.Select(vo => new
 			{
-				Id = vo.Id.Value,
+				vo.Id,
 				vo.Title,
 				vo.Description,
 				OrganizationId = vo.OrganizationId.Value,
@@ -139,25 +145,61 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (filter.HasRadius)
 		{
-			var candidates = await baseQuery.ToListAsync(cancellationToken);
-
 			var centerLat = filter.CenterLatitude!.Value;
 			var centerLon = filter.CenterLongitude!.Value;
 			var radiusKm = filter.RadiusKm!.Value;
 
-			var matched = candidates
-				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
-					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value) <= radiusKm)
-				.OrderBy(s => GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value))
-				.ThenBy(s => s.Id)
-				.ToList();
+			// Distance is computed once here (haversine formula, #1729) and referenced
+			// in both the Where below and the OrderBy further down - filtering,
+			// ordering, and paging all happen in Postgres instead of materializing the
+			// whole bounding box into memory and redoing all three client-side on every
+			// request/page.
+			var withDistance = baseQuery
+				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+				.Select(s => new
+				{
+					s.Id,
+					s.Title,
+					s.Description,
+					s.OrganizationId,
+					s.Street,
+					s.HouseNumber,
+					s.ZipCode,
+					s.City,
+					s.Latitude,
+					s.Longitude,
+					s.IsRemote,
+					s.Occurrence,
+					s.ParticipationType,
+					s.CheckInMethod,
+					s.Category,
+					s.Tags,
+					s.CreatedOn,
+					s.ValidUntil,
+					s.NextTimeSlotStart,
+					s.NextTimeSlotEnd,
+					s.Status,
+					s.BannerImageUrl,
+					DistanceKm = 6371.0 * 2.0 * Math.Atan2(
+						Math.Sqrt(Math.Pow(Math.Sin((s.Latitude!.Value - centerLat) * Math.PI / 180.0 / 2.0), 2) +
+							Math.Cos(centerLat * Math.PI / 180.0) * Math.Cos(s.Latitude.Value * Math.PI / 180.0) *
+							Math.Pow(Math.Sin((s.Longitude!.Value - centerLon) * Math.PI / 180.0 / 2.0), 2)),
+						Math.Sqrt(1.0 - (Math.Pow(Math.Sin((s.Latitude.Value - centerLat) * Math.PI / 180.0 / 2.0), 2) +
+							Math.Cos(centerLat * Math.PI / 180.0) * Math.Cos(s.Latitude.Value * Math.PI / 180.0) *
+							Math.Pow(Math.Sin((s.Longitude.Value - centerLon) * Math.PI / 180.0 / 2.0), 2)))),
+				})
+				.Where(s => s.DistanceKm <= radiusKm);
 
-			var page = matched
+			var matchedCount = await withDistance.CountAsync(cancellationToken);
+
+			var page = await withDistance
+				.OrderBy(s => s.DistanceKm)
+				.ThenBy(s => s.Id)
 				.Skip((filter.PageNumber - 1) * filter.PageSize)
 				.Take(filter.PageSize)
-				.ToList();
+				.ToListAsync(cancellationToken);
 
-			var pageGuids = page.Select(x => x.Id).ToList();
+			var pageGuids = page.Select(x => x.Id.Value).ToList();
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 			var orgMap = await LoadOrganizationSummariesAsync(page.Select(x => x.OrganizationId), cancellationToken);
 
@@ -170,15 +212,15 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.Select(x =>
 				{
 					var (orgName, orgLogoUrl) = orgMap[x.OrganizationId];
-					return ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+					return ToSummary(x.Id.Value, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
 						x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 						x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 						x.Status, x.BannerImageUrl,
-						maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0));
+						maxPMap.GetValueOrDefault(x.Id.Value, 0), partCountMap.GetValueOrDefault(x.Id.Value, 0));
 				})
 				.ToList();
 
-			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
+			return new PagedList<VolunteerOpportunitySummary>(summaries, matchedCount, filter.PageNumber, filter.PageSize);
 		}
 
 		var total = await query.CountAsync(cancellationToken);
@@ -190,7 +232,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (rows.Count == 0)
 			return new PagedList<VolunteerOpportunitySummary>([], total, filter.PageNumber, filter.PageSize);
 
-		var guids = rows.Select(x => x.Id).ToList();
+		var guids = rows.Select(x => x.Id.Value).ToList();
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 		var organizationSummaries = await LoadOrganizationSummariesAsync(rows.Select(x => x.OrganizationId), cancellationToken);
 
@@ -200,11 +242,11 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(x =>
 			{
 				var (orgName, orgLogoUrl) = organizationSummaries[x.OrganizationId];
-				return ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+				return ToSummary(x.Id.Value, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 					x.Status, x.BannerImageUrl,
-					maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0));
+					maxParticipantsMap.GetValueOrDefault(x.Id.Value, 0), participantCountMap.GetValueOrDefault(x.Id.Value, 0));
 			})
 			.ToList();
 

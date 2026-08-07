@@ -1,7 +1,5 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
-using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -14,10 +12,7 @@ namespace Application.Engagements.CreateEngagement.v1;
 
 internal sealed class CreateEngagementCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrganizationService,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer)
+	IKeycloakOrganizationService keycloakOrganizationService)
 	: ICommandHandler<CreateEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -98,36 +93,17 @@ internal sealed class CreateEngagementCommandHandler(
 			await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		}
 
-		var volunteer = await keycloakUserService.GetUserAsync(request.VolunteerId.Value, cancellationToken);
-		var volunteerName = volunteer.FirstName ?? volunteer.Username;
-		var isSlotSignUp = request.TimeSlotId is not null;
-
-		var volunteerUser = await dbContext.Users.FindAsync(request.VolunteerId, cancellationToken);
-		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
-
-		var volunteerContent = emailTemplateRenderer.Render(
-			isSlotSignUp ? EmailTemplateKind.EngagementWaitlisted : EmailTemplateKind.EngagementRequestReceived,
-			volunteerLanguage,
-			new Dictionary<string, string>
-			{
-				["VolunteerName"] = volunteerName,
-				["OpportunityTitle"] = opportunity.Title,
-			});
-
-		// Never gated by preference (#1055): this is the direct, synchronous
-		// response to the volunteer's own just-submitted action, not a repeatable
-		// notification about someone else's activity - equivalent to an order
-		// receipt, which platforms conventionally don't let users opt out of.
-		//
-		// The organizer "New sign-up" email is NOT sent here (#1174): it moves
-		// off this request's DB transaction onto the outbox, delivered by
+		// Neither the organizer "New sign-up" email nor the volunteer's own
+		// sign-up receipt is sent here (#1174, #1729): both move off this
+		// request's DB transaction onto the outbox, delivered by
 		// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler
 		// once EngagementCreatedDomainEvent/EngagementReactivatedDomainEvent (raised
 		// above by Engagement.CreateSlotSignUp/CreateIndividualContact/Reactivate)
-		// is dispatched - see EngagementOrganizerNotificationHelper.
-		await emailService.SendAsync(
-			volunteer.Email, volunteerContent.Subject, volunteerContent.Body, engagement.Id.Value.ToString(), cancellationToken);
-
+		// is dispatched - see EngagementOrganizerNotificationHelper and
+		// EngagementVolunteerConfirmationHelper. This matters because the time-slot
+		// row lock (#1142) taken above is held for the rest of this transaction, so
+		// a synchronous SMTP send here would block every other volunteer trying to
+		// book the same slot behind a full mail round trip.
 		return engagement;
 	}
 }

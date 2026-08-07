@@ -15,6 +15,15 @@ internal sealed class OutboxMessage
 
 	public DateTime? ProcessedOnUtc { get; set; }
 
+	// Stamped by OutboxProcessorJob.ClaimBatchAsync the instant a batch is claimed,
+	// then left alone for the rest of dispatch (#1729) - the FOR UPDATE SKIP LOCKED
+	// row lock is only held for that brief claim+stamp transaction, not across the
+	// SMTP-heavy dispatch that follows it outside any open transaction. A second
+	// replica's claim query treats a row with a recent ClaimedOnUtc as already
+	// in flight and skips it; one older than OutboxOptions.ClaimTimeoutSeconds is
+	// treated as abandoned (the claiming process crashed) and reclaimed.
+	public DateTime? ClaimedOnUtc { get; set; }
+
 	public string? Error { get; set; }
 
 	// Incremented on every failed dispatch attempt; once it reaches OutboxOptions.MaxAttempts

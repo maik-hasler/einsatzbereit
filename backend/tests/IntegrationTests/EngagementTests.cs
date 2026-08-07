@@ -979,6 +979,74 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(409);
 	}
 
+	// ── Concurrent overbooking prevention (#1142, #1729) ─────────────────────
+	//
+	// CreateEngagementCommandHandler's time-slot row lock (LockTimeSlotForUpdateAsync)
+	// is the only thing standing between a shared opportunity link and an
+	// overbooked shift. Every other test above exercises it against a mock or
+	// sequentially - this is the one place it runs against real concurrent
+	// requests hitting a real Postgres, proving the lock actually serializes
+	// them instead of letting two callers both read the same stale count.
+
+	[Test]
+	public async Task CreateEngagement_ShouldAllowExactlyOneSignUp_WhenManyVolunteersRaceForASingleSlot(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 1,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var timeSlotId = timeSlots.Single().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		const int volunteerCount = 8;
+		var volunteerClients = new List<EinsatzbereitApi>(volunteerCount);
+		for (var i = 0; i < volunteerCount; i++)
+		{
+			var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+			volunteerClients.Add(await CreateAuthenticatedClientAsync(username, password));
+		}
+
+		// Every volunteer's request is already in flight before any of them is
+		// awaited - Task.WhenAll on N distinct HTTP calls, not a sequential loop.
+		var signUpTasks = volunteerClients.Select(async client =>
+		{
+			try
+			{
+				await client.CreateEngagementAsync(
+					opportunity.Id, new CreateEngagementRequest { TimeSlotId = timeSlotId }, cancellationToken);
+				return true;
+			}
+			catch (ApiException ex) when (ex.StatusCode == 409)
+			{
+				return false;
+			}
+		}).ToList();
+
+		var results = await Task.WhenAll(signUpTasks);
+
+		results.Count(succeeded => succeeded).Should().Be(1,
+			"the time-slot row lock must let exactly one concurrent sign-up win a slot with MaxParticipants = 1");
+
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var nonTerminalCount = await dbContext.Set<Engagement>()
+			.CountAsync(e =>
+				e.OpportunityId == VolunteerOpportunityId.Create(opportunity.Id).GetValueOrThrow() &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
+				cancellationToken);
+		nonTerminalCount.Should().Be(1, "the database must never end up with more live engagements than the slot's capacity");
+	}
+
 	// ── Cross-user withdrawal ─────────────────────────────────────────────────
 
 	[Test]

@@ -101,7 +101,7 @@ public sealed class Engagement
 			timeSlotEndDateTime,
 			message: null,
 			EngagementStatus.Pending);
-		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId, IsSlotSignUp: true));
 		return engagement;
 	}
 
@@ -124,7 +124,7 @@ public sealed class Engagement
 			timeSlotEndDateTime: null,
 			message,
 			EngagementStatus.Pending);
-		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId, IsSlotSignUp: false));
 		return engagement;
 	}
 
@@ -209,7 +209,7 @@ public sealed class Engagement
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
 		ReactivationCount++;
-		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId, IsSlotSignUp: timeSlotId is not null));
 		return Result.Success();
 	}
 
