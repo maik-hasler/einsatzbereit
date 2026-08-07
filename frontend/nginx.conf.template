@@ -31,6 +31,14 @@ server {
 	root /usr/share/nginx/html;
 	index index.html;
 
+	# The privacy policy (privacyPolicy.section2Body4) states visitor IP addresses
+	# are never stored - true for the backend's in-memory rate limiter and scoped
+	# HttpLogging, but nginx's base image (nginx:1.31-alpine) otherwise applies its
+	# default access-log format, which includes the client IP, and every container's
+	# stdout is forwarded to Loki (einsatzbereit#1730). Disabled here to keep that
+	# claim accurate.
+	access_log off;
+
 	add_header X-Content-Type-Options "nosniff" always;
 	add_header X-Frame-Options "DENY" always;
 	add_header X-XSS-Protection "1; mode=block" always;

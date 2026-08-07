@@ -704,6 +704,7 @@
     },
     "privacyPolicy": {
       "title": "Datenschutzerklärung",
+      "lastUpdated": "Stand: 7. August 2026",
       "section1Title": "Verantwortliche Stelle",
       "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg\nE-Mail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
@@ -732,7 +733,7 @@
       "section7Body": "Bestimmte administrative Maßnahmen - etwa die Vergabe oder der Entzug von Administratorrechten, das Sperren oder Entsperren eines Kontos, das Entfernen oder Wiederherstellen von Inhalten sowie das administrative Absagen einer Anmeldung - werden mit der ausführenden Nutzer-ID, der Art der Maßnahme, dem betroffenen Objekt, einem optionalen Grund und dem Zeitpunkt protokolliert. Dieses Protokoll ist ausschließlich für Administratorinnen und Administratoren einsehbar und dient der Nachvollziehbarkeit von Verwaltungsmaßnahmen sowie dem Schutz vor Missbrauch. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an der Sicherheit und Integrität der Plattform.",
       "section8Title": "Cookies und Speicherung im Browser",
       "section8Body1": "Diese Website verwendet ein technisch notwendiges Cookie für die Authentifizierung (ein Session-Cookie, gesetzt von unserem Authentifizierungsdienst Keycloak) sowie ein weiteres Cookie, active-org, das sich merkt, welche Organisation Sie zuletzt geöffnet haben, damit Sie zum richtigen Dashboard zurückkehren; es dient nicht der Authentifizierung und wird für bis zu ein Jahr gespeichert. Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
-      "section8Body2": "Darüber hinaus speichern wir einige Werte im lokalen Speicher (Local Storage) Ihres Browsers: Ihre gewählte Oberflächensprache, ob Sie diese Sprache bewusst selbst gewählt haben statt sie automatisch erkennen zu lassen, sowie welche Erfolgs-Benachrichtigungen Sie bereits gesehen haben (kontobezogen gespeichert). Diese Werte verlassen Ihren Browser nie. Das active-org-Cookie und diese lokalen Speicherwerte werden bei der Abmeldung gelöscht.",
+      "section8Body2": "Darüber hinaus speichern wir einige Werte im lokalen Speicher (Local Storage) Ihres Browsers: Ihre gewählte Oberflächensprache, ob Sie diese Sprache bewusst selbst gewählt haben statt sie automatisch erkennen zu lassen, sowie welche Erfolgs-Benachrichtigungen Sie bereits gesehen haben (kontobezogen gespeichert). Die Zugriffs-, ID- und Refresh-Token Ihrer Sitzung werden getrennt davon im Sitzungsspeicher (Session Storage) Ihres Browsers abgelegt; dies ist technisch notwendig, um Sie angemeldet zu halten, und wird automatisch gelöscht, sobald Sie den Browser-Tab schließen. Diese Werte verlassen Ihren Browser nie. Das active-org-Cookie sowie diese lokalen Speicher- und Sitzungsspeicherwerte werden bei der Abmeldung gelöscht.",
       "section9Title": "Ihre Rechte",
       "section9Body1": "Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO) und Einschränkung der Verarbeitung (Art. 18 DSGVO) Ihrer personenbezogenen Daten sowie das Recht auf Datenübertragbarkeit (Art. 20 DSGVO) und das Recht, der auf unserem berechtigten Interesse beruhenden Verarbeitung zu widersprechen (Art. 21 DSGVO). Ihr eigenes Konto und die meisten damit verbundenen Daten können Sie jederzeit selbst in Ihren Profileinstellungen löschen; für alle anderen Anliegen, einschließlich einer Kopie Ihrer Daten oder eines Widerspruchs, wenden Sie sich an die im Abschnitt „Verantwortliche Stelle“ oben genannte Adresse oder E-Mail-Adresse. Wir sind bemüht, innerhalb eines Monats zu antworten, wie es Art. 12 Abs. 3 DSGVO vorsieht.",
       "section9Body2": "Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Bundesland, in dem Sie wohnen, arbeiten oder in dem der mutmaßliche Verstoß erfolgt ist. Die für uns zuständige Aufsichtsbehörde ist: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover."
@@ -780,6 +781,7 @@
     },
     "termsOfUse": {
       "title": "Nutzungsbedingungen",
+      "lastUpdated": "Stand: 7. August 2026",
       "section1Title": "Geltungsbereich und Zustimmung",
       "section1Body": "Diese Nutzungsbedingungen regeln die Nutzung von Einsatzbereit (die \"Plattform\"). Mit der Erstellung eines Kontos, der Anmeldung zu einem Einsatz oder der sonstigen Nutzung der Plattform erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie die Plattform bitte nicht.",
       "section2Title": "Unsere Rolle als Plattform",
@@ -988,6 +990,7 @@
       "subNavProfile": "Profil",
       "subNavSettings": "Einstellungen",
       "sectionDetails": "Profil-Details",
+      "publicProfileNotice": "Dein Profilbild, dein Text im Feld „Über mich“, deine Fähigkeiten und Sprachen erscheinen auf deiner öffentlichen Profilseite, die für jede Person im Internet ohne Anmeldung einsehbar ist. Weitere Informationen dazu findest du in unserer <privacyLink>Datenschutzerklärung</privacyLink>.",
       "emptyStateTitle": "Dein Profil ist noch leer",
       "emptyStateMessage": "Füge eine Bio, Fähigkeiten oder Kontaktpräferenzen hinzu, damit Organisationen etwas über dich wissen.",
       "emptyStateCta": "Profil vervollständigen",
