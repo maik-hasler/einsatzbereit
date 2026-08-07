@@ -54,6 +54,13 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 - **Platform administration** to verify organizations, manage users, and toggle admin/enabled status.
 - **Notifications and a language selector** (German by default, English as a secondary language).
 - **Keycloak-backed authentication** via OIDC/PKCE, with Keycloak Organizations powering org membership.
+- **Achievements and badges** awarded for volunteering milestones, shown on the profile.
+- **Saved search alerts** - save a filtered opportunity search and get a digest email when new matches appear.
+- **Organization invitations** to join and manage an organization's membership.
+- **Reporting and moderation** for opportunities, organizations, and users, backed by a full admin audit log.
+- **Image uploads** for avatars, organization logos, and opportunity banners, stored in MinIO object storage.
+- **CSV export** of an organization's engagement data.
+- **Installable as a PWA** with offline support for previously visited pages.
 
 ---
 
@@ -71,9 +78,11 @@ A live staging deployment runs at **[einsatzbereit.maik-hasler.de](https://einsa
 | Layer | Tech |
 |---|---|
 | Backend | .NET 10, Clean Architecture (Api -> Application -> Domain, Infrastructure -> Domain), EF Core 10, PostgreSQL 18, CQRS-style command/query handlers, transactional outbox for domain events |
-| Auth | Keycloak 26.7.0 (OIDC, JWT, Keycloak Organizations) |
+| Auth | Keycloak 26.7.1 (OIDC, JWT, Keycloak Organizations) |
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4, react-oidc-context, Leaflet/react-leaflet |
 | API client | NSwag-generated TypeScript client from the backend OpenAPI spec - never hand-edited |
+| Object storage | MinIO (avatars, organization logos, opportunity banners) |
+| Observability | Grafana, Prometheus, Alertmanager, Tempo (distributed tracing) |
 | Tests | TUnit + Aspire.Hosting.Testing + Respawn + NetArchTest (Application.UnitTests, IntegrationTests, ArchitectureTests), Vitest (frontend pure-logic units), Playwright + axe-core (E2E and accessibility, `backend/tests/VisualTests`) |
 | CI/CD | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push, auto-deploy to staging) |
 | Dependency updates | Renovate |
@@ -111,7 +120,7 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 | Service | URL | Credentials |
 |---|---|---|
 | Frontend | http://localhost:4321 | - |
-| Backend API | http://localhost:5000 | - |
+| Backend API | *dynamic port - see the Aspire dashboard* | - |
 | Keycloak | http://localhost:8080 | admin / admin |
 | pgAdmin | http://localhost:5050 | admin@admin.com / admin |
 | PostgreSQL | localhost:5432 | postgres / postgres |

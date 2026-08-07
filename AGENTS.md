@@ -38,7 +38,7 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 | Service | URL | Credentials |
 |---|---|---|
 | Frontend | http://localhost:4321 | - |
-| Backend API | http://localhost:5000 | - |
+| Backend API | *dynamic port - see the Aspire dashboard* | - |
 | Keycloak admin | http://localhost:8080 | admin / admin |
 | pgAdmin | http://localhost:5050 | admin@admin.com / admin |
 | PostgreSQL | localhost:5432 | postgres / postgres |
