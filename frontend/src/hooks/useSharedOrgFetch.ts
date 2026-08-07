@@ -34,9 +34,18 @@ export function useSharedOrgFetch<T>(
 			inFlight.set(key, promise);
 			// Dropped once settled - the next mount/refresh under this key issues
 			// a fresh request rather than serving indefinitely stale data.
-			void promise.finally(() => {
-				if (inFlight.get(key) === promise) inFlight.delete(key);
-			});
+			// The trailing .catch(() => {}) is load-bearing, not decorative: the
+			// promise returned by .finally() is a *new* derived promise with no
+			// rejection handler of its own (the .catch below at :46-48 attaches to
+			// a different link in the chain) - without this, every failed shared
+			// fetch reached window's unhandledrejection listener in main.tsx and
+			// fired a bogus app-wide error toast on top of whatever this hook's
+			// own error branch already rendered.
+			void promise
+				.finally(() => {
+					if (inFlight.get(key) === promise) inFlight.delete(key);
+				})
+				.catch(() => {});
 		}
 
 		promise

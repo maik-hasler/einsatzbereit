@@ -620,7 +620,6 @@ export default function OrgMembersPage() {
 					confirmLabel={t("confirmDialog.removeMember.confirm")}
 					onConfirm={() => void handleConfirmRemoveMember()}
 					onClose={() => {
-						if (removingMember) return;
 						setRemoveTarget(null);
 						setRemoveMemberError(null);
 					}}

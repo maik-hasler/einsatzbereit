@@ -6,18 +6,27 @@ interface Props {
 	message: string;
 	retrying: boolean;
 	onRetry: () => void;
+	"data-testid"?: string;
 }
 
 // Inline "load more failed" state - keeps whatever already rendered above it
 // in place and offers a retry, rather than the page's full error banner
 // (which would also hide those already-loaded rows). See einsatzbereit#1226.
-export default function LoadMoreError({ message, retrying, onRetry }: Props) {
+// Also doubles as the initial-load error state for lists that want a retry
+// affordance instead of a dead-end ErrorBanner (einsatzbereit#1728) - `message`/
+// `retrying`/`onRetry` read the same either way.
+export default function LoadMoreError({
+	message,
+	retrying,
+	onRetry,
+	"data-testid": testId,
+}: Props) {
 	const { t } = useTranslation();
 	// useId (not a fixed string) - OrgOpportunitiesPage renders a drafts and a
 	// published instance of this at once, which would otherwise collide.
 	const errorId = useId();
 	return (
-		<div className="mt-6 flex flex-col items-center gap-3">
+		<div className="mt-6 flex flex-col items-center gap-3" data-testid={testId}>
 			<ErrorBanner id={errorId} message={message} />
 			{/* aria-describedby ties this to the error text above - its own
 			accessible name ("Retry") says nothing about what it's retrying, and a

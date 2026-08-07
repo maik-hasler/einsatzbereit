@@ -286,7 +286,6 @@ export default function OrgOpportunitiesPage() {
 	}
 
 	function handleCancelClose() {
-		if (cancelling) return;
 		setCancelTargetId(null);
 		setCancelReason("");
 		setCancelError(null);
@@ -670,7 +669,6 @@ export default function OrgOpportunitiesPage() {
 					confirmLabel={t("confirmDialog.delete.confirm")}
 					onConfirm={handleDeleteConfirm}
 					onClose={() => {
-						if (deleting) return;
 						setDeleteTargetId(null);
 						setDeleteError(null);
 					}}
@@ -686,7 +684,6 @@ export default function OrgOpportunitiesPage() {
 					confirmLabel={t("confirmDialog.unpublish.confirm")}
 					onConfirm={handleUnpublishConfirm}
 					onClose={() => {
-						if (unpublishing) return;
 						setUnpublishTargetId(null);
 						setUnpublishError(null);
 					}}

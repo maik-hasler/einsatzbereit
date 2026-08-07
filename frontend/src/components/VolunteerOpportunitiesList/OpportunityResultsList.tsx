@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import EmptyState from "../EmptyState";
 import Skeleton from "../Skeleton";
-import ErrorBanner from "../ErrorBanner";
 import LoadMoreError from "../LoadMoreError";
 import LoadMoreButton from "../LoadMoreButton";
 import OpportunityListItem from "./OpportunityListItem";
@@ -70,8 +69,10 @@ export default function OpportunityResultsList({
 				</div>
 			)}
 			{error && (
-				<ErrorBanner
+				<LoadMoreError
 					message={t("opportunities.error", { message: error })}
+					retrying={loading}
+					onRetry={onRetryLoadMore}
 					data-testid="opportunities-error"
 				/>
 			)}

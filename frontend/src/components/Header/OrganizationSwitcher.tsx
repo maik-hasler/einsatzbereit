@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -7,9 +7,19 @@ import type {
 } from "../../client/api-client";
 import { orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
-import CreateOrganizationModal from "../CreateOrganizationModal";
+import ModalLoadingFallback from "../ModalLoadingFallback";
 import Skeleton from "../Skeleton";
 import { ChevronDownIcon, PlusIcon } from "../icons";
+
+// Lazy-loaded: this component is statically imported by Header, which is
+// eager on every route (including the anonymous landing page) - without
+// this, react-hook-form + zod stay in the entry chunk regardless of whether
+// HomePage's own CreateOrganizationModal usage is lazy-loaded, since
+// bundlers keep a module in its statically-importing chunk even when a
+// *different* call site imports it dynamically (#1728).
+const CreateOrganizationModal = lazy(
+	() => import("../CreateOrganizationModal"),
+);
 
 export default function OrganizationSwitcher({
 	currentOrgId,
@@ -158,10 +168,16 @@ export default function OrganizationSwitcher({
 			</div>
 
 			{showModal && (
-				<CreateOrganizationModal
-					onClose={() => setShowModal(false)}
-					onSuccess={handleOrgCreated}
-				/>
+				<Suspense
+					fallback={
+						<ModalLoadingFallback onClose={() => setShowModal(false)} />
+					}
+				>
+					<CreateOrganizationModal
+						onClose={() => setShowModal(false)}
+						onSuccess={handleOrgCreated}
+					/>
+				</Suspense>
 			)}
 		</>
 	);

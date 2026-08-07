@@ -144,7 +144,6 @@ export default function ActivitySection() {
 	}
 
 	function handleWithdrawClose() {
-		if (withdrawing) return;
 		setConfirmWithdrawId(null);
 		setWithdrawError(null);
 	}
@@ -223,7 +222,6 @@ export default function ActivitySection() {
 	}
 
 	function handleDeleteFeedbackClose() {
-		if (deletingFeedback) return;
 		setConfirmDeleteFeedbackId(null);
 		setDeleteFeedbackError(null);
 	}
