@@ -102,7 +102,10 @@ internal sealed class NotificationRetentionJob(
 		CancellationToken cancellationToken = default) =>
 		await dbContext.Set<Notification>()
 			.Where(n =>
-				(n.IsRead && n.CreatedOn < readCutoff) ||
+				// #1725: the read branch used to key off CreatedOn, deleting a
+				// notification read a day after creation almost immediately
+				// instead of ReadRetentionDays after it was actually read.
+				(n.IsRead && n.ReadOn != null && n.ReadOn < readCutoff) ||
 				(!n.IsRead && n.CreatedOn < unreadCutoff))
 			.ExecuteDeleteAsync(cancellationToken);
 }

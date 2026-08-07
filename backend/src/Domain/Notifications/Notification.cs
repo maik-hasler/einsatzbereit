@@ -15,6 +15,12 @@ public sealed class Notification
 
 	public bool IsRead { get; private set; }
 
+	// Stamped by MarkRead() with the moment it was actually read (#1725) -
+	// NotificationRetentionJob's read-retention window ("90 days after being
+	// read") must count from here, not from CreatedOn or the generic
+	// ModifiedOn (which any future unrelated mutation could also bump).
+	public DateTimeOffset? ReadOn { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -46,13 +52,15 @@ public sealed class Notification
 			kind,
 			relatedEntityId);
 
-	public void MarkRead()
+	public void MarkRead(DateTimeOffset readOn)
 	{
 		IsRead = true;
+		ReadOn = readOn;
 	}
 
 	public void MarkUnread()
 	{
 		IsRead = false;
+		ReadOn = null;
 	}
 }
