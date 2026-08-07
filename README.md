@@ -137,7 +137,6 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4
 ├── keycloak/       Custom Keycloak image + realm config
 ├── docs/           arc42 architecture docs + ADRs
-├── wiki/           Project LLM wiki (informal knowledge)
 └── .github/        CI/CD workflows + issue templates
 ```
 
