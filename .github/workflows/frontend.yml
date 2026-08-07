@@ -6,11 +6,13 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend.yml'
+      - '.github/workflows/frontend-checks.yml'
   pull_request:
     branches: [main]
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend.yml'
+      - '.github/workflows/frontend-checks.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,182 +23,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Format check
-        run: pnpm format:check
-
-      - name: Check i18n key parity
-        run: pnpm i18n:check
-
-      - name: Check nginx CSP header
-        run: pnpm check:nginx-csp
-
-      - name: Check config.js defer
-        run: pnpm check:config-defer
-
-      - name: Check nginx gzip_static wiring
-        run: pnpm check:nginx-gzip-static
-
-      - name: Check nginx HSTS header
-        run: pnpm check:nginx-hsts
-
-      - name: Check nginx Permissions-Policy header
-        run: pnpm check:nginx-permissions-policy
-
-      - name: Check PWA precache scoping
-        run: pnpm check:pwa-precache
-
-      - name: Type check
-        run: pnpm check
-
-  test:
-    runs-on: ubuntu-latest
-    needs: lint
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Unit tests
-        run: pnpm test
-
-  build:
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-
-  # None of dotnet.yml's VisualTests exercise this - they all drive the plain
-  # Vite dev server via Aspire's AddViteApp, which has no CSP, no runtime
-  # envsubst, no service worker, and no gzip_static. This is the only place
-  # frontend/Dockerfile is ever actually built and run in CI, so a defect only
-  # the production nginx image has (a CSP header nginx.conf.template renders
-  # wrong, config.js left with an unsubstituted "${...}" placeholder, a
-  # cross-origin image blocked) can otherwise merge with an all-green pipeline.
-  docker-image:
-    name: Production container smoke test
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Build production image
-        run: |
-          docker build \
-            --build-arg VITE_KEYCLOAK_AUTHORITY_URL=https://login.example.test/realms/einsatzbereit \
-            --build-arg VITE_KEYCLOAK_CLIENT_ID=frontend \
-            --build-arg VITE_API_URL=https://api.example.test \
-            -t frontend-smoke-test \
-            frontend
-
-      - name: Run container with production-like runtime config
-        run: |
-          docker run -d --name frontend-smoke-test -p 8081:80 \
-            -e VITE_KEYCLOAK_AUTHORITY_URL=https://login.example.test/realms/einsatzbereit \
-            -e VITE_KEYCLOAK_CLIENT_ID=frontend \
-            -e VITE_API_URL=https://api.example.test \
-            -e STORAGE_PUBLIC_URL=https://storage.example.test \
-            frontend-smoke-test
-
-          for i in $(seq 1 30); do
-            code=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8081/ || echo 000)
-            [ "$code" = "200" ] && break
-            sleep 1
-          done
-
-      - name: Container logs (always, for debugging)
-        if: always()
-        run: docker logs frontend-smoke-test || true
-
-      - name: index.html is served
-        run: |
-          code=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8081/)
-          [ "$code" = "200" ] || { echo "::error::GET / returned $code"; exit 1; }
-
-      - name: config.js is substituted, not left as a template placeholder
-        run: |
-          body=$(curl -fsS http://localhost:8081/config.js)
-          echo "$body"
-          if echo "$body" | grep -q '\${'; then
-            echo "::error::config.js still contains an unsubstituted \${...} placeholder"
-            exit 1
-          fi
-          echo "$body" | grep -q "https://api.example.test" || { echo "::error::config.js does not contain the expected API_URL"; exit 1; }
-
-      - name: Content-Security-Policy header reflects runtime origins
-        run: |
-          csp=$(curl -fsSI http://localhost:8081/ | tr -d '\r' | grep -i '^content-security-policy:')
-          echo "$csp"
-          [ -n "$csp" ] || { echo "::error::No Content-Security-Policy header"; exit 1; }
-          echo "$csp" | grep -q "https://api.example.test" || { echo "::error::CSP does not allow the runtime API origin (connect-src)"; exit 1; }
-          echo "$csp" | grep -q "https://login.example.test" || { echo "::error::CSP does not allow the runtime Keycloak origin (frame-src)"; exit 1; }
-          echo "$csp" | grep -q "https://storage.example.test" || { echo "::error::CSP does not allow the runtime storage origin (img-src) - cross-origin images would be blocked"; exit 1; }
-
-      - name: gzip_static serves precompressed assets
-        run: |
-          asset=$(curl -fsS http://localhost:8081/ | grep -o '/assets/index-[^"]*\.js' | head -1)
-          [ -n "$asset" ] || { echo "::error::Could not find an entry JS asset reference in index.html"; exit 1; }
-          encoding=$(curl -fsSI -H "Accept-Encoding: gzip" "http://localhost:8081${asset}" | tr -d '\r' | grep -i '^content-encoding:')
-          echo "$encoding"
-          echo "$encoding" | grep -qi "gzip" || { echo "::error::${asset} was not served with Content-Encoding: gzip"; exit 1; }
-
-      - name: Stop container
-        if: always()
-        run: docker rm -f frontend-smoke-test || true
+  # Fake example.test origins - this is the PR/push gate, run against
+  # untrusted branches with no access to real infrastructure. publish.yml
+  # calls the same reusable workflow with the real maik-hasler.de origins
+  # before a release goes out - see #1733.
+  checks:
+    uses: ./.github/workflows/frontend-checks.yml
+    with:
+      vite_keycloak_authority_url: https://login.example.test/realms/einsatzbereit
+      vite_keycloak_client_id: frontend
+      keycloak_origin: https://login.example.test
+      vite_api_url: https://api.example.test
+      storage_public_url: https://storage.example.test

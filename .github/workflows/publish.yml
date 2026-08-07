@@ -243,6 +243,7 @@ jobs:
       IMAGE_NAME: ${{ github.repository }}-backend
     outputs:
       prerelease: ${{ steps.version.outputs.prerelease }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -283,44 +284,34 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  # Runs the exact same lint/format/i18n/nginx-header/type-check/unit-test/
+  # production-container-smoke-test gate as frontend.yml's PR/push gate,
+  # against the real maik-hasler.de origins this release will actually be
+  # deployed with - see #1733: before this, publish-frontend below ran only
+  # pnpm lint/check/test/build inline and never built or smoke-tested the
+  # production nginx image at all, so the release path skipped the nginx
+  # CSP/HSTS/Permissions-Policy checks and the image build guarding the
+  # artifact actually being pushed and deployed.
+  frontend-checks:
+    name: Frontend Checks
+    needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
+    uses: ./.github/workflows/frontend-checks.yml
+    with:
+      vite_keycloak_authority_url: https://login.maik-hasler.de/realms/einsatzbereit
+      vite_keycloak_client_id: frontend
+      keycloak_origin: https://login.maik-hasler.de
+      vite_api_url: https://api.maik-hasler.de
+      storage_public_url: https://storage.maik-hasler.de
+
   publish-frontend:
     name: Publish Frontend
-    needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
+    needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests, frontend-checks]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       IMAGE_NAME: ${{ github.repository }}-frontend
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-        working-directory: frontend
-
-      - name: Lint
-        working-directory: frontend
-        run: pnpm lint
-
-      - name: Type check
-        working-directory: frontend
-        run: pnpm check
-
-      - name: Unit tests
-        working-directory: frontend
-        run: pnpm test
-
-      - name: Build
-        working-directory: frontend
-        run: pnpm build
 
       - name: Log in to Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -457,6 +448,30 @@ jobs:
           # STAGING_SSH_HOST_KEY was captured and verified.
           echo "${{ secrets.STAGING_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
 
+      # Read before "Copy compose file and .env" below overwrites the host's
+      # .env - this is the only point at which the previously-deployed
+      # IMAGE_TAG is still readable. Without it, rollback (further down) has
+      # no immutable version to name (#1733) - the images built above are
+      # tagged with the exact release version (see publish-backend's Docker
+      # meta step), but nothing recorded which version was actually running
+      # before this deploy replaces it.
+      - name: Capture previously deployed image tag
+        id: previous_tag
+        run: |
+          set -euo pipefail
+          TAG=$(ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            if [ -f /opt/einsatzbereit/.env ]; then
+              grep -m1 '^IMAGE_TAG=' /opt/einsatzbereit/.env | cut -d'"' -f2
+            fi
+          EOF
+          )
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [ -n "$TAG" ]; then
+            echo "Previously deployed IMAGE_TAG: ${TAG}"
+          else
+            echo "No previous IMAGE_TAG found on the host (first deploy) - rollback will have nothing to revert to if this deploy fails."
+          fi
+
       - name: Render .env
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -495,6 +510,13 @@ jobs:
           OFFSITE_S3_ENDPOINT: ${{ secrets.OFFSITE_S3_ENDPOINT }}
           OFFSITE_S3_ACCESS_KEY: ${{ secrets.OFFSITE_S3_ACCESS_KEY }}
           OFFSITE_S3_SECRET_KEY: ${{ secrets.OFFSITE_S3_SECRET_KEY }}
+          # The specific version tag this RC's images were just pushed under
+          # (publish-backend's Docker meta step), not the floating "staging"
+          # tag docker-compose.yml would otherwise fall back to - see #1733:
+          # without this, there is no immutable artifact to roll back to,
+          # since "staging" is overwritten by every deploy including the bad
+          # one being rolled back from.
+          IMAGE_TAG: ${{ needs.publish-backend.outputs.version }}
         run: |
           umask 077
           # Escape \, " and $ so secrets that contain quotes, hashes, leading
@@ -532,6 +554,7 @@ jobs:
             printf 'OFFSITE_S3_ENDPOINT="%s"\n' "$(escape "$OFFSITE_S3_ENDPOINT")"
             printf 'OFFSITE_S3_ACCESS_KEY="%s"\n' "$(escape "$OFFSITE_S3_ACCESS_KEY")"
             printf 'OFFSITE_S3_SECRET_KEY="%s"\n' "$(escape "$OFFSITE_S3_SECRET_KEY")"
+            printf 'IMAGE_TAG="%s"\n' "$(escape "$IMAGE_TAG")"
             # Not a secret - staging is meant to come back seeded with demo
             # organizations/opportunities on every deploy/reset (see
             # reset-staging.yml). docker-compose.yml defaults this to
@@ -629,12 +652,6 @@ jobs:
             set -euo pipefail
             cd /opt/einsatzbereit
             chmod 600 .env
-            # Tag running images as staging-previous so we can roll back if the
-            # health gate fails after the deploy.
-            for svc in backend frontend keycloak; do
-              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
-              docker tag "${img}:staging" "${img}:staging-previous" 2>/dev/null || true
-            done
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune --force || true
@@ -682,23 +699,36 @@ jobs:
           exit 1
 
       - name: Rollback on unhealthy deploy
-        # Scoped to the actual deploy step so an earlier failure (env render,
-        # file copy, Keycloak mapper setup) - where no new images were ever
-        # deployed - doesn't re-tag staging-previous over a healthy stack.
-        if: failure() && steps.pull_and_restart.outcome == 'success'
+        # Scoped to the deploy step having actually run (not skipped because
+        # an earlier step like env render/file copy/Keycloak mapper setup
+        # failed first, in which case no new images were ever deployed) -
+        # rather than having *succeeded*. #1733: the real failure mode this
+        # step exists for is `docker compose up` itself failing because the
+        # backend never reports healthy (frontend/keycloak's `depends_on:
+        # condition: service_healthy` on it never resolves) - see the log
+        # capture step above. That is pull_and_restart *failing*, so gating
+        # on outcome == 'success' meant rollback never fired in exactly the
+        # scenario it was written for.
+        if: failure() && steps.pull_and_restart.conclusion != 'skipped'
         run: |
-          echo "::warning::Health gate failed - rolling back to staging-previous images."
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+          set -uo pipefail
+          PREV_TAG="${{ steps.previous_tag.outputs.tag }}"
+          if [ -z "$PREV_TAG" ]; then
+            echo "::warning::No previous IMAGE_TAG was recorded (likely the first deploy to this host) - nothing to roll back to."
+            exit 0
+          fi
+          echo "::warning::Health gate failed - rolling back to IMAGE_TAG=${PREV_TAG}."
+          # Deliberately an unquoted heredoc (unlike the other remote scripts
+          # in this job) - PREV_TAG must expand on the runner before the
+          # script reaches the remote shell; nothing else in this block
+          # depends on remote-side variables.
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<EOF
             set -euo pipefail
             cd /opt/einsatzbereit
-            for svc in backend frontend keycloak; do
-              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
-              if docker image inspect "${img}:staging-previous" &>/dev/null; then
-                docker tag "${img}:staging-previous" "${img}:staging"
-              fi
-            done
+            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG="${PREV_TAG}"/' .env
+            docker compose pull
             docker compose up -d --remove-orphans
-            echo "Rollback complete - previous images re-deployed."
+            echo "Rollback complete - redeployed IMAGE_TAG=${PREV_TAG}."
           EOF
 
       - name: Bind single-step Keycloak browser flow
@@ -826,6 +856,26 @@ jobs:
           # follows the same recipe (today, against the same host).
           echo "${{ secrets.PRODUCTION_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
 
+      # See the matching step in deploy-staging above for why this has to run
+      # before "Copy compose file and .env" overwrites the host's .env, and
+      # why it exists at all (#1733).
+      - name: Capture previously deployed image tag
+        id: previous_tag
+        run: |
+          set -euo pipefail
+          TAG=$(ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
+            if [ -f /opt/einsatzbereit/.env ]; then
+              grep -m1 '^IMAGE_TAG=' /opt/einsatzbereit/.env | cut -d'"' -f2
+            fi
+          EOF
+          )
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [ -n "$TAG" ]; then
+            echo "Previously deployed IMAGE_TAG: ${TAG}"
+          else
+            echo "No previous IMAGE_TAG found on the host (first deploy) - rollback will have nothing to revert to if this deploy fails."
+          fi
+
       - name: Render .env
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -850,6 +900,7 @@ jobs:
           OFFSITE_S3_ENDPOINT: ${{ secrets.OFFSITE_S3_ENDPOINT }}
           OFFSITE_S3_ACCESS_KEY: ${{ secrets.OFFSITE_S3_ACCESS_KEY }}
           OFFSITE_S3_SECRET_KEY: ${{ secrets.OFFSITE_S3_SECRET_KEY }}
+          IMAGE_TAG: ${{ needs.publish-backend.outputs.version }}
         run: |
           umask 077
           # Escape \, " and $ - see deploy-staging's "Render .env" step for
@@ -883,10 +934,14 @@ jobs:
             printf 'OFFSITE_S3_ENDPOINT="%s"\n' "$(escape "$OFFSITE_S3_ENDPOINT")"
             printf 'OFFSITE_S3_ACCESS_KEY="%s"\n' "$(escape "$OFFSITE_S3_ACCESS_KEY")"
             printf 'OFFSITE_S3_SECRET_KEY="%s"\n' "$(escape "$OFFSITE_S3_SECRET_KEY")"
-            # Selects the `latest`-tagged images in docker-compose.yml instead
-            # of deploy-staging's floating `staging` tag (see publish-backend's
-            # Docker meta step: stable tags get `latest`, RC tags get `staging`).
-            printf 'IMAGE_TAG="latest"\n'
+            # The specific version tag this release's images were just pushed
+            # under (publish-backend's Docker meta step also tags this same
+            # image `latest` in the registry, for anyone pulling it manually),
+            # not the floating `latest` tag docker-compose.yml would otherwise
+            # fall back to - see #1733: without this, there is no immutable
+            # artifact to roll back to, since `latest` is overwritten by every
+            # deploy including the bad one being rolled back from.
+            printf 'IMAGE_TAG="%s"\n' "$(escape "$IMAGE_TAG")"
             printf 'ASPNETCORE_ENVIRONMENT="Production"\n'
             # Deliberately no DATABASE_SEED_ON_STARTUP override here - unlike
             # deploy-staging, a stable release should not reseed demo data
@@ -969,13 +1024,6 @@ jobs:
             set -euo pipefail
             cd /opt/einsatzbereit
             chmod 600 .env
-            # Tag running images as latest-previous so we can roll back if the
-            # health gate fails after the deploy - same idea as deploy-staging's
-            # staging-previous, just for the `latest` tag this job deploys.
-            for svc in backend frontend keycloak; do
-              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
-              docker tag "${img}:latest" "${img}:latest-previous" 2>/dev/null || true
-            done
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune --force || true
@@ -1014,20 +1062,27 @@ jobs:
           exit 1
 
       - name: Rollback on unhealthy deploy
-        if: failure() && steps.pull_and_restart.outcome == 'success'
+        # See the matching condition in deploy-staging above for why this
+        # checks conclusion != 'skipped' rather than outcome == 'success'
+        # (#1733).
+        if: failure() && steps.pull_and_restart.conclusion != 'skipped'
         run: |
-          echo "::warning::Health gate failed - rolling back to latest-previous images."
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
+          set -uo pipefail
+          PREV_TAG="${{ steps.previous_tag.outputs.tag }}"
+          if [ -z "$PREV_TAG" ]; then
+            echo "::warning::No previous IMAGE_TAG was recorded (likely the first deploy to this host) - nothing to roll back to."
+            exit 0
+          fi
+          echo "::warning::Health gate failed - rolling back to IMAGE_TAG=${PREV_TAG}."
+          # Deliberately an unquoted heredoc - see deploy-staging's matching
+          # rollback step above.
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<EOF
             set -euo pipefail
             cd /opt/einsatzbereit
-            for svc in backend frontend keycloak; do
-              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
-              if docker image inspect "${img}:latest-previous" &>/dev/null; then
-                docker tag "${img}:latest-previous" "${img}:latest"
-              fi
-            done
+            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG="${PREV_TAG}"/' .env
+            docker compose pull
             docker compose up -d --remove-orphans
-            echo "Rollback complete - previous images re-deployed."
+            echo "Rollback complete - redeployed IMAGE_TAG=${PREV_TAG}."
           EOF
 
       - name: Bind single-step Keycloak browser flow
