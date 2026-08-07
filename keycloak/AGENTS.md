@@ -25,6 +25,8 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 | `organisator` | Can create and manage volunteer opportunities |
 | `admin` | Full admin access - composite role, includes `user` + `organisator` so admin tokens also satisfy `EinsatzbereitDefaultUserPolicy`/`EinsatzbereitOrganisatorPolicy` |
 
+The realm's `defaultRole` (`default-roles-einsatzbereit`, composite over `user` plus Keycloak's own `offline_access`/`uma_authorization`/account-client defaults) is what Keycloak grants automatically to every newly created user, including self-registrations through the public `/protocol/openid-connect/registrations` form (#1723 - without it, self-registered accounts got no realm role at all and every `EinsatzbereitDefaultUserPolicy`-gated endpoint 403'd for them). It does **not** apply to the three seeded test users above or `service-account-backend` - those are created via this file's `users` array during realm import, which bypasses Keycloak's normal user-creation code path and only grants the `realmRoles`/`clientRoles` listed explicitly on each entry.
+
 ### Clients
 
 **`frontend`** (public OIDC client)

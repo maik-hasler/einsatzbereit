@@ -40,6 +40,25 @@
   "roles": {
     "realm": [
       {
+        "name": "default-roles-einsatzbereit",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization",
+            "user"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account"
+            ]
+          }
+        },
+        "clientRole": false
+      },
+      {
         "name": "admin",
         "description": "Administrator",
         "composite": true,
@@ -59,6 +78,12 @@
         "description": "Organisator - can create and manage volunteer opportunities"
       }
     ]
+  },
+  "defaultRole": {
+    "name": "default-roles-einsatzbereit",
+    "description": "${role_default-roles}",
+    "composite": true,
+    "clientRole": false
   },
   "clients": [
     {
