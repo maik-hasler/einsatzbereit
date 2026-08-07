@@ -12,8 +12,10 @@ using Microsoft.Extensions.Logging;
 namespace Infrastructure.BackgroundJobs;
 
 // One-shot compensator for pre-existing organizations that predate the
-// organization_membership table (migration AddOrganizationMembership, see
-// wiki/bundle/gotchas/auth-fresh-deploy-traps.md for why it's needed at all).
+// organization_membership table (migration AddOrganizationMembership). Without it,
+// every organizer of an org created before that migration has zero membership rows
+// and gets 403'd out of their own org, since OwnershipGuard.EnsureIsOrganizerAsync
+// has no Keycloak fallback at request time.
 // Organizations created after that migration always get their founding organizer's
 // membership row written synchronously by CreateOrganizationCommandHandler, so once
 // this has run once against every organization that existed before the table did,

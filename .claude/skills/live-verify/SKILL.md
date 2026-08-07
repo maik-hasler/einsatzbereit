@@ -23,11 +23,10 @@ curl -sf https://api.maik-hasler.de/health   # must return HTTP 200
 ## 2. Write the script to a scratch directory - never `scripts/`
 
 There is no committed `scripts/` directory and no root `package.json`
-anymore (`wiki/bundle/decisions/scripts-folder-removed.md`). Write the
-Playwright script to a scratch directory outside the repo (this session's
-scratchpad, or `/tmp`) and delete it once it has served its purpose - it is
-throwaway proof the change works right now, never a durable artifact (that's
-step 7's C# TUnit test, below).
+anymore. Write the Playwright script to a scratch directory outside the
+repo (this session's scratchpad, or `/tmp`) and delete it once it has
+served its purpose - it is throwaway proof the change works right now,
+never a durable artifact (that's step 7's C# TUnit test, below).
 
 ```bash
 cd <scratch-dir> && npm init -y && npm install playwright
@@ -94,9 +93,3 @@ Add the same assertions as an automated C# TUnit test in
 `backend/tests/VisualTests/` (step 7 of the mandatory flow, runs against the
 local Aspire stack in CI). That test is the durable, reviewable record of
 the fix; this scratch script is not.
-
-## Related
-
-- `wiki/bundle/process/deploy-verify-flow.md` - the full 9-step flow this is step 6 of
-- `wiki/bundle/process/live-playwright-scripts.md` - the same recipe as wiki knowledge, for non-Claude-Code agents
-- `wiki/bundle/decisions/scripts-folder-removed.md` - why this is scratch-only and not a committed helper

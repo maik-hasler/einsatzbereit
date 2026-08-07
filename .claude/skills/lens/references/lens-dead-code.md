@@ -37,8 +37,8 @@ assets. Deletion candidates, each with proof.
 
 **Repo-wide:** scripts in `frontend/scripts/` nothing invokes (search
 workflows, package.json scripts, docs, hooks) - there is no root `scripts/`
-anymore, it was removed wholesale (`wiki/bundle/decisions/scripts-folder-removed.md`),
-so don't flag its absence as a finding; `.claude/` agents/skills referenced
+anymore, it was removed wholesale, so don't flag its absence as a finding;
+`.claude/` agents/skills referenced
 by nothing (check `.claude` configs and CLAUDE.md files before flagging).
 
 ## Verification bar
