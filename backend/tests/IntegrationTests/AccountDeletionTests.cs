@@ -180,6 +180,40 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task DeleteMyAccount_ShouldFullyEraseAccount_WhenUserWasPreviouslyShadowDeleted(
+		CancellationToken cancellationToken)
+	{
+		// #1725: DeleteMyAccountCommandHandler used to look up the local `user`
+		// row via the filtered dbContext.Users.FindAsync, which a shadow-deleted
+		// row (IsDeleted = true) is invisible to - the handler silently no-opped
+		// while still reporting success. Self-deletion must fully erase the
+		// account (Keycloak identity + local row) even for a user an admin
+		// already shadow-deleted.
+		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
+		// The first profile load lazily creates the local `user` row -
+		// AdminShadowDeleteUserAsync 404s otherwise (see AdminShadowDeleteUserTests).
+		await ephemeralClient.GetUserProfileAsync(cancellationToken);
+
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		await adminClient.AdminShadowDeleteUserAsync(ephemeralUserId, cancellationToken);
+
+		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Users.UserAccountDeletedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("a shadow-deleted user's self-deletion must still delete the Keycloak identity");
+
+		var reLogin = () => fixture.GetAccessTokenAsync(ephemeralUsername, ephemeralPassword);
+		await reLogin.Should().ThrowAsync<Exception>();
+
+		(await fixture.CountRowsWhereAsync("user", "id", ephemeralUserId))
+			.Should().Be(0);
+	}
+
+	[Test]
 	public async Task DeleteMyAccount_ShouldBeBlocked_WhenUserIsSoleOrganizerOfAnOrganization(
 		CancellationToken cancellationToken)
 	{

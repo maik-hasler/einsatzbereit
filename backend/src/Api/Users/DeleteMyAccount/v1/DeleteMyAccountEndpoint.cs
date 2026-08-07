@@ -17,6 +17,7 @@ internal sealed class DeleteMyAccountEndpoint : IEndpoint
 			.WithTags("Users")
 			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)

@@ -5,6 +5,7 @@ using Application.Users.DeleteMyAccount.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
@@ -31,6 +32,12 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Organization>());
+		// Default: a plain, non-deleted user is found for any lookup - tests that
+		// only care about an unrelated side effect don't need to configure this
+		// themselves. Tests exercising the user-lookup path override it directly.
+		_dbContext
+			.FindUserIncludingDeletedAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(_ => User.Create(DefaultUserId));
 		_sut = new DeleteMyAccountCommandHandler(_dbContext, _fileStorage);
 	}
 
@@ -164,7 +171,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// Arrange
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage
 			.GetObjectKeyFromPublicUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png")
 			.Returns($"user-avatars/{DefaultUserId.Value}/abc123.png");
@@ -188,7 +195,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -208,7 +215,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// return type is string?.
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl("not-a-valid-storage-url");
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
@@ -225,7 +232,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -236,18 +243,51 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSkipAvatarDeletionAndUserRowDelete_WhenLocalUserRowIsMissing(
+	public async Task Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - FindAsync is unconfigured and defaults to null, simulating a missing local user row.
+		// Arrange - issue #1725: a missing local row must never again be reported
+		// as a successful erasure. FindUserIncludingDeletedAsync overridden back
+		// to null for this specific call, overriding the constructor's default.
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns((User?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
-		await _sut.Handle(command, cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
+		var thrown = await act.Should().ThrowAsync<ResultFailureException>();
+		thrown.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldFullyProcessDeletion_WhenUserWasPreviouslyShadowDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1725: dbContext.Users.FindAsync is filtered by
+		// UserConfiguration's !IsDeleted query filter and would never see a
+		// shadow-deleted row. FindUserIncludingDeletedAsync must be used instead
+		// so avatar deletion, the UserAccountDeletedDomainEvent (-> Keycloak
+		// deletion), and the row's hard delete all still run.
+		var user = User.Create(DefaultUserId);
+		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
+		user.MarkDeleted(DateTimeOffset.UtcNow).ThrowIfFailure();
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png")
+			.Returns($"user-avatars/{DefaultUserId.Value}/abc123.png");
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", cancellationToken);
+		_usersRepo.Received(1).Delete(user);
+		user.Events.Should().ContainSingle().Which.Should().BeOfType<UserAccountDeletedDomainEvent>();
 	}
 
 	[Test]
@@ -259,7 +299,7 @@ public class DeleteMyAccountCommandHandlerTests
 		// UserAccountDeletedDomainEventHandler). The handler's only job is to raise that event
 		// on the aggregate once the local row is actually about to be deleted.
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -277,7 +317,7 @@ public class DeleteMyAccountCommandHandlerTests
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
-		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act

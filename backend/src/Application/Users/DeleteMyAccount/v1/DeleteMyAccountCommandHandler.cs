@@ -42,31 +42,35 @@ internal sealed class DeleteMyAccountCommandHandler(
 		await dbContext.DeleteSearchAlertForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteReportsForReporterAsync(request.UserId, cancellationToken);
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-		if (user is not null)
+		// IgnoreQueryFilters() lookup (einsatzbereit#1725) - a shadow-deleted user's
+		// row is hidden by UserConfiguration's !IsDeleted query filter but still
+		// physically exists, so dbContext.Users.FindAsync would silently no-op here
+		// (no avatar delete, no MarkAccountDeleted -> no Keycloak deletion) while
+		// this handler kept reporting success.
+		var user = await dbContext.FindUserIncludingDeletedAsync(request.UserId, cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("User.NotFound", "User not found."));
+
+		// The avatar's random object key (issue #1175) can't be reconstructed
+		// from the user id, so it has to come from the stored AvatarUrl instead
+		// of a guessed extension.
+		var avatarObjectKey = user.AvatarUrl is not null
+			? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
+			: null;
+
+		if (avatarObjectKey is not null)
 		{
-			// The avatar's random object key (issue #1175) can't be reconstructed
-			// from the user id, so it has to come from the stored AvatarUrl instead
-			// of a guessed extension.
-			var avatarObjectKey = user.AvatarUrl is not null
-				? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
-				: null;
-
-			if (avatarObjectKey is not null)
+			try
 			{
-				try
-				{
-					await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
-				}
-				catch
-				{
-					// Object may already be gone or storage may be transiently unavailable; continue.
-				}
+				await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
 			}
-
-			user.MarkAccountDeleted();
-			dbContext.Users.Delete(user);
+			catch
+			{
+				// Object may already be gone or storage may be transiently unavailable; continue.
+			}
 		}
+
+		user.MarkAccountDeleted();
+		dbContext.Users.Delete(user);
 
 		return true;
 	}
