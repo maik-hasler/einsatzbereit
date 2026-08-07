@@ -52,6 +52,7 @@ function setsEqual(a, b) {
 const ALLOWED_IDENTICAL_KEYS = new Set(
 	[
 		"brand.name",
+		"footer.license",
 		"nav.administration",
 		"landing.heroStat3Label",
 		"opportunities.remote",

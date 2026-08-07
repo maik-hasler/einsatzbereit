@@ -41,6 +41,7 @@
       "contact": "Kontakt",
       "help": "Hilfe",
       "followUs": "Folge uns",
+      "license": "AGPL-3.0",
       "copyright": "© {{year}} Einsatzbereit. Lizenziert unter <licenseLink>AGPL-3.0</licenseLink>."
     },
     "landing": {

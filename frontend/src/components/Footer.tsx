@@ -11,12 +11,15 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 	if (compact) {
 		return (
 			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-				<Link to="/help" className="inline-block py-1 hover:text-gray-600">
-					{t("footer.help")}
-				</Link>
-				<span className="mx-2">&middot;</span>
 				<Link to="/imprint" className="inline-block py-1 hover:text-gray-600">
 					{t("footer.imprint")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link
+					to="/terms-of-use"
+					className="inline-block py-1 hover:text-gray-600"
+				>
+					{t("footer.terms")}
 				</Link>
 				<span className="mx-2">&middot;</span>
 				<Link
@@ -25,6 +28,23 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 				>
 					{t("footer.privacy")}
 				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link to="/contact" className="inline-block py-1 hover:text-gray-600">
+					{t("footer.contact")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link to="/help" className="inline-block py-1 hover:text-gray-600">
+					{t("footer.help")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<a
+					href="https://github.com/maik-hasler/einsatzbereit/blob/main/LICENSE"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="inline-block py-1 hover:text-gray-600"
+				>
+					{t("footer.license")}
+				</a>
 			</footer>
 		);
 	}
