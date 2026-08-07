@@ -129,6 +129,8 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService<CheckInAttemptPruneJob>();
 		services.ConfigureOptions<NotificationRetentionOptionsSetup>();
 		services.AddHostedService<NotificationRetentionJob>();
+		services.ConfigureOptions<ReportRetentionOptionsSetup>();
+		services.AddHostedService<ReportRetentionJob>();
 
 
 		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see

@@ -50,6 +50,15 @@ public interface IApplicationDbContext
 		UserId reporterId,
 		CancellationToken cancellationToken = default);
 
+	// Report.TargetId is an untyped uuid with no FK/navigation to User (it's
+	// polymorphic - User, Organization, or VolunteerOpportunity depending on
+	// TargetType), and this needs to see the *unfiltered* physical user row
+	// rather than EF's !IsDeleted query filter, so a merely shadow-deleted
+	// user (row still exists) is correctly left alone - returns the number of
+	// report rows deleted (einsatzbereit#1725).
+	Task<int> DeleteReportsTargetingNonExistentUsersAsync(
+		CancellationToken cancellationToken = default);
+
 	Task<List<VolunteerOpportunity>> GetVolunteerOpportunitiesByIdsAsync(
 		IReadOnlyCollection<VolunteerOpportunityId> opportunityIds,
 		CancellationToken cancellationToken = default);

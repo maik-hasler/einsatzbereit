@@ -137,6 +137,20 @@ internal sealed class ApplicationDbContext(
 			.Where(r => r.ReporterId == reporterId)
 			.ExecuteDeleteAsync(cancellationToken);
 
+	// Raw SQL, not LINQ: a NOT EXISTS against the physical "user" table can't
+	// be expressed against Report.TargetId (a plain Guid with no FK/navigation
+	// to User - see the IApplicationDbContext doc comment), and needs to
+	// bypass EF's !IsDeleted query filter entirely rather than IgnoreQueryFilters()
+	// a LINQ subquery, so a merely shadow-deleted user's still-physically-present
+	// row is correctly left alone (einsatzbereit#1725).
+	public async Task<int> DeleteReportsTargetingNonExistentUsersAsync(
+		CancellationToken cancellationToken = default) =>
+		await Database.ExecuteSqlInterpolatedAsync($@"
+			DELETE FROM report
+			WHERE target_type = 'User'
+			  AND NOT EXISTS (SELECT 1 FROM ""user"" WHERE ""user"".id = report.target_id)",
+			cancellationToken);
+
 	public async Task<List<VolunteerOpportunity>> GetVolunteerOpportunitiesByIdsAsync(
 		IReadOnlyCollection<VolunteerOpportunityId> opportunityIds,
 		CancellationToken cancellationToken = default) =>
