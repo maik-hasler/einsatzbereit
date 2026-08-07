@@ -25,6 +25,8 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 | `organisator` | Can create and manage volunteer opportunities |
 | `admin` | Full admin access - composite role, includes `user` + `organisator` so admin tokens also satisfy `EinsatzbereitDefaultUserPolicy`/`EinsatzbereitOrganisatorPolicy` |
 
+The realm's `defaultRole` (`default-roles-einsatzbereit`, composite over `user`) is what Keycloak grants automatically to every newly created user, including self-registrations through the public `/protocol/openid-connect/registrations` form (#1723 - without it, self-registered accounts got no realm role at all and every `EinsatzbereitDefaultUserPolicy`-gated endpoint 403'd for them). Deliberately does not also compose Keycloak's built-in `offline_access`/`uma_authorization`/account-client roles the way a full UI export would - this realm's import is a hand-authored partial file, and those built-ins are not yet provisioned at the point a partial import resolves `roles.realm` composites, so referencing them there fails `--import-realm` outright (confirmed via `keycloak-realm-import.yml` against the real production Keycloak version: `Unable to find composite realm role: uma_authorization`). None of the app's clients request the `offline_access`/`uma_authorization` scopes anyway, so nothing is lost by leaving them out. It does **not** apply to the three seeded test users above or `service-account-backend` - those are created via this file's `users` array during realm import, which bypasses Keycloak's normal user-creation code path and only grants the `realmRoles`/`clientRoles` listed explicitly on each entry.
+
 ### Clients
 
 **`frontend`** (public OIDC client)
