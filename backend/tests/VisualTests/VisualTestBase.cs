@@ -248,18 +248,30 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				return;
 
 			clickedAtElementCount = elementCount;
-			commitDeadline = DateTimeOffset.UtcNow.AddSeconds(2);
 			try
 			{
 				await loadMoreButton.ClickAsync(new() { Timeout = (float)remainingMs });
 			}
-			catch (PlaywrightException)
+			// Fully qualified because a bare TimeoutException here resolves to
+			// Playwright's only by virtue of this file's using shadowing the
+			// implicit global System one - too subtle to rely on silently.
+			// Deliberately narrower than PlaywrightException: a strict-mode
+			// violation or a protocol error is a real defect that should surface
+			// with its own message, not vanish into a silent return that fails
+			// confusingly further down.
+			catch (Microsoft.Playwright.TimeoutException)
 			{
 				// The button was unmounted between the read above and the click,
 				// or the budget ran out mid-click. Either way there is nothing
 				// more to page through - same as Gone above.
 				return;
 			}
+
+			// Started only once the click has actually been dispatched. ClickAsync
+			// can block for a while first (waiting out actionability on a list
+			// that is still settling), and a grace period started before that
+			// wait could be spent before React has had a single tick to commit.
+			commitDeadline = DateTimeOffset.UtcNow.AddSeconds(2);
 		}
 	}
 
