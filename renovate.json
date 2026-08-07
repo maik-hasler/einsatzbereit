@@ -53,11 +53,16 @@
       "managerFilePatterns": [
         "/^(keycloak/)?AGENTS\\.md$/",
         "/^docs/Architecture/src/.*\\.adoc$/",
-        "/^docs/Architecture/images/.*\\.puml$/"
+        "/^docs/Architecture/images/.*\\.puml$/",
+        "/^README\\.md$/",
+        "/^backend/src/Aspire/AppHost/AppHost\\.cs$/",
+        "/^\\.github/workflows/dotnet\\.yml$/",
+        "/^\\.github/workflows/publish\\.yml$/"
       ],
       "matchStrings": [
         "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",
-        "quay\\.io/keycloak/keycloak:(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
+        "quay\\.io/keycloak/keycloak:(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",
+        "quay\\.io/keycloak/keycloak\",\\s*\"(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
       ],
       "datasourceTemplate": "docker",
       "depNameTemplate": "quay.io/keycloak/keycloak"

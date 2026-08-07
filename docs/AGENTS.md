@@ -20,14 +20,8 @@ docs/
 │   │   ├── 11_technical_risks.adoc
 │   │   ├── 12_glossary.adoc
 │   │   └── config.adoc         Locale/language config (German)
-│   └── images/
-│       ├── business-context.puml   PlantUML diagram
-│       └── quality-tree.puml       PlantUML diagram
-├── ADRs/
-│   ├── 1_monorepository.adoc   Accepted 2026-03-23
-│   ├── 2_arc42.adoc            Accepted 2026-03-25
-│   ├── 3_keycloak.adoc         Accepted 2026-03-25
-│   └── 4_geocoding_and_geo_search.adoc  Accepted 2026-05-13
+│   └── images/                 PlantUML diagrams (`.puml`) + `arc42-logo.png`, embedded via asciidoctor-diagram
+├── ADRs/                       See `09_architecture_decisions.adoc` for the current indexed list (number, status, date) - not duplicated here so it cannot go stale
 └── TDRs/                       Technical debt/risk records - see TDR Conventions below
 ```
 
