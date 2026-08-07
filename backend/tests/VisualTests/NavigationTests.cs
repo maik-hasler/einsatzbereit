@@ -74,8 +74,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// #1708: seed data always publishes opportunities - a non-waiting
+		// CountAsync() right after the h1 check above raced the home page's
+		// opportunity fetch and could silently skip this test instead of failing.
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
-		Skip.When(await orgLink.CountAsync() == 0, "no opportunities/organizations seeded");
+		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await orgLink.GetAttributeAsync("href");
 		Skip.When(href is null, "organization link had no href");
@@ -130,8 +133,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// #1708: seed data always publishes opportunities - a non-waiting
+		// CountAsync() right after the h1 check above raced the home page's
+		// opportunity fetch and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded");
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
 		Skip.When(href is null, "opportunity link had no href");
@@ -262,7 +268,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
-		var rowCount = await Page.GetByTestId("org-switch-row").CountAsync();
+		// #1708: wait for the switcher panel to actually render its rows before
+		// counting them - a bare CountAsync() right after the click raced the
+		// panel's own mount, which could misreport "< 2" and skip this test even
+		// when olaf's seed data has the two orgs it needs.
+		var orgSwitchRows = Page.GetByTestId("org-switch-row");
+		await Expect(orgSwitchRows.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var rowCount = await orgSwitchRows.CountAsync();
 		Skip.When(rowCount < 2, "olaf needs at least two orgs in seed to prove navigation follows selection");
 
 		// The active org's row carries aria-current="page" - pick a different one.

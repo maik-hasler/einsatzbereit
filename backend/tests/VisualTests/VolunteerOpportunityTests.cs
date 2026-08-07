@@ -104,12 +104,17 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
 			.ToBeVisibleAsync();
 
-		// If opportunities are seeded, each card carries the redesigned visuals:
-		// a clickable organisation link and the brand-gradient category banner.
+		// Seed data always publishes opportunities, so a rendered card must
+		// carry the redesigned visuals: a clickable organisation link and the
+		// brand-gradient category banner.
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
-		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded - skip card-specific checks");
+		// #1708: seed data always publishes opportunities, and the list only
+		// mounts <ul>/<li> once its loading skeleton clears - a non-waiting
+		// CountAsync() right after the heading check above raced that fetch
+		// and could silently skip these card-specific assertions.
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Expect(firstCard.Locator("a[href*='/organizations/']"))
 			.ToBeVisibleAsync();
@@ -206,8 +211,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// #1708: seed data always publishes opportunities - a non-waiting
+		// CountAsync() right after the h1 check above raced the home page's
+		// opportunity fetch (h1 paints before the list leaves its loading
+		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
 		Skip.When(href is null, "opportunity card link had no href");
@@ -238,8 +247,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// #1708: seed data always publishes opportunities - a non-waiting
+		// CountAsync() right after the h1 check above raced the home page's
+		// opportunity fetch (h1 paints before the list leaves its loading
+		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
 		Skip.When(href is null, "opportunity card link had no href");
@@ -268,8 +281,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// #1708: seed data always publishes opportunities - a non-waiting
+		// CountAsync() right after the h1 check above raced the home page's
+		// opportunity fetch (h1 paints before the list leaves its loading
+		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
 		Skip.When(href is null, "opportunity card link had no href");

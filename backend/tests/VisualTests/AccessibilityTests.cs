@@ -390,24 +390,23 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
+		// #1708: the old locator (`ul > li .relative.z-10 a`) never matched
+		// anything - OpportunityListItem.tsx's org link carries `relative
+		// z-20` (the stretched card-cover Link is the one at z-10), so this
+		// test always timed out and silently skipped, giving /organizations/{id}
+		// zero axe coverage. Target the org link by data-testid instead of a
+		// brittle Tailwind class combination, and seed data always publishes
+		// opportunities (ApplicationDbContextInitializer.cs), so a missing
+		// link is a genuine failure, not a "not seeded yet" skip.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Wait for org links from opportunity cards; skip gracefully if page load times out
-		var orgLinks = Page.Locator("ul > li .relative.z-10 a");
-		try
-		{
-			await orgLinks.First.WaitForAsync(new() { Timeout = 30_000 });
-		}
-		catch (TimeoutException)
-		{
-			Skip.Test("home page did not load in time");
-		}
+		var orgLink = Page.GetByTestId("opportunity-org-link").First;
+		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		Skip.When(await orgLinks.CountAsync() == 0, "no opportunities seeded");
-
-		var href = await orgLinks.First.GetAttributeAsync("href");
+		var href = await orgLink.GetAttributeAsync("href");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -1194,8 +1193,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await signUpBtn.ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
+		// #1708: the SignUpModal is already open and this opportunity was just
+		// filtered above to one with open ScheduledSlots capacity, so the
+		// dropdown is always going to render - a non-waiting CountAsync() here
+		// raced the modal's own mount and could silently skip the axe scan
+		// instead of failing on a genuine regression.
 		var dropdown = Page.Locator("#sign-up-time-slot");
-		Skip.When(await dropdown.CountAsync() == 0, "opportunity has no time slots to pick from");
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await dropdown.ClickAsync();
 		await Expect(Page.Locator("[role='option']").First).ToBeVisibleAsync();
