@@ -30,6 +30,8 @@
       "menu": "Menü"
     },
     "footer": {
+      "ctaTitle": "Bereit, wenn du es bist.",
+      "ctaButton": "Jetzt stöbern",
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
       "participate": "Mitmachen",

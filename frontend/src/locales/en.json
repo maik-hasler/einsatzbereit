@@ -30,6 +30,8 @@
       "menu": "Menu"
     },
     "footer": {
+      "ctaTitle": "Ready when you are.",
+      "ctaButton": "Start browsing",
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
       "participate": "Get involved",
