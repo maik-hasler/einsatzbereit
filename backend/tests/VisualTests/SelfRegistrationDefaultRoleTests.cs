@@ -12,8 +12,7 @@ namespace VisualTests;
 /// signups. Every other test in this suite signs in as vera/olaf/admin, whose
 /// roles are hardcoded in the realm JSON - none of them exercised the actual
 /// registration -> role-assignment path, which is why this hid. The fix adds
-/// a "defaultRole" (default-roles-einsatzbereit, composite over "user" plus
-/// Keycloak's own offline_access/uma_authorization/account defaults) to
+/// a "defaultRole" (default-roles-einsatzbereit, composite over "user") to
 /// keycloak/realms/einsatzbereit-realm.json, which Keycloak grants to every
 /// newly created user automatically - including ones created by the
 /// registration flow, unlike realm-JSON-imported users.

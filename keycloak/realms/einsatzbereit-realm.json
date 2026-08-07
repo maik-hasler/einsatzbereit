@@ -45,16 +45,8 @@
         "composite": true,
         "composites": {
           "realm": [
-            "offline_access",
-            "uma_authorization",
             "user"
-          ],
-          "client": {
-            "account": [
-              "view-profile",
-              "manage-account"
-            ]
-          }
+          ]
         },
         "clientRole": false
       },
