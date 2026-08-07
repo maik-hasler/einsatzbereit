@@ -35,6 +35,15 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetReportHistoryForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Report>());
+		// #1725: FindUserIncludingDeletedAsync now must return non-null for the many
+		// tests below that only care about a different side effect (search alert
+		// deletion, achievement deletion, etc.) - the handler throws when it's null,
+		// where the old dbContext.Users.FindAsync-based code silently tolerated it.
+		// Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing overrides this back to
+		// null to exercise that exact case.
+		_dbContext
+			.FindUserIncludingDeletedAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => User.Create(callInfo.ArgAt<UserId>(0)));
 		_sut = new DeleteMyAccountCommandHandler(_dbContext, _fileStorage);
 	}
 
@@ -243,9 +252,12 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1725: FindUserIncludingDeletedAsync is unconfigured and defaults to
-		// null, simulating a row that genuinely doesn't exist. Reporting success here would mean
-		// a legally-mandated erasure request silently no-ops.
+		// Arrange - issue #1725: explicitly override the constructor's default back to
+		// null, simulating a row that genuinely doesn't exist. Reporting success here
+		// would mean a legally-mandated erasure request silently no-ops.
+		_dbContext
+			.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken)
+			.Returns((User?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
