@@ -77,8 +77,8 @@ export default defineConfig({
 				name: "Einsatzbereit",
 				short_name: "Einsatzbereit",
 				description:
-					"Volunteer coordination platform - find local volunteer opportunities and help your community.",
-				lang: "en",
+					"Einsatzbereit verbindet engagierte Freiwillige mit regionalen Hilfsangeboten. Finde lokale Einsätze, hilf spontan und mach einen Unterschied in deiner Gemeinde.",
+				lang: "de",
 				start_url: "/",
 				display: "standalone",
 				background_color: "#ffffff",

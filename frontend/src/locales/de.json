@@ -226,6 +226,7 @@
       "checkInMethodNoneHint": "Teilnehmer:innen werden während des Einsatzes nicht eingecheckt. Sie werden automatisch als eingecheckt markiert, sobald der Zeitslot beendet ist - das schaltet für sie auch das Feedback frei.",
       "checkInMethodNoneIndividualWarning": "Einsätze mit individueller Kontaktaufnahme haben keinen Zeitslot, daher gibt es keinen automatischen Zeitpunkt zum Einchecken - Teilnehmer:innen werden nie als eingecheckt markiert und können kein Feedback abgeben. Wähle stattdessen Manuell, wenn du die Anwesenheit erfassen möchtest.",
       "checkInPinInvalid": "Die PIN muss 4 bis 6 Ziffern haben.",
+      "fieldTooLong": "Darf {{max}} Zeichen nicht überschreiten.",
       "generateRandomPin": "Zufällig generieren",
       "fieldCategory": "Kategorie",
       "fieldCategoryNone": "Keine",
@@ -236,6 +237,8 @@
       "tagAdded": "{{tag}} hinzugefügt.",
       "tagRemoved": "{{tag}} entfernt.",
       "tagAlreadyAdded": "{{tag}} bereits hinzugefügt.",
+      "tagLimitReached": "Du kannst bis zu {{max}} Schlagwörter hinzufügen.",
+      "tagTooLong": "Ein Schlagwort darf {{max}} Zeichen nicht überschreiten.",
       "fieldValidUntil": "Bewerbungsfrist",
       "validUntilHint": "Einsätze mit individueller Kontaktaufnahme haben keinen Zeitslot, daher zeigt eine Frist Freiwilligen, wie lange dieser Einsatz noch offen ist. Vor der Veröffentlichung erforderlich.",
       "validUntilRequiredForPublish": "Ein Einsatz mit individueller Kontaktaufnahme muss eine Bewerbungsfrist haben, bevor er veröffentlicht werden kann.",
@@ -456,6 +459,7 @@
       "fieldZip": "PLZ",
       "fieldCity": "Stadt",
       "fieldRequired": "Erforderlich",
+      "fieldTooLong": "Darf {{max}} Zeichen nicht überschreiten.",
       "zipInvalid": "Die PLZ muss genau 5 Zeichen lang sein.",
       "websiteInvalid": "Die Website muss eine gültige http:// oder https:// URL sein.",
       "savedSuccess": "Änderungen gespeichert.",
@@ -1342,6 +1346,9 @@
         "CannotDisableSelf": "Du kannst dein eigenes Konto nicht sperren.",
         "CannotDemoteSelf": "Du kannst dir nicht selbst die Admin-Rechte entziehen."
       },
+      "Concurrency": {
+        "Conflict": "Dieser Datensatz wurde in der Zwischenzeit von jemand anderem geändert. Bitte lade die Seite neu und versuche es erneut."
+      },
       "Address": {
         "StreetRequired": "Straße darf nicht leer sein.",
         "HouseNumberRequired": "Hausnummer darf nicht leer sein.",
@@ -1387,6 +1394,8 @@
         "WeakCheckInPin": "Diese PIN ist zu leicht zu erraten - wähle eine weniger vorhersehbare PIN.",
         "TitleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
         "DescriptionTooLong": "Die Beschreibung darf 5000 Zeichen nicht überschreiten.",
+        "TooManyTags": "Ein Einsatz kann nicht mehr als 20 Schlagwörter haben.",
+        "TagTooLong": "Jedes Schlagwort darf 50 Zeichen nicht überschreiten.",
         "ScheduledSlotsMustStartAsDraft": "Ein Einsatz mit der Teilnahmeart Zeitslots muss zunächst als Entwurf angelegt werden und kann erst nach Hinzufügen mindestens eines Zeitslots veröffentlicht werden.",
         "TitleRequired": "Titel darf nicht leer sein.",
         "DescriptionRequired": "Beschreibung darf nicht leer sein.",

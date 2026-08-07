@@ -226,6 +226,7 @@
       "checkInMethodNoneHint": "Participants aren't checked in during the event. They're automatically marked as checked in once the time slot has ended, which also unlocks feedback for them.",
       "checkInMethodNoneIndividualWarning": "Individual-contact opportunities have no time slot, so there's no automatic point to check participants in - they will never be marked as checked in or able to leave feedback. Choose Manual instead if you need attendance tracking.",
       "checkInPinInvalid": "PIN must be 4 to 6 digits.",
+      "fieldTooLong": "Must not exceed {{max}} characters.",
       "generateRandomPin": "Generate random",
       "fieldCategory": "Category",
       "fieldCategoryNone": "None",
@@ -236,6 +237,8 @@
       "tagAdded": "{{tag}} added.",
       "tagRemoved": "{{tag}} removed.",
       "tagAlreadyAdded": "{{tag}} already added.",
+      "tagLimitReached": "You can add up to {{max}} tags.",
+      "tagTooLong": "A tag must not exceed {{max}} characters.",
       "fieldValidUntil": "Application deadline",
       "validUntilHint": "Individual-contact opportunities have no time slot, so a deadline tells volunteers how long this request stays open. Required before publishing.",
       "validUntilRequiredForPublish": "An Individual contact opportunity must have a deadline before it can be published.",
@@ -456,6 +459,7 @@
       "fieldZip": "ZIP",
       "fieldCity": "City",
       "fieldRequired": "Required",
+      "fieldTooLong": "Must not exceed {{max}} characters.",
       "zipInvalid": "ZIP code must be exactly 5 characters.",
       "websiteInvalid": "Website must be a valid http:// or https:// URL.",
       "savedSuccess": "Changes saved.",
@@ -1342,6 +1346,9 @@
         "CannotDisableSelf": "You cannot block your own account.",
         "CannotDemoteSelf": "You cannot remove your own admin access."
       },
+      "Concurrency": {
+        "Conflict": "This record was changed by someone else in the meantime. Please reload and try again."
+      },
       "Address": {
         "StreetRequired": "Street must not be empty.",
         "HouseNumberRequired": "House number must not be empty.",
@@ -1387,6 +1394,8 @@
         "WeakCheckInPin": "This PIN is too easy to guess - choose a less predictable one.",
         "TitleTooLong": "Title must not exceed 200 characters.",
         "DescriptionTooLong": "Description must not exceed 5000 characters.",
+        "TooManyTags": "An opportunity cannot have more than 20 tags.",
+        "TagTooLong": "Each tag must not exceed 50 characters.",
         "ScheduledSlotsMustStartAsDraft": "A Scheduled slots opportunity must be created as a draft and published after adding at least one time slot.",
         "TitleRequired": "Title must not be empty.",
         "DescriptionRequired": "Description must not be empty.",

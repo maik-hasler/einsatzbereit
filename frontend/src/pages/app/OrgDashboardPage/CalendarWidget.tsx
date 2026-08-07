@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
-import { enUS, de } from "date-fns/locale";
+import { enGB, de } from "date-fns/locale";
 // react-big-calendar's own stylesheet is imported eagerly from main.tsx
 // (before global.css), not here - see the comment there for why: this
 // widget only exists on the lazy-loaded OrgDashboardPage chunk, and an
@@ -21,7 +21,7 @@ import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
-import { formatDateTime } from "../../../lib/format";
+import { formatDateTime, resolveDateLocale } from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
 import {
 	readableTextColor,
@@ -41,9 +41,12 @@ function defaultViewForSize(size: WidgetSizeClass): View {
 	return "month";
 }
 
+// Keyed by resolveDateLocale's output (lib/format.ts's single source of
+// truth for i18n.language -> Intl/date-fns locale, #1267) rather than a
+// second, independently-drifting en-US/de ternary here (#1731).
 const rbcLocales = {
-	"en-US": enUS,
-	de,
+	"en-GB": enGB,
+	"de-DE": de,
 };
 const localizer = dateFnsLocalizer({
 	format,
@@ -399,7 +402,7 @@ function CalendarWidget({
 					<div className="rbc-container h-full">
 						<Calendar
 							localizer={localizer}
-							culture={i18n.language === "de" ? "de" : "en-US"}
+							culture={resolveDateLocale(i18n.language)}
 							events={calEvents}
 							view={calView}
 							onView={(v: View) => setCalView(v)}

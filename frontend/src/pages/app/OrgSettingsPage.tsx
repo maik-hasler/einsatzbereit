@@ -345,6 +345,7 @@ export default function OrgSettingsPage() {
 							<Field label={t("orgSettings.fieldName")} id="org-name">
 								<input
 									id="org-name"
+									maxLength={100}
 									autoComplete="off"
 									aria-invalid={errors.name ? true : undefined}
 									aria-describedby={errors.name ? "org-name-error" : undefined}

@@ -61,7 +61,7 @@ internal sealed class SearchAlertMatchesFoundNotificationHandler(
 		var opportunitiesList = string.Join('\n', opportunities.Select(o => $"- {o.Title}"));
 
 		var content = emailTemplateRenderer.Render(
-			EmailTemplateKind.SearchAlertNewMatches,
+			opportunities.Count == 1 ? EmailTemplateKind.SearchAlertNewMatchesSingle : EmailTemplateKind.SearchAlertNewMatches,
 			language,
 			new Dictionary<string, string>
 			{

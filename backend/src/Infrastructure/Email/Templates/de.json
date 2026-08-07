@@ -43,6 +43,10 @@
     "subject": "{Count} neue Einsätze passen zu deiner gespeicherten Suche",
     "body": "Hallo {DisplayName},\n\nwir haben {Count} neue Einsätze gefunden, die zu deiner gespeicherten Suche passen:\n\n{OpportunitiesList}\n\nMelde dich bei Einsatzbereit an, um die Details zu sehen und dich anzumelden. Du kannst diese Benachrichtigung jederzeit auf der Suchseite deaktivieren.\n\nEinsatzbereit"
   },
+  "SearchAlertNewMatchesSingle": {
+    "subject": "Ein neuer Einsatz passt zu deiner gespeicherten Suche",
+    "body": "Hallo {DisplayName},\n\nwir haben einen neuen Einsatz gefunden, der zu deiner gespeicherten Suche passt:\n\n{OpportunitiesList}\n\nMelde dich bei Einsatzbereit an, um die Details zu sehen und dich anzumelden. Du kannst diese Benachrichtigung jederzeit auf der Suchseite deaktivieren.\n\nEinsatzbereit"
+  },
   "EmailFooter": {
     "subject": "",
     "body": "\n\n---\nMöchtest du diese Art von E-Mail nicht mehr erhalten? Hier abmelden: {UnsubscribeUrl}"

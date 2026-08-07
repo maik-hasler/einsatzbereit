@@ -5,6 +5,13 @@ public static class OutputCachingPolicies
 	public const string LongPublicRead = "output-cache-long-public-read";
 	public const string ShortPublicRead = "output-cache-short-public-read";
 
+	// Same expiry as LongPublicRead, but for a response that varies by the caller's
+	// X-Language header (e.g. SearchCities) - LongPublicRead's cache key is only the
+	// request path + query string (see the OutputCachingExtensions.cs comment), so a
+	// language-dependent endpoint using it as-is could serve a response cached for one
+	// language to a caller requesting another (#1731).
+	public const string LongPublicReadByLanguage = "output-cache-long-public-read-by-language";
+
 	// A few seconds only, not ShortPublicReadSeconds - /health backs the deploy gate's
 	// and docker-compose's readiness probes, both of which need to observe a real
 	// dependency outage within a handful of seconds, not up to a full minute (#1172).

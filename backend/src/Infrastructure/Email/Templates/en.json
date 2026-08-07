@@ -43,6 +43,10 @@
     "subject": "{Count} new opportunities match your saved search",
     "body": "Hi {DisplayName},\n\nWe found {Count} new opportunities matching your saved search:\n\n{OpportunitiesList}\n\nLog in to Einsatzbereit to see the details and sign up. You can turn this alert off any time from the search page.\n\nEinsatzbereit"
   },
+  "SearchAlertNewMatchesSingle": {
+    "subject": "A new opportunity matches your saved search",
+    "body": "Hi {DisplayName},\n\nWe found a new opportunity matching your saved search:\n\n{OpportunitiesList}\n\nLog in to Einsatzbereit to see the details and sign up. You can turn this alert off any time from the search page.\n\nEinsatzbereit"
+  },
   "EmailFooter": {
     "subject": "",
     "body": "\n\n---\nDon't want to receive this type of email? Unsubscribe here: {UnsubscribeUrl}"

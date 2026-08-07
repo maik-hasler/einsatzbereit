@@ -14,16 +14,17 @@ const CHECK_IN_METHOD_VALUES = ["None", "QRCode", "PINCode", "Manual"] as const;
 export function buildOpportunityFormSchema(t: TFunction) {
 	const required = t("createOpportunity.fieldRequired");
 	const invalidPin = t("createOpportunity.checkInPinInvalid");
+	const tooLong = (max: number) => t("createOpportunity.fieldTooLong", { max });
 
 	return z
 		.object({
-			title: z.string().max(150),
-			description: z.string().max(2000),
+			title: z.string().max(150, tooLong(150)),
+			description: z.string().max(2000, tooLong(2000)),
 			isRemote: z.boolean(),
-			street: z.string().max(100),
-			houseNumber: z.string().max(10),
-			zipCode: z.string().max(5),
-			city: z.string().max(100),
+			street: z.string().max(100, tooLong(100)),
+			houseNumber: z.string().max(10, tooLong(10)),
+			zipCode: z.string().max(5, tooLong(5)),
+			city: z.string().max(100, tooLong(100)),
 			occurrence: z.enum(OCCURRENCE_VALUES),
 			participationType: z.enum(PARTICIPATION_TYPE_VALUES),
 			checkInMethod: z.enum(CHECK_IN_METHOD_VALUES),

@@ -22,6 +22,10 @@ internal static class OutputCachingExtensions
 			cache.AddPolicy(OutputCachingPolicies.LongPublicRead, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.LongPublicReadSeconds)));
 
+			cache.AddPolicy(OutputCachingPolicies.LongPublicReadByLanguage, policy =>
+				policy.Expire(TimeSpan.FromSeconds(options.LongPublicReadSeconds))
+					.SetVaryByHeader("X-Language"));
+
 			cache.AddPolicy(OutputCachingPolicies.ShortPublicRead, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds)));
 
