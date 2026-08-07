@@ -23,7 +23,10 @@ import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import { formatDateTime } from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
-import { readableTextColor } from "../../../lib/colorContrast";
+import {
+	readableTextColor,
+	meetsTextContrastFloor,
+} from "../../../lib/colorContrast";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { labelClass } from "../../../lib/formClasses";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -109,7 +112,7 @@ function CalEventChip({
 		>
 			<span className="truncate">{e.title}</span>
 			{capacityLabel && (
-				<span className="shrink-0 text-xs opacity-80">{capacityLabel}</span>
+				<span className="shrink-0 text-xs">{capacityLabel}</span>
 			)}
 		</button>
 	);
@@ -239,6 +242,7 @@ function CalendarWidget({
 	const [pickerColor, setPickerColor] = useState<string>(() =>
 		brandColor("700"),
 	);
+	const pickerColorContrastOk = meetsTextContrastFloor(pickerColor);
 	const [savingColor, setSavingColor] = useState(false);
 	const [colorSaveError, setColorSaveError] = useState<string | null>(null);
 	const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -453,10 +457,28 @@ function CalendarWidget({
 										type="color"
 										value={pickerColor}
 										onChange={(e) => handleColorPickerChange(e.target.value)}
+										aria-invalid={pickerColorContrastOk ? undefined : true}
+										aria-describedby={
+											pickerColorContrastOk
+												? undefined
+												: "event-color-contrast-warning"
+										}
 										className="h-9 w-16 cursor-pointer rounded border border-gray-300"
 									/>
 									<span className="text-sm text-gray-500">{pickerColor}</span>
 								</div>
+								{/* Mirrors the backend's MinimumTextContrastRatio gate
+								(EventColorContrast.cs) client-side so the organizer sees
+								why a color is unreadable before the round trip to the
+								API rejects it with the same message (einsatzbereit#1726). */}
+								{!pickerColorContrastOk && (
+									<p
+										id="event-color-contrast-warning"
+										className="mt-1 text-sm text-red-700"
+									>
+										{t("orgOverview.eventColorContrastWarning")}
+									</p>
+								)}
 							</div>
 						)}
 						{colorSaveError && <ErrorBanner message={colorSaveError} />}
@@ -488,7 +510,7 @@ function CalendarWidget({
 								{isOrganizer && (
 									<Button
 										type="button"
-										disabled={savingColor}
+										disabled={savingColor || !pickerColorContrastOk}
 										onClick={handleColorSave}
 										size="sm"
 									>
