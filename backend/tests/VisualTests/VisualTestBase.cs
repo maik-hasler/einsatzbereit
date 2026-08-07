@@ -195,6 +195,7 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		var loadMoreButton = Page.Locator($"{listSelector} [data-testid='load-more']");
 		var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
 		var clickedAtElementCount = -1;
+		var commitDeadline = DateTimeOffset.MinValue;
 
 		while (DateTimeOffset.UtcNow < deadline)
 		{
@@ -210,17 +211,30 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 			if (state == LoadMoreState.Gone)
 				return;
 
-			// Either a page is in flight (button still mounted, but
-			// disabled={loadingMore}), or our own last click hasn't been
-			// committed by React yet - it re-renders a tick after ClickAsync
-			// returns, so an enabled button over an unchanged list means "not
-			// yet", not "click again". Both windows have to be waited out rather
-			// than clicked through: a second click during the *final* load waits
-			// on a button useLoadMore is about to unmount instead of re-enable
-			// (see this method's doc), and a second click before React commits
-			// double-advances `page`, whose cancelled fetch silently drops a
-			// whole page of rows - possibly the one holding the target.
-			if (state == LoadMoreState.Loading || elementCount == clickedAtElementCount)
+			// A page is in flight - the button is still mounted but
+			// disabled={loadingMore}. Waiting this out instead of clicking
+			// through it is the actual fix: a second click during the *final*
+			// load waits on a button useLoadMore is about to unmount rather
+			// than re-enable (see this method's doc).
+			if (state == LoadMoreState.Loading)
+			{
+				await Task.Delay(100);
+				continue;
+			}
+
+			// Enabled, but nothing has changed since our last click - React
+			// re-renders a tick after ClickAsync returns, so this is most likely
+			// "your click hasn't been committed yet" rather than "the page
+			// landed". Clicking again here would double-advance `page`, and the
+			// superseded fetch's cleanup drops a whole page of rows silently -
+			// possibly the one holding the target.
+			//
+			// Bounded rather than waited out indefinitely, because an unchanged
+			// list is not proof of an uncommitted click: a page that legitimately
+			// lands with no new rows (this suite pages over live data that
+			// sibling tests concurrently withdraw from) looks identical. After
+			// the grace period, click again and make progress.
+			if (elementCount == clickedAtElementCount && DateTimeOffset.UtcNow < commitDeadline)
 			{
 				await Task.Delay(100);
 				continue;
@@ -234,6 +248,7 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				return;
 
 			clickedAtElementCount = elementCount;
+			commitDeadline = DateTimeOffset.UtcNow.AddSeconds(2);
 			try
 			{
 				await loadMoreButton.ClickAsync(new() { Timeout = (float)remainingMs });
