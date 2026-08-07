@@ -710,22 +710,36 @@ jobs:
         # on outcome == 'success' meant rollback never fired in exactly the
         # scenario it was written for.
         if: failure() && steps.pull_and_restart.conclusion != 'skipped'
+        env:
+          # Routed through env: rather than spliced as a raw "${{ }}"
+          # expression into the script body - see "Pull and restart" above's
+          # comment on GHCR_USERNAME/GHCR_TOKEN for why: a GitHub Actions
+          # expression is substituted into run: text before any shell parses
+          # it, so embedding one directly would let shell metacharacters in
+          # its value (this one is read live off the host's .env, which
+          # isn't fully under this workflow's control - e.g. an operator's
+          # out-of-band incident edit) be reinterpreted as script syntax
+          # instead of a literal string.
+          PREV_TAG: ${{ steps.previous_tag.outputs.tag }}
         run: |
           set -uo pipefail
-          PREV_TAG="${{ steps.previous_tag.outputs.tag }}"
           if [ -z "$PREV_TAG" ]; then
             echo "::warning::No previous IMAGE_TAG was recorded (likely the first deploy to this host) - nothing to roll back to."
             exit 0
           fi
           echo "::warning::Health gate failed - rolling back to IMAGE_TAG=${PREV_TAG}."
-          # Deliberately an unquoted heredoc (unlike the other remote scripts
-          # in this job) - PREV_TAG must expand on the runner before the
-          # script reaches the remote shell; nothing else in this block
-          # depends on remote-side variables.
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<EOF
+          # PREV_TAG is passed to the remote shell as an environment variable
+          # on the ssh command line (${PREV_TAG@Q} shell-quotes it for safe
+          # re-parsing by the remote shell, same as GHCR_USERNAME above),
+          # not substituted into the heredoc text - so the heredoc stays
+          # quoted (<<'EOF') like every other remote script in this job, and
+          # the value only ever flows through normal shell variable
+          # expansion, never as literal script text.
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" \
+            "PREV_TAG=${PREV_TAG@Q} bash -s" <<'EOF'
             set -euo pipefail
             cd /opt/einsatzbereit
-            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG="${PREV_TAG}"/' .env
+            sed -i "s#^IMAGE_TAG=.*#IMAGE_TAG=\"${PREV_TAG}\"#" .env
             docker compose pull
             docker compose up -d --remove-orphans
             echo "Rollback complete - redeployed IMAGE_TAG=${PREV_TAG}."
@@ -1066,20 +1080,25 @@ jobs:
         # checks conclusion != 'skipped' rather than outcome == 'success'
         # (#1733).
         if: failure() && steps.pull_and_restart.conclusion != 'skipped'
+        env:
+          # See deploy-staging's matching rollback step above for why this is
+          # routed through env: rather than spliced directly into the script.
+          PREV_TAG: ${{ steps.previous_tag.outputs.tag }}
         run: |
           set -uo pipefail
-          PREV_TAG="${{ steps.previous_tag.outputs.tag }}"
           if [ -z "$PREV_TAG" ]; then
             echo "::warning::No previous IMAGE_TAG was recorded (likely the first deploy to this host) - nothing to roll back to."
             exit 0
           fi
           echo "::warning::Health gate failed - rolling back to IMAGE_TAG=${PREV_TAG}."
-          # Deliberately an unquoted heredoc - see deploy-staging's matching
-          # rollback step above.
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<EOF
+          # See deploy-staging's matching rollback step above for why
+          # PREV_TAG is passed as a remote environment variable instead of
+          # substituted into the heredoc text.
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" \
+            "PREV_TAG=${PREV_TAG@Q} bash -s" <<'EOF'
             set -euo pipefail
             cd /opt/einsatzbereit
-            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG="${PREV_TAG}"/' .env
+            sed -i "s#^IMAGE_TAG=.*#IMAGE_TAG=\"${PREV_TAG}\"#" .env
             docker compose pull
             docker compose up -d --remove-orphans
             echo "Rollback complete - redeployed IMAGE_TAG=${PREV_TAG}."
