@@ -282,6 +282,13 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
+		// #1725: CreateEngagementCommandHandler only does a nullable lookup on the
+		// local `user` row, it doesn't lazily create it (unlike GetUserProfile) - and
+		// DeleteMyAccount now 404s instead of silently no-op'ing when that row is
+		// missing entirely, so it must exist before this test's own DeleteMyAccount
+		// call below.
+		await ephemeralClient.GetUserProfileAsync(cancellationToken);
+
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Anonymized Checked-In Engagement Test Org" }, cancellationToken);
