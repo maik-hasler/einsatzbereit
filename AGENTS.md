@@ -19,7 +19,7 @@ einsatzbereit/
 | | |
 |---|---|
 | Backend | .NET 10 (SDK 10.0.302, see `backend/global.json`), EF Core 10, PostgreSQL 18 |
-| Auth | Keycloak 26.7.0 (OIDC, JWT) |
+| Auth | Keycloak 26.7.1 (OIDC, JWT) |
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4 |
 | API client | NSwag-generated - **never hand-edit** `api-client.ts` |
 | Tests (BE) | TUnit, Aspire.Hosting.Testing, Respawn, NetArchTest |
