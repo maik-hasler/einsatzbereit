@@ -183,9 +183,15 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task ProcessBatchAsync_TwoConcurrentCalls_OnlyOneDispatchesTheLockedMessage(
+	public async Task ProcessBatchAsync_TwoConcurrentCalls_SecondCallDoesNotReclaimAMessageBeingDispatchedByTheFirst(
 		CancellationToken cancellationToken)
 	{
+		// Regression for #1729: dispatch now happens with no open transaction/row
+		// lock held (see OutboxProcessorJob.ClaimBatchAsync) so it no longer blocks
+		// on a synchronous SMTP send per organizer for the whole batch. What now
+		// stops a second replica from re-selecting the same message while A is
+		// still dispatching it is ClaimedOnUtc, stamped and committed by A's short
+		// claim transaction before dispatch even starts.
 		await using var seedContext = fixture.CreateApplicationDbContext();
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(seedContext, domainEvent, cancellationToken);
@@ -202,17 +208,17 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var taskA = OutboxProcessorJob.ProcessBatchAsync(
 			contextA, gatedDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
-		// Wait until A's transaction has actually reached the dispatcher - meaning its
-		// SELECT ... FOR UPDATE SKIP LOCKED already committed the row lock - before
-		// starting B, so B's own SKIP LOCKED query has something real to skip instead of
-		// racing to see an as-yet-unlocked row.
+		// Wait until A has claimed the message (ClaimedOnUtc committed) and reached
+		// the dispatcher - A's claim transaction has already committed by this
+		// point, so nothing is locked anymore; only the ClaimedOnUtc stamp
+		// protects the row now.
 		await started.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
 
 		var recordingDispatcher = new RecordingDispatcher();
-		var selectedByB = await OutboxProcessorJob.ProcessBatchAsync(
+		var claimedByB = await OutboxProcessorJob.ProcessBatchAsync(
 			contextB, recordingDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
-		selectedByB.Should().Be(0, "the only pending message is locked by A's still-open transaction, so B's SKIP LOCKED query must skip it rather than dispatch it a second time");
+		claimedByB.Should().Be(0, "the message was just claimed by A - within the claim timeout, B's claim query must skip it rather than dispatch it a second time");
 		recordingDispatcher.DispatchedEvents.Should().BeEmpty();
 
 		release.SetResult();
@@ -224,6 +230,61 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 			.AsNoTracking()
 			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
 		message.ProcessedOnUtc.Should().NotBeNull();
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MessageClaimedPastTheTimeout_IsReclaimedAndDispatched(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1729: a process that claims a batch and then crashes
+		// before dispatch completes must not leave those messages stuck forever -
+		// once ClaimedOnUtc is older than claimTimeoutSeconds, a later poll treats
+		// the claim as abandoned and reclaims the message.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		message.ClaimedOnUtc = DateTime.UtcNow.AddSeconds(-10);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var dispatcher = new RecordingDispatcher();
+		var claimed = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory),
+			batchSize: 20, claimTimeoutSeconds: 5, cancellationToken: cancellationToken);
+
+		claimed.Should().Be(1, "a claim older than claimTimeoutSeconds must be treated as abandoned and reclaimed");
+		dispatcher.DispatchedEvents.Should().ContainSingle();
+
+		var reprocessed = await dbContext.Set<OutboxMessage>()
+			.AsNoTracking()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		reprocessed.ProcessedOnUtc.Should().NotBeNull();
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MessageClaimedWithinTheTimeout_IsNotReclaimed(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		message.ClaimedOnUtc = DateTime.UtcNow;
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var dispatcher = new RecordingDispatcher();
+		var claimed = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory),
+			batchSize: 20, claimTimeoutSeconds: 300, cancellationToken: cancellationToken);
+
+		claimed.Should().Be(0, "a message claimed moments ago is presumed still in flight elsewhere");
+		dispatcher.DispatchedEvents.Should().BeEmpty();
 	}
 
 	// #1008: OutboxMessage.Error was persisted but never surfaced anywhere an operator

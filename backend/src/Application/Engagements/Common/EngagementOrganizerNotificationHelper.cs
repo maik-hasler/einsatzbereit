@@ -86,6 +86,14 @@ internal static class EngagementOrganizerNotificationHelper
 		var organizerUsersById = (await dbContext.GetOrCreateUsersAsync(organizerIds, cancellationToken))
 			.ToDictionary(u => u.Id);
 
+		// Built up and sent as a single SendBatchAsync call after the loop (#1729,
+		// mirrors OpportunityNotificationHelper.NotifyActiveVolunteersAsync) instead
+		// of one SendAsync per organizer - this runs from the outbox, outside any
+		// open DB transaction, but a batch of 10+ subscribed organizers still meant
+		// 10+ sequential SMTP connect/authenticate/disconnect round trips per
+		// dispatched message.
+		var messages = new List<EmailMessage>(members.Count);
+
 		foreach (var organizer in members.Where(m => m.IsOrganisator))
 		{
 			var organizerId = UserId.Create(organizer.UserId).GetValueOrThrow();
@@ -110,12 +118,14 @@ internal static class EngagementOrganizerNotificationHelper
 			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
 				organizerId, organizerUser.UnsubscribeToken, subscriptionType);
 
-			await emailService.SendAsync(
+			messages.Add(new EmailMessage(
 				organizer.Email,
 				content.Subject,
 				EmailFooter.Append(emailTemplateRenderer, organizerLanguage, content.Body, unsubscribeUrl),
-				engagementId.Value.ToString(),
-				cancellationToken);
+				engagementId.Value.ToString()));
 		}
+
+		if (messages.Count > 0)
+			await emailService.SendBatchAsync(messages, cancellationToken);
 	}
 }

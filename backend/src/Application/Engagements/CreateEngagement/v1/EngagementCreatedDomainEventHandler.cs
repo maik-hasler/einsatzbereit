@@ -9,9 +9,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
-// Consumer of EngagementCreatedDomainEvent (#1174) - sends the organizer
-// "New sign-up" email. See EngagementOrganizerNotificationHelper for the
-// full rationale.
+// Consumer of EngagementCreatedDomainEvent - sends the organizer "New sign-up"
+// email (#1174) and the volunteer's own sign-up receipt (#1729). See
+// EngagementOrganizerNotificationHelper and EngagementVolunteerConfirmationHelper
+// for the full rationale.
 internal sealed class EngagementCreatedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
@@ -39,6 +40,18 @@ internal sealed class EngagementCreatedDomainEventHandler(
 			notification.VolunteerId,
 			EmailTemplateKind.EngagementSignupNotifyOrganizer,
 			EmailNotificationType.NewSignUp,
+			logger,
+			cancellationToken);
+
+		await EngagementVolunteerConfirmationHelper.NotifyAsync(
+			dbContext,
+			keycloakUserService,
+			emailService,
+			emailTemplateRenderer,
+			notification.EngagementId,
+			notification.OpportunityId,
+			notification.VolunteerId,
+			notification.IsSlotSignUp,
 			logger,
 			cancellationToken);
 

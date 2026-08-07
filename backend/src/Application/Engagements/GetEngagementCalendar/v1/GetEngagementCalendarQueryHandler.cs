@@ -29,31 +29,38 @@ internal sealed class GetEngagementCalendarQueryHandler(
 
 		var now = DateTimeOffset.UtcNow;
 		var sb = new StringBuilder();
-		sb.AppendLine("BEGIN:VCALENDAR");
-		sb.AppendLine("VERSION:2.0");
-		sb.AppendLine("PRODID:-//Einsatzbereit//EN");
-		sb.AppendLine("CALSCALE:GREGORIAN");
-		sb.AppendLine("METHOD:PUBLISH");
-		sb.AppendLine("BEGIN:VEVENT");
-		sb.AppendLine($"UID:{info.EngagementId}@einsatzbereit");
-		sb.AppendLine($"DTSTAMP:{FormatDateTime(now)}");
-		sb.AppendLine($"DTSTART:{FormatDateTime(info.StartDateTime)}");
-		sb.AppendLine($"DTEND:{FormatDateTime(info.EndDateTime)}");
+		AppendLine(sb, "BEGIN:VCALENDAR");
+		AppendLine(sb, "VERSION:2.0");
+		AppendLine(sb, "PRODID:-//Einsatzbereit//EN");
+		AppendLine(sb, "CALSCALE:GREGORIAN");
+		AppendLine(sb, "METHOD:PUBLISH");
+		AppendLine(sb, "BEGIN:VEVENT");
+		AppendLine(sb, $"UID:{info.EngagementId}@einsatzbereit");
+		AppendLine(sb, $"DTSTAMP:{FormatDateTime(now)}");
+		AppendLine(sb, $"DTSTART:{FormatDateTime(info.StartDateTime)}");
+		AppendLine(sb, $"DTEND:{FormatDateTime(info.EndDateTime)}");
 		AppendICalText(sb, "SUMMARY", info.OpportunityTitle);
 		if (!string.IsNullOrWhiteSpace(info.OpportunityDescription))
 			AppendICalText(sb, "DESCRIPTION", info.OpportunityDescription);
 		if (!string.IsNullOrWhiteSpace(info.Location))
 			AppendICalText(sb, "LOCATION", info.Location);
 		if (!string.IsNullOrWhiteSpace(opportunityUrl))
-			sb.AppendLine($"URL:{opportunityUrl}");
-		sb.AppendLine("END:VEVENT");
-		sb.AppendLine("END:VCALENDAR");
+			AppendLine(sb, $"URL:{opportunityUrl}");
+		AppendLine(sb, "END:VEVENT");
+		AppendLine(sb, "END:VCALENDAR");
 
 		return sb.ToString();
 	}
 
 	private static string FormatDateTime(DateTimeOffset dt) =>
 		dt.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'");
+
+	// RFC 5545 requires every line to end in CRLF. StringBuilder.AppendLine
+	// uses Environment.NewLine, which is "\n" (not "\r\n") on Linux - where
+	// this runs - so the file ended up mixing LF from here with the CRLF
+	// AppendICalText's line-folding below already used explicitly (#1729).
+	private static void AppendLine(StringBuilder sb, string line) =>
+		sb.Append(line).Append("\r\n");
 
 	private static void AppendICalText(StringBuilder sb, string property, string value)
 	{
@@ -70,7 +77,7 @@ internal sealed class GetEngagementCalendarQueryHandler(
 		var line = $"{property}:{escaped}";
 		if (line.Length <= 75)
 		{
-			sb.AppendLine(line);
+			AppendLine(sb, line);
 			return;
 		}
 
@@ -82,6 +89,6 @@ internal sealed class GetEngagementCalendarQueryHandler(
 			sb.Append($"\r\n {chunk}");
 			remaining = remaining[chunk.Length..];
 		}
-		sb.AppendLine();
+		sb.Append("\r\n");
 	}
 }

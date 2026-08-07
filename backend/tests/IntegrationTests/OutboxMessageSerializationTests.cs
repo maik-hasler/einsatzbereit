@@ -61,7 +61,7 @@ public class OutboxMessageSerializationTests
 		yield return new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), "Reason");
 		yield return new EngagementCreatedDomainEvent(
-			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), IsSlotSignUp: true);
 		yield return new EngagementCheckInUndoneDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementCheckedInDomainEvent(
@@ -75,7 +75,7 @@ public class OutboxMessageSerializationTests
 		yield return new EngagementFeedbackUpdatedDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), 5);
 		yield return new EngagementReactivatedDomainEvent(
-			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), IsSlotSignUp: true);
 		yield return new EngagementReminderDueDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), TimeSlotId.New());
 		yield return new EngagementWithdrawnDomainEvent(

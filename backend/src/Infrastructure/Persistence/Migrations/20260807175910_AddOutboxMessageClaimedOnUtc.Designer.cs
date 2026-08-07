@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260807175910_AddOutboxMessageClaimedOnUtc")]
+	partial class AddOutboxMessageClaimedOnUtc
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -242,10 +245,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("VolunteerId", "TimeSlotId")
 						.IsUnique()
 						.HasDatabaseName("ix_engagement_volunteer_id_time_slot_id");
-
-					b.HasIndex(new[] { "TimeSlotId" }, "IX_Engagement_TimeSlotId_PendingAutoCheckIn")
-						.HasDatabaseName("ix_engagement_time_slot_id_pending_auto_check_in")
-						.HasFilter("status = 'Confirmed' AND is_checked_in = false AND time_slot_id IS NOT NULL");
 
 					b.ToTable("engagement", null, t =>
 						{

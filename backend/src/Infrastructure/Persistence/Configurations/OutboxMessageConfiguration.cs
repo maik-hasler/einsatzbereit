@@ -22,6 +22,8 @@ internal sealed class OutboxMessageConfiguration
 
 		builder.Property(m => m.AttemptCount).IsRequired().HasDefaultValue(0);
 
+		builder.Property(m => m.ClaimedOnUtc);
+
 		// Matches OutboxProcessorJob's batch query exactly - "WHERE
 		// processed_on_utc IS NULL ORDER BY occurred_on_utc LIMIT n" - a plain
 		// index on ProcessedOnUtc alone supports the filter but not the

@@ -22,10 +22,15 @@ internal sealed class AdminReportReadRepository(
 		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
-		var allReports = await dbContext.ReportsQuery.ToListAsync(cancellationToken);
+		// Grouped, counted, ordered, and paged in a single SQL query (#1729) rather
+		// than pulling every report row into memory and doing all of that
+		// client-side - cost no longer grows linearly with total reports filed.
+		var groupedReports = dbContext.ReportsQuery
+			.GroupBy(r => new { r.TargetType, r.TargetId });
 
-		var groups = allReports
-			.GroupBy(r => (r.TargetType, r.TargetId))
+		var totalItems = await groupedReports.CountAsync(cancellationToken);
+
+		var page = await groupedReports
 			.Select(g => new
 			{
 				g.Key.TargetType,
@@ -36,14 +41,9 @@ internal sealed class AdminReportReadRepository(
 			})
 			.OrderByDescending(g => g.LastReportedOn)
 			.ThenBy(g => g.TargetId)
-			.ToList();
-
-		var totalItems = groups.Count;
-
-		var page = groups
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
-			.ToList();
+			.ToListAsync(cancellationToken);
 
 		var opportunityIds = page.Where(g => g.TargetType == ReportTargetType.VolunteerOpportunity).Select(g => g.TargetId).ToList();
 		var organizationIds = page.Where(g => g.TargetType == ReportTargetType.Organization).Select(g => g.TargetId).ToList();

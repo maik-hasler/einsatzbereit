@@ -139,23 +139,87 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (filter.HasRadius)
 		{
-			var candidates = await baseQuery.ToListAsync(cancellationToken);
-
 			var centerLat = filter.CenterLatitude!.Value;
 			var centerLon = filter.CenterLongitude!.Value;
 			var radiusKm = filter.RadiusKm!.Value;
 
-			var matched = candidates
-				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
-					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value) <= radiusKm)
-				.OrderBy(s => GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value))
-				.ThenBy(s => s.Id)
-				.ToList();
+			// Haversine distance expressed with literal Math.* calls rather than a
+			// call to GeoMath.DistanceKm (#1729) - Npgsql's EF Core provider
+			// translates Math.Sin/Cos/Sqrt/Atan2 to SQL, but can't translate an
+			// arbitrary C# method, so filtering, ordering, and paging all now happen
+			// in Postgres instead of materializing the whole bounding box into
+			// memory and redoing all three client-side on every request/page.
+			// Split into two Selects so the "a" term (haversine's intermediate
+			// value, needed by both of Atan2's arguments) is written only once.
+			var withHaversineA = baseQuery
+				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+				.Select(s => new
+				{
+					s.Id,
+					s.Title,
+					s.Description,
+					s.OrganizationId,
+					s.Street,
+					s.HouseNumber,
+					s.ZipCode,
+					s.City,
+					s.Latitude,
+					s.Longitude,
+					s.IsRemote,
+					s.Occurrence,
+					s.ParticipationType,
+					s.CheckInMethod,
+					s.Category,
+					s.Tags,
+					s.CreatedOn,
+					s.ValidUntil,
+					s.NextTimeSlotStart,
+					s.NextTimeSlotEnd,
+					s.Status,
+					s.BannerImageUrl,
+					HaversineA =
+						(Math.Sin((s.Latitude!.Value - centerLat) * Math.PI / 180.0 / 2.0) * Math.Sin((s.Latitude!.Value - centerLat) * Math.PI / 180.0 / 2.0))
+						+ (Math.Cos(centerLat * Math.PI / 180.0) * Math.Cos(s.Latitude!.Value * Math.PI / 180.0)
+							* Math.Sin((s.Longitude!.Value - centerLon) * Math.PI / 180.0 / 2.0) * Math.Sin((s.Longitude!.Value - centerLon) * Math.PI / 180.0 / 2.0)),
+				});
 
-			var page = matched
+			var withDistance = withHaversineA
+				.Select(s => new
+				{
+					s.Id,
+					s.Title,
+					s.Description,
+					s.OrganizationId,
+					s.Street,
+					s.HouseNumber,
+					s.ZipCode,
+					s.City,
+					s.Latitude,
+					s.Longitude,
+					s.IsRemote,
+					s.Occurrence,
+					s.ParticipationType,
+					s.CheckInMethod,
+					s.Category,
+					s.Tags,
+					s.CreatedOn,
+					s.ValidUntil,
+					s.NextTimeSlotStart,
+					s.NextTimeSlotEnd,
+					s.Status,
+					s.BannerImageUrl,
+					DistanceKm = 6371.0 * 2.0 * Math.Atan2(Math.Sqrt(s.HaversineA), Math.Sqrt(1.0 - s.HaversineA)),
+				})
+				.Where(s => s.DistanceKm <= radiusKm);
+
+			var matchedCount = await withDistance.CountAsync(cancellationToken);
+
+			var page = await withDistance
+				.OrderBy(s => s.DistanceKm)
+				.ThenBy(s => s.Id)
 				.Skip((filter.PageNumber - 1) * filter.PageSize)
 				.Take(filter.PageSize)
-				.ToList();
+				.ToListAsync(cancellationToken);
 
 			var pageGuids = page.Select(x => x.Id).ToList();
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
@@ -178,7 +242,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				})
 				.ToList();
 
-			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
+			return new PagedList<VolunteerOpportunitySummary>(summaries, matchedCount, filter.PageNumber, filter.PageSize);
 		}
 
 		var total = await query.CountAsync(cancellationToken);

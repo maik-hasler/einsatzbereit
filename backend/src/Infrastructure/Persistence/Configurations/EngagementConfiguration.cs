@@ -120,6 +120,30 @@ internal sealed class EngagementConfiguration
 			.IsUnique()
 			.HasFilter("time_slot_id IS NULL AND status NOT IN ('Cancelled', 'Withdrawn')");
 
+		// Declared explicitly (rather than left to the FK-property index
+		// convention below) because the AutomaticCheckInJob index right after it
+		// needs a second, distinctly-named index over the same TimeSlotId
+		// property - the moment any explicit index covers a FK property, EF's
+		// convention stops auto-adding its own plain one, so this one has to
+		// stand in for it or it would disappear from the model entirely.
+		builder.HasIndex(e => e.TimeSlotId);
+
+		// AutomaticCheckInJob's hourly query (#1729) filters on exactly this
+		// predicate before joining to TimeSlot/VolunteerOpportunity to check the
+		// slot's end time - without a supporting index, every tick was a full
+		// scan of a monotonically growing table. Partial rather than a plain
+		// index (the one above) since confirmed-but-not-yet-checked-in
+		// engagements are a small, shrinking fraction of the table once it has
+		// any history - same reasoning as the outbox_message "unprocessed"
+		// partial index. The explicit model-level name ("PendingAutoCheckIn")
+		// is required, not just HasDatabaseName below - EF Core keys index
+		// identity by property set alone otherwise, so a second
+		// HasIndex(e => e.TimeSlotId) without it would redefine the plain index
+		// above in place instead of adding a second one alongside it.
+		builder.HasIndex(e => e.TimeSlotId, "IX_Engagement_TimeSlotId_PendingAutoCheckIn")
+			.HasDatabaseName("ix_engagement_time_slot_id_pending_auto_check_in")
+			.HasFilter("status = 'Confirmed' AND is_checked_in = false AND time_slot_id IS NOT NULL");
+
 		builder.HasOne<TimeSlot>()
 			.WithMany()
 			.HasForeignKey(e => e.TimeSlotId)

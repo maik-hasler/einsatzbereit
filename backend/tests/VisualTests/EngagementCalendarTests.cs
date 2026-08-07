@@ -113,5 +113,13 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 		var icsBody = await icsResponse.Content.ReadAsStringAsync();
 		icsBody.Should().Contain("BEGIN:VCALENDAR");
 		icsBody.Should().Contain($"UID:{engagementId}@einsatzbereit");
+
+		// Regression for #1729: every line must end in CRLF per RFC 5545 - the
+		// handler used to mix LF (from StringBuilder.AppendLine, which is
+		// Environment.NewLine - "\n" on Linux) with the CRLF its own line-folding
+		// used explicitly.
+		var withoutCrLf = icsBody.Replace("\r\n", string.Empty);
+		withoutCrLf.Should().NotContain("\n");
+		withoutCrLf.Should().NotContain("\r");
 	}
 }

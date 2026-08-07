@@ -1,4 +1,3 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -20,18 +19,12 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IKeycloakOrganizationService _keycloakService =
 		Substitute.For<IKeycloakOrganizationService>();
-	private readonly IKeycloakUserService _keycloakUserService =
-		Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
-	private readonly IAggregateRepository<User, UserId> _userRepo =
-		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateEngagementCommandHandler _sut;
 
@@ -83,22 +76,13 @@ public class CreateEngagementCommandHandlerTests
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
-		_dbContext.Users.Returns(_userRepo);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
 		_dbContext.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
 		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns((Engagement?)null);
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService);
 	}
 
 	// Individual-contact opportunities never have time slots - this is the fixture
@@ -517,68 +501,22 @@ public class CreateEngagementCommandHandlerTests
 		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
 	}
 
-	// --- Localized emails (#1052) ---
-
-	[Test]
-	public async Task Handle_ShouldRenderVolunteerEmail_InVolunteersPreferredLanguage(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = VolunteerOpportunityId.New();
-		var volunteerId = UserId.New();
-		SetupOpportunityExists(opportunityId);
-		var volunteer = User.Create(volunteerId);
-		volunteer.SetPreferredLanguage("en");
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
-		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementRequestReceived,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	[Test]
-	public async Task Handle_ShouldDefaultVolunteerEmailToGerman_WhenNoProfileExistsYet(
-		CancellationToken cancellationToken)
-	{
-		// Arrange - a volunteer who signs up without ever having loaded their
-		// profile page has no User row yet, so PreferredLanguage can't have
-		// been seeded; the recipient's language must still resolve, never NRE.
-		var opportunityId = VolunteerOpportunityId.New();
-		var volunteerId = UserId.New();
-		SetupOpportunityExists(opportunityId);
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns((User?)null);
-		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementRequestReceived,
-			"de",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	// --- Organizer notifications (#1174) ---
+	// --- Notifications and emails (#1174, #1729) ---
 	//
-	// The organizer "New sign-up" email (subscription-gated per #1055) is sent
-	// asynchronously via the outbox, by EngagementCreatedDomainEventHandler /
-	// EngagementReactivatedDomainEventHandler - see those handlers' tests for
-	// the subscription-preference coverage.
+	// Neither the organizer "New sign-up" email (subscription-gated per #1055)
+	// nor the volunteer's own sign-up receipt is sent synchronously from this
+	// handler anymore - both go out asynchronously via the outbox, by
+	// EngagementCreatedDomainEventHandler / EngagementReactivatedDomainEventHandler
+	// - see those handlers' tests (including localized-email and
+	// subscription-preference coverage) and EngagementVolunteerConfirmationHelper.
 
 	[Test]
-	public async Task Handle_ShouldNotEmailOrganizersSynchronously_RegardlessOfHowManyExist(
+	public async Task Handle_ShouldNotSendAnyEmailSynchronously_RegardlessOfHowManyOrganizersExist(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - a rapid create/withdraw loop must no longer hold this
-		// request's DB transaction open across one synchronous SMTP send per
-		// organizer.
+		// request's DB transaction open across a synchronous SMTP send, whether
+		// for the organizers or for the volunteer's own receipt (#1142).
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -591,9 +529,9 @@ public class CreateEngagementCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - exactly one email goes out synchronously: the volunteer's own
-		// receipt (#1055).
-		await _emailService.Received(1).SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		// Assert - nothing about this request talks to Keycloak's user endpoint
+		// or renders/sends an email; only the organizer membership lookup (needed
+		// for in-app Notification rows) remains.
+		await _keycloakService.Received(1).GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }
