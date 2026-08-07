@@ -709,7 +709,7 @@
       "section2Body1": "Beim Besuch dieser Website werden automatisch allgemeine technische Informationen verarbeitet (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs), um einen sicheren und zuverlässigen Betrieb sicherzustellen. Auch wenn wir diese Daten nicht anderweitig mit Ihrer Identität verknüpfen, können sie personenbezogene Daten darstellen - einschließlich Ihrer IP-Adresse, entsprechend dem Breyer-Urteil des EuGH (C-582/14).",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von Ihnen eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um Ihnen die Nutzung der Plattform zu ermöglichen.",
       "section2Body3": "Darüber hinaus können Sie in Ihrem Profil freiwillig weitere Angaben hinterlegen, etwa eine Telefonnummer, unter der Organisationen Sie erreichen können, ein Profilbild, einen Text im Feld „Über mich“ sowie Fähigkeiten und Sprachen. An wen diese Angaben weitergegeben oder für wen sie sichtbar werden, ist in den folgenden Abschnitten beschrieben.",
-      "section2Body4": "Rechtsgrundlage für die oben beschriebenen technischen Zugriffsinformationen ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einem sicheren und zuverlässigen Betrieb; Ihre IP-Adresse wird dabei ausschließlich vorübergehend im Arbeitsspeicher zur Durchsetzung von Anfragebegrenzungen verwendet und nicht gespeichert. Rechtsgrundlage für Ihre Registrierungs- und Kontodaten, einschließlich optionaler Angaben, die Sie freiwillig in Ihrem Profil hinterlegen, ist die Erfüllung des Nutzungsvertrags mit Ihnen (Art. 6 Abs. 1 lit. b DSGVO). Wir speichern Ihre Konto- und Profildaten, solange Ihr Konto besteht; löschen Sie Ihr Konto - das können Sie jederzeit in Ihren Profileinstellungen tun -, werden diese Daten unmittelbar gelöscht oder anonymisiert. Benachrichtigungen werden automatisch 90 Tage nach dem Lesen gelöscht, ungelesene nach 180 Tagen. Protokolle sicherheitsrelevanter Aktionen (siehe unten) werden ohne automatische Löschfrist aufbewahrt.",
+      "section2Body4": "Rechtsgrundlage für die oben beschriebenen technischen Zugriffsinformationen ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einem sicheren und zuverlässigen Betrieb; Ihre IP-Adresse wird dabei ausschließlich vorübergehend im Arbeitsspeicher zur Durchsetzung von Anfragebegrenzungen verwendet und nicht gespeichert. Rechtsgrundlage für Ihre Registrierungs- und Kontodaten, einschließlich optionaler Angaben, die Sie freiwillig in Ihrem Profil hinterlegen, ist die Erfüllung des Nutzungsvertrags mit Ihnen (Art. 6 Abs. 1 lit. b DSGVO). Wir speichern Ihre Konto- und Profildaten, solange Ihr Konto besteht; löschen Sie Ihr Konto - das können Sie jederzeit in Ihren Profileinstellungen tun -, werden diese Daten unmittelbar gelöscht oder anonymisiert. Benachrichtigungen werden automatisch 90 Tage nach dem Lesen gelöscht, ungelesene nach 180 Tagen. Meldungen gegen einen Nutzer, eine Organisation oder einen Einsatz werden als Moderationsverlauf aufbewahrt; nach ihrer Bearbeitung werden sie automatisch nach 180 Tagen gelöscht, und eine Meldung, die einen Nutzer betrifft, wird unmittelbar gelöscht, sobald das Konto dieses Nutzers vollständig gelöscht wurde. Protokolle sicherheitsrelevanter Aktionen (siehe unten) werden ohne automatische Löschfrist aufbewahrt.",
       "section3Title": "Weitergabe von Daten",
       "section3Body": "Personenbezogene Daten werden nur in den in diesem Abschnitt und den folgenden Unterabschnitten beschriebenen Fällen an Dritte weitergegeben oder öffentlich zugänglich gemacht: bei Ihrer Anmeldung zu einem Einsatz, im Rahmen Ihres öffentlichen Profils sowie im Rahmen der eingebundenen Drittdienste zur Kartendarstellung und Ortssuche. Eine darüber hinausgehende Übermittlung findet nur statt, wenn Sie ausdrücklich eingewilligt haben oder wir gesetzlich dazu verpflichtet sind.",
       "section3aTitle": "Anmeldung zu einem Einsatz",
@@ -846,6 +846,15 @@
       "title": "Du wurdest abgemeldet",
       "description": "Du hast diese Art von E-Mail abbestellt. Du kannst sie jederzeit in deinen Benachrichtigungseinstellungen im Profil wieder aktivieren.",
       "manageInProfile": "Benachrichtigungseinstellungen verwalten"
+    },
+    "unsubscribeConfirm": {
+      "title": "E-Mail abbestellen?",
+      "description": "Du bist dabei, diese Art von E-Mail abzubestellen:",
+      "note": "Das wirkt sich nicht auf deine anderen Benachrichtigungseinstellungen aus - die kannst du jederzeit in deinem Profil ändern.",
+      "confirmButton": "Abbestellen bestätigen",
+      "confirming": "Wird abbestellt…",
+      "invalidLink": "Dieser Abmeldelink ist ungültig oder unvollständig.",
+      "error": "Beim Abbestellen ist etwas schiefgelaufen. Bitte versuche es erneut oder verwalte deine Benachrichtigungseinstellungen in deinem Profil."
     },
     "report": {
       "title": "Inhalt melden",
@@ -1330,6 +1339,7 @@
         "AlreadyDeleted": "Nutzer:in ist bereits schattengelöscht.",
         "NotDeleted": "Nutzer:in ist nicht schattengelöscht.",
         "InvalidUnsubscribeToken": "Der Abmelde-Link ist ungültig oder wurde bereits mit einem anderen Token verwendet.",
+        "UnknownEmailNotificationType": "Unbekannter E-Mail-Benachrichtigungstyp.",
         "SoleOrganizerOfOrganizations": "Du bist die:der einzige Organisator:in mindestens einer Organisation. Übertrage die Leitung an eine andere Person oder lösche diese Organisationen, bevor du dein Konto löschst."
       },
       "Users": {

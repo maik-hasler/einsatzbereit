@@ -709,7 +709,7 @@
       "section2Body1": "When visiting this website, general technical information is automatically processed (e.g. IP address, browser type, time of access) to ensure secure and reliable operation. This data can constitute personal data - including your IP address, per the Court of Justice of the EU's Breyer ruling (C-582/14) - even though we do not otherwise link it to your identity.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
       "section2Body3": "You may also voluntarily add further details to your profile, such as a phone number organizations can reach you on, a profile picture, a short bio, and your skills and languages. Who this information is shared with or visible to is described in the following sections.",
-      "section2Body4": "The legal basis for the technical access information described above is our legitimate interest (Art. 6(1)(f) GDPR) in secure and reliable operation; your IP address is used only transiently, in memory, to enforce request rate limits, and is never stored. The legal basis for your registration and account data, including any optional profile fields you choose to add, is performance of the usage agreement with you (Art. 6(1)(b) GDPR). We retain your account and profile data for as long as your account exists; deleting your account, which you can do at any time from your profile settings, erases or anonymizes this data immediately. Notifications are deleted automatically 90 days after being read, or after 180 days if never read. Audit logs of security-relevant actions (see below) are retained without an automatic deletion period.",
+      "section2Body4": "The legal basis for the technical access information described above is our legitimate interest (Art. 6(1)(f) GDPR) in secure and reliable operation; your IP address is used only transiently, in memory, to enforce request rate limits, and is never stored. The legal basis for your registration and account data, including any optional profile fields you choose to add, is performance of the usage agreement with you (Art. 6(1)(b) GDPR). We retain your account and profile data for as long as your account exists; deleting your account, which you can do at any time from your profile settings, erases or anonymizes this data immediately. Notifications are deleted automatically 90 days after being read, or after 180 days if never read. Reports filed against a user, organization, or volunteer opportunity are retained as moderation history; once resolved, they are deleted automatically after 180 days, and a report naming a user as its subject is deleted immediately once that user's account has been fully deleted. Audit logs of security-relevant actions (see below) are retained without an automatic deletion period.",
       "section3Title": "Data sharing",
       "section3Body": "Personal data is only shared with third parties or made publicly accessible in the cases described in this section and its subsections below: when you sign up for an opportunity, as part of your public profile, and through the embedded third-party services for map display and location search. Any transfer beyond that only takes place if you have expressly consented or we are legally required to do so.",
       "section3aTitle": "Signing up for an opportunity",
@@ -846,6 +846,15 @@
       "title": "You've been unsubscribed",
       "description": "You have been unsubscribed from this type of email. You can re-enable it any time from your notification preferences in your profile.",
       "manageInProfile": "Manage notification preferences"
+    },
+    "unsubscribeConfirm": {
+      "title": "Unsubscribe from this email?",
+      "description": "You're about to unsubscribe from this type of email:",
+      "note": "This won't affect your other notification preferences - you can change those anytime from your profile.",
+      "confirmButton": "Confirm unsubscribe",
+      "confirming": "Unsubscribing…",
+      "invalidLink": "This unsubscribe link is invalid or incomplete.",
+      "error": "Something went wrong while unsubscribing. Please try again, or manage your notification preferences from your profile."
     },
     "report": {
       "title": "Report content",
@@ -1330,6 +1339,7 @@
         "AlreadyDeleted": "User is already shadow-deleted.",
         "NotDeleted": "User is not shadow-deleted.",
         "InvalidUnsubscribeToken": "The unsubscribe link is invalid or has already been used with a different token.",
+        "UnknownEmailNotificationType": "Unknown email notification type.",
         "SoleOrganizerOfOrganizations": "You are the sole organizer of one or more organizations. Transfer ownership to another organizer or delete these organizations before deleting your account."
       },
       "Users": {

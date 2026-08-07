@@ -1870,6 +1870,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -1965,7 +1975,7 @@
       }
     },
     "/v1/users/{userId}/unsubscribe": {
-      "get": {
+      "post": {
         "tags": [
           "Users"
         ],
@@ -1999,8 +2009,8 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Found"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",

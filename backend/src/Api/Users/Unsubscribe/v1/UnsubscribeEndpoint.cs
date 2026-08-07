@@ -11,14 +11,21 @@ namespace Api.Users.Unsubscribe.v1;
 // One-click unsubscribe link embedded in transactional emails (#1055) - must work
 // for a recipient who never signed in, so this is intentionally unauthenticated
 // and identifies the target solely via the opaque per-user UnsubscribeToken.
+//
+// POST, not GET (#1725): the email footer links here through a frontend
+// confirmation page (UnsubscribeLinkBuilder builds that URL, not this one
+// directly) that only calls this endpoint once the recipient explicitly
+// clicks a confirm button. A GET here would let a mail scanner or link
+// prefetcher silently trigger the opt-out just by following the link in the
+// email body, without the recipient ever choosing to leave.
 internal sealed class UnsubscribeEndpoint
 	: IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapGet("/users/{userId:guid}/unsubscribe", UnsubscribeAsync)
+		app.MapPost("/users/{userId:guid}/unsubscribe", UnsubscribeAsync)
 			.WithName("Unsubscribe")
 			.WithTags("Users")
-			.Produces(StatusCodes.Status302Found)
+			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
@@ -26,18 +33,11 @@ internal sealed class UnsubscribeEndpoint
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 
-	// Redirects into a branded, localized frontend route rather than returning raw
-	// HTML directly (#1675) - this endpoint has no locale of its own to render in,
-	// so the frontend's own i18n (German-default) takes over from here. Reuses the
-	// same Cors:Origins-derived frontend base URL as GetSitemapEndpoint/
-	// GetEngagementCalendarEndpoint, since there's no dedicated "frontend base URL"
-	// setting in this codebase.
 	private static async Task<IResult> UnsubscribeAsync(
 		[FromRoute] Guid userId,
 		[FromQuery] string type,
 		[FromQuery] Guid token,
 		[FromServices] ISender sender,
-		[FromServices] IConfiguration configuration,
 		CancellationToken cancellationToken)
 	{
 		if (!Enum.TryParse<EmailNotificationType>(type, out var notificationType))
@@ -49,9 +49,6 @@ internal sealed class UnsubscribeEndpoint
 			new UnsubscribeCommand(UserId.Create(userId).GetValueOrThrow(), token, notificationType),
 			cancellationToken);
 
-		var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-		var frontendBaseUrl = origins.Length > 0 ? origins[0].TrimEnd('/') : "";
-
-		return Results.Redirect($"{frontendBaseUrl}/unsubscribed?type={Uri.EscapeDataString(type)}");
+		return Results.NoContent();
 	}
 }

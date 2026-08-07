@@ -1152,6 +1152,65 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task UnsubscribeConfirmPage_WithValidLink_HasNoSeriousA11yViolations()
+	{
+		// The confirmation interstitial the unsubscribe email link now points to
+		// (#1725) - scanned with a well-formed userId/type/token query string so
+		// the confirm button itself renders.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/unsubscribe?userId={Guid.NewGuid()}&type=EngagementReminder&token={Guid.NewGuid()}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task UnsubscribeConfirmPage_WithMissingParams_HasNoSeriousA11yViolations()
+	{
+		// The invalid-link branch (missing/incomplete query string) renders an
+		// ErrorBanner instead of the confirm button - scanned separately since
+		// it's a materially different DOM state from the happy path above.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/unsubscribe");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task UnsubscribeConfirmPage_ConfirmFailed_HasNoSeriousA11yViolations()
+	{
+		// A third DOM state neither test above reaches: description + confirm
+		// button *and* an ErrorBanner together, after the POST /unsubscribe
+		// call itself fails - reached by aborting that request and clicking
+		// through it.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.RouteAsync("**/unsubscribe**", async route =>
+		{
+			if (route.Request.Method == "POST")
+				await route.AbortAsync();
+			else
+				await route.ContinueAsync();
+		});
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/unsubscribe?userId={Guid.NewGuid()}&type=EngagementReminder&token={Guid.NewGuid()}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Confirm unsubscribe" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Alert)).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task SignUpModal_OpenTimeSlotDropdown_HasNoSeriousA11yViolations()
 	{
 		// #573: the native time slot <select> was replaced with a custom
