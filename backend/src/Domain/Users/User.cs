@@ -141,6 +141,13 @@ public sealed class User
 			case EmailNotificationType.EngagementReminder:
 				NotifyOnEngagementReminder = false;
 				break;
+			default:
+				// #1725: an unrecognized type used to fall through every case and
+				// still return Result.Success() - a future EmailNotificationType
+				// member added here without a matching case would report a
+				// successful opt-out that silently did nothing.
+				return Result.Failure(Error.Validation(
+					"User.UnknownEmailNotificationType", $"Unknown email notification type '{type}'."));
 		}
 
 		return Result.Success();

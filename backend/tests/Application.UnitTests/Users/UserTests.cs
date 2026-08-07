@@ -112,4 +112,42 @@ public class UserTests
 		result.IsSuccess.Should().BeTrue();
 		user.NotifyOnWithdrawal.Should().BeFalse();
 	}
+
+	[Test]
+	[MethodDataSource(nameof(AllEmailNotificationTypes))]
+	public void Unsubscribe_ShouldMakeIsSubscribedToReturnFalse_ForEveryDefinedType(
+		EmailNotificationType type)
+	{
+		// #1725: a data-driven regression guard, not just a happy-path check for
+		// the types that exist today - if a future EmailNotificationType member
+		// is added without a matching case in both Unsubscribe's switch and
+		// IsSubscribedTo's switch expression, this fails immediately for that
+		// new member instead of silently reporting a successful opt-out that
+		// does nothing (the switch's missing default arm before this fix).
+		var user = User.Create(UserId.New());
+
+		var result = user.Unsubscribe(type, user.UnsubscribeToken);
+
+		result.IsSuccess.Should().BeTrue();
+		user.IsSubscribedTo(type).Should().BeFalse();
+	}
+
+	[Test]
+	public void Unsubscribe_ShouldFailWithValidation_ForAnUnrecognizedType()
+	{
+		// Arrange - #1725: Unsubscribe's switch had no default arm and returned
+		// Result.Success() unconditionally, so an EmailNotificationType value
+		// outside the switch's cases silently no-op'd while reporting success.
+		var user = User.Create(UserId.New());
+
+		// Act
+		var result = user.Unsubscribe((EmailNotificationType)(-1), user.UnsubscribeToken);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Type.Should().Be(ErrorType.Validation);
+	}
+
+	public static IEnumerable<EmailNotificationType> AllEmailNotificationTypes() =>
+		Enum.GetValues<EmailNotificationType>();
 }

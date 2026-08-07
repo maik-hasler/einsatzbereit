@@ -1,4 +1,4 @@
-using Domain.Notifications;
+using Domain.Reports;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,24 +8,19 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Notification.RelatedEntityId is an untyped uuid pointing at an engagement, an
-// opportunity, or an invitation with no FK - a deleted target just leaves the
-// notification pointing at nothing (NotificationReadRepository already
-// tolerates this, falling back to a placeholder). Nothing else ever deletes a
-// notification row (aside from DeleteMyAccountCommandHandler wiping a whole
-// recipient's rows), so the table grew without bound - this periodically
-// prunes read rows past ReadRetentionDays *since they were read* (Notification.ReadOn,
-// #1725 - not since they were created), and unread rows (which could
-// otherwise keep pointing at a long-deleted target indefinitely until the
-// recipient happens to open them) past the longer UnreadRetentionDays,
-// counted from CreatedOn since they have no ReadOn (#1209).
-internal sealed class NotificationRetentionJob(
+// Reports where the deleted user is the *target* survive DeleteMyAccountCommandHandler
+// as moderation history (only reports the deleted user *filed*, as reporter, are
+// hard-deleted immediately - DeleteReportsForReporterAsync) and had no retention limit
+// at all, outliving the account they concern indefinitely with no disclosure in the
+// privacy policy. This periodically prunes them, measured from Report.TargetDeletedOn
+// (stamped once, when the target account is deleted), not from CreatedOn (#1725).
+internal sealed class AbuseReportRetentionJob(
 	IServiceScopeFactory scopeFactory,
-	ILogger<NotificationRetentionJob> logger,
-	IOptions<NotificationRetentionOptions> options)
+	ILogger<AbuseReportRetentionJob> logger,
+	IOptions<AbuseReportRetentionOptions> options)
 	: IHostedService, IAsyncDisposable
 {
-	private readonly NotificationRetentionOptions _options = options.Value;
+	private readonly AbuseReportRetentionOptions _options = options.Value;
 
 	private Task _executeTask = Task.CompletedTask;
 	private CancellationTokenSource? _cts;
@@ -74,7 +69,7 @@ internal sealed class NotificationRetentionJob(
 			{
 				// A row that should have been pruned this tick just gets picked up
 				// again on the next one - no data is lost by skipping a tick.
-				logger.LogError(ex, "Notification retention tick failed; will retry on the next poll interval");
+				logger.LogError(ex, "Abuse report retention tick failed; will retry on the next poll interval");
 			}
 		}
 	}
@@ -85,26 +80,22 @@ internal sealed class NotificationRetentionJob(
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
 		var now = DateTimeOffset.UtcNow;
-		var deleted = await DeleteExpiredNotificationsAsync(
+		var deleted = await DeleteExpiredReportsAsync(
 			dbContext,
-			readCutoff: now.AddDays(-_options.ReadRetentionDays),
-			unreadCutoff: now.AddDays(-_options.UnreadRetentionDays),
+			targetDeletedCutoff: now.AddDays(-_options.RetentionDaysAfterTargetDeleted),
 			ct);
 
 		if (deleted > 0)
-			logger.LogInformation("Pruned {Count} expired notification(s)", deleted);
+			logger.LogInformation("Pruned {Count} expired abuse report(s)", deleted);
 	}
 
 	// Exposed so IntegrationTests can exercise the deletion directly against a real
 	// Postgres without waiting on the real RetentionCheckIntervalHours.
-	internal static async Task<int> DeleteExpiredNotificationsAsync(
+	internal static async Task<int> DeleteExpiredReportsAsync(
 		ApplicationDbContext dbContext,
-		DateTimeOffset readCutoff,
-		DateTimeOffset unreadCutoff,
+		DateTimeOffset targetDeletedCutoff,
 		CancellationToken cancellationToken = default) =>
-		await dbContext.Set<Notification>()
-			.Where(n =>
-				(n.IsRead && n.ReadOn != null && n.ReadOn < readCutoff) ||
-				(!n.IsRead && n.CreatedOn < unreadCutoff))
+		await dbContext.Set<Report>()
+			.Where(r => r.TargetDeletedOn != null && r.TargetDeletedOn < targetDeletedCutoff)
 			.ExecuteDeleteAsync(cancellationToken);
 }

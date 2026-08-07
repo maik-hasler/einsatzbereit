@@ -14,8 +14,9 @@ internal sealed class MarkAllNotificationsReadCommandHandler(
 		var unread = await dbContext.GetUnreadNotificationsForRecipientAsync(
 			request.RecipientId, cancellationToken);
 
+		var now = DateTimeOffset.UtcNow;
 		foreach (var n in unread)
-			n.MarkRead();
+			n.MarkRead(now);
 
 		return unread.Count;
 	}

@@ -29,6 +29,15 @@ public sealed class Report
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
+	// Reports targeting a user survive that user's own account deletion as
+	// moderation history (DeleteMyAccountCommandHandler only hard-deletes
+	// reports the deleted user *filed*, via DeleteReportsForReporterAsync) -
+	// but they still need their own retention limit once the account they
+	// concern is gone for good. Stamped once, when the target account is
+	// deleted, so AbuseReportRetentionJob can prune from that point rather
+	// than from CreatedOn (#1725).
+	public DateTimeOffset? TargetDeletedOn { get; private set; }
+
 #pragma warning disable CS8618
 	private Report() : base(default) { }
 #pragma warning restore CS8618
@@ -83,5 +92,13 @@ public sealed class Report
 		ResolvedByUserId = resolvedByUserId;
 		ResolvedOn = resolvedOn;
 		return Result.Success();
+	}
+
+	// Idempotent by design (unlike Dismiss/MarkActioned) - a report's
+	// resolution status is independent of whether its target account still
+	// exists, so this just stamps the timestamp regardless of current state.
+	public void MarkTargetDeleted(DateTimeOffset deletedOn)
+	{
+		TargetDeletedOn = deletedOn;
 	}
 }
