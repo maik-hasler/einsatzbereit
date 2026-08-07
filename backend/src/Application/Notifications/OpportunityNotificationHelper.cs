@@ -57,10 +57,20 @@ internal static class OpportunityNotificationHelper
 		var volunteerUsersById = (await dbContext.GetOrCreateUsersAsync(volunteerUserIds, cancellationToken))
 			.ToDictionary(u => u.Id);
 
+		// Batched instead of one GetUserAsync call per volunteer (#1678) - this runs
+		// inside TransactionPipelineBehavior's DB transaction (see callers), so an N+1
+		// here held row locks open for N sequential outbound Keycloak calls. Mirrors
+		// the GetUserProfilesAsync usage in GetEngagementsQueryHandler/
+		// ExportEngagementsQueryHandler; a volunteer whose lookup fails (e.g. deleted
+		// in Keycloak) is silently skipped rather than aborting the whole batch.
+		var profileMap = await keycloakUserService.GetUserProfilesAsync(volunteerIds, cancellationToken);
+
 		var messages = new List<EmailMessage>(volunteerIds.Count);
 		foreach (var volunteerId in volunteerIds)
 		{
-			var volunteer = await keycloakUserService.GetUserAsync(volunteerId, cancellationToken);
+			if (!profileMap.TryGetValue(volunteerId, out var volunteer))
+				continue;
+
 			var volunteerUser = volunteerUsersById[UserId.Create(volunteerId).GetValueOrThrow()];
 			var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
 
@@ -76,6 +86,7 @@ internal static class OpportunityNotificationHelper
 			messages.Add(new EmailMessage(volunteer.Email, content.Subject, content.Body, volunteerId.ToString()));
 		}
 
-		await emailService.SendBatchAsync(messages, cancellationToken);
+		if (messages.Count > 0)
+			await emailService.SendBatchAsync(messages, cancellationToken);
 	}
 }

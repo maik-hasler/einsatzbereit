@@ -18,7 +18,20 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
+	// Serialized against every other test that writes vera's single avatar_url
+	// field. This test uploads an avatar and then asserts the nav bar renders an
+	// <img> instead of her initials - but RemoveUserAvatar_... below (same class,
+	// so TUnit co-schedules the two by default) uploads and then DELETEs that
+	// same field, and AccessibilityTests' ProfileOverviewPage_EditModeWithAvatar_...
+	// uploads it too. Those three are the only writers of /v1/users/me/avatar in
+	// the suite. With the delete landing between this upload and this assertion,
+	// GET /v1/users/me returns avatarUrl: null and AccountControls renders the
+	// initials span with no <img> at all - the exact observed CI failure
+	// ("element(s) not found", aria snapshot showing button "User menu": VV).
+	// A keyed [NotInParallel] is cheap here: the assembly parallel limit is
+	// already ProcessorCount - 2, so serializing three tests costs almost nothing.
 	[Test]
+	[NotInParallel("visualtests-vera-avatar")]
 	public async Task UploadedAvatar_ShowsInNavBar_InsteadOfInitials()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -197,7 +210,10 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		afterOrg.GetProperty("logoUrl").ValueKind.Should().Be(JsonValueKind.Null);
 	}
 
+	// Same keyed [NotInParallel] as UploadedAvatar_... above - this test's DELETE
+	// is what makes that one's uploaded avatar vanish mid-assertion.
 	[Test]
+	[NotInParallel("visualtests-vera-avatar")]
 	public async Task RemoveUserAvatar_ClearsAvatarUrl_AndHidesRemoveButton()
 	{
 		// #1063: the user-avatar upload feature had no matching delete/remove

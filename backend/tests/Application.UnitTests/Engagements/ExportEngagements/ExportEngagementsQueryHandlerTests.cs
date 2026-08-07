@@ -461,6 +461,56 @@ public class ExportEngagementsQueryHandlerTests
 		file.Content.Should().Contain("Anonymisierte:r Freiwillige:r;Bestätigt;;Eingecheckt;\r\n");
 	}
 
+	[Test]
+	[Arguments("=SUM(A1:A9)")]
+	[Arguments("+1234567")]
+	[Arguments("-1234567")]
+	[Arguments("@example")]
+	public async Task Handle_ShouldPrefixNameWithASingleQuote_WhenItStartsWithAFormulaTriggerCharacter(
+		string maliciousFirstName,
+		CancellationToken cancellationToken)
+	{
+		// Arrange - CWE-1236: a spreadsheet app treats a cell starting with any of
+		// these characters as a formula to evaluate; the Name column comes straight
+		// from a volunteer's caller-controlled Keycloak first/last name (#1678).
+		// Tab/CR aren't exercisable through this column specifically - ResolveName's
+		// own Trim() (below) strips a leading tab or CR as whitespace before
+		// CsvEscape ever sees it - but CsvEscape still neutralizes them for any
+		// other column a future caller-controlled field might add.
+		var volunteerId = Guid.NewGuid();
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			volunteerId,
+			null,
+			null,
+			"Pending",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow);
+
+		_readRepository
+			.GetForExportAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([engagement]);
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>
+			{
+				[volunteerId] = new KeycloakUserProfile(volunteerId, "vera", maliciousFirstName, null, "vera@example.com"),
+			});
+
+		var query = new ExportEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId);
+
+		// Act
+		var file = await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		file.Content.Should().Contain($"'{maliciousFirstName}");
+	}
+
 	private static VolunteerOpportunity CreateDefaultOpportunity() =>
 		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Draft).Value;
 }

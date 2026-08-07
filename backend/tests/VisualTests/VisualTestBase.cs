@@ -150,6 +150,49 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	}
 
 	/// <summary>
+	/// Clicks "Load more" inside <paramref name="listSelector"/> until
+	/// <paramref name="target"/> is visible, the list is fully loaded, or
+	/// <paramref name="timeoutSeconds"/> elapses.
+	///
+	/// Exists because the seeded vera/olaf accounts accumulate unbounded state
+	/// across a shared session: ~15 classes leave vera engagements they never
+	/// withdraw, and EngagementReadRepository.GetByVolunteerAsync orders the
+	/// "Current &amp; Upcoming" scope by time-slot start with slot-less entries
+	/// last, tie-broken by the UUIDv7 engagement id. A test's own freshly
+	/// created IndividualContact engagement is therefore deterministically the
+	/// LAST row of the whole list, several 10-row pages down, rather than
+	/// anywhere near the top.
+	///
+	/// Two details make this reliable, and both were wrong in the hand-rolled
+	/// copies this replaces:
+	/// <list type="bullet">
+	/// <item>The button is found by <c>data-testid</c>, never by accessible
+	/// name. LoadMoreButton renders <c>{loading ? loadingLabel : label}</c> on
+	/// the same element, so a name-based locator matches zero elements while a
+	/// page is in flight and a non-waiting <c>IsVisibleAsync</c> guard reads
+	/// false mid-load, ending the walk after a single click.</item>
+	/// <item><c>ClickAsync</c> is the only synchronization needed - the button
+	/// is <c>disabled={loading}</c> and Playwright's click auto-waits for
+	/// enabled. A <c>WaitForLoadStateAsync(NetworkIdle)</c> here would not
+	/// straddle the fetch at all, since useLoadMore only issues it from an
+	/// effect after React commits the page increment.</item>
+	/// </list>
+	/// </summary>
+	protected async Task LoadMoreUntilVisibleAsync(
+		ILocator target, string listSelector = "#activity", int timeoutSeconds = 60)
+	{
+		var loadMoreButton = Page.Locator($"{listSelector} [data-testid='load-more']");
+		var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
+
+		while (!await target.IsVisibleAsync()
+			&& await loadMoreButton.IsVisibleAsync()
+			&& DateTimeOffset.UtcNow < deadline)
+		{
+			await loadMoreButton.ClickAsync();
+		}
+	}
+
+	/// <summary>
 	/// Asserts the page's content wrapper inside `&lt;main&gt;` (marked with the
 	/// `data-content-wrapper` attribute - see #1328, this used to select on the
 	/// `.max-w-2xl` Tailwind utility class directly, which a purely cosmetic
