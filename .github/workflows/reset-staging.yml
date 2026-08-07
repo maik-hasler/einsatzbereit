@@ -32,7 +32,36 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
+          # Pinned host key from a secret, not ssh-keyscan's live result -
+          # this is a destructive workflow (wipes Postgres + MinIO data), so
+          # it should be at least as strict as deploy-staging about not
+          # trusting whatever host key a DNS/BGP hijack of STAGING_SSH_HOST
+          # would otherwise hand it (#1733). See publish.yml's matching step
+          # and .github/AGENTS.md for how STAGING_SSH_HOST_KEY was captured.
+          echo "${{ secrets.STAGING_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
+
+      # Read before "Copy .env" below overwrites the host's .env - without
+      # this, the render below had no IMAGE_TAG line at all, so
+      # docker-compose.yml's `${IMAGE_TAG:-staging}` default silently took
+      # over on restart, which could resurrect an old cached `staging`-tagged
+      # image instead of whatever version (RC or stable) was actually
+      # running before the reset (#1733).
+      - name: Capture currently deployed image tag
+        id: current_tag
+        run: |
+          set -euo pipefail
+          TAG=$(ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            if [ -f /opt/einsatzbereit/.env ]; then
+              grep -m1 '^IMAGE_TAG=' /opt/einsatzbereit/.env | cut -d'"' -f2
+            fi
+          EOF
+          )
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [ -n "$TAG" ]; then
+            echo "Currently deployed IMAGE_TAG: ${TAG} - reset will restart with this same version."
+          else
+            echo "::warning::No IMAGE_TAG found in the host's current .env - reset will fall back to docker-compose.yml's default (staging), which may not match what is actually running."
+          fi
 
       # Without this, the restart below reuses whatever .env is already on
       # the host from the last deploy-staging run - so a secret rotated
@@ -65,6 +94,10 @@ jobs:
           # without it fails rendering the compose config entirely, same as
           # deploy-staging.
           ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
+          # Whatever was actually running before the reset (captured above),
+          # not docker-compose.yml's "staging" default - see the "Capture
+          # currently deployed image tag" step above (#1733).
+          IMAGE_TAG: ${{ steps.current_tag.outputs.tag }}
         run: |
           umask 077
           # Escape \, " and $ so secrets that contain quotes, hashes, leading
@@ -99,6 +132,7 @@ jobs:
             printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
             printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
             printf 'ALERT_NOTIFICATION_EMAIL="%s"\n' "$(escape "$ALERT_NOTIFICATION_EMAIL")"
+            printf 'IMAGE_TAG="%s"\n' "$(escape "$IMAGE_TAG")"
             # Not a secret - restarting after a reset should come back seeded
             # with demo organizations/opportunities, same as deploy-staging
             # (see publish.yml's "Render .env" step and this workflow's

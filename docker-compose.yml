@@ -41,8 +41,12 @@ services:
 
   keycloak:
     # IMAGE_TAG lets publish.yml's deploy-staging and deploy-production jobs
-    # point the same compose file at different image tags (staging vs latest)
-    # on the same host without editing this file per deploy (#1344).
+    # point the same compose file at different images on the same host
+    # without editing this file per deploy (#1344). Both jobs render this to
+    # the specific version tag being released (not a floating "staging"/
+    # "latest" tag) so a bad deploy has an immutable prior version to roll
+    # back to (#1733) - the "staging" fallback here only applies if IMAGE_TAG
+    # is unset entirely, e.g. a manual `docker compose up` on a fresh host.
     image: ghcr.io/maik-hasler/einsatzbereit-keycloak:${IMAGE_TAG:-staging}
     container_name: keycloak
     restart: unless-stopped
