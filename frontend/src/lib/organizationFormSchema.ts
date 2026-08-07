@@ -11,18 +11,19 @@ export function buildOrganizationFormSchema(t: TFunction) {
 	const required = t("orgSettings.fieldRequired");
 	const invalidZip = t("orgSettings.zipInvalid");
 	const invalidWebsite = t("orgSettings.websiteInvalid");
+	const tooLong = (max: number) => t("orgSettings.fieldTooLong", { max });
 
 	return z
 		.object({
-			name: z.string().max(100),
-			description: z.string().max(1000),
-			contactEmail: z.string().max(254),
-			contactPhone: z.string().max(30),
-			website: z.string().max(500),
-			street: z.string().max(200),
-			houseNumber: z.string().max(20),
-			zipCode: z.string().max(10),
-			city: z.string().max(100),
+			name: z.string().max(100, tooLong(100)),
+			description: z.string().max(1000, tooLong(1000)),
+			contactEmail: z.string().max(254, tooLong(254)),
+			contactPhone: z.string().max(30, tooLong(30)),
+			website: z.string().max(500, tooLong(500)),
+			street: z.string().max(200, tooLong(200)),
+			houseNumber: z.string().max(20, tooLong(20)),
+			zipCode: z.string().max(10, tooLong(10)),
+			city: z.string().max(100, tooLong(100)),
 		})
 		.superRefine((data, ctx) => {
 			if (!data.name.trim())

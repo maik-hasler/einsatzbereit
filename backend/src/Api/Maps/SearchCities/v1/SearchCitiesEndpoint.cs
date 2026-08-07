@@ -21,7 +21,7 @@ internal sealed class SearchCitiesEndpoint : IEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
-			.CacheOutput(OutputCachingPolicies.LongPublicRead)
+			.CacheOutput(OutputCachingPolicies.LongPublicReadByLanguage)
 			.MapToApiVersion(1);
 	}
 

@@ -148,6 +148,32 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		secondBody.Should().Contain("Org Two").And.NotContain("Org One");
 	}
 
+	// Regression coverage for #1731: SearchCities' response varies by the caller's
+	// X-Language header (Nominatim returns different exonyms per language), so unlike
+	// LongPublicRead's plain path+query cache key, its policy must also vary by that
+	// header - otherwise a request in one language could be served a response cached
+	// for another.
+	[Test]
+	public async Task SearchCities_ShouldCacheEachLanguageSeparately(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = WithForwardedFor(fixture.CreateHttpClient(), "10.0.2.7");
+		const string route = "/v1/maps/cities?q=Berlin";
+
+		httpClient.DefaultRequestHeaders.Add("X-Language", "de");
+		await httpClient.GetAsync(route, cancellationToken);
+		var germanSecondRequest = await httpClient.GetAsync(route, cancellationToken);
+
+		httpClient.DefaultRequestHeaders.Remove("X-Language");
+		httpClient.DefaultRequestHeaders.Add("X-Language", "en");
+		var englishFirstRequest = await httpClient.GetAsync(route, cancellationToken);
+
+		germanSecondRequest.Headers.TryGetValues("Age", out _).Should().BeTrue(
+			"the second identical German-language request should be served from the output cache");
+		englishFirstRequest.Headers.TryGetValues("Age", out _).Should().BeFalse(
+			"a different X-Language must be a cache miss, not reuse the German response cached above");
+	}
+
 	// GetOrganizationOpportunities is authenticated and organizer-scoped - its response is not
 	// the same for every caller, so it must be excluded from output caching. Caching it under
 	// the default (caller-agnostic) cache key would risk serving one organizer's data to another.

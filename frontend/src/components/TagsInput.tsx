@@ -4,6 +4,12 @@ import { useTranslation } from "react-i18next";
 import Chip from "./Chip";
 import { labelClass } from "../lib/formClasses";
 
+// Mirrors VolunteerOpportunity.MaxTagsCount/MaxTagLength (#1678) - keeping the
+// same bounds here means the backend's VolunteerOpportunity.TooManyTags/
+// TagTooLong validation errors are not reachable in normal use (#1731).
+const MAX_TAGS = 20;
+const MAX_TAG_LENGTH = 50;
+
 interface Props {
 	id: string;
 	label: string;
@@ -30,6 +36,18 @@ export default function TagsInput({
 		const trimmed = draft.trim();
 		setDraft("");
 		if (!trimmed) return;
+		if (value.length >= MAX_TAGS) {
+			setStatusMessage(
+				t("createOpportunity.tagLimitReached", { max: MAX_TAGS }),
+			);
+			return;
+		}
+		if (trimmed.length > MAX_TAG_LENGTH) {
+			setStatusMessage(
+				t("createOpportunity.tagTooLong", { max: MAX_TAG_LENGTH }),
+			);
+			return;
+		}
 		const alreadyPresent = value.some(
 			(tag) => tag.toLowerCase() === trimmed.toLowerCase(),
 		);
@@ -96,6 +114,7 @@ export default function TagsInput({
 					id={id}
 					type="text"
 					value={draft}
+					maxLength={MAX_TAG_LENGTH}
 					onChange={(e) => setDraft(e.target.value)}
 					onKeyDown={handleKeyDown}
 					onBlur={commitDraft}

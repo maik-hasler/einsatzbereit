@@ -98,10 +98,16 @@ describe("buildOrganizationFormSchema", () => {
 		expect(zipIssue?.message).toBe("orgSettings.fieldRequired");
 	});
 
-	it("rejects a name longer than 100 characters", () => {
+	it("rejects a name longer than 100 characters with a translated message", () => {
 		const result = schema.safeParse(values({ name: "a".repeat(101) }));
 		expect(result.success).toBe(false);
 		expect(issuePaths(result)).toContain("name");
+		// Regression guard for #1731: zod's built-in message must not leak
+		// through untranslated for any bare .max() field.
+		const nameIssue = result.error?.issues.find(
+			(issue) => issue.path[0] === "name",
+		);
+		expect(nameIssue?.message).toBe("orgSettings.fieldTooLong");
 	});
 
 	it("trims whitespace-only address fields the same as empty ones", () => {

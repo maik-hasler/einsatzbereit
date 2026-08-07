@@ -98,6 +98,44 @@ public class SearchAlertMatchesFoundNotificationHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldRenderSingularTemplate_ForOneMatch(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		_dbContext
+			.GetVolunteerOpportunitiesByIdsAsync(Arg.Any<IReadOnlyCollection<VolunteerOpportunityId>>(), cancellationToken)
+			.Returns([opportunity]);
+		var notification = new SearchAlertMatchesFoundDomainEvent(SearchAlertId.New(), UserId.New(), [opportunity.Id.Value]);
+
+		await _sut.Handle(notification, cancellationToken);
+
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.SearchAlertNewMatchesSingle,
+			Arg.Any<string>(),
+			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderPluralTemplate_ForMultipleMatches(
+		CancellationToken cancellationToken)
+	{
+		var first = CreateOpportunity();
+		var second = CreateOpportunity();
+		_dbContext
+			.GetVolunteerOpportunitiesByIdsAsync(Arg.Any<IReadOnlyCollection<VolunteerOpportunityId>>(), cancellationToken)
+			.Returns([first, second]);
+		var notification = new SearchAlertMatchesFoundDomainEvent(
+			SearchAlertId.New(), UserId.New(), [first.Id.Value, second.Id.Value]);
+
+		await _sut.Handle(notification, cancellationToken);
+
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.SearchAlertNewMatches,
+			Arg.Any<string>(),
+			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldSkip_WhenNoneOfTheMatchedOpportunitiesStillExist(
 		CancellationToken cancellationToken)
 	{
