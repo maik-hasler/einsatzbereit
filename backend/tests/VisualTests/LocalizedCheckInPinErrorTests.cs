@@ -81,16 +81,15 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 		// Upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this row can
-		// land past the first (10-item) page. Click "Load more" until it shows up
-		// or there is nothing left to load, before switching language below (the
-		// load state doesn't depend on locale) - see MyEngagementsTests.cs.
-		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
-		while (!await row.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
-		{
-			await loadMoreButton.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		}
+		// land past the first (10-item) page, so page through to it before
+		// switching language below (the load state doesn't depend on locale).
+		//
+		// Wait for the first page before starting: the WaitForLoadStateAsync
+		// above can settle before the engagements fetch is even issued, since
+		// useLoadMore only requests from an effect after React commits.
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(row);
 
 		// Switch to German only after signing in - FastSignInAsync itself waits on
 		// the English "User menu" aria-label (see OrgDashboardWidgetsTests).

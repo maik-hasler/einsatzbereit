@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Playwright;
 using TUnit.Core;
 using TUnit.Playwright;
@@ -163,19 +164,29 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	/// LAST row of the whole list, several 10-row pages down, rather than
 	/// anywhere near the top.
 	///
-	/// Two details make this reliable, and both were wrong in the hand-rolled
-	/// copies this replaces:
+	/// Three details make this reliable, and the first two were wrong in the
+	/// hand-rolled copies this replaces:
 	/// <list type="bullet">
 	/// <item>The button is found by <c>data-testid</c>, never by accessible
 	/// name. LoadMoreButton renders <c>{loading ? loadingLabel : label}</c> on
 	/// the same element, so a name-based locator matches zero elements while a
 	/// page is in flight and a non-waiting <c>IsVisibleAsync</c> guard reads
 	/// false mid-load, ending the walk after a single click.</item>
-	/// <item><c>ClickAsync</c> is the only synchronization needed - the button
-	/// is <c>disabled={loading}</c> and Playwright's click auto-waits for
-	/// enabled. A <c>WaitForLoadStateAsync(NetworkIdle)</c> here would not
+	/// <item>A <c>WaitForLoadStateAsync(NetworkIdle)</c> between clicks does not
 	/// straddle the fetch at all, since useLoadMore only issues it from an
-	/// effect after React commits the page increment.</item>
+	/// effect after React commits the page increment - it can return before the
+	/// request has even been made.</item>
+	/// <item>Each iteration waits for the in-flight page to land <em>before</em>
+	/// clicking again, rather than leaning on <c>ClickAsync</c>'s
+	/// auto-wait-for-enabled to absorb it. That reliance is what made this
+	/// flaky (einsatzbereit CI run 31155273854, main): the button is
+	/// <c>disabled={loadingMore}</c> while a page loads, but when the
+	/// <em>last</em> page lands useLoadMore flips <c>hasMore</c> false and
+	/// ActivitySection unmounts the button entirely. A click issued during that
+	/// final load is therefore waiting on a button that gets detached rather
+	/// than re-enabled, and Playwright's detached-element retry then burns its
+	/// full 30s action timeout on a locator that will never resolve again -
+	/// "element was detached from the DOM, retrying".</item>
 	/// </list>
 	/// </summary>
 	protected async Task LoadMoreUntilVisibleAsync(
@@ -183,13 +194,115 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	{
 		var loadMoreButton = Page.Locator($"{listSelector} [data-testid='load-more']");
 		var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
+		var clickedAtElementCount = -1;
 
-		while (!await target.IsVisibleAsync()
-			&& await loadMoreButton.IsVisibleAsync()
-			&& DateTimeOffset.UtcNow < deadline)
+		while (DateTimeOffset.UtcNow < deadline)
 		{
-			await loadMoreButton.ClickAsync();
+			if (await target.IsVisibleAsync())
+				return;
+
+			var (state, elementCount) = await ReadLoadMoreStateAsync(listSelector);
+
+			// Nothing left to page through. Return instead of stalling until the
+			// deadline, so the caller's own Expect reports the real problem (the
+			// row genuinely isn't in this list) rather than this helper eating
+			// the whole budget first.
+			if (state == LoadMoreState.Gone)
+				return;
+
+			// Either a page is in flight (button still mounted, but
+			// disabled={loadingMore}), or our own last click hasn't been
+			// committed by React yet - it re-renders a tick after ClickAsync
+			// returns, so an enabled button over an unchanged list means "not
+			// yet", not "click again". Both windows have to be waited out rather
+			// than clicked through: a second click during the *final* load waits
+			// on a button useLoadMore is about to unmount instead of re-enable
+			// (see this method's doc), and a second click before React commits
+			// double-advances `page`, whose cancelled fetch silently drops a
+			// whole page of rows - possibly the one holding the target.
+			if (state == LoadMoreState.Loading || elementCount == clickedAtElementCount)
+			{
+				await Task.Delay(100);
+				continue;
+			}
+
+			// Bound the click by what is left of the caller's budget, so a stuck
+			// click cannot overrun timeoutSeconds by Playwright's own separate
+			// 30s default action timeout.
+			var remainingMs = (deadline - DateTimeOffset.UtcNow).TotalMilliseconds;
+			if (remainingMs <= 0)
+				return;
+
+			clickedAtElementCount = elementCount;
+			try
+			{
+				await loadMoreButton.ClickAsync(new() { Timeout = (float)remainingMs });
+			}
+			catch (PlaywrightException)
+			{
+				// The button was unmounted between the read above and the click,
+				// or the budget ran out mid-click. Either way there is nothing
+				// more to page through - same as Gone above.
+				return;
+			}
 		}
+	}
+
+	private enum LoadMoreState
+	{
+		/// <summary>Mounted, rendered and enabled - safe to click.</summary>
+		Ready,
+
+		/// <summary>Mounted but <c>disabled={loadingMore}</c> - a page is in flight.</summary>
+		Loading,
+
+		/// <summary>Unmounted or not rendered - <c>hasMore</c> is false, the list is fully loaded.</summary>
+		Gone,
+	}
+
+	/// <summary>
+	/// Reads the load-more button's state and the list's current element count
+	/// in a single round trip, for <see cref="LoadMoreUntilVisibleAsync"/>.
+	///
+	/// Deliberately not separate <c>CountAsync</c>/<c>IsVisibleAsync</c>/
+	/// <c>IsEnabledAsync</c> locator calls: the button can unmount between any
+	/// two of them - the exact race that method exists to avoid - and
+	/// <c>IsEnabledAsync</c> throws once it has.
+	///
+	/// The element count is a progress signal, not an assertion: it only has to
+	/// grow when a page of rows is appended, so it counts every descendant
+	/// rather than assuming a row tag. A text-only change (the button's own
+	/// label flipping to its loading state) leaves it untouched, which is what
+	/// makes "unchanged count + enabled button" a reliable read of "React has
+	/// not committed our click yet".
+	/// </summary>
+	private async Task<(LoadMoreState State, int ElementCount)> ReadLoadMoreStateAsync(string listSelector)
+	{
+		var snapshot = (await Page.EvaluateAsync(
+			"""
+			({ list }) => {
+				const el = document.querySelector(`${list} [data-testid='load-more']`);
+				// getClientRects() is empty for a display:none element, or one
+				// inside a collapsed ancestor. The IsVisibleAsync() guard this
+				// read replaces treated that the same as absent, and so does
+				// 'gone' here.
+				const state = !el || el.getClientRects().length === 0
+					? 'gone'
+					: el.disabled ? 'loading' : 'ready';
+				return { state, elementCount: document.querySelectorAll(`${list} *`).length };
+			}
+			""",
+			new { list = listSelector }))!.Value;
+
+		var elementCount = snapshot.GetProperty("elementCount").GetInt32();
+		var state = snapshot.GetProperty("state").GetString() switch
+		{
+			"ready" => LoadMoreState.Ready,
+			"loading" => LoadMoreState.Loading,
+			_ => LoadMoreState.Gone,
+		};
+
+		return (state, elementCount);
 	}
 
 	/// <summary>
