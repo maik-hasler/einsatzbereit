@@ -380,6 +380,11 @@ public sealed class VolunteerOpportunity
 				"VolunteerOpportunity.ColorContrastTooLow",
 				$"Color does not have enough contrast (at least {EventColorContrast.MinimumContrastRatio}:1 against white) to be usable as a calendar event color."));
 
+		if (EventColorContrast.BestTextContrastRatio(color) < EventColorContrast.MinimumTextContrastRatio)
+			return Result.Failure(Error.Validation(
+				"VolunteerOpportunity.ColorTextContrastTooLow",
+				$"Color does not leave enough contrast (at least {EventColorContrast.MinimumTextContrastRatio}:1) for its chip text to stay readable."));
+
 		Color = color;
 		return Result.Success();
 	}

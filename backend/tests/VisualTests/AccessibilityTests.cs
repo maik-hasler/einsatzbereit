@@ -548,6 +548,43 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_CalendarWidgetColorDialogInvalidContrast_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1726: picking a color that fails the 4.5:1 chip-text
+		// contrast floor now renders a conditional aria-invalid/aria-describedby
+		// pair on the color input plus an inline warning paragraph and disables
+		// Save - a DOM state the plain color-dialog scan above never reaches,
+		// since olaf's seeded event keeps the default brand-700 color.
+		var frontend = Fixture.GetEndpoint("frontend");
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var calendarEvent = Page.Locator(".rbc-event").First;
+		try
+		{
+			await calendarEvent.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("olaf's org has no calendar events seeded for the current month");
+		}
+
+		await calendarEvent.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		// #2d8a5e (brand-600): clears the 3:1 chip-vs-page floor but not the
+		// 4.5:1 text floor - see EventColorContrast.cs's MinimumTextContrastRatio.
+		await Page.Locator("#event-color-picker").FillAsync("#2d8a5e");
+		await Expect(Page.Locator("#event-color-contrast-warning")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }))
+			.ToBeDisabledAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrgOpportunitiesPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

@@ -6,15 +6,27 @@ namespace Domain.VolunteerOpportunities;
 /// Organizers pick a raw calendar event color via an unconstrained OS color
 /// picker (see CalendarWidget.tsx) which then renders as a chip - the app
 /// flips the chip's text between white and near-black based on the color's
-/// luminance, but the color itself still needs to clear WCAG 1.4.11's 3:1
-/// non-text-contrast floor against the white calendar background, or the
-/// chip becomes invisible as a UI component regardless of its text.
+/// luminance. Two independent WCAG floors apply to that color:
+/// <list type="bullet">
+/// <item><see cref="MinimumContrastRatio"/> (1.4.11, non-text): the chip
+/// itself must clear 3:1 against the white calendar background, or it
+/// becomes invisible as a UI component regardless of its text.</item>
+/// <item><see cref="MinimumTextContrastRatio"/> (1.4.3, text): the better of
+/// white/near-black text on top of the chip must independently clear 4.5:1.
+/// The two candidates cross over around 4.16:1 (einsatzbereit#1726) - a
+/// color can comfortably clear the 3:1 chip floor while both text options
+/// still fall short of 4.5:1, so this can't be derived from the first
+/// check.</item>
+/// </list>
 /// Mirrors the frontend's lib/colorContrast.ts formula (WCAG relative
 /// luminance) so client and server agree on what "readable" means.
 /// </summary>
 public static class EventColorContrast
 {
 	public const double MinimumContrastRatio = 3.0;
+	public const double MinimumTextContrastRatio = 4.5;
+
+	private const string DarkTextColor = "#111827";
 
 	public static bool IsValidHex(string color)
 	{
@@ -24,10 +36,23 @@ public static class EventColorContrast
 		return color[1..].All(Uri.IsHexDigit);
 	}
 
-	public static double ContrastAgainstWhite(string hexColor)
+	public static double ContrastAgainstWhite(string hexColor) =>
+		ContrastRatio(1.0, RelativeLuminance(hexColor));
+
+	/// <summary>The higher of white-on-color and near-black-on-color contrast - whichever text color the chip would actually use.</summary>
+	public static double BestTextContrastRatio(string hexColor)
 	{
-		var luminance = RelativeLuminance(hexColor);
-		return (1.0 + 0.05) / (luminance + 0.05);
+		var backgroundLuminance = RelativeLuminance(hexColor);
+		var whiteContrast = ContrastRatio(1.0, backgroundLuminance);
+		var darkContrast = ContrastRatio(RelativeLuminance(DarkTextColor), backgroundLuminance);
+		return Math.Max(whiteContrast, darkContrast);
+	}
+
+	private static double ContrastRatio(double luminanceA, double luminanceB)
+	{
+		var lighter = Math.Max(luminanceA, luminanceB);
+		var darker = Math.Min(luminanceA, luminanceB);
+		return (lighter + 0.05) / (darker + 0.05);
 	}
 
 	private static double RelativeLuminance(string hexColor)

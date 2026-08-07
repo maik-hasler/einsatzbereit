@@ -46,14 +46,17 @@ public class SetOpportunityColorCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		var command = new SetOpportunityColorCommand(opportunityId, "#ff0000", DefaultRequestingUserId);
+		// #c10007, not #ff0000: pure red's best text contrast falls short of
+		// the 4.5:1 floor added for einsatzbereit#1726 - see
+		// VolunteerOpportunityTests.SetColor_ShouldFail_WhenTextContrastIsBelowMinimum.
+		var command = new SetOpportunityColorCommand(opportunityId, "#c10007", DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
-		opportunity.Color.Should().Be("#ff0000");
+		opportunity.Color.Should().Be("#c10007");
 	}
 
 	[Test]

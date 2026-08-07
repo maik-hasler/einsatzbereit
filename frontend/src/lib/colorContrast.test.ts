@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { readableTextColor, contrastRatio } from "./colorContrast";
+import {
+	readableTextColor,
+	contrastRatio,
+	bestTextContrastRatio,
+	meetsTextContrastFloor,
+} from "./colorContrast";
 
 describe("readableTextColor", () => {
 	it("picks dark text on a near-white background", () => {
@@ -46,5 +51,31 @@ describe("contrastRatio", () => {
 
 	it("confirms Chip's danger tone clears WCAG AA after the text-red-700 fix (einsatzbereit#1671)", () => {
 		expect(contrastRatio("#c10007", "#fef2f2")).toBeGreaterThanOrEqual(4.5);
+	});
+});
+
+describe("bestTextContrastRatio / meetsTextContrastFloor", () => {
+	it("rejects brand-600 - the two text candidates cross over near this luminance and both fall short of 4.5:1 (einsatzbereit#1726)", () => {
+		expect(bestTextContrastRatio("#2d8a5e")).toBeCloseTo(4.28, 1);
+		expect(meetsTextContrastFloor("#2d8a5e")).toBe(false);
+	});
+
+	it("rejects pure red - its best text contrast (white-on-red) is only 4.44:1", () => {
+		expect(bestTextContrastRatio("#ff0000")).toBeLessThan(4.5);
+		expect(meetsTextContrastFloor("#ff0000")).toBe(false);
+	});
+
+	it("accepts the default brand-700 background", () => {
+		expect(meetsTextContrastFloor("#226947")).toBe(true);
+	});
+
+	it("matches whichever color readableTextColor actually picks", () => {
+		for (const hex of ["#5bbf8c", "#226947", "#0000ff", "#3366cc"]) {
+			const picked = readableTextColor(hex);
+			expect(bestTextContrastRatio(hex)).toBeCloseTo(
+				contrastRatio(picked, hex),
+				5,
+			);
+		}
 	});
 });

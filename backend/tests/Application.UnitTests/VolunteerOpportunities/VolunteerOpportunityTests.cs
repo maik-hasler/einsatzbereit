@@ -984,10 +984,14 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
-		var result = opportunity.SetColor("#ff0000");
+		// #c10007, not #ff0000: pure red's best text contrast (white-on-red)
+		// is only 4.44:1 - it clears the 3:1 chip-vs-page floor but not the
+		// 4.5:1 text floor added for einsatzbereit#1726, see
+		// SetColor_ShouldFail_WhenTextContrastIsBelowMinimum below.
+		var result = opportunity.SetColor("#c10007");
 
 		result.IsSuccess.Should().BeTrue();
-		opportunity.Color.Should().Be("#ff0000");
+		opportunity.Color.Should().Be("#c10007");
 	}
 
 	[Test]
@@ -1023,6 +1027,25 @@ public class VolunteerOpportunityTests
 	[Arguments("#ffffff")]
 	[Arguments("#5bbf8c")]
 	public void SetColor_ShouldFail_WhenContrastAgainstWhiteIsBelowMinimum(string color)
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.SetColor(color);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*contrast*");
+		opportunity.Color.Should().BeNull();
+	}
+
+	// einsatzbereit#1726: #2d8a5e (the project's own brand-600) clears the
+	// 3:1 chip-vs-page floor above (4.28:1) but its best possible chip text
+	// (white, also 4.28:1) still falls short of the independent 4.5:1 text
+	// floor - the two candidates cross over near this luminance, so neither
+	// white nor near-black text clears it.
+	[Test]
+	[Arguments("#2d8a5e")]
+	[Arguments("#ff0000")]
+	public void SetColor_ShouldFail_WhenTextContrastIsBelowMinimum(string color)
 	{
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
