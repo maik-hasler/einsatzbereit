@@ -475,6 +475,22 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
+		// Wait for the create itself to finish before asserting anything about
+		// where it navigated. CreateOrganizationModal only closes on success
+		// (onSuccess then onClose, after the POST resolves); a failed create
+		// keeps the dialog open with an inline error instead.
+		//
+		// This is a diagnostic split, not a fix for a known race: this test
+		// failed once in CI (run 31158818536) with the switcher still showing
+		// the previous org, and the single assertion below could not tell
+		// "create failed", "create was still in flight" and "create succeeded
+		// but navigation didn't happen" apart - all three render identically.
+		// Splitting the wait means the next occurrence says which one it was.
+		// The root cause is still unknown; four separate analyses failed to
+		// find a mechanism that survived scrutiny, so nothing here claims to
+		// remove it.
+		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
+
 		// Creating an org makes it the active org and navigates into its new
 		// /app dashboard. Wait for the switcher to reflect the NEW org before
 		// opening Settings: a bare WaitForURLAsync(/app/.../dashboard) is already

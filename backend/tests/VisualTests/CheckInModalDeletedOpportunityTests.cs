@@ -74,15 +74,14 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		// shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this row can
 		// land past the first (10-item) page instead of being visible
-		// immediately. Click "Load more" until it shows up or there is nothing
-		// left to load - see MyEngagementsTests.cs for the same pattern.
-		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
-		while (!await row.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
-		{
-			await loadMoreButton.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		}
+		// immediately, so page through to it.
+		//
+		// Wait for the first page before starting: the WaitForLoadStateAsync
+		// above can settle before the engagements fetch is even issued, since
+		// useLoadMore only requests from an effect after React commits.
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(row);
 
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var checkInButton = row.GetByRole(AriaRole.Button, new() { Name = "Check in" });
