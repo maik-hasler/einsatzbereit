@@ -48,6 +48,27 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_NotificationBellAndAccountMenu_HaveDarkTransparentTheme_OnHero()
+	{
+		// Regression for #1737: only LanguageSelector's button carried a
+		// border that switched color with the isTransparent prop - the
+		// notification bell and account-menu buttons stayed unbordered
+		// against the dark hero, looking inconsistent with the language
+		// selector's themed pill. Both must now carry the same translucent
+		// white border while the header is transparent.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		var bell = Page.GetByTestId("notification-bell");
+		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(bell).ToHaveClassAsync(new Regex("border-white"));
+
+		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
+		await Expect(userMenuBtn).ToHaveClassAsync(new Regex("border-white"));
+	}
+
+	[Test]
 	public async Task HomePage_HasNoBreadcrumb()
 	{
 		// #574: pages that don't call usePageToolbar must not render a stray
