@@ -1,11 +1,11 @@
-import { useEffect, useId, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
-import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import Button from "../components/Button";
+import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -22,6 +22,14 @@ import {
 	MapPinIcon,
 	SparklesIcon,
 } from "../components/icons";
+
+// Lazy-loaded: HomePage itself must stay a plain eager import (see App.tsx's
+// comment on why), but the org-creation form it conditionally renders pulls
+// in react-hook-form + zod (~27 KiB gzip) that an anonymous landing-page
+// visitor - the vast majority of this page's traffic - never needs (#1728).
+const CreateOrganizationModal = lazy(
+	() => import("../components/CreateOrganizationModal"),
+);
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -454,28 +462,36 @@ export default function HomePage() {
 			</div>
 
 			{showCreateOrgModal && (
-				<CreateOrganizationModal
-					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={async (org) => {
-						setShowCreateOrgModal(false);
-						// CreateOrganization grants the "organisator" realm role
-						// server-side, but the access token already held by the
-						// browser was minted before that grant and doesn't carry
-						// it yet - EinsatzbereitOrganisatorPolicy checks that
-						// static claim, so the org app shell's very next request
-						// (OrgAppLayout's GetOrganizationDetails call) would 403
-						// against the stale token before it ever reaches the
-						// live per-organization membership check. Best-effort:
-						// if silent renewal fails, still navigate - the org app
-						// shell's own error state takes over from there.
-						try {
-							await auth.signinSilent();
-						} catch {
-							/* see comment above */
-						}
-						navigate(`/app/${org.id?.value}/dashboard`);
-					}}
-				/>
+				<Suspense
+					fallback={
+						<ModalLoadingFallback
+							onClose={() => setShowCreateOrgModal(false)}
+						/>
+					}
+				>
+					<CreateOrganizationModal
+						onClose={() => setShowCreateOrgModal(false)}
+						onSuccess={async (org) => {
+							setShowCreateOrgModal(false);
+							// CreateOrganization grants the "organisator" realm role
+							// server-side, but the access token already held by the
+							// browser was minted before that grant and doesn't carry
+							// it yet - EinsatzbereitOrganisatorPolicy checks that
+							// static claim, so the org app shell's very next request
+							// (OrgAppLayout's GetOrganizationDetails call) would 403
+							// against the stale token before it ever reaches the
+							// live per-organization membership check. Best-effort:
+							// if silent renewal fails, still navigate - the org app
+							// shell's own error state takes over from there.
+							try {
+								await auth.signinSilent();
+							} catch {
+								/* see comment above */
+							}
+							navigate(`/app/${org.id?.value}/dashboard`);
+						}}
+					/>
+				</Suspense>
 			)}
 		</>
 	);

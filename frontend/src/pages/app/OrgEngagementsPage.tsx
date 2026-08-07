@@ -129,7 +129,6 @@ export default function OrgEngagementsPage() {
 	}
 
 	function handleCancelClose() {
-		if (cancelling) return;
 		setConfirmCancelId(null);
 		setCancelReason("");
 		setCancelError(null);

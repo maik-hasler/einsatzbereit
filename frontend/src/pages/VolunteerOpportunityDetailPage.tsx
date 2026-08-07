@@ -771,7 +771,6 @@ export default function VolunteerOpportunityDetailPage() {
 					confirmLabel={t("confirmDialog.withdraw.confirm")}
 					onConfirm={handleWithdrawConfirm}
 					onClose={() => {
-						if (withdrawing) return;
 						setShowWithdrawConfirm(false);
 						setWithdrawError(null);
 					}}

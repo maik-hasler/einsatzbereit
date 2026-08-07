@@ -39,6 +39,12 @@ export default function ConfirmDialog({
 			labelledBy="confirm-dialog-title"
 			maxWidth="max-w-sm"
 			initialFocusRef={actionsRef}
+			// An in-flight confirm/deny request whose result would otherwise be
+			// lost if Escape/backdrop dismissed the dialog before it settles -
+			// see einsatzbereit#1728. Every caller already passes `loading`, so
+			// this closes the gap for all of them (including callers that forgot
+			// their own guard) in one place instead of ten hand-rolled ones.
+			closeDisabled={loading}
 		>
 			<h2
 				id="confirm-dialog-title"

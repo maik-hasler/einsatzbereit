@@ -17,6 +17,14 @@ interface ModalProps {
 	backdropClassName?: string;
 	/** While true, Escape and the Tab focus trap are suspended - for when a nested dialog owns them instead. */
 	suspended?: boolean;
+	/**
+	 * While true, Escape and the backdrop click no longer call `onClose` - for
+	 * an in-flight action (e.g. a confirm dialog's delete request) whose
+	 * result would otherwise be lost if the dialog closed out from under it
+	 * before the request settles. The dialog's own action buttons are
+	 * expected to disable themselves separately (see ConfirmDialog).
+	 */
+	closeDisabled?: boolean;
 	/** Scopes the initial-focus search to a subtree instead of the whole dialog (e.g. to skip a header close button). */
 	initialFocusRef?: RefObject<HTMLElement | null>;
 	children: ReactNode;
@@ -29,6 +37,7 @@ export default function Modal({
 	className = "rounded-card bg-white p-6 shadow-modal",
 	backdropClassName = "bg-black/50",
 	suspended = false,
+	closeDisabled = false,
 	initialFocusRef,
 	children,
 }: ModalProps) {
@@ -68,7 +77,7 @@ export default function Modal({
 		function handleKeyDown(e: KeyboardEvent) {
 			if (suspended) return;
 			if (e.key === "Escape") {
-				onClose();
+				if (!closeDisabled) onClose();
 				return;
 			}
 			if (e.key !== "Tab" || !dialogRef.current) return;
@@ -88,7 +97,7 @@ export default function Modal({
 		}
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [onClose, suspended]);
+	}, [onClose, suspended, closeDisabled]);
 
 	// Portaled to document.body rather than rendered in place - a modal opened
 	// from inside a dashboard widget would otherwise live inside
@@ -112,7 +121,7 @@ export default function Modal({
 				// away with the rest of the content otherwise, uncovering whatever's
 				// behind the dialog once scrolled.
 				className={`fixed inset-0 ${backdropClassName}`}
-				onClick={onClose}
+				onClick={closeDisabled ? undefined : onClose}
 				tabIndex={-1}
 				aria-hidden="true"
 			/>

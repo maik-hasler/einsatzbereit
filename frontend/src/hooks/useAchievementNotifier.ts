@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "./useApiClient";
@@ -47,18 +47,25 @@ export function useAchievementNotifier() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
-	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	// Scoped per user id (#1236) - a global key leaked between accounts on any
 	// shared browser (a kiosk, or the seeded vera/olaf/admin staging accounts).
 	const userId = auth.user?.profile?.sub;
 
+	// Pauses while the tab is hidden and catches up with an immediate fetch
+	// when it becomes visible again (mirrors useAccountMenu's unread-count
+	// poll) - without this, this hook is mounted on every route (AppLayout,
+	// OrgAppLayout) with a plain setInterval, so a backend outage became a
+	// recurring error toast every 60s on every page, in every open tab,
+	// including backgrounded ones.
 	useEffect(() => {
 		if (!auth.isAuthenticated) return;
 		const key = seenKeyFor(userId);
+		const controller = new AbortController();
+		let intervalId: ReturnType<typeof setInterval> | null = null;
 
 		const check = async () => {
 			try {
-				const achievements = await api.getMyAchievements();
+				const achievements = await api.getMyAchievements(controller.signal);
 				const seen = getSeenIds(key);
 				// First successful poll for this user/device: seed their existing
 				// achievements as already-seen (writing the marker unconditionally,
@@ -88,14 +95,39 @@ export function useAchievementNotifier() {
 					);
 				}
 			} catch (err) {
+				if (controller.signal.aborted) return;
 				console.error("[useAchievementNotifier] poll failed:", err);
 			}
 		};
 
+		const startPolling = () => {
+			if (intervalId !== null) return;
+			intervalId = setInterval(() => void check(), 60_000);
+		};
+
+		const stopPolling = () => {
+			if (intervalId === null) return;
+			clearInterval(intervalId);
+			intervalId = null;
+		};
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				void check();
+				startPolling();
+			} else {
+				stopPolling();
+			}
+		};
+
 		void check();
-		intervalRef.current = setInterval(() => void check(), 60_000);
+		if (document.visibilityState === "visible") startPolling();
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
 		return () => {
-			if (intervalRef.current) clearInterval(intervalRef.current);
+			controller.abort();
+			stopPolling();
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.isAuthenticated, userId]);

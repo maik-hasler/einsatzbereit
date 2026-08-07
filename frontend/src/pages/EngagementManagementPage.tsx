@@ -295,7 +295,6 @@ export default function EngagementManagementPage() {
 	}
 
 	function handleBulkCancelClose() {
-		if (bulkCancelling) return;
 		setBulkCancelOpen(false);
 		setBulkCancelReason("");
 		setBulkCancelError(null);
@@ -502,7 +501,6 @@ export default function EngagementManagementPage() {
 	}
 
 	function handleCancelClose() {
-		if (cancelling) return;
 		setConfirmCancelId(null);
 		setCancelReason("");
 		setCancelError(null);
