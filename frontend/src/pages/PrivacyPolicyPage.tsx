@@ -13,9 +13,12 @@ export default function PrivacyPolicyPage() {
 
 	return (
 		<div data-content-wrapper className="max-w-2xl">
-			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
+			<h1 className={`mb-2 text-gray-900 ${pageTitleClass}`}>
 				{t("privacyPolicy.title")}
 			</h1>
+			<p className="mb-6 text-sm text-gray-500">
+				{t("privacyPolicy.lastUpdated")}
+			</p>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">

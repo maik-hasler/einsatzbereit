@@ -13,9 +13,12 @@ export default function TermsOfUsePage() {
 
 	return (
 		<div data-content-wrapper className="max-w-2xl">
-			<h1 className={`mb-8 text-gray-900 ${pageTitleClass}`}>
+			<h1 className={`mb-2 text-gray-900 ${pageTitleClass}`}>
 				{t("termsOfUse.title")}
 			</h1>
+			<p className="mb-8 text-sm text-gray-500">
+				{t("termsOfUse.lastUpdated")}
+			</p>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
@@ -448,6 +448,16 @@ export default function ProfileOverviewPage() {
 					{/* Profile details */}
 					<section className="mb-6">
 						<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
+						<p className="mb-4 text-sm text-gray-600">
+							<Trans
+								i18nKey="profile.publicProfileNotice"
+								components={{
+									privacyLink: (
+										<Link to="/privacy-policy" className="underline" />
+									),
+								}}
+							/>
+						</p>
 
 						{!editing &&
 							(isProfileFieldsEmpty ? (

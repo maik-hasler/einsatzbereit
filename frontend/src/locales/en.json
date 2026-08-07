@@ -703,6 +703,7 @@
     },
     "privacyPolicy": {
       "title": "Privacy Policy",
+      "lastUpdated": "Last updated: August 7, 2026",
       "section1Title": "Responsible party",
       "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg, Germany\nEmail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Collection and storage of personal data",
@@ -731,7 +732,7 @@
       "section7Body": "Certain administrative actions - such as granting or revoking administrator rights, disabling or re-enabling an account, removing or restoring content, and administratively cancelling a sign-up - are logged with the acting user's ID, the type of action, the affected item, an optional reason, and the timestamp. This log is only accessible to platform administrators and serves to make administrative actions traceable and to protect against abuse. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in the security and integrity of the platform.",
       "section8Title": "Cookies and browser storage",
       "section8Body1": "This website uses one technically necessary cookie for authentication (a session cookie, set by our authentication service, Keycloak), and one further cookie, active-org, which remembers the organization you last opened so you return to the right dashboard; it is not used for authentication and is stored for up to one year. No tracking or advertising cookies are used.",
-      "section8Body2": "We also store a small number of values in your browser's local storage: your selected interface language, whether you explicitly chose that language yourself rather than it being detected automatically, and which achievement notifications you have already seen (stored per account). These values never leave your browser. The active-org cookie and these local storage values are cleared when you sign out.",
+      "section8Body2": "We also store a small number of values in your browser's local storage: your selected interface language, whether you explicitly chose that language yourself rather than it being detected automatically, and which achievement notifications you have already seen (stored per account). Your session's access, ID, and refresh tokens are held separately in your browser's session storage, which is strictly necessary to keep you signed in and is cleared automatically when you close the browser tab. These values never leave your browser. The active-org cookie and these local storage and session storage values are cleared when you sign out.",
       "section9Title": "Your rights",
       "section9Body1": "You have the right to access (Art. 15 GDPR), rectification (Art. 16 GDPR), erasure (Art. 17 GDPR), and restriction of processing (Art. 18 GDPR) of your personal data, as well as the right to data portability (Art. 20 GDPR) and the right to object to processing carried out on the basis of our legitimate interest (Art. 21 GDPR). You can delete your own account and most associated data at any time from your profile settings; for any other request, including a copy of your data or an objection, contact us using the address or email given in the \"Responsible party\" section above. We aim to respond within one month, as required by Art. 12(3) GDPR.",
       "section9Body2": "You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the German state where you live, work, or where an alleged infringement occurred. The authority responsible for us is: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover, Germany."
@@ -779,6 +780,7 @@
     },
     "termsOfUse": {
       "title": "Terms of Use",
+      "lastUpdated": "Last updated: August 7, 2026",
       "section1Title": "Scope and acceptance",
       "section1Body": "These Terms of Use govern your use of Einsatzbereit (the \"Platform\"). By creating an account, registering for a volunteer opportunity, or otherwise using the Platform, you agree to be bound by these Terms. If you do not agree, please do not use the Platform.",
       "section2Title": "Our role as a platform",
@@ -987,6 +989,7 @@
       "subNavProfile": "Profile",
       "subNavSettings": "Settings",
       "sectionDetails": "Profile Details",
+      "publicProfileNotice": "Your profile picture, bio, skills, and languages appear on your public profile page, visible to anyone on the internet without signing in. See our <privacyLink>Privacy Policy</privacyLink> for details on how this information is used.",
       "emptyStateTitle": "Your profile is still empty",
       "emptyStateMessage": "Add a bio, skills, or contact preferences so organizations know a bit about you.",
       "emptyStateCta": "Complete your profile",
