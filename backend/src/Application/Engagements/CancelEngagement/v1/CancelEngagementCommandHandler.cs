@@ -6,11 +6,13 @@ using Application.Engagements.Common;
 using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Primitives;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CancelEngagement.v1;
 
 internal sealed class CancelEngagementCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	ILogger<CancelEngagementCommandHandler> logger)
 	: ICommandHandler<CancelEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -29,24 +31,32 @@ internal sealed class CancelEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		await EngagementCancellationHelper.CancelAndNotifyAsync(
+		var cancelled = await EngagementCancellationHelper.CancelAndNotifyAsync(
 			dbContext,
 			engagement,
 			request.Reason,
 			opportunity.Title,
+			logger,
 			cancellationToken);
 
-		// Audited here (not via EngagementCancelledDomainEvent) since that event is
-		// also raised for cascade cancellations from an opportunity/organization
-		// shadow-delete - those are already audited as their own action and would
-		// otherwise double up with a per-engagement entry (#1088).
-		var auditLog = AuditLog.Create(
-			request.RequestingUserId,
-			AuditActionType.EngagementCancelled,
-			AuditSubjectType.Engagement,
-			engagement.Id.Value,
-			request.Reason);
-		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
+		// Only when a cancellation actually happened - CancelAndNotifyAsync leaves an
+		// already-anonymized engagement (its volunteer deleted their account) untouched
+		// rather than throwing (einsatzbereit#1724), and an audit entry claiming
+		// "EngagementCancelled" for a no-op would be misleading.
+		if (cancelled)
+		{
+			// Audited here (not via EngagementCancelledDomainEvent) since that event is
+			// also raised for cascade cancellations from an opportunity/organization
+			// shadow-delete - those are already audited as their own action and would
+			// otherwise double up with a per-engagement entry (#1088).
+			var auditLog = AuditLog.Create(
+				request.RequestingUserId,
+				AuditActionType.EngagementCancelled,
+				AuditSubjectType.Engagement,
+				engagement.Id.Value,
+				request.Reason);
+			await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
+		}
 
 		return engagement;
 	}

@@ -210,6 +210,63 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		stillThere.Name.Should().Be("Sole Organizer Test Org");
 	}
 
+	[Test]
+	public async Task DeleteVolunteerOpportunity_ShouldSucceed_WhenAnAnonymizedEngagementIsCheckedIn(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1724: DeleteMyAccount deliberately leaves a checked-in
+		// engagement non-terminal (Withdraw() refuses a checked-in engagement,
+		// Engagement.cs) while anonymizing it (VolunteerId set to null). The
+		// opportunity-deletion cascade used to select active engagements without
+		// excluding anonymized ones, so this single row made
+		// DeleteVolunteerOpportunity 409 forever with no way to clear it - not
+		// even by cancelling the engagement directly, since Engagement.Cancel()
+		// refuses an anonymized aggregate too.
+		var (_, ephemeralUsername, ephemeralPassword) =
+			await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Anonymized Checked-In Engagement Test Org" }, cancellationToken);
+		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Anonymized Checked-In Engagement Test Opportunity",
+				Description = "Integration test opportunity for #1724",
+				OrganizationId = org.Id.Value,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "IndividualContact",
+				CheckInMethod = "None",
+				ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
+			},
+			cancellationToken);
+
+		var engagement = await ephemeralClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
+
+		var deleteOpportunity = () => olafClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+		await deleteOpportunity.Should().NotThrowAsync(
+			"an anonymized-but-checked-in engagement must not permanently block the deletion cascade (#1724)");
+
+		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id))
+			.Should().Be(0);
+
+		// The anonymized engagement itself survives as history - deletion cancels
+		// active engagements but never deletes them, and this one was skipped by
+		// the cascade (not cancelled) rather than tripping it.
+		(await fixture.CountRowsWhereAsync("engagement", "id", engagement.Id))
+			.Should().Be(1);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{

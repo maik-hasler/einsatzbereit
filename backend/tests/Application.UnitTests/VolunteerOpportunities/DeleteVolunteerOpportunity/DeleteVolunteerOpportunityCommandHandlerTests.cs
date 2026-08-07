@@ -11,6 +11,7 @@ using Domain.Primitives;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.DeleteVolunteerOpportunity;
@@ -47,7 +48,8 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(
+			_dbContext, _engagementReadRepository, NullLogger<DeleteVolunteerOpportunityCommandHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>

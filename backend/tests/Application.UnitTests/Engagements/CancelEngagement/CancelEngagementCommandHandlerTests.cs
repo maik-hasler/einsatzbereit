@@ -9,6 +9,7 @@ using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.Engagements.CancelEngagement;
@@ -43,7 +44,7 @@ public class CancelEngagementCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new CancelEngagementCommandHandler(_dbContext);
+		_sut = new CancelEngagementCommandHandler(_dbContext, NullLogger<CancelEngagementCommandHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

@@ -7,6 +7,7 @@ using Domain.AuditLogs;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Reports;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Organizations.AdminShadowDeleteOrganization.v1;
 
@@ -25,7 +26,8 @@ namespace Application.Organizations.AdminShadowDeleteOrganization.v1;
 /// </summary>
 internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository)
+	IEngagementReadRepository engagementReadRepository,
+	ILogger<AdminShadowDeleteOrganizationCommandHandler> logger)
 	: ICommandHandler<AdminShadowDeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -48,6 +50,7 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 				opportunity.Id,
 				request.AdminUserId,
 				now,
+				logger,
 				cancellationToken);
 		}
 

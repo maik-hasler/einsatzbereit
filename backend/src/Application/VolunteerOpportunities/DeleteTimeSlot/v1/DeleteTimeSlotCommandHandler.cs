@@ -5,11 +5,13 @@ using Application.Common.Persistence;
 using Application.Engagements.Common;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.DeleteTimeSlot.v1;
 
 internal sealed class DeleteTimeSlotCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	ILogger<DeleteTimeSlotCommandHandler> logger)
 	: ICommandHandler<DeleteTimeSlotCommand, DeleteTimeSlotResult>
 {
 	public async ValueTask<DeleteTimeSlotResult> Handle(
@@ -81,6 +83,7 @@ internal sealed class DeleteTimeSlotCommandHandler(
 				engagement,
 				"The recurring time slot series was cancelled.",
 				opportunity.Title,
+				logger,
 				cancellationToken);
 		}
 

@@ -12,6 +12,7 @@ using Domain.Primitives;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.Organizations.AdminShadowDeleteOrganization;
@@ -56,7 +57,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository);
+		_sut = new AdminShadowDeleteOrganizationCommandHandler(
+			_dbContext, _engagementReadRepository, NullLogger<AdminShadowDeleteOrganizationCommandHandler>.Instance);
 	}
 
 	private static Organization CreateOrganization(Guid id) =>

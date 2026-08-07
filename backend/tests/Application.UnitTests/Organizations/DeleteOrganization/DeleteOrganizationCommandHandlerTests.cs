@@ -8,6 +8,7 @@ using Domain.Organizations;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.Organizations.DeleteOrganization;
@@ -51,7 +52,8 @@ public class DeleteOrganizationCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Guid>());
-		_sut = new DeleteOrganizationCommandHandler(_dbContext, _keycloakService, _engagementReadRepository);
+		_sut = new DeleteOrganizationCommandHandler(
+			_dbContext, _keycloakService, _engagementReadRepository, NullLogger<DeleteOrganizationCommandHandler>.Instance);
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>

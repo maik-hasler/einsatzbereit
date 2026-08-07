@@ -8,13 +8,15 @@ using Application.VolunteerOpportunities.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Reports;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Organizations.DeleteOrganization.v1;
 
 internal sealed class DeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
-	IEngagementReadRepository engagementReadRepository)
+	IEngagementReadRepository engagementReadRepository,
+	ILogger<DeleteOrganizationCommandHandler> logger)
 	: ICommandHandler<DeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -87,6 +89,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 				opportunity.Id,
 				request.RequestingUserId,
 				now,
+				logger,
 				cancellationToken);
 		}
 

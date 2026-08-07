@@ -6,12 +6,14 @@ using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 
 internal sealed class DeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository)
+	IEngagementReadRepository engagementReadRepository,
+	ILogger<DeleteVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<DeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -39,6 +41,7 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			opportunityId,
 			request.RequestingUserId,
 			DateTimeOffset.UtcNow,
+			logger,
 			cancellationToken);
 
 		return true;

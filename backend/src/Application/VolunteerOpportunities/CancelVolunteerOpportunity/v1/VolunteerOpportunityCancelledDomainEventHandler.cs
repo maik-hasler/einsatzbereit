@@ -60,6 +60,7 @@ internal sealed class VolunteerOpportunityCancelledDomainEventHandler(
 			opportunity.Title,
 			NotificationKind.OpportunityCancelled,
 			engagementCancellationReason,
+			logger,
 			cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);

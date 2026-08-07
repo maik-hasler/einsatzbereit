@@ -56,6 +56,7 @@ internal sealed class VolunteerOpportunityUnpublishedDomainEventHandler(
 			opportunity.Title,
 			NotificationKind.OpportunityUnpublished,
 			"Opportunity was unpublished.",
+			logger,
 			cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
