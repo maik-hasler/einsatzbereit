@@ -74,7 +74,7 @@ export default function OpportunityListItem({
 						>
 							<CategoryGlyph
 								category={item.category}
-								className="h-10 w-10 text-brand-300"
+								className="h-10 w-10 text-brand-500"
 							/>
 						</div>
 					)}

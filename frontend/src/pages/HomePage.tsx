@@ -68,6 +68,29 @@ export default function HomePage() {
 		}
 	}, []);
 
+	// Keep the hero's own copies of q/city/lat/lng in sync with the URL after
+	// mount, not just on first paint - the filter bar below owns the same
+	// params (its own Location dropdown, the keyword pill's clear button) and
+	// previously had no way to push a change back up into the hero fields,
+	// leaving them showing stale text once the filter bar moved the URL out
+	// from under them. Deps are the individual param strings, not the
+	// searchParams object itself, so an unrelated change (e.g. toggling a
+	// category filter) doesn't re-run this and clobber a location the visitor
+	// is still mid-typing into the hero box, unconfirmed by a suggestion pick.
+	const urlKeyword = searchParams.get("q") ?? "";
+	const urlCity = searchParams.get("city") ?? "";
+	const urlLat = searchParams.get("lat") ?? "";
+	const urlLng = searchParams.get("lng") ?? "";
+	useEffect(() => {
+		setHeroKeyword(urlKeyword);
+		setHeroCityInput(urlCity);
+		setHeroLocation(
+			urlCity && urlLat && urlLng
+				? { label: urlCity, lat: Number(urlLat), lng: Number(urlLng) }
+				: null,
+		);
+	}, [urlKeyword, urlCity, urlLat, urlLng]);
+
 	// Search directly from the hero (#... hero redesign, vostel.de pattern)
 	// instead of only linking down to an unfiltered list - writes straight
 	// into the same URL params VolunteerOpportunitiesList already reads, then
@@ -295,73 +318,145 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			<div id="opportunities">
+			{/* mb-20 lives here, not inside VolunteerOpportunitiesList itself
+			(that component's root div carries no margin of its own) - without
+			it there's nothing establishing a fixed gap before the Org CTA
+			band's top wave below, so the last card row sat flush against the
+			wave, sized only by whatever the content happened to end on. */}
+			<div id="opportunities" className="mb-20">
 				<VolunteerOpportunitiesList />
 			</div>
 
 			{/* Org CTA - the landing page's other half, placed right after the
 			opportunities list and ahead of the founder band. Everything else
 			on this page pitches a volunteer; this is the one section that
-			pitches an organization instead - it comes before the wave band
-			below rather than after it so a visitor doesn't have to scroll
-			past the founder's personal pitch to reach it. Plain white, no
-			colored stage - the founder band and the footer are both
-			brand-100 wave bands, so a third one back to back would flatten
-			into one long stretch instead of distinct moments (an earlier
-			brand-800 card version here read as an unrelated block dropped
-			onto the page rather than part of it). mt-20 (not mb-20) is the
-			explicit owner of the gap from the opportunities list above,
-			which carries no bottom margin of its own - see the Founder/
-			Mission band comment below for why the wave band always owns
-			both of its own margins instead. */}
-			<section aria-labelledby={orgCtaTitleId} className="mt-20">
-				<div className="animate-fade-up mx-auto max-w-2xl text-center">
-					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-600 uppercase">
-						{t("landing.orgCtaLabel")}
-					</p>
-					<h2
-						id={orgCtaTitleId}
-						className="font-display text-3xl font-bold text-gray-900 sm:text-4xl"
-					>
-						{t("landing.orgCtaTitle")}
-					</h2>
-					<p className="mt-4 text-base leading-relaxed text-gray-600">
-						{t("landing.orgCtaText")}
-					</p>
-				</div>
+			pitches an organization instead. A full-bleed wavy band now, not
+			a plain white section - breaks out of <main>'s max-w-page column
+			the same way the Founder/Mission band below does (relative
+			left-1/2 w-screen -translate-x-1/2). Two wave caps of its own:
+			a top one fading in from white, and a bottom one (see the
+			comment further down) that fades this band's own color into
+			brand-100 before the Founder band even starts, so the two greens
+			meet inside a single continuous wave with no page-white gap
+			between them - Founder's own top cap was removed to match, see
+			its comment. An earlier version gave Founder the only cap and
+			just zeroed the margin between them, which left a thin white
+			sliver at the seam (Founder's notches reveal the page background,
+			not whatever tint precedes it, since they're separate boxes).
+			Background is brand-700 - Button.tsx's own primary color, already
+			proven to carry white text everywhere else on the site. Two
+			lighter attempts before this - a translucent color-mix tint,
+			then a solid brand-800 stage - either sat too close to the
+			Founder band's own brand-100 to read as a deliberate second tone
+			(brand-800 was the opposite problem: too dark) once judged
+			against it directly rather than in isolation. Light-on-dark text
+			now, matching the hero's own palette (brand-200 label, white
+			heading/icons, white/70-80 body) since this is a dark stage
+			again; Button's `onDark` variant for the CTA so it doesn't
+			disappear into the same brand-700 it's sitting on. Cards dropped
+			from the three features - icon directly on the band in a
+			frosted white/15 circle (hero's own search-bar treatment), not
+			a bordered box. Glow blobs mirror the hero's, scaled down - a
+			flat brand-700 rectangle alone read as an unstyled block. */}
+			<section
+				aria-labelledby={orgCtaTitleId}
+				className="relative left-1/2 w-screen -translate-x-1/2"
+			>
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 1440 60"
+					preserveAspectRatio="none"
+					className="block h-8 w-full text-brand-700 sm:h-12"
+				>
+					<path d={WAVE_PATH} fill="currentColor" />
+				</svg>
 
-				<div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-3">
-					{orgFeatures.map(({ icon, title, desc }, index) => (
+				<div className="bg-brand-700">
+					<div className="relative isolate overflow-hidden">
+						{/* Same soft glow-blob treatment as the hero, scaled down -
+						brand-700 alone read as a flat rectangle without it. */}
 						<div
-							key={title}
-							className={`rounded-card border border-gray-100 bg-white p-6 text-center shadow-resting ${
-								index === 0
-									? "animate-fade-up"
-									: index === 1
-										? "animate-fade-up-d1"
-										: "animate-fade-up-d2"
-							}`}
-						>
-							<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-md">
-								{icon}
-							</div>
-							<h3 className="mb-2 text-base font-semibold text-gray-900">
-								{title}
-							</h3>
-							<p className="text-sm leading-relaxed text-gray-600">{desc}</p>
-						</div>
-					))}
-				</div>
+							aria-hidden="true"
+							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-600 opacity-40 blur-3xl"
+						/>
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-brand-800 opacity-50 blur-3xl"
+						/>
 
-				<div className="animate-fade-up-d2 mt-10 text-center">
-					<Button
-						type="button"
-						onClick={handleOrgCta}
-						size="lg"
-						className="shadow-md"
+						<div className="relative mx-auto max-w-page px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+							<div className="animate-fade-up mx-auto max-w-2xl text-center">
+								<p className="mb-3 text-xs font-semibold tracking-widest text-brand-200 uppercase">
+									{t("landing.orgCtaLabel")}
+								</p>
+								<h2
+									id={orgCtaTitleId}
+									className="font-display text-3xl font-bold text-white sm:text-4xl"
+								>
+									{t("landing.orgCtaTitle")}
+								</h2>
+								<p className="mt-4 text-base leading-relaxed text-white/80">
+									{t("landing.orgCtaText")}
+								</p>
+							</div>
+
+							<div className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-3">
+								{orgFeatures.map(({ icon, title, desc }, index) => (
+									<div
+										key={title}
+										className={`text-center ${
+											index === 0
+												? "animate-fade-up"
+												: index === 1
+													? "animate-fade-up-d1"
+													: "animate-fade-up-d2"
+										}`}
+									>
+										<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white">
+											{icon}
+										</div>
+										<h3 className="mb-2 text-base font-semibold text-white">
+											{title}
+										</h3>
+										<p className="text-sm leading-relaxed text-white/70">
+											{desc}
+										</p>
+									</div>
+								))}
+							</div>
+
+							<div className="animate-fade-up-d2 mt-10 text-center">
+								<Button
+									type="button"
+									onClick={handleOrgCta}
+									variant="onDark"
+									size="lg"
+									className="shadow-md"
+								>
+									{t("landing.heroCtaOrg")}
+								</Button>
+							</div>
+						</div>
+					</div>
+
+					{/* Bottom cap fades this box's own background into brand-100
+					(not another currentColor tint) - the transparent notches
+					above the fill reveal this div's own pale-mint background
+					since the svg is nested inside it, not a sibling after it
+					(a sibling's notches would reveal the page's white instead -
+					the bug an earlier version of this had, see the git history
+					on this section). Founder's own top cap is removed below
+					since this already provides the full pale-mint -> brand-100
+					transition; its flat top edge continues in the exact same
+					brand-100 this ends in, so there is no seam left to see. */}
+					<svg
+						aria-hidden="true"
+						viewBox="0 0 1440 60"
+						preserveAspectRatio="none"
+						className="block h-8 w-full text-brand-100 sm:h-12"
 					>
-						{t("landing.heroCtaOrg")}
-					</Button>
+						<path d={WAVE_PATH} fill="currentColor" />
+					</svg>
 				</div>
 			</section>
 
@@ -373,27 +468,20 @@ export default function HomePage() {
 			(relative left-1/2 w-screen -translate-x-1/2 - safe because
 			global.css already sets html { overflow-x: clip }) so the brand-100
 			stage runs edge-to-edge like the hero and footer bands do, just in a
-			lighter tier of the same palette. WAVE_PATH caps the top and bottom
-			edges - the same shape rotated 180deg for the bottom cap, so the
-			transition in and out of the band always matches. mt-20/mb-20 both
-			live here on the wave band itself rather than on its neighbors -
-			neither the org CTA above nor the FAQ below carries its own margin
-			on the side that touches this band, so there's exactly one owner
-			per gap instead of two adjacent margins relying on collapsing to
-			not double up. */}
+			lighter tier of the same palette. Only a bottom cap now (rotated
+			180deg) - no top cap of its own. The Org CTA band above already
+			ends in its own brand-100 bottom cap (see its comment), so this
+			section's flat top edge continues in the exact same color with no
+			seam to cap; adding a second cap here on top of that would just
+			carve a redundant notch out of solid brand-100. No mt-20 either,
+			for the same reason - the two bands are flush, not gapped. mb-20
+			(toward the FAQ below) is still this band's own, unchanged - the
+			FAQ carries no margin on the side that touches it either, so
+			there's exactly one owner for that gap. */}
 			<section
 				aria-labelledby={missionTitleId}
-				className="relative left-1/2 mt-20 mb-20 w-screen -translate-x-1/2"
+				className="relative left-1/2 mb-20 w-screen -translate-x-1/2"
 			>
-				<svg
-					aria-hidden="true"
-					viewBox="0 0 1440 60"
-					preserveAspectRatio="none"
-					className="block h-8 w-full text-brand-100 sm:h-12"
-				>
-					<path d={WAVE_PATH} fill="currentColor" />
-				</svg>
-
 				<div className="bg-brand-100 py-10 sm:py-14">
 					<div className="mx-auto grid max-w-page items-center gap-10 px-4 sm:px-6 lg:grid-cols-5 lg:gap-16 lg:px-8">
 						<div className="animate-fade-up relative mx-auto w-full max-w-64 lg:col-span-2 lg:max-w-none">

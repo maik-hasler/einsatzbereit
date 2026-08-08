@@ -3534,68 +3534,6 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional) 
-     * @return OK
-     */
-    getPublicOrganizations(pageNumber: number, pageSize: number, search: string | undefined, signal?: AbortSignal): Promise<PagedListOfPublicOrganizationSummary> {
-        let url_ = this.baseUrl + "/v1/organizations/directory?";
-        if (pageNumber === undefined || pageNumber === null)
-            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
-        else
-            url_ += "PageNumber=" + encodeURIComponent("" + pageNumber) + "&";
-        if (pageSize === undefined || pageSize === null)
-            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
-        else
-            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
-        if (search === null)
-            throw new globalThis.Error("The parameter 'search' cannot be null.");
-        else if (search !== undefined)
-            url_ += "Search=" + encodeURIComponent("" + search) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPublicOrganizations(_response);
-        });
-    }
-
-    protected processGetPublicOrganizations(response: Response): Promise<PagedListOfPublicOrganizationSummary> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfPublicOrganizationSummary;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            let result500: any = null;
-            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Internal Server Error", status, _responseText, _headers, result500);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PagedListOfPublicOrganizationSummary>(null as any);
-    }
-
-    /**
      * @return OK
      */
     getPublicOrganizationProfile(organizationId: string, signal?: AbortSignal): Promise<PublicOrganizationProfileResponse> {
@@ -6921,15 +6859,6 @@ export interface PagedListOfFlaggedTargetSummary {
     [key: string]: any;
 }
 
-export interface PagedListOfPublicOrganizationSummary {
-    totalItems?: number;
-    currentPage: number;
-    pageCount?: number;
-    items: PublicOrganizationSummary[];
-
-    [key: string]: any;
-}
-
 export interface PagedListOfVolunteerOpportunitySummary {
     totalItems?: number;
     currentPage: number;
@@ -6984,17 +6913,6 @@ export interface PublicOrganizationProfileResponse {
     address: PublicAddressDto | undefined;
     openOpportunities: PublicOpportunitySummaryDto[];
     logoUrl: string | undefined;
-
-    [key: string]: any;
-}
-
-export interface PublicOrganizationSummary {
-    id: string;
-    name: string;
-    description: string | undefined;
-    city: string | undefined;
-    logoUrl: string | undefined;
-    openOpportunityCount: number;
 
     [key: string]: any;
 }

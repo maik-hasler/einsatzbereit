@@ -651,20 +651,6 @@ export default function VolunteerOpportunitiesList() {
 				</div>
 			</div>
 
-			{/* Live result count, mono/tabular-nums - a small "readiness board"
-			readout rather than decoration: the same live count the sr-only
-			status paragraph in OpportunityResultsList.tsx already announces to
-			screen readers, just made visible here (aria-hidden so it isn't
-			announced twice). */}
-			{!error && !(loading && items.length === 0) && (
-				<p
-					aria-hidden="true"
-					className="mb-4 text-center font-mono text-xs tracking-wide text-gray-400 tabular-nums"
-				>
-					{t("opportunities.resultCount", { count: items.length })}
-				</p>
-			)}
-
 			<OpportunityResultsList
 				loading={loading}
 				error={error}
