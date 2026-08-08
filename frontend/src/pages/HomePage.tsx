@@ -8,9 +8,14 @@ import type { CitySuggestion } from "../components/VolunteerOpportunitiesList/us
 import LocationSearchInput from "../components/LocationSearchInput";
 import Button from "../components/Button";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
+import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useApiClient } from "../hooks/useApiClient";
+import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
 import { WAVE_PATH } from "../lib/wavePath";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
+import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 import {
 	MagnifyingGlassIcon,
 	PlusIcon,
@@ -18,7 +23,10 @@ import {
 	ShieldCheckIcon,
 	ChevronDownIcon,
 } from "../components/icons";
-import type { Organization } from "../client/api-client";
+import type {
+	Organization,
+	OrganizationSummaryDto,
+} from "../client/api-client";
 
 // Lazy-loaded: HomePage is eager (App.tsx keeps it out of the lazy route
 // map, see the comment there), so a static import here would pull
@@ -35,6 +43,7 @@ export default function HomePage() {
 	usePageTitle(t("landing.pageTitle"));
 	const auth = useAuth();
 	const navigate = useNavigate();
+	const api = useApiClient();
 
 	const heroTitleId = useId();
 	const missionTitleId = useId();
@@ -43,6 +52,22 @@ export default function HomePage() {
 
 	const [showOrgModal, setShowOrgModal] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
+
+	// Shared with Header, which independently needs the same top-level
+	// organization list on the same mount (#1396) - see useSharedOrgFetch.
+	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
+		`organizations:${auth.isAuthenticated}`,
+		() => (auth.isAuthenticated ? api.getOrganizations() : Promise.resolve([])),
+	);
+	const orgs = auth.isAuthenticated ? (orgsData ?? []) : [];
+	// useSharedOrgFetch leaves orgsData null both while the fetch is still in
+	// flight and after it rejects - without distinguishing those, a signed-in
+	// organizer could see the "create an organization" CTA (and, if clicked,
+	// create a duplicate org) while their real org list was still loading or
+	// had failed to load (see HomePageOrgCtaTests.cs's regression test).
+	const orgsLoading = auth.isAuthenticated && orgsData === null && !orgsError;
+	const orgsFailed = auth.isAuthenticated && orgsData === null && !!orgsError;
+	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
 	// Hero search - initialized from the URL so a back-navigation (or a
 	// shared link with ?q=/&city=... already set) shows the search that
@@ -67,6 +92,20 @@ export default function HomePage() {
 			document.getElementById("opportunities")?.scrollIntoView();
 		}
 	}, []);
+
+	// Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint sends
+	// signed-out visitors through Keycloak's registration flow with
+	// ?createOrg=1 baked into the post-login returnTo - once they land back
+	// here authenticated, open the modal they originally asked for instead of
+	// making them find and click the CTA a second time.
+	useEffect(() => {
+		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
+			setShowOrgModal(true);
+			const next = new URLSearchParams(searchParams);
+			next.delete("createOrg");
+			setSearchParams(next, { replace: true });
+		}
+	}, [searchParams, auth.isAuthenticated, setSearchParams]);
 
 	// Keep the hero's own copies of q/city/lat/lng in sync with the URL after
 	// mount, not just on first paint - the filter bar below owns the same
@@ -117,13 +156,22 @@ export default function HomePage() {
 
 	// Org CTA - the landing page's only pitch to the other side of the
 	// marketplace (everything else here is volunteer-facing). Signed-in users
-	// go straight into CreateOrganizationModal (the same one Header's
-	// OrganizationSwitcher opens); signed-out visitors hit the same sign-in
-	// gate VolunteerOpportunityDetailPage uses for its "log in to join" CTA,
-	// since Keycloak's own login screen carries the registration link too.
+	// with no org yet go straight into CreateOrganizationModal (the same one
+	// Header's OrganizationSwitcher opens); signed-out visitors go through
+	// Keycloak's registration flow rather than plain login, since this is a
+	// first-touch CTA for people who don't have an account yet. Users who
+	// already organize an org never reach this function - see the render
+	// branch below, which swaps the button for an "Organization overview"
+	// link instead so this can't create a duplicate org.
 	function handleOrgCta() {
-		if (auth.isAuthenticated) setShowOrgModal(true);
-		else auth.signinRedirect(signinLocaleArgs());
+		if (auth.isAuthenticated) {
+			setShowOrgModal(true);
+		} else {
+			void signinRedirectForRegistration({
+				...signinLocaleArgs(),
+				state: { returnTo: "/?createOrg=1" },
+			});
+		}
 	}
 
 	function handleOrgCreated(newOrg: Organization) {
@@ -386,7 +434,7 @@ export default function HomePage() {
 
 						<div className="relative mx-auto max-w-page px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
 							<div className="animate-fade-up mx-auto max-w-2xl text-center">
-								<p className="mb-3 text-xs font-semibold tracking-widest text-brand-200 uppercase">
+								<p className="mb-3 text-xs font-semibold tracking-widest text-brand-100 uppercase">
 									{t("landing.orgCtaLabel")}
 								</p>
 								<h2
@@ -418,7 +466,7 @@ export default function HomePage() {
 										<h3 className="mb-2 text-base font-semibold text-white">
 											{title}
 										</h3>
-										<p className="text-sm leading-relaxed text-white/70">
+										<p className="text-sm leading-relaxed text-white/80">
 											{desc}
 										</p>
 									</div>
@@ -426,15 +474,28 @@ export default function HomePage() {
 							</div>
 
 							<div className="animate-fade-up-d2 mt-10 text-center">
-								<Button
-									type="button"
-									onClick={handleOrgCta}
-									variant="onDark"
-									size="lg"
-									className="shadow-md"
-								>
-									{t("landing.heroCtaOrg")}
-								</Button>
+								{auth.isAuthenticated && orgAppPath ? (
+									<Button
+										to={orgAppPath}
+										variant="onDark"
+										size="lg"
+										className="shadow-md"
+									>
+										{t("landing.heroCtaOrgOverview")}
+									</Button>
+								) : orgsLoading ? (
+									<Skeleton className="mx-auto h-13 w-56 rounded-xl" />
+								) : orgsFailed ? null : (
+									<Button
+										type="button"
+										onClick={handleOrgCta}
+										variant="onDark"
+										size="lg"
+										className="shadow-md"
+									>
+										{t("landing.heroCtaOrg")}
+									</Button>
+								)}
 							</div>
 						</div>
 					</div>
@@ -498,7 +559,7 @@ export default function HomePage() {
 						</div>
 
 						<div className="animate-fade-up-d1 text-center lg:col-span-3 lg:text-left">
-							<p className="mb-3 text-xs font-semibold tracking-widest text-brand-600 uppercase">
+							<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 								{t("landing.missionLabel")}
 							</p>
 							<h2
@@ -546,7 +607,7 @@ export default function HomePage() {
 			moved above the founder band. */}
 			<section aria-labelledby={faqTitleId} className="mb-20">
 				<div className="animate-fade-up mx-auto max-w-2xl text-center">
-					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-600 uppercase">
+					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 						{t("landing.faqLabel")}
 					</p>
 					<h2

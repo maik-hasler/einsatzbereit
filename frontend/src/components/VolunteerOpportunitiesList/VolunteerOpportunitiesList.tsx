@@ -302,7 +302,7 @@ export default function VolunteerOpportunitiesList() {
 			idealist.org/betterplace.org treat their own search/filter bars (no
 			card, no background tint). */}
 			<div className="mb-8 text-center">
-				<p className="mb-3 text-xs font-semibold tracking-widest text-brand-600 uppercase">
+				<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 					{t("opportunities.eyebrow")}
 				</p>
 				<h2 className="font-display text-3xl font-bold text-gray-900 sm:text-4xl">

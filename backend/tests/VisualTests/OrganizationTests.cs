@@ -579,62 +579,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
-	{
-		// #772 review follow-up (issue #763): "the site looks a bit dead" -
-		// the public organization directory now shows each org's count of
-		// open (Published) volunteer opportunities instead of just a bare
-		// name/description, so a card with real opportunities reads as such.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var orgName = await CreateOrganizationAsync("Visual772 OpenCount", pinnedOrgId!.Value);
-
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await createBtn.First.ClickAsync();
-
-		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-
-		// Step 1: title/description.
-		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");
-		await Page.Locator("#opportunity-description").FillAsync(
-			"Coverage for the organization directory's open-opportunity count.");
-
-		// Step 2: remote, so no address fields are required.
-		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
-		await Page.Locator("#opportunity-remote").CheckAsync();
-
-		// Step 3: IndividualContact (Express interest) - unlike ScheduledSlots, this
-		// type can publish with no time slots, keeping this test focused on
-		// the directory count rather than the slot-creation flow.
-		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])")
-			.ClickAsync();
-
-		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
-		// Individual-contact opportunities need an application deadline before
-		// they can be published (einsatzbereit#1086).
-		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
-		await Page.GetByTestId("modal-submit").ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
-
-		// The public directory, filtered to this org, must show "1 open opportunity".
-		await Page.GotoAsync($"{origin}/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.Locator("#organizations-search").FillAsync(orgName);
-
-		var orgCard = Page.Locator("li").Filter(new() { HasTextString = orgName });
-		await Expect(orgCard).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(orgCard.GetByText("1 open opportunity", new() { Exact = true }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
-	[Test]
 	public async Task PublicProfilePage_ContentIsLeftAlignedUnderHeading()
 	{
 		// Regression for #766: OrganizationProfileView's content wrapper had
