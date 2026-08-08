@@ -47,8 +47,13 @@ export default function MobileMenu({
 }) {
 	const { t } = useTranslation();
 	// Shared by the profile link, admin link, and org-menu toggle below.
+	// hover:text-brand-700, not the lighter brand-600 - brand-600 on brand-50
+	// measures ~4.0:1, under axe-core's WCAG AA 4.5:1 floor (caught by
+	// AccessibilityTests.cs's MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations,
+	// which leaves the org-menu toggle in a real :hover state via
+	// Playwright's ClickAsync before scanning), while brand-700 clears it.
 	const menuItemVariant =
-		"text-gray-700 hover:bg-brand-50 hover:text-brand-600";
+		"text-gray-700 hover:bg-brand-50 hover:text-brand-700";
 	// Only ever mounted while open (see Header.tsx), so dismissal listeners
 	// attach for this component's entire lifetime.
 	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
@@ -207,7 +212,7 @@ export default function MobileMenu({
 													key={tab.key}
 													to={orgTabPath(activeOrg.id, tab.key)}
 													onClick={onClose}
-													className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+													className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
 												>
 													{t(tab.labelKey)}
 												</Link>
