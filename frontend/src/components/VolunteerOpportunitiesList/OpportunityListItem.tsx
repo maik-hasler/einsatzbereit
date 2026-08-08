@@ -3,16 +3,21 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
-import {
-	getOpportunityCategoryBannerClassName,
-	OPPORTUNITY_CATEGORY_LABEL_SCRIM_CLASS,
-} from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
 import Chip from "../Chip";
 import ReportFlagButton from "../ReportFlagButton";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
 import { CategoryGlyph } from "./CategoryGlyph";
 
+// A photo-less card's banner tile uses one fixed brand-green tint for every
+// category (see the banner div below) rather than a synthetic per-category
+// color block - one Tailwind swatch per category (rose/orange/sky/violet/
+// etc., an earlier design) read as a generic admin-dashboard tag system and
+// clashed against the rest of the marketing page's muted brand-green
+// language (cross-checked against idealist.org and betterplace.org, neither
+// of which recolors a listing by category; they lean on real photos or
+// plain text/badges instead). Category is still visually distinct via the
+// icon+label chip below.
 function orgInitials(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "?";
@@ -42,9 +47,17 @@ export default function OpportunityListItem({
 				aria-label={item.title}
 			/>
 			<div className="flex h-full flex-col">
-				<div
-					className={`relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden ${getOpportunityCategoryBannerClassName(item.category)}`}
-				>
+				{/* Banner - a real photo when the org uploaded one, otherwise a
+				quiet category-glyph tile rather than nothing. Every seed/demo
+				opportunity is currently photo-less, so without this every card in
+				the grid was an identical blank white box under its chip row - no
+				color or shape to distinguish one listing from the next at a
+				glance. Stays on the same muted brand-green tint for every
+				category (not a per-category rainbow fill - see the comment on
+				orgInitials below for why that was rejected), so it reads as one
+				consistent card treatment, not a re-introduction of the
+				per-category color system. */}
+				<div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100">
 					{item.bannerImageUrl ? (
 						<img
 							src={item.bannerImageUrl}
@@ -55,32 +68,26 @@ export default function OpportunityListItem({
 							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 						/>
 					) : (
-						<>
-							<div
-								aria-hidden="true"
-								className="pointer-events-none absolute -top-8 -right-6 h-24 w-24 rounded-full bg-white/15 blur-xl"
-							/>
-							<div
-								aria-hidden="true"
-								className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10 blur-xl"
-							/>
+						<div
+							aria-hidden="true"
+							className="flex h-full w-full items-center justify-center transition-transform duration-300 group-hover:scale-105"
+						>
 							<CategoryGlyph
 								category={item.category}
-								className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
+								className="h-10 w-10 text-brand-300"
 							/>
-							<span
-								className={`absolute right-0 bottom-2 left-0 px-2 py-0.5 text-center text-xs font-semibold tracking-wider text-white uppercase ${OPPORTUNITY_CATEGORY_LABEL_SCRIM_CLASS}`}
-							>
-								{item.category
-									? t(`opportunities.category.${item.category}`)
-									: t("opportunities.category.Other")}
-							</span>
-						</>
+						</div>
 					)}
 				</div>
 
 				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-					<div className="mb-2 flex items-center gap-2">
+					<div className="mb-2 flex flex-wrap items-center gap-1.5">
+						<Chip tone="brand" size="sm" className="shrink-0">
+							<CategoryGlyph category={item.category} className="h-3 w-3" />
+							{item.category
+								? t(`opportunities.category.${item.category}`)
+								: t("opportunities.category.Other")}
+						</Chip>
 						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>

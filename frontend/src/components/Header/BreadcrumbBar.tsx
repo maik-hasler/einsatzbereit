@@ -30,7 +30,7 @@ export default function BreadcrumbBar({
 	const { t } = useTranslation();
 	return (
 		<div className="border-b border-gray-200 bg-white">
-			<div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+			<div className="mx-auto flex max-w-page items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
 				<nav
 					aria-label={t("breadcrumb.label")}
 					className="flex min-w-0 items-center gap-1.5 text-sm"

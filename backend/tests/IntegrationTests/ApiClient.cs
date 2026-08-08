@@ -90,7 +90,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -1927,7 +1927,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -1990,6 +1990,10 @@ namespace IntegrationTests
                     if (tag != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("Tag")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tag, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (keyword != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Keyword")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(keyword, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 

@@ -785,9 +785,10 @@ export class EinsatzbereitApi {
      * @param radiusKm (optional) 
      * @param categories (optional) 
      * @param tag (optional) 
+     * @param keyword (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, keyword: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -837,6 +838,10 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'tag' cannot be null.");
         else if (tag !== undefined)
             url_ += "Tag=" + encodeURIComponent("" + tag) + "&";
+        if (keyword === null)
+            throw new globalThis.Error("The parameter 'keyword' cannot be null.");
+        else if (keyword !== undefined)
+            url_ += "Keyword=" + encodeURIComponent("" + keyword) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

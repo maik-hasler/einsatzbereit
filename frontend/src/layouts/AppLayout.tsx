@@ -34,7 +34,7 @@ function AppLayoutInner() {
 			<main
 				id="main-content"
 				tabIndex={-1}
-				className="mx-auto w-full max-w-7xl flex-1 scroll-mt-24 px-4 pt-[var(--main-top-padding)] pb-16 focus:outline-none sm:px-6 lg:px-8"
+				className="mx-auto w-full max-w-page flex-1 scroll-mt-24 px-4 pt-[var(--main-top-padding)] pb-16 focus:outline-none sm:px-6 lg:px-8"
 			>
 				{/* Scoped to this route (remounts, clearing any caught error, whenever
 				the location changes) so a render crash in a single page replaces

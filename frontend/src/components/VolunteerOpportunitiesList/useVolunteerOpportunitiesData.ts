@@ -15,6 +15,7 @@ export interface VolunteerOpportunitiesFilters {
 	dateTo: string;
 	categoriesParam: string;
 	tag: string;
+	keyword: string;
 	lat: string;
 	lng: string;
 	radius: string;
@@ -34,6 +35,7 @@ export function useVolunteerOpportunitiesData(
 		dateTo,
 		categoriesParam,
 		tag,
+		keyword,
 		lat,
 		lng,
 		radius,
@@ -72,6 +74,7 @@ export function useVolunteerOpportunitiesData(
 				categories:
 					selectedCategories.length > 0 ? selectedCategories : undefined,
 				tag: tag || undefined,
+				keyword: keyword || undefined,
 			});
 		},
 		{
@@ -86,6 +89,7 @@ export function useVolunteerOpportunitiesData(
 				dateTo,
 				categoriesParam,
 				tag,
+				keyword,
 			],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
 		},

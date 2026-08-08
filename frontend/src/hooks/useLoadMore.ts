@@ -63,8 +63,8 @@ function defaultGetErrorMessage(error: unknown): string {
  * fetch effect; only a `page` change or an explicit `reset()` does.
  *
  * `deps` covers the "reactive" case (filters change -> reset to page 1 and
- * refetch, mirrors VolunteerOpportunitiesList/OrganizationsPage's own effect
- * dependency arrays). For the "imperative" case (a scope tab, a search-submit
+ * refetch, mirrors VolunteerOpportunitiesList's own effect dependency
+ * arrays). For the "imperative" case (a scope tab, a search-submit
  * button), skip `deps` and call `reset()` directly from the event handler
  * instead, right after committing whatever changed to a state variable that
  * `fetchPage` itself closes over (not a plain local variable) - React batches

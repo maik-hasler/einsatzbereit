@@ -670,6 +670,54 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_MatchingTitleOrDescription(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Beach Cleanup", "Help remove litter from the shoreline", cancellationToken);
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Reading Tutor", "Support kids with their reading skills", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var byTitle = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "cleanup", cancellationToken: cancellationToken);
+		var byDescription = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "shoreline", cancellationToken: cancellationToken);
+
+		byTitle.TotalItems.Should().Be(1);
+		byTitle.Items.Single().Title.Should().Be("Beach Cleanup");
+		byDescription.TotalItems.Should().Be(1);
+		byDescription.Items.Single().Title.Should().Be("Beach Cleanup");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_MatchingOrganizationName(
+		CancellationToken cancellationToken)
+	{
+		// Organizations dropped their own public directory/browse page in
+		// favor of being findable through this same keyword search (a search
+		// for an NPO/NGO's name should surface its opportunities even when
+		// the keyword appears in neither the title nor the description).
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var matchingOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken, "Riverside Wildlife Rescue");
+		var otherOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, matchingOrgId, "Weekend Shift", "General help needed", cancellationToken);
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, otherOrgId, "Unrelated Task", "Nothing to do with wildlife", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "wildlife rescue", cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(1);
+		result.Items.Single().Title.Should().Be("Weekend Shift");
+	}
+
+	[Test]
 	public async Task GetVolunteerOpportunities_ShouldFilterByRadius_AndOrderResultsByDistanceAscending(
 		CancellationToken cancellationToken)
 	{
@@ -712,9 +760,13 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(
-		EinsatzbereitApi client, CancellationToken cancellationToken)
+		EinsatzbereitApi client, CancellationToken cancellationToken, string? namePrefix = null)
 	{
-		var uniqueName = $"Testorg_{Guid.NewGuid()}";
+		// The GUID suffix is appended after a trailing space rather than
+		// concatenated directly, so a caller-supplied multi-word namePrefix
+		// (e.g. "Riverside Wildlife Rescue") stays intact as a contiguous
+		// substring for keyword-search tests to match against.
+		var uniqueName = $"{namePrefix ?? "Testorg"}_{Guid.NewGuid()}";
 		var organization = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = uniqueName }, cancellationToken);
 		return organization.Id.Value;

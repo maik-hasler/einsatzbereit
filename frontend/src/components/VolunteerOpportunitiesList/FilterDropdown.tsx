@@ -121,10 +121,10 @@ export default function FilterDropdown({
 			<div
 				role="group"
 				aria-label={label}
-				className={`inline-flex items-stretch overflow-hidden rounded-full border transition-all ${
+				className={`inline-flex items-stretch overflow-hidden rounded-full border bg-white transition-all ${
 					active
-						? "border-brand-500 bg-brand-50"
-						: "border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/50"
+						? "border-brand-500 shadow-resting"
+						: "border-gray-200 hover:border-brand-300 hover:shadow-resting"
 				}`}
 			>
 				<button

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { useNavigate, Link, useLocation } from "react-router";
+import { useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
 import { useApiClient } from "../../hooks/useApiClient";
@@ -48,7 +48,6 @@ export default function Header({
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const location = useLocation();
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -87,8 +86,6 @@ export default function Header({
 		if (!mobileOpen) setOrgMenuOpen(false);
 	}, [mobileOpen]);
 
-	const isTransparent = location.pathname === "/" && !scrolled;
-
 	function handleNotificationNavigate(actionUrl: string | null | undefined) {
 		navigate(actionUrl ?? "/my-engagements");
 	}
@@ -117,16 +114,12 @@ export default function Header({
 		<>
 			<header
 				className={`sticky top-0 z-40 transition-all duration-300 ${
-					isTransparent && mobileOpen
-						? "border-b-0 bg-brand-800"
-						: isTransparent
-							? "border-b-0 bg-transparent"
-							: scrolled
-								? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
-								: "border-b border-gray-200 bg-white"
+					scrolled
+						? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
+						: "border-b border-gray-200 bg-white"
 				}`}
 			>
-				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div className="mx-auto max-w-page px-4 sm:px-6 lg:px-8">
 					<div
 						className={`flex h-16 items-center justify-between ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
@@ -142,7 +135,7 @@ export default function Header({
 							<img
 								src="/logo.svg"
 								alt={t("brand.name")}
-								className={`h-8 w-auto max-w-none shrink-0 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+								className="h-8 w-auto max-w-none shrink-0"
 							/>
 						</Link>
 
@@ -160,7 +153,6 @@ export default function Header({
 
 						<DesktopHeader
 							isLoggedIn={isLoggedIn}
-							isTransparent={isTransparent}
 							menu={menu}
 							displayName={displayName}
 							initials={initials}
@@ -174,7 +166,6 @@ export default function Header({
 
 						<MobileHeader
 							isLoggedIn={isLoggedIn}
-							isTransparent={isTransparent}
 							mobileOpen={mobileOpen}
 							setMobileOpen={setMobileOpen}
 							menu={menu}
@@ -187,7 +178,6 @@ export default function Header({
 
 				{mobileOpen && (
 					<MobileMenu
-						isTransparent={isTransparent}
 						isLoggedIn={isLoggedIn}
 						avatarUrl={avatarUrl}
 						initials={initials}

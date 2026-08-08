@@ -999,6 +999,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

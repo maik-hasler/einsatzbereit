@@ -119,7 +119,7 @@ function OrgAppShell({
 			<main
 				id="main-content"
 				tabIndex={-1}
-				className="mx-auto w-full max-w-7xl flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
+				className="mx-auto w-full max-w-page flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
 			>
 				<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>{pageTitle}</h1>
 				{/* Scoped to this route (remounts, clearing any caught error, whenever

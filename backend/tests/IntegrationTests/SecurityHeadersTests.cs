@@ -44,12 +44,12 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 	// the Cache-Control:no-store logic this test targets, but enough to make the
 	// assertion fail for the wrong reason. A plain 200 avoids both.
 	[Test]
-	public async Task GetPublicOrganizations_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
+	public async Task GetVolunteerOpportunities_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
 	{
 		using var httpClient = fixture.CreateHttpClient();
 
 		var response = await httpClient.GetAsync(
-			"/v1/organizations/directory?pageNumber=1&pageSize=10", cancellationToken);
+			"/v1/volunteer-opportunities?pageNumber=1&pageSize=10", cancellationToken);
 
 		response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 		response.Headers.TryGetValues("Cache-Control", out _).Should().BeFalse();
