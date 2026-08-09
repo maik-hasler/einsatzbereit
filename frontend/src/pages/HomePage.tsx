@@ -7,6 +7,7 @@ import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList
 import type { CitySuggestion } from "../components/VolunteerOpportunitiesList/useCitySuggestions";
 import LocationSearchInput from "../components/LocationSearchInput";
 import Button from "../components/Button";
+import FaqAccordion from "../components/FaqAccordion";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -21,7 +22,6 @@ import {
 	PlusIcon,
 	UserGroupIcon,
 	ShieldCheckIcon,
-	ChevronDownIcon,
 } from "../components/icons";
 import type {
 	Organization,
@@ -596,15 +596,13 @@ export default function HomePage() {
 			{/* FAQ - closes the page on objection-handling rather than a third
 			pitch: cost, account requirement, org onboarding speed, and
 			license, in that order (volunteer concerns first, since the page
-			is volunteer-facing until the org CTA above). Native
-			<details>/<summary> instead of a hand-rolled accordion - no open/
-			close state to wire up, and it's keyboard/screen-reader operable
-			for free. group-open:rotate-180 reads the element's own [open]
-			attribute via Tailwind's group variant, so the chevron animates
-			without any JS tracking which item is expanded. mb-20 (not mt-20)
-			since this is the last content section before Footer - matches
-			how the org CTA used to own this same trailing gap before it
-			moved above the founder band. */}
+			is volunteer-facing until the org CTA above). The accordion itself
+			is shared with HelpPage (FaqAccordion) - the "More questions?"
+			link below leads there, and the two used to be visibly different
+			pieces of markup, so following it left the design system (#1755).
+			mb-20 (not mt-20) since this is the last content section before
+			Footer - matches how the org CTA used to own this same trailing
+			gap before it moved above the founder band. */}
 			<section aria-labelledby={faqTitleId} className="mb-20">
 				<div className="animate-fade-up mx-auto max-w-2xl text-center">
 					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
@@ -618,17 +616,10 @@ export default function HomePage() {
 					</h2>
 				</div>
 
-				<div className="animate-fade-up-d1 mx-auto mt-10 max-w-2xl divide-y divide-gray-200 rounded-card border border-gray-100 bg-white px-6 shadow-resting">
-					{faqItems.map(({ q, a }) => (
-						<details key={q} className="group py-5">
-							<summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
-								{q}
-								<ChevronDownIcon className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" />
-							</summary>
-							<p className="mt-3 text-sm leading-relaxed text-gray-600">{a}</p>
-						</details>
-					))}
-				</div>
+				<FaqAccordion
+					items={faqItems}
+					className="animate-fade-up-d1 mx-auto mt-10 max-w-2xl"
+				/>
 
 				<p className="animate-fade-up-d1 mt-6 text-center text-sm text-gray-600">
 					<Link

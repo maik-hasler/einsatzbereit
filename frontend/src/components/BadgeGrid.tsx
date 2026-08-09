@@ -121,10 +121,15 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	return (
 		<div
 			ref={cardRef}
+			// Locked badges recede to a dashed outline instead of a solid gray-50
+			// fill (#1755). With five of six locked, the filled version made the
+			// unearned ones the heaviest thing on the profile page and the single
+			// earned badge the quietest - exactly backwards. Text colours are
+			// unchanged, so the gray-500 label still clears the 4.5:1 floor.
 			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
 				isEarned
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"
-					: "border-gray-100 bg-gray-50"
+					: "border-dashed border-gray-200 bg-transparent"
 			}`}
 			tabIndex={isHidden ? undefined : 0}
 			role={isHidden ? undefined : "group"}
@@ -133,7 +138,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 		>
 			<div
 				className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full ${
-					isEarned ? "bg-brand-50" : "bg-gray-100"
+					isEarned ? "bg-brand-50" : "bg-gray-50"
 				}`}
 			>
 				{isHidden ? (
@@ -219,10 +224,7 @@ export default function BadgeGrid({
 
 	if (loading) {
 		return (
-			<div
-				role="status"
-				className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
-			>
+			<div role="status" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 				<span className="sr-only">{t("achievements.loading")}</span>
 				{Array.from({ length: 6 }).map((_, i) => (
 					<Skeleton key={i} className="h-28 w-full" />
@@ -234,7 +236,7 @@ export default function BadgeGrid({
 	const earnedByKey = new Map(earned.map((a) => [a.key, a]));
 
 	return (
-		<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+		<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 			{catalog.map((entry) => (
 				<BadgeCard
 					key={entry.key}

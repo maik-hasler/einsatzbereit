@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
@@ -12,15 +12,13 @@ import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
-import Chip from "../components/Chip";
 import { useApiClient } from "../hooks/useApiClient";
-import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
-import { cardClass } from "../lib/surfaceClasses";
 import { FlagIcon } from "../components/icons";
+import PageHeaderBand from "../components/PageHeaderBand";
+import PublicOpportunityCard from "../components/PublicOpportunityCard";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -36,7 +34,6 @@ export default function OrganizationProfilePage() {
 	const [showReport, setShowReport] = useState(false);
 
 	usePageTitle(profile?.name ?? t("orgProfile.loading"));
-	usePageToolbar([{ label: profile?.name ?? t("orgProfile.loading") }]);
 
 	function load() {
 		if (!organizationId) return;
@@ -103,72 +100,43 @@ export default function OrganizationProfilePage() {
 
 	return (
 		<>
+			<PageHeaderBand
+				eyebrow={t("orgProfile.eyebrow")}
+				title={profile.name}
+				lead={profile.description ?? undefined}
+			>
+				{auth.isAuthenticated && (
+					<Button
+						variant="outlineOnDark"
+						size="sm"
+						onClick={() => setShowReport(true)}
+						data-testid="report-organization"
+						aria-label={t("orgProfile.reportOrganization")}
+					>
+						<FlagIcon className="h-4 w-4" />
+						<span className="hidden sm:inline">{t("orgProfile.report")}</span>
+					</Button>
+				)}
+			</PageHeaderBand>
+
 			<OrganizationProfileView
+				showHeader={false}
+				centered
 				name={profile.name}
 				logoUrl={profile.logoUrl}
-				description={profile.description}
 				contactEmail={profile.contactEmail}
 				contactPhone={profile.contactPhone}
 				website={profile.website}
 				address={profile.address}
-				nameAs="h1"
-				actions={
-					auth.isAuthenticated && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setShowReport(true)}
-							data-testid="report-organization"
-							aria-label={t("orgProfile.reportOrganization")}
-						>
-							<FlagIcon className="h-4 w-4" />
-							<span className="hidden sm:inline">{t("orgProfile.report")}</span>
-						</Button>
-					)
-				}
 			>
 				<SectionHeading>{t("orgProfile.currentNeeds")}</SectionHeading>
 
 				{profile.openOpportunities.length === 0 ? (
 					<EmptyState title={t("orgProfile.noOpportunities")} />
 				) : (
-					<ul className="space-y-3">
+					<ul className="grid gap-4 sm:grid-cols-2">
 						{profile.openOpportunities.map((opp) => (
-							<li
-								key={opp.id}
-								className={`relative ${cardClass} transition-shadow hover:shadow-raised`}
-							>
-								<Link
-									to={`/volunteer-opportunities/${opp.id}`}
-									className="absolute inset-0 rounded-card"
-									aria-label={opp.title}
-								/>
-								<strong className="block text-sm font-semibold text-gray-900">
-									{opp.title}
-								</strong>
-								{opp.description && (
-									<p className="mt-1 line-clamp-2 text-sm text-gray-500">
-										{opp.description}
-									</p>
-								)}
-								<div className="mt-2 flex flex-wrap gap-2">
-									<Chip tone="neutral" size="sm">
-										{formatOccurrence(opp.occurrence, t)}
-									</Chip>
-									<Chip tone="brand" size="sm">
-										{formatParticipationType(opp.participationType, t)}
-									</Chip>
-									{opp.isRemote ? (
-										<Chip tone="success" size="sm">
-											{t("opportunities.remote")}
-										</Chip>
-									) : opp.street ? (
-										<Chip tone="neutral" size="sm">
-											{opp.street} {opp.houseNumber}, {opp.zipCode} {opp.city}
-										</Chip>
-									) : null}
-								</div>
-							</li>
+							<PublicOpportunityCard key={opp.id} opportunity={opp} />
 						))}
 					</ul>
 				)}

@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import { formatDate } from "../../lib/format";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
+import { cardClass } from "../../lib/surfaceClasses";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Skeleton from "../../components/Skeleton";
@@ -163,7 +164,13 @@ export default function OrgEngagementsPage() {
 				{t("orgEngagements.pageDescription")}
 			</p>
 
-			<div className="mb-4 flex flex-wrap items-end gap-3">
+			{/* Boxed, matching the invite panel on the Members tab (#1755): a
+			status select and a search field are one filter control, and as two
+			bare form fields on the page background they read as the start of a
+			form rather than as the toolbar for the list below them. */}
+			<div
+				className={`mb-6 flex flex-wrap items-end gap-3 ${cardClass} sm:p-5`}
+			>
 				<div>
 					<label htmlFor="org-engagement-status-filter" className={labelClass}>
 						{t("orgEngagements.filterLabelStatus")}
@@ -310,7 +317,11 @@ export default function OrgEngagementsPage() {
 										})}
 									</p>
 								</div>
-								<div className="flex shrink-0 flex-col items-end gap-2">
+								{/* One row, not a stack (#1755): as flex-col the status chip
+							floated above the Confirm/Cancel pair, so the card's right
+							corner read as two loosely related clusters at different
+							heights instead of one status-and-actions group. */}
+								<div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
 									<span
 										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${ENGAGEMENT_STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 									>

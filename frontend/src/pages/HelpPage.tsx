@@ -1,80 +1,95 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
-import { pageTitleClass } from "../lib/headingClasses";
+import PageHeaderBand from "../components/PageHeaderBand";
+import FaqAccordion from "../components/FaqAccordion";
+import { HandRaisedIcon } from "../components/icons";
+import { cardClass } from "../lib/surfaceClasses";
 
 export default function HelpPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("help.title"));
-	usePageToolbar([{ label: t("help.title") }]);
+
+	// Two audiences, not a sequence - so the page splits by who is asking
+	// rather than numbering the questions. Each column reuses the same
+	// accordion the landing page's FAQ is built from, which is where the
+	// "More questions? See Help" link at the bottom of that FAQ leads.
+	const audiences = [
+		{
+			title: t("help.volunteersTitle"),
+			items: [
+				{ q: t("help.volunteersQ1"), a: t("help.volunteersA1") },
+				{ q: t("help.volunteersQ2"), a: t("help.volunteersA2") },
+				{ q: t("help.volunteersQ3"), a: t("help.volunteersA3") },
+			],
+		},
+		{
+			title: t("help.organizersTitle"),
+			items: [
+				{ q: t("help.organizersQ1"), a: t("help.organizersA1") },
+				{ q: t("help.organizersQ2"), a: t("help.organizersA2") },
+				{ q: t("help.organizersQ3"), a: t("help.organizersA3") },
+			],
+		},
+	];
+
+	const linkClass =
+		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	return (
-		<div data-content-wrapper className="max-w-2xl">
-			<h1 className={`mb-2 text-gray-900 ${pageTitleClass}`}>
-				{t("help.title")}
-			</h1>
-			<p className="mb-8 leading-relaxed text-gray-700">{t("help.intro")}</p>
+		<>
+			<PageHeaderBand
+				eyebrow={t("help.eyebrow")}
+				title={t("help.title")}
+				lead={t("help.intro")}
+			/>
 
-			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">
-					{t("help.volunteersTitle")}
-				</h2>
-				<h3 className="mb-1 text-lg font-medium">{t("help.volunteersQ1")}</h3>
-				<p className="mb-4 leading-relaxed text-gray-700">
-					{t("help.volunteersA1")}
-				</p>
-				<h3 className="mb-1 text-lg font-medium">{t("help.volunteersQ2")}</h3>
-				<p className="mb-4 leading-relaxed text-gray-700">
-					{t("help.volunteersA2")}
-				</p>
-				<h3 className="mb-1 text-lg font-medium">{t("help.volunteersQ3")}</h3>
-				<p className="leading-relaxed text-gray-700">
-					{t("help.volunteersA3")}
-				</p>
-			</section>
+			<div data-content-wrapper className="mx-auto max-w-5xl">
+				<div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
+					{audiences.map(({ title, items }) => (
+						<section key={title} aria-label={title}>
+							<h2 className="mb-5 font-display text-3xl font-bold text-gray-900">
+								{title}
+							</h2>
+							<FaqAccordion items={items} />
+						</section>
+					))}
+				</div>
 
-			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">
-					{t("help.organizersTitle")}
-				</h2>
-				<h3 className="mb-1 text-lg font-medium">{t("help.organizersQ1")}</h3>
-				<p className="mb-4 leading-relaxed text-gray-700">
-					{t("help.organizersA1")}
-				</p>
-				<h3 className="mb-1 text-lg font-medium">{t("help.organizersQ2")}</h3>
-				<p className="mb-4 leading-relaxed text-gray-700">
-					{t("help.organizersA2")}
-				</p>
-				<h3 className="mb-1 text-lg font-medium">{t("help.organizersQ3")}</h3>
-				<p className="leading-relaxed text-gray-700">
-					{t("help.organizersA3")}
-				</p>
-			</section>
-
-			<section>
-				<h2 className="mb-2 text-xl font-semibold">{t("help.contactTitle")}</h2>
-				<p className="leading-relaxed text-gray-700">
-					<Trans
-						i18nKey="help.contactBody"
-						components={{
-							opportunitiesLink: (
-								<Link to="/" className="text-brand-700 underline" />
-							),
-							// Organizations no longer have their own listing page -
-							// findable via the same homepage search as opportunities
-							// now (keyword search matches org names too), so this
-							// points to "/" same as opportunitiesLink.
-							organizationsLink: (
-								<Link to="/" className="text-brand-700 underline" />
-							),
-							contactLink: (
-								<Link to="/contact" className="text-brand-700 underline" />
-							),
-						}}
-					/>
-				</p>
-			</section>
-		</div>
+				<section
+					aria-labelledby="help-contact"
+					className={`mt-12 flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6 ${cardClass} sm:p-8`}
+				>
+					<div
+						aria-hidden="true"
+						className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700"
+					>
+						<HandRaisedIcon className="h-6 w-6" />
+					</div>
+					<div>
+						<h2
+							id="help-contact"
+							className="font-display text-2xl font-bold text-gray-900"
+						>
+							{t("help.contactTitle")}
+						</h2>
+						<p className="mt-2 leading-7 text-gray-700">
+							<Trans
+								i18nKey="help.contactBody"
+								components={{
+									opportunitiesLink: <Link to="/" className={linkClass} />,
+									// Organizations no longer have their own listing page -
+									// findable via the same homepage search as opportunities
+									// now (keyword search matches org names too), so this
+									// points to "/" same as opportunitiesLink.
+									organizationsLink: <Link to="/" className={linkClass} />,
+									contactLink: <Link to="/contact" className={linkClass} />,
+								}}
+							/>
+						</p>
+					</div>
+				</section>
+			</div>
+		</>
 	);
 }

@@ -59,14 +59,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		await Expect(breadcrumb).ToBeVisibleAsync();
-
-		var homeCrumb = breadcrumb.Locator("a[href='/']");
-		await Expect(homeCrumb).ToBeVisibleAsync();
+		// #1755 replaced this page's breadcrumb bar with a PageHeaderBand: the
+		// band states the org name as the h1 and carries the way back home, so
+		// the bar restating both directly above it was pure duplication.
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
-		await Expect(breadcrumb.GetByText(orgName, new() { Exact = true })).ToBeVisibleAsync();
+		orgName.Should().NotBeNullOrWhiteSpace();
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -93,19 +94,17 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		await Expect(breadcrumb).ToBeVisibleAsync();
-		await Expect(breadcrumb.Locator("a[href='/']")).ToBeVisibleAsync();
+		// #1755: the breadcrumb bar is gone from this page too - the
+		// PageHeaderBand states the opportunity title as the h1 and puts the
+		// link to the owning organization in its eyebrow, which is where the
+		// middle crumb's job moved.
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync();
+		await Expect(Page.Locator("main a[href*='/organizations/']").First).ToBeVisibleAsync();
 
-		// Middle crumb links to the opportunity's organization, matching the org
-		// chip rendered further down the page.
-		var orgChipHref = await Page.Locator("a[href*='/organizations/']").First.GetAttributeAsync("href");
-		if (orgChipHref is not null)
-			await Expect(breadcrumb.Locator($"a[href='{orgChipHref}']")).ToBeVisibleAsync();
-
-		// Last crumb (current page, no link) matches the opportunity title.
 		var title = await Page.Locator("h1").First.InnerTextAsync();
-		await Expect(breadcrumb.GetByText(title, new() { Exact = true })).ToBeVisibleAsync();
+		title.Should().NotBeNullOrWhiteSpace();
 	}
 
 	[Test]

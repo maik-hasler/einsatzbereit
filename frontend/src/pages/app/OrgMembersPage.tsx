@@ -14,10 +14,12 @@ import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import Chip from "../../components/Chip";
+import SectionHeading from "../../components/SectionHeading";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
+import { cardClass } from "../../lib/surfaceClasses";
 
 export default function OrgMembersPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
@@ -257,7 +259,11 @@ export default function OrgMembersPage() {
 
 	return (
 		<div>
-			<div data-content-wrapper className="max-w-2xl">
+			{/* max-w-4xl, was max-w-2xl (#1755): a member row carries a name, an
+			email, a role chip and up to two actions, which at 672px left the
+			actions crowded against the name while ~700px of page sat empty
+			beside them. Still flush left, per #766. */}
+			<div data-content-wrapper className="max-w-4xl">
 				{successMessage && (
 					<SuccessBanner message={successMessage} className="mb-4" />
 				)}
@@ -265,33 +271,45 @@ export default function OrgMembersPage() {
 					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
 
+				{/* Boxed, and side by side from sm up: the search field and the role
+				select are one action ("invite this person, as this"), but as two
+				full-width controls stacked on bare page they read as the start of a
+				long form and gave the page no first section at all (#1755). */}
 				{isOrganizer && (
-					<div className="mb-6">
-						<label htmlFor="member-search" className={labelClass}>
-							{t("orgSettings.inviteLabel")}
-						</label>
-						<input
-							id="member-search"
-							type="search"
-							value={memberSearch}
-							onChange={(e) => handleMemberSearchChange(e.target.value)}
-							placeholder={t("orgSettings.invitePlaceholder")}
-							className={inputClass}
-						/>
-						<label htmlFor="invite-role" className={`mt-2 ${labelClass}`}>
-							{t("orgSettings.inviteRoleLabel")}
-						</label>
-						<select
-							id="invite-role"
-							value={inviteRole}
-							onChange={(e) =>
-								setInviteRole(e.target.value as "Member" | "Organizer")
-							}
-							className={inputClass}
-						>
-							<option value="Member">{t("orgSettings.roleMember")}</option>
-							<option value="Organizer">{t("orgSettings.organisator")}</option>
-						</select>
+					<div className={`mb-8 ${cardClass} sm:p-6`}>
+						<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+							<div>
+								<label htmlFor="member-search" className={labelClass}>
+									{t("orgSettings.inviteLabel")}
+								</label>
+								<input
+									id="member-search"
+									type="search"
+									value={memberSearch}
+									onChange={(e) => handleMemberSearchChange(e.target.value)}
+									placeholder={t("orgSettings.invitePlaceholder")}
+									className={inputClass}
+								/>
+							</div>
+							<div>
+								<label htmlFor="invite-role" className={labelClass}>
+									{t("orgSettings.inviteRoleLabel")}
+								</label>
+								<select
+									id="invite-role"
+									value={inviteRole}
+									onChange={(e) =>
+										setInviteRole(e.target.value as "Member" | "Organizer")
+									}
+									className={inputClass}
+								>
+									<option value="Member">{t("orgSettings.roleMember")}</option>
+									<option value="Organizer">
+										{t("orgSettings.organisator")}
+									</option>
+								</select>
+							</div>
+						</div>
 						{memberSearchLoading && (
 							<p role="status" className="mt-1 text-xs text-gray-500">
 								{t("orgSettings.searching")}
@@ -341,9 +359,9 @@ export default function OrgMembersPage() {
 
 				{invitations.some((i) => i.status === "Pending") && (
 					<div className="mb-6">
-						<h2 className="mb-2 text-sm font-medium text-gray-700">
+						<SectionHeading>
 							{t("orgSettings.pendingInvitations")}
-						</h2>
+						</SectionHeading>
 						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{invitations
 								.filter((i) => i.status === "Pending")
@@ -389,9 +407,9 @@ export default function OrgMembersPage() {
 
 				{invitations.some((i) => i.status === "Declined") && (
 					<div className="mb-6">
-						<h2 className="mb-2 text-sm font-medium text-gray-700">
+						<SectionHeading>
 							{t("orgSettings.declinedInvitations")}
-						</h2>
+						</SectionHeading>
 						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{invitations
 								.filter((i) => i.status === "Declined")
@@ -424,9 +442,9 @@ export default function OrgMembersPage() {
 
 				{invitations.some((i) => i.status === "Expired") && (
 					<div className="mb-6">
-						<h2 className="mb-2 text-sm font-medium text-gray-700">
+						<SectionHeading>
 							{t("orgSettings.expiredInvitations")}
-						</h2>
+						</SectionHeading>
 						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{invitations
 								.filter((i) => i.status === "Expired")
@@ -491,110 +509,122 @@ export default function OrgMembersPage() {
 						message={t("orgSettings.noMembersHint")}
 					/>
 				) : (
-					<ul className="divide-y divide-gray-100">
-						{members.map((member) => (
-							<li
-								key={member.userId}
-								className="flex items-center justify-between py-3"
-							>
-								<div className="min-w-0">
-									<p className="truncate text-sm font-medium text-gray-900">
-										{member.firstName && member.lastName
-											? `${member.firstName} ${member.lastName}`
-											: member.username}
-									</p>
-									<p className="truncate text-xs text-gray-500">
-										{member.email}
-									</p>
-									{member.isOrganisator && (
-										<Chip tone="brand" size="sm" className="mt-0.5">
-											{t("orgSettings.organisator")}
-										</Chip>
-									)}
-								</div>
-								{member.userId === currentUserId ? (
-									<button
-										type="button"
-										onClick={() => setShowLeaveConfirm(true)}
-										disabled={isLastOrganizer}
-										title={
-											isLastOrganizer
-												? t("orgSettings.leaveOrganizationLastOrganizerHint")
-												: undefined
-										}
-										className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-									>
-										{t("orgSettings.leaveOrganization")}
-									</button>
-								) : isOrganizer ? (
-									<div className="flex shrink-0 items-center gap-3">
-										{(() => {
-											const memberName =
-												member.firstName && member.lastName
-													? `${member.firstName} ${member.lastName}`
-													: member.username;
-											return (
-												<>
-													<button
-														type="button"
-														onClick={() =>
-															void handleChangeMemberRole(
-																member.userId,
-																member.isOrganisator ? "Member" : "Organizer",
-															)
-														}
-														disabled={
-															changingRoleUserId === member.userId ||
-															(member.isOrganisator && organizerCount <= 1)
-														}
-														title={
-															member.isOrganisator && organizerCount <= 1
-																? t("orgSettings.changeRoleLastOrganizerHint")
-																: undefined
-														}
-														aria-label={
-															member.isOrganisator
-																? t("orgSettings.demoteToMemberNamed", {
-																		name: memberName,
-																	})
-																: t("orgSettings.promoteToOrganizerNamed", {
-																		name: memberName,
-																	})
-														}
-														className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-													>
-														{member.isOrganisator
-															? t("orgSettings.demoteToMember")
-															: t("orgSettings.promoteToOrganizer")}
-													</button>
-													<button
-														type="button"
-														onClick={() =>
-															setRemoveTarget({
-																userId: member.userId,
-																name: memberName,
-															})
-														}
-														aria-label={t("orgSettings.removeMemberNamed", {
-															name: memberName,
-														})}
-														className="text-xs text-red-700 hover:text-red-800"
-													>
-														{t("orgSettings.removeMember")}
-													</button>
-												</>
-											);
-										})()}
+					// Boxed like every other list on this page. It was the only one
+					// left as a bare divide-y on the page background, so the page's
+					// actual subject - who is in this organization - was the one
+					// thing with no surface of its own (#1755).
+					// cardClass's own p-4 is deliberately not used here: the padding
+					// belongs on each row, not the frame, which surfaceClasses.ts
+					// calls out as the one card-like case it doesn't cover.
+					<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
+						<ul className="divide-y divide-gray-100">
+							{members.map((member) => (
+								<li
+									key={member.userId}
+									className="flex items-center justify-between gap-4 px-4 py-4"
+								>
+									<div className="min-w-0">
+										<p className="truncate text-sm font-medium text-gray-900">
+											{member.firstName && member.lastName
+												? `${member.firstName} ${member.lastName}`
+												: member.username}
+										</p>
+										<p className="truncate text-xs text-gray-500">
+											{member.email}
+										</p>
+										{member.isOrganisator && (
+											<Chip tone="brand" size="sm" className="mt-0.5">
+												{t("orgSettings.organisator")}
+											</Chip>
+										)}
 									</div>
-								) : null}
-							</li>
-						))}
-					</ul>
-				)}
-				{isLastOrganizer && (
-					<p className="mt-3 text-xs text-gray-500">
-						{t("orgSettings.leaveOrganizationLastOrganizerHint")}
-					</p>
+									{member.userId === currentUserId ? (
+										<button
+											type="button"
+											onClick={() => setShowLeaveConfirm(true)}
+											disabled={isLastOrganizer}
+											title={
+												isLastOrganizer
+													? t("orgSettings.leaveOrganizationLastOrganizerHint")
+													: undefined
+											}
+											className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+										>
+											{t("orgSettings.leaveOrganization")}
+										</button>
+									) : isOrganizer ? (
+										<div className="flex shrink-0 items-center gap-3">
+											{(() => {
+												const memberName =
+													member.firstName && member.lastName
+														? `${member.firstName} ${member.lastName}`
+														: member.username;
+												return (
+													<>
+														<button
+															type="button"
+															onClick={() =>
+																void handleChangeMemberRole(
+																	member.userId,
+																	member.isOrganisator ? "Member" : "Organizer",
+																)
+															}
+															disabled={
+																changingRoleUserId === member.userId ||
+																(member.isOrganisator && organizerCount <= 1)
+															}
+															title={
+																member.isOrganisator && organizerCount <= 1
+																	? t("orgSettings.changeRoleLastOrganizerHint")
+																	: undefined
+															}
+															aria-label={
+																member.isOrganisator
+																	? t("orgSettings.demoteToMemberNamed", {
+																			name: memberName,
+																		})
+																	: t("orgSettings.promoteToOrganizerNamed", {
+																			name: memberName,
+																		})
+															}
+															className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+														>
+															{member.isOrganisator
+																? t("orgSettings.demoteToMember")
+																: t("orgSettings.promoteToOrganizer")}
+														</button>
+														<button
+															type="button"
+															onClick={() =>
+																setRemoveTarget({
+																	userId: member.userId,
+																	name: memberName,
+																})
+															}
+															aria-label={t("orgSettings.removeMemberNamed", {
+																name: memberName,
+															})}
+															className="text-xs text-red-700 hover:text-red-800"
+														>
+															{t("orgSettings.removeMember")}
+														</button>
+													</>
+												);
+											})()}
+										</div>
+									) : null}
+								</li>
+							))}
+						</ul>
+						{/* Footer inside the card, not loose text under it: the hint
+						explains why the row above has a disabled "Leave" action, so it
+						belongs to the list rather than to the page (#1755). */}
+						{isLastOrganizer && (
+							<p className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
+								{t("orgSettings.leaveOrganizationLastOrganizerHint")}
+							</p>
+						)}
+					</div>
 				)}
 			</div>
 

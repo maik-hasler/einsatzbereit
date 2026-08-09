@@ -46,6 +46,10 @@ export default function DangerZoneCard() {
 	return (
 		<>
 			<DangerZonePanel
+				// Capped to the same measure as the notification card above, so
+				// the two panels on this page share an edge instead of the red
+				// one running 600px wider than the white one (#1755).
+				className="max-w-3xl"
 				title={t("account.dangerZoneTitle")}
 				description={t("account.dangerZoneDescription")}
 				actionLabel={t("account.deleteAccountButton")}

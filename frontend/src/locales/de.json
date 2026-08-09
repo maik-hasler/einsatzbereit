@@ -13,7 +13,8 @@
       "retrying": "Wird erneut versucht…",
       "loading": "Wird geladen…",
       "pageLoading": "Seite wird geladen…",
-      "skipToContent": "Zum Inhalt springen"
+      "skipToContent": "Zum Inhalt springen",
+      "onThisPage": "Auf dieser Seite"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
@@ -199,7 +200,10 @@
       "participantsJoined_one": "{{count}} Person hat sich bereits angemeldet",
       "participantsJoined_other": "{{count}} Personen haben sich bereits angemeldet",
       "maxParticipants_one": "(max. {{count}} Person)",
-      "maxParticipants_other": "(max. {{count}} Personen)"
+      "maxParticipants_other": "(max. {{count}} Personen)",
+      "factWhen": "Wann",
+      "factFormat": "Ablauf",
+      "factWhere": "Wo"
     },
     "createOpportunity": {
       "title": "Einsatz erstellen",
@@ -744,7 +748,8 @@
       "section8Body2": "Darüber hinaus speichern wir einige Werte im lokalen Speicher (Local Storage) Ihres Browsers: Ihre gewählte Oberflächensprache, ob Sie diese Sprache bewusst selbst gewählt haben statt sie automatisch erkennen zu lassen, sowie welche Erfolgs-Benachrichtigungen Sie bereits gesehen haben (kontobezogen gespeichert). Die Zugriffs-, ID- und Refresh-Token Ihrer Sitzung werden getrennt davon im Sitzungsspeicher (Session Storage) Ihres Browsers abgelegt; dies ist technisch notwendig, um Sie angemeldet zu halten, und wird automatisch gelöscht, sobald Sie den Browser-Tab schließen. Diese Werte verlassen Ihren Browser nie. Das active-org-Cookie sowie diese lokalen Speicher- und Sitzungsspeicherwerte werden bei der Abmeldung gelöscht.",
       "section9Title": "Ihre Rechte",
       "section9Body1": "Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO) und Einschränkung der Verarbeitung (Art. 18 DSGVO) Ihrer personenbezogenen Daten sowie das Recht auf Datenübertragbarkeit (Art. 20 DSGVO) und das Recht, der auf unserem berechtigten Interesse beruhenden Verarbeitung zu widersprechen (Art. 21 DSGVO). Ihr eigenes Konto und die meisten damit verbundenen Daten können Sie jederzeit selbst in Ihren Profileinstellungen löschen; für alle anderen Anliegen, einschließlich einer Kopie Ihrer Daten oder eines Widerspruchs, wenden Sie sich an die im Abschnitt „Verantwortliche Stelle“ oben genannte Adresse oder E-Mail-Adresse. Wir sind bemüht, innerhalb eines Monats zu antworten, wie es Art. 12 Abs. 3 DSGVO vorsieht.",
-      "section9Body2": "Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Bundesland, in dem Sie wohnen, arbeiten oder in dem der mutmaßliche Verstoß erfolgt ist. Die für uns zuständige Aufsichtsbehörde ist: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover."
+      "section9Body2": "Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Bundesland, in dem Sie wohnen, arbeiten oder in dem der mutmaßliche Verstoß erfolgt ist. Die für uns zuständige Aufsichtsbehörde ist: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover.",
+      "eyebrow": "Rechtliches"
     },
     "imprint": {
       "title": "Impressum",
@@ -758,14 +763,17 @@
       "section4aTitle": "Haftung für Inhalte",
       "section4aBody": "Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.",
       "section4bTitle": "Haftung für Links",
-      "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich."
+      "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich.",
+      "eyebrow": "Rechtliches"
     },
     "contact": {
       "title": "Kontakt",
       "reportSectionTitle": "Missbräuchliche Inhalte melden",
       "reportSectionBody": "Wenn dir ein Einsatz oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
       "otherSectionTitle": "Andere Fragen oder Anliegen",
-      "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
+      "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform.",
+      "eyebrow": "Support",
+      "intro": "Melde ein Problem oder finde die richtige Stelle für deine Frage."
     },
     "help": {
       "title": "Hilfe",
@@ -785,7 +793,8 @@
       "organizersQ3": "Wie verwalte ich Anmeldungen von Freiwilligen?",
       "organizersA3": "Öffne einen Einsatz im Dashboard deiner Organisation, um alle Angemeldeten zu sehen, ihnen zu schreiben oder sie einzuchecken.",
       "contactTitle": "Noch Hilfe nötig?",
-      "contactBody": "Wenn dir etwas wie Spam, Betrug oder anderweitig illegale Inhalte auffällt, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Für alles andere besuche unsere <contactLink>Kontaktseite</contactLink> oder schreibe uns direkt an maikhslr@gmail.com - wir antworten in der Regel innerhalb von 24 Stunden."
+      "contactBody": "Wenn dir etwas wie Spam, Betrug oder anderweitig illegale Inhalte auffällt, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Für alles andere besuche unsere <contactLink>Kontaktseite</contactLink> oder schreibe uns direkt an maikhslr@gmail.com - wir antworten in der Regel innerhalb von 24 Stunden.",
+      "eyebrow": "Support"
     },
     "termsOfUse": {
       "title": "Nutzungsbedingungen",
@@ -803,7 +812,8 @@
       "section6Title": "Sperrung und Kündigung",
       "section6Body": "Wir können ein Konto sperren oder deaktivieren, das gegen diese Bedingungen verstößt, betrügerische oder unsichere Inhalte veröffentlicht oder Gegenstand belegter Meldungen anderer Nutzerinnen und Nutzer ist. Wo möglich, informieren wir das betroffene Konto über den Grund. Sie können die Nutzung der Plattform jederzeit beenden und die Löschung Ihres Kontos beantragen; Einzelheiten zum Umgang mit Ihren Daten finden Sie in unserer <privacyLink>Datenschutzerklärung</privacyLink>.",
       "section7Title": "Änderungen dieser Bedingungen",
-      "section7Body": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren, um Änderungen der Plattform oder rechtlicher Vorgaben widerzuspiegeln. Die fortgesetzte Nutzung der Plattform nach einer Aktualisierung gilt als Zustimmung zu den geänderten Bedingungen. Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte über die in unserem <imprintLink>Impressum</imprintLink> genannten Angaben."
+      "section7Body": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren, um Änderungen der Plattform oder rechtlicher Vorgaben widerzuspiegeln. Die fortgesetzte Nutzung der Plattform nach einer Aktualisierung gilt als Zustimmung zu den geänderten Bedingungen. Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte über die in unserem <imprintLink>Impressum</imprintLink> genannten Angaben.",
+      "eyebrow": "Rechtliches"
     },
     "notifications": {
       "bellLabel": "Benachrichtigungen",
@@ -983,7 +993,8 @@
       "currentNeeds": "Aktuelle Einsätze",
       "noOpportunities": "Keine aktuellen Einsätze vorhanden.",
       "report": "Melden",
-      "reportOrganization": "Organisation melden"
+      "reportOrganization": "Organisation melden",
+      "eyebrow": "Organisation"
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
@@ -1035,7 +1046,9 @@
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
-      "removeChip": "Entfernen"
+      "removeChip": "Entfernen",
+      "subNavActivity": "Aktivität",
+      "eyebrow": "Konto"
     },
     "profileSettings": {
       "title": "Einstellungen"
@@ -1101,8 +1114,7 @@
     },
     "breadcrumb": {
       "label": "Navigationspfad",
-      "home": "Startseite",
-      "profile": "Profil"
+      "home": "Startseite"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",

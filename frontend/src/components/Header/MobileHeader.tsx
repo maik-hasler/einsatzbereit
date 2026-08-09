@@ -9,6 +9,7 @@ import { MenuToggleIcon } from "../icons";
 // owns the overlay the burger button toggles.
 export default function MobileHeader({
 	isLoggedIn,
+	isTransparent,
 	mobileOpen,
 	setMobileOpen,
 	menu,
@@ -17,6 +18,7 @@ export default function MobileHeader({
 	onNotificationNavigate,
 }: {
 	isLoggedIn: boolean;
+	isTransparent: boolean;
 	mobileOpen: boolean;
 	setMobileOpen: Dispatch<SetStateAction<boolean>>;
 	menu: AccountMenuState;
@@ -31,6 +33,7 @@ export default function MobileHeader({
 			{isLoggedIn && (
 				<NotificationDropdown
 					menu={menu}
+					transparent={isTransparent}
 					mobile
 					containerRef={notifContainerRef}
 					onNavigate={onNotificationNavigate}
@@ -41,7 +44,7 @@ export default function MobileHeader({
 				ref={menuButtonRef}
 				type="button"
 				onClick={() => setMobileOpen((o) => !o)}
-				className="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-brand-50 hover:text-brand-600"
+				className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={t("nav.openMenu")}
 				aria-expanded={mobileOpen}
 			>

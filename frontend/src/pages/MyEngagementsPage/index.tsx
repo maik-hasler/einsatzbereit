@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { usePageToolbar } from "../../contexts/ToolbarContext";
-import { pageTitleClass } from "../../lib/headingClasses";
+import ProfileSubNav from "../../components/ProfileSubNav";
+import PageHeaderBand from "../../components/PageHeaderBand";
 import ActivitySection from "./ActivitySection";
 
 // Open invitations and sign-ups - split out of the overloaded /profile into
@@ -11,15 +11,23 @@ import ActivitySection from "./ActivitySection";
 export default function MyEngagementsPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("myEngagementsPage.title"));
-	usePageToolbar([{ label: t("myEngagementsPage.title") }]);
 
 	return (
 		<>
-			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
-				{t("myEngagementsPage.title")}
-			</h1>
+			<PageHeaderBand
+				eyebrow={t("profile.eyebrow")}
+				title={t("myEngagementsPage.title")}
+			/>
 
-			<ActivitySection />
+			<div
+				data-content-wrapper
+				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			>
+				<ProfileSubNav active="activity" />
+				<div className="min-w-0">
+					<ActivitySection />
+				</div>
+			</div>
 		</>
 	);
 }

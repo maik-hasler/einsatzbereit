@@ -72,7 +72,7 @@ export default function UserProfilePage() {
 					</div>
 				</div>
 				<Skeleton className="mb-4 h-4 w-32" />
-				<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					{Array.from({ length: 6 }).map((_, i) => (
 						<Skeleton key={i} className="h-28 w-full" />
 					))}
@@ -87,18 +87,23 @@ export default function UserProfilePage() {
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 
 	return (
-		<>
-			<div className="mb-8 flex items-center gap-4">
+		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
+		// pulled the three badge columns out to ~450px each around cards holding
+		// an icon and two short lines. The identity block is boxed on the same
+		// brand-100 stage /profile uses, so a visitor's own profile and someone
+		// else's read as the same object rather than two unrelated pages.
+		<div className="max-w-5xl">
+			<div className="mb-8 flex items-center gap-4 rounded-card bg-brand-100 p-5 sm:p-6">
 				{profile.avatarUrl ? (
 					<img
 						src={profile.avatarUrl}
 						alt={profile.displayName}
-						width={64}
-						height={64}
-						className="h-16 w-16 rounded-full object-cover"
+						width={72}
+						height={72}
+						className="h-18 w-18 rounded-full object-cover ring-3 ring-white"
 					/>
 				) : (
-					<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-700">
+					<div className="flex h-18 w-18 items-center justify-center rounded-full bg-white text-2xl font-bold text-brand-700 ring-3 ring-white">
 						{profile.displayName.charAt(0).toUpperCase()}
 					</div>
 				)}
@@ -106,7 +111,7 @@ export default function UserProfilePage() {
 					<h1 className={`text-gray-900 ${pageTitleClass}`}>
 						{profile.displayName}
 					</h1>
-					<p className="mt-0.5 text-sm text-gray-500">
+					<p className="mt-0.5 text-sm text-brand-800">
 						{t("userProfile.engagementCount", {
 							count: profile.engagementCount,
 						})}
@@ -144,6 +149,6 @@ export default function UserProfilePage() {
 				<SectionHeading>{t("achievements.badgesTitle")}</SectionHeading>
 				<BadgeGrid earned={profile.badges} catalog={catalog} loading={false} />
 			</section>
-		</>
+		</div>
 	);
 }

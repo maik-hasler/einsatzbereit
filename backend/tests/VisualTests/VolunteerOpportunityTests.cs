@@ -226,8 +226,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #394 breadcrumb navigation present (aria-label is hardcoded "Breadcrumb").
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']"))
+		// #394 wanted a way back from this page; #1755 moved that into the
+		// PageHeaderBand and dropped the bar, so the Home link now lives in
+		// <main> rather than in a nav[aria-label='Breadcrumb'] strip.
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
 			.ToBeVisibleAsync();
 
 		// #373 share button present (matched by stable test id, locale-independent).

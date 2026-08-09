@@ -16,6 +16,7 @@ import {
 } from "../icons";
 
 export default function AccountControls({
+	transparent = false,
 	menu,
 	displayName,
 	initials,
@@ -24,6 +25,7 @@ export default function AccountControls({
 	onSignOut,
 	onNotificationNavigate,
 }: {
+	transparent?: boolean;
 	menu: AccountMenuState;
 	displayName: string;
 	initials: string;
@@ -49,6 +51,7 @@ export default function AccountControls({
 		<>
 			<NotificationDropdown
 				menu={menu}
+				transparent={transparent}
 				containerRef={notifRef}
 				onNavigate={onNotificationNavigate}
 			/>
@@ -57,7 +60,7 @@ export default function AccountControls({
 				<button
 					type="button"
 					onClick={() => setDropdownOpen((o) => !o)}
-					className="flex cursor-pointer items-center gap-1.5 rounded-full border border-transparent p-0.5 transition-all hover:ring-2 hover:ring-brand-200"
+					className={`flex cursor-pointer items-center gap-1.5 rounded-full border p-0.5 transition-all ${transparent ? "border-white/30 hover:bg-white/10" : "border-transparent hover:ring-2 hover:ring-brand-200"}`}
 					aria-label={t("nav.userMenu")}
 					aria-expanded={dropdownOpen}
 				>
@@ -74,7 +77,9 @@ export default function AccountControls({
 							{initials}
 						</span>
 					)}
-					<ChevronDownIcon className="h-4 w-4 text-gray-400" />
+					<ChevronDownIcon
+						className={`h-4 w-4 ${transparent ? "text-white/70" : "text-gray-400"}`}
+					/>
 				</button>
 
 				{dropdownOpen && (

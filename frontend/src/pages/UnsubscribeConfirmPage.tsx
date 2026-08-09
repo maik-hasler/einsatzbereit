@@ -4,7 +4,9 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import { EnvelopeIcon } from "../components/icons";
 import { statusTitleClass } from "../lib/headingClasses";
+import { cardClass } from "../lib/surfaceClasses";
 
 // One-click-unsubscribe links in transactional emails point here instead of
 // straight at the backend's state-changing endpoint (#1725) - a mail scanner
@@ -37,23 +39,33 @@ export default function UnsubscribeConfirmPage() {
 		? `${runtimeConfig.apiUrl}/v1/users/${encodeURIComponent(userId ?? "")}/unsubscribe?type=${encodeURIComponent(type ?? "")}&token=${encodeURIComponent(token ?? "")}`
 		: undefined;
 
+	// Boxed rather than floating text on white - see the same note on
+	// UnsubscribePage, the step this one leads into (#1755).
 	return (
-		<div className="flex min-h-[70vh] items-center justify-center px-4 text-center">
-			<div className="max-w-md">
-				<h1 className={`mb-4 text-brand-700 ${statusTitleClass}`}>
+		<div className="mx-auto max-w-md py-10 sm:py-16">
+			<div className={`${cardClass} text-center sm:p-8`}>
+				<div
+					aria-hidden="true"
+					className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-brand-700"
+				>
+					<EnvelopeIcon className="h-7 w-7" />
+				</div>
+				<h1 className={`mt-6 text-gray-900 ${statusTitleClass}`}>
 					{t("unsubscribeConfirm.title")}
 				</h1>
 				{isValid && confirmUrl ? (
 					<>
-						<p className="mb-8 text-black">
+						<p className="mt-4 leading-relaxed text-gray-700">
 							{t("unsubscribeConfirm.description", { type: typeLabel })}
 						</p>
-						<Button href={confirmUrl} size="lg">
+						<Button href={confirmUrl} size="lg" className="mt-8">
 							{t("unsubscribeConfirm.confirm")}
 						</Button>
 					</>
 				) : (
-					<ErrorBanner message={t("unsubscribeConfirm.invalidLink")} />
+					<div className="mt-6 text-left">
+						<ErrorBanner message={t("unsubscribeConfirm.invalidLink")} />
+					</div>
 				)}
 			</div>
 		</div>

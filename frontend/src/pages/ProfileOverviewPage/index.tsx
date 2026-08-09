@@ -5,16 +5,15 @@ import { Trans, useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
-import { pageTitleClass } from "../../lib/headingClasses";
-import { cardSubtleClass } from "../../lib/surfaceClasses";
+import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import ProfileSubNav from "../../components/ProfileSubNav";
+import PageHeaderBand from "../../components/PageHeaderBand";
 import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
 import LoadMoreError from "../../components/LoadMoreError";
@@ -159,7 +158,6 @@ export default function ProfileOverviewPage() {
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
-	usePageToolbar([{ label: t("breadcrumb.profile") }]);
 
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [profileLoading, setProfileLoading] = useState(true);
@@ -341,393 +339,444 @@ export default function ProfileOverviewPage() {
 		!form.state.preferredLanguage;
 
 	return (
+		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
+		// stretched the identity band to ~1376x130 around two lines of text and
+		// pulled the six badges out to 160px-wide slivers. The content is a
+		// person, a couple of stats and six badges - it needs a column, not the
+		// full page.
 		<>
-			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
-				{t("profile.title")}
-			</h1>
+			<PageHeaderBand
+				eyebrow={t("profile.eyebrow")}
+				title={t("profile.title")}
+			/>
 
-			<ProfileSubNav active="profile" />
-
-			{profileLoading && (
-				<div
-					className={`mb-6 flex items-center gap-4 ${cardSubtleClass}`}
-					role="status"
-				>
-					<span className="sr-only">{t("profile.loading")}</span>
-					<Skeleton className="h-16 w-16 shrink-0 rounded-full" />
-					<div className="flex-1 space-y-2">
-						<Skeleton className="h-5 w-40" />
-						<Skeleton className="h-4 w-24" />
-					</div>
-				</div>
-			)}
-
-			{!profileLoading && (
-				<>
-					{profileError && (
-						<LoadMoreError
-							message={profileError}
-							retrying={retryingProfileLoad}
-							onRetry={handleRetryProfileLoad}
-						/>
+			<div
+				data-content-wrapper
+				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			>
+				<ProfileSubNav active="profile" />
+				<div className="min-w-0">
+					{profileLoading && (
+						<div
+							className={`mb-6 flex items-center gap-4 ${cardSubtleClass}`}
+							role="status"
+						>
+							<span className="sr-only">{t("profile.loading")}</span>
+							<Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+							<div className="flex-1 space-y-2">
+								<Skeleton className="h-5 w-40" />
+								<Skeleton className="h-4 w-24" />
+							</div>
+						</div>
 					)}
-					{/* Always mounted (not conditional on `successMessage`) so the live
+
+					{!profileLoading && (
+						<>
+							{profileError && (
+								<LoadMoreError
+									message={profileError}
+									retrying={retryingProfileLoad}
+									onRetry={handleRetryProfileLoad}
+								/>
+							)}
+							{/* Always mounted (not conditional on `successMessage`) so the live
 					region is registered before it ever gets content - see
 					CheckInModal.tsx's identical pattern for why. SuccessBanner itself
 					collapses to sr-only when `message` is empty, so this stays mounted
 					across the toggle. */}
-					<SuccessBanner message={successMessage} className="mb-4" />
+							<SuccessBanner message={successMessage} className="mb-4" />
 
-					{/* Identity + momentum hero */}
-					{!editing && (
-						<div
-							className={`mb-6 flex flex-col gap-4 ${cardSubtleClass} sm:flex-row sm:items-center sm:justify-between`}
-						>
-							<div className="flex items-center gap-4">
-								{avatarUrl ? (
-									<img
-										src={avatarUrl}
-										alt=""
-										width={64}
-										height={64}
-										className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brand-100"
-									/>
-								) : (
-									<span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-										{profile?.username?.charAt(0).toUpperCase() ?? "?"}
-									</span>
-								)}
-								<div>
-									<p className="text-xl font-semibold text-gray-900">
-										{form.state.firstName || form.state.lastName
-											? `${form.state.firstName} ${form.state.lastName}`.trim()
-											: profile?.username}
-									</p>
-									<p className="text-sm text-gray-500">@{profile?.username}</p>
-									<p className="text-sm text-gray-500">{profile?.email}</p>
-								</div>
-							</div>
-
-							{streaks && (
-								<div className="flex flex-wrap gap-3">
-									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-											<FireIcon />
-										</span>
-										<div>
-											<p className="text-xl font-bold text-gray-900">
-												{streaks.loginStreak}
+							{/* Identity + momentum hero. Was a gray-50 panel (#1755): the
+					person is the subject of this page, and rendering their own
+					name, handle and avatar as a grey utility strip - the largest
+					flat surface on the page - was most of why it read as dead.
+					Pale-mint brand stage instead, the same tier the landing page's
+					founder band uses, with the avatar ringed in white so it reads
+					as a portrait rather than another tile. */}
+							{!editing && (
+								<div className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+									<div className="flex items-center gap-4">
+										{avatarUrl ? (
+											<img
+												src={avatarUrl}
+												alt=""
+												width={72}
+												height={72}
+												className="h-18 w-18 shrink-0 rounded-full object-cover ring-3 ring-white"
+											/>
+										) : (
+											<span className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-white text-2xl font-semibold text-brand-700 ring-3 ring-white">
+												{profile?.username?.charAt(0).toUpperCase() ?? "?"}
+											</span>
+										)}
+										<div className="min-w-0">
+											<p className="font-display text-3xl font-bold text-gray-900">
+												{form.state.firstName || form.state.lastName
+													? `${form.state.firstName} ${form.state.lastName}`.trim()
+													: profile?.username}
 											</p>
-											<p className="text-xs text-gray-500">
-												{t("achievements.loginStreak", {
-													count: streaks.loginStreak,
-												})}
+											<p className="text-sm text-brand-800">
+												@{profile?.username}
+											</p>
+											<p className="truncate text-sm text-brand-800">
+												{profile?.email}
 											</p>
 										</div>
 									</div>
-									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-											<CalendarIcon />
-										</span>
-										<div>
-											<p className="text-xl font-bold text-gray-900">
-												{streaks.activityStreak}
-											</p>
-											<p className="text-xs text-gray-500">
-												{t("achievements.activityStreak", {
-													count: streaks.activityStreak,
-												})}
-											</p>
+
+									{streaks && (
+										<div className="flex flex-wrap gap-3">
+											<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
+												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+													<FireIcon />
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.loginStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.loginStreak", {
+															count: streaks.loginStreak,
+														})}
+													</p>
+												</div>
+											</div>
+											<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
+												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+													<CalendarIcon />
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.activityStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.activityStreak", {
+															count: streaks.activityStreak,
+														})}
+													</p>
+												</div>
+											</div>
 										</div>
-									</div>
+									)}
 								</div>
 							)}
-						</div>
-					)}
 
-					{/* Profile details */}
-					<section className="mb-6">
-						<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
-						<p className="mb-4 text-sm text-gray-600">
-							<Trans
-								i18nKey="profile.publicProfileNotice"
-								components={{
-									privacyLink: (
-										<Link to="/privacy-policy" className="underline" />
-									),
-								}}
-							/>
-						</p>
+							{/* Profile details */}
+							<section className="mb-10">
+								<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
 
-						{!editing &&
-							(isProfileFieldsEmpty ? (
-								<EmptyState
-									title={t("profile.emptyStateTitle")}
-									message={t("profile.emptyStateMessage")}
-									action={{
-										label: t("profile.emptyStateCta"),
-										onClick: () => setEditing(true),
-									}}
-								/>
-							) : (
-								<ProfileFieldsView
-									bio={form.state.bio}
-									skills={form.state.skills}
-									languages={form.state.languages}
-									preferredContact={form.state.preferredContact || null}
-									phone={form.state.phone || null}
-									preferredLanguage={form.state.preferredLanguage}
-								/>
-							))}
+								{!editing &&
+									(isProfileFieldsEmpty ? (
+										<EmptyState
+											title={t("profile.emptyStateTitle")}
+											message={t("profile.emptyStateMessage")}
+											action={{
+												label: t("profile.emptyStateCta"),
+												onClick: () => setEditing(true),
+											}}
+										/>
+									) : (
+										// Boxed, like the identity band above and the badges
+										// below: as bare label/value pairs on white this was the
+										// one section on the page with no surface of its own.
+										<div className={`${cardClass} sm:p-6`}>
+											<ProfileFieldsView
+												bio={form.state.bio}
+												skills={form.state.skills}
+												languages={form.state.languages}
+												preferredContact={form.state.preferredContact || null}
+												phone={form.state.phone || null}
+												preferredLanguage={form.state.preferredLanguage}
+											/>
+										</div>
+									))}
 
-						{editing && (
-							<form ref={formRef} onSubmit={handleSave} className="space-y-6">
-								<div>
-									<h3 className="mb-4 text-sm font-semibold text-gray-900">
-										{t("account.title")}
-									</h3>
-									<div className="space-y-5">
+								{/* Small print under the fields, not a lead paragraph above
+						them (#1755): as the first thing in the section it made a
+						privacy footnote look like the section's actual content, on a
+						page where the section otherwise holds very little. */}
+								{!editing && (
+									<p className="mt-4 text-xs text-gray-500">
+										<Trans
+											i18nKey="profile.publicProfileNotice"
+											components={{
+												privacyLink: (
+													<Link to="/privacy-policy" className="underline" />
+												),
+											}}
+										/>
+									</p>
+								)}
+
+								{editing && (
+									<form
+										ref={formRef}
+										onSubmit={handleSave}
+										className="space-y-6"
+									>
 										<div>
-											<p className={`mb-1 ${labelClass}`}>
-												{t("profile.fieldAvatar")}
-											</p>
-											<div className="flex items-center gap-4">
-												{avatarUrl ? (
-													<img
-														src={avatarUrl}
-														alt=""
-														width={64}
-														height={64}
-														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
-													/>
-												) : (
-													<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-														{profile?.username?.charAt(0).toUpperCase() ?? "?"}
-													</span>
-												)}
+											<h3 className="mb-4 text-sm font-semibold text-gray-900">
+												{t("account.title")}
+											</h3>
+											<div className="space-y-5">
 												<div>
-													<div className="flex items-center gap-3">
-														<FileUploadButton
-															id="avatar-upload"
-															label={
-																avatarUpload.uploading
-																	? t("profile.avatarUploading")
-																	: t("profile.avatarUpload")
-															}
-															accept="image/jpeg,image/png,image/webp"
-															onChange={avatarUpload.handleChange}
-															disabled={
-																avatarUpload.uploading || avatarUpload.removing
-															}
-															inputRef={avatarUpload.inputRef}
-															ariaDescribedBy={
-																avatarUpload.error
-																	? "avatar-upload-error"
-																	: undefined
-															}
-														/>
-														{avatarUrl && (
-															<button
-																type="button"
-																data-testid="avatar-remove"
-																onClick={() => void avatarUpload.handleRemove()}
-																disabled={
-																	avatarUpload.uploading ||
-																	avatarUpload.removing
-																}
-																className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-															>
-																{avatarUpload.removing
-																	? t("profile.avatarRemoving")
-																	: t("profile.avatarRemove")}
-															</button>
-														)}
-													</div>
-													<p className="mt-1 text-xs text-gray-500">
-														{t("profile.avatarHint")}
+													<p className={`mb-1 ${labelClass}`}>
+														{t("profile.fieldAvatar")}
 													</p>
-													{avatarUpload.error && (
-														<p
-															id="avatar-upload-error"
-															className="mt-1 text-xs text-red-600"
-															role="alert"
-														>
-															{avatarUpload.error}
+													<div className="flex items-center gap-4">
+														{avatarUrl ? (
+															<img
+																src={avatarUrl}
+																alt=""
+																width={64}
+																height={64}
+																className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+															/>
+														) : (
+															<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+																{profile?.username?.charAt(0).toUpperCase() ??
+																	"?"}
+															</span>
+														)}
+														<div>
+															<div className="flex items-center gap-3">
+																<FileUploadButton
+																	id="avatar-upload"
+																	label={
+																		avatarUpload.uploading
+																			? t("profile.avatarUploading")
+																			: t("profile.avatarUpload")
+																	}
+																	accept="image/jpeg,image/png,image/webp"
+																	onChange={avatarUpload.handleChange}
+																	disabled={
+																		avatarUpload.uploading ||
+																		avatarUpload.removing
+																	}
+																	inputRef={avatarUpload.inputRef}
+																	ariaDescribedBy={
+																		avatarUpload.error
+																			? "avatar-upload-error"
+																			: undefined
+																	}
+																/>
+																{avatarUrl && (
+																	<button
+																		type="button"
+																		data-testid="avatar-remove"
+																		onClick={() =>
+																			void avatarUpload.handleRemove()
+																		}
+																		disabled={
+																			avatarUpload.uploading ||
+																			avatarUpload.removing
+																		}
+																		className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+																	>
+																		{avatarUpload.removing
+																			? t("profile.avatarRemoving")
+																			: t("profile.avatarRemove")}
+																	</button>
+																)}
+															</div>
+															<p className="mt-1 text-xs text-gray-500">
+																{t("profile.avatarHint")}
+															</p>
+															{avatarUpload.error && (
+																<p
+																	id="avatar-upload-error"
+																	className="mt-1 text-xs text-red-600"
+																	role="alert"
+																>
+																	{avatarUpload.error}
+																</p>
+															)}
+														</div>
+													</div>
+												</div>
+
+												<div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+													<Field
+														label={t("account.fieldUsername")}
+														id="username"
+													>
+														<input
+															id="username"
+															disabled
+															autoComplete="username"
+															value={profile?.username ?? ""}
+															className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+														/>
+													</Field>
+
+													<Field label={t("account.fieldEmail")} id="email">
+														<input
+															id="email"
+															disabled
+															type="email"
+															autoComplete="email"
+															value={profile?.email ?? ""}
+															className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+														/>
+														<p className="mt-1 text-xs text-gray-500">
+															{t("account.emailHint")}
 														</p>
-													)}
+													</Field>
+
+													<Field
+														label={t("account.fieldFirstName")}
+														id="first-name"
+													>
+														<input
+															id="first-name"
+															autoComplete="given-name"
+															value={form.state.firstName}
+															onChange={(e) =>
+																form.setFirstName(e.target.value)
+															}
+															className={inputClass}
+														/>
+													</Field>
+
+													<Field
+														label={t("account.fieldLastName")}
+														id="last-name"
+													>
+														<input
+															id="last-name"
+															autoComplete="family-name"
+															value={form.state.lastName}
+															onChange={(e) => form.setLastName(e.target.value)}
+															className={inputClass}
+														/>
+													</Field>
 												</div>
 											</div>
 										</div>
 
-										<div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-											<Field label={t("account.fieldUsername")} id="username">
-												<input
-													id="username"
-													disabled
-													autoComplete="username"
-													value={profile?.username ?? ""}
-													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+										<hr className="border-gray-200" />
+
+										<div className="space-y-5">
+											<Field label={t("profile.fieldBio")} id="bio">
+												<textarea
+													id="bio"
+													rows={4}
+													value={form.state.bio}
+													placeholder={t("profile.bioPlaceholder")}
+													onChange={(e) => form.setBio(e.target.value)}
+													className={textareaClass}
 												/>
 											</Field>
 
-											<Field label={t("account.fieldEmail")} id="email">
-												<input
-													id="email"
-													disabled
-													type="email"
-													autoComplete="email"
-													value={profile?.email ?? ""}
-													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+											<Field label={t("profile.fieldSkills")} id="skill-input">
+												<ChipInput
+													inputRef={form.skillInputRef}
+													inputId="skill-input"
+													chips={form.state.skills}
+													inputValue={form.state.skillInput}
+													placeholder={t("profile.skillsPlaceholder")}
+													onInputChange={form.setSkillInput}
+													onAdd={form.addSkill}
+													onRemove={form.removeSkill}
+													removeLabel={t("profile.removeChip")}
 												/>
-												<p className="mt-1 text-xs text-gray-500">
-													{t("account.emailHint")}
-												</p>
 											</Field>
 
 											<Field
-												label={t("account.fieldFirstName")}
-												id="first-name"
+												label={t("profile.fieldLanguages")}
+												id="lang-input"
 											>
+												<ChipInput
+													inputRef={form.langInputRef}
+													inputId="lang-input"
+													chips={form.state.languages}
+													inputValue={form.state.langInput}
+													placeholder={t("profile.languagesPlaceholder")}
+													onInputChange={form.setLangInput}
+													onAdd={form.addLanguage}
+													onRemove={form.removeLanguage}
+													removeLabel={t("profile.removeChip")}
+													tone="neutral"
+												/>
+											</Field>
+
+											<Field label={t("profile.fieldPhone")} id="phone">
 												<input
-													id="first-name"
-													autoComplete="given-name"
-													value={form.state.firstName}
-													onChange={(e) => form.setFirstName(e.target.value)}
+													id="phone"
+													type="tel"
+													autoComplete="tel"
+													value={form.state.phone}
+													placeholder={t("profile.phonePlaceholder")}
+													onChange={(e) => form.setPhone(e.target.value)}
 													className={inputClass}
 												/>
 											</Field>
 
-											<Field label={t("account.fieldLastName")} id="last-name">
-												<input
-													id="last-name"
-													autoComplete="family-name"
-													value={form.state.lastName}
-													onChange={(e) => form.setLastName(e.target.value)}
+											<Field
+												label={t("profile.fieldPreferredContact")}
+												id="preferred-contact"
+											>
+												<Dropdown
+													id="preferred-contact"
+													value={form.state.preferredContact}
+													onChange={(v) =>
+														form.setPreferredContact(v as ContactPref)
+													}
 													className={inputClass}
+													options={[
+														{
+															value: "",
+															label: t("profile.preferredContactNone"),
+														},
+														{
+															value: "Email",
+															label: t("profile.preferredContactEmail"),
+														},
+														{
+															value: "Phone",
+															label: t("profile.preferredContactPhone"),
+														},
+													]}
+												/>
+											</Field>
+
+											<Field
+												label={t("profile.fieldPreferredLanguage")}
+												id="preferred-language"
+											>
+												<Dropdown
+													id="preferred-language"
+													value={form.state.preferredLanguage}
+													onChange={(v) =>
+														form.setPreferredLanguage(v as PreferredLanguage)
+													}
+													className={inputClass}
+													options={[
+														{
+															value: "de",
+															label: t("profile.preferredLanguageDe"),
+														},
+														{
+															value: "en",
+															label: t("profile.preferredLanguageEn"),
+														},
+													]}
 												/>
 											</Field>
 										</div>
-									</div>
-								</div>
+									</form>
+								)}
+							</section>
+						</>
+					)}
 
-								<hr className="border-gray-200" />
-
-								<div className="space-y-5">
-									<Field label={t("profile.fieldBio")} id="bio">
-										<textarea
-											id="bio"
-											rows={4}
-											value={form.state.bio}
-											placeholder={t("profile.bioPlaceholder")}
-											onChange={(e) => form.setBio(e.target.value)}
-											className={textareaClass}
-										/>
-									</Field>
-
-									<Field label={t("profile.fieldSkills")} id="skill-input">
-										<ChipInput
-											inputRef={form.skillInputRef}
-											inputId="skill-input"
-											chips={form.state.skills}
-											inputValue={form.state.skillInput}
-											placeholder={t("profile.skillsPlaceholder")}
-											onInputChange={form.setSkillInput}
-											onAdd={form.addSkill}
-											onRemove={form.removeSkill}
-											removeLabel={t("profile.removeChip")}
-										/>
-									</Field>
-
-									<Field label={t("profile.fieldLanguages")} id="lang-input">
-										<ChipInput
-											inputRef={form.langInputRef}
-											inputId="lang-input"
-											chips={form.state.languages}
-											inputValue={form.state.langInput}
-											placeholder={t("profile.languagesPlaceholder")}
-											onInputChange={form.setLangInput}
-											onAdd={form.addLanguage}
-											onRemove={form.removeLanguage}
-											removeLabel={t("profile.removeChip")}
-											tone="neutral"
-										/>
-									</Field>
-
-									<Field label={t("profile.fieldPhone")} id="phone">
-										<input
-											id="phone"
-											type="tel"
-											autoComplete="tel"
-											value={form.state.phone}
-											placeholder={t("profile.phonePlaceholder")}
-											onChange={(e) => form.setPhone(e.target.value)}
-											className={inputClass}
-										/>
-									</Field>
-
-									<Field
-										label={t("profile.fieldPreferredContact")}
-										id="preferred-contact"
-									>
-										<Dropdown
-											id="preferred-contact"
-											value={form.state.preferredContact}
-											onChange={(v) =>
-												form.setPreferredContact(v as ContactPref)
-											}
-											className={inputClass}
-											options={[
-												{
-													value: "",
-													label: t("profile.preferredContactNone"),
-												},
-												{
-													value: "Email",
-													label: t("profile.preferredContactEmail"),
-												},
-												{
-													value: "Phone",
-													label: t("profile.preferredContactPhone"),
-												},
-											]}
-										/>
-									</Field>
-
-									<Field
-										label={t("profile.fieldPreferredLanguage")}
-										id="preferred-language"
-									>
-										<Dropdown
-											id="preferred-language"
-											value={form.state.preferredLanguage}
-											onChange={(v) =>
-												form.setPreferredLanguage(v as PreferredLanguage)
-											}
-											className={inputClass}
-											options={[
-												{
-													value: "de",
-													label: t("profile.preferredLanguageDe"),
-												},
-												{
-													value: "en",
-													label: t("profile.preferredLanguageEn"),
-												},
-											]}
-										/>
-									</Field>
-								</div>
-							</form>
-						)}
-					</section>
-				</>
-			)}
-
-			{/* Mounted unconditionally (not gated behind profileLoading) so its own
+					{/* Mounted unconditionally (not gated behind profileLoading) so its own
 			independent data fetch starts immediately, and so its section id
 			exists right away for the legacy ?tab=achievements scroll-to-section
 			effect above regardless of how long the profile fetch takes. */}
-			<AchievementsSection />
+					<AchievementsSection />
+				</div>
+			</div>
 
 			{avatarUpload.croppingFile && (
 				<ImageCropModal

@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { usePageToolbar } from "../../contexts/ToolbarContext";
-import { pageTitleClass } from "../../lib/headingClasses";
 import ProfileSubNav from "../../components/ProfileSubNav";
+import PageHeaderBand from "../../components/PageHeaderBand";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import DangerZoneCard from "./DangerZoneCard";
 
@@ -13,21 +12,24 @@ import DangerZoneCard from "./DangerZoneCard";
 export default function ProfileSettingsPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("profileSettings.title"));
-	usePageToolbar([
-		{ label: t("breadcrumb.profile"), href: "/profile" },
-		{ label: t("profileSettings.title") },
-	]);
 
 	return (
 		<>
-			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
-				{t("profileSettings.title")}
-			</h1>
+			<PageHeaderBand
+				eyebrow={t("profile.eyebrow")}
+				title={t("profileSettings.title")}
+			/>
 
-			<ProfileSubNav active="settings" />
-
-			<NotificationPreferencesSection />
-			<DangerZoneCard />
+			<div
+				data-content-wrapper
+				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			>
+				<ProfileSubNav active="settings" />
+				<div className="min-w-0">
+					<NotificationPreferencesSection />
+					<DangerZoneCard />
+				</div>
+			</div>
 		</>
 	);
 }
