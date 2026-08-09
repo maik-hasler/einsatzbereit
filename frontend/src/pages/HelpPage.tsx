@@ -61,11 +61,12 @@ export default function HelpPage() {
 							opportunitiesLink: (
 								<Link to="/" className="text-brand-700 underline" />
 							),
+							// Organizations no longer have their own listing page -
+							// findable via the same homepage search as opportunities
+							// now (keyword search matches org names too), so this
+							// points to "/" same as opportunitiesLink.
 							organizationsLink: (
-								<Link
-									to="/organizations"
-									className="text-brand-700 underline"
-								/>
+								<Link to="/" className="text-brand-700 underline" />
 							),
 							contactLink: (
 								<Link to="/contact" className="text-brand-700 underline" />

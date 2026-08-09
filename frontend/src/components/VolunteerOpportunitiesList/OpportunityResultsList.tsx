@@ -40,10 +40,16 @@ export default function OpportunityResultsList({
 			loading skeleton and on error; otherwise announces the settled
 			result count whenever a filter change, search, or "Load more"
 			rewrites the list - previously nothing did, so a screen-reader user
-			had no way to tell whether anything changed. */}
+			had no way to tell whether anything changed. Two different messages
+			depending on hasMore - "N found" implies N is the total match count,
+			which is false while more pages are still behind "Load more"; that
+			case gets its own "N loaded, more available" wording instead of
+			overclaiming a total the screen-reader user hasn't seen yet. */}
 			<p role="status" className="sr-only">
 				{!error && !isInitialLoad
-					? t("opportunities.resultCount", { count: items.length })
+					? hasMore
+						? t("opportunities.resultCountPartial", { count: items.length })
+						: t("opportunities.resultCount", { count: items.length })
 					: ""}
 			</p>
 			{loading && items.length === 0 && (

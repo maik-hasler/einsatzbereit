@@ -358,17 +358,13 @@ overflow-y-auto already handles vertical scrolling. */
 /* ── Header offset tokens (issue #1130) ───────────────────────────────────
 Header.tsx's header is `sticky`, not `fixed`, so it already occupies flow
 space above AppLayout's <main> - --main-top-padding is just <main>'s own
-breathing room below it, unchanged per breakpoint from before. --header-
-offset adds --header-height on top of that: the full distance a full-bleed
-section (the HomePage hero) must pull itself up by to cancel both <main>'s
-padding and the header's own height and reach the very top of the document,
-tucking under the sticky (and, on the hero, transparent) header. Both
-tokens are defined once here so AppLayout and the hero can no longer drift
-out of sync with each other or with Header's actual height. */
+breathing room below it. --header-height is MobileMenu's own reference
+point for its below-the-header scrim/panel. Both tokens are defined once
+here so AppLayout and Header can no longer drift out of sync with each
+other or with Header's actual height. */
 :root {
 	--header-height: 4rem;
 	--main-top-padding: 1.5rem;
-	--header-offset: calc(var(--header-height) + var(--main-top-padding));
 }
 
 @media (min-width: 640px) {
@@ -381,14 +377,6 @@ out of sync with each other or with Header's actual height. */
 	:root {
 		--main-top-padding: 3rem;
 	}
-}
-
-/* Full-bleed: break an element out of its centered max-w container to span
-the full viewport width, regardless of the container's own max-width. */
-.full-bleed {
-	left: 50%;
-	width: 100vw;
-	margin-left: -50vw;
 }
 
 /* ── Global focus-visible ring (issue #992) ──────────────────────────────
@@ -429,6 +417,11 @@ same unlayered-override pattern already used in this file). */
 	font-black) without extra @font-face declarations. */
 	--font-sans: "Source Sans 3 Variable", ui-sans-serif, system-ui, sans-serif;
 
+	/* Display face - hero h1 and major section h2s only (font-display
+	utility), see main.tsx's font import comment. Everything else (body,
+	labels, UI chrome) stays on --font-sans above. */
+	--font-display: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
+
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
 	--color-brand-200: #a8dfc3;
@@ -439,10 +432,25 @@ same unlayered-override pattern already used in this file). */
 	--color-brand-700: #226947;
 	--color-brand-800: #1a3c2b;
 	--color-brand-900: #0e251a;
-	--color-accent-400: #5ac48a;
+	/* Was #5ac48a - a near-duplicate of --color-brand-400 (#5bbf8c), so every
+	spot meant to read as a deliberate second tone (the footer CTA card, the
+	hero's third glow blob and its flat "stone-4" fill) instead just blended
+	back into the same green ramp. Warm gold gives those spots real hue
+	separation from the all-green rest of the page rather than another shade
+	of it - kept off Tailwind's stock amber-500 (#f59e0b) and clear of the
+	warning chip's amber-700 (#b45309, browner/darker) so it doesn't read as
+	a caution color by association. */
+	--color-accent-400: #f0b23a;
 
 	/* Card/container radius - buttons and inputs keep their own rounded-xl (12px), see Button.tsx / lib/formClasses.ts */
 	--radius-card: 1rem;
+
+	/* Site content column (max-w-page) - Header, Footer, AppLayout and
+	OrgAppLayout all share this single width so the nav bar, page content
+	and boxed sections (e.g. HomePage's hero) line up edge-to-edge instead
+	of drifting out of sync. Wider than Tailwind's default 7xl (80rem) to
+	match the otter.com reference used for the marketing redesign. */
+	--container-page: 90rem;
 
 	/* Elevation scale: resting cards, raised/hover state, and true overlays (modals/popovers) */
 	--shadow-resting:

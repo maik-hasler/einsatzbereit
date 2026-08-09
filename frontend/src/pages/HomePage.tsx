@@ -1,32 +1,37 @@
 import { lazy, Suspense, useEffect, useId, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import type { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router";
-import type { OrganizationSummaryDto } from "../client/api-client";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { useAuth } from "react-oidc-context";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
+import type { CitySuggestion } from "../components/VolunteerOpportunitiesList/useCitySuggestions";
+import LocationSearchInput from "../components/LocationSearchInput";
 import Button from "../components/Button";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
-import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useApiClient } from "../hooks/useApiClient";
 import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
+import { WAVE_PATH } from "../lib/wavePath";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 import {
-	BuildingOfficeIcon,
-	CheckIcon,
-	ClockIcon,
-	HandRaisedIcon,
 	MagnifyingGlassIcon,
-	MapPinIcon,
-	SparklesIcon,
+	PlusIcon,
+	UserGroupIcon,
+	ShieldCheckIcon,
+	ChevronDownIcon,
 } from "../components/icons";
+import type {
+	Organization,
+	OrganizationSummaryDto,
+} from "../client/api-client";
 
-// Lazy-loaded: HomePage itself must stay a plain eager import (see App.tsx's
-// comment on why), but the org-creation form it conditionally renders pulls
-// in react-hook-form + zod (~27 KiB gzip) that an anonymous landing-page
-// visitor - the vast majority of this page's traffic - never needs (#1728).
+// Lazy-loaded: HomePage is eager (App.tsx keeps it out of the lazy route
+// map, see the comment there), so a static import here would pull
+// react-hook-form + zod into the entry chunk for every page - same reasoning
+// as OrganizationSwitcher's own lazy import of this same component (#1728).
 const CreateOrganizationModal = lazy(
 	() => import("../components/CreateOrganizationModal"),
 );
@@ -34,18 +39,18 @@ const CreateOrganizationModal = lazy(
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-	const auth = useAuth();
-	const api = useApiClient();
-	const navigate = useNavigate();
 	const { t } = useTranslation();
 	usePageTitle(t("landing.pageTitle"));
+	const auth = useAuth();
+	const navigate = useNavigate();
+	const api = useApiClient();
 
 	const heroTitleId = useId();
-	const howItWorksTitleId = useId();
 	const missionTitleId = useId();
-	const orgsTeaserTitleId = useId();
+	const orgCtaTitleId = useId();
+	const faqTitleId = useId();
 
-	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+	const [showOrgModal, setShowOrgModal] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	// Shared with Header, which independently needs the same top-level
@@ -56,29 +61,24 @@ export default function HomePage() {
 	);
 	const orgs = auth.isAuthenticated ? (orgsData ?? []) : [];
 	// useSharedOrgFetch leaves orgsData null both while the fetch is still in
-	// flight and after it rejects (see its error branch) - without checking
-	// for that, both looked identical to "this user genuinely organizes
-	// nothing", and a signed-in organizer could see the "create an
-	// organisation" CTA (and, if clicked, create a duplicate org) while their
-	// real org list was still loading or had failed to load. Split the two:
-	// a pulsing skeleton implies work in progress, which is only honest while
-	// still loading - once it's failed there's nothing further to wait for
-	// (no retry is wired up here, see HomePageOrgCtaTests.cs's regression
-	// test), so that slot renders nothing instead of a permanently animating
-	// placeholder.
+	// flight and after it rejects - without distinguishing those, a signed-in
+	// organizer could see the "create an organization" CTA (and, if clicked,
+	// create a duplicate org) while their real org list was still loading or
+	// had failed to load (see HomePageOrgCtaTests.cs's regression test).
 	const orgsLoading = auth.isAuthenticated && orgsData === null && !orgsError;
 	const orgsFailed = auth.isAuthenticated && orgsData === null && !!orgsError;
-
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
-	useEffect(() => {
-		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
-			setShowCreateOrgModal(true);
-			const next = new URLSearchParams(searchParams);
-			next.delete("createOrg");
-			setSearchParams(next, { replace: true });
-		}
-	}, [searchParams, auth.isAuthenticated, setSearchParams]);
+	// Hero search - initialized from the URL so a back-navigation (or a
+	// shared link with ?q=/&city=... already set) shows the search that
+	// produced the results below instead of a blank-looking form.
+	const [heroKeyword, setHeroKeyword] = useState(
+		() => searchParams.get("q") ?? "",
+	);
+	const [heroCityInput, setHeroCityInput] = useState(
+		() => searchParams.get("city") ?? "",
+	);
+	const [heroLocation, setHeroLocation] = useState<CitySuggestion | null>(null);
 
 	// A cross-page "/#opportunities" link (Footer, #1031) triggers a full
 	// browser navigation into this CSR SPA, whose initial HTML has no
@@ -93,9 +93,79 @@ export default function HomePage() {
 		}
 	}, []);
 
+	// Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint sends
+	// signed-out visitors through Keycloak's registration flow with
+	// ?createOrg=1 baked into the post-login returnTo - once they land back
+	// here authenticated, open the modal they originally asked for instead of
+	// making them find and click the CTA a second time.
+	useEffect(() => {
+		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
+			setShowOrgModal(true);
+			const next = new URLSearchParams(searchParams);
+			next.delete("createOrg");
+			setSearchParams(next, { replace: true });
+		}
+	}, [searchParams, auth.isAuthenticated, setSearchParams]);
+
+	// Keep the hero's own copies of q/city/lat/lng in sync with the URL after
+	// mount, not just on first paint - the filter bar below owns the same
+	// params (its own Location dropdown, the keyword pill's clear button) and
+	// previously had no way to push a change back up into the hero fields,
+	// leaving them showing stale text once the filter bar moved the URL out
+	// from under them. Deps are the individual param strings, not the
+	// searchParams object itself, so an unrelated change (e.g. toggling a
+	// category filter) doesn't re-run this and clobber a location the visitor
+	// is still mid-typing into the hero box, unconfirmed by a suggestion pick.
+	const urlKeyword = searchParams.get("q") ?? "";
+	const urlCity = searchParams.get("city") ?? "";
+	const urlLat = searchParams.get("lat") ?? "";
+	const urlLng = searchParams.get("lng") ?? "";
+	useEffect(() => {
+		setHeroKeyword(urlKeyword);
+		setHeroCityInput(urlCity);
+		setHeroLocation(
+			urlCity && urlLat && urlLng
+				? { label: urlCity, lat: Number(urlLat), lng: Number(urlLng) }
+				: null,
+		);
+	}, [urlKeyword, urlCity, urlLat, urlLng]);
+
+	// Search directly from the hero (#... hero redesign, vostel.de pattern)
+	// instead of only linking down to an unfiltered list - writes straight
+	// into the same URL params VolunteerOpportunitiesList already reads, then
+	// scrolls it into view. Location only applies if a suggestion was
+	// actually picked (heroLocation), matching the filter bar's own
+	// city-search convention below - free-typed, ungeocoded text is dropped
+	// rather than sent as a filter.
+	function handleHeroSearch(e: FormEvent) {
+		e.preventDefault();
+		const next = new URLSearchParams(searchParams);
+		if (heroKeyword.trim()) next.set("q", heroKeyword.trim());
+		else next.delete("q");
+		if (heroLocation) {
+			next.set("city", heroLocation.label);
+			next.set("lat", String(heroLocation.lat));
+			next.set("lng", String(heroLocation.lng));
+			if (!next.get("radius")) next.set("radius", "10");
+		}
+		setSearchParams(next, { replace: true });
+		document.getElementById("opportunities")?.scrollIntoView({
+			behavior: "smooth",
+		});
+	}
+
+	// Org CTA - the landing page's only pitch to the other side of the
+	// marketplace (everything else here is volunteer-facing). Signed-in users
+	// with no org yet go straight into CreateOrganizationModal (the same one
+	// Header's OrganizationSwitcher opens); signed-out visitors go through
+	// Keycloak's registration flow rather than plain login, since this is a
+	// first-touch CTA for people who don't have an account yet. Users who
+	// already organize an org never reach this function - see the render
+	// branch below, which swaps the button for an "Organization overview"
+	// link instead so this can't create a duplicate org.
 	function handleOrgCta() {
 		if (auth.isAuthenticated) {
-			setShowCreateOrgModal(true);
+			setShowOrgModal(true);
 		} else {
 			void signinRedirectForRegistration({
 				...signinLocaleArgs(),
@@ -104,392 +174,481 @@ export default function HomePage() {
 		}
 	}
 
-	const steps = [
+	function handleOrgCreated(newOrg: Organization) {
+		setShowOrgModal(false);
+		navigate(`/app/${newOrg.id?.value}/dashboard`);
+	}
+
+	const orgFeatures = [
 		{
-			step: 1,
-			icon: <MagnifyingGlassIcon className="h-6 w-6" />,
-			title: t("landing.step1Title"),
-			desc: t("landing.step1Desc"),
+			icon: <PlusIcon className="h-6 w-6" />,
+			title: t("landing.orgFeature1Title"),
+			desc: t("landing.orgFeature1Desc"),
 		},
 		{
-			step: 2,
-			icon: <HandRaisedIcon className="h-6 w-6" />,
-			title: t("landing.step2Title"),
-			desc: t("landing.step2Desc"),
+			icon: <UserGroupIcon className="h-6 w-6" />,
+			title: t("landing.orgFeature2Title"),
+			desc: t("landing.orgFeature2Desc"),
 		},
 		{
-			step: 3,
-			icon: <SparklesIcon className="h-6 w-6" />,
-			title: t("landing.step3Title"),
-			desc: t("landing.step3Desc"),
+			icon: <ShieldCheckIcon className="h-6 w-6" />,
+			title: t("landing.orgFeature3Title"),
+			desc: t("landing.orgFeature3Desc"),
 		},
 	];
 
-	const stats = [
-		{
-			id: "time",
-			value: t("landing.heroStat1Value"),
-			label: t("landing.heroStat1Label"),
-		},
-		{
-			id: "cost",
-			value: t("landing.heroStat2Value"),
-			label: t("landing.heroStat2Label"),
-		},
-		{
-			id: "oss",
-			value: t("landing.heroStat3Value"),
-			label: t("landing.heroStat3Label"),
-		},
+	const faqItems = [
+		{ q: t("landing.faqQ1"), a: t("landing.faqA1") },
+		{ q: t("landing.faqQ2"), a: t("landing.faqA2") },
+		{ q: t("landing.faqQ3"), a: t("landing.faqA3") },
+		{ q: t("landing.faqQ4"), a: t("landing.faqA4") },
 	];
 
 	return (
 		<>
-			{/* Hero */}
-			<section
-				aria-labelledby={heroTitleId}
-				className="full-bleed relative -mt-[var(--header-offset)] mb-20 overflow-hidden bg-brand-800"
-			>
-				{/* Decorative glow blobs */}
-				<div
-					aria-hidden="true"
-					className="pointer-events-none absolute -top-40 -left-40 h-120 w-120 rounded-full bg-brand-700 opacity-60 blur-3xl"
-				/>
-				<div
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 -right-32 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
-				/>
-				<div
-					aria-hidden="true"
-					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-125 -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
-				/>
+			{/* Hero - otter.com-inspired: a headline plus an in-hero search
+			(vostel.de pattern: city + keyword, "Suchen" submits straight into
+			the results below), framed by otter's own 5 organic "stone" shapes
+			(3 photos, 2 flat brand-color fills - see the clip-path defs and
+			the /images/hero/*.jpg photos below). */}
+			<section aria-labelledby={heroTitleId} className="mb-20">
+				<div className="animate-fade-up relative isolate overflow-hidden rounded-card bg-brand-800 shadow-resting">
+					{/* Decorative glow blobs */}
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute -top-40 -left-40 h-120 w-120 rounded-full bg-brand-700 opacity-60 blur-3xl"
+					/>
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute top-0 -right-32 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
+					/>
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-125 -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
+					/>
 
-				{/* Content grid */}
-				<div className="relative mx-auto max-w-7xl px-4 pt-22 pb-16 sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
-					{/* Left feature cards - xl+ only */}
-					<div className="hidden xl:flex xl:flex-col xl:gap-3">
-						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
-							<div
-								aria-hidden="true"
-								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
-							>
-								<ClockIcon className="h-4 w-4 text-white" />
-							</div>
-							<div>
-								<p className="text-sm font-semibold text-white">
-									{t("landing.heroLeftCard1Label")}
-								</p>
-								<p className="text-xs text-brand-200">
-									{t("landing.heroLeftCard1Desc")}
-								</p>
-							</div>
-						</div>
-						<div className="ml-4 flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
-							<div
-								aria-hidden="true"
-								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
-							>
-								<MapPinIcon className="h-4 w-4 text-white" />
-							</div>
-							<div>
-								<p className="text-sm font-semibold text-white">
-									{t("landing.heroLeftCard2Label")}
-								</p>
-								<p className="text-xs text-brand-200">
-									{t("landing.heroLeftCard2Desc")}
-								</p>
-							</div>
-						</div>
-						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
-							<div
-								aria-hidden="true"
-								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
-							>
-								<CheckIcon className="h-4 w-4 text-white" />
-							</div>
-							<div>
-								<p className="text-sm font-semibold text-white">
-									{t("landing.heroLeftCard3Label")}
-								</p>
-								<p className="text-xs text-brand-200">
-									{t("landing.heroLeftCard3Desc")}
-								</p>
-							</div>
-						</div>
+					{/* Organic "stone" shapes, ported 1:1 from otter.com's own hero
+					(same 5 SVG clip-path outlines, objectBoundingBox units so they
+					scale to whatever box each is applied to) - 3 carry photos, 2 are
+					flat brand-color fills, matching otter's exact photo:color split.
+					otter keeps 4 of its 5 shapes at every viewport, just smaller and
+					corner-anchored on phones (only the smallest, solid-color one
+					drops out) - mirrored here rather than hiding all 5 below lg,
+					which otter itself doesn't do either. */}
+					<svg width="0" height="0" aria-hidden="true" className="absolute">
+						<defs>
+							<clipPath id="hero-stone-1" clipPathUnits="objectBoundingBox">
+								<path d="M0.941,0.199 C1,0.306,1,0.775,0.909,0.857 C0.81,0.939,0.354,1,0.239,0.986 C0.125,0.936,0,0.648,0,0.569 C0,0.463,0.082,0.068,0.197,0.017 C0.337,-0.044,0.823,0.069,0.941,0.199" />
+							</clipPath>
+							<clipPath id="hero-stone-2" clipPathUnits="objectBoundingBox">
+								<path d="M0.924,0.106 C0.986,0.152,1,0.253,1,0.324 C1,0.395,0.824,0.999,0.622,1 C0.415,1,0.162,0.843,0.042,0.663 C-0.018,0.573,-0.001,0.324,0.018,0.252 C0.037,0.18,0.157,0.03,0.24,0.005 C0.33,-0.022,0.863,0.061,0.924,0.106" />
+							</clipPath>
+							<clipPath id="hero-stone-3" clipPathUnits="objectBoundingBox">
+								<path d="M0.517,0 C0.58,0.003,0.64,0.02,0.694,0.049 C0.747,0.079,0.791,0.12,0.821,0.169 C0.868,0.245,1,0.955,0.955,0.996 C0.842,1,0.7,0.869,0.453,0.806 C0.218,0.747,0.032,0.737,0.003,0.628 C-0.025,0.519,0.134,0.188,0.202,0.126 C0.285,0.05,0.398,0.005,0.517,0" />
+							</clipPath>
+							<clipPath id="hero-stone-4" clipPathUnits="objectBoundingBox">
+								<path d="M0.704,0.043 C0.64,0.017,0.448,-0.023,0.349,0.018 C0.245,0.062,0.117,0.317,0.072,0.418 C0.028,0.519,-0.027,0.818,0.016,0.897 C0.045,0.95,0.109,1,0.242,0.979 C0.411,0.898,0.976,0.458,0.999,0.381 C1,0.305,0.768,0.069,0.704,0.043" />
+							</clipPath>
+							<clipPath id="hero-stone-5" clipPathUnits="objectBoundingBox">
+								<path d="M0.996,0.23 C1,0.296,0.946,0.473,0.861,0.648 C0.776,0.823,0.71,0.984,0.613,0.999 C0.519,1,0.337,0.862,0.218,0.735 C0.131,0.643,0.048,0.549,0.025,0.502 C-0.013,0.426,-0.006,0.312,0.038,0.257 C0.085,0.197,0.175,0.204,0.417,0.139 C0.602,0.089,0.668,-0.008,0.76,0 C0.837,0.007,0.975,0.164,0.996,0.23" />
+							</clipPath>
+						</defs>
+					</svg>
+
+					<div
+						aria-hidden="true"
+						style={{ clipPath: "url(#hero-stone-1)" }}
+						className="pointer-events-none absolute -top-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+					>
+						<img
+							src="/images/hero/volunteer-1.jpg"
+							alt=""
+							className="h-full w-full object-cover"
+						/>
+					</div>
+					<div
+						aria-hidden="true"
+						style={{ clipPath: "url(#hero-stone-2)" }}
+						className="pointer-events-none absolute top-52 -left-12 hidden h-40 w-40 bg-brand-500 shadow-raised lg:block"
+					/>
+					<div
+						aria-hidden="true"
+						style={{ clipPath: "url(#hero-stone-3)" }}
+						className="pointer-events-none absolute -bottom-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:bottom-6 lg:left-28 lg:h-36 lg:w-36"
+					>
+						<img
+							src="/images/hero/volunteer-3.jpg"
+							alt=""
+							className="h-full w-full object-cover"
+						/>
+					</div>
+					<div
+						aria-hidden="true"
+						style={{ clipPath: "url(#hero-stone-4)" }}
+						className="pointer-events-none absolute -top-2 -right-2 h-24 w-24 bg-accent-400 shadow-raised sm:h-28 sm:w-28 lg:-top-8 lg:-right-8 lg:h-72 lg:w-72 xl:h-80 xl:w-80"
+					/>
+					<div
+						aria-hidden="true"
+						style={{ clipPath: "url(#hero-stone-5)" }}
+						className="pointer-events-none absolute -right-2 -bottom-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-right-8 lg:bottom-2 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+					>
+						<img
+							src="/images/hero/volunteer-2.jpg"
+							alt=""
+							className="h-full w-full object-cover"
+						/>
 					</div>
 
-					{/* Center hero content */}
-					<div className="text-center">
-						<div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 sm:mb-8 sm:px-4 sm:py-1.5 sm:text-sm">
-							<span
-								className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
-								aria-hidden="true"
-							/>
-							{t("landing.heroTagline")}
-						</div>
+					<div className="relative px-4 pt-24 pb-32 text-center sm:px-8 sm:pt-28 sm:pb-32 lg:px-10 lg:py-28">
 						<h1
 							id={heroTitleId}
-							className="animate-fade-up-d1 mb-4 text-3xl font-bold tracking-tight text-white sm:mb-5 sm:text-5xl lg:text-6xl"
+							className="animate-fade-up-d1 mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-8xl"
 						>
 							{t("landing.heroTitle")}
 						</h1>
-						<p className="animate-fade-up-d2 mb-7 text-sm leading-relaxed text-brand-100 sm:mb-10 sm:text-xl">
+						<p className="animate-fade-up-d2 mx-auto mt-5 max-w-xl text-base leading-relaxed text-brand-100 sm:mt-6 sm:text-lg xl:text-xl">
 							{t("landing.heroSubtitle")}
 						</p>
-						<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-							<Button
-								href="#opportunities"
-								variant="onDark"
-								size="lg"
-								fullWidth
-								className="shadow-lg sm:w-auto"
-							>
-								{t("landing.heroCta")}
-							</Button>
-							{auth.isAuthenticated && orgAppPath ? (
-								<Button
-									to={orgAppPath}
-									variant="outlineOnDark"
-									size="lg"
-									fullWidth
-									className="sm:w-auto"
-								>
-									{t("landing.heroCtaOrgOverview")}
-								</Button>
-							) : orgsLoading ? (
-								<Skeleton className="h-13 w-full rounded-xl sm:w-56" />
-							) : orgsFailed ? null : (
-								<Button
-									type="button"
-									onClick={handleOrgCta}
-									variant="outlineOnDark"
-									size="lg"
-									fullWidth
-									className="sm:w-auto"
-								>
-									{t("landing.heroCtaOrg")}
-								</Button>
-							)}
-						</div>
 
-						{/* Mobile/tablet feature chips - the left rail below is xl+ only,
-						which used to mean these three value props were invisible on
-						every viewport smaller than 1280px, including the phone-sized
-						audience this product's "sign up in seconds" pitch targets
-						(#988). Reflowed here as a compact row instead of duplicating
-						the full bordered cards. */}
-						<div className="animate-fade-up-d3 mt-8 flex flex-wrap items-center justify-center gap-3 xl:hidden">
-							{[
-								{
-									icon: <ClockIcon className="h-4 w-4" />,
-									label: t("landing.heroLeftCard1Label"),
-								},
-								{
-									icon: <MapPinIcon className="h-4 w-4" />,
-									label: t("landing.heroLeftCard2Label"),
-								},
-								{
-									icon: <CheckIcon className="h-4 w-4" />,
-									label: t("landing.heroLeftCard3Label"),
-								},
-							].map(({ icon, label }) => (
-								<span
-									key={label}
-									className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
-								>
-									<span aria-hidden="true">{icon}</span>
-									{label}
-								</span>
-							))}
-						</div>
-						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
-							{stats.map(({ id, value, label }) => (
-								<div key={id} className="text-center">
-									<div className="text-2xl font-bold text-white sm:text-3xl">
-										{value}
-									</div>
-									<div className="mt-1 text-sm text-brand-100">{label}</div>
+						{/* Search - the hero's actual job now: search right here
+						instead of only linking down to the (unfiltered) list below
+						(vostel.de pattern). See handleHeroSearch. Each field gets its
+						own bordered/tinted box (same resting/focus treatment as the
+						filter bar's LocationSearchInput usage below) so the bar reads
+						as three distinct controls - location, keyword, submit - rather
+						than one continuous white surface with a button stuck on. */}
+						<form
+							onSubmit={handleHeroSearch}
+							className="animate-fade-up-d3 mx-auto mt-8 max-w-2xl sm:mt-10"
+						>
+							<div className="flex flex-col gap-3 rounded-full bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch">
+								<div className="flex-1 rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
+									<LocationSearchInput
+										id="hero-location-search"
+										value={heroCityInput}
+										onValueChange={(value) => {
+											setHeroCityInput(value);
+											setHeroLocation(null);
+										}}
+										onSelect={(suggestion) => {
+											setHeroLocation(suggestion);
+											setHeroCityInput(suggestion.label);
+										}}
+										placeholder={t("landing.heroSearchLocationPlaceholder")}
+										ariaLabel={t("landing.heroSearchLocationLabel")}
+										inputClassName="w-full rounded-full border-0 bg-transparent py-3 pr-8 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+									/>
 								</div>
-							))}
-						</div>
-					</div>
 
-					{/* Right org card - xl+ only */}
-					<div className="hidden xl:flex xl:flex-col xl:gap-3">
-						<div className="rounded-card border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
-							<div className="mb-3 flex items-center gap-2">
-								<BuildingOfficeIcon className="h-4 w-4 text-brand-200" />
-								<p className="text-sm font-semibold text-white">
-									{t("landing.heroRightCardTitle")}
-								</p>
+								<div className="relative flex-1 rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
+									<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
+									<input
+										type="text"
+										aria-label={t("landing.heroSearchKeywordLabel")}
+										placeholder={t("landing.heroSearchKeywordPlaceholder")}
+										value={heroKeyword}
+										onChange={(e) => setHeroKeyword(e.target.value)}
+										className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+									/>
+								</div>
+
+								<Button
+									type="submit"
+									size="lg"
+									pill
+									className="shrink-0 shadow-md"
+								>
+									{t("landing.heroSearchButton")}
+								</Button>
 							</div>
-							<ul className="space-y-2.5">
-								{(
-									[
-										"landing.heroRightCard1",
-										"landing.heroRightCard2",
-										"landing.heroRightCard3",
-									] as const
-								).map((key) => (
-									<li key={key} className="flex items-center gap-2 text-sm">
-										<span
-											className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
-											aria-hidden="true"
-										/>
-										<span className="text-brand-100">{t(key)}</span>
-									</li>
-								))}
-							</ul>
-						</div>
-						<div className="mr-4 flex items-center gap-2.5 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
-							<span
-								className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent-400"
-								aria-hidden="true"
-							/>
-							<p className="text-sm text-brand-100">
-								{t("landing.heroRightCardActive")}
-							</p>
-						</div>
+						</form>
 					</div>
 				</div>
+			</section>
 
-				{/* Wave bottom edge */}
-				<div aria-hidden="true" className="absolute right-0 bottom-0 left-0">
+			{/* mb-20 lives here, not inside VolunteerOpportunitiesList itself
+			(that component's root div carries no margin of its own) - without
+			it there's nothing establishing a fixed gap before the Org CTA
+			band's top wave below, so the last card row sat flush against the
+			wave, sized only by whatever the content happened to end on. */}
+			<div id="opportunities" className="mb-20">
+				<VolunteerOpportunitiesList />
+			</div>
+
+			{/* Org CTA - the landing page's other half, placed right after the
+			opportunities list and ahead of the founder band. Everything else
+			on this page pitches a volunteer; this is the one section that
+			pitches an organization instead. A full-bleed wavy band now, not
+			a plain white section - breaks out of <main>'s max-w-page column
+			the same way the Founder/Mission band below does (relative
+			left-1/2 w-screen -translate-x-1/2). Two wave caps of its own:
+			a top one fading in from white, and a bottom one (see the
+			comment further down) that fades this band's own color into
+			brand-100 before the Founder band even starts, so the two greens
+			meet inside a single continuous wave with no page-white gap
+			between them - Founder's own top cap was removed to match, see
+			its comment. An earlier version gave Founder the only cap and
+			just zeroed the margin between them, which left a thin white
+			sliver at the seam (Founder's notches reveal the page background,
+			not whatever tint precedes it, since they're separate boxes).
+			Background is brand-700 - Button.tsx's own primary color, already
+			proven to carry white text everywhere else on the site. Two
+			lighter attempts before this - a translucent color-mix tint,
+			then a solid brand-800 stage - either sat too close to the
+			Founder band's own brand-100 to read as a deliberate second tone
+			(brand-800 was the opposite problem: too dark) once judged
+			against it directly rather than in isolation. Light-on-dark text
+			now, matching the hero's own palette (brand-200 label, white
+			heading/icons, white/70-80 body) since this is a dark stage
+			again; Button's `onDark` variant for the CTA so it doesn't
+			disappear into the same brand-700 it's sitting on. Cards dropped
+			from the three features - icon directly on the band in a
+			frosted white/15 circle (hero's own search-bar treatment), not
+			a bordered box. Glow blobs mirror the hero's, scaled down - a
+			flat brand-700 rectangle alone read as an unstyled block. */}
+			<section
+				aria-labelledby={orgCtaTitleId}
+				className="relative left-1/2 w-screen -translate-x-1/2"
+			>
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 1440 60"
+					preserveAspectRatio="none"
+					className="block h-8 w-full text-brand-700 sm:h-12"
+				>
+					<path d={WAVE_PATH} fill="currentColor" />
+				</svg>
+
+				<div className="bg-brand-700">
+					<div className="relative isolate overflow-hidden">
+						{/* Same soft glow-blob treatment as the hero, scaled down -
+						brand-700 alone read as a flat rectangle without it. */}
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-600 opacity-40 blur-3xl"
+						/>
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-brand-800 opacity-50 blur-3xl"
+						/>
+
+						<div className="relative mx-auto max-w-page px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+							<div className="animate-fade-up mx-auto max-w-2xl text-center">
+								<p className="mb-3 text-xs font-semibold tracking-widest text-brand-100 uppercase">
+									{t("landing.orgCtaLabel")}
+								</p>
+								<h2
+									id={orgCtaTitleId}
+									className="font-display text-3xl font-bold text-white sm:text-4xl"
+								>
+									{t("landing.orgCtaTitle")}
+								</h2>
+								<p className="mt-4 text-base leading-relaxed text-white/80">
+									{t("landing.orgCtaText")}
+								</p>
+							</div>
+
+							<div className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-3">
+								{orgFeatures.map(({ icon, title, desc }, index) => (
+									<div
+										key={title}
+										className={`text-center ${
+											index === 0
+												? "animate-fade-up"
+												: index === 1
+													? "animate-fade-up-d1"
+													: "animate-fade-up-d2"
+										}`}
+									>
+										<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white">
+											{icon}
+										</div>
+										<h3 className="mb-2 text-base font-semibold text-white">
+											{title}
+										</h3>
+										<p className="text-sm leading-relaxed text-white/80">
+											{desc}
+										</p>
+									</div>
+								))}
+							</div>
+
+							<div className="animate-fade-up-d2 mt-10 text-center">
+								{auth.isAuthenticated && orgAppPath ? (
+									<Button
+										to={orgAppPath}
+										variant="onDark"
+										size="lg"
+										className="shadow-md"
+									>
+										{t("landing.heroCtaOrgOverview")}
+									</Button>
+								) : orgsLoading ? (
+									<Skeleton className="mx-auto h-13 w-56 rounded-xl" />
+								) : orgsFailed ? null : (
+									<Button
+										type="button"
+										onClick={handleOrgCta}
+										variant="onDark"
+										size="lg"
+										className="shadow-md"
+									>
+										{t("landing.heroCtaOrg")}
+									</Button>
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* Bottom cap fades this box's own background into brand-100
+					(not another currentColor tint) - the transparent notches
+					above the fill reveal this div's own pale-mint background
+					since the svg is nested inside it, not a sibling after it
+					(a sibling's notches would reveal the page's white instead -
+					the bug an earlier version of this had, see the git history
+					on this section). Founder's own top cap is removed below
+					since this already provides the full pale-mint -> brand-100
+					transition; its flat top edge continues in the exact same
+					brand-100 this ends in, so there is no seam left to see. */}
 					<svg
-						viewBox="0 0 1440 56"
+						aria-hidden="true"
+						viewBox="0 0 1440 60"
 						preserveAspectRatio="none"
-						className="block h-14 w-full fill-white"
+						className="block h-8 w-full text-brand-100 sm:h-12"
 					>
-						<path d="M0,28 C360,56 1080,0 1440,28 L1440,56 L0,56 Z" />
+						<path d={WAVE_PATH} fill="currentColor" />
 					</svg>
 				</div>
 			</section>
 
-			{/* How it works */}
-			<section aria-labelledby={howItWorksTitleId} className="mb-20">
-				<h2
-					id={howItWorksTitleId}
-					className="mb-12 text-center text-2xl font-bold text-gray-900"
-				>
-					{t("landing.howItWorksTitle")}
-				</h2>
-				<div className="grid gap-10 sm:grid-cols-3">
-					{steps.map(({ step, icon, title, desc }) => (
-						<div
-							key={step}
-							className={`flex flex-col items-center text-center ${
-								step === 1
-									? "animate-fade-up"
-									: step === 2
-										? "animate-fade-up-d1"
-										: "animate-fade-up-d2"
-							}`}
-						>
-							<div className="relative mb-5">
-								<span
-									className="text-8xl leading-none font-black text-brand-100 select-none"
-									aria-hidden="true"
-								>
-									{"0" + step}
-								</span>
-								<div className="absolute inset-0 flex items-center justify-center">
-									<div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-md">
-										{icon}
-									</div>
-								</div>
-							</div>
-							<h3 className="mb-2 text-base font-semibold text-gray-900">
-								{title}
-							</h3>
-							<p className="text-sm leading-relaxed text-gray-600">{desc}</p>
+			{/* Founder / Mission band - vostel.de's "Die Mission von vostel.de"
+			module (portrait photo backed by an organic blob, paired with the
+			founder's own words), replacing the old plain-text Mission intro so
+			the page states its "why" as a real person's claim rather than a
+			marketing paragraph. Breaks out of <main>'s max-w-page column
+			(relative left-1/2 w-screen -translate-x-1/2 - safe because
+			global.css already sets html { overflow-x: clip }) so the brand-100
+			stage runs edge-to-edge like the hero and footer bands do, just in a
+			lighter tier of the same palette. Only a bottom cap now (rotated
+			180deg) - no top cap of its own. The Org CTA band above already
+			ends in its own brand-100 bottom cap (see its comment), so this
+			section's flat top edge continues in the exact same color with no
+			seam to cap; adding a second cap here on top of that would just
+			carve a redundant notch out of solid brand-100. No mt-20 either,
+			for the same reason - the two bands are flush, not gapped. mb-20
+			(toward the FAQ below) is still this band's own, unchanged - the
+			FAQ carries no margin on the side that touches it either, so
+			there's exactly one owner for that gap. */}
+			<section
+				aria-labelledby={missionTitleId}
+				className="relative left-1/2 mb-20 w-screen -translate-x-1/2"
+			>
+				<div className="bg-brand-100 py-10 sm:py-14">
+					<div className="mx-auto grid max-w-page items-center gap-10 px-4 sm:px-6 lg:grid-cols-5 lg:gap-16 lg:px-8">
+						<div className="animate-fade-up relative mx-auto w-full max-w-64 lg:col-span-2 lg:max-w-none">
+							<div
+								aria-hidden="true"
+								style={{ clipPath: "url(#hero-stone-3)" }}
+								className="absolute -inset-6 bg-accent-400/50"
+							/>
+							<img
+								src="/images/founder.png"
+								alt=""
+								className="relative aspect-square w-full rounded-card object-cover shadow-raised"
+							/>
 						</div>
-					))}
+
+						<div className="animate-fade-up-d1 text-center lg:col-span-3 lg:text-left">
+							<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+								{t("landing.missionLabel")}
+							</p>
+							<h2
+								id={missionTitleId}
+								className="font-display text-3xl font-bold text-gray-900 sm:text-4xl"
+							>
+								{t("landing.missionTitle")}
+							</h2>
+							<p className="mt-4 text-base leading-relaxed text-gray-700">
+								{t("landing.missionText")}
+							</p>
+							<p className="mt-4 text-sm font-semibold text-brand-700">
+								{t("landing.missionAuthor")}
+							</p>
+							<div className="mt-8">
+								<Button href="#opportunities" size="lg" className="shadow-md">
+									{t("landing.missionCta")}
+								</Button>
+							</div>
+						</div>
+					</div>
 				</div>
+
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 1440 60"
+					preserveAspectRatio="none"
+					className="block h-8 w-full rotate-180 text-brand-100 sm:h-12"
+				>
+					<path d={WAVE_PATH} fill="currentColor" />
+				</svg>
 			</section>
 
-			{/* Mission */}
-			<section aria-labelledby={missionTitleId} className="mb-20">
-				<div className="animate-fade-up overflow-hidden rounded-card bg-brand-800 px-8 py-12 text-center sm:px-16">
-					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-200 uppercase">
-						{t("landing.missionLabel")}
+			{/* FAQ - closes the page on objection-handling rather than a third
+			pitch: cost, account requirement, org onboarding speed, and
+			license, in that order (volunteer concerns first, since the page
+			is volunteer-facing until the org CTA above). Native
+			<details>/<summary> instead of a hand-rolled accordion - no open/
+			close state to wire up, and it's keyboard/screen-reader operable
+			for free. group-open:rotate-180 reads the element's own [open]
+			attribute via Tailwind's group variant, so the chevron animates
+			without any JS tracking which item is expanded. mb-20 (not mt-20)
+			since this is the last content section before Footer - matches
+			how the org CTA used to own this same trailing gap before it
+			moved above the founder band. */}
+			<section aria-labelledby={faqTitleId} className="mb-20">
+				<div className="animate-fade-up mx-auto max-w-2xl text-center">
+					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+						{t("landing.faqLabel")}
 					</p>
 					<h2
-						id={missionTitleId}
-						className="mb-5 text-2xl font-bold text-white sm:text-3xl"
+						id={faqTitleId}
+						className="font-display text-3xl font-bold text-gray-900 sm:text-4xl"
 					>
-						{t("landing.missionTitle")}
+						{t("landing.faqTitle")}
 					</h2>
-					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
-						{t("landing.missionText")}
-					</p>
-					<Button
-						href="#opportunities"
-						variant="onDark"
-						className="mt-8 shadow-lg"
-					>
-						{t("landing.missionCta")}
-					</Button>
 				</div>
+
+				<div className="animate-fade-up-d1 mx-auto mt-10 max-w-2xl divide-y divide-gray-200 rounded-card border border-gray-100 bg-white px-6 shadow-resting">
+					{faqItems.map(({ q, a }) => (
+						<details key={q} className="group py-5">
+							<summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+								{q}
+								<ChevronDownIcon className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" />
+							</summary>
+							<p className="mt-3 text-sm leading-relaxed text-gray-600">{a}</p>
+						</details>
+					))}
+				</div>
+
+				<p className="animate-fade-up-d1 mt-6 text-center text-sm text-gray-600">
+					<Link
+						to="/help"
+						className="font-medium text-brand-700 underline-offset-2 hover:underline"
+					>
+						{t("landing.faqMoreLink")}
+					</Link>
+				</p>
 			</section>
 
-			{/* Organizations directory teaser */}
-			<section aria-labelledby={orgsTeaserTitleId} className="mb-20">
-				<div className="animate-fade-up flex flex-col items-center gap-6 rounded-card border border-gray-100 bg-white p-8 text-center shadow-resting sm:flex-row sm:items-center sm:justify-between sm:p-10 sm:text-left">
-					<div>
-						<h2
-							id={orgsTeaserTitleId}
-							className="text-xl font-bold text-gray-900 sm:text-2xl"
-						>
-							{t("landing.orgsTeaserTitle")}
-						</h2>
-						<p className="mt-2 text-sm text-gray-600 sm:text-base">
-							{t("landing.orgsTeaserDesc")}
-						</p>
-					</div>
-					<Button
-						to="/organizations"
-						data-testid="organizations-teaser-cta"
-						size="lg"
-						className="shrink-0 shadow-sm"
-					>
-						{t("landing.orgsTeaserCta")}
-					</Button>
-				</div>
-			</section>
-
-			<div id="opportunities">
-				<VolunteerOpportunitiesList />
-			</div>
-
-			{showCreateOrgModal && (
+			{showOrgModal && (
 				<Suspense
 					fallback={
-						<ModalLoadingFallback
-							onClose={() => setShowCreateOrgModal(false)}
-						/>
+						<ModalLoadingFallback onClose={() => setShowOrgModal(false)} />
 					}
 				>
 					<CreateOrganizationModal
-						onClose={() => setShowCreateOrgModal(false)}
-						onSuccess={async (org) => {
-							setShowCreateOrgModal(false);
-							// CreateOrganization grants the "organisator" realm role
-							// server-side, but the access token already held by the
-							// browser was minted before that grant and doesn't carry
-							// it yet - EinsatzbereitOrganisatorPolicy checks that
-							// static claim, so the org app shell's very next request
-							// (OrgAppLayout's GetOrganizationDetails call) would 403
-							// against the stale token before it ever reaches the
-							// live per-organization membership check. Best-effort:
-							// if silent renewal fails, still navigate - the org app
-							// shell's own error state takes over from there.
-							try {
-								await auth.signinSilent();
-							} catch {
-								/* see comment above */
-							}
-							navigate(`/app/${org.id?.value}/dashboard`);
-						}}
+						onClose={() => setShowOrgModal(false)}
+						onSuccess={handleOrgCreated}
 					/>
 				</Suspense>
 			)}

@@ -55,7 +55,6 @@ const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
-const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
@@ -198,7 +197,6 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
-				<Route path="/organizations" element={<OrganizationsPage />} />
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

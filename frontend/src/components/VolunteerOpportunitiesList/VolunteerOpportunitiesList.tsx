@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import LocationSearchInput from "../LocationSearchInput";
 import FilterDropdown, {
 	DropdownOption,
 	MultiDropdownOption,
@@ -11,7 +11,7 @@ import FilterDropdown, {
 import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
-import { useCitySuggestions, type CitySuggestion } from "./useCitySuggestions";
+import type { CitySuggestion } from "./useCitySuggestions";
 import { useSearchAlert } from "./useSearchAlert";
 import { resolveDateLocale } from "../../lib/format";
 import { SpinnerIcon } from "../Spinner";
@@ -23,6 +23,7 @@ import {
 	CloseIcon,
 	GlobeIcon,
 	HashtagIcon,
+	MagnifyingGlassIcon,
 	MapPinIcon,
 	TagIcon,
 	UsersIcon,
@@ -55,6 +56,7 @@ export default function VolunteerOpportunitiesList() {
 	const dateTo = searchParams.get("dateTo") ?? "";
 	const categoriesParam = searchParams.get("categories") ?? "";
 	const tag = searchParams.get("tag") ?? "";
+	const keyword = searchParams.get("q") ?? "";
 	const city = searchParams.get("city") ?? "";
 	const lat = searchParams.get("lat") ?? "";
 	const lng = searchParams.get("lng") ?? "";
@@ -68,70 +70,6 @@ export default function VolunteerOpportunitiesList() {
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [locationCityInput, setLocationCityInput] = useState(city);
 	const [locationLoading, setLocationLoading] = useState(false);
-	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
-	const locationListboxId = "location-suggestions-listbox";
-
-	const {
-		suggestions: locationSuggestions,
-		show: showLocationSuggestions,
-		setShow: setShowLocationSuggestions,
-		reset: resetLocationSuggestions,
-		loading: locationSuggestionsLoading,
-		error: locationSuggestionsError,
-	} = useCitySuggestions(locationCityInput);
-
-	// Without this, a rate-limited/unreachable Nominatim just left the
-	// dropdown never appearing - indistinguishable from "this city doesn't
-	// exist" (#1240).
-	const cityStatusMessage = locationSuggestionsLoading
-		? t("opportunities.citySearching")
-		: locationSuggestionsError
-			? locationSuggestionsError
-			: locationCityInput.length >= 2 && locationSuggestions.length === 0
-				? t("opportunities.cityNoMatch")
-				: "";
-
-	// Keeps the roving highlight in bounds (and cleared) whenever the
-	// suggestion list itself changes - a stale index from the previous
-	// keystroke's results would otherwise point at the wrong (or a
-	// no-longer-existing) option.
-	useEffect(() => {
-		setActiveSuggestionIndex(-1);
-	}, [locationSuggestions]);
-
-	function handleLocationInputKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-		if (!showLocationSuggestions || locationSuggestions.length === 0) return;
-		switch (e.key) {
-			case "ArrowDown":
-				e.preventDefault();
-				setActiveSuggestionIndex((i) => (i + 1) % locationSuggestions.length);
-				break;
-			case "ArrowUp":
-				e.preventDefault();
-				setActiveSuggestionIndex(
-					(i) =>
-						(i - 1 + locationSuggestions.length) % locationSuggestions.length,
-				);
-				break;
-			case "Enter":
-				if (activeSuggestionIndex >= 0) {
-					e.preventDefault();
-					selectLocationSuggestion(locationSuggestions[activeSuggestionIndex]);
-				}
-				break;
-			case "Escape":
-				e.preventDefault();
-				// Dismiss just the suggestions dropdown, not the whole location
-				// panel - without this, the keydown bubbles to document where
-				// the filter bar's own useDismissableOverlay listens for Escape
-				// too, closing both in one keystroke instead of the suggestions
-				// first, the panel on a second press.
-				e.stopPropagation();
-				setShowLocationSuggestions(false);
-				setActiveSuggestionIndex(-1);
-				break;
-		}
-	}
 
 	const filterBarRef = useDismissableOverlay<HTMLDivElement>(
 		openFilter !== null,
@@ -163,6 +101,7 @@ export default function VolunteerOpportunitiesList() {
 		dateTo,
 		categoriesParam,
 		tag,
+		keyword,
 		lat,
 		lng,
 		radius,
@@ -190,6 +129,7 @@ export default function VolunteerOpportunitiesList() {
 				next.delete("dateTo");
 				next.delete("categories");
 				next.delete("tag");
+				next.delete("q");
 				return next;
 			},
 			{ replace: true },
@@ -255,7 +195,6 @@ export default function VolunteerOpportunitiesList() {
 		params.set("radius", currentRadius);
 		setSearchParams(params, { replace: true });
 		setLocationCityInput(suggestion.label);
-		setShowLocationSuggestions(false);
 		setOpenFilter(null);
 	}
 
@@ -277,7 +216,6 @@ export default function VolunteerOpportunitiesList() {
 				params.set("radius", currentRadius);
 				setSearchParams(params, { replace: true });
 				setLocationCityInput(label);
-				setShowLocationSuggestions(false);
 				setOpenFilter(null);
 				setLocationLoading(false);
 			},
@@ -296,7 +234,8 @@ export default function VolunteerOpportunitiesList() {
 		dateFrom ||
 		dateTo ||
 		selectedCategories.length > 0 ||
-		tag
+		tag ||
+		keyword
 	);
 
 	async function handleActivateSearchAlert() {
@@ -356,8 +295,17 @@ export default function VolunteerOpportunitiesList() {
 
 	return (
 		<div>
+			{/* Boxing this in its own tinted panel (an earlier pass) made the
+			filter bar read as a separate section from the result cards right
+			below it rather than one continuous "Opportunities" area - reverted
+			to sitting directly on the page background, matching how
+			idealist.org/betterplace.org treat their own search/filter bars (no
+			card, no background tint). */}
 			<div className="mb-8 text-center">
-				<h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+				<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+					{t("opportunities.eyebrow")}
+				</p>
+				<h2 className="font-display text-3xl font-bold text-gray-900 sm:text-4xl">
 					{t("opportunities.currentNeeds")}
 				</h2>
 				<p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
@@ -377,7 +325,6 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() => {
 							if (openFilter !== "location") {
 								setLocationCityInput(city);
-								resetLocationSuggestions();
 							}
 							setOpenFilter((f) => (f === "location" ? null : "location"));
 						}}
@@ -388,94 +335,17 @@ export default function VolunteerOpportunitiesList() {
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.filterLabelCity")}
 							</p>
-							<div className="relative mb-3">
-								<MapPinIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-								<input
-									type="text"
-									role="combobox"
-									aria-label={t("opportunities.filterLabelCity")}
-									aria-expanded={showLocationSuggestions}
-									aria-controls={locationListboxId}
-									aria-autocomplete="list"
-									aria-activedescendant={
-										showLocationSuggestions && activeSuggestionIndex >= 0
-											? `${locationListboxId}-option-${activeSuggestionIndex}`
-											: undefined
-									}
-									placeholder={t("opportunities.locationPlaceholder")}
+							<div className="mb-3">
+								<LocationSearchInput
+									id="opportunities-location-search"
 									value={locationCityInput}
-									onChange={(e) => setLocationCityInput(e.target.value)}
-									onKeyDown={handleLocationInputKeyDown}
-									onBlur={() =>
-										setTimeout(() => setShowLocationSuggestions(false), 150)
-									}
-									onFocus={() => {
-										if (locationSuggestions.length > 0)
-											setShowLocationSuggestions(true);
-									}}
-									className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-400 focus:bg-white"
+									onValueChange={setLocationCityInput}
+									onSelect={selectLocationSuggestion}
+									placeholder={t("opportunities.locationPlaceholder")}
+									ariaLabel={t("opportunities.filterLabelCity")}
+									inputClassName="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-400 focus:bg-white"
 								/>
-								{locationCityInput && (
-									<button
-										type="button"
-										onClick={() => {
-											setLocationCityInput("");
-											resetLocationSuggestions();
-										}}
-										aria-label={t("opportunities.clearCity")}
-										className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-600 hover:text-gray-800"
-									>
-										&times;
-									</button>
-								)}
-								{showLocationSuggestions && (
-									<ul
-										id={locationListboxId}
-										role="listbox"
-										aria-label={t("opportunities.filterLabelCity")}
-										className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-modal"
-									>
-										{locationSuggestions.map((s, i) => (
-											<li
-												key={i}
-												id={`${locationListboxId}-option-${i}`}
-												role="option"
-												aria-selected={i === activeSuggestionIndex}
-												onMouseDown={(e) => e.preventDefault()}
-												onMouseEnter={() => setActiveSuggestionIndex(i)}
-												onClick={() => selectLocationSuggestion(s)}
-												// Keyboard selection normally goes through the input's
-												// own onKeyDown (aria-activedescendant combobox
-												// pattern - this option is never itself focused), but
-												// jsx-a11y/click-events-have-key-events still requires
-												// a click element to carry its own key handler too.
-												onKeyDown={(e) => {
-													if (e.key === "Enter") selectLocationSuggestion(s);
-												}}
-												className={`cursor-pointer px-3 py-2 text-sm text-gray-700 ${
-													i === activeSuggestionIndex
-														? "bg-brand-50 text-brand-700"
-														: "hover:bg-brand-50 hover:text-brand-700"
-												}`}
-											>
-												<span className="flex items-center gap-2">
-													<MapPinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-													{s.label}
-												</span>
-											</li>
-										))}
-									</ul>
-								)}
 							</div>
-
-							<p
-								role="status"
-								className={
-									cityStatusMessage ? "mb-3 text-xs text-gray-500" : "sr-only"
-								}
-							>
-								{cityStatusMessage}
-							</p>
 
 							<button
 								type="button"
@@ -696,12 +566,37 @@ export default function VolunteerOpportunitiesList() {
 						/>
 					</FilterDropdown>
 
+					{/* Keyword (static pill) - set from the homepage hero's search
+					box, surfaced and clearable here like any other applied filter
+					rather than staying a hidden param once the visitor scrolls
+					down to the results. */}
+					{keyword && (
+						<div
+							role="group"
+							aria-label={`${t("opportunities.filterLabelKeyword")}: ${keyword}`}
+							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-white"
+						>
+							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
+								<MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+								<span>&quot;{keyword}&quot;</span>
+							</span>
+							<button
+								type="button"
+								onClick={() => updateFilter("q", "")}
+								aria-label={t("opportunities.clearKeyword")}
+								className="flex items-center px-2 py-1.5 text-brand-700 transition-colors hover:bg-brand-100 hover:text-brand-800"
+							>
+								<CloseIcon />
+							</button>
+						</div>
+					)}
+
 					{/* Tag (static pill) */}
 					{tag && (
 						<div
 							role="group"
 							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
-							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
+							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-white"
 						>
 							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
 								<HashtagIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
@@ -735,7 +630,7 @@ export default function VolunteerOpportunitiesList() {
 							onClick={handleDeactivateSearchAlert}
 							disabled={savingSearchAlert}
 							aria-label={t("opportunities.searchAlertDeactivate")}
-							className="flex items-center gap-1.5 rounded-full border border-brand-500 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
+							className="flex items-center gap-1.5 rounded-full border border-brand-500 bg-white px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<BellIcon className="h-3.5 w-3.5" />
 							{t("opportunities.searchAlertActive")}

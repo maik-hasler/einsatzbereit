@@ -18,7 +18,14 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	private const int PageSize = 10;
+	// The opportunities grid's page size is viewport-responsive (see
+	// useVolunteerOpportunitiesData.ts's computePageSize: xl >= 1280px is 3
+	// cols x 3 rows = 9, so a fully-loaded page is always a whole number of
+	// rows). Viewport is pinned explicitly below rather than relying on
+	// PageTest's default so this stays correct if that default ever changes.
+	private const int WideViewportWidth = 1440;
+	private const int WideViewportHeight = 900;
+	private const int PageSize = 9;
 	private const int SeedCount = PageSize + 1;
 
 	[Test]
@@ -27,6 +34,8 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.SetViewportSizeAsync(WideViewportWidth, WideViewportHeight);
 
 		var olaf = await Fixture.SignInAsync("olaf", "olaf123");
 		using var http = new HttpClient { BaseAddress = backend };

@@ -35,6 +35,7 @@ describe("fetchVolunteerOpportunities", () => {
 			undefined,
 			undefined,
 			undefined,
+			undefined,
 		);
 	});
 
@@ -59,6 +60,7 @@ describe("fetchVolunteerOpportunities", () => {
 				radiusKm: 7,
 				categories: ["environment"],
 				tag: "cleanup",
+				keyword: "beach",
 			},
 			signal,
 		);
@@ -76,6 +78,7 @@ describe("fetchVolunteerOpportunities", () => {
 			7,
 			["environment"],
 			"cleanup",
+			"beach",
 			signal,
 		);
 	});

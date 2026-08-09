@@ -16,6 +16,7 @@ export interface FetchVolunteerOpportunitiesOptions {
 	radiusKm?: number;
 	categories?: string[];
 	tag?: string;
+	keyword?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ export function fetchVolunteerOpportunities(
 		options.radiusKm,
 		options.categories,
 		options.tag,
+		options.keyword,
 		signal,
 	);
 }

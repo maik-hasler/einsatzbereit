@@ -36,10 +36,7 @@ export default function OrganizationProfilePage() {
 	const [showReport, setShowReport] = useState(false);
 
 	usePageTitle(profile?.name ?? t("orgProfile.loading"));
-	usePageToolbar([
-		{ label: t("breadcrumb.organizations"), href: "/organizations" },
-		{ label: profile?.name ?? t("orgProfile.loading") },
-	]);
+	usePageToolbar([{ label: profile?.name ?? t("orgProfile.loading") }]);
 
 	function load() {
 		if (!organizationId) return;

@@ -1093,18 +1093,6 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OrganizationsPage_HasNoSeriousA11yViolations()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
 	public async Task PrivacyPolicyPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

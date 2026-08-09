@@ -19,56 +19,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task HomePage_LanguageSelector_HasDarkTransparentTheme_OnHero()
-	{
-		// Regression: LanguageSelector dropdown on the hero section should use the
-		// dark (transparent) theme - bg-brand-800 with white text - instead of the
-		// white light theme that was shown before the fix (PR #441).
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		// Wait for the hero h1 so React has fully rendered the Header with isTransparent=true.
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
-		await Expect(langBtn).ToBeVisibleAsync();
-
-		// Button must carry transparent Tailwind classes (border-white/30, text-white).
-		await Expect(langBtn).ToHaveClassAsync(new Regex("border-white|text-white"));
-
-		// Open the dropdown and verify it uses the dark brand background.
-		await langBtn.ClickAsync();
-		var dropdown = Page.Locator("header ul[role='listbox']").First;
-		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		await Expect(dropdown).ToContainClassAsync("bg-brand-800");
-		await Expect(dropdown).ToContainClassAsync("left-0");
-
-		await Page.Keyboard.PressAsync("Escape");
-	}
-
-	[Test]
-	public async Task HomePage_NotificationBellAndAccountMenu_HaveDarkTransparentTheme_OnHero()
-	{
-		// Regression for #1737: only LanguageSelector's button carried a
-		// border that switched color with the isTransparent prop - the
-		// notification bell and account-menu buttons stayed unbordered
-		// against the dark hero, looking inconsistent with the language
-		// selector's themed pill. Both must now carry the same translucent
-		// white border while the header is transparent.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-
-		var bell = Page.GetByTestId("notification-bell");
-		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(bell).ToHaveClassAsync(new Regex("border-white"));
-
-		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
-		await Expect(userMenuBtn).ToHaveClassAsync(new Regex("border-white"));
-	}
-
-	[Test]
 	public async Task HomePage_HasNoBreadcrumb()
 	{
 		// #574: pages that don't call usePageToolbar must not render a stray
@@ -82,13 +32,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OrganizationProfilePage_BreadcrumbShowsHomeOrganizationsAndOrgName()
+	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
 	{
 		// #574: OrganizationProfilePage had no way back at all - revived
-		// breadcrumb must show "Home > {organization name}".
-		// #772 review follow-up (issue #763): the trail must also link back
-		// to the organization directory - "Home > Organizations > {org name}",
-		// not jump straight from Home to the org.
+		// breadcrumb must show "Home > {organization name}". #772/#763 had
+		// briefly inserted an "Organizations" middle crumb linking to a
+		// public directory page - removed along with that directory feature
+		// (organizations are now found via the volunteer-opportunity search's
+		// keyword field instead of a separate browse page), so the trail is
+		// back to a direct "Home > {org name}".
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -113,33 +65,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var homeCrumb = breadcrumb.Locator("a[href='/']");
 		await Expect(homeCrumb).ToBeVisibleAsync();
 
-		var organizationsCrumb = breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Organizations" });
-		await Expect(organizationsCrumb).ToBeVisibleAsync();
-		await Expect(organizationsCrumb).ToHaveAttributeAsync("href", "/organizations");
-
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
 		await Expect(breadcrumb.GetByText(orgName, new() { Exact = true })).ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task HomePage_ShowsOrganizationsTeaser_LinkingToDirectory()
-	{
-		// #772 review follow-up round 2 (issue #763): a permanent Header nav
-		// entry point was judged too heavy a commitment for an unvalidated
-		// use case - replaced with a homepage section instead, so the
-		// directory stays discoverable without growing the global nav.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var teaserCta = Page.GetByTestId("organizations-teaser-cta");
-		await teaserCta.ScrollIntoViewIfNeededAsync();
-		await Expect(teaserCta).ToBeVisibleAsync();
-		await Expect(teaserCta).ToHaveAttributeAsync("href", "/organizations");
-
-		await teaserCta.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/organizations$"), new() { Timeout = 10_000 });
 	}
 
 	[Test]
@@ -359,43 +286,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task MobileMenu_LanguageSelector_HasDarkTransparentTheme_OnHero()
-	{
-		// Regression: LanguageSelector inside the mobile menu on the hero section
-		// must use the transparent dark theme (PR #441) - white text, dark dropdown.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.SetViewportSizeAsync(390, 844);
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Open the mobile menu by clicking the button with aria-label matching openMenu.
-		var menuBtn = Page.Locator("header button[aria-label]")
-			.Filter(new() { HasNotText = "English" })
-			.Filter(new() { HasNotText = "Deutsch" });
-		var menuBtnCount = await menuBtn.CountAsync();
-		ILocator? hamburger = null;
-		for (var i = 0; i < menuBtnCount; i++)
-		{
-			var label = await menuBtn.Nth(i).GetAttributeAsync("aria-label");
-			if (label is not null && Regex.IsMatch(label, "menu|menü|open|öffnen", RegexOptions.IgnoreCase))
-			{
-				hamburger = menuBtn.Nth(i);
-				break;
-			}
-		}
-
-		Skip.When(hamburger is null, "hamburger not found at this viewport");
-
-		await hamburger!.ClickAsync();
-
-		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
-		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		await Expect(mobileLangBtn).ToHaveClassAsync(new Regex("border-white|text-white"));
-	}
-
-	[Test]
 	public async Task HomePage_LanguageSelector_ClosesOnEscape()
 	{
 		// #884: dropdown/overlay menus in the Header only closed on outside
@@ -428,7 +318,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		var heading = Page.Locator("h1").First;
 		await Expect(heading).ToHaveTextAsync(
-			"Volunteering doesn't have to be hard.", new() { Timeout = 15_000 });
+			"Your volunteering starts here.", new() { Timeout = 15_000 });
 		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
 		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
@@ -438,7 +328,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dropdown.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(heading).ToHaveTextAsync(
-			"Ehrenamt muss nicht schwer sein.", new() { Timeout = 10_000 });
+			"Dein Ehrenamt beginnt hier.", new() { Timeout = 10_000 });
 		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "de");
 
 		await langBtn.ClickAsync();
@@ -446,7 +336,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dropdown.GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
 
 		await Expect(heading).ToHaveTextAsync(
-			"Volunteering doesn't have to be hard.", new() { Timeout = 10_000 });
+			"Your volunteering starts here.", new() { Timeout = 10_000 });
 		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 	}
 

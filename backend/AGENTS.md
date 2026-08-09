@@ -157,7 +157,6 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 | Method | Route | Auth | Handler |
 |---|---|---|---|
 | GET | `/v1/organizations` | DefaultUser | `GetOrganizations` |
-| GET | `/v1/organizations/directory` | Anonymous | `GetPublicOrganizations` |
 | POST | `/v1/organizations` | DefaultUser | `CreateOrganization` |
 | GET | `/v1/organizations/{id}` | Organisator | `GetOrganizationDetails` |
 | PUT | `/v1/organizations/{id}` | Organisator | `UpdateOrganization` |

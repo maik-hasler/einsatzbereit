@@ -19,14 +19,12 @@ import { BellIcon } from "../icons";
 // additionally collapses the burger menu).
 export default function NotificationDropdown({
 	menu,
-	transparent = false,
 	mobile = false,
 	containerRef,
 	onNavigate,
 	onClose,
 }: {
 	menu: AccountMenuState;
-	transparent?: boolean;
 	mobile?: boolean;
 	containerRef: RefObject<HTMLDivElement | null>;
 	onNavigate: (actionUrl: string | null | undefined) => void;
@@ -94,7 +92,7 @@ export default function NotificationDropdown({
 				type="button"
 				data-testid={mobile ? "notification-bell-mobile" : "notification-bell"}
 				onClick={() => setNotifOpen((o) => !o)}
-				className={`relative cursor-pointer rounded-lg border p-2 transition-colors ${transparent ? "border-white/30 text-white/90 hover:bg-white/10 hover:text-white" : "border-transparent text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
+				className="relative cursor-pointer rounded-lg border border-transparent p-2 text-gray-500 transition-colors hover:bg-brand-50 hover:text-brand-600"
 				aria-label={bellLabel}
 				aria-controls={panelId}
 				aria-expanded={notifOpen}

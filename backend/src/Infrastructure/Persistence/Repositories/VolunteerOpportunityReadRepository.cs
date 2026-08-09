@@ -85,6 +85,25 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
 			query = query.Where(vo => vo.Tags.Contains(filter.Tag));
 
+		// Same .ToLower().Contains(...) pattern as OrganizationReadRepository's
+		// own (now-removed) name search - Npgsql translates this to a
+		// parameterized "lower(column) LIKE '%...%'", the established
+		// convention in this repo for case-insensitive substring matching (no
+		// EF.Functions.ILike usage exists elsewhere to follow instead). The
+		// organization-name clause is an Any(...) subquery rather than a real
+		// Join, specifically so it doesn't change query's element type (still
+		// bare VolunteerOpportunity) - a real Join would ripple into every
+		// vo.* reference in the projection below (see #869's comment) and the
+		// HasRadius branch's CountAsync(query)/baseQuery reuse.
+		if (!string.IsNullOrWhiteSpace(filter.Keyword))
+		{
+			var keyword = filter.Keyword.ToLower();
+			query = query.Where(vo =>
+				vo.Title.ToLower().Contains(keyword) ||
+				vo.Description.ToLower().Contains(keyword) ||
+				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(keyword)));
+		}
+
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)

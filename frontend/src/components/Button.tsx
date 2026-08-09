@@ -25,7 +25,13 @@ type Size = keyof typeof SIZE_CLASSES;
 // global.css (issue #992) - not from a per-component outline-none/ring
 // pair, which had too little contrast on this shared component.
 const BASE_CLASSES =
-	"inline-flex items-center justify-center gap-1.5 rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+	"inline-flex items-center justify-center gap-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+
+// rounded-xl is the default; `pill` swaps in rounded-full for the handful of
+// pill-shaped CTAs (e.g. the hero search button sitting inside a pill-shaped
+// search bar) - a real prop instead of an inline style override fighting
+// BASE_CLASSES' own radius class at equal Tailwind specificity.
+const SHAPE_CLASS = { default: "rounded-xl", pill: "rounded-full" } as const;
 
 // primary: solid brand-color CTA. secondary: borderless cancel/close action -
 // the single style every modal's cancel/close button should share (see
@@ -73,6 +79,7 @@ interface CommonProps {
 	variant?: Variant;
 	size?: Size;
 	fullWidth?: boolean;
+	pill?: boolean;
 	className?: string;
 	children: ReactNode;
 }
@@ -103,12 +110,14 @@ export default function Button(props: ButtonProps) {
 		variant = "primary",
 		size = "md",
 		fullWidth = false,
+		pill = false,
 		className = "",
 		children,
 		...rest
 	} = props;
 	const classes = [
 		BASE_CLASSES,
+		SHAPE_CLASS[pill ? "pill" : "default"],
 		VARIANT_CLASSES[variant],
 		SIZE_CLASSES[size],
 		fullWidth && "w-full",

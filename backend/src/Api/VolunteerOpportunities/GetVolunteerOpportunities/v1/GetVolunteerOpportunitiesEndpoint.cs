@@ -76,6 +76,9 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		if (request.Keyword is { Length: > 200 })
+			return Results.Problem("Keyword must be at most 200 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		var query = new GetVolunteerOpportunitiesQuery(
 			request.PageNumber,
 			request.PageSize,
@@ -88,7 +91,8 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			request.CenterLongitude,
 			request.RadiusKm,
 			request.Categories,
-			request.Tag);
+			request.Tag,
+			request.Keyword);
 
 		var result = await sender.Send(query, cancellationToken);
 
