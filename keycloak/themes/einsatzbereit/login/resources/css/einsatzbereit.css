@@ -511,6 +511,89 @@ textarea.form-input {
 	background: var(--border);
 }
 
+/* ── Form intro copy ─────────────────────────────────────────────────────── */
+.form-intro {
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--muted-fg);
+}
+
+/* ── Terms block on the registration form ────────────────────────────────── */
+/* The full legal text used to render inline: ~190 words of unstyled prose
+   wedged between the username field and the submit button, at the same size
+   and color as everything else. The intro line stays out here (it is the
+   actual ask); everything else sits behind this disclosure. */
+#kc-registration-terms-text {
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	color: var(--muted-fg);
+}
+
+#kc-registration-terms-text p {
+	margin: 0 0 0.5rem;
+}
+
+.terms-details > summary {
+	cursor: pointer;
+	color: var(--brand-600);
+	font-weight: 500;
+}
+
+.terms-details > summary:focus-visible {
+	outline: 2px solid var(--brand-600);
+	outline-offset: 2px;
+	border-radius: 0.25rem;
+}
+
+.terms-details[open] > summary {
+	margin-bottom: 0.5rem;
+}
+
+.terms-details p {
+	margin: 0 0 0.5rem;
+}
+
+/* The consent checkbox rendered completely unstyled - the only checkbox rule
+   in this file was scoped to .form-options (the login form's "remember me"),
+   which this is not, so the two checkboxes in the same theme looked unrelated. */
+.form-field-checkbox {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.form-field-checkbox label {
+	font-size: 0.875rem;
+	line-height: 1.4;
+	color: var(--foreground);
+}
+
+.terms-checkbox {
+	width: 1rem;
+	height: 1rem;
+	margin-top: 0.125rem;
+	flex: none;
+	accent-color: var(--brand-600);
+	cursor: pointer;
+}
+
+/* ── Back to the product ─────────────────────────────────────────────────── */
+.auth-back {
+	margin-top: 1.25rem;
+	text-align: center;
+	font-size: 0.8125rem;
+}
+
+.auth-back a {
+	color: var(--muted-fg);
+	text-decoration: none;
+}
+
+.auth-back a:hover {
+	color: var(--brand-600);
+	text-decoration: underline;
+}
+
 /* ── Legacy wrapper classes the base Keycloak templates may output ──────── */
 .kcContentWrapperClass { display: flex; flex-direction: column; gap: 1rem; }
 .kcInputWrapperClass   { display: flex; flex-direction: column; gap: 0.25rem; }

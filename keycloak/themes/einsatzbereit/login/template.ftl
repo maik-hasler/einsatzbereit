@@ -72,6 +72,13 @@
 			</#if>
 
 		</div>
+
+		<#-- Way back to the product. Without it, a visitor who reaches these
+		pages and changes their mind is stuck on an origin (login.*) that has
+		no other link on it - browser Back is the only exit. -->
+		<p class="auth-back">
+			<a href="https://einsatzbereit.maik-hasler.de">&larr; ${msg("backToSite")}</a>
+		</p>
 	</main>
 
 </div>

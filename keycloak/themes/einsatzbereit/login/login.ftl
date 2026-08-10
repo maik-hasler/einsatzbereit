@@ -22,6 +22,7 @@
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
 							autocomplete="username"
 							autofocus
+							required
 							placeholder=" "
 						/>
 						<label for="username" class="${properties.kcLabelClass!}">
@@ -34,6 +35,11 @@
 							</#if>
 						</label>
 					</div>
+					<#-- One combined message for both fields, deliberately: naming
+					which of the two was wrong tells an attacker whether the account
+					exists. The `required` attributes above are what stop an empty
+					password from reaching the server and coming back as this
+					message pointed at the username field. -->
 					<#if messagesPerField.existsError('username','password')>
 						<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 							${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
@@ -51,6 +57,7 @@
 							type="password"
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
 							autocomplete="current-password"
+							required
 							placeholder=" "
 						/>
 						<label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>

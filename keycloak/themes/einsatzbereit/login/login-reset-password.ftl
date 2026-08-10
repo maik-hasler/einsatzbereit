@@ -10,6 +10,8 @@
 	<#elseif section = "form">
 		<form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
+			<p class="form-intro">${msg("emailForgotIntro")}</p>
+
 			<div class="form-group">
 				<div class="form-field">
 					<input
@@ -22,6 +24,7 @@
 						aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
 						autocomplete="username"
 						autofocus
+						required
 						placeholder=" "
 					/>
 					<label for="username" class="${properties.kcLabelClass!}">
@@ -46,7 +49,7 @@
 					tabindex="4"
 					class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
 					type="submit"
-					value="${msg('doSubmit')}"
+					value="${msg('doSubmitResetPassword')}"
 				/>
 			</div>
 

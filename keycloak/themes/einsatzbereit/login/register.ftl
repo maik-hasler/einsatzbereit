@@ -129,15 +129,20 @@
 
 			<div class="form-group">
 				<div id="kc-registration-terms-text">
-					${kcSanitize(msg("termsText"))?no_esc}
+					<p>${msg("termsIntro")}</p>
+					<details class="terms-details">
+						<summary>${msg("termsSummary")}</summary>
+						${kcSanitize(msg("termsDetails"))?no_esc}
+					</details>
 				</div>
 			</div>
 			<div class="form-group">
-				<div class="form-field">
+				<div class="form-field form-field-checkbox">
 					<input
 						type="checkbox"
 						id="termsAccepted"
 						name="termsAccepted"
+						class="terms-checkbox"
 						aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
 					/>
 					<label for="termsAccepted">${msg("acceptTerms")}</label>
