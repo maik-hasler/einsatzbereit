@@ -115,6 +115,7 @@ function OrgAppShell({
 				QuickActionsContext itself, so the org app's "Create opportunity"
 				and dashboard edit-mode actions land in it without the bar. */}
 				<PageHeaderBand
+					fullWidth
 					eyebrow={org.name}
 					title={pageTitle}
 					backHref={back?.href ?? `/app/${organizationId}/dashboard`}

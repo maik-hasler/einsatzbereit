@@ -6,6 +6,7 @@ import type {
 	OrganizationSummaryDto,
 } from "../../client/api-client";
 import { orgTabPath } from "../../lib/orgTabs";
+import { getInitials } from "../../lib/initials";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import ModalLoadingFallback from "../ModalLoadingFallback";
 import Skeleton from "../Skeleton";
@@ -95,11 +96,15 @@ export default function OrganizationSwitcher({
 							<span
 								className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
 								aria-hidden="true"
-								data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
+								data-initial={currentOrg ? getInitials(currentOrg.name) : "?"}
 							/>
 						))}
+					{/* title so a truncated name is still readable on hover - two
+					seeded orgs share a leading word, so the visible text can be
+					identical for both once cut. */}
 					<span
 						data-testid="org-switcher-current-name"
+						title={error ? undefined : currentOrg?.name}
 						className="max-w-50 flex-1 truncate sm:min-w-24"
 					>
 						{error
@@ -141,7 +146,7 @@ export default function OrganizationSwitcher({
 											<span
 												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
 												aria-hidden="true"
-												data-initial={org.name.charAt(0).toUpperCase()}
+												data-initial={getInitials(org.name)}
 											/>
 										)}
 										<span className="truncate">{org.name}</span>

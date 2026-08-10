@@ -14,16 +14,11 @@ import {
 	resolveActiveOrg,
 } from "../../lib/activeOrg";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
+import { getInitials } from "../../lib/initials";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import DesktopHeader from "./DesktopHeader";
 import MobileHeader from "./MobileHeader";
 import MobileMenu from "./MobileMenu";
-
-function getInitials(name: string): string {
-	const parts = name.trim().split(/\s+/);
-	if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-	return name.slice(0, 2).toUpperCase();
-}
 
 export default function Header({
 	orgSwitcher,

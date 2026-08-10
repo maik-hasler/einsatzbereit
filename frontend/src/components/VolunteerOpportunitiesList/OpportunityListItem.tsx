@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
 import Chip from "../Chip";
+import { getInitials } from "../../lib/initials";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
 import { CategoryGlyph } from "./CategoryGlyph";
 
@@ -15,12 +16,6 @@ import { CategoryGlyph } from "./CategoryGlyph";
 // since almost no opportunity has a photo. Cross-checked against
 // idealist.org and betterplace.org, neither of which recolors a listing by
 // category. Category is carried by the icon+label chip instead.
-function orgInitials(name: string): string {
-	const parts = name.trim().split(/\s+/).filter(Boolean);
-	if (parts.length === 0) return "?";
-	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 export default function OpportunityListItem({
 	item,
@@ -187,7 +182,7 @@ export default function OpportunityListItem({
 									aria-hidden="true"
 									className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
 								>
-									{orgInitials(item.organizationName)}
+									{getInitials(item.organizationName)}
 								</span>
 							)}
 							<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">

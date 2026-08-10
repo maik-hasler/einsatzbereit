@@ -27,6 +27,13 @@ interface Props {
 	 */
 	backHref?: string;
 	backLabel?: string;
+	/**
+	 * Drop the inner max-w-5xl measure so the band's text starts on the same
+	 * left edge as a page whose content fills the full max-w-page column. The
+	 * org app's pages do; the account and legal pages centre a 5xl column and
+	 * want the default.
+	 */
+	fullWidth?: boolean;
 }
 
 // Shared title band for the standalone public pages (help, contact, imprint,
@@ -65,6 +72,7 @@ export default function PageHeaderBand({
 	children,
 	backHref = "/",
 	backLabel,
+	fullWidth = false,
 }: Props) {
 	const { t } = useTranslation();
 	useOverlaysHeader();
@@ -101,7 +109,9 @@ export default function PageHeaderBand({
 					at most two lines of lead - so on /help, /contact and the account
 					pages roughly 60% of the tallest, darkest surface on the page was
 					empty. The type scale is unchanged; only the air around it is. */}
-					<div className="mx-auto max-w-5xl pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14">
+					<div
+						className={`pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14 ${fullWidth ? "" : "mx-auto max-w-5xl"}`}
+					>
 						{/* Replaces the BreadcrumbBar these pages used to render - one
 						way back, in the band, instead of a grey strip above it
 						repeating the title. */}

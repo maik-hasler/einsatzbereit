@@ -589,9 +589,14 @@ export default function HomePage() {
 			pieces of markup, so following it left the design system (#1755).
 			mb-20 (not mt-20) since this is the last content section before
 			Footer - matches how the org CTA used to own this same trailing
-			gap before it moved above the founder band. */}
-			<section aria-labelledby={faqTitleId} className="mb-20">
-				<div className="animate-fade-up mx-auto max-w-2xl text-center">
+			gap before it moved above the founder band. Trimmed to mb-10: the
+			footer opens with its own pale band and generous padding, so a full
+			mb-20 on top of that left ~200px of nothing between the last
+			question and the first footer heading. The accordion column widens
+			to max-w-3xl for the same reason it exists at all - at max-w-2xl it
+			was a 670px card marooned in a 1440px viewport. */}
+			<section aria-labelledby={faqTitleId} className="mb-10">
+				<div className="animate-fade-up mx-auto max-w-3xl text-center">
 					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 						{t("landing.faqLabel")}
 					</p>
@@ -605,7 +610,7 @@ export default function HomePage() {
 
 				<FaqAccordion
 					items={faqItems}
-					className="animate-fade-up-d1 mx-auto mt-10 max-w-2xl"
+					className="animate-fade-up-d1 mx-auto mt-10 max-w-3xl"
 				/>
 
 				<p className="animate-fade-up-d1 mt-6 text-center text-sm text-gray-600">

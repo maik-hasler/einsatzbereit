@@ -28,7 +28,12 @@ import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
-import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
+import {
+	inputClass,
+	labelClass,
+	textareaClass,
+	selectClass,
+} from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import {
 	ArrowDownTrayIcon,
@@ -626,7 +631,7 @@ export default function EngagementManagementPage() {
 							id="engagement-status-filter"
 							value={statusFilter}
 							onChange={(e) => setStatusFilter(e.target.value)}
-							className={inputClass}
+							className={selectClass}
 						>
 							<option value="">{t("engagementManagement.allStatuses")}</option>
 							{Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -648,7 +653,7 @@ export default function EngagementManagementPage() {
 								id="engagement-timeslot-filter"
 								value={timeSlotFilter}
 								onChange={(e) => setTimeSlotFilter(e.target.value)}
-								className={inputClass}
+								className={selectClass}
 							>
 								<option value="">
 									{t("engagementManagement.allTimeSlots")}
