@@ -38,11 +38,10 @@ export interface OrgAppContext {
 }
 
 // Renders the org app shell body inside OrgBreadcrumbProvider so it can read
-// the nested-page breadcrumb extra (see useSetOrgBreadcrumbExtra) and pass
-// the resulting trail into Header's shared breadcrumb/action-bar prop -
-// normally just the active tab's own name, current-page style; a nested page
-// (e.g. engagement management) can add a further segment, which demotes the
-// tab name to a link back to that tab.
+// the nested-page title extra (see useSetOrgBreadcrumbExtra). Normally the
+// band shows the active tab's own name; a nested page (e.g. engagement
+// management) overrides it with its own, which demotes the tab name to the
+// band's back link.
 function OrgAppShell({
 	organizationId,
 	org,
