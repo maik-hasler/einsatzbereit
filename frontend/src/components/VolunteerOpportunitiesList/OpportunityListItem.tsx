@@ -159,7 +159,7 @@ export default function OpportunityListItem({
 									key={tag}
 									tone="neutral"
 									size="sm"
-									to={`/?tag=${encodeURIComponent(tag)}`}
+									to={`/opportunities?tag=${encodeURIComponent(tag)}`}
 									aria-label={t("opportunities.filterByTag", { tag })}
 								>
 									{tag}

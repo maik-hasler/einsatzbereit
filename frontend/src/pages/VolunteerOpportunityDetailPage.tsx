@@ -470,7 +470,7 @@ export default function VolunteerOpportunityDetailPage() {
 									<Chip
 										key={tag}
 										tone="neutral"
-										to={`/?tag=${encodeURIComponent(tag)}`}
+										to={`/opportunities?tag=${encodeURIComponent(tag)}`}
 										aria-label={t("opportunities.filterByTag", { tag })}
 									>
 										{tag}

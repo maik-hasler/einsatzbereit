@@ -47,12 +47,16 @@ export default function ContactPage() {
 						<Trans
 							i18nKey="contact.reportSectionBody"
 							components={{
-								opportunitiesLink: <Link to="/" className={linkClass} />,
-								// Organizations no longer have their own listing page -
-								// findable via the same homepage search as opportunities
-								// now (keyword search matches org names too), so this
-								// points to "/" same as opportunitiesLink.
-								organizationsLink: <Link to="/" className={linkClass} />,
+								opportunitiesLink: (
+									<Link to="/opportunities" className={linkClass} />
+								),
+								// Organizations have no listing page of their own -
+								// findable via the same search as opportunities (keyword
+								// search matches org names too), so this points at the
+								// same route as opportunitiesLink.
+								organizationsLink: (
+									<Link to="/opportunities" className={linkClass} />
+								),
 							}}
 						/>
 					</p>
