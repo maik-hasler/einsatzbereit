@@ -35,11 +35,17 @@ export default function RowActionsMenu({
 
 	return (
 		<div ref={rootRef} className="relative">
+			{/* A disclosure, not a WAI-ARIA menu. An earlier version claimed
+			aria-haspopup="menu" + role="menu"/"menuitem", which is structurally
+			valid and passes axe but promises keyboard behaviour this does not
+			implement: focus is never moved into the list on open and there is no
+			Arrow/Home/End roving tabindex, so a screen-reader user told "menu"
+			reaches for arrow keys and gets nothing. Tab through a labelled list
+			of buttons is what it actually does, so that is what it announces. */}
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
-				aria-haspopup="menu"
 				aria-label={label}
 				data-testid="row-actions-trigger"
 				className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
@@ -49,14 +55,13 @@ export default function RowActionsMenu({
 
 			{open && (
 				<ul
-					role="menu"
+					aria-label={label}
 					className="absolute top-full right-0 z-50 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal"
 				>
 					{actions.map((action) => (
-						<li key={action.key} role="none">
+						<li key={action.key}>
 							<button
 								type="button"
-								role="menuitem"
 								disabled={action.disabled}
 								data-testid={action.testId}
 								onClick={() => {

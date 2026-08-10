@@ -142,7 +142,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 											href="/#for-organizations"
 											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
 										>
-											{t("nav.forOrganizations")}
+											{t("footer.forOrganizations")}
 										</a>
 									</li>
 								</ul>

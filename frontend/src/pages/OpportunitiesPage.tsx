@@ -69,7 +69,7 @@ export default function OpportunitiesPage() {
 			</PageHeaderBand>
 
 			<div id="opportunities" className="mb-20">
-				<VolunteerOpportunitiesList showHeading={false} />
+				<VolunteerOpportunitiesList />
 			</div>
 		</>
 	);

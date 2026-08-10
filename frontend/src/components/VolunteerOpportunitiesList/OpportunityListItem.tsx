@@ -6,15 +6,15 @@ import Chip from "../Chip";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
 import { CategoryGlyph } from "./CategoryGlyph";
 
-// A photo-less card's banner tile uses one fixed brand-green tint for every
-// category (see the banner div below) rather than a synthetic per-category
-// color block - one Tailwind swatch per category (rose/orange/sky/violet/
-// etc., an earlier design) read as a generic admin-dashboard tag system and
-// clashed against the rest of the marketing page's muted brand-green
-// language (cross-checked against idealist.org and betterplace.org, neither
-// of which recolors a listing by category; they lean on real photos or
-// plain text/badges instead). Category is still visually distinct via the
-// icon+label chip below.
+// A card carries a banner only when the organization uploaded a photo; there
+// is no synthetic per-category color block standing in for one. Both the
+// rainbow version (one Tailwind swatch per category) and the single-tint
+// glyph tile that replaced it were rejected - the first read as a generic
+// admin-dashboard tag system against the muted brand-green language, the
+// second put 128px of near-empty rectangle at the top of nearly every card,
+// since almost no opportunity has a photo. Cross-checked against
+// idealist.org and betterplace.org, neither of which recolors a listing by
+// category. Category is carried by the icon+label chip instead.
 function orgInitials(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "?";

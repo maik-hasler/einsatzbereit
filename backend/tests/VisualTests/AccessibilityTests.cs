@@ -99,7 +99,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// Wait for opportunity cards (not footer links which also match ul>li a)
@@ -406,7 +406,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// link is a genuine failure, not a "not seeded yet" skip.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgLink = Page.GetByTestId("opportunity-org-link").First;
@@ -1217,7 +1217,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// opportunities (seed data has two, both with open capacity) and follow
 		// the first card's link in, matching the navigation pattern
 		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above uses.
-		await Page.GotoAsync($"{frontend}?participationType=ScheduledSlots");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities?participationType=ScheduledSlots");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -1448,6 +1449,33 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Assert something rendered before scanning - a scan of a page whose
+		// list failed to load passes vacuously.
+		await Expect(Page.GetByTestId("opportunities-keyword-input"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	// The row overflow menu is an overlay with hand-rolled markup, so it gets
+	// scanned in its open state the way NotificationDropdown_Open and the
+	// sign-up modal's slot dropdown do - closed, it contributes nothing.
+	[Test]
+	public async Task OrgOpportunitiesPage_RowActionsMenuOpen_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var organizationId = await AuthHelper.FastSignInAsync(
+			Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var trigger = Page.GetByTestId("row-actions-trigger").First;
+		await Expect(trigger).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await trigger.ClickAsync();
+		await Expect(Page.GetByTestId("opportunity-delete").First).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -1947,7 +1975,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// covering the open state those semantics live in.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
@@ -1967,7 +1995,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-frequency").ClickAsync();

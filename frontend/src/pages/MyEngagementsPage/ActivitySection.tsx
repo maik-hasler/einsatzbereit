@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -35,7 +35,6 @@ const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 export default function ActivitySection() {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
-	const navigate = useNavigate();
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -380,7 +379,7 @@ export default function ActivitySection() {
 						message={t("myEngagements.noEngagementsHint")}
 						action={{
 							label: t("myEngagements.exploreNeeds"),
-							onClick: () => navigate("/"),
+							to: "/opportunities",
 						}}
 					/>
 				) : (

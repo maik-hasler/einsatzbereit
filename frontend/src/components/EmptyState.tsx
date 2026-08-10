@@ -3,9 +3,14 @@ import Button from "./Button";
 interface Props {
 	title: string;
 	message?: string;
+	// An empty screen is an invitation to act, so the CTA is the point of it.
+	// `to` renders the CTA as a real link (navigation should be a link, not a
+	// button that happens to navigate); `onClick` for in-place actions like
+	// opening a modal. Supply one or the other.
 	action?: {
 		label: string;
-		onClick: () => void;
+		to?: string;
+		onClick?: () => void;
 	};
 	// Smaller padding/type for dashboard widgets and dropdown panels, where
 	// the default py-12 is too much space for the room available - #1122.
@@ -57,16 +62,25 @@ export default function EmptyState({
 					{message}
 				</p>
 			)}
-			{action && (
-				<Button
-					type="button"
-					onClick={action.onClick}
-					size={compact ? "sm" : "md"}
-					className={compact ? "mt-3" : "mt-4"}
-				>
-					{action.label}
-				</Button>
-			)}
+			{action &&
+				(action.to ? (
+					<Button
+						to={action.to}
+						size={compact ? "sm" : "md"}
+						className={compact ? "mt-3" : "mt-4"}
+					>
+						{action.label}
+					</Button>
+				) : (
+					<Button
+						type="button"
+						onClick={action.onClick}
+						size={compact ? "sm" : "md"}
+						className={compact ? "mt-3" : "mt-4"}
+					>
+						{action.label}
+					</Button>
+				))}
 		</div>
 	);
 }

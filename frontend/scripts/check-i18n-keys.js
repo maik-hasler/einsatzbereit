@@ -54,6 +54,8 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"brand.name",
 		// The operator's contact address - one value, not a translation.
 		"contact.email",
+		// Same established German loanword as help.eyebrow/contact.eyebrow.
+		"footer.support",
 		"footer.license",
 		"nav.administration",
 		"landing.heroStat3Label",
