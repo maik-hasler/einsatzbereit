@@ -62,21 +62,23 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	}
 
 	[Test]
-	public async Task OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression()
+	public async Task OrgAppShell_UsesTheSameBandAsEveryOtherPage_NoActionBarLeft()
 	{
-		// #758 acceptance criterion: the org app shell's action bar must behave
-		// exactly as before now that it shares Header.tsx's implementation
-		// instead of its own copy - home icon + current tab label, directly
-		// beneath <header>, with the org switcher remaining a separate control.
+		// #758 gave the org app shell the shared action bar; this replaces that
+		// acceptance criterion. The bar is gone from the whole product now - the
+		// org app was the last surface still rendering it, which is what made it
+		// read as a third visual system next to the public site and the account
+		// area. What has to survive the removal is what the bar carried: the
+		// page's own name, a way back up one level, and the org switcher
+		// remaining a separate control in the header.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardViaCtaAsync(Page, frontend);
 
-		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
-		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();

@@ -20,6 +20,13 @@ interface Props {
 	lead?: string;
 	/** Optional trailing row (a "last updated" chip, a CTA). */
 	children?: ReactNode;
+	/**
+	 * Where the in-band back link goes, and what it is called. Defaults to the
+	 * site root. The org app overrides both: inside that shell "back" means the
+	 * organization's dashboard, not the public landing page.
+	 */
+	backHref?: string;
+	backLabel?: string;
 }
 
 // Shared title band for the standalone public pages (help, contact, imprint,
@@ -56,6 +63,8 @@ export default function PageHeaderBand({
 	title,
 	lead,
 	children,
+	backHref = "/",
+	backLabel,
 }: Props) {
 	const { t } = useTranslation();
 	useOverlaysHeader();
@@ -97,11 +106,11 @@ export default function PageHeaderBand({
 						way back, in the band, instead of a grey strip above it
 						repeating the title. */}
 						<Link
-							to="/"
+							to={backHref}
 							className="animate-fade-up -ml-1 inline-flex items-center gap-1 rounded-lg px-1 py-1 text-sm font-medium text-brand-100 transition-colors hover:text-white"
 						>
 							<ChevronLeftIcon className="h-4 w-4" />
-							{t("breadcrumb.home")}
+							{backLabel ?? t("breadcrumb.home")}
 						</Link>
 						{actions.length > 0 && (
 							<div className="animate-fade-up-d1 float-right ml-4 flex shrink-0 items-center gap-2">

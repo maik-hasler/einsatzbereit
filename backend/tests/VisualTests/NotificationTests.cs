@@ -103,7 +103,9 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			new() { Timeout = 15_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" })).Not.ToBeVisibleAsync();
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		// The org app shell rendered (its band, not the removed breadcrumb bar).
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	/// <summary>

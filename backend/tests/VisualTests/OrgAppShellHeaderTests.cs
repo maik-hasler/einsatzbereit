@@ -17,7 +17,7 @@ namespace VisualTests;
 public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OrgAppShell_LogoInHeader_BreadcrumbInActionBar()
+	public async Task OrgAppShell_LogoInHeader_PageNameAndWayBackInBand()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -29,7 +29,7 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		match.Success.Should().BeTrue();
 		var organizationId = match.Groups[1].Value;
 
-		// Land on a known subpage so the breadcrumb has a stable current-page label.
+		// Land on a known subpage so the band has a stable current-page title.
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/settings");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -38,15 +38,15 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(logoLink.Locator("img")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Back to Einsatzbereit")).Not.ToBeVisibleAsync();
 
-		// Breadcrumb: home-icon link + the current subpage label ("Settings"). It
-		// lives in the action bar beneath the header, NOT inside <header> itself.
-		var breadcrumb = Page.GetByRole(AriaRole.Navigation, new() { Name = "Breadcrumb" });
-		await Expect(breadcrumb).ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Home" }))
+		// The org app carries the same PageHeaderBand as the rest of the product
+		// now: the page's name as the h1, and one way back (to the dashboard,
+		// not the public landing page). The action bar it replaced - the last
+		// BreadcrumbBar in the app - is gone everywhere.
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToHaveTextAsync("Settings");
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Dashboard" }))
 			.ToBeVisibleAsync();
-		await Expect(breadcrumb).ToContainTextAsync("Settings");
-		// The breadcrumb moved out of the header into the action bar.
-		await Expect(Page.Locator("header nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		// The org switcher remains present in the header as its own separate control.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))

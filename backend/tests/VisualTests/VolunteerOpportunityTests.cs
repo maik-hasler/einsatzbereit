@@ -205,16 +205,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task DetailPage_ShowsBreadcrumbAndShareButton()
+	public async Task DetailPage_ShowsOrgEyebrowAndShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;

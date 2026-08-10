@@ -12,7 +12,7 @@ namespace VisualTests;
 public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task TermsOfUsePage_ShowsBreadcrumbBar_AndCoreSections()
+	public async Task TermsOfUsePage_ShowsInBandHomeLink_AndCoreSections()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);

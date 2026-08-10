@@ -144,11 +144,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		await Expect(breadcrumb).ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
-			.ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByText(opportunityTitle, new() { Exact = true }))
+		// The band replaced the breadcrumb bar: the nested page's own title as
+		// the h1, and one link back up to the tab that owns it.
+		var band = Page.Locator("main");
+		await Expect(band.GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToHaveTextAsync(opportunityTitle, new() { Timeout = 15_000 });
+		await Expect(band.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
 			.ToBeVisibleAsync();
 	}
 
@@ -185,12 +186,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		var breadcrumbOpportunitiesLink = breadcrumb.GetByRole(
+		var backToOpportunities = Page.Locator("main").GetByRole(
 			AriaRole.Link, new() { Name = "Opportunities", Exact = true });
-		await Expect(breadcrumbOpportunitiesLink).ToBeVisibleAsync();
+		await Expect(backToOpportunities).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await breadcrumbOpportunitiesLink.ClickAsync();
+		await backToOpportunities.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities$"), new() { Timeout = 15_000 });
 	}
 
@@ -258,7 +258,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var organizationId = match.Groups[1].Value;
 
 		var errorBoundaryHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" });
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
 
 		foreach (var (path, activePageLabel) in new[]
 		{
@@ -275,11 +274,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Expect(errorBoundaryHeading).ToHaveCountAsync(0);
 
 			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
-			// above it, at the app root), taking the breadcrumb down with it -
-			// so its current-page label is present precisely when the page
+			// above it, at the app root), taking the header band down with it -
+			// so the band's h1 carries the page's name precisely when the page
 			// rendered for real, regardless of whether the org has any
 			// opportunities/members/etc. to show.
-			await Expect(breadcrumb.Locator("[aria-current='page']"))
+			await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
 				.ToHaveTextAsync(activePageLabel, new() { Timeout = 10_000 });
 		}
 	}

@@ -14,13 +14,10 @@ import {
 	resolveActiveOrg,
 } from "../../lib/activeOrg";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
-import type { BreadcrumbItem } from "../../contexts/ToolbarContext";
 import type { OrganizationSummaryDto } from "../../client/api-client";
-import type { QuickAction } from "../../contexts/QuickActionsContext";
 import DesktopHeader from "./DesktopHeader";
 import MobileHeader from "./MobileHeader";
 import MobileMenu from "./MobileMenu";
-import BreadcrumbBar from "./BreadcrumbBar";
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);
@@ -30,21 +27,12 @@ function getInitials(name: string): string {
 
 export default function Header({
 	orgSwitcher,
-	breadcrumb,
 	overlaysBand = false,
 }: {
 	// When set, this header is rendered inside the org app shell: it grows an
 	// extra middle slot for the active organization's switcher between the
 	// brand logo and the account controls. Omitted entirely on the public site.
 	orgSwitcher?: { currentOrgId: string; currentTab: string };
-	// Opt-in, per-page action bar (icon-led breadcrumb) rendered as a bar
-	// directly beneath <header>. Omit entirely to render no action bar (e.g.
-	// the homepage). See BreadcrumbBar for the rendering rules.
-	breadcrumb?: {
-		homeHref: string;
-		items: BreadcrumbItem[];
-		actions?: QuickAction[];
-	};
 	// Set by AppLayout when the page below renders a dark band that runs up
 	// underneath this header (PageHeaderBand). The header then drops its own
 	// background and switches its controls to their on-dark variants until the
@@ -212,13 +200,6 @@ export default function Header({
 					/>
 				)}
 			</header>
-			{breadcrumb && breadcrumb.items.length > 0 && (
-				<BreadcrumbBar
-					homeHref={breadcrumb.homeHref}
-					items={breadcrumb.items}
-					actions={breadcrumb.actions}
-				/>
-			)}
 		</>
 	);
 }
