@@ -102,9 +102,15 @@ export default function OpportunityListItem({
 						opportunity's own page, where the reader has the full listing
 						in front of them to judge. */}
 					</div>
-					<h3 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+					{/* h2, not h3: this list used to sit inside the landing page
+					behind a "Current Opportunities" <h2> section heading, which is
+					what made an h3 card title the next level down. #1755 gave the
+					list its own route, where the page header band's <h1> is the
+					only heading above it - so an h3 here skipped a level and axe
+					failed the page on heading-order. */}
+					<h2 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
-					</h3>
+					</h2>
 					{/* One slot, one meaning. The start date used to render as a bare
 					datetime in brand green while the application deadline rendered
 					as "Apply by {date}" in grey - same position, different colour,

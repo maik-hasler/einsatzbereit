@@ -29,7 +29,7 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 	private const int SeedCount = PageSize + 1;
 
 	[Test]
-	public async Task HomePage_FailedLoadMore_KeepsFirstPageVisible_AndRetrySucceeds()
+	public async Task OpportunitiesPage_FailedLoadMore_KeepsFirstPageVisible_AndRetrySucceeds()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -96,7 +96,7 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 			});
 		});
 
-		await Page.GotoAsync($"{origin}/?tag={tag}");
+		await Page.GotoAsync($"{origin}/opportunities?tag={tag}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var opportunitiesSection = Page.Locator("#opportunities");

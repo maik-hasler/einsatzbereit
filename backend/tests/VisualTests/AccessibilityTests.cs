@@ -326,7 +326,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
+		// Pinned to the page's <h1>: #1755 gave the page a header band whose
+		// title carries this name, and the section heading further down the
+		// page still carries it too, so an unqualified lookup matches both.
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
@@ -592,7 +595,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// #771: the tab bar is gone - reach the page via the dashboard's own
 		// widget links instead.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -1967,7 +1970,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task HomePage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
+	public async Task OpportunitiesPage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297/#1292: none of the seven home-page filter popovers
 		// were ever scanned - MiniCalendar's day-grid gained full ARIA
@@ -1986,7 +1989,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task HomePage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
+	public async Task OpportunitiesPage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
 	{
 		// #1090: the "notify me about new matches" toggle only renders once a
 		// signed-in volunteer has a filter active - neither existing HomePage

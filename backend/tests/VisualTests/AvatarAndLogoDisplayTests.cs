@@ -137,7 +137,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
 			.EnsureSuccessStatusCode();
 
-		await Page.GotoAsync($"{origin}/?tag={tag}");
+		await Page.GotoAsync($"{origin}/opportunities?tag={tag}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var card = Page.Locator("li", new() { HasText = oppTitle });
