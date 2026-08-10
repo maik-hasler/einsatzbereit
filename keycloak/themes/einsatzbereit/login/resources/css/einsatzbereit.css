@@ -1,10 +1,10 @@
 /* The app's two faces, self-hosted from the theme's own resources - the same
-   files the frontend ships (@fontsource/barlow-condensed,
-   @fontsource-variable/source-sans-3), copied in at build time. Before this
-   the sign-in pages asked for 'Inter', which is not bundled anywhere, so they
-   silently rendered in system-ui: the one surface in the funnel that did not
-   look like the product it signs you into. Latin subset only, and just the
-   weights these pages actually use, to keep the auth pages light. */
+ * files the frontend ships (@fontsource/barlow-condensed,
+ * @fontsource-variable/source-sans-3), copied in at build time. Before this
+ * the sign-in pages asked for 'Inter', which is not bundled anywhere, so they
+ * silently rendered in system-ui: the one surface in the funnel that did not
+ * look like the product it signs you into. Latin subset only, and just the
+ * weights these pages actually use, to keep the auth pages light. */
 @font-face {
 	font-family: 'Barlow Condensed';
 	font-style: normal;
@@ -548,9 +548,9 @@ textarea.form-input {
 
 /* ── Terms block on the registration form ────────────────────────────────── */
 /* The full legal text used to render inline: ~190 words of unstyled prose
-   wedged between the username field and the submit button, at the same size
-   and color as everything else. The intro line stays out here (it is the
-   actual ask); everything else sits behind this disclosure. */
+ * wedged between the username field and the submit button, at the same size
+ * and color as everything else. The intro line stays out here (it is the
+ * actual ask); everything else sits behind this disclosure. */
 #kc-registration-terms-text {
 	font-size: 0.8125rem;
 	line-height: 1.5;
@@ -582,8 +582,8 @@ textarea.form-input {
 }
 
 /* The consent checkbox rendered completely unstyled - the only checkbox rule
-   in this file was scoped to .form-options (the login form's "remember me"),
-   which this is not, so the two checkboxes in the same theme looked unrelated. */
+ * in this file was scoped to .form-options (the login form's "remember me"),
+ * which this is not, so the two checkboxes in the same theme looked unrelated. */
 .form-field-checkbox {
 	display: flex;
 	align-items: flex-start;
@@ -606,7 +606,7 @@ textarea.form-input {
 }
 
 /* Shared by the card footer's "back to sign in" and the page's "back to
-   Einsatzbereit" - one back-link treatment, chevron included. */
+ * Einsatzbereit" - one back-link treatment, chevron included. */
 .back-link {
 	display: inline-flex;
 	align-items: center;
