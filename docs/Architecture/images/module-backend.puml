@@ -1,0 +1,44 @@
+@startuml Backend Module View
+
+!include <C4/C4_Component>
+
+title Level 2 - Backend API, functional modules
+
+Container_Boundary(backend, "Backend API") {
+	Component(opportunities, "Volunteer Opportunities", "Api/ + Application/ + Domain/ + Infrastructure/ VolunteerOpportunities", "Opportunity lifecycle (draft, publish, unpublish, cancel), time slots and series, categories/tags, banner images, check-in PINs, address geocoding.")
+	Component(engagements, "Engagements", "Api/ + Application/ + Domain/ Engagements", "Sign-up, withdrawal, confirmation and cancellation, check-in, feedback, reminders, calendar and CSV export.")
+	Component(organizations, "Organizations", "Api/ + Application/ + Domain/ Organizations", "Organization profiles, memberships and roles, invitations sent by an organizer, dashboard layout.")
+	Component(invitations, "Invitations", "Api/ + Application/ Invitations", "The invitee's side of an invitation: list, accept, decline. Shares the Organizations aggregate.")
+	Component(users, "Users", "Api/ + Application/ + Domain/ Users", "Profiles, notification preferences, streaks, search alerts, account deletion, admin user administration.")
+	Component(achievements, "Achievements", "Api/ + Application/ + Domain/ + Infrastructure/ Achievements", "Badge catalog and awarding of milestone, streak and hidden achievements.")
+	Component(notifications, "Notifications", "Api/ + Application/ + Domain/ Notifications", "In-app notification inbox: create, read, mark read, retention.")
+	Component(reports, "Reports", "Api/ + Application/ + Domain/ Reports", "Abuse reports against opportunities, organizations and users; moderation queue.")
+	Component(auditlogs, "Audit Logs", "Api/ + Application/ + Domain/ AuditLogs", "Append-only record of administrative actions, readable by platform admins.")
+	Component(maps, "Maps", "Api/ + Application/ + Infrastructure/ Maps", "Map tile and city-search proxying so visitor IPs never reach OpenStreetMap directly (ADR-5).")
+	Component(meta, "Meta", "Api/ + Application/ Meta", "Server-rendered Open Graph metadata for opportunity and organization links.")
+	Component(sitemap, "Sitemap", "Api/ + Application/ Sitemap", "Generates sitemap.xml from published opportunities.")
+
+	Component(shared, "Shared Kernel", "Application/Common, Domain/Primitives, Infrastructure/Common", "Messaging (ISender), Result/Error primitives, authorization guards, pagination, persistence and storage abstractions, pipeline behaviors, background job host.")
+}
+
+Rel(engagements, opportunities, "Reads slots, capacity, status")
+Rel(invitations, organizations, "Accepts / declines")
+Rel(opportunities, maps, "Geocodes addresses")
+
+Rel_U(notifications, engagements, "Reacts to domain events")
+Rel_U(notifications, opportunities, "Reacts to domain events")
+Rel_U(notifications, organizations, "Reacts to domain events")
+Rel_U(achievements, engagements, "Reacts to domain events")
+
+Rel(opportunities, shared, "Uses")
+Rel(engagements, shared, "Uses")
+Rel(organizations, shared, "Uses")
+Rel(users, shared, "Uses")
+
+note right of shared
+	Every module uses the Shared Kernel.
+	Only four arrows are drawn to keep the
+	diagram readable.
+end note
+
+@enduml

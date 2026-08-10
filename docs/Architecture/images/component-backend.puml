@@ -1,38 +1,34 @@
-@startuml Backend Component View
+@startuml Backend Module Internals
 
 !include <C4/C4_Component>
 
-title Component View - Backend API (Clean Architecture)
+title Level 3 - Inside a functional module (example: Volunteer Opportunities)
 
-Container_Boundary(api, "API Layer  [backend/src/Api/]") {
-		Component(endpoints, "Endpoints", "ASP.NET Core Minimal API", "Routes HTTP requests to Application layer via versioned endpoint classes. Handles request/response serialization.")
-		Component(auth_mw, "JWT Middleware", "ASP.NET Core Bearer Auth", "Validates JWT signature and expiry on every request using Keycloak's JWKS.")
+Container_Boundary(module, "Volunteer Opportunities module") {
+	Component(endpoint, "Endpoint", "Api/VolunteerOpportunities/{Feature}/v1/", "One Minimal API endpoint class per feature, plus its Request and Response records. Binds and validates the payload, then dispatches.")
+	Component(handler, "Command / Query Handler", "Application/VolunteerOpportunities/{Feature}/v1/", "One handler per feature. Enforces authorization and use-case rules, orchestrates the aggregate, returns Result<T>.")
+	Component(aggregate, "Aggregate + Value Objects", "Domain/VolunteerOpportunities/", "VolunteerOpportunity, TimeSlot, Address. Business invariants and state transitions. Raises domain events.")
+	Component(readrepo, "Read Repository Interface", "Application/VolunteerOpportunities/", "IVolunteerOpportunityReadRepository - the port queries read through.")
+	Component(impl, "Repository + Adapters", "Infrastructure/Persistence/, Infrastructure/VolunteerOpportunities/", "EF Core implementation of the ports, entity configurations, migrations, geocoding adapter.")
 }
 
-Container_Boundary(application, "Application Layer  [backend/src/Application/]") {
-		Component(queries, "Query Handlers", "In-house IQueryHandler", "Read-only use cases. Return data without modifying state. Use read repository interfaces.")
-		Component(commands, "Command Handlers", "In-house ICommandHandler", "State-changing use cases. Enforce business rules. Use write repository interfaces.")
-		Component(repo_interfaces, "Repository Interfaces", "C# Interfaces", "Abstractions for data access. Implemented by Infrastructure layer.")
-}
+Component_Ext(shared, "Shared Kernel", "Application/Common, Domain/Primitives", "ISender dispatch, pipeline behaviors (transaction, slow-request logging), Result/Error, OwnershipGuard, pagination.")
+Component_Ext(other, "Other modules", "Notifications, Achievements", "Subscribe to this module's domain events.")
 
-Container_Boundary(domain, "Domain Layer  [backend/src/Domain/]") {
-		Component(entities, "Entities", "C# Records / Classes", "Core business objects: VolunteerOpportunity, Organization, Engagement. No framework dependencies.")
-}
+Rel(endpoint, shared, "Dispatches via ISender")
+Rel(shared, handler, "Routes to")
+Rel(handler, aggregate, "Creates / modifies")
+Rel(handler, readrepo, "Queries through")
+Rel(impl, readrepo, "Implements")
+Rel(impl, aggregate, "Persists")
+Rel(aggregate, other, "Raises domain events to")
 
-Container_Boundary(infrastructure, "Infrastructure Layer  [backend/src/Infrastructure/]") {
-		Component(db_context, "ApplicationDbContext", "EF Core 10", "ORM context. Configures entity mappings and applies migrations.")
-		Component(repositories, "Repositories", "EF Core Repositories", "Implement repository interfaces. Map between EF entities and domain objects.")
-		Component(migrations, "Migrations", "EF Core Migrations", "Database schema history. Applied on startup in Development.")
-}
-
-Rel(endpoints, queries, "Dispatches via ISender")
-Rel(endpoints, commands, "Dispatches via ISender")
-Rel(auth_mw, endpoints, "Populates ClaimsPrincipal")
-Rel(queries, repo_interfaces, "Uses")
-Rel(commands, repo_interfaces, "Uses")
-Rel(commands, entities, "Creates / modifies")
-Rel(repositories, db_context, "Uses")
-Rel(repositories, entities, "Maps to / from")
-Rel(db_context, migrations, "Applies on startup")
+note bottom of impl
+	Dependencies point inward: Api -> Application -> Domain.
+	Infrastructure implements ports declared in Application
+	and is referenced only through them. Every module in
+	Level 2 is built the same way - see the Module Structure
+	concept in chapter 8.
+end note
 
 @enduml

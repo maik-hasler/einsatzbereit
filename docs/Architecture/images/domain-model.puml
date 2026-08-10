@@ -1,0 +1,155 @@
+@startuml Domain Model
+
+title Domain Model - Einsatzbereit
+
+hide circle
+hide methods
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 25
+skinparam ranksep 45
+
+package Organizations <<Rectangle>> {
+	class Organization <<aggregate root>> {
+		Name
+		Description
+		ContactEmail
+		Website
+		LogoUrl
+	}
+
+	class OrganizationMembership <<aggregate root>> {
+		Role
+	}
+
+	class OrganizationInvitation <<aggregate root>> {
+		IntendedRole
+		Status
+		ExpiresOn
+	}
+}
+
+package "Volunteer Opportunities" <<Rectangle>> {
+	class VolunteerOpportunity <<aggregate root>> {
+		Title
+		Description
+		Category
+		Tags
+		IsRemote
+		Occurrence
+		ParticipationType
+		CheckInMethod
+		Status
+		ApplicationDeadline
+		PublishedOn
+	}
+
+	class TimeSlot <<entity>> {
+		StartDateTime
+		EndDateTime
+		MaxParticipants
+		SeriesId
+	}
+}
+
+package Engagements <<Rectangle>> {
+	class Engagement <<aggregate root>> {
+		Status
+		Message
+		IsCheckedIn
+		FeedbackRating
+		FeedbackComment
+		ReactivationCount
+	}
+}
+
+package Users <<Rectangle>> {
+	class User <<aggregate root>> {
+		Bio
+		Skills
+		Languages
+		PreferredContact
+		EmailPreferences
+	}
+
+	class UserStreak <<aggregate root>> {
+		LoginStreak
+		ActivityStreak
+		TotalConfirmedEngagements
+	}
+
+	class SearchAlert <<aggregate root>> {
+		Categories
+		Tag
+		RadiusKm
+		LastNotifiedAt
+	}
+
+	class Achievement <<aggregate root>> {
+		Type
+		Key
+		UnlockedAt
+	}
+
+	class Notification <<aggregate root>> {
+		Kind
+		RelatedEntityId
+		IsRead
+	}
+}
+
+package Moderation <<Rectangle>> {
+	class Report <<aggregate root>> {
+		TargetType
+		Reason
+		Status
+	}
+
+	class AuditLog <<aggregate root>> {
+		ActionType
+		SubjectType
+		Reason
+	}
+}
+
+class Address <<value object>> {
+	Street
+	HouseNumber
+	ZipCode
+	City
+	Latitude
+	Longitude
+}
+
+Organization "1" *-- "0..*" VolunteerOpportunity : publishes
+VolunteerOpportunity "1" *-- "0..*" TimeSlot : offers shifts
+VolunteerOpportunity "1" o-- "0..*" Engagement : receives
+Engagement "0..*" --> "0..1" TimeSlot : booked for
+VolunteerOpportunity *-- Address
+Organization *-- Address
+
+Organization "1" *-- "0..*" OrganizationMembership
+Organization "1" *-- "0..*" OrganizationInvitation
+
+User "1" o-- "0..*" Engagement : signs up via
+User "1" o-- "0..*" OrganizationMembership : is member through
+User "1" o-- "0..*" OrganizationInvitation : invited as
+User "1" o-- "0..1" UserStreak
+User "1" o-- "0..1" SearchAlert : saves
+User "1" o-- "0..*" Achievement : earns
+User "1" o-- "0..*" Notification : receives
+User "1" o-- "0..*" Report : files
+User "1" o-- "0..*" AuditLog : acts in
+
+legend bottom left
+	Enum values are omitted here and defined in the glossary.
+	Address is stored inline on its owner, not as its own table;
+	only an opportunity's address carries coordinates.
+	Report and AuditLog reference their target polymorphically
+	(TargetType/SubjectType + a raw id), so they have no typed
+	association to the aggregate they concern.
+	Engagement.VolunteerId is nullable: an engagement outlives
+	the volunteer's account deletion in anonymized form.
+end legend
+
+@enduml

@@ -50,7 +50,7 @@ These same test-user credentials are intentionally also live on the public stagi
 
 ## Key Conventions
 
-- Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in both backend and frontend
+- Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in the backend (`Api/`, `Application/` and `Domain/` all repeat the same module folders). The frontend is cut by artifact kind instead (`pages/`, `components/`, `hooks/`, `lib/`), with organizer routes grouped under `pages/app/` - see chapter 5 of the arc42 docs
 - Routes: `/v{version:apiVersion}/...`, namespaces: `.v1`
 - Commands/queries/DTOs: C# records
 - Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)

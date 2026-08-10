@@ -5,7 +5,11 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 Einsatzbereit runs in three environments: the local developer stack (orchestrated by .NET Aspire), the CI/CD pipeline (GitHub Actions), and the deployed staging/production host.
 
-=== Local Development (.NET Aspire)
+This chapter describes the infrastructure and which building blocks run where. The operational decisions behind that infrastructure - why the monitoring stack is self-hosted, what the backup strategy guards against, how alerting is routed - are cross-cutting and live in <<section-concepts>> under Operations.
+
+=== Infrastructure Level 1
+
+==== Local Development (.NET Aspire)
 
 .Deployment View - Local Development
 [plantuml, "deployment-local", png]
@@ -19,30 +23,34 @@ The entire stack runs locally via the .NET Aspire AppHost: a single `dotnet run 
 Quality and Performance Characteristics::
 Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak runs the upstream image with a dev-file database and a relaxed, auto-imported realm; the backend and frontend run from source with hot reload.
 
-.Service Allocation
+.Building Block to Node Mapping
+[cols="2,2,2" options="header"]
+|===
+|Building block (Level 1) |Node |Artifact
+
+|Single Page Application
+|Developer machine
+|Vite dev server from source, port 4321
+
+|Backend API
+|Developer machine
+|`dotnet` host process from source, port 5000
+
+|Identity Provider
+|Docker container
+|`quay.io/keycloak/keycloak:26.7.1`, port 8080
+
+|Application Database
+|Docker container
+|`postgres:18`, port 5432
+|===
+
+`backend/src/Aspire/AppHost` is the orchestrator itself and is the one project that exists only here - it is never part of a deployed artifact.
+
+.Supporting Services
 [cols="2,2,1,2" options="header"]
 |===
 |Service |Image / Source |Port |Notes
-
-|Frontend
-|Vite dev server (from source)
-|4321
-|Hot module replacement
-
-|Backend API
-|ASP.NET Core project (from source)
-|5000
-|Runs EF Core migrations on startup (Development)
-
-|Keycloak
-|`quay.io/keycloak/keycloak:26.7.1`
-|8080
-|Upstream image, dev-file DB, realm auto-imported (relaxed for local)
-
-|PostgreSQL
-|`postgres:18` (Aspire default)
-|5432
-|Application database `einsatzbereit`
 
 |pgAdmin
 |`dpage/pgadmin4`
@@ -60,7 +68,7 @@ Local development is optimized for fast iteration, not production performance. A
 |S3-compatible object storage (API on 9000, console on 9001)
 |===
 
-=== CI/CD Pipeline
+==== CI/CD Pipeline
 
 .Deployment View - CI/CD (GitHub Actions)
 [plantuml, "deployment-cicd", png]
@@ -68,9 +76,9 @@ Local development is optimized for fast iteration, not production performance. A
 include::../images/deployment-cicd.puml[]
 ....
 
-The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gates on every change, docs deployment, and release-time image publishing plus staging deployment.
+The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gates on every change, docs deployment, and release-time image publishing plus staging deployment. This environment builds and verifies the building blocks rather than serving them, so there is no building-block-to-node mapping for it; the artifacts it produces are the ones deployed in the next section.
 
-==== Quality Gate (on every push / PR to `main`)
+===== Quality Gate (on every push / PR to `main`)
 
 The backend workflow (`dotnet.yml`) runs four independent jobs in parallel (no `needs` between them), each doing its own `dotnet build` via `dotnet run`:
 
@@ -82,7 +90,7 @@ The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, a
 
 The architecture docs build (`docs.yml`) also builds on every pull request touching `docs/**`, as a build-only check - GitHub Pages deployment stays gated to pushes on `main`, so a docs PR can never publish a preview.
 
-==== Image Publishing (on tag push)
+===== Image Publishing (on tag push)
 
 Images are published to GitHub Container Registry (GHCR) on version tag pushes. A single Git tag triggers the release of all components at the same version:
 
@@ -106,7 +114,7 @@ Images are published to GitHub Container Registry (GHCR) on version tag pushes. 
 
 Release candidate tags (`v{semver}-rc.N`) publish images and deploy via the `deploy-staging` job without moving the `latest` tag. Stable tags (no `-rc` suffix) publish images, move `latest`, and deploy via a separate `deploy-production` job. See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
 
-=== Staging and Production
+==== Staging and Production
 
 .Deployment View - Staging / Production
 [plantuml, "deployment-staging", png]
@@ -118,14 +126,14 @@ Motivation::
 The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host (a Hetzner `cx43`: 8 vCPU / 16 GB RAM / 40 GB disk, provisioned via Terraform in a separate, private infrastructure repository), behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). The same host also runs Blogfolio, an unrelated personal site - the two stacks share the machine but are otherwise fully independent (separate repos, separate deploy pipelines, no shared services beyond Traefik). This is the environment every release candidate is verified against before a change is considered done.
 
 Quality and Performance Characteristics::
-All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention, and the MinIO bucket is backed up daily with a flat retention window (#1087); `minio-backup` then also mirrors both local backup outputs off-host to a Hetzner Object Storage bucket (closing the off-host gap #1087 left open) - the local backups alone still guard only against accidental deletion/corruption, not loss of the host itself, which the offsite mirror now also covers. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
+All public traffic is HTTPS via Traefik. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`). Backup and retention behaviour is described in <<section-concepts>> under Operations.
 
-.Service Allocation
+.Building Block to Node Mapping
 [cols="2,2,2,2" options="header"]
 |===
-|Service |Image |Hostname |Notes
+|Building block (Level 1) |Image |Hostname |Notes
 
-|Frontend
+|Single Page Application
 |`einsatzbereit-frontend:staging`
 |`einsatzbereit.maik-hasler.de`
 |Static SPA assets
@@ -135,15 +143,23 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |`api.maik-hasler.de`
 |`ASPNETCORE_ENVIRONMENT=Staging`; migrates on startup
 
-|Keycloak
+|Identity Provider
 |`einsatzbereit-keycloak:staging`
 |`login.maik-hasler.de`
 |Custom image with committed realm; PostgreSQL-backed
 
-|PostgreSQL
+|Application Database
 |`postgres:18`
 |internal
 |Two databases: `einsatzbereit` and `keycloak`
+|===
+
+The mapping is 1:1 today - every Level-1 building block runs as exactly one container on one host. There is no horizontal scaling and no second host, which is what makes the single-host risk in TDR-3 a real one rather than a theoretical one.
+
+.Supporting Services
+[cols="2,2,2,2" options="header"]
+|===
+|Service |Image |Hostname |Notes
 
 |db-backup
 |`prodrigestivill/postgres-backup-local:18`
@@ -163,22 +179,22 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |minio-backup
 |`minio/mc`
 |internal
-|Daily mirror of the einsatzbereit bucket (retention 7 days), then mirrors its own and db-backup's local output to a Hetzner Object Storage bucket (#1087)
+|Daily mirror of the einsatzbereit bucket, then mirrors its own and db-backup's local output off-host (#1087)
 
 |Grafana
 |`grafana/grafana`
 |`grafana.maik-hasler.de`
-|Dashboards; datasources are Prometheus (metrics), Loki (logs), Tempo (traces), and Alertmanager (alerts)
+|Dashboards; datasources are Prometheus, Loki, Tempo and Alertmanager
 
 |Prometheus
 |`prom/prometheus`
 |internal only
-|Metrics store; scrapes node-exporter, not exposed via Traefik; evaluates alert rules and forwards firing alerts to Alertmanager
+|Metrics store; scrapes node-exporter, evaluates alert rules
 
 |Alertmanager
 |`prom/alertmanager`
 |internal only
-|Routes firing alerts to email over the same SMTP relay as the backend/Keycloak, not exposed via Traefik
+|Routes firing alerts to email over the SMTP relay
 
 |node-exporter
 |`prom/node-exporter`
@@ -188,7 +204,7 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |Loki
 |`grafana/loki`
 |internal only
-|Log store; receives pushes from Alloy, not exposed via Traefik
+|Log store; receives pushes from Alloy
 
 |Alloy
 |`grafana/alloy`
@@ -198,7 +214,7 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |Tempo
 |`grafana/tempo`
 |internal only
-|Trace store; receives OTLP pushes directly from the backend, not exposed via Traefik
+|Trace store; receives OTLP pushes directly from the backend
 
 |Traefik
 |host-level (shared)
@@ -206,6 +222,29 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |Reverse proxy, TLS termination via ACME / Let's Encrypt
 |===
 
-Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). The two-job split exists so that pointing at a genuinely separate production host later is a matter of changing the `production` GitHub Environment's secrets, not restructuring the workflow; until then, a stable release replaces whatever RC was running with the `latest`-tagged images (RCs use the mutable `staging` tag instead), and the two jobs share a concurrency group so they never race against the same host. The deploy is health-gated (backend `/alive` and `/health`) and rolls back to the previous images on failure.
+Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). The two-job split exists so that pointing at a genuinely separate production host later is a matter of changing the `production` GitHub Environment's secrets, not restructuring the workflow; until then, a stable release replaces whatever RC was running with the `latest`-tagged images (RCs use the mutable `staging` tag instead).
 
-Prometheus, Alertmanager, node-exporter, Loki, and Tempo sit on an internal-only `monitoring` Docker network with no Traefik route, since none of them has built-in auth and would leak scraped metrics, log, trace, or alert content if reachable from the internet. Grafana is the only service in this group with a public route, gated by its own admin login (`GF_SECURITY_ADMIN_USER`/`GF_SECURITY_ADMIN_PASSWORD`), and reads Prometheus (metrics), Loki (logs), Tempo (traces), and Alertmanager (alerts) as datasources. Alloy ships container logs to Loki; it discovers containers and streams their logs through a read-only mount of the host's Docker socket, the standard pattern for Docker-aware log shippers - this is a narrower grant than cAdvisor's (list containers and read their logs, not full host filesystem and cgroup access, which is why cAdvisor itself was left out of this pass), but a compromised container with socket access still has effective host-level reach, so it is not risk-free. Per-container metrics (cAdvisor) remain a possible follow-up if the host-level view here proves insufficient. Tempo has no equivalent shipper: the backend pushes traces to it directly over OTLP (see ADR 6), since the app already speaks OTLP natively via the Aspire service defaults. Alertmanager notifies over email (SMTP) rather than a push-based shipper, since alerts are pulled from Prometheus's own rule evaluation, not scraped or streamed from elsewhere.
+=== Infrastructure Level 2: Deployed Host
+
+The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps the unauthenticated monitoring services off the internet. Everything above runs as containers on a single Docker daemon, split across three networks:
+
+[cols="1,3,3" options="header"]
+|===
+|Network |Members |Reachability
+
+|`proxy` (external, shared with Blogfolio)
+|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup, Grafana
+|Attached to the host-level Traefik. Frontend, Backend API, Keycloak, MinIO and Grafana each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
+
+|`einsatzbereit-db`
+|PostgreSQL, Keycloak, Backend API, db-backup
+|Container-to-container only. PostgreSQL publishes no port and is reachable by name from this network alone.
+
+|`einsatzbereit-monitoring`
+|Prometheus, Alertmanager, node-exporter, Loki, Alloy, Tempo, Grafana, Backend API
+|No Traefik route except through Grafana. See <<section-concepts>> under Operations for why the rest are not exposed.
+|===
+
+Three containers deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, `monitoring` to push OTLP traces to Tempo. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale. *Grafana* is on `proxy` and `monitoring` so it can be publicly reachable while reading datasources that are not.
+
+Those three are therefore where an authentication gap has the widest blast radius, which is why Grafana carries its own admin login and the Backend API validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).

@@ -3,12 +3,86 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-glossary]]
 == Glossary
 
+=== Domain Terms
+
+These are the terms the domain model in <<section-concepts>> is built from. They are the vocabulary used in code, in the UI and in this document; where a German UI string differs from the code identifier, both are given.
+
+[cols="1,3" options="header"]
+|===
+|Term |Definition
+
+|Achievement
+|A badge a volunteer unlocks, of type `Milestone` (a count reached), `Streak` (sustained activity) or `Hidden` (not shown until earned). Awarded automatically in reaction to domain events, never granted by hand.
+
+|Audit Log
+|Append-only record of an administrative action: who acted, what action, on which subject, and optionally why. Written whenever a platform admin disables, restores or changes an account, organization or listing. Readable only by admins.
+
+|Check-in
+|Confirmation that a volunteer actually showed up. The organizer chooses the method per opportunity: `None`, `QRCode`, `PINCode` (a short code the organizer reads out on site) or `Manual`.
+
+|Engagement
+|A volunteer's sign-up for one volunteer opportunity, and the record of how it went: `Pending` until the organizer confirms, then check-in, then optional feedback. Withdrawn or cancelled engagements are kept rather than deleted and can be reactivated a limited number of times. Survives the volunteer's account deletion in anonymized form.
+
+|Feedback
+|A rating and optional comment a volunteer leaves on a completed engagement, editable for a limited window after submission.
+
+|Invitation
+|An organizer's offer to a user to join an organization with an intended role. Expires after 14 days if not accepted or declined.
+
+|Membership
+|The link between a user and an organization, carrying the member's role (`Member` or `Organizer`). This local record - not the JWT role - decides at request time whether a user may modify a given organization.
+
+|Notification
+|An in-app message in a user's inbox, generated from a domain event (a sign-up arrived, an invitation was accepted, a matching opportunity was published). Distinct from the emails sent for the same events.
+
+|Occurrence
+|Whether an opportunity happens once (`OneTime`) or repeatedly (`Recurring`). Recurring opportunities generate a series of time slots that can be edited or cancelled together.
+
+|Organization
+|A club, NGO, or other entity that posts volunteer opportunities on the platform.
+
+|Organizer
+|A user with the `organisator` role who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
+
+|Participation Type
+|How a volunteer takes part: `ScheduledSlots` (they book a concrete time slot) or `IndividualContact` (they apply before a deadline and arrange it with the organizer directly).
+
+|Platform Admin
+|A user with the `admin` role. Works through reported content, disables and restores accounts, organizations and listings, and reads the audit log. Test persona: `admin` / `admin123`.
+
+|Report
+|An abuse report filed by a user against an opportunity, an organization or another user. Moves from `Open` to either `Dismissed` or `Actioned` in the moderation queue.
+
+|Search Alert
+|A volunteer's saved search criteria. One per user; a scheduled digest job notifies them when newly published opportunities match.
+
+|Shadow Delete
+|An admin action that makes an account, organization or listing invisible to everyone else without destroying its data, so it can be restored. Distinct from a volunteer deleting their own account, which anonymizes their engagements permanently.
+
+|Streak
+|Counters tracking a volunteer's sustained activity: consecutive login days and consecutive active weeks, plus a total of confirmed engagements. Feeds the streak achievements.
+
+|Time Slot
+|One concrete shift within a volunteer opportunity: start, end, and an optional participant cap. Slots created by one recurring request share a series ID.
+
+|Volunteer
+|A user who searches for and signs up for volunteer opportunities. Test persona: Vera (`vera` / `vera123`).
+
+|Volunteer Opportunity
+|A concrete request for help posted by an organization. Describes what is needed, where, when, and what skills are required. Central aggregate of the domain; moves through `Draft`, `Published`, `Unpublished` and `Cancelled`.
+|===
+
+=== Technical Terms
+
 [cols="1,3" options="header"]
 |===
 |Term |Definition
 
 |ADR
 |Architecture Decision Record. A document that captures a significant architectural decision including its context, the decision itself, the rationale, considered alternatives, and consequences. ADRs are stored under `docs/ADRs/`.
+
+|Aggregate
+|A cluster of domain objects treated as one consistency boundary, with a single root entity as its only entry point. `VolunteerOpportunity` with its `TimeSlot` children is the clearest example; a handler loads and saves the root, never a child directly.
 
 |AGPL
 |GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works - including those deployed as network services - must be released under the same license.
@@ -22,11 +96,11 @@ ifndef::imagesdir[:imagesdir: ../images]
 |CQRS
 |Command Query Responsibility Segregation. An architectural pattern that separates read operations (queries) from write operations (commands).
 
+|Domain Event
+|A record that something business-relevant happened, raised by an aggregate and dispatched after the transaction commits. How modules react to each other without referencing each other - see <<section-concepts>> under Module Structure.
+
 |EF Core
 |Entity Framework Core. The ORM (Object-Relational Mapper) used in the backend to interact with PostgreSQL. Manages the database schema via migrations.
-
-|Engagement
-|The act of a volunteer signing up to help with a specific volunteer opportunity. Modeled as an `Engagement` entity in the domain.
 
 |GHCR
 |GitHub Container Registry. The Docker image registry used to publish the frontend, backend, and Keycloak images on version releases.
@@ -46,27 +120,31 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Mediator (ISender)
 |The application's small in-house CQRS dispatcher (`ISender`). Routes commands and queries to their handlers, decoupling the API layer from use-case implementation. The project deliberately uses this instead of the external MediatR library.
 
+|Module
+|A functional building block of the backend, cut by business function and repeated as a folder in `Api/`, `Application/` and `Domain/`. Listed in full in <<section-building-block-view>>.
+
 |NSwag
 |A .NET toolchain for generating API clients from OpenAPI specifications. The frontend TypeScript client (`api-client.ts`) is generated via NSwag and must never be hand-edited.
 
 |OIDC
 |OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.
 
-|Organization
-|A club, NGO, or other entity that posts volunteer opportunities on the platform.
+|OTLP
+|OpenTelemetry Protocol. The wire format the backend exports logs, metrics and traces in - collected by the Aspire dashboard locally and by Grafana Tempo in staging (ADR-6).
 
-|Organizer
-|A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
+|Outbox
+|A database table domain events are written to inside the same transaction as the state change that raised them, then dispatched by a background job. Guarantees an event is never lost or emitted for a rolled-back change.
 
 |PKCE
 |Proof Key for Code Exchange. An extension to the OAuth 2.0 Authorization Code Flow that prevents authorization code interception attacks. Required for public clients (SPAs) where a client secret cannot be kept confidential.
 
+|Shared Kernel
+|The cross-module code every module depends on: message dispatch, `Result`/`Error` primitives, authorization guards, pagination, and the persistence, storage and email ports.
+
 |TDR
 |Technical Debt Record. Captures a known technical debt or risk with its context, impact, severity, and proposed mitigation. Stored under `docs/TDRs/` and referenced from chapter 11.
 
-|Volunteer
-|A user who searches for and signs up for volunteer opportunities. Test persona: Vera (`vera` / `vera123`).
+|Value Object
+|A domain object identified by its values rather than an ID, immutable once created. `Address` is the one in this domain; it is stored inline on its owner rather than as its own table.
 
-|Volunteer Opportunity
-|A concrete request for help posted by an organization. Describes what is needed, where, when, and what skills are required. Core entity of the domain.
 |===
