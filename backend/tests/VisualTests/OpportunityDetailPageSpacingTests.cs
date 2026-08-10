@@ -12,23 +12,34 @@ namespace VisualTests;
 /// other top-level block on the page carries, so whichever one rendered sat
 /// flush against the "About this organization" section right below it with
 /// zero gap. Fixed by adding `mb-6` to each of the three.
+///
+/// #1754's two-column redesign (`lg:grid-cols-[minmax(0,1fr)_20rem]`) moved
+/// all three blocks into a sticky rail beside the reading column, while
+/// "About this organization" stayed behind in the reading column - the two
+/// are no longer vertically stacked, so a "gap above" check no longer means
+/// anything (whichever column happens to be taller decides its sign, not any
+/// actual spacing bug). What still matters, and what the redesign's own
+/// `lg:gap-10` exists to guarantee, is that the rail never overlaps the
+/// reading column horizontally - these checks now assert that gap instead.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// Comfortably below the intended 24px (`mb-6`) gap, but far enough above
-	// zero that a regression back to "flush against the next section" (the
-	// bug's actual symptom) cannot pass.
+	// Comfortably below the intended `lg:gap-10` (40px) column gap, but far
+	// enough above zero that a regression back to the rail actually
+	// overlapping the reading column (the bug's modern equivalent of "flush
+	// against the next section") cannot pass.
 	private const double MinExpectedGapPx = 16;
 
 	/// <summary>
-	/// Asserts a visible gap exists between the bottom of <paramref name="block"/>
-	/// and the top of the "About this organization" section, reading both boxes
-	/// in a single EvaluateAsync call so nothing can shift layout between the
-	/// two reads (see VisualTestBase.AssertMaxWidthContentCenteredAsync for the
-	/// same pattern).
+	/// Asserts a visible horizontal gap exists between the right edge of the
+	/// "About this organization" section (in the reading column) and the left
+	/// edge of <paramref name="block"/> (in the sticky rail beside it), reading
+	/// both boxes in a single EvaluateAsync call so nothing can shift layout
+	/// between the two reads (see VisualTestBase.AssertMaxWidthContentCenteredAsync
+	/// for the same pattern).
 	/// </summary>
-	private async Task AssertGapBeforeAboutOrganizationAsync(ILocator block, string label)
+	private async Task AssertRailDoesNotOverlapAboutOrganizationAsync(ILocator block, string label)
 	{
 		var aboutOrg = Page.GetByTestId("about-organization");
 		await Expect(aboutOrg).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -43,13 +54,14 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 					const about = document.querySelector(aboutSelector);
 					const blockBox = el.getBoundingClientRect();
 					const aboutBox = about.getBoundingClientRect();
-					return aboutBox.top - blockBox.bottom;
+					return blockBox.left - (aboutBox.left + aboutBox.width);
 				}
 				""",
 				"[data-testid='about-organization']");
 			return gap >= MinExpectedGapPx;
-		}, () => $"{label}: expected at least {MinExpectedGapPx}px between the block and \"About this "
-			+ $"organization\" (last observed gap = {gap}px) - it must not sit flush against the next section");
+		}, () => $"{label}: expected at least {MinExpectedGapPx}px between the reading column's \"About "
+			+ $"this organization\" section and the sticky rail (last observed gap = {gap}px) - the rail "
+			+ "must not overlap the reading column");
 	}
 
 	private async Task<(string OrganizationId, string OpportunityId)> CreateOpportunityWithFullOrgProfileAsync(
@@ -100,7 +112,7 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 	}
 
 	[Test]
-	public async Task ApplicationStatusCard_HasGapBeforeAboutOrganization()
+	public async Task ApplicationStatusCard_DoesNotOverlapAboutOrganization()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -120,12 +132,12 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertGapBeforeAboutOrganizationAsync(
+		await AssertRailDoesNotOverlapAboutOrganizationAsync(
 			Page.GetByTestId("application-status"), "Your application status card");
 	}
 
 	[Test]
-	public async Task SignUpCta_HasGapBeforeAboutOrganization()
+	public async Task SignUpCta_DoesNotOverlapAboutOrganization()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -136,11 +148,11 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertGapBeforeAboutOrganizationAsync(Page.GetByTestId("signup-cta"), "Sign-up CTA");
+		await AssertRailDoesNotOverlapAboutOrganizationAsync(Page.GetByTestId("signup-cta"), "Sign-up CTA");
 	}
 
 	[Test]
-	public async Task LoginPrompt_HasGapBeforeAboutOrganization()
+	public async Task LoginPrompt_DoesNotOverlapAboutOrganization()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -150,6 +162,6 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertGapBeforeAboutOrganizationAsync(Page.GetByTestId("login-prompt"), "Login prompt");
+		await AssertRailDoesNotOverlapAboutOrganizationAsync(Page.GetByTestId("login-prompt"), "Login prompt");
 	}
 }
