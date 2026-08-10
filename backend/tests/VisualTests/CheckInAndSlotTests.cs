@@ -210,7 +210,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		// the public detail page (#751).
 		var oppRow = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(oppRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await oppRow.GetByTestId("opportunity-edit").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(oppRow, "opportunity-edit");
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		// Step 3 (Format): switch the check-in method to PINCode and type a PIN.

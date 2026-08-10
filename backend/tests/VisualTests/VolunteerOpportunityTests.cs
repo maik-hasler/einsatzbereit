@@ -583,7 +583,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Reopen the draft's edit wizard directly from the list row (inline edit).
 		var draftRow = draftsSection.Locator("li", new() { HasText = uniqueTitle });
 		await Expect(draftRow).ToBeVisibleAsync();
-		await draftRow.GetByTestId("opportunity-edit").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(draftRow, "opportunity-edit");
 
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
 

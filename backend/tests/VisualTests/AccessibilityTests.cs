@@ -1692,6 +1692,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		await Page.GetByTestId("row-actions-trigger").First.ClickAsync();
 		await Page.GetByTestId("opportunity-cancel").First.ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync();

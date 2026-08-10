@@ -18,6 +18,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
+import RowActionsMenu from "../../components/RowActionsMenu";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import PageSectionHeading from "../../components/PageSectionHeading";
@@ -373,7 +374,7 @@ export default function OrgOpportunitiesPage() {
 					{item.totalMaxParticipants == null ? (
 						<p className="mt-1 text-xs text-gray-500">
 							{t("orgOpportunities.participantsUnlimited", {
-								booked: item.currentParticipantCount,
+								count: item.currentParticipantCount,
 							})}
 						</p>
 					) : (
@@ -387,35 +388,14 @@ export default function OrgOpportunitiesPage() {
 						)
 					)}
 				</div>
+				{/* One visible primary action per card plus an overflow menu, not
+				five side-by-side buttons. Publish is the exception: on a draft it
+				*is* the primary thing to do, so it stays out here. Everything else
+				(Edit, Unpublish, Cancel, Delete) moves into the menu - three of
+				those read as destructive and two shared the same red outline, so
+				the card gave "Delete" exactly as much weight as the action an
+				organizer actually came for. */}
 				<div className="mt-auto flex flex-wrap items-center gap-2">
-					{isOrganizer && status !== "Cancelled" && (
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => void openEdit(item.id)}
-							disabled={editLoadingId === item.id}
-							data-testid="opportunity-edit"
-						>
-							{editLoadingId === item.id
-								? t("orgOpportunities.editLoading")
-								: t("opportunities.edit")}
-						</Button>
-					)}
-					{isOrganizer && (
-						<Button
-							type="button"
-							variant="dangerOutline"
-							size="sm"
-							onClick={() => {
-								setDeleteTargetId(item.id);
-								setDeleteError(null);
-							}}
-							data-testid="opportunity-delete"
-						>
-							{t("opportunities.delete")}
-						</Button>
-					)}
 					{isOrganizer && (status === "Draft" || status === "Unpublished") && (
 						<Button
 							type="button"
@@ -429,36 +409,6 @@ export default function OrgOpportunitiesPage() {
 								: t("opportunities.publish")}
 						</Button>
 					)}
-					{isOrganizer && status === "Published" && (
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => {
-								setUnpublishTargetId(item.id);
-								setUnpublishError(null);
-							}}
-							data-testid="opportunity-unpublish"
-						>
-							{t("opportunities.unpublish")}
-						</Button>
-					)}
-					{isOrganizer &&
-						(status === "Published" || status === "Unpublished") && (
-							<Button
-								type="button"
-								variant="dangerOutline"
-								size="sm"
-								onClick={() => {
-									setCancelTargetId(item.id);
-									setCancelReason("");
-									setCancelError(null);
-								}}
-								data-testid="opportunity-cancel"
-							>
-								{t("opportunities.cancel")}
-							</Button>
-						)}
 					{status !== "Draft" && (
 						<Link
 							to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
@@ -467,6 +417,69 @@ export default function OrgOpportunitiesPage() {
 							{t("orgOpportunities.manageApplications")}
 							<ArrowRightIcon className="h-3.5 w-3.5" />
 						</Link>
+					)}
+					{isOrganizer && (
+						<div className="ml-auto">
+							<RowActionsMenu
+								label={t("orgOpportunities.moreActionsFor", {
+									title: item.title || t("orgDashboard.unnamedDraft"),
+								})}
+								actions={[
+									...(status !== "Cancelled"
+										? [
+												{
+													key: "edit",
+													label:
+														editLoadingId === item.id
+															? t("orgOpportunities.editLoading")
+															: t("opportunities.edit"),
+													disabled: editLoadingId === item.id,
+													testId: "opportunity-edit",
+													onClick: () => void openEdit(item.id),
+												},
+											]
+										: []),
+									...(status === "Published"
+										? [
+												{
+													key: "unpublish",
+													label: t("opportunities.unpublish"),
+													testId: "opportunity-unpublish",
+													onClick: () => {
+														setUnpublishTargetId(item.id);
+														setUnpublishError(null);
+													},
+												},
+											]
+										: []),
+									...(status === "Published" || status === "Unpublished"
+										? [
+												{
+													key: "cancel",
+													label: t("opportunities.cancel"),
+													destructive: true,
+													testId: "opportunity-cancel",
+													onClick: () => {
+														setCancelTargetId(item.id);
+														setCancelReason("");
+														setCancelError(null);
+													},
+												},
+											]
+										: []),
+									{
+										key: "delete",
+										label: t("opportunities.delete"),
+										destructive: true,
+										testId: "opportunity-delete",
+										onClick: () => {
+											setDeleteTargetId(item.id);
+											setDeleteError(null);
+										},
+									},
+								]}
+							/>
+						</div>
 					)}
 				</div>
 			</li>

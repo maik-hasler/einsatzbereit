@@ -265,6 +265,18 @@ export function ArrowRightIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	);
 }
 
+export function EllipsisHorizontalIcon({ className = "h-4 w-4" }: IconProps) {
+	return (
+		<StrokeIcon className={className}>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+			/>
+		</StrokeIcon>
+	);
+}
+
 export function UserCircleIcon({ className = "h-4 w-4" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>

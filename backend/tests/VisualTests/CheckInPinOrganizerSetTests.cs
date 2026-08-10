@@ -117,7 +117,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		// not the public detail page (#751).
 		var oppRow = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(oppRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await oppRow.GetByTestId("opportunity-edit").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(oppRow, "opportunity-edit");
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
