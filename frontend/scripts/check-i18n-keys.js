@@ -52,6 +52,8 @@ function setsEqual(a, b) {
 const ALLOWED_IDENTICAL_KEYS = new Set(
 	[
 		"brand.name",
+		// The operator's contact address - one value, not a translation.
+		"contact.email",
 		"footer.license",
 		"nav.administration",
 		"landing.heroStat3Label",

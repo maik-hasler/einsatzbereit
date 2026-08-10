@@ -77,12 +77,21 @@ export default function ContactPage() {
 					<p className="mt-3 leading-7 text-gray-700">
 						{t("contact.otherSectionBody")}
 					</p>
-					{/* The body names the imprint as where the operator's details
-					live, so the page provides that jump instead of leaving the
-					reader to find it in the footer. */}
+					{/* The address itself, not just a pointer to where it is
+					published. This page used to send the reader to the imprint to
+					go and find it - a contact page whose only outcome was another
+					page. Same address the imprint carries. */}
+					<a
+						href={`mailto:${t("contact.email")}`}
+						data-testid="contact-email"
+						className={`mt-5 inline-flex items-center gap-2 ${linkClass}`}
+					>
+						<EnvelopeIcon className="h-4 w-4 shrink-0" />
+						{t("contact.email")}
+					</a>
 					<Link
 						to="/imprint"
-						className="mt-5 inline-flex items-center gap-1.5 font-medium text-brand-700 transition-colors hover:text-brand-800"
+						className="mt-4 flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-brand-800"
 					>
 						{t("footer.imprint")}
 						<ArrowRightIcon />

@@ -16,7 +16,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
-import { FlagIcon } from "../components/icons";
+import { FlagIcon, GlobeIcon } from "../components/icons";
 import PageHeaderBand from "../components/PageHeaderBand";
 import PublicOpportunityCard from "../components/PublicOpportunityCard";
 
@@ -100,21 +100,27 @@ export default function OrganizationProfilePage() {
 
 	return (
 		<>
+			{/* The band's action slot leads with the organization's own website
+				when it has one. Reporting used to be the only thing in here, which
+				made "report this organization" the single most prominent action on
+				every organization's page; it moves down to the contact panel with
+				the rest of the administrative links. */}
 			<PageHeaderBand
 				eyebrow={t("orgProfile.eyebrow")}
 				title={profile.name}
 				lead={profile.description ?? undefined}
 			>
-				{auth.isAuthenticated && (
+				{profile.website && (
 					<Button
-						variant="outlineOnDark"
+						variant="onDark"
 						size="sm"
-						onClick={() => setShowReport(true)}
-						data-testid="report-organization"
-						aria-label={t("orgProfile.reportOrganization")}
+						href={profile.website}
+						target="_blank"
+						rel="noopener noreferrer"
+						data-testid="organization-website"
 					>
-						<FlagIcon className="h-4 w-4" />
-						<span className="hidden sm:inline">{t("orgProfile.report")}</span>
+						<GlobeIcon className="h-4 w-4" />
+						{t("orgProfile.visitWebsite")}
 					</Button>
 				)}
 			</PageHeaderBand>
@@ -139,6 +145,23 @@ export default function OrganizationProfilePage() {
 							<PublicOpportunityCard key={opp.id} opportunity={opp} />
 						))}
 					</ul>
+				)}
+
+				{/* Moved out of the header band: a moderation action belongs with
+				the administrative footnotes, not as the page's primary control. */}
+				{auth.isAuthenticated && (
+					<div className="mt-10 border-t border-gray-100 pt-6">
+						<button
+							type="button"
+							onClick={() => setShowReport(true)}
+							data-testid="report-organization"
+							aria-label={t("orgProfile.reportOrganization")}
+							className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-700"
+						>
+							<FlagIcon className="h-4 w-4" />
+							{t("orgProfile.report")}
+						</button>
+					</div>
 				)}
 			</OrganizationProfileView>
 

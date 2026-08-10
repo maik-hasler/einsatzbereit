@@ -87,7 +87,12 @@ export default function PageHeaderBand({
 				alone lands ~175px off. The band's *background* still runs edge
 				to edge; only its text is brought into the document measure. */}
 				<div className="relative mx-auto max-w-page px-4 sm:px-6 lg:px-8">
-					<div className="mx-auto max-w-5xl pt-[calc(var(--header-height)+2rem)] pb-14 sm:pt-[calc(var(--header-height)+3rem)] sm:pb-20">
+					{/* Vertical padding tightened from pt+3rem/pb-20. At the old
+					values the band ran ~420px tall to hold an eyebrow, a title and
+					at most two lines of lead - so on /help, /contact and the account
+					pages roughly 60% of the tallest, darkest surface on the page was
+					empty. The type scale is unchanged; only the air around it is. */}
+					<div className="mx-auto max-w-5xl pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14">
 						{/* Replaces the BreadcrumbBar these pages used to render - one
 						way back, in the band, instead of a grey strip above it
 						repeating the title. */}

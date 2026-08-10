@@ -1,11 +1,8 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
-import { useApiClient } from "../../hooks/useApiClient";
 import Chip from "../Chip";
-import ReportFlagButton from "../ReportFlagButton";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
 import { CategoryGlyph } from "./CategoryGlyph";
 
@@ -31,8 +28,6 @@ export default function OpportunityListItem({
 	item: VolunteerOpportunitySummary;
 }) {
 	const { t, i18n } = useTranslation();
-	const api = useApiClient();
-	const auth = useAuth();
 	const isUnlimited = item.totalMaxParticipants == null;
 	const spotsLeft =
 		item.totalMaxParticipants != null && item.totalMaxParticipants > 0
@@ -47,18 +42,16 @@ export default function OpportunityListItem({
 				aria-label={item.title}
 			/>
 			<div className="flex h-full flex-col">
-				{/* Banner - a real photo when the org uploaded one, otherwise a
-				quiet category-glyph tile rather than nothing. Every seed/demo
-				opportunity is currently photo-less, so without this every card in
-				the grid was an identical blank white box under its chip row - no
-				color or shape to distinguish one listing from the next at a
-				glance. Stays on the same muted brand-green tint for every
-				category (not a per-category rainbow fill - see the comment on
-				orgInitials below for why that was rejected), so it reads as one
-				consistent card treatment, not a re-introduction of the
-				per-category color system. */}
-				<div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100">
-					{item.bannerImageUrl ? (
+				{/* Banner, only when the organization actually uploaded a photo.
+				There used to be a 128px category-glyph tile in its place on every
+				photo-less card, added back when the demo content was thin enough
+				that cards had little else to tell them apart. With real titles,
+				dates, organizations and cities on the card that no longer holds,
+				and since almost no opportunity carries a photo it meant most of
+				the grid's top third was a tinted rectangle with a small icon
+				centred in it. A photo-less card is a text card now. */}
+				{item.bannerImageUrl && (
+					<div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100">
 						<img
 							src={item.bannerImageUrl}
 							alt=""
@@ -67,18 +60,8 @@ export default function OpportunityListItem({
 							loading="lazy"
 							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 						/>
-					) : (
-						<div
-							aria-hidden="true"
-							className="flex h-full w-full items-center justify-center transition-transform duration-300 group-hover:scale-105"
-						>
-							<CategoryGlyph
-								category={item.category}
-								className="h-10 w-10 text-brand-500"
-							/>
-						</div>
-					)}
-				</div>
+					</div>
+				)}
 
 				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
 					<div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -115,31 +98,35 @@ export default function OpportunityListItem({
 								</Chip>
 							))
 						)}
-						{auth.isAuthenticated && (
-							<ReportFlagButton
-								targetLabel={item.title}
-								ariaLabel={t("opportunities.reportOpportunity")}
-								onReport={async (reason, details) => {
-									await api.reportVolunteerOpportunity(item.id, {
-										reason,
-										details: details || undefined,
-									});
-								}}
-								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800${spotsLeft === null && !isUnlimited ? "ml-auto" : ""}`}
-							/>
-						)}
+						{/* No report control here. It sat inline in this metadata row,
+						immediately after the category and capacity chips, giving a
+						moderation action the same weight and adjacency as the
+						listing's own attributes - and it broke the row's rhythm,
+						since it needed a conditional ml-auto depending on whether a
+						capacity chip happened to be present. Reporting stays on the
+						opportunity's own page, where the reader has the full listing
+						in front of them to judge. */}
 					</div>
 					<h3 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
 					</h3>
+					{/* One slot, one meaning. The start date used to render as a bare
+					datetime in brand green while the application deadline rendered
+					as "Apply by {date}" in grey - same position, different colour,
+					different fact, no label on the first of them. Two cards side by
+					side were not comparable. Both are labelled and share a tone
+					now; the calendar icon is the only thing they still share
+					silently. */}
 					{item.nextTimeSlotStart ? (
-						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-700">
+						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
 							<CalendarIcon className="h-4 w-4 shrink-0" />
 							<span>
-								{formatDateTime(
-									item.nextTimeSlotStart as unknown as string,
-									i18n.language,
-								)}
+								{t("opportunities.startsOn", {
+									date: formatDateTime(
+										item.nextTimeSlotStart as unknown as string,
+										i18n.language,
+									),
+								})}
 							</span>
 						</p>
 					) : item.validUntil ? (

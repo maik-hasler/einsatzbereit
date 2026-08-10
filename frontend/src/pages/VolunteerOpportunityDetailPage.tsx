@@ -638,14 +638,15 @@ export default function VolunteerOpportunityDetailPage() {
 				height, which would make top-24 have nothing left to stick against. */}
 					<aside className="lg:sticky lg:top-24">
 						<div className="space-y-6">
-							{/* Application deadline */}
+							{/* Application deadline - only as a card of its own when there
+							is no sign-up card below to carry it (owner, draft, already
+							signed up, signed out). When the CTA is showing, the deadline
+							renders inside it instead: two stacked cards pushed the rail's
+							actual purpose - the button - a full card-height further down
+							a page that already opens with a banner image. */}
 							{opportunity.participationType === "IndividualContact" &&
-								opportunity.validUntil && (
-									// Carded like the rest of the rail, and without the mb-6 the
-									// wrapping space-y-6 already provides: as a bare line above
-									// the sign-up card it was the one thing in the rail with no
-									// surface, reading as text stranded above the panel rather
-									// than as the deadline for it.
+								opportunity.validUntil &&
+								!(isAuthenticated && !isOwner && !cue && !isDraft) && (
 									<div
 										className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}
 									>
@@ -739,6 +740,17 @@ export default function VolunteerOpportunityDetailPage() {
 											? t("opportunities.joinWaitlist")
 											: t("opportunities.expressInterest")}
 									</Button>
+									{opportunity.participationType === "IndividualContact" &&
+										opportunity.validUntil && (
+											<p className="text-sm text-gray-600">
+												{t("opportunities.applyBy", {
+													date: formatDate(
+														opportunity.validUntil as unknown as string,
+														i18n.language,
+													),
+												})}
+											</p>
+										)}
 								</div>
 							)}
 

@@ -177,6 +177,7 @@
       "notFound": "Not found.",
       "flexibleDate": "Flexible date",
       "applyBy": "Apply by {{date}}",
+      "startsOn": "Starts {{date}}",
       "full": "Full",
       "spotsLeft": "{{count}} spots left",
       "spotsLeft_one": "{{count}} spot left",
@@ -261,7 +262,7 @@
       "creating": "Creating…",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
-      "fieldRequired": "Required",
+      "fieldRequired": "Please fill this in.",
       "useOrgAddress": "Use organization address",
       "publish": "Publish",
       "saveDraft": "Save as draft",
@@ -475,7 +476,7 @@
       "fieldHouseNumber": "House number",
       "fieldZip": "ZIP",
       "fieldCity": "City",
-      "fieldRequired": "Required",
+      "fieldRequired": "Please fill this in.",
       "fieldTooLong": "Must not exceed {{max}} characters.",
       "zipInvalid": "ZIP code must be exactly 5 characters.",
       "websiteInvalid": "Website must be a valid http:// or https:// URL.",
@@ -780,6 +781,7 @@
       "reportSectionTitle": "Reporting abusive content",
       "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
       "otherSectionTitle": "Other questions or concerns",
+      "email": "maikhslr@gmail.com",
       "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint.",
       "eyebrow": "Support",
       "intro": "Report a problem, or find the right place to ask your question."
@@ -1003,6 +1005,7 @@
       "noOpportunities": "No current opportunities available.",
       "report": "Report",
       "reportOrganization": "Report organization",
+      "visitWebsite": "Visit website",
       "eyebrow": "Organization"
     },
     "profileOverview": {

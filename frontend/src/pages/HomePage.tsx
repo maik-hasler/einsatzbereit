@@ -237,10 +237,15 @@ export default function HomePage() {
 						</defs>
 					</svg>
 
+					{/* The three photo stones are hidden below `sm`. At 80px, clipped
+					to an organic shape, a photo of a crowd of volunteers is not
+					legible as anything - on a phone they read as stray fragments in
+					the corners rather than as imagery. The two flat colour stones
+					stay: a shape works at any size. */}
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-1)" }}
-						className="pointer-events-none absolute -top-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+						className="pointer-events-none absolute -top-2 -left-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
 					>
 						<img
 							src="/images/hero/volunteer-1.jpg"
@@ -256,7 +261,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-3)" }}
-						className="pointer-events-none absolute -bottom-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:bottom-6 lg:left-28 lg:h-36 lg:w-36"
+						className="pointer-events-none absolute -bottom-2 -left-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:bottom-6 lg:left-28 lg:h-36 lg:w-36"
 					>
 						<img
 							src="/images/hero/volunteer-3.jpg"
@@ -272,7 +277,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-5)" }}
-						className="pointer-events-none absolute -right-2 -bottom-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-right-8 lg:bottom-2 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+						className="pointer-events-none absolute -right-2 -bottom-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:-right-8 lg:bottom-2 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
 					>
 						<img
 							src="/images/hero/volunteer-2.jpg"

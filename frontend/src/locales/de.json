@@ -177,6 +177,7 @@
       "notFound": "Nicht gefunden.",
       "flexibleDate": "Flexibler Termin",
       "applyBy": "Bewerbung bis {{date}}",
+      "startsOn": "Beginnt am {{date}}",
       "full": "Ausgebucht",
       "spotsLeft": "{{count}} Plätze frei",
       "spotsLeft_one": "{{count}} Platz frei",
@@ -261,7 +262,7 @@
       "creating": "Wird erstellt…",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
-      "fieldRequired": "Erforderlich",
+      "fieldRequired": "Bitte ausfüllen.",
       "useOrgAddress": "Adresse der Organisation übernehmen",
       "publish": "Veröffentlichen",
       "saveDraft": "Als Entwurf speichern",
@@ -475,7 +476,7 @@
       "fieldHouseNumber": "Hausnummer",
       "fieldZip": "PLZ",
       "fieldCity": "Stadt",
-      "fieldRequired": "Erforderlich",
+      "fieldRequired": "Bitte ausfüllen.",
       "fieldTooLong": "Darf {{max}} Zeichen nicht überschreiten.",
       "zipInvalid": "Die PLZ muss genau 5 Zeichen lang sein.",
       "websiteInvalid": "Die Website muss eine gültige http:// oder https:// URL sein.",
@@ -780,6 +781,7 @@
       "reportSectionTitle": "Missbräuchliche Inhalte melden",
       "reportSectionBody": "Wenn dir ein Einsatz oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
       "otherSectionTitle": "Andere Fragen oder Anliegen",
+      "email": "maikhslr@gmail.com",
       "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform.",
       "eyebrow": "Support",
       "intro": "Melde ein Problem oder finde die richtige Stelle für deine Frage."
@@ -1003,6 +1005,7 @@
       "noOpportunities": "Keine aktuellen Einsätze vorhanden.",
       "report": "Melden",
       "reportOrganization": "Organisation melden",
+      "visitWebsite": "Website besuchen",
       "eyebrow": "Organisation"
     },
     "profileOverview": {
