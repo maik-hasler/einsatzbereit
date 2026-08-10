@@ -305,8 +305,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Page.GetByTestId("profile-edit").ClickAsync();
+		await Expect(Page.GetByTestId("profile-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
 
@@ -385,8 +385,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Page.GetByTestId("profile-edit").ClickAsync();
+		await Expect(Page.GetByTestId("profile-save")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();

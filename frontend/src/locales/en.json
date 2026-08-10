@@ -1086,8 +1086,10 @@
       "unlockedOn": "Unlocked: {{date}}",
       "lockedBadge": "Mystery Badge",
       "badgesTitle": "Badges",
-      "loginStreak": "Login streak",
       "activityStreak": "Activity streak",
+      "engagementStatLabel": "Confirmed opportunities",
+      "engagementStatLabel_one": "Confirmed opportunity",
+      "engagementStatLabel_other": "Confirmed opportunities",
       "newBadge": "🏆 New badge unlocked: {{name}}!",
       "types": {
         "Milestone": "Milestone",

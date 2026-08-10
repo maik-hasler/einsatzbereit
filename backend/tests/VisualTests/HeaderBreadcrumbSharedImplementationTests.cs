@@ -26,8 +26,9 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		// The bar itself is unchanged and still covered on the org app shell by
 		// OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression
 		// below. What this pins instead is that the two things the bar carried
-		// for /profile survived the move: the way back home, and the Edit
-		// quick action.
+		// for /profile survived the move: the way back home, and the ability to
+		// edit - the latter now as the Profile details section's own button
+		// rather than a quick action in the page chrome.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -44,15 +45,19 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(homeLink).ToBeVisibleAsync();
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
 
-		// useEditModeQuickActions publishes through QuickActionsContext, which
-		// PageHeaderBand now reads in the action bar's place - same key and the
-		// same data-testid, so the edit-mode tests keep working unchanged.
-		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync();
+		// Edit sits inside the Profile details section, next to the fields it
+		// edits, matching how /profile/settings has always saved. It used to be
+		// published through QuickActionsContext for the page chrome to render,
+		// which left the account area running two editing paradigms at once.
+		var editButton = Page.GetByTestId("profile-edit");
+		await Expect(editButton).ToBeVisibleAsync();
+		await Expect(Page.Locator("main section").Filter(new() { Has = editButton }))
+			.ToBeVisibleAsync();
 
 		// The sub-nav is what ties the three pages together now that each has
 		// its own band; all three must offer all three destinations.
 		var subNav = Page.Locator("main nav[aria-label]").First;
-		foreach (var tab in new[] { "Profile", "Activity", "Settings" })
+		foreach (var tab in new[] { "Profile", "Sign-ups", "Settings" })
 			await Expect(subNav.GetByRole(AriaRole.Link, new() { Name = tab })).ToBeVisibleAsync();
 	}
 

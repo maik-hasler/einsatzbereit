@@ -5,7 +5,6 @@ import { Trans, useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
@@ -21,6 +20,8 @@ import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
+import Button from "../../components/Button";
+import { CheckIcon, PencilIcon } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
 import {
 	useProfileForm,
@@ -64,25 +65,6 @@ function FireIcon({ className = "h-5 w-5" }: { className?: string }) {
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"
-			/>
-		</svg>
-	);
-}
-
-function CalendarIcon({ className = "h-5 w-5" }: { className?: string }) {
-	return (
-		<svg
-			className={className}
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth={1.5}
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
 			/>
 		</svg>
 	);
@@ -171,6 +153,7 @@ export default function ProfileOverviewPage() {
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
+	const [engagementCount, setEngagementCount] = useState<number | null>(null);
 	const formRef = useRef<HTMLFormElement>(null);
 	// Guards state updates from a stale in-flight request (initial load or a
 	// later manual retry) after the component has unmounted.
@@ -234,8 +217,14 @@ export default function ProfileOverviewPage() {
 		loadProfile().finally(() => setRetryingProfileLoad(false));
 	}
 
-	// Streak chips in the identity hero - a lightweight, non-critical stat
-	// display, so a failed fetch is silently ignored rather than surfaced.
+	// Stat chips in the identity hero - a lightweight, non-critical display,
+	// so a failed fetch is silently ignored rather than surfaced.
+	//
+	// The headline stat is confirmed opportunities, not the login streak this
+	// used to lead with: a volunteering platform that puts "days in a row you
+	// opened the app" first is rewarding the wrong thing, and on a new account
+	// it opened with a 0. The activity streak stays (it counts weeks with real
+	// activity); the login streak is gone.
 	useEffect(() => {
 		api
 			.getMyStreaks()
@@ -243,6 +232,16 @@ export default function ProfileOverviewPage() {
 			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	const userId = auth.user?.profile?.sub;
+	useEffect(() => {
+		if (!userId) return;
+		api
+			.getPublicUserProfile(userId)
+			.then((p) => setEngagementCount(p.engagementCount))
+			.catch(() => {});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [userId]);
 
 	// Legacy ?tab= deep links that #1684 moved off this page entirely
 	// (invitations/sign-ups now live at /my-signups) redirect there
@@ -315,28 +314,30 @@ export default function ProfileOverviewPage() {
 		setEditing(false);
 	}
 
-	useEditModeQuickActions({
-		editing,
-		saving,
-		onEdit: () => setEditing(true),
-		// Goes through the form's native submit (not handleSave() directly) so
-		// the browser still runs constraint validation and focuses/announces
-		// the offending field, same as pressing Enter in the form used to.
-		onSave: () => formRef.current?.requestSubmit(),
-		onCancel: handleCancel,
-	});
+	// Edit/Save/Cancel live in this section's own header, not in the page
+	// chrome. They used to be published through QuickActionsContext so the
+	// header band could render them, which meant the account area ran two
+	// different editing paradigms side by side: /profile toggled a page-wide
+	// mode from a button in the hero, while /profile/settings saved inline
+	// from a button next to the fields it saves. This page now does what
+	// Settings does - the controls sit with the content they act on.
 
 	// ProfileFieldsView renders nothing at all once every field below is
 	// empty (a fresh account has none of them set) - previously that left the
 	// "Profile Details" heading sitting over a blank gap on every new user's
 	// very first view of this page (#985).
+	//
+	// preferredLanguage is deliberately not part of this check: it always has
+	// a value (it defaults), so counting it meant a profile with nothing else
+	// filled in still rendered a full card wrapping one row - "Email language:
+	// English" - instead of the empty state that invites you to fill the
+	// profile in.
 	const isProfileFieldsEmpty =
 		!form.state.bio &&
 		form.state.skills.length === 0 &&
 		form.state.languages.length === 0 &&
 		!form.state.preferredContact &&
-		!form.state.phone &&
-		!form.state.preferredLanguage;
+		!form.state.phone;
 
 	return (
 		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
@@ -424,26 +425,31 @@ export default function ProfileOverviewPage() {
 										</div>
 									</div>
 
-									{streaks && (
-										<div className="flex flex-wrap gap-3">
-											<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
+									<div className="flex flex-wrap gap-3">
+										{engagementCount !== null && (
+											<div
+												data-testid="profile-stat-engagements"
+												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+											>
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-													<FireIcon />
+													<CheckIcon className="h-5 w-5" />
 												</span>
 												<div>
 													<p className="text-xl font-bold text-gray-900">
-														{streaks.loginStreak}
+														{engagementCount}
 													</p>
 													<p className="text-xs text-gray-500">
-														{t("achievements.loginStreak", {
-															count: streaks.loginStreak,
+														{t("achievements.engagementStatLabel", {
+															count: engagementCount,
 														})}
 													</p>
 												</div>
 											</div>
+										)}
+										{streaks && streaks.activityStreak > 0 && (
 											<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-													<CalendarIcon />
+													<FireIcon />
 												</span>
 												<div>
 													<p className="text-xl font-bold text-gray-900">
@@ -456,14 +462,56 @@ export default function ProfileOverviewPage() {
 													</p>
 												</div>
 											</div>
-										</div>
-									)}
+										)}
+									</div>
 								</div>
 							)}
 
 							{/* Profile details */}
 							<section className="mb-10">
-								<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
+								<div className="flex items-center justify-between gap-3">
+									<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
+									{!editing ? (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => setEditing(true)}
+											data-testid="profile-edit"
+											className="shrink-0"
+										>
+											<PencilIcon className="h-4 w-4" />
+											{t("common.edit")}
+										</Button>
+									) : (
+										<div className="flex shrink-0 items-center gap-2">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={handleCancel}
+												disabled={saving}
+												data-testid="profile-cancel"
+											>
+												{t("common.cancel")}
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												disabled={saving}
+												data-testid="profile-save"
+												// Goes through the form's native submit (not
+												// handleSave() directly) so the browser still runs
+												// constraint validation and focuses/announces the
+												// offending field, same as pressing Enter in the form.
+												onClick={() => formRef.current?.requestSubmit()}
+											>
+												<CheckIcon className="h-4 w-4" />
+												{saving ? t("common.saving") : t("common.save")}
+											</Button>
+										</div>
+									)}
+								</div>
 
 								{!editing &&
 									(isProfileFieldsEmpty ? (
@@ -494,8 +542,12 @@ export default function ProfileOverviewPage() {
 								{/* Small print under the fields, not a lead paragraph above
 						them (#1755): as the first thing in the section it made a
 						privacy footnote look like the section's actual content, on a
-						page where the section otherwise holds very little. */}
-								{!editing && (
+						page where the section otherwise holds very little.
+						Suppressed over the empty state too: the notice names the
+						picture, bio, skills and languages that will be public, and
+						reading that over a card saying you have not filled any of
+						them in described fields that were not on screen. */}
+								{!editing && !isProfileFieldsEmpty && (
 									<p className="mt-4 text-xs text-gray-500">
 										<Trans
 											i18nKey="profile.publicProfileNotice"

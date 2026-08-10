@@ -1086,8 +1086,10 @@
       "unlockedOn": "Freigeschaltet: {{date}}",
       "lockedBadge": "Geheimes Abzeichen",
       "badgesTitle": "Abzeichen",
-      "loginStreak": "Login-Serie",
       "activityStreak": "Aktivitätsserie",
+      "engagementStatLabel": "Bestätigte Einsätze",
+      "engagementStatLabel_one": "Bestätigter Einsatz",
+      "engagementStatLabel_other": "Bestätigte Einsätze",
       "newBadge": "🏆 Neues Abzeichen freigeschaltet: {{name}}!",
       "types": {
         "Milestone": "Meilenstein",
