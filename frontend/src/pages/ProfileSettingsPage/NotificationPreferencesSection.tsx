@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { NotificationPreferencesResponse } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { cardSubtleClass } from "../../lib/surfaceClasses";
+import { cardClass } from "../../lib/surfaceClasses";
 import Button from "../../components/Button";
 import PageSectionHeading from "../../components/PageSectionHeading";
 import Skeleton from "../../components/Skeleton";
@@ -101,7 +101,12 @@ export default function NotificationPreferencesSection() {
 	}
 
 	return (
-		<section className={`mb-6 ${cardSubtleClass}`}>
+		// White card, not the gray-50 cardSubtleClass: this is the page's primary
+		// content, not an aside, and a grey slab was the largest surface on it.
+		// max-w-3xl caps the measure inside the page's shared max-w-5xl column -
+		// a checkbox list has no reason to run the full width even though the
+		// column does (see the note on the page's own wrapper).
+		<section className={`mb-6 max-w-3xl ${cardClass} sm:p-6`}>
 			<PageSectionHeading>
 				{t("notificationPreferences.title")}
 			</PageSectionHeading>

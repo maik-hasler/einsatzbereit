@@ -13,6 +13,7 @@ import { ChevronDownIcon } from "../icons";
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
 export default function MobileMenu({
+	isTransparent,
 	isLoggedIn,
 	avatarUrl,
 	initials,
@@ -27,6 +28,7 @@ export default function MobileMenu({
 	onRegister,
 	onSignOut,
 }: {
+	isTransparent: boolean;
 	isLoggedIn: boolean;
 	avatarUrl: string | null;
 	initials: string;
@@ -46,14 +48,19 @@ export default function MobileMenu({
 	onSignOut: () => void;
 }) {
 	const { t } = useTranslation();
-	// Shared by the profile link, admin link, and org-menu toggle below.
-	// hover:text-brand-700, not the lighter brand-600 - brand-600 on brand-50
-	// measures ~4.0:1, under axe-core's WCAG AA 4.5:1 floor (caught by
-	// AccessibilityTests.cs's MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations,
-	// which leaves the org-menu toggle in a real :hover state via
-	// Playwright's ClickAsync before scanning), while brand-700 clears it.
-	const menuItemVariant =
-		"text-gray-700 hover:bg-brand-50 hover:text-brand-700";
+	// Shared by the profile link, admin link, and org-menu toggle below - the
+	// only exact repeat of this variant in the file (other isTransparent
+	// ternaries here use their own one-off colors).
+	//
+	// On the opaque side: hover:text-brand-700, not the lighter brand-600 -
+	// brand-600 on brand-50 measures ~4.0:1, under axe-core's WCAG AA 4.5:1
+	// floor (caught by AccessibilityTests.cs's
+	// MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations, which leaves the
+	// org-menu toggle in a real :hover state via Playwright's ClickAsync
+	// before scanning), while brand-700 clears it.
+	const menuItemVariant = isTransparent
+		? "text-white/90 hover:bg-white/10 hover:text-white"
+		: "text-gray-700 hover:bg-brand-50 hover:text-brand-700";
 	// Only ever mounted while open (see Header.tsx), so dismissal listeners
 	// attach for this component's entire lifetime.
 	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
@@ -134,11 +141,23 @@ export default function MobileMenu({
 				// landscape-phone viewport) - overscroll-contain keeps a drag past
 				// this panel's own scroll bounds from rubber-banding the (locked)
 				// body underneath.
-				className="absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t border-gray-100 bg-white shadow-modal md:hidden"
+				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
+				{/* Blur-blob lighting, matching the band the transparent header
+				sits over - a flat brand-900 panel dropping out of a lit band
+				read as a different surface entirely. */}
+				{isTransparent && (
+					<div
+						className="pointer-events-none absolute inset-0 overflow-hidden"
+						aria-hidden="true"
+					>
+						<div className="absolute -top-10 -left-20 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl" />
+						<div className="absolute -top-8 -right-16 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl" />
+					</div>
+				)}
 				<div className="relative space-y-2 px-4 py-4">
 					<div className="pb-2">
-						<LanguageSelector />
+						<LanguageSelector transparent={isTransparent} />
 					</div>
 					{isLoggedIn ? (
 						<div className="space-y-1">
@@ -157,7 +176,9 @@ export default function MobileMenu({
 										{initials}
 									</div>
 								)}
-								<span className="text-sm font-medium text-gray-700">
+								<span
+									className={`text-sm font-medium ${isTransparent ? "text-white/90" : "text-gray-700"}`}
+								>
 									{displayName}
 								</span>
 							</div>
@@ -206,13 +227,15 @@ export default function MobileMenu({
 										/>
 									</button>
 									{orgMenuOpen && (
-										<div className="ml-3 space-y-1 border-l border-gray-200 pl-3">
+										<div
+											className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
+										>
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}
 													to={orgTabPath(activeOrg.id, tab.key)}
 													onClick={onClose}
-													className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
+													className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
 												>
 													{t(tab.labelKey)}
 												</Link>
@@ -224,7 +247,7 @@ export default function MobileMenu({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+								className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
 							>
 								{t("nav.signOut")}
 							</button>
@@ -234,7 +257,7 @@ export default function MobileMenu({
 							<Button
 								type="button"
 								onClick={onSignIn}
-								variant="primary"
+								variant={isTransparent ? "onDark" : "primary"}
 								fullWidth
 							>
 								{t("nav.signIn")}
@@ -242,7 +265,7 @@ export default function MobileMenu({
 							<Button
 								type="button"
 								onClick={onRegister}
-								variant="outline"
+								variant={isTransparent ? "outlineOnDark" : "outline"}
 								fullWidth
 							>
 								{t("nav.register")}

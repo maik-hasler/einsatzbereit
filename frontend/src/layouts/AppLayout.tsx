@@ -12,6 +12,10 @@ import {
 	QuickActionsProvider,
 	useQuickActionsList,
 } from "../contexts/QuickActionsContext";
+import {
+	HeaderOverlayProvider,
+	useHeaderOverlay,
+} from "../contexts/HeaderOverlayContext";
 
 function AppLayoutInner() {
 	useAchievementNotifier();
@@ -19,6 +23,7 @@ function AppLayoutInner() {
 	const location = useLocation();
 	const toolbarConfig = useToolbarConfig();
 	const quickActions = useQuickActionsList();
+	const headerOverlaysBand = useHeaderOverlay();
 	const breadcrumb =
 		toolbarConfig && toolbarConfig.breadcrumbs.length > 0
 			? {
@@ -30,7 +35,7 @@ function AppLayoutInner() {
 	return (
 		<div className="flex min-h-screen flex-col">
 			<SkipLink />
-			<Header breadcrumb={breadcrumb} />
+			<Header breadcrumb={breadcrumb} overlaysBand={headerOverlaysBand} />
 			<main
 				id="main-content"
 				tabIndex={-1}
@@ -62,7 +67,9 @@ export default function AppLayout() {
 	return (
 		<ToolbarProvider>
 			<QuickActionsProvider>
-				<AppLayoutInner />
+				<HeaderOverlayProvider>
+					<AppLayoutInner />
+				</HeaderOverlayProvider>
 			</QuickActionsProvider>
 		</ToolbarProvider>
 	);

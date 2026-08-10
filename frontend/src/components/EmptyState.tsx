@@ -18,8 +18,25 @@ export default function EmptyState({
 	action,
 	compact = false,
 }: Props) {
+	// The full-size variant gets a dashed outline (#1755). Without one it was
+	// centred text floating in the page background, which on a short page - the
+	// admin Reports/Audit Log sections, My Activity with no sign-ups - read as
+	// a rendering failure rather than as "nothing here yet", and left every
+	// other section on those pages boxed while this one wasn't. Dashed rather
+	// than solid so it reads as an outline waiting to be filled, matching how
+	// BadgeGrid draws a not-yet-earned badge.
+	//
+	// `compact` stays bare on purpose: it exists for empty states already
+	// inside a widget card or dropdown panel, where a second frame would
+	// double up on the one around it.
 	return (
-		<div className={compact ? "py-4 text-center" : "py-12 text-center"}>
+		<div
+			className={
+				compact
+					? "py-4 text-center"
+					: "rounded-card border border-dashed border-gray-200 px-4 py-12 text-center"
+			}
+		>
 			<p
 				className={
 					compact

@@ -37,10 +37,20 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
-	public async Task ProfilePage_ShowsHomeBreadcrumb()
+	public async Task ProfilePage_ShowsHomeLink()
 	{
 		// #590: /profile never called usePageToolbar, so it rendered with no
 		// breadcrumb trail at all, unlike every other authenticated page.
+		//
+		// #1754 gave /profile a PageHeaderBand and dropped the
+		// nav[aria-label='Breadcrumb'] bar in favor of a plain "way back home"
+		// link inside the band - see VolunteerOpportunityTests's identical
+		// update and HeaderBreadcrumbSharedImplementationTests
+		// .AccountPages_ReplaceActionBar_WithBandHomeLinkAndQuickActions, which
+		// already pins this page's fuller behavior (heading, no breadcrumb bar,
+		// Home link, Edit quick action, sub-nav). This keeps #590's original
+		// regression - that /profile has *some* way back to the home page -
+		// covered under its own name.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -49,10 +59,10 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		await Expect(breadcrumb).ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(breadcrumb.Locator("a[href='/']")).ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByText("Profile", new() { Exact = true })).ToBeVisibleAsync();
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
+		var homeLink = Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" });
+		await Expect(homeLink).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
 	}
 
 	[Test]

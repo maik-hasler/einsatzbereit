@@ -12,7 +12,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
-import { cardSubtleClass } from "../lib/surfaceClasses";
+import { cardClass } from "../lib/surfaceClasses";
 import { formatDateLong, formatDateTime } from "../lib/format";
 import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -69,9 +69,13 @@ export default function AdministrationPage() {
 				<ReportsSection />
 			</section>
 			<section>
-				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+				{/* Was a hand-rolled h2 carrying PageSectionHeading's pre-#1755
+				recipe verbatim, so it kept the old text-lg body-face styling while
+				the three sections above it moved to the display face - the last
+				section on the page rendering visibly smaller than its siblings. */}
+				<PageSectionHeading>
 					{t("administration.auditLogHeading")}
-				</h2>
+				</PageSectionHeading>
 				<AuditLogSection />
 			</section>
 		</>
@@ -173,55 +177,63 @@ function OrganizationsSection() {
 
 	return (
 		<>
-			<form onSubmit={handleSearchSubmit} className="mb-4 flex items-end gap-3">
-				<div className="flex-1">
-					<label htmlFor="admin-org-search" className={labelClass}>
-						{t("administration.organizations.searchLabel")}
+			{/* Search plus the two scope toggles are one filter control, boxed
+			like the Members/Sign-ups toolbars (#1755) rather than three bare
+			rows stacked on the page background. */}
+			<div className={`mb-6 ${cardClass} sm:p-5`}>
+				<form
+					onSubmit={handleSearchSubmit}
+					className="mb-4 flex items-end gap-3"
+				>
+					<div className="flex-1">
+						<label htmlFor="admin-org-search" className={labelClass}>
+							{t("administration.organizations.searchLabel")}
+						</label>
+						<input
+							id="admin-org-search"
+							type="search"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							placeholder={t("administration.organizations.searchPlaceholder")}
+							className={inputClass}
+						/>
+					</div>
+					<Button type="submit">
+						{t("administration.organizations.searchButton")}
+					</Button>
+				</form>
+				<div className="mb-6 flex flex-wrap items-center gap-4">
+					<label
+						htmlFor="admin-org-flagged-only"
+						className="flex cursor-pointer items-center gap-2 py-1"
+					>
+						<input
+							type="checkbox"
+							id="admin-org-flagged-only"
+							checked={flaggedOnly}
+							onChange={(e) => setFlaggedOnly(e.target.checked)}
+							className="h-4 w-4 accent-brand-600"
+						/>
+						<span className="text-sm text-gray-800">
+							{t("administration.organizations.flaggedOnlyLabel")}
+						</span>
 					</label>
-					<input
-						id="admin-org-search"
-						type="search"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder={t("administration.organizations.searchPlaceholder")}
-						className={inputClass}
-					/>
+					<label
+						htmlFor="admin-org-deleted-only"
+						className="flex cursor-pointer items-center gap-2 py-1"
+					>
+						<input
+							type="checkbox"
+							id="admin-org-deleted-only"
+							checked={deletedOnly}
+							onChange={(e) => setDeletedOnly(e.target.checked)}
+							className="h-4 w-4 accent-brand-600"
+						/>
+						<span className="text-sm text-gray-800">
+							{t("administration.organizations.deletedOnlyLabel")}
+						</span>
+					</label>
 				</div>
-				<Button type="submit">
-					{t("administration.organizations.searchButton")}
-				</Button>
-			</form>
-			<div className="mb-6 flex flex-wrap items-center gap-4">
-				<label
-					htmlFor="admin-org-flagged-only"
-					className="flex cursor-pointer items-center gap-2 py-1"
-				>
-					<input
-						type="checkbox"
-						id="admin-org-flagged-only"
-						checked={flaggedOnly}
-						onChange={(e) => setFlaggedOnly(e.target.checked)}
-						className="h-4 w-4 accent-brand-600"
-					/>
-					<span className="text-sm text-gray-800">
-						{t("administration.organizations.flaggedOnlyLabel")}
-					</span>
-				</label>
-				<label
-					htmlFor="admin-org-deleted-only"
-					className="flex cursor-pointer items-center gap-2 py-1"
-				>
-					<input
-						type="checkbox"
-						id="admin-org-deleted-only"
-						checked={deletedOnly}
-						onChange={(e) => setDeletedOnly(e.target.checked)}
-						className="h-4 w-4 accent-brand-600"
-					/>
-					<span className="text-sm text-gray-800">
-						{t("administration.organizations.deletedOnlyLabel")}
-					</span>
-				</label>
 			</div>
 			{loading ? (
 				<div
@@ -492,26 +504,32 @@ function UsersSection() {
 
 	return (
 		<>
-			<form onSubmit={handleSearchSubmit} className="mb-6 flex items-end gap-3">
-				<div className="flex-1">
-					<label htmlFor="admin-user-search" className={labelClass}>
-						{t("administration.users.searchLabel")}
-					</label>
-					<input
-						id="admin-user-search"
-						type="search"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder={t("administration.users.searchPlaceholder")}
-						className={inputClass}
-					/>
-				</div>
-				<Button type="submit">{t("administration.users.searchButton")}</Button>
-			</form>
+			{/* Boxed like the organizations filter above - the staleness note
+			belongs with the search that produces the list it qualifies. */}
+			<div className={`mb-6 ${cardClass} sm:p-5`}>
+				<form onSubmit={handleSearchSubmit} className="flex items-end gap-3">
+					<div className="flex-1">
+						<label htmlFor="admin-user-search" className={labelClass}>
+							{t("administration.users.searchLabel")}
+						</label>
+						<input
+							id="admin-user-search"
+							type="search"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							placeholder={t("administration.users.searchPlaceholder")}
+							className={inputClass}
+						/>
+					</div>
+					<Button type="submit">
+						{t("administration.users.searchButton")}
+					</Button>
+				</form>
 
-			<p className="mb-4 text-xs text-gray-500">
-				{t("administration.users.staleness")}
-			</p>
+				<p className="mt-3 text-xs text-gray-500">
+					{t("administration.users.staleness")}
+				</p>
+			</div>
 
 			{loading ? (
 				<div
@@ -1030,7 +1048,7 @@ function ReportHistoryModal({
 			) : (
 				<ul className="max-h-96 space-y-3 overflow-y-auto">
 					{entries.map((entry) => (
-						<li key={entry.id} className={cardSubtleClass}>
+						<li key={entry.id} className={cardClass}>
 							<div className="flex items-center justify-between gap-2">
 								<span className="text-sm font-medium text-gray-900">
 									{t(`administration.reports.reason.${entry.reason}`)}

@@ -14,7 +14,6 @@ import {
 	formatParticipationType,
 	formatPostedAgo,
 } from "../lib/format";
-import { pageTitleClass } from "../lib/headingClasses";
 import Chip from "../components/Chip";
 import SectionHeading from "../components/SectionHeading";
 import SignUpModal from "../components/SignUpModal";
@@ -26,12 +25,13 @@ import Button from "../components/Button";
 import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
+import PageHeaderBand from "../components/PageHeaderBand";
+import PublicOpportunityCard from "../components/PublicOpportunityCard";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
-import { cardClass, cardSubtleClass } from "../lib/surfaceClasses";
+import { cardClass } from "../lib/surfaceClasses";
 import {
 	CalendarIcon,
 	EnvelopeIcon,
@@ -64,17 +64,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
 	usePageTitle(opportunity?.title);
-	usePageToolbar(
-		opportunity
-			? [
-					{
-						label: opportunity.organizationName,
-						href: `/organizations/${opportunity.organizationId}`,
-					},
-					{ label: opportunity.title },
-				]
-			: [],
-	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
@@ -245,7 +234,9 @@ export default function VolunteerOpportunityDetailPage() {
 			<div className="mx-auto max-w-4xl" role="status">
 				<span className="sr-only">{t("opportunities.loading")}</span>
 				<Skeleton className="mb-6 h-56 w-full sm:h-72" />
-				<div className="mx-auto max-w-2xl">
+				{/* Same flush-left reading column as the loaded page below, so the
+				skeleton doesn't sit at a different x than the content replacing it. */}
+				<div className="max-w-2xl">
 					<div className="mb-3 flex items-center justify-between gap-3">
 						<Skeleton className="h-6 w-32 rounded-full" />
 						<Skeleton className="h-8 w-20 rounded-lg" />
@@ -307,516 +298,542 @@ export default function VolunteerOpportunityDetailPage() {
 			.slice(0, 3) ?? [];
 
 	return (
-		<div data-content-wrapper className="mx-auto max-w-4xl">
-			{/* Banner image - spans the full width of this wider wrapper; a
+		<>
+			<PageHeaderBand
+				eyebrow={
+					<Link
+						to={`/organizations/${opportunity.organizationId}`}
+						className="text-brand-200 underline-offset-2 transition-colors hover:text-white hover:underline"
+					>
+						{opportunity.organizationName}
+					</Link>
+				}
+				title={opportunity.title}
+				lead={opportunity.description ?? undefined}
+			/>
+
+			<div data-content-wrapper className="mx-auto max-w-6xl">
+				{/* Banner image - spans the full width of this wider wrapper; a
 			reading column is right for prose below, but there's no reason to
 			confine a banner to it too (#1727). */}
-			{opportunity.bannerImageUrl && (
-				<img
-					src={opportunity.bannerImageUrl}
-					alt=""
-					width={1200}
-					height={480}
-					className="mb-6 h-56 w-full rounded-card object-cover shadow-resting sm:h-72"
-				/>
-			)}
+				{opportunity.bannerImageUrl && (
+					<img
+						src={opportunity.bannerImageUrl}
+						alt=""
+						width={1200}
+						height={480}
+						className="mb-6 h-56 w-full rounded-card object-cover shadow-resting sm:h-72"
+					/>
+				)}
 
-			<div className="mx-auto max-w-2xl">
-				{/* Org chip + action buttons */}
-				<div className="mb-3 flex items-center justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-2">
-						<Link
-							to={`/organizations/${opportunity.organizationId}`}
-							className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
-						>
-							{opportunity.organizationName}
-						</Link>
-						{isDraft && isOwner && (
-							<Chip
-								tone="warning"
-								size="sm"
-								data-testid="opportunity-detail-draft-badge"
-							>
-								{t("opportunities.draftBadge")}
-							</Chip>
-						)}
-					</div>
-					<div className="flex shrink-0 gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleShare}
-							data-testid="share-opportunity"
-							aria-label={t("opportunities.shareOpportunity")}
-						>
-							<ShareIcon className="h-4 w-4" />
-							<span className="hidden sm:inline">
-								{t("opportunities.share")}
-							</span>
-						</Button>
-						{isAuthenticated && !isOwner && (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setShowReport(true)}
-								data-testid="report-opportunity"
-								aria-label={t("opportunities.reportOpportunity")}
-							>
-								<FlagIcon className="h-4 w-4" />
-								<span className="hidden sm:inline">
-									{t("opportunities.report")}
+				{/* Two columns from lg up (#1755). What a visitor reads to decide -
+			what it is, when, where, who runs it - stays in the reading column;
+			what they act on (deadline, their own status, the sign-up button) moves
+			into a sticky rail beside it. The CTA used to sit inline after the
+			time-slot list, which on a long opportunity put the page's only
+			conversion point below the fold while ~500px of page sat empty next to
+			it. One column below lg, where a 20rem rail would just be a narrow box
+			and the CTA is better off in reading order anyway. */}
+				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
+					<div className="min-w-0">
+						{/* Flush left inside the max-w-4xl wrapper, not centred within it.
+			#1727 deliberately let the banner and the time-slot list span the
+			full wrapper while prose stayed at a reading measure - but centring
+			the prose meant the page alternated between two column widths
+			(672px title, 896px slot rows, 672px again), reading as three
+			misaligned blocks rather than one document. Sharing a left edge
+			keeps #1727's wider media and a readable measure at the same time. */}
+						<div className="max-w-2xl">
+							{/* Share/Report (and the owner's draft controls) sit on the
+							same line as the at-a-glance panel's top edge rather than
+							floating alone above an empty stretch of column - the org chip
+							that used to anchor this row moved into the band's eyebrow. */}
+							<div className="mb-4 flex items-center justify-between gap-3">
+								<div className="flex min-w-0 items-center gap-2">
+									{isDraft && isOwner && (
+										<Chip
+											tone="warning"
+											size="sm"
+											data-testid="opportunity-detail-draft-badge"
+										>
+											{t("opportunities.draftBadge")}
+										</Chip>
+									)}
+								</div>
+								<div className="flex shrink-0 gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={handleShare}
+										data-testid="share-opportunity"
+										aria-label={t("opportunities.shareOpportunity")}
+									>
+										<ShareIcon className="h-4 w-4" />
+										<span className="hidden sm:inline">
+											{t("opportunities.share")}
+										</span>
+									</Button>
+									{isAuthenticated && !isOwner && (
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setShowReport(true)}
+											data-testid="report-opportunity"
+											aria-label={t("opportunities.reportOpportunity")}
+										>
+											<FlagIcon className="h-4 w-4" />
+											<span className="hidden sm:inline">
+												{t("opportunities.report")}
+											</span>
+										</Button>
+									)}
+									{isDraft && isOwner && (
+										<>
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => setShowEditModal(true)}
+												data-testid="opportunity-detail-edit"
+											>
+												{t("opportunities.edit")}
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												onClick={() => void handlePublish()}
+												disabled={publishing}
+												data-testid="opportunity-detail-publish"
+											>
+												{publishing
+													? t("opportunities.publishing")
+													: t("opportunities.publish")}
+											</Button>
+										</>
+									)}
+								</div>
+							</div>
+
+							{/* At-a-glance panel (#1755). The three facts a volunteer decides
+						on - when, how, where - were three identical grey icon rows in a
+						flat white box, with the category chip, the participant count and
+						the posted-on date orphaned as three more separate lines under
+						it. One tinted panel with labelled columns gives them a hierarchy
+						and puts the page's first real colour below the band; the loose
+						lines collapse into a single meta row beneath it. */}
+							<dl className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6">
+								<div>
+									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+										<CalendarIcon className="h-4 w-4 shrink-0" />
+										{t("opportunities.factWhen")}
+									</dt>
+									<dd className="mt-2 text-sm font-medium text-gray-900">
+										{formatOccurrence(opportunity.occurrence, t)}
+									</dd>
+								</div>
+
+								<div>
+									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+										<UserGroupIcon className="h-4 w-4 shrink-0" />
+										{t("opportunities.factFormat")}
+									</dt>
+									<dd className="mt-2 text-sm font-medium text-gray-900">
+										{formatParticipationType(opportunity.participationType, t)}
+									</dd>
+								</div>
+
+								<div>
+									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
+										{opportunity.isRemote ? (
+											<GlobeIcon className="h-4 w-4 shrink-0" />
+										) : (
+											<MapPinIcon className="h-4 w-4 shrink-0" />
+										)}
+										{t("opportunities.factWhere")}
+									</dt>
+									<dd className="mt-2 text-sm font-medium text-gray-900">
+										{opportunity.isRemote
+											? t("opportunities.remote")
+											: `${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
+									</dd>
+								</div>
+							</dl>
+
+							{/* Meta row - category, tags, headcount and posted-on, previously
+						three separate stranded lines. */}
+							<div className="mb-6 flex flex-wrap items-center gap-2">
+								{opportunity.category && (
+									<Chip tone="brand">
+										{t(`opportunities.category.${opportunity.category}`)}
+									</Chip>
+								)}
+								{opportunity.tags?.map((tag) => (
+									<Chip
+										key={tag}
+										tone="neutral"
+										to={`/?tag=${encodeURIComponent(tag)}`}
+										aria-label={t("opportunities.filterByTag", { tag })}
+									>
+										{tag}
+									</Chip>
+								))}
+								{opportunity.currentParticipantCount > 0 && (
+									<span className="text-sm font-medium text-gray-700">
+										{t("opportunities.participantsJoined", {
+											count: opportunity.currentParticipantCount,
+										})}
+									</span>
+								)}
+								<span className="text-xs text-gray-500">
+									{formatPostedAgo(
+										opportunity.createdOn as unknown as string,
+										t,
+									)}
 								</span>
-							</Button>
-						)}
-						{isDraft && isOwner && (
-							<>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => setShowEditModal(true)}
-									data-testid="opportunity-detail-edit"
-								>
-									{t("opportunities.edit")}
-								</Button>
-								<Button
-									type="button"
-									size="sm"
-									onClick={() => void handlePublish()}
-									disabled={publishing}
-									data-testid="opportunity-detail-publish"
-								>
-									{publishing
-										? t("opportunities.publishing")
-										: t("opportunities.publish")}
-								</Button>
-							</>
-						)}
-					</div>
-				</div>
+							</div>
 
-				{/* Title */}
-				<h1 className={`mb-1 text-gray-900 ${pageTitleClass}`}>
-					{opportunity.title}
-				</h1>
-				<p className="mb-3 text-xs text-gray-600">
-					{formatPostedAgo(opportunity.createdOn as unknown as string, t)}
-				</p>
-
-				{/* Description */}
-				{opportunity.description && (
-					<p className="mb-6 leading-relaxed text-gray-600">
-						{opportunity.description}
-					</p>
-				)}
-
-				{/* Info card */}
-				<div className={`mb-6 space-y-3 ${cardSubtleClass}`}>
-					<div className="flex items-center gap-3 text-sm text-gray-700">
-						<CalendarIcon className="h-4 w-4 shrink-0 text-gray-400" />
-						<span>{formatOccurrence(opportunity.occurrence, t)}</span>
-					</div>
-
-					<div className="flex items-center gap-3 text-sm text-gray-700">
-						<UserGroupIcon className="h-4 w-4 shrink-0 text-gray-400" />
-						<span>
-							{formatParticipationType(opportunity.participationType, t)}
-						</span>
-					</div>
-
-					{opportunity.isRemote ? (
-						<div className="flex items-center gap-3 text-sm text-green-700">
-							<GlobeIcon className="h-4 w-4 shrink-0 text-green-500" />
-							<span>{t("opportunities.remote")}</span>
+							{/* Map */}
+							{!opportunity.isRemote &&
+								opportunity.latitude != null &&
+								opportunity.longitude != null && (
+									<div className="mb-6 overflow-hidden rounded-card border border-gray-100 shadow-resting">
+										<Suspense fallback={<Skeleton className="h-64 w-full" />}>
+											<SingleMarkerMap
+												latitude={opportunity.latitude}
+												longitude={opportunity.longitude}
+												label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
+											/>
+										</Suspense>
+									</div>
+								)}
 						</div>
-					) : (
-						<div className="flex items-center gap-3 text-sm text-gray-700">
-							<MapPinIcon className="h-4 w-4 shrink-0 text-gray-400" />
-							<span>
-								{opportunity.street} {opportunity.houseNumber},{" "}
-								{opportunity.zipCode} {opportunity.city}
-							</span>
-						</div>
-					)}
-				</div>
 
-				{/* Social proof */}
-				{opportunity.currentParticipantCount > 0 && (
-					<p className="mb-6 text-sm font-medium text-gray-600">
-						{t("opportunities.participantsJoined", {
-							count: opportunity.currentParticipantCount,
-						})}
-					</p>
-				)}
-
-				{/* Category and tags */}
-				{(opportunity.category ||
-					(opportunity.tags && opportunity.tags.length > 0)) && (
-					<div className="mb-6 flex flex-wrap gap-2">
-						{opportunity.category && (
-							<Chip tone="brand">
-								{t(`opportunities.category.${opportunity.category}`)}
-							</Chip>
-						)}
-						{opportunity.tags &&
-							opportunity.tags.map((tag) => (
-								<Chip
-									key={tag}
-									tone="neutral"
-									to={`/?tag=${encodeURIComponent(tag)}`}
-									aria-label={t("opportunities.filterByTag", { tag })}
-								>
-									{tag}
-								</Chip>
-							))}
-					</div>
-				)}
-
-				{/* Map */}
-				{!opportunity.isRemote &&
-					opportunity.latitude != null &&
-					opportunity.longitude != null && (
-						<div className="mb-6 overflow-hidden rounded-card border border-gray-100 shadow-resting">
-							<Suspense fallback={<Skeleton className="h-64 w-full" />}>
-								<SingleMarkerMap
-									latitude={opportunity.latitude}
-									longitude={opportunity.longitude}
-									label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
-								/>
-							</Suspense>
-						</div>
-					)}
-			</div>
-
-			{/* Time slots - a reading column has no reason to constrain a list of
+						{/* Time slots - a reading column has no reason to constrain a list of
 			date/spot rows, so this spans the wider outer wrapper (#1727). */}
-			{opportunity.participationType === "ScheduledSlots" &&
-				opportunity.timeSlots.length > 0 && (
-					<div className="mb-6">
-						<SectionHeading>
-							{t("opportunities.availableTimeSlots")}
-						</SectionHeading>
-						<ul className="space-y-2">
-							{opportunity.timeSlots.map((ts) => (
-								<li
-									key={ts.id}
-									className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+						{opportunity.participationType === "ScheduledSlots" &&
+							opportunity.timeSlots.length > 0 && (
+								<div className="mb-6">
+									<SectionHeading>
+										{t("opportunities.availableTimeSlots")}
+									</SectionHeading>
+									<ul className="space-y-2">
+										{opportunity.timeSlots.map((ts) => (
+											<li
+												key={ts.id}
+												className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+											>
+												<span>
+													{formatDateTime(
+														ts.startDateTime as unknown as string,
+														i18n.language,
+													)}
+													{" - "}
+													{formatDateTime(
+														ts.endDateTime as unknown as string,
+														i18n.language,
+													)}
+												</span>
+												<span className="ml-3 shrink-0 text-xs text-gray-600">
+													{ts.maxParticipants == null
+														? t("opportunities.unlimitedSpots")
+														: t("opportunities.maxParticipants", {
+																count: ts.maxParticipants,
+															})}
+												</span>
+											</li>
+										))}
+									</ul>
+								</div>
+							)}
+						<div className="max-w-2xl">
+							{/* About this organization */}
+							{orgProfileError && !orgProfile && (
+								<div className="mb-6" data-testid="about-organization">
+									<SectionHeading>
+										{t("opportunities.aboutOrganization")}
+									</SectionHeading>
+									<LoadMoreError
+										message={orgProfileError}
+										retrying={retryingOrgProfile}
+										onRetry={retryLoadOrgProfile}
+									/>
+								</div>
+							)}
+							{orgProfile &&
+								(orgProfile.description ||
+									orgProfile.contactEmail ||
+									orgProfile.contactPhone ||
+									orgProfile.website ||
+									orgProfile.address) && (
+									<div className="mb-6" data-testid="about-organization">
+										<SectionHeading>
+											{t("opportunities.aboutOrganization")}
+										</SectionHeading>
+										{orgProfile.description && (
+											<p className="mb-3 leading-relaxed text-gray-600">
+												{orgProfile.description}
+											</p>
+										)}
+										{(orgProfile.contactEmail ||
+											orgProfile.contactPhone ||
+											orgProfile.website ||
+											orgProfile.address) && (
+											<div
+												className={`space-y-2.5 ${cardClass} text-sm text-gray-700`}
+											>
+												{orgProfile.contactEmail && (
+													<div className="flex items-center gap-3">
+														<EnvelopeIcon className="h-4 w-4 shrink-0 text-brand-700" />
+														<a
+															href={`mailto:${orgProfile.contactEmail}`}
+															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+														>
+															{orgProfile.contactEmail}
+														</a>
+													</div>
+												)}
+												{orgProfile.contactPhone && (
+													<div className="flex items-center gap-3">
+														<PhoneIcon className="h-4 w-4 shrink-0 text-brand-700" />
+														<a
+															href={`tel:${orgProfile.contactPhone}`}
+															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+														>
+															{orgProfile.contactPhone}
+														</a>
+													</div>
+												)}
+												{orgProfile.website && (
+													<div className="flex items-center gap-3">
+														<GlobeIcon className="h-4 w-4 shrink-0 text-brand-700" />
+														<a
+															href={orgProfile.website}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+														>
+															{orgProfile.website}
+														</a>
+													</div>
+												)}
+												{orgProfile.address && (
+													<div className="flex items-center gap-3">
+														<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
+														<span>
+															{orgProfile.address.street}{" "}
+															{orgProfile.address.houseNumber},{" "}
+															{orgProfile.address.zipCode}{" "}
+															{orgProfile.address.city}
+														</span>
+													</div>
+												)}
+											</div>
+										)}
+									</div>
+								)}
+						</div>
+					</div>
+
+					{/* sticky needs a scroll container that is not the grid item itself;
+				lg:items-start on the grid keeps this from stretching to full row
+				height, which would make top-24 have nothing left to stick against. */}
+					<aside className="lg:sticky lg:top-24">
+						<div className="space-y-6">
+							{/* Application deadline */}
+							{opportunity.participationType === "IndividualContact" &&
+								opportunity.validUntil && (
+									// Carded like the rest of the rail, and without the mb-6 the
+									// wrapping space-y-6 already provides: as a bare line above
+									// the sign-up card it was the one thing in the rail with no
+									// surface, reading as text stranded above the panel rather
+									// than as the deadline for it.
+									<div
+										className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}
+									>
+										<span>
+											{t("opportunities.applyBy", {
+												date: formatDate(
+													opportunity.validUntil as unknown as string,
+													i18n.language,
+												),
+											})}
+										</span>
+									</div>
+								)}
+
+							{/* Your application status */}
+							{isAuthenticated && !isOwner && cue && !isDraft && (
+								<div
+									data-testid="application-status"
+									className={`${cardClass} sm:p-5`}
 								>
-									<span>
-										{formatDateTime(
-											ts.startDateTime as unknown as string,
-											i18n.language,
-										)}
-										{" - "}
-										{formatDateTime(
-											ts.endDateTime as unknown as string,
-											i18n.language,
-										)}
-									</span>
-									<span className="ml-3 shrink-0 text-xs text-gray-600">
-										{ts.maxParticipants == null
-											? t("opportunities.unlimitedSpots")
-											: t("opportunities.maxParticipants", {
-													count: ts.maxParticipants,
-												})}
-									</span>
-								</li>
+									<div className="flex items-center justify-between gap-4">
+										<div>
+											<p className="mb-1 text-xs text-gray-500">
+												{t("opportunities.yourApplication")}
+											</p>
+											<Chip
+												tone={
+													cue.status === "Confirmed" ? "success" : "warning"
+												}
+												size="sm"
+											>
+												{t(`myEngagements.status.${cue.status}`)}
+											</Chip>
+										</div>
+										<Button
+											type="button"
+											variant="dangerOutline"
+											size="sm"
+											className="shrink-0"
+											onClick={() => setShowWithdrawConfirm(true)}
+											disabled={withdrawing}
+										>
+											{t("myEngagements.withdraw")}
+										</Button>
+									</div>
+								</div>
+							)}
+
+							{/* Sign-up CTA */}
+							{isAuthenticated && !isOwner && !cue && !isDraft && (
+								<div
+									data-testid="signup-cta"
+									className={`space-y-3 ${cardClass} sm:p-5`}
+								>
+									{hasUnlimitedSlot ? (
+										<p className="text-sm font-medium text-teal-700">
+											{t("opportunities.unlimitedSpots")}
+										</p>
+									) : (
+										totalMax !== null &&
+										totalMax > 0 &&
+										spotsLeft !== null && (
+											<p
+												className={`text-sm font-medium ${
+													isFull
+														? "text-red-600"
+														: spotsLeft <= 5
+															? "text-orange-700"
+															: "text-gray-600"
+												}`}
+											>
+												{isFull
+													? t("opportunities.noSpotsLeft")
+													: spotsLeft <= 5
+														? t("opportunities.fewSpotsLeft", {
+																count: spotsLeft,
+															})
+														: t("opportunities.spotsLeft", {
+																count: spotsLeft,
+															})}
+											</p>
+										)
+									)}
+									<Button
+										onClick={() => setShowSignUp(true)}
+										disabled={isFull}
+										fullWidth
+										size="lg"
+									>
+										{opportunity.participationType === "ScheduledSlots"
+											? t("opportunities.joinWaitlist")
+											: t("opportunities.expressInterest")}
+									</Button>
+								</div>
+							)}
+
+							{/* Login prompt */}
+							{!isAuthenticated && !isDraft && (
+								<div
+									data-testid="login-prompt"
+									className={`space-y-3 ${cardClass} sm:p-5`}
+								>
+									<p className="text-sm text-gray-600">
+										{t("opportunities.loginPrompt")}
+									</p>
+									<Button
+										onClick={() => auth.signinRedirect(signinLocaleArgs())}
+										data-testid="opportunity-signin"
+										fullWidth
+										size="lg"
+									>
+										{t("nav.signIn")}
+									</Button>
+								</div>
+							)}
+						</div>
+					</aside>
+				</div>
+
+				{/* More from this organization - a wider grid than the reading
+			column above so a third card doesn't orphan onto its own row on
+			desktop (#1727). */}
+				{otherOrgOpportunities.length > 0 && (
+					<div className="mb-6" data-testid="more-from-organization">
+						<SectionHeading>
+							{t("opportunities.moreFromOrganization")}
+						</SectionHeading>
+						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+							{otherOrgOpportunities.map((opp) => (
+								<PublicOpportunityCard key={opp.id} opportunity={opp} />
 							))}
 						</ul>
 					</div>
 				)}
-
-			<div className="mx-auto max-w-2xl">
-				{/* Application deadline */}
-				{opportunity.participationType === "IndividualContact" &&
-					opportunity.validUntil && (
-						<div className="mb-6 flex items-center gap-1.5 text-sm font-medium text-gray-600">
-							<span>
-								{t("opportunities.applyBy", {
-									date: formatDate(
-										opportunity.validUntil as unknown as string,
-										i18n.language,
-									),
-								})}
-							</span>
-						</div>
-					)}
-
-				{/* Your application status */}
-				{isAuthenticated && !isOwner && cue && !isDraft && (
-					<div data-testid="application-status" className={`mb-6 ${cardClass}`}>
-						<div className="flex items-center justify-between gap-4">
-							<div>
-								<p className="mb-1 text-xs text-gray-500">
-									{t("opportunities.yourApplication")}
-								</p>
-								<Chip
-									tone={cue.status === "Confirmed" ? "success" : "warning"}
-									size="sm"
-								>
-									{t(`myEngagements.status.${cue.status}`)}
-								</Chip>
-							</div>
-							<Button
-								type="button"
-								variant="dangerOutline"
-								size="sm"
-								className="shrink-0"
-								onClick={() => setShowWithdrawConfirm(true)}
-								disabled={withdrawing}
-							>
-								{t("myEngagements.withdraw")}
-							</Button>
-						</div>
-					</div>
-				)}
-
-				{/* Sign-up CTA */}
-				{isAuthenticated && !isOwner && !cue && !isDraft && (
-					<div data-testid="signup-cta" className="mb-6 space-y-3">
-						{hasUnlimitedSlot ? (
-							<p className="text-sm font-medium text-teal-700">
-								{t("opportunities.unlimitedSpots")}
-							</p>
-						) : (
-							totalMax !== null &&
-							totalMax > 0 &&
-							spotsLeft !== null && (
-								<p
-									className={`text-sm font-medium ${
-										isFull
-											? "text-red-600"
-											: spotsLeft <= 5
-												? "text-orange-700"
-												: "text-gray-600"
-									}`}
-								>
-									{isFull
-										? t("opportunities.noSpotsLeft")
-										: spotsLeft <= 5
-											? t("opportunities.fewSpotsLeft", { count: spotsLeft })
-											: t("opportunities.spotsLeft", { count: spotsLeft })}
-								</p>
-							)
-						)}
-						<Button
-							onClick={() => setShowSignUp(true)}
-							disabled={isFull}
-							fullWidth
-							size="lg"
-						>
-							{opportunity.participationType === "ScheduledSlots"
-								? t("opportunities.joinWaitlist")
-								: t("opportunities.expressInterest")}
-						</Button>
-					</div>
-				)}
-
-				{/* Login prompt */}
-				{!isAuthenticated && !isDraft && (
-					<div data-testid="login-prompt" className="mb-6 space-y-3">
-						<p className="text-sm text-gray-600">
-							{t("opportunities.loginPrompt")}
-						</p>
-						<Button
-							onClick={() => auth.signinRedirect(signinLocaleArgs())}
-							data-testid="opportunity-signin"
-							fullWidth
-							size="lg"
-						>
-							{t("nav.signIn")}
-						</Button>
-					</div>
-				)}
-
-				{/* About this organization */}
-				{orgProfileError && !orgProfile && (
-					<div className="mb-6" data-testid="about-organization">
-						<SectionHeading>
-							{t("opportunities.aboutOrganization")}
-						</SectionHeading>
-						<LoadMoreError
-							message={orgProfileError}
-							retrying={retryingOrgProfile}
-							onRetry={retryLoadOrgProfile}
-						/>
-					</div>
-				)}
-				{orgProfile &&
-					(orgProfile.description ||
-						orgProfile.contactEmail ||
-						orgProfile.contactPhone ||
-						orgProfile.website ||
-						orgProfile.address) && (
-						<div className="mb-6" data-testid="about-organization">
-							<SectionHeading>
-								{t("opportunities.aboutOrganization")}
-							</SectionHeading>
-							{orgProfile.description && (
-								<p className="mb-3 leading-relaxed text-gray-600">
-									{orgProfile.description}
-								</p>
-							)}
-							{(orgProfile.contactEmail ||
-								orgProfile.contactPhone ||
-								orgProfile.website ||
-								orgProfile.address) && (
-								<div
-									className={`space-y-2.5 ${cardSubtleClass} text-sm text-gray-700`}
-								>
-									{orgProfile.contactEmail && (
-										<div className="flex items-center gap-3">
-											<EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400" />
-											<a
-												href={`mailto:${orgProfile.contactEmail}`}
-												className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-											>
-												{orgProfile.contactEmail}
-											</a>
-										</div>
-									)}
-									{orgProfile.contactPhone && (
-										<div className="flex items-center gap-3">
-											<PhoneIcon className="h-4 w-4 shrink-0 text-gray-400" />
-											<a
-												href={`tel:${orgProfile.contactPhone}`}
-												className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-											>
-												{orgProfile.contactPhone}
-											</a>
-										</div>
-									)}
-									{orgProfile.website && (
-										<div className="flex items-center gap-3">
-											<GlobeIcon className="h-4 w-4 shrink-0 text-gray-400" />
-											<a
-												href={orgProfile.website}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-											>
-												{orgProfile.website}
-											</a>
-										</div>
-									)}
-									{orgProfile.address && (
-										<div className="flex items-center gap-3">
-											<MapPinIcon className="h-4 w-4 shrink-0 text-gray-400" />
-											<span>
-												{orgProfile.address.street}{" "}
-												{orgProfile.address.houseNumber},{" "}
-												{orgProfile.address.zipCode} {orgProfile.address.city}
-											</span>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-					)}
-			</div>
-
-			{/* More from this organization - a wider grid than the reading
-			column above so a third card doesn't orphan onto its own row on
-			desktop (#1727). */}
-			{otherOrgOpportunities.length > 0 && (
-				<div className="mb-6" data-testid="more-from-organization">
-					<SectionHeading>
-						{t("opportunities.moreFromOrganization")}
-					</SectionHeading>
-					<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-						{otherOrgOpportunities.map((opp) => (
-							<li
-								key={opp.id}
-								className={`relative flex h-full flex-col ${cardClass} transition-shadow hover:shadow-raised`}
-							>
-								<Link
-									to={`/volunteer-opportunities/${opp.id}`}
-									className="absolute inset-0 rounded-card"
-									aria-label={opp.title}
-								/>
-								<strong className="block text-sm font-semibold text-gray-900">
-									{opp.title}
-								</strong>
-								{opp.description && (
-									<p className="mt-1 line-clamp-2 text-sm text-gray-500">
-										{opp.description}
-									</p>
-								)}
-								<div className="mt-2 flex flex-wrap gap-2">
-									<Chip tone="neutral" size="sm">
-										{formatOccurrence(opp.occurrence, t)}
-									</Chip>
-									<Chip tone="brand" size="sm">
-										{formatParticipationType(opp.participationType, t)}
-									</Chip>
-									{opp.isRemote ? (
-										<Chip tone="success" size="sm">
-											{t("opportunities.remote")}
-										</Chip>
-									) : opp.street ? (
-										<Chip tone="neutral" size="sm">
-											{opp.street} {opp.houseNumber}, {opp.zipCode} {opp.city}
-										</Chip>
-									) : null}
-								</div>
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			{showSignUp && (
-				<SignUpModal
-					opportunityId={opportunity.id}
-					participationType={opportunity.participationType}
-					timeSlots={opportunity.timeSlots}
-					onClose={() => setShowSignUp(false)}
-					onSuccess={() => {
-						setShowSignUp(false);
-						load();
-					}}
-				/>
-			)}
-
-			{showWithdrawConfirm && (
-				<ConfirmDialog
-					title={t("confirmDialog.withdraw.title")}
-					message={t("confirmDialog.withdraw.message")}
-					confirmLabel={t("confirmDialog.withdraw.confirm")}
-					onConfirm={handleWithdrawConfirm}
-					onClose={() => {
-						setShowWithdrawConfirm(false);
-						setWithdrawError(null);
-					}}
-					loading={withdrawing}
-					error={withdrawError}
-				/>
-			)}
-
-			{showReport && (
-				<ReportContentModal
-					targetLabel={opportunity.title}
-					onSubmit={handleReportSubmit}
-					onClose={() => setShowReport(false)}
-				/>
-			)}
-
-			{showEditModal && (
-				<Suspense
-					fallback={
-						<ModalLoadingFallback onClose={() => setShowEditModal(false)} />
-					}
-				>
-					<CreateVolunteerOpportunityModal
-						organizationId={opportunity.organizationId}
-						initialOpportunity={opportunity}
-						onClose={() => setShowEditModal(false)}
+				{showSignUp && (
+					<SignUpModal
+						opportunityId={opportunity.id}
+						participationType={opportunity.participationType}
+						timeSlots={opportunity.timeSlots}
+						onClose={() => setShowSignUp(false)}
 						onSuccess={() => {
-							setShowEditModal(false);
+							setShowSignUp(false);
 							load();
 						}}
 					/>
-				</Suspense>
-			)}
-		</div>
+				)}
+
+				{showWithdrawConfirm && (
+					<ConfirmDialog
+						title={t("confirmDialog.withdraw.title")}
+						message={t("confirmDialog.withdraw.message")}
+						confirmLabel={t("confirmDialog.withdraw.confirm")}
+						onConfirm={handleWithdrawConfirm}
+						onClose={() => {
+							setShowWithdrawConfirm(false);
+							setWithdrawError(null);
+						}}
+						loading={withdrawing}
+						error={withdrawError}
+					/>
+				)}
+
+				{showReport && (
+					<ReportContentModal
+						targetLabel={opportunity.title}
+						onSubmit={handleReportSubmit}
+						onClose={() => setShowReport(false)}
+					/>
+				)}
+
+				{showEditModal && (
+					<Suspense
+						fallback={
+							<ModalLoadingFallback onClose={() => setShowEditModal(false)} />
+						}
+					>
+						<CreateVolunteerOpportunityModal
+							organizationId={opportunity.organizationId}
+							initialOpportunity={opportunity}
+							onClose={() => setShowEditModal(false)}
+							onSuccess={() => {
+								setShowEditModal(false);
+								load();
+							}}
+						/>
+					</Suspense>
+				)}
+			</div>
+		</>
 	);
 }

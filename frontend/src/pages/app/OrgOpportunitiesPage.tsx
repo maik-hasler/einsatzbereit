@@ -490,9 +490,10 @@ export default function OrgOpportunitiesPage() {
 		if (loading || error || items.length === 0) return null;
 		return (
 			<section data-testid={testId}>
-				<PageSectionHeading>{heading}</PageSectionHeading>
-				<p className="mt-1 text-sm text-gray-500">{description}</p>
-				<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				<PageSectionHeading description={description}>
+					{heading}
+				</PageSectionHeading>
+				<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					{items.map((item) => renderRow(item, showStatusBadge))}
 				</ul>
 				{hasMore &&

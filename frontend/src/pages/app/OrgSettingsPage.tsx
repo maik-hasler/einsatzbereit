@@ -225,6 +225,11 @@ export default function OrgSettingsPage() {
 			<div data-content-wrapper className="max-w-2xl">
 				{!editing && (
 					<OrganizationProfileView
+						// Stacked, not the public profile's contact sidebar: this page
+						// is already inside its own max-w-2xl settings column, so a
+						// 1fr/18rem split here left ~340px for the description and
+						// squeezed the danger-zone panel below it to half width.
+						layout="stacked"
 						name={org.name}
 						logoUrl={logoUrl}
 						description={org.description}

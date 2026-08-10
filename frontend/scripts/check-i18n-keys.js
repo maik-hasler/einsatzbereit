@@ -96,6 +96,10 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"orgOverview.tabDashboard",
 		"orgOverview.calendarAgenda",
 		"orgOverview.eventChipUnlimited",
+		// "Support" is the established German loanword for this, and both
+		// pages' eyebrow names the same category in either language.
+		"help.eyebrow",
+		"contact.eyebrow",
 	].map((k) => `translation.${k}`),
 );
 

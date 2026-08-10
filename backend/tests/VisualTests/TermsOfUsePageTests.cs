@@ -20,17 +20,28 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync($"{origin}/terms-of-use");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
-		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(actionBar.GetByText("Terms of Use", new() { Exact = true }))
-			.ToBeVisibleAsync();
+		// #1755 replaced this page's breadcrumb action bar with a Home link
+		// inside the title band - see
+		// HeaderBreadcrumbSharedImplementationTests.ImprintAndPrivacyPolicyPages_ReplaceActionBar_WithInBandHomeLink
+		// for the rationale and the cross-page guard.
+		await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
+			.ToHaveCountAsync(0);
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Terms of Use", Level = 1 })).ToBeVisibleAsync();
+		// Exact = false throughout this file's clause-heading assertions: since
+		// #1755 each clause heading carries its own number ("2 Our role as a
+		// platform"), because legal text is cited by clause and the number
+		// therefore belongs in the heading's accessible name rather than being
+		// an aria-hidden decoration. Substring matching keeps these assertions
+		// about the clause titles themselves, so inserting a section above one
+		// doesn't break an unrelated test.
 		await Expect(Page.GetByRole(AriaRole.Heading,
-			new() { Name = "Our role as a platform" })).ToBeVisibleAsync();
+			new() { Name = "Our role as a platform", Exact = false })).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading,
-			new() { Name = "Suspension and termination" })).ToBeVisibleAsync();
+			new() { Name = "Suspension and termination", Exact = false })).ToBeVisibleAsync();
 		await Expect(Page.GetByText("at your own risk", new() { Exact = false }))
 			.ToBeVisibleAsync();
 	}
@@ -50,7 +61,7 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Nutzungsbedingungen", Level = 1 })).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading,
-			new() { Name = "Unsere Rolle als Plattform" })).ToBeVisibleAsync();
+			new() { Name = "Unsere Rolle als Plattform", Exact = false })).ToBeVisibleAsync();
 		await Expect(Page.GetByText("auf eigenes Risiko", new() { Exact = false }))
 			.ToBeVisibleAsync();
 	}
@@ -86,8 +97,10 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync($"{origin}/terms-of-use");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// Exact = false - see the clause-numbering note higher up this file.
 		await Expect(Page.GetByRole(AriaRole.Heading,
-			new() { Name = "Organizations and volunteer opportunities" })).ToBeVisibleAsync();
+			new() { Name = "Organizations and volunteer opportunities", Exact = false }))
+			.ToBeVisibleAsync();
 		await Expect(Page.GetByText("verification badge", new() { Exact = false }))
 			.Not.ToBeVisibleAsync();
 

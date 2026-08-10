@@ -13,7 +13,8 @@
       "retrying": "Retrying…",
       "loading": "Loading…",
       "pageLoading": "Loading page…",
-      "skipToContent": "Skip to content"
+      "skipToContent": "Skip to content",
+      "onThisPage": "On this page"
     },
     "nav": {
       "primaryLabel": "Main navigation",
@@ -199,7 +200,10 @@
       "participantsJoined_one": "{{count}} person has already joined",
       "participantsJoined_other": "{{count}} people have already joined",
       "maxParticipants_one": "(max. {{count}} person)",
-      "maxParticipants_other": "(max. {{count}} people)"
+      "maxParticipants_other": "(max. {{count}} people)",
+      "factWhen": "When",
+      "factFormat": "How it works",
+      "factWhere": "Where"
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -744,7 +748,8 @@
       "section8Body2": "We also store a small number of values in your browser's local storage: your selected interface language, whether you explicitly chose that language yourself rather than it being detected automatically, and which achievement notifications you have already seen (stored per account). Your session's access, ID, and refresh tokens are held separately in your browser's session storage, which is strictly necessary to keep you signed in and is cleared automatically when you close the browser tab. These values never leave your browser. The active-org cookie and these local storage and session storage values are cleared when you sign out.",
       "section9Title": "Your rights",
       "section9Body1": "You have the right to access (Art. 15 GDPR), rectification (Art. 16 GDPR), erasure (Art. 17 GDPR), and restriction of processing (Art. 18 GDPR) of your personal data, as well as the right to data portability (Art. 20 GDPR) and the right to object to processing carried out on the basis of our legitimate interest (Art. 21 GDPR). You can delete your own account and most associated data at any time from your profile settings; for any other request, including a copy of your data or an objection, contact us using the address or email given in the \"Responsible party\" section above. We aim to respond within one month, as required by Art. 12(3) GDPR.",
-      "section9Body2": "You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the German state where you live, work, or where an alleged infringement occurred. The authority responsible for us is: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover, Germany."
+      "section9Body2": "You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the German state where you live, work, or where an alleged infringement occurred. The authority responsible for us is: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover, Germany.",
+      "eyebrow": "Legal"
     },
     "imprint": {
       "title": "Imprint",
@@ -758,14 +763,17 @@
       "section4aTitle": "Liability for content",
       "section4aBody": "The contents of these pages have been created with the greatest care. However, we cannot guarantee the accuracy, completeness and timeliness of the content.",
       "section4bTitle": "Liability for links",
-      "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages."
+      "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages.",
+      "eyebrow": "Legal"
     },
     "contact": {
       "title": "Contact",
       "reportSectionTitle": "Reporting abusive content",
       "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
       "otherSectionTitle": "Other questions or concerns",
-      "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint."
+      "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint.",
+      "eyebrow": "Support",
+      "intro": "Report a problem, or find the right place to ask your question."
     },
     "help": {
       "title": "Help",
@@ -785,7 +793,8 @@
       "organizersQ3": "How do I manage volunteer sign-ups?",
       "organizersA3": "Open an opportunity from your organization's dashboard to see everyone who signed up, message them, or check them in.",
       "contactTitle": "Still need help?",
-      "contactBody": "If something looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on the relevant <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. For anything else, visit our <contactLink>Contact page</contactLink>, or email us directly at maikhslr@gmail.com - we usually reply within 24 hours."
+      "contactBody": "If something looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on the relevant <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. For anything else, visit our <contactLink>Contact page</contactLink>, or email us directly at maikhslr@gmail.com - we usually reply within 24 hours.",
+      "eyebrow": "Support"
     },
     "termsOfUse": {
       "title": "Terms of Use",
@@ -803,7 +812,8 @@
       "section6Title": "Suspension and termination",
       "section6Body": "We may suspend or disable an account that violates these Terms, publishes fraudulent or unsafe content, or is the subject of substantiated reports from other users. Wherever possible, we will inform the affected account of the reason. You may stop using the Platform and request deletion of your account at any time; see our <privacyLink>Privacy Policy</privacyLink> for details on how your data is handled.",
       "section7Title": "Changes to these terms",
-      "section7Body": "We may update these Terms from time to time to reflect changes to the Platform or legal requirements. Continued use of the Platform after an update constitutes acceptance of the revised Terms. For questions about these Terms, please contact us via the details listed in our <imprintLink>Imprint</imprintLink>."
+      "section7Body": "We may update these Terms from time to time to reflect changes to the Platform or legal requirements. Continued use of the Platform after an update constitutes acceptance of the revised Terms. For questions about these Terms, please contact us via the details listed in our <imprintLink>Imprint</imprintLink>.",
+      "eyebrow": "Legal"
     },
     "notifications": {
       "bellLabel": "Notifications",
@@ -983,7 +993,8 @@
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available.",
       "report": "Report",
-      "reportOrganization": "Report organization"
+      "reportOrganization": "Report organization",
+      "eyebrow": "Organization"
     },
     "profileOverview": {
       "invitationsHeading": "Open Invitations"
@@ -1035,7 +1046,9 @@
       "saveError": "Failed to save profile.",
       "loadError": "Could not load profile.",
       "loading": "Loading…",
-      "removeChip": "Remove"
+      "removeChip": "Remove",
+      "subNavActivity": "Activity",
+      "eyebrow": "Account"
     },
     "profileSettings": {
       "title": "Settings"
@@ -1101,8 +1114,7 @@
     },
     "breadcrumb": {
       "label": "Breadcrumb",
-      "home": "Home",
-      "profile": "Profile"
+      "home": "Home"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",

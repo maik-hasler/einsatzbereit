@@ -605,7 +605,25 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertMaxWidthContentLeftAlignedAsync("Organization profile page");
+		// #766 wanted this column not stranded as a narrow strip in a wide page.
+		// #1755 gave the page a PageHeaderBand, which anchors the layout and
+		// centres its own title at max-w-5xl - so the content is centred to match
+		// it rather than flush left, and the invariant that matters is now that
+		// the two share a left edge. The org app Settings tab, which has no band,
+		// still asserts the flush-left arrangement below.
+		await AssertMaxWidthContentCenteredAsync("Organization profile page");
+
+		var edgeDelta = await Page.EvaluateAsync<double>(
+			"""
+			() => {
+				const h1 = document.querySelector('main h1');
+				const column = document.querySelector('main [data-content-wrapper]');
+				return Math.abs(h1.getBoundingClientRect().left
+					- column.getBoundingClientRect().left);
+			}
+			""");
+		edgeDelta.Should().BeLessThan(2,
+			"the band title and the content column below it must share a left edge");
 	}
 
 	[Test]

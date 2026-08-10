@@ -595,90 +595,102 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 
-			<div className="mb-4 flex justify-end">
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={handleExport}
-					disabled={exporting}
-				>
-					<ArrowDownTrayIcon className="h-4 w-4" />
-					{exporting
-						? t("engagementManagement.exportButtonLoading")
-						: t("engagementManagement.exportButton")}
-				</Button>
-			</div>
-			{exportError && <ErrorBanner message={exportError} className="mb-4" />}
-
-			<div className="mb-4 flex flex-wrap items-end gap-3">
-				<div>
-					<label htmlFor="engagement-status-filter" className={labelClass}>
-						{t("engagementManagement.filterLabelStatus")}
-					</label>
-					<select
-						id="engagement-status-filter"
-						value={statusFilter}
-						onChange={(e) => setStatusFilter(e.target.value)}
-						className={inputClass}
+			{/* Export, the filters and the bulk-select row are one toolbar for
+			the list below, boxed like the Sign-ups and Members toolbars (#1755).
+			They were three separate bare rows - a right-floating Export button on
+			nothing, then two form fields on the page background, then a
+			full-width card holding a single checkbox. */}
+			<div className={`mb-6 ${cardClass} sm:p-5`}>
+				<div className="mb-4 flex justify-end">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={handleExport}
+						disabled={exporting}
 					>
-						<option value="">{t("engagementManagement.allStatuses")}</option>
-						{Object.entries(STATUS_LABELS).map(([value, label]) => (
-							<option key={value} value={value}>
-								{label}
-							</option>
-						))}
-					</select>
+						<ArrowDownTrayIcon className="h-4 w-4" />
+						{exporting
+							? t("engagementManagement.exportButtonLoading")
+							: t("engagementManagement.exportButton")}
+					</Button>
 				</div>
-				{opportunity && opportunity.timeSlots.length > 1 && (
+				{exportError && <ErrorBanner message={exportError} className="mb-4" />}
+
+				<div className="flex flex-wrap items-end gap-3">
 					<div>
-						<label htmlFor="engagement-timeslot-filter" className={labelClass}>
-							{t("engagementManagement.filterLabelTimeSlot")}
+						<label htmlFor="engagement-status-filter" className={labelClass}>
+							{t("engagementManagement.filterLabelStatus")}
 						</label>
 						<select
-							id="engagement-timeslot-filter"
-							value={timeSlotFilter}
-							onChange={(e) => setTimeSlotFilter(e.target.value)}
+							id="engagement-status-filter"
+							value={statusFilter}
+							onChange={(e) => setStatusFilter(e.target.value)}
 							className={inputClass}
 						>
-							<option value="">{t("engagementManagement.allTimeSlots")}</option>
-							{opportunity.timeSlots.map((slot) => (
-								<option key={slot.id} value={slot.id}>
-									{formatDateTime(
-										slot.startDateTime as unknown as string,
-										i18n.language,
-									)}{" "}
-									-{" "}
-									{formatDateTime(
-										slot.endDateTime as unknown as string,
-										i18n.language,
-									)}
+							<option value="">{t("engagementManagement.allStatuses")}</option>
+							{Object.entries(STATUS_LABELS).map(([value, label]) => (
+								<option key={value} value={value}>
+									{label}
 								</option>
 							))}
 						</select>
 					</div>
-				)}
-				<form
-					onSubmit={handleSearchSubmit}
-					className="flex flex-1 items-end gap-2"
-				>
-					<div className="min-w-0 flex-1">
-						<label htmlFor="engagement-search" className={labelClass}>
-							{t("engagementManagement.searchLabel")}
-						</label>
-						<input
-							id="engagement-search"
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder={t("engagementManagement.searchPlaceholder")}
-							className={inputClass}
-						/>
-					</div>
-					<Button type="submit">
-						{t("engagementManagement.searchButton")}
-					</Button>
-				</form>
+					{opportunity && opportunity.timeSlots.length > 1 && (
+						<div>
+							<label
+								htmlFor="engagement-timeslot-filter"
+								className={labelClass}
+							>
+								{t("engagementManagement.filterLabelTimeSlot")}
+							</label>
+							<select
+								id="engagement-timeslot-filter"
+								value={timeSlotFilter}
+								onChange={(e) => setTimeSlotFilter(e.target.value)}
+								className={inputClass}
+							>
+								<option value="">
+									{t("engagementManagement.allTimeSlots")}
+								</option>
+								{opportunity.timeSlots.map((slot) => (
+									<option key={slot.id} value={slot.id}>
+										{formatDateTime(
+											slot.startDateTime as unknown as string,
+											i18n.language,
+										)}{" "}
+										-{" "}
+										{formatDateTime(
+											slot.endDateTime as unknown as string,
+											i18n.language,
+										)}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
+					<form
+						onSubmit={handleSearchSubmit}
+						className="flex flex-1 items-end gap-2"
+					>
+						<div className="min-w-0 flex-1">
+							<label htmlFor="engagement-search" className={labelClass}>
+								{t("engagementManagement.searchLabel")}
+							</label>
+							<input
+								id="engagement-search"
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder={t("engagementManagement.searchPlaceholder")}
+								className={inputClass}
+							/>
+						</div>
+						<Button type="submit">
+							{t("engagementManagement.searchButton")}
+						</Button>
+					</form>
+				</div>
 			</div>
 
 			{loading && (
@@ -720,7 +732,7 @@ export default function EngagementManagementPage() {
 				))}
 
 			{isOrganizer && !loading && !error && actionableCount > 0 && (
-				<div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-gray-200 bg-gray-50 p-3 text-sm">
+				<div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-gray-100 bg-white p-3 text-sm shadow-resting">
 					<label
 						htmlFor="select-all-pending"
 						className="flex items-center gap-2"
@@ -864,7 +876,7 @@ export default function EngagementManagementPage() {
 											</Chip>
 										)}
 									</div>
-									<div className="flex shrink-0 flex-col items-end gap-2">
+									<div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
 										<span
 											className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 										>
@@ -1052,7 +1064,7 @@ export default function EngagementManagementPage() {
 				<section className="mt-8">
 					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
 					{feedbackStats.feedbackCount === 0 ? (
-						<p className="text-sm text-gray-500">{t("feedback.noFeedback")}</p>
+						<EmptyState title={t("feedback.noFeedback")} />
 					) : (
 						<>
 							<p className="mb-4 text-sm text-gray-700">

@@ -31,6 +31,7 @@ function getInitials(name: string): string {
 export default function Header({
 	orgSwitcher,
 	breadcrumb,
+	overlaysBand = false,
 }: {
 	// When set, this header is rendered inside the org app shell: it grows an
 	// extra middle slot for the active organization's switcher between the
@@ -44,6 +45,11 @@ export default function Header({
 		items: BreadcrumbItem[];
 		actions?: QuickAction[];
 	};
+	// Set by AppLayout when the page below renders a dark band that runs up
+	// underneath this header (PageHeaderBand). The header then drops its own
+	// background and switches its controls to their on-dark variants until the
+	// reader scrolls past the band. See HeaderOverlayContext.
+	overlaysBand?: boolean;
 } = {}) {
 	const auth = useAuth();
 	const { t } = useTranslation();
@@ -86,6 +92,11 @@ export default function Header({
 		if (!mobileOpen) setOrgMenuOpen(false);
 	}, [mobileOpen]);
 
+	// Only while the band is actually behind the header - once scrolled past
+	// it there's white page underneath, so the header has to take its own
+	// background back or its white-on-dark controls would sit on white.
+	const isTransparent = overlaysBand && !scrolled;
+
 	function handleNotificationNavigate(actionUrl: string | null | undefined) {
 		navigate(actionUrl ?? "/my-engagements");
 	}
@@ -114,9 +125,13 @@ export default function Header({
 		<>
 			<header
 				className={`sticky top-0 z-40 transition-all duration-300 ${
-					scrolled
-						? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
-						: "border-b border-gray-200 bg-white"
+					isTransparent && mobileOpen
+						? "border-b-0 bg-brand-800"
+						: isTransparent
+							? "border-b-0 bg-transparent"
+							: scrolled
+								? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
+								: "border-b border-gray-200 bg-white"
 				}`}
 			>
 				<div className="mx-auto max-w-page px-4 sm:px-6 lg:px-8">
@@ -135,7 +150,7 @@ export default function Header({
 							<img
 								src="/logo.svg"
 								alt={t("brand.name")}
-								className="h-8 w-auto max-w-none shrink-0"
+								className={`h-8 w-auto max-w-none shrink-0 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
 							/>
 						</Link>
 
@@ -153,6 +168,7 @@ export default function Header({
 
 						<DesktopHeader
 							isLoggedIn={isLoggedIn}
+							isTransparent={isTransparent}
 							menu={menu}
 							displayName={displayName}
 							initials={initials}
@@ -166,6 +182,7 @@ export default function Header({
 
 						<MobileHeader
 							isLoggedIn={isLoggedIn}
+							isTransparent={isTransparent}
 							mobileOpen={mobileOpen}
 							setMobileOpen={setMobileOpen}
 							menu={menu}
@@ -178,6 +195,7 @@ export default function Header({
 
 				{mobileOpen && (
 					<MobileMenu
+						isTransparent={isTransparent}
 						isLoggedIn={isLoggedIn}
 						avatarUrl={avatarUrl}
 						initials={initials}

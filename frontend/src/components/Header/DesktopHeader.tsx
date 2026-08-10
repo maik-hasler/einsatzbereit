@@ -9,6 +9,7 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 // buttons) plus the language selector.
 export default function DesktopHeader({
 	isLoggedIn,
+	isTransparent,
 	menu,
 	displayName,
 	initials,
@@ -20,6 +21,7 @@ export default function DesktopHeader({
 	onRegister,
 }: {
 	isLoggedIn: boolean;
+	isTransparent: boolean;
 	menu: AccountMenuState;
 	displayName: string;
 	initials: string;
@@ -39,6 +41,7 @@ export default function DesktopHeader({
 		>
 			{isLoggedIn ? (
 				<AccountControls
+					transparent={isTransparent}
 					menu={menu}
 					displayName={displayName}
 					initials={initials}
@@ -49,16 +52,26 @@ export default function DesktopHeader({
 				/>
 			) : (
 				<div className="flex items-center gap-3">
-					<Button type="button" onClick={onSignIn} variant="primary">
+					<Button
+						type="button"
+						onClick={onSignIn}
+						variant={isTransparent ? "onDark" : "primary"}
+					>
 						{t("nav.signIn")}
 					</Button>
-					<Button type="button" onClick={onRegister} variant="outline">
+					<Button
+						type="button"
+						onClick={onRegister}
+						variant={isTransparent ? "outlineOnDark" : "outline"}
+					>
 						{t("nav.register")}
 					</Button>
 				</div>
 			)}
-			<div className="h-6 w-px bg-gray-200" />
-			<LanguageSelector />
+			<div
+				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+			/>
+			<LanguageSelector transparent={isTransparent} />
 		</nav>
 	);
 }

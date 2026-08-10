@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Button from "../components/Button";
+import { CheckIcon } from "../components/icons";
 import { statusTitleClass } from "../lib/headingClasses";
+import { cardClass } from "../lib/surfaceClasses";
 
 // Landing page the one-click unsubscribe link in transactional emails
 // redirects to after UnsubscribeEndpoint records the opt-out server-side
@@ -12,14 +14,26 @@ export default function UnsubscribePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("unsubscribe.title"));
 
+	// Boxed rather than floating text on white: this is the end of a flow that
+	// started in an email client, so the confirmation needs an edge that says
+	// "this is the receipt" (#1755). Same treatment as UnsubscribeConfirmPage,
+	// the step immediately before it.
 	return (
-		<div className="flex min-h-[70vh] items-center justify-center px-4 text-center">
-			<div className="max-w-md">
-				<h1 className={`mb-4 text-brand-700 ${statusTitleClass}`}>
+		<div className="mx-auto max-w-md py-10 sm:py-16">
+			<div className={`${cardClass} text-center sm:p-8`}>
+				<div
+					aria-hidden="true"
+					className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-brand-700"
+				>
+					<CheckIcon className="h-7 w-7" />
+				</div>
+				<h1 className={`mt-6 text-gray-900 ${statusTitleClass}`}>
 					{t("unsubscribe.title")}
 				</h1>
-				<p className="mb-8 text-black">{t("unsubscribe.description")}</p>
-				<Button to="/profile" size="lg">
+				<p className="mt-4 leading-relaxed text-gray-700">
+					{t("unsubscribe.description")}
+				</p>
+				<Button to="/profile" size="lg" className="mt-8">
 					{t("unsubscribe.manageInProfile")}
 				</Button>
 			</div>
