@@ -164,7 +164,7 @@ Rotating the staging host's SSH host key (a fresh box, a reinstall) requires upd
 
 All templates are in **English** (see `CONTRIBUTING.md`'s Language Convention). Fields:
 
-**Bug report:** Affected Persona (dropdown: Volunteer Vera/Organizer Olaf/Contributor Caro/Maintainer Milo/All), Priority (Low/Medium/High), Description, Steps to Reproduce, Environment, Additional Information
+**Bug report:** Affected Persona (dropdown: Volunteer Vera/Organizer Olaf/Platform Admin/Contributor Caro/Maintainer Milo/All - same order as the stakeholder table in arc42 chapter 1, end users before project-side roles), Priority (Low/Medium/High), Description, Steps to Reproduce, Environment, Additional Information
 
 **Chore:** Priority, Description, Acceptance Criteria (checkboxes)
 
