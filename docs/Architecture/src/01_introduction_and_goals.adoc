@@ -75,6 +75,12 @@ _A complete list of all quality goals with detailed scenarios can be found in Ch
 
 *Organizer Olaf* expects a simple way to post volunteer opportunities and reach volunteers without any technical knowledge.
 
+|Platform admins
+|End users (currently the maintainers)
+|_"If someone posts something abusive, I want it gone in two clicks - and I want to be able to prove afterwards what I did and why."_
+
+*Platform Admin* expects a moderation queue over reported content, the ability to disable and restore accounts, organizations and listings, and an audit trail of every such action. The role is held by the maintainers today, but it is a separate role in the system rather than a maintenance chore.
+
 |Contributors
 |GitHub Issues and Pull Requests
 |_"I want to contribute a feature over a weekend, not spend two days just understanding the project."_

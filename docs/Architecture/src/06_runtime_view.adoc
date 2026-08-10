@@ -3,7 +3,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-runtime-view]]
 == Runtime View
 
-The following three scenarios cover the platform's most representative flows across the two primary personas: signing in, browsing opportunities (the main volunteer read path), and creating an opportunity (the main organizer write path).
+The following three scenarios cover the platform's most representative flows: signing in, browsing opportunities (the main volunteer read path), and creating an opportunity (the main organizer write path). They are deliberately few - arc42 advises documenting only the scenarios that are architecturally revealing. The Platform Admin flows from <<section-context-and-scope>> are not drawn here because they follow the same request path as the organizer scenario, differing only in the role the endpoint requires.
 
 === User Login (OIDC Authorization Code Flow)
 

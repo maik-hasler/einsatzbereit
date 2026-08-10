@@ -19,8 +19,8 @@ The following table summarizes the key architectural decisions and how they addr
 |Each use case is encapsulated in one handler class. Finding the code for a feature means finding one file. No large service classes accumulating unrelated logic.
 
 |Appropriateness
-|Feature folder structure in both backend and frontend
-|Code is organized by domain feature, not by technical layer. Adding a new feature means adding a new folder - not modifying multiple existing ones.
+|Backend cut into functional modules, each with one folder per use case
+|The backend's `Api/`, `Application/` and `Domain/` layers repeat the same twelve module folders, and each use case is its own `{Feature}/v1/` folder. Adding a feature means adding folders instead of editing shared service classes. The frontend is cut by artifact kind instead - see <<section-building-block-view>> for why the two ends differ.
 
 |Maintainability
 |NSwag-generated API client for the frontend

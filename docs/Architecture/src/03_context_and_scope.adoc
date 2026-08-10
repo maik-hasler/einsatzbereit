@@ -22,8 +22,11 @@ include::../images/business-context.puml[]
 |Organizer Olaf
 |Creates and manages volunteer opportunities for their organization or club. Posts what help is needed, where, and when.
 
+|Platform Admin
+|Keeps the platform usable for the other two: works through abuse reports, disables or restores accounts, organizations and opportunities, and reads the audit trail of those actions.
+
 |Einsatzbereit
-|Connects volunteers with organizations by managing regional volunteer opportunities and registrations.
+|Connects volunteers with organizations by managing regional volunteer opportunities and registrations, and notifies both sides when something concerning them changes.
 |===
 
 === Technical Context
@@ -92,4 +95,16 @@ include::../images/technical-context.puml[]
 
 |Organizer manages their opportunities
 |`GET /v1/volunteer-opportunities/{id}` is public; `PUT` and `DELETE` require the `organisator` role
+
+|Organizer invites a member to the organization
+|`POST /v1/organizations/{organizationId}/invitations`, requires an organizer membership row for that organization
+
+|Volunteer reports inappropriate content
+|`POST /v1/volunteer-opportunities/{opportunityId}/reports` (and the equivalents for organizations and users), authenticated via JWT
+
+|Admin works through the moderation queue
+|`GET /v1/admin/reports/targets` and `PUT /v1/admin/reports/{reportId}/dismiss`, require the `admin` role
+
+|Admin disables or restores an account or listing
+|`DELETE /v1/admin/users/{userId}` and `PUT /v1/admin/users/{userId}/restore`, require the `admin` role; both write an audit log entry
 |===

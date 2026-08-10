@@ -3,6 +3,31 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-building-block-view]]
 == Building Block View
 
+The decomposition below uses one consistent cohesion criterion per level, named explicitly so a reader can tell whether a new piece of code belongs in an existing building block or needs a new one.
+
+[cols="1,2,3" options="header"]
+|===
+|Level |Cohesion criterion |Result
+
+|1
+|Deployment and runtime boundary
+|Four separately deployed containers.
+
+|2 (Backend)
+|Similar business function
+|Twelve functional modules plus a shared kernel.
+
+|2 (Frontend)
+|Similar technology and implementation rules, then route area
+|Artifact kinds (pages, components, hooks), with the organizer area separated by route.
+
+|3
+|Refinement of one module
+|The layer slice every backend module repeats.
+|===
+
+Level 3 is deliberately shown for one module only. The remaining eleven are built identically, which is documented once as the <<section-concepts, Module Structure>> concept rather than redrawn per module.
+
 === Level 1: System Overview (Whitebox)
 
 .Container View - Einsatzbereit
@@ -11,127 +36,224 @@ ifndef::imagesdir[:imagesdir: ../images]
 include::../images/container-view.puml[]
 ....
 
-Motivation::
-The system consists of four main containers: a React SPA for the UI, an ASP.NET Core API for business logic, Keycloak for identity management, and PostgreSQL for persistence.
-Authentication is centralized in Keycloak - neither the frontend nor the backend implements login logic directly.
+Rationale for this decomposition::
+The split follows deployment boundaries, not business function: each of the four containers is built, versioned and shipped as its own artifact and can be restarted independently. Business function is the criterion one level down, inside the Backend API.
+
+Two of the four containers are third-party software (greyed out in the diagram, arc42 tip 5-20). They appear in the building block view even though arc42 normally reserves it for self-written code, because authentication and persistence are delegated so completely that the remaining two containers cannot be understood without them - the Backend API implements no login logic at all. No code in this repository is compiled into them; the project contributes a realm configuration and an image build for Keycloak, and a schema plus migrations for PostgreSQL. In <<section-context-and-scope>> the same two appear as self-hosted neighbour systems, seen from outside the system boundary.
 
 Contained Building Blocks::
 
-[cols="1,2,2" options="header"]
+[cols="1,1,2,2" options="header"]
 |===
-|Container |Technology |Responsibility
+|Container |Origin |Technology |Responsibility
 
 |Single Page Application
+|Written here
 |React 19, Vite, TypeScript, Tailwind CSS 4
-|Provides the web UI for volunteers and organizers. Handles OIDC login redirect and token storage. Communicates with the backend API using a NSwag-generated client.
+|Provides the web UI for volunteers, organizers and platform admins. Handles OIDC login redirect and token storage. Communicates with the backend API using a NSwag-generated client.
 
 |Backend API
+|Written here
 |.NET 10, ASP.NET Core, Clean Architecture
 |Exposes the versioned REST API. Implements all business logic via CQRS handlers. Validates JWT tokens, enforces role-based authorization, persists data via EF Core.
 
 |Identity Provider
+|Third party
 |Keycloak 26.7.1
 |Handles user authentication via OIDC Authorization Code Flow. Manages users, roles (`user`, `organisator`, `admin`), and organizations. Issues and signs JWT access tokens.
 
 |Application Database
+|Third party
 |PostgreSQL 18
 |Stores all application data: volunteer opportunities, organizations, engagements, and user associations.
 |===
 
 Important Interfaces::
 
+The external interfaces below are consistent with the technical context in <<section-context-and-scope>>, which remains the authoritative list; this table adds the two interfaces internal to the system boundary. The one context interface without a Level-1 counterpart is GitHub Actions to GHCR, which touches build artifacts rather than a running building block - see <<section-deployment-view>>.
+
 [cols="1,3" options="header"]
 |===
 |Interface |Description
 
-|Frontend ↔ Backend API
+|Frontend to Backend API
 |REST over HTTPS, versioned (`/v1/...`). Authenticated requests carry a JWT Bearer token; public browsing is anonymous. Response format is JSON. The TypeScript client is generated from the OpenAPI spec.
 
-|Frontend ↔ Keycloak
+|Frontend to Keycloak
 |OIDC Authorization Code Flow with PKCE. Frontend redirects to Keycloak for login; receives access and refresh tokens on success.
 
-|Backend ↔ Keycloak
+|Backend to Keycloak
 |Backend fetches Keycloak's JWKS endpoint to validate JWT signatures. For organization and user management it also calls Keycloak's Admin REST API (`/admin/realms/...`) using a service-account admin token.
 
-|Backend ↔ PostgreSQL
+|Backend to PostgreSQL
 |EF Core 10 over TCP. Migrations are applied on startup in Development, and in other environments only when `Database:MigrateOnStartup` is enabled.
 
-|Backend ↔ Object storage (MinIO / S3)
+|Backend to Object storage (MinIO / S3)
 |Stores and serves binary assets: organization logos, user avatars, and opportunity banners.
 
-|Backend ↔ Mail server (SMTP)
+|Backend to Mail server (SMTP)
 |Sends notification and reminder emails (Mailpit locally, a real SMTP relay on staging).
 
-|Backend ↔ Geocoding (Nominatim)
-|Geocodes opportunity addresses at write time, throttled to about one request per second. See ADR-4.
+|Backend to Geocoding (Nominatim)
+|Geocodes opportunity addresses at write time, throttled to about one request per second. Map tiles and city search are proxied through the backend so visitor IPs never reach OpenStreetMap. See ADR-4 and ADR-5.
 |===
 
 === Level 2: Backend API (Whitebox)
 
-.Backend Component View - Clean Architecture
+.Backend Module View - Functional Modules
+[plantuml, "module-backend", png]
+....
+include::../images/module-backend.puml[]
+....
+
+Rationale for this decomposition::
+The modules are cut by business function, following the fact that a change request almost always arrives phrased as one ("organizers need to invite members", "volunteers should get a reminder"). The cut is carried through the layers that hold use cases and business rules: `Api/`, `Application/` and `Domain/` each contain the same module folders, so a feature is one folder per layer rather than a diff spread across shared service classes. `Infrastructure/` is the deliberate exception - it is organized by adapted technology (`Persistence/`, `Email/`, `Keycloak/`, `Storage/`, `Geocoding/`, `Maps/`), because an adapter belongs to the external system it wraps, not to the module that happens to call it first. Only where an implementation is genuinely module-specific rather than technology-specific does a module folder reappear there (`Infrastructure/Achievements/` for the badge catalog, `Infrastructure/VolunteerOpportunities/` for PIN generation).
+
+Two cuts are worth explaining because they do not follow entity ownership. *Invitations* is split from *Organizations* by actor rather than by aggregate: the organizer's side (create, resend, dismiss) lives in Organizations, the invitee's side (list, accept, decline) in Invitations, because the two are reached by different roles through different screens. *Maps*, *Meta* and *Sitemap* are thin modules with no aggregate of their own; they exist as modules because they are separately addressable capabilities with their own endpoints, not because they own domain state.
+
+Contained Building Blocks::
+
+[cols="1,3,2" options="header"]
+|===
+|Module |Responsibility |Source location
+
+|Volunteer Opportunities
+|Opportunity lifecycle (draft, publish, unpublish, cancel), time slots including recurring series, categories and tags, banner images, check-in PINs, address geocoding.
+|`{Api,Application,Domain,Infrastructure}/VolunteerOpportunities/`
+
+|Engagements
+|Sign-up and withdrawal, confirmation and cancellation by the organizer, check-in, feedback, reminders, calendar and CSV export.
+|`{Api,Application,Domain}/Engagements/`
+
+|Organizations
+|Organization profiles, memberships and member roles, invitations from the organizer's side, dashboard layout.
+|`{Api,Application,Domain}/Organizations/`
+
+|Invitations
+|The invitee's side of an organization invitation: list, accept, decline. Operates on the Organizations aggregate.
+|`{Api,Application}/Invitations/`
+
+|Users
+|Profiles, notification preferences, streaks, search alerts, account deletion, and the admin-facing user administration.
+|`{Api,Application,Domain}/Users/`, `Domain/SearchAlerts/`
+
+|Achievements
+|Badge catalog and awarding of milestone, streak and hidden achievements.
+|`{Api,Application,Domain,Infrastructure}/Achievements/`
+
+|Notifications
+|In-app notification inbox: creation from domain events, read state, deletion, retention.
+|`{Api,Application,Domain}/Notifications/`
+
+|Reports
+|Abuse reports against opportunities, organizations and users, and the moderation queue that resolves them.
+|`{Api,Application,Domain}/Reports/`
+
+|Audit Logs
+|Append-only record of administrative actions, readable by platform admins.
+|`{Api,Application,Domain}/AuditLogs/`
+
+|Maps
+|Map tile and city-search proxying so visitor IP addresses never reach OpenStreetMap directly (ADR-5).
+|`{Api,Application,Infrastructure}/Maps/`
+
+|Meta
+|Server-rendered Open Graph metadata so shared opportunity and organization links preview correctly.
+|`{Api,Application}/Meta/`
+
+|Sitemap
+|Generates `sitemap.xml` from published opportunities.
+|`{Api,Application}/Sitemap/`
+
+|Shared Kernel
+|Cross-module infrastructure every module depends on: `ISender` dispatch and pipeline behaviors, `Result`/`Error` primitives, authorization guards, pagination, persistence/storage/email ports, the outbox, and the background job host.
+|`Application/Common/`, `Domain/{Primitives,Common}/`, `Infrastructure/{Common,Persistence,Email,Keycloak,Storage,Geocoding,RateLimiting,BackgroundJobs}/`, `Aspire/ServiceDefaults/`
+|===
+
+Modules communicate in one of two ways. Direct calls go inward through the shared kernel only for reads a use case cannot complete without (Engagements reads opportunity status and slot capacity). Everything reactive - notifications, achievements, search-alert digests - runs off domain events raised by the aggregate and dispatched after commit, so the module that causes an event never references the modules that react to it.
+
+=== Level 3: Inside a Module (Whitebox, example)
+
+.Module Internals - Volunteer Opportunities
 [plantuml, "component-backend", png]
 ....
 include::../images/component-backend.puml[]
 ....
 
-The backend follows Clean Architecture with four layers. Dependencies flow inward only: API → Application → Domain. Infrastructure implements interfaces defined in Application.
+Rationale for this decomposition::
+Every functional module from Level 2 repeats the same internal shape, so only one is drawn (arc42 tip 5-27: refine only a few building blocks). The shape itself - Clean Architecture layering plus one folder per use case - is a cross-cutting concept and is described once in <<section-concepts>> under Module Structure, rather than repeated as a whitebox for each of the twelve modules.
 
-==== API Layer
+[cols="1,2,2" options="header"]
+|===
+|Element |Responsibility |Source location
 
-Responsibility:: Routes HTTP requests to the Application layer. Applies authentication middleware. Handles versioning and request/response serialization.
+|Endpoint
+|One Minimal API endpoint class per feature, with its `Request` and `Response` records. Binds and validates the payload, applies the authorization policy, then dispatches.
+|`Api/VolunteerOpportunities/{Feature}/v1/`
 
-Interfaces:: Exposes versioned ASP.NET Core Minimal API endpoints. Dispatches use cases through the application's `ISender` and reads JWT Bearer tokens via ASP.NET Core middleware.
+|Command / Query Handler
+|One handler per feature. Enforces use-case rules and ownership, orchestrates the aggregate, returns `Result<T>`.
+|`Application/VolunteerOpportunities/{Feature}/v1/`
 
-Location:: `backend/src/Api/`
+|Aggregate and Value Objects
+|`VolunteerOpportunity`, `TimeSlot`, `Address`. Holds business invariants and state transitions, raises domain events. No framework dependencies.
+|`Domain/VolunteerOpportunities/`
 
-==== Application Layer
+|Read Repository Interface
+|`IVolunteerOpportunityReadRepository` - the port queries read through, declared by the module that needs it.
+|`Application/VolunteerOpportunities/`
 
-Responsibility:: Implements all use cases as CQRS command and query handlers. Defines repository interfaces used for data access.
-
-Interfaces:: In-house messaging contracts (`ICommand`/`IQuery` with `ICommandHandler`/`IQueryHandler`, dispatched via `ISender`). Repository interfaces (`IVolunteerOpportunityReadRepository`, etc.).
-
-Location:: `backend/src/Application/`
-
-==== Domain Layer
-
-Responsibility:: Contains core business entities as plain C# classes/records. No framework dependencies. Defines business rules as domain logic.
-
-Location:: `backend/src/Domain/`
-
-==== Infrastructure Layer
-
-Responsibility:: Implements the interfaces (ports) defined in the Application layer. Persistence via EF Core (repositories, migrations); adapters for the external systems (Keycloak Admin API, SMTP email, Nominatim geocoding, MinIO object storage); domain-event dispatch and background jobs. Wires up all services in `ServiceCollectionExtensions`.
-
-Location:: `backend/src/Infrastructure/`
+|Repository and Adapters
+|EF Core implementation of the ports, entity configurations, migrations, and the geocoding adapter.
+|`Infrastructure/Persistence/`, `Infrastructure/VolunteerOpportunities/`
+|===
 
 === Level 2: Frontend SPA (Whitebox)
 
-==== Pages
+Rationale for this decomposition::
+The frontend is cut by artifact kind rather than by business function - the opposite of the backend. A React page composes shared components, hooks and helpers that are reused across unrelated domains (a modal, a date formatter, the toast bus), so grouping by domain would leave most files in a shared bucket anyway. The one functional split that does exist is by route area: everything an organizer reaches under `/app` lives in `pages/app/`, because that area has its own layout, navigation and authorization gate.
 
-Responsibility:: Top-level route components. Each page corresponds to a route and composes components.
+This asymmetry with the backend is deliberate, but it is an asymmetry: a feature that spans both ends is one folder per layer in the backend and a scattering of files in the frontend. It is the main reason a contributor's first change tends to take longer on the frontend side.
 
-Location:: `frontend/src/pages/`
+[cols="1,2,2" options="header"]
+|===
+|Element |Responsibility |Source location
 
-==== Components
+|Pages
+|Top-level route components, one per route. Public and volunteer-facing pages sit at the root; organizer pages are grouped under `app/`. A page with local sections or hooks becomes a folder with an `index.tsx`.
+|`frontend/src/pages/`, `frontend/src/pages/app/`
 
-Responsibility:: Reusable UI building blocks. Stateless or locally stateful React components styled with Tailwind CSS.
+|Components
+|Reusable UI building blocks - stateless or locally stateful, styled with Tailwind CSS. Includes the domain-flavoured ones (`SignUpModal`, `CheckInModal`, `PublicOpportunityCard`) and the generic ones (`Button`, `Modal`, `Field`).
+|`frontend/src/components/`
 
-Location:: `frontend/src/components/`
+|API Client
+|NSwag-generated TypeScript client. Provides typed methods for all backend endpoints. Never hand-edited.
+|`frontend/src/client/api-client.ts`
 
-==== API Client
+|Layouts
+|App shells (`AppLayout`, `OrgAppLayout`) and the `ProtectedRoute` authentication gate that guards routes requiring a signed-in user.
+|`frontend/src/layouts/`
 
-Responsibility:: NSwag-generated TypeScript client. Provides typed methods for all backend endpoints. Never hand-edited.
+|Contexts and Hooks
+|Global UI state (`ToastContext`, `ToolbarContext`, `QuickActionsContext`) and reusable logic (`useApiClient`, `useAchievementNotifier`, `useLoadMore`).
+|`frontend/src/contexts/`, `frontend/src/hooks/`
 
-Location:: `frontend/src/client/api-client.ts`
+|Helpers
+|Framework-free logic with unit tests alongside: formatting, status mapping, geo and colour maths, form schemas.
+|`frontend/src/lib/`
+|===
 
-==== Layouts
+=== Source Code Mapping
 
-Responsibility:: App shells (`AppLayout`, `OrgAppLayout`) and the `ProtectedRoute` authentication gate that guards routes requiring a signed-in user.
+The building block structure maps directly onto the directory structure, so no separate mapping table is needed beyond the source locations given above:
 
-Location:: `frontend/src/layouts/`
+* Level 1 containers map to the top-level directories `frontend/` and `backend/src/Api|Application|Domain|Infrastructure/`, plus `keycloak/` for the Keycloak image and realm.
+* Level 2 backend modules map to identically named folders repeated inside `Api/`, `Application/` and `Domain/`.
+* Level 3 features map to `{Feature}/v1/` folders inside a module.
 
-==== Contexts and Hooks
+Three parts of the repository sit outside that scheme and are named here so no shipped code is left unaccounted for:
 
-Responsibility:: Global UI state (`ToastContext`, `ToolbarContext`) and reusable logic (`useApiClient`, `useAchievementNotifier`, and others).
-
-Location:: `frontend/src/contexts/`, `frontend/src/hooks/`
+* `backend/src/Aspire/ServiceDefaults/` is compiled into the Backend API and belongs to the Shared Kernel. It contributes the OpenTelemetry, health-check and service-discovery defaults described in <<section-concepts>>.
+* `backend/src/Aspire/AppHost/` is local orchestration only and is never deployed - see <<section-deployment-view>>.
+* `backend/tests/` and `frontend/` test files carry no building block of their own; they are covered by the testing approach in <<section-concepts>>.

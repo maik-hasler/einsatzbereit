@@ -3,6 +3,48 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-concepts]]
 == Cross-cutting Concepts
 
+The concepts below are grouped the way arc42 suggests: what the system is about, how it is structured, how it is secured, what happens under the hood, how it is developed, and how it is operated. Term definitions are not repeated here - they live in <<section-glossary>>.
+
+=== Domain Model
+
+The domain model is the vocabulary the rest of this document uses. It is referenced by every module in <<section-building-block-view>> and by the runtime scenarios in <<section-runtime-view>>.
+
+.Domain Model
+[plantuml, "domain-model", png]
+....
+include::../images/domain-model.puml[]
+....
+
+An *Organization* publishes *Volunteer Opportunities*. An opportunity is the central aggregate: it says what help is needed, where, and when. It is either a `ScheduledSlots` opportunity, which carries one or more *Time Slots* that volunteers book, or an `IndividualContact` opportunity, which carries an application deadline instead and is arranged directly with the organizer. A recurring opportunity generates several time slots sharing a `SeriesId` so they can later be edited or cancelled together.
+
+A volunteer signing up creates an *Engagement*, which links a *User*, an opportunity and (for scheduled opportunities) one time slot. The engagement carries the whole lifecycle a sign-up goes through: `Pending` until the organizer confirms it, then check-in on the day, then optional feedback afterwards. Withdrawn or cancelled engagements are kept rather than deleted and can be reactivated a bounded number of times.
+
+Two modelling decisions are worth stating because they are not obvious from the diagram:
+
+* An engagement's `VolunteerId` is nullable. When a user deletes their account, their engagements are anonymized instead of removed, so an organizer's past participant counts stay correct and the opportunity's history is not silently rewritten.
+* *Report* and *Audit Log* reference what they concern polymorphically, through a `TargetType`/`SubjectType` enum plus a raw `Guid`. Moderation has to be able to point at any aggregate, and a typed foreign key per target type would either couple the moderation module to every other module or force a join table per type.
+
+Membership in an organization is its own aggregate, not a field on either side: *Organization Membership* holds the pair plus the member's role, and *Organization Invitation* holds a pending offer to create one. The local membership table, not the JWT, is the request-time source of truth for organizer access - see Authentication and Authorization below.
+
+The remaining aggregates hang off *User* and exist to support engagement rather than to record it: *Achievements* (badges), *User Streak* (login and activity counters), *Search Alert* (saved criteria, one per user, matched by a scheduled digest), and *Notification* (the in-app inbox).
+
+=== Module Structure
+
+Every functional module in <<section-building-block-view>> is built the same way. Documenting the shape once here is what allows Level 3 of the building block view to show a single example instead of twelve near-identical whiteboxes.
+
+*Clean Architecture layering.* Dependencies point inward only: `Api` to `Application` to `Domain`. `Infrastructure` implements ports declared in `Application` and is referenced only through them, so the domain and use cases compile without EF Core, Keycloak or any HTTP client. The rule is enforced by `backend/tests/ArchitectureTests`, not just by convention.
+
+*One folder per use case.* Each feature lives in `{Layer}/{Domain}/{Feature}/v1/` and consists of the request record, the handler, and the response record. Finding the code for a feature means finding one folder per layer; adding a feature means adding folders rather than editing shared service classes.
+
+*CQRS.* Use cases are split into commands and queries, dispatched through a small in-house mediator (`ISender`, no external library) with reflection-registered handlers. Two pipeline behaviors wrap every command: one opens a database transaction, the other logs slow requests.
+
+* *Queries* are read-only. They use dedicated read repository interfaces (`IVolunteerOpportunityReadRepository`) and may use projections without loading full aggregate state.
+* *Commands* change state. They return only what is needed (typically the new entity's ID) and enforce business rules before writing.
+
+*Domain events for cross-module reactions.* An aggregate raises domain events; they are dispatched after commit through the outbox. Notifications, achievements and emails are produced by handlers subscribing to those events, so the module that causes something never references the modules that react to it. This is what keeps Volunteer Opportunities free of any mention of Notifications.
+
+*Result instead of exceptions.* Domain and application logic signal failure with `Result` / `Result<T>` carrying an `Error`, not by throwing. See Error Handling below for how that reaches the client.
+
 === Authentication and Authorization
 
 Authentication and authorization are fully delegated to Keycloak. The application itself does not implement login, password management, or session handling.
@@ -30,7 +72,7 @@ Role-based access control is enforced at the API endpoint level using ASP.NET Co
 |All `user` permissions + create, update, and delete own organization's opportunities
 
 |`admin`
-|Full administrative access
+|Full administrative access: moderation queue, user and organization administration, audit log
 |===
 
 *Per-organization membership:*
@@ -42,15 +84,6 @@ Membership rows are written when a user is added to an organization, and once at
 *Token handling in the frontend:*
 
 Access and refresh tokens are stored in `localStorage` via the OIDC client's `WebStorageStateStore`, so the session survives a page reload. The refresh token is used to obtain new access tokens silently when the access token expires.
-
-=== CQRS (Command Query Responsibility Segregation)
-
-All use cases in the application layer follow the CQRS pattern, dispatched through a small in-house mediator (`ISender`, no external library) with reflection-registered handlers. Two pipeline behaviors wrap every command: one opens a database transaction, the other logs slow requests.
-
-* *Queries* are read-only operations. They return data and do not modify state. Queries use dedicated read repository interfaces (`IVolunteerOpportunityReadRepository`) and may use optimized read paths (e.g., projections) without loading full aggregate state.
-* *Commands* are state-changing operations. They return only what is needed (e.g., the created entity's ID) and enforce business rules before writing.
-
-Each use case lives in its own folder under `{Layer}/{Domain}/{Feature}/v1/` and consists of the request record, the handler, and the response record. This makes every use case self-contained and easy to locate.
 
 === Error Handling
 
@@ -105,13 +138,29 @@ The user interface is translated with i18next (`react-i18next`), backed by resou
 
 === Geocoding and Geo-Search
 
-Opportunity addresses are geocoded at write time, and spatial search uses a bounding-box prefilter plus in-memory Haversine refinement (no PostGIS). This concept is documented in full as an architecture decision - see ADR-4.
+Opportunity addresses are geocoded at write time, and spatial search uses a bounding-box prefilter plus in-memory Haversine refinement (no PostGIS). This concept is documented in full as an architecture decision - see ADR-4. Map tiles and city autocomplete are proxied through the backend rather than called from the browser, so visitor IP addresses are never sent to OpenStreetMap - see ADR-5.
+
+=== Testing
+
+Tests are organized by what they need to run, which is also how CI parallelizes them (see <<section-deployment-view>>):
+
+* `Application.UnitTests` and `ArchitectureTests` need no containers. The architecture tests (NetArchTest) enforce the Clean Architecture layer rules and the naming conventions described under Module Structure, so a violation fails the build rather than waiting for review.
+* `IntegrationTests` boot the Aspire AppHost stack under Docker and reset state between tests with Respawn.
+* `VisualTests` add Playwright end-to-end checks against the same stack, and are also where accessibility assertions live.
+* Frontend helper logic under `frontend/src/lib/` carries unit tests alongside the implementation.
+
+=== Development and Build
+
+* *Local orchestration.* One command (`dotnet run --project backend/src/Aspire/AppHost`) provisions PostgreSQL, pgAdmin, Keycloak, MinIO and Mailpit as containers and runs the backend and frontend from source. Contributors do not set up services by hand.
+* *Generated API client.* `frontend/src/client/api-client.ts` is generated by NSwag from the backend's OpenAPI document and is never hand-edited; a change to an endpoint or DTO requires regenerating it.
+* *Dependency management.* NuGet versions are centralized in `Directory.Packages.props`; Renovate opens update pull requests.
+* *Release artifacts.* Frontend, backend and Keycloak images are built and published together under a single version tag - see <<section-deployment-view>> and `VERSIONING.md`.
 
 === Logging and Observability
 
 The backend uses the .NET built-in `ILogger<T>` abstraction. Every request runs inside a logging scope that enriches its entries with the OpenTelemetry trace ID and the authenticated user ID.
 
-Observability is built on OpenTelemetry (via the Aspire service defaults): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by Grafana Tempo in staging/production, where `docker-compose.yml` points `OTEL_EXPORTER_OTLP_ENDPOINT` at it (ADR 6).
+Observability is built on OpenTelemetry (via the Aspire service defaults in `backend/src/Aspire/ServiceDefaults/`): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by Grafana Tempo in staging/production (ADR-6).
 
 Key logged events:
 
@@ -119,6 +168,20 @@ Key logged events:
 * Unhandled exceptions (with trace ID)
 * Slow requests (flagged by the performance pipeline behavior)
 
-No third-party observability SaaS (Datadog, Grafana Cloud, etc.) is wired in by default - a deliberate trade-off to keep operational complexity minimal; any OTLP backend can be pointed at the exporter, and the self-hosted Grafana stack (Prometheus, Loki, Tempo) already deployed alongside the app is what it points at in staging/production.
+=== Operations
 
-Prometheus evaluates alert rules (`docker-compose.yml`'s `prometheus-rules` config, mounted at `/etc/prometheus/alert.rules.yml`) and forwards firing alerts to a self-hosted Alertmanager, which emails them out over the same SMTP relay the backend and Keycloak already use (#1081) - again keeping the "self-hosted over SaaS" trade-off above rather than adding a third-party alerting/incident vendor. The only rule shipped so far is `InstanceDown` (any scrape target unreachable for 2 minutes); it is deliberately the one signal that needs no application-specific metric knowledge, left minimal until real staging traffic justifies additional thresholds.
+The infrastructure these concepts run on is described in <<section-deployment-view>>; this section covers the decisions behind it, which apply across services rather than to any one node.
+
+*Self-hosted over SaaS.* No third-party observability or alerting vendor is wired in by default - not Datadog, not Grafana Cloud, not an incident platform. The deployed environment runs its own Grafana, Prometheus, Loki, Tempo and Alertmanager instead. The trade-off is deliberate: it keeps operational complexity and cost inside one `docker-compose.yml` and avoids a data-sharing relationship with a vendor for a platform handling volunteer contact data. Any OTLP backend can be pointed at the exporter if that changes.
+
+*Exposure of the monitoring stack.* Prometheus, Alertmanager, node-exporter, Loki and Tempo sit on an internal-only `monitoring` Docker network with no reverse-proxy route, because none of them has built-in authentication and each would leak metric, log, trace or alert content if reachable from the internet. Grafana is the only one with a public route, gated by its own admin login.
+
+*Log and trace collection.* Grafana Alloy ships container logs to Loki, discovering containers through a read-only mount of the host's Docker socket. This is the standard pattern for Docker-aware log shippers and a narrower grant than cAdvisor's (list containers and read their logs, rather than full host filesystem and cgroup access, which is why cAdvisor was left out), but a compromised container with socket access still has effective host-level reach - it is not risk-free. Per-container metrics remain a possible follow-up if the host-level view proves insufficient. Tempo needs no shipper: the backend pushes traces to it directly over OTLP, since the application already speaks OTLP natively.
+
+*Alerting.* Prometheus evaluates alert rules and forwards firing alerts to Alertmanager, which emails them over the same SMTP relay the backend and Keycloak already use (#1081). The only rule shipped so far is `InstanceDown` (any scrape target unreachable for two minutes) - deliberately the one signal that needs no application-specific metric knowledge. It stays minimal until real staging traffic justifies additional thresholds.
+
+*Backup and recovery.* PostgreSQL is backed up daily with tiered retention (7 days / 4 weeks / 6 months); the object storage bucket is mirrored daily with a flat retention window. Both local backup outputs are then mirrored off-host to Hetzner Object Storage (#1087). Local backups alone guard only against accidental deletion or corruption; the offsite mirror is what covers loss of the host itself.
+
+*Data retention.* Read notifications are pruned relative to when they were read rather than when they were created, and abuse reports concerning a deleted account are pruned from the point that account was deleted (#1725). Both run as scheduled background jobs.
+
+*Deployment safety.* Deployments are health-gated on the backend's `/alive` and `/health` endpoints and roll back to the previous images on failure. Release-candidate and stable deploys share a concurrency group so they can never race against the same host.
