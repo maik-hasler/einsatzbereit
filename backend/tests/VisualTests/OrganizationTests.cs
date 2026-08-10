@@ -51,9 +51,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
 
-		// Seed data never makes vera a member of "Fairview Animal Welfare
-		// Association" (she's only ever a baseline member of olaf's OTHER
-		// seeded org, Fairview Red Cross), and FastSignInAsync(olaf)
+		// Seed data never makes vera a member of "Lindenauer Tierschutzverein
+		// e.V." (she's only ever a baseline member of olaf's OTHER seeded org,
+		// Lindenauer Nachbarschaftshilfe e.V.), and FastSignInAsync(olaf)
 		// deterministically pins this test to that org. fixture.ResetAsync()
 		// (this class opts in) only clears vera's own Organizer-role
 		// membership rows and her global Keycloak organisator role - it does

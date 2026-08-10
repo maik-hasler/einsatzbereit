@@ -18,7 +18,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	public async Task AccountPages_ReplaceActionBar_WithBandHomeLinkAndQuickActions()
 	{
 		// #758 made /profile the canonical example of the shared action bar.
-		// #1755 gave the three account pages (/profile, /my-engagements,
+		// #1755 gave the three account pages (/profile, /my-signups,
 		// /profile/settings) the same PageHeaderBand the legal pages use, and a
 		// band page renders no action bar - the title would otherwise be stated
 		// twice with a grey strip cutting through the treatment.

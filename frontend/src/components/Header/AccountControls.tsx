@@ -96,7 +96,7 @@ export default function AccountControls({
 								{t("nav.myProfile")}
 							</Link>
 							<Link
-								to="/my-engagements"
+								to="/my-signups"
 								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<HandRaisedIcon className="h-4 w-4" />

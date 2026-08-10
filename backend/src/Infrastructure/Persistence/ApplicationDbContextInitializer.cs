@@ -66,25 +66,25 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp1 = VolunteerOpportunity.Create(
 			org1Id,
-			"First Aid Course",
-			"Learn life-saving first aid techniques in our hands-on one-day course.",
+			"Erste-Hilfe-Kurs",
+			"Lerne lebensrettende Sofortmaßnahmen in unserem eintägigen Praxiskurs.",
 			isRemote: false,
-			Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Karl-Heine-Straße", "12", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.OneTime,
 			ParticipationType.ScheduledSlots,
 			CheckInMethod.Manual,
 			pinGenerator,
 			category: Category.Health,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
-		opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20, now).GetValueOrThrow();
+		opp1.AddTimeSlot(DayAt(now, 14, 9), DayAt(now, 14, 17), 20, now).GetValueOrThrow();
 		opp1.Publish().ThrowIfFailure();
 
 		var opp2 = VolunteerOpportunity.Create(
 			org1Id,
-			"Blood Donation Drive",
-			"Support our regular blood donation drive and help save lives.",
+			"Blutspendetermin begleiten",
+			"Unterstütze unseren regelmäßigen Blutspendetermin und hilf mit, Leben zu retten.",
 			isRemote: false,
-			Address.Create("Town Hall Square", "1", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Rathausplatz", "1", "04416", "Markkleeberg").GetValueOrThrow(),
 			Occurrence.Recurring,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
@@ -94,10 +94,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp2b = VolunteerOpportunity.Create(
 			org1Id,
-			"Paramedic Service at the Town Festival",
-			"Join our paramedic team at the annual town festival and provide first aid on site.",
+			"Sanitätsdienst beim Stadtteilfest",
+			"Verstärke unser Sanitätsteam beim Stadtteilfest und leiste Erste Hilfe vor Ort.",
 			isRemote: false,
-			Address.Create("Market Square", "2", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Lindenauer Markt", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.OneTime,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
@@ -107,10 +107,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp2c = VolunteerOpportunity.Create(
 			org1Id,
-			"Clothing Collection for People in Need",
-			"Help sort and distribute donated clothing to people in need in the region.",
+			"Kleiderausgabe für Bedürftige",
+			"Hilf mit, gespendete Kleidung zu sortieren und an Menschen in der Region auszugeben.",
 			isRemote: false,
-			Address.Create("Warehouse Street", "10", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Lagerstraße", "10", "06108", "Halle (Saale)").GetValueOrThrow(),
 			Occurrence.Recurring,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
@@ -120,8 +120,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp2d = VolunteerOpportunity.Create(
 			org1Id,
-			"First Aid Training for Clubs and Associations",
-			"Teach clubs and volunteer groups the basics of first aid in online training sessions.",
+			"Erste-Hilfe-Schulung für Vereine",
+			"Vermittle Vereinen und Gruppen online die Grundlagen der Ersten Hilfe.",
 			isRemote: true,
 			address: null,
 			Occurrence.Recurring,
@@ -133,25 +133,25 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp3 = VolunteerOpportunity.Create(
 			org2Id,
-			"Animal Shelter Helpers Wanted",
-			"Help us care for and look after the animals in our shelter.",
+			"Helfer:innen für das Tierheim",
+			"Hilf uns dabei, die Tiere in unserem Tierheim zu versorgen und zu betreuen.",
 			isRemote: false,
-			Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Tierparkweg", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.Recurring,
 			ParticipationType.ScheduledSlots,
 			CheckInMethod.QRCode,
 			pinGenerator,
 			category: Category.Animals,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
-		opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
+		opp3.AddTimeSlot(DayAt(now, 7, 10), DayAt(now, 7, 14), 5, now).GetValueOrThrow();
 		// Unlimited capacity - demonstrates the "no cap" option locally (#1066).
-		opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), null, now).GetValueOrThrow();
+		opp3.AddTimeSlot(DayAt(now, 21, 10), DayAt(now, 21, 14), null, now).GetValueOrThrow();
 		opp3.Publish().ThrowIfFailure();
 
 		var opp4 = VolunteerOpportunity.Create(
 			org2Id,
-			"Online Fundraising Support",
-			"Support our online fundraising team from the comfort of your own home.",
+			"Online-Fundraising unterstützen",
+			"Unterstütze unser Fundraising-Team bequem von zu Hause aus.",
 			isRemote: true,
 			address: null,
 			Occurrence.OneTime,
@@ -163,10 +163,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp4b = VolunteerOpportunity.Create(
 			org2Id,
-			"Dog Walking Service for Shelter Dogs",
-			"Take our shelter dogs for regular walks and give them the exercise they need.",
+			"Gassi-Dienst für Tierheimhunde",
+			"Geh regelmäßig mit unseren Tierheimhunden spazieren und gib ihnen Auslauf.",
 			isRemote: false,
-			Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Tierparkweg", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.Recurring,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
@@ -176,10 +176,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp4c = VolunteerOpportunity.Create(
 			org2Id,
-			"Pet Food Donation Drive",
-			"Collect food and supply donations for our animals at a local drive.",
+			"Futterspenden-Sammlung",
+			"Sammle Futter- und Sachspenden für unsere Tiere bei einer Aktion vor Ort.",
 			isRemote: false,
-			Address.Create("Field Lane", "3", "12345", "Fairview").GetValueOrThrow(),
+			Address.Create("Rathausplatz", "3", "04416", "Markkleeberg").GetValueOrThrow(),
 			Occurrence.OneTime,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
@@ -189,8 +189,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp4d = VolunteerOpportunity.Create(
 			org2Id,
-			"Foster Animal Sponsorships",
-			"Take on a sponsorship for a foster animal and support them through their placement.",
+			"Patenschaft für Pflegetiere",
+			"Übernimm eine Patenschaft für ein Pflegetier und begleite es bis zur Vermittlung.",
 			isRemote: true,
 			address: null,
 			Occurrence.Recurring,
@@ -210,15 +210,28 @@ internal sealed class ApplicationDbContextInitializer(
 			Engagement.CreateIndividualContact(
 				opp2.Id,
 				veraUserId,
-				"I would love to help out as a volunteer at the next blood donation drive.").GetValueOrThrow(),
+				"Ich würde beim nächsten Blutspendetermin gerne als Freiwillige mithelfen.").GetValueOrThrow(),
 			Engagement.CreateSlotSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
+	// Slot times are pinned to a fixed hour of day instead of inheriting
+	// DateTimeOffset.UtcNow's time-of-day. Otherwise every seeded shift starts at
+	// whatever o'clock the seeder happened to run - staging ended up advertising
+	// 23:05-03:05 "shifts" across the whole demo data set, which reads as a bug
+	// rather than as sample content.
+	private static DateTimeOffset DayAt(DateTimeOffset from, int daysAhead, int hourUtc) =>
+		new DateTimeOffset(from.UtcDateTime.Date, TimeSpan.Zero)
+			.AddDays(daysAhead)
+			.AddHours(hourUtc);
+
 	private async Task<OrganizationId> SeedOrg1Async(CancellationToken cancellationToken)
 	{
-		const string name = "Fairview Red Cross";
+		// Both seeded orgs deliberately share a leading word and first letter -
+		// OrgAppMobileResponsiveTests (#809) covers switcher truncation for exactly
+		// that case, so renaming these apart would silently defeat that test.
+		const string name = "Lindenauer Nachbarschaftshilfe e.V.";
 
 		var keycloakId = await keycloakOrganizationService.FindOrganizationByNameAsync(name, cancellationToken)
 			?? await keycloakOrganizationService.CreateOrganizationAsync(name, cancellationToken);
@@ -229,9 +242,13 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), name)
 			.GetValueOrThrow();
-		org.ChangeDescription("Your local Red Cross chapter - we help people in need.");
-		org.ChangeContactInfo("info@fairview-redcross.org", "+1 555 0100", "https://www.fairview-redcross.example");
-		org.Relocate(Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow());
+		org.ChangeDescription(
+			"Wir unterstützen Menschen in Leipzig und Umgebung - von der Nachbarschaftshilfe bis zum Sanitätsdienst.");
+		org.ChangeContactInfo(
+			"info@nachbarschaftshilfe-lindenau.example",
+			"+49 341 1234560",
+			"https://www.nachbarschaftshilfe-lindenau.example");
+		org.Relocate(Address.Create("Karl-Heine-Straße", "12", "04177", "Leipzig").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 
@@ -243,7 +260,7 @@ internal sealed class ApplicationDbContextInitializer(
 
 	private async Task<OrganizationId> SeedOrg2Async(CancellationToken cancellationToken)
 	{
-		const string name = "Fairview Animal Welfare Association";
+		const string name = "Lindenauer Tierschutzverein e.V.";
 
 		var keycloakId = await keycloakOrganizationService.FindOrganizationByNameAsync(name, cancellationToken)
 			?? await keycloakOrganizationService.CreateOrganizationAsync(name, cancellationToken);
@@ -253,9 +270,9 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), name)
 			.GetValueOrThrow();
-		org.ChangeDescription("We are committed to the wellbeing of animals in Fairview and the surrounding area.");
-		org.ChangeContactInfo("info@fairview-animalwelfare.org", "+1 555 0101", null);
-		org.Relocate(Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow());
+		org.ChangeDescription("Wir setzen uns für das Wohl der Tiere in Leipzig und Umgebung ein.");
+		org.ChangeContactInfo("info@tierschutz-lindenau.example", "+49 341 1234561", null);
+		org.Relocate(Address.Create("Tierparkweg", "5", "04177", "Leipzig").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 

@@ -39,7 +39,7 @@ const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 };
 
 // Legacy ?tab= values for content that #1684 split off this page entirely -
-// "activity"/"engagements" are the older aliases the /my-engagements redirect
+// "activity"/"engagements" are the older aliases the /my-signups redirect
 // used to produce; "invitations" is what backend-generated notification
 // action URLs still send (NotificationReadRepository.cs). All three now
 // redirect to the dedicated page instead of scrolling to a section that no
@@ -245,12 +245,12 @@ export default function ProfileOverviewPage() {
 	}, []);
 
 	// Legacy ?tab= deep links that #1684 moved off this page entirely
-	// (invitations/sign-ups now live at /my-engagements) redirect there
+	// (invitations/sign-ups now live at /my-signups) redirect there
 	// immediately rather than waiting on profileLoading - there's no section
 	// left on this page to scroll to.
 	useEffect(() => {
 		if (LEGACY_REDIRECT_TABS.has(searchParams.get("tab") ?? "")) {
-			navigate("/my-engagements", { replace: true });
+			navigate("/my-signups", { replace: true });
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams]);

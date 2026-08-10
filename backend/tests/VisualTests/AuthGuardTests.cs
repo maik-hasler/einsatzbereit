@@ -13,12 +13,12 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
 
-		// Navigation chain: /my-engagements -> ProtectedRoute triggers signinRedirect()
+		// Navigation chain: /my-signups -> ProtectedRoute triggers signinRedirect()
 		// -> Keycloak /protocol/openid-connect/auth. Don't wait on individual URL -
 		// race-prone with frame detachment. Wait on Keycloak login form element instead.
 		try
 		{
-			await Page.GotoAsync($"{frontend}my-engagements", new() { WaitUntil = WaitUntilState.Commit });
+			await Page.GotoAsync($"{frontend}my-signups", new() { WaitUntil = WaitUntilState.Commit });
 		}
 		catch (PlaywrightException)
 		{

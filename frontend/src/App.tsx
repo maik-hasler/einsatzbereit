@@ -34,6 +34,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 // synchronous commit - a lazy HomePage's chunk-load delay pushes its mount
 // past Header's request already having settled, so the "shared" fetch
 // fires twice instead of once.
+const OpportunitiesPage = lazy(() => import("./pages/OpportunitiesPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
@@ -146,6 +147,10 @@ export default function App() {
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
+				{/* The browse/search list, previously an "#opportunities" anchor
+				inside HomePage. A real route is what lets the header carry a
+				"Find opportunities" nav item at all. */}
+				<Route path="/opportunities" element={<OpportunitiesPage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
 				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
@@ -162,10 +167,13 @@ export default function App() {
 					element={<OrganizationProfilePage />}
 				/>
 				{/* #1684: previously just redirected into /profile?tab=engagements -
-				now the real destination for engagement notifications and the
-				header's notification-bell fallback, which already pointed here. */}
+				now the real destination for sign-up notifications and the
+				header's notification-bell fallback, which already pointed here.
+				Renamed off /my-signups so the URL matches the one word the
+				UI now uses for this ("Anmeldungen" / "sign-ups"); no redirect
+				from the old path, there are no users with saved links yet. */}
 				<Route
-					path="/my-engagements"
+					path="/my-signups"
 					element={
 						<ProtectedRoute>
 							<MyEngagementsPage />

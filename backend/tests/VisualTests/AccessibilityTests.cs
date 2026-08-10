@@ -278,7 +278,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
 		// into a single page. #1684: it was later split again - Profile
 		// Details and Badges render here; invitations/sign-ups moved to
-		// /my-engagements and notifications/export/deletion moved to
+		// /my-signups and notifications/export/deletion moved to
 		// /profile/settings (both scanned separately below).
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -323,7 +323,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
@@ -1755,8 +1755,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -1802,8 +1802,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
@@ -1839,8 +1839,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Confirmed-but-not-checked-in, so this lands in the default "Current &

@@ -42,10 +42,10 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var keycloak = new FakeKeycloakOrganizationService();
 
 		// Simulates the exact failure mode from #1212: a prior seed attempt got far
-		// enough to create the Red Cross organization in Keycloak, then failed before
+		// enough to create the first organization in Keycloak, then failed before
 		// the trailing SaveChangesAsync - so the local database is still empty, but
-		// re-seeding must not create a second, orphaned "Fairview Red Cross" org.
-		var existingOrgId = keycloak.SeedExistingOrganization("Fairview Red Cross");
+		// re-seeding must not create a second, orphaned copy of that org.
+		var existingOrgId = keycloak.SeedExistingOrganization("Lindenauer Nachbarschaftshilfe e.V.");
 
 		var initializer = new ApplicationDbContextInitializer(
 			dbContext, keycloak, new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
@@ -54,7 +54,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 
 		keycloak.FindOrganizationByNameCallCount.Should().Be(2, "both seed organizations are looked up by name before creating one");
 		keycloak.CreateOrganizationCallCount.Should().Be(
-			1, "the Red Cross organization already existed in Keycloak and must not be created a second time");
+			1, "the first organization already existed in Keycloak and must not be created a second time");
 
 		var organizations = await dbContext.Set<DomainOrganization>().ToListAsync(cancellationToken);
 		organizations.Should().HaveCount(2);
@@ -71,8 +71,8 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		// Simulates a prior attempt that got further still: both organizations, all
 		// their members, and olaf's organizer role were already provisioned in
 		// Keycloak before the trailing SaveChangesAsync failed.
-		keycloak.SeedExistingOrganization("Fairview Red Cross", OlafId, VeraId);
-		keycloak.SeedExistingOrganization("Fairview Animal Welfare Association", OlafId);
+		keycloak.SeedExistingOrganization("Lindenauer Nachbarschaftshilfe e.V.", OlafId, VeraId);
+		keycloak.SeedExistingOrganization("Lindenauer Tierschutzverein e.V.", OlafId);
 		keycloak.SeedExistingOrganizerRole(OlafId);
 
 		var initializer = new ApplicationDbContextInitializer(

@@ -3,7 +3,6 @@ import type { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "react-oidc-context";
-import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import type { CitySuggestion } from "../components/VolunteerOpportunitiesList/useCitySuggestions";
 import LocationSearchInput from "../components/LocationSearchInput";
 import Button from "../components/Button";
@@ -80,19 +79,6 @@ export default function HomePage() {
 	);
 	const [heroLocation, setHeroLocation] = useState<CitySuggestion | null>(null);
 
-	// A cross-page "/#opportunities" link (Footer, #1031) triggers a full
-	// browser navigation into this CSR SPA, whose initial HTML has no
-	// #opportunities element yet - it only exists once React has mounted.
-	// The browser's native scroll-to-fragment pass can fire before that
-	// mount completes (a real race, worse under load), silently giving up
-	// rather than retrying. Do it ourselves once mounted, when the element
-	// is guaranteed to be there.
-	useEffect(() => {
-		if (window.location.hash === "#opportunities") {
-			document.getElementById("opportunities")?.scrollIntoView();
-		}
-	}, []);
-
 	// Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint sends
 	// signed-out visitors through Keycloak's registration flow with
 	// ?createOrg=1 baked into the post-login returnTo - once they land back
@@ -130,28 +116,24 @@ export default function HomePage() {
 		);
 	}, [urlKeyword, urlCity, urlLat, urlLng]);
 
-	// Search directly from the hero (#... hero redesign, vostel.de pattern)
-	// instead of only linking down to an unfiltered list - writes straight
-	// into the same URL params VolunteerOpportunitiesList already reads, then
-	// scrolls it into view. Location only applies if a suggestion was
-	// actually picked (heroLocation), matching the filter bar's own
-	// city-search convention below - free-typed, ungeocoded text is dropped
-	// rather than sent as a filter.
+	// Search from the hero (vostel.de pattern). The results list is its own
+	// route now, so this hands the same URL params VolunteerOpportunitiesList
+	// reads straight to /opportunities instead of scrolling to an anchor on
+	// this page. Location only applies if a suggestion was actually picked
+	// (heroLocation), matching the filter bar's own city-search convention -
+	// free-typed, ungeocoded text is dropped rather than sent as a filter.
 	function handleHeroSearch(e: FormEvent) {
 		e.preventDefault();
-		const next = new URLSearchParams(searchParams);
+		const next = new URLSearchParams();
 		if (heroKeyword.trim()) next.set("q", heroKeyword.trim());
-		else next.delete("q");
 		if (heroLocation) {
 			next.set("city", heroLocation.label);
 			next.set("lat", String(heroLocation.lat));
 			next.set("lng", String(heroLocation.lng));
-			if (!next.get("radius")) next.set("radius", "10");
+			next.set("radius", "10");
 		}
-		setSearchParams(next, { replace: true });
-		document.getElementById("opportunities")?.scrollIntoView({
-			behavior: "smooth",
-		});
+		const query = next.toString();
+		navigate(query ? `/opportunities?${query}` : "/opportunities");
 	}
 
 	// Org CTA - the landing page's only pitch to the other side of the
@@ -366,17 +348,8 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* mb-20 lives here, not inside VolunteerOpportunitiesList itself
-			(that component's root div carries no margin of its own) - without
-			it there's nothing establishing a fixed gap before the Org CTA
-			band's top wave below, so the last card row sat flush against the
-			wave, sized only by whatever the content happened to end on. */}
-			<div id="opportunities" className="mb-20">
-				<VolunteerOpportunitiesList />
-			</div>
-
 			{/* Org CTA - the landing page's other half, placed right after the
-			opportunities list and ahead of the founder band. Everything else
+			hero and ahead of the founder band. Everything else
 			on this page pitches a volunteer; this is the one section that
 			pitches an organization instead. A full-bleed wavy band now, not
 			a plain white section - breaks out of <main>'s max-w-page column
@@ -407,29 +380,37 @@ export default function HomePage() {
 			a bordered box. Glow blobs mirror the hero's, scaled down - a
 			flat brand-700 rectangle alone read as an unstyled block. */}
 			<section
+				id="for-organizations"
 				aria-labelledby={orgCtaTitleId}
-				className="relative left-1/2 w-screen -translate-x-1/2"
+				className="relative left-1/2 w-screen -translate-x-1/2 scroll-mt-[var(--header-height)]"
 			>
 				<svg
 					aria-hidden="true"
 					viewBox="0 0 1440 60"
 					preserveAspectRatio="none"
-					className="block h-8 w-full text-brand-700 sm:h-12"
+					className="block h-8 w-full text-brand-800 sm:h-12"
 				>
 					<path d={WAVE_PATH} fill="currentColor" />
 				</svg>
 
-				<div className="bg-brand-700">
+				{/* brand-800, not brand-700. brand-700 was the only surface in the
+				whole product using that step: the hero above and every subpage's
+				PageHeaderBand are brand-800, so a near-miss of that green read as
+				an inconsistency rather than as a deliberate second tone. The
+				earlier attempt at brand-800 here was judged against a brand-100
+				Mission band below and came out too dark - that band is brand-50
+				now, which is what makes this work. */}
+				<div className="bg-brand-800">
 					<div className="relative isolate overflow-hidden">
-						{/* Same soft glow-blob treatment as the hero, scaled down -
-						brand-700 alone read as a flat rectangle without it. */}
+						{/* Same soft glow-blob treatment as the hero and
+						PageHeaderBand - a flat fill alone reads as a plain rectangle. */}
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-600 opacity-40 blur-3xl"
+							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
 						/>
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-brand-800 opacity-50 blur-3xl"
+							className="pointer-events-none absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-accent-400 opacity-10 blur-3xl"
 						/>
 
 						<div className="relative mx-auto max-w-page px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
@@ -500,21 +481,21 @@ export default function HomePage() {
 						</div>
 					</div>
 
-					{/* Bottom cap fades this box's own background into brand-100
+					{/* Bottom cap fades this box's own background into brand-50
 					(not another currentColor tint) - the transparent notches
-					above the fill reveal this div's own pale-mint background
-					since the svg is nested inside it, not a sibling after it
-					(a sibling's notches would reveal the page's white instead -
-					the bug an earlier version of this had, see the git history
-					on this section). Founder's own top cap is removed below
-					since this already provides the full pale-mint -> brand-100
-					transition; its flat top edge continues in the exact same
-					brand-100 this ends in, so there is no seam left to see. */}
+					above the fill reveal this div's own background since the
+					svg is nested inside it, not a sibling after it (a sibling's
+					notches would reveal the page's white instead - the bug an
+					earlier version of this had, see the git history on this
+					section). Founder's own top cap is removed below since this
+					already provides the full transition; its flat top edge
+					continues in the exact same brand-50 this ends in, so there
+					is no seam left to see. */}
 					<svg
 						aria-hidden="true"
 						viewBox="0 0 1440 60"
 						preserveAspectRatio="none"
-						className="block h-8 w-full text-brand-100 sm:h-12"
+						className="block h-8 w-full text-brand-50 sm:h-12"
 					>
 						<path d={WAVE_PATH} fill="currentColor" />
 					</svg>
@@ -543,7 +524,7 @@ export default function HomePage() {
 				aria-labelledby={missionTitleId}
 				className="relative left-1/2 mb-20 w-screen -translate-x-1/2"
 			>
-				<div className="bg-brand-100 py-10 sm:py-14">
+				<div className="bg-brand-50 py-10 sm:py-14">
 					<div className="mx-auto grid max-w-page items-center gap-10 px-4 sm:px-6 lg:grid-cols-5 lg:gap-16 lg:px-8">
 						<div className="animate-fade-up relative mx-auto w-full max-w-64 lg:col-span-2 lg:max-w-none">
 							<div
@@ -575,7 +556,7 @@ export default function HomePage() {
 								{t("landing.missionAuthor")}
 							</p>
 							<div className="mt-8">
-								<Button href="#opportunities" size="lg" className="shadow-md">
+								<Button href="/opportunities" size="lg" className="shadow-md">
 									{t("landing.missionCta")}
 								</Button>
 							</div>
@@ -587,7 +568,7 @@ export default function HomePage() {
 					aria-hidden="true"
 					viewBox="0 0 1440 60"
 					preserveAspectRatio="none"
-					className="block h-8 w-full rotate-180 text-brand-100 sm:h-12"
+					className="block h-8 w-full rotate-180 text-brand-50 sm:h-12"
 				>
 					<path d={WAVE_PATH} fill="currentColor" />
 				</svg>

@@ -98,7 +98,7 @@ export default function Header({
 	const isTransparent = overlaysBand && !scrolled;
 
 	function handleNotificationNavigate(actionUrl: string | null | undefined) {
-		navigate(actionUrl ?? "/my-engagements");
+		navigate(actionUrl ?? "/my-signups");
 	}
 
 	function handleSignIn() {

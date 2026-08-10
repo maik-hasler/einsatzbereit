@@ -66,9 +66,9 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task MobileHeader_OrgSwitcherName_StaysLegibleForOrgsSharingAnInitial()
 	{
-		// #809: olaf organizes "Fairview Red Cross" and "Fairview Animal Welfare
-		// Association" - two names sharing both a first letter and a "Fairview "
-		// prefix. The switcher's name span used to collapse to almost nothing on
+		// #809: olaf organizes "Lindenauer Nachbarschaftshilfe e.V." and "Lindenauer
+		// Tierschutzverein e.V." - two names sharing both a first letter and a
+		// "Lindenauer " prefix. The switcher's name span used to collapse to almost nothing on
 		// phone widths (the brand wordmark plus the mobile bell/hamburger left it
 		// no room), rendering as just "F.." for both - indistinguishable. Fixed by
 		// cropping the header wordmark to its icon mark on mobile whenever the org
@@ -87,7 +87,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// click above raced the panel's own mount, which could misreport "not
 		// found" even when the seeded org is there, just not painted yet.
 		var animalWelfareRow = Page.GetByTestId("org-switch-row")
-			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
+			.Filter(new() { HasText = "Lindenauer Tierschutzverein e.V." });
 		try
 		{
 			await animalWelfareRow.WaitForAsync(new() { Timeout = 10_000 });
@@ -108,7 +108,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// name to actually be showing before measuring - otherwise BoundingBoxAsync
 		// races the skeleton and returns null.
 		var nameSpan = Page.GetByTestId("org-switcher-current-name");
-		await Expect(nameSpan).ToHaveTextAsync("Fairview Animal Welfare Association", new() { Timeout = 15_000 });
+		await Expect(nameSpan).ToHaveTextAsync("Lindenauer Tierschutzverein e.V.", new() { Timeout = 15_000 });
 		var box = await nameSpan.BoundingBoxAsync();
 		box.Should().NotBeNull();
 		box!.Width.Should().BeGreaterThan(60,

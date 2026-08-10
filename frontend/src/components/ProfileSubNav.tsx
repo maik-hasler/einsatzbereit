@@ -5,7 +5,7 @@ const TABS = [
 	{ key: "profile", href: "/profile", labelKey: "profile.subNavProfile" },
 	{
 		key: "activity",
-		href: "/my-engagements",
+		href: "/my-signups",
 		labelKey: "profile.subNavActivity",
 	},
 	{
@@ -22,7 +22,7 @@ const TABS = [
 // destinations are already flat top-level routes.
 //
 // #1684 split all three out but only wired two of them into this nav, leaving
-// /my-engagements reachable solely from the account menu and the notification
+// /my-signups reachable solely from the account menu and the notification
 // bell - so the three pages read as unrelated one-offs rather than one account
 // area, and each looked emptier than it is. Adding it here is the whole
 // consolidation: the routes stay separate (that split fixed a 1900-line page

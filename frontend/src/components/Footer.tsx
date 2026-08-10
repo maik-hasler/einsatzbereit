@@ -97,7 +97,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 								{t("brand.description")}
 							</p>
 							<Button
-								href="/#opportunities"
+								href="/opportunities"
 								variant="primary"
 								size="lg"
 								className="mt-8 shadow-md"
@@ -120,6 +120,10 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 					box to align against, so no offset there. */}
 					<div className="flex flex-col lg:col-span-2 lg:pt-10">
 						<div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+							{/* Three columns of real links. "Contact" and "Help" used to
+							sit under the Legal heading while Terms and Privacy - the
+							actually legal ones - lived down in the bottom bar. Support
+							is its own column now and Legal holds only legal documents. */}
 							<div>
 								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
 									{t("footer.platform")}
@@ -127,7 +131,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 								<ul className="space-y-2 text-sm">
 									<li>
 										<Link
-											to="/"
+											to="/opportunities"
 											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
 										>
 											{t("footer.findOpportunities")}
@@ -135,11 +139,35 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 									</li>
 									<li>
 										<a
-											href="/#opportunities"
+											href="/#for-organizations"
 											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
 										>
-											{t("footer.participate")}
+											{t("nav.forOrganizations")}
 										</a>
+									</li>
+								</ul>
+							</div>
+
+							<div>
+								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
+									{t("footer.support")}
+								</h2>
+								<ul className="space-y-2 text-sm">
+									<li>
+										<Link
+											to="/help"
+											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
+										>
+											{t("footer.help")}
+										</Link>
+									</li>
+									<li>
+										<Link
+											to="/contact"
+											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
+										>
+											{t("footer.contact")}
+										</Link>
 									</li>
 								</ul>
 							</div>
@@ -159,68 +187,47 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 									</li>
 									<li>
 										<Link
-											to="/contact"
+											to="/terms-of-use"
 											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
 										>
-											{t("footer.contact")}
+											{t("footer.terms")}
 										</Link>
 									</li>
 									<li>
 										<Link
-											to="/help"
+											to="/privacy-policy"
 											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
 										>
-											{t("footer.help")}
+											{t("footer.privacy")}
 										</Link>
 									</li>
 								</ul>
 							</div>
-
-							<div>
-								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
-									{t("footer.followUs")}
-								</h2>
-								<div className="flex space-x-4">
-									<a
-										href="https://github.com/maik-hasler/einsatzbereit"
-										target="_blank"
-										rel="noopener noreferrer"
-										aria-label="GitHub"
-										className="text-gray-600 transition-colors hover:text-brand-700"
-									>
-										{/* simple-icons: github */}
-										<svg
-											className="h-6 w-6"
-											fill="currentColor"
-											viewBox="0 0 24 24"
-											aria-hidden="true"
-										>
-											<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-										</svg>
-									</a>
-								</div>
-							</div>
 						</div>
 
-						{/* Terms/Privacy bottom-left, copyright bottom-right - pulled
-						out of the Legal nav column above rather than duplicated
-						in both places (#1749 footer redesign, matches otter.com). */}
+						{/* GitHub bottom-left, copyright bottom-right. Terms/Privacy
+						moved up into the Legal column: keeping them down here while
+						Contact/Help sat under "Legal" put every link in the wrong
+						place at once. The lone social icon had a whole column and
+						~300px of empty row to its right, so it comes down here. */}
 						<div className="mt-auto flex flex-col gap-3 pt-8 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-							<div>
-								<Link
-									to="/terms-of-use"
-									className="inline-block py-1 transition-colors hover:text-brand-700"
+							<a
+								href="https://github.com/maik-hasler/einsatzbereit"
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label="GitHub"
+								className="inline-flex text-gray-600 transition-colors hover:text-brand-700"
+							>
+								{/* simple-icons: github */}
+								<svg
+									className="h-5 w-5"
+									fill="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
 								>
-									{t("footer.terms")}
-								</Link>
-								<span className="mx-2">&middot;</span>
-								<Link
-									to="/privacy-policy"
-									className="inline-block py-1 transition-colors hover:text-brand-700"
-								>
-									{t("footer.privacy")}
-								</Link>
-							</div>
+									<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+								</svg>
+							</a>
 							<p>
 								<Trans
 									i18nKey="footer.copyright"

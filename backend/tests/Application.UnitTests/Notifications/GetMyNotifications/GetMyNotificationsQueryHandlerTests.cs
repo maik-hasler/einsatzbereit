@@ -99,7 +99,7 @@ public class GetMyNotificationsQueryHandlerTests
 				Guid.NewGuid(),
 				"EngagementCreated",
 				"Some Title",
-				"/my-engagements",
+				"/my-signups",
 				false,
 				DateTimeOffset.UtcNow.AddMinutes(-i)))
 			.ToList();

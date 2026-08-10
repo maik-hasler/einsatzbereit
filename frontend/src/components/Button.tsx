@@ -94,7 +94,7 @@ type ButtonAsLink = CommonProps &
 	Omit<LinkProps, "className"> & { href?: undefined };
 
 // Plain <a href>, not a router Link - for in-page hash anchors (e.g. the
-// hero CTA scrolling to #opportunities) and external URLs, where handing
+// footer's "/#for-organizations" link) and external URLs, where handing
 // navigation to react-router's Link would change how same-page hash
 // scrolling behaves.
 type ButtonAsAnchor = CommonProps &

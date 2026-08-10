@@ -72,7 +72,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		deleteResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-engagements");
+		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #675 split the tab into "Current & Upcoming" (default) and "Past" -
@@ -111,7 +111,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await Fixture.DeleteOpportunityRowDirectlyAsync(Guid.Parse(opportunityId));
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-engagements");
+		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Default tab is "Current & Upcoming" - the orphaned Pending engagement
