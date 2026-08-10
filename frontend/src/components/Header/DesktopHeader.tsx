@@ -15,9 +15,9 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 // route to the opportunity list except the account dropdown, while the mobile
 // hamburger did carry these same links. Desktop was the worse of the two.
 const LINKS = [
-	{ key: "findOpportunities", to: "/opportunities" },
-	{ key: "forOrganizations", to: "/#for-organizations" },
-	{ key: "help", to: "/help" },
+	{ key: "findOpportunities", to: "/opportunities", hash: false },
+	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
+	{ key: "help", to: "/help", hash: false },
 ] as const;
 export default function DesktopHeader({
 	isLoggedIn,
@@ -52,24 +52,43 @@ export default function DesktopHeader({
 			className="hidden items-center gap-3 md:flex"
 		>
 			<ul className="mr-2 flex items-center gap-1 lg:gap-2">
-				{LINKS.map((link) => (
-					<li key={link.key}>
-						<NavLink
-							to={link.to}
-							data-testid={`nav-${link.key}`}
-							className={({ isActive }) => {
-								const base =
-									"rounded-lg px-3 py-2 text-sm font-medium transition-colors";
-								if (isTransparent) {
-									return `${base} ${isActive ? "text-white" : "text-brand-100 hover:text-white"}`;
-								}
-								return `${base} ${isActive ? "text-brand-800" : "text-gray-600 hover:text-brand-800"}`;
-							}}
-						>
-							{t(`nav.${link.key}`)}
-						</NavLink>
-					</li>
-				))}
+				{LINKS.map((link) => {
+					const base =
+						"rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+					const idle = isTransparent
+						? "text-brand-100 hover:text-white"
+						: "text-gray-600 hover:text-brand-800";
+					const activeClass = isTransparent ? "text-white" : "text-brand-800";
+
+					return (
+						<li key={link.key}>
+							{/* The hash destination is a plain <a>, not a NavLink:
+							NavLink would match it against the "/" route (making it
+							look active on the landing page) and would hand the
+							navigation to the router, which doesn't scroll to the
+							fragment. Same reasoning as Button's anchor branch. */}
+							{link.hash ? (
+								<a
+									href={link.to}
+									data-testid={`nav-${link.key}`}
+									className={`${base} ${idle}`}
+								>
+									{t(`nav.${link.key}`)}
+								</a>
+							) : (
+								<NavLink
+									to={link.to}
+									data-testid={`nav-${link.key}`}
+									className={({ isActive }) =>
+										`${base} ${isActive ? activeClass : idle}`
+									}
+								>
+									{t(`nav.${link.key}`)}
+								</NavLink>
+							)}
+						</li>
+					);
+				})}
 			</ul>
 
 			<div

@@ -330,6 +330,7 @@ export default function HomePage() {
 										placeholder={t("landing.heroSearchKeywordPlaceholder")}
 										value={heroKeyword}
 										onChange={(e) => setHeroKeyword(e.target.value)}
+										data-testid="hero-keyword-input"
 										className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
 									/>
 								</div>
