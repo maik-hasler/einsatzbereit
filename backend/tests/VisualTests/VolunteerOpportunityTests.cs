@@ -111,10 +111,14 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.ToBeVisibleAsync();
 
 		// Seed data always publishes opportunities, so a rendered card must
-		// carry the redesigned visuals: a clickable organisation link and the
-		// brand-gradient banner tile (one muted brand-green tint for every
-		// category, not the per-category rainbow fill an earlier design used -
-		// see OpportunityListItem.tsx's own comment on why that was rejected).
+		// carry the redesigned visuals: a clickable organisation link and a
+		// title that is an <h2> (an <h3> skipped a level under the band's <h1>
+		// once the "Current Opportunities" section heading went away, which
+		// axe fails on heading-order - see OpportunityListItem). Deliberately
+		// no banner-tile assertion any more: the brand-gradient tile only
+		// backs a real uploaded photo now, since on a photo-less card (almost
+		// all of them) it made the grid's top third a tinted rectangle with
+		// one small icon in it.
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
@@ -126,7 +130,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Expect(firstCard.Locator("a[href*='/organizations/']"))
 			.ToBeVisibleAsync();
-		await Expect(firstCard.Locator("[class*='from-brand-50']")).Not.ToHaveCountAsync(0);
+		await Expect(firstCard.Locator("h2")).ToBeVisibleAsync();
 	}
 
 	[Test]
