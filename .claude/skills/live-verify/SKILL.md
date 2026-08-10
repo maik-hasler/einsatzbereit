@@ -66,21 +66,27 @@ const context = await browser.newContext({ ignoreHTTPSErrors: true });
 const page = await context.newPage();
 ```
 
-## 4. Log in - two steps, in order
+## 4. Log in - one form, both fields
 
 ```js
 await page.getByRole("button", { name: /sign in|anmelden/i }).click();
+await page.waitForSelector("#password", { timeout: 30000 });
 await page.fill("#username", "vera");
-await page.click("#kc-login");
 await page.fill("#password", "vera123");
 await page.click("#kc-login");
 await page.waitForLoadState("networkidle", { timeout: 30000 });
 ```
 
-The sign-in button label is English or German depending on locale. Live
-Keycloak is this two-step form; local Aspire Keycloak (step 7's
-`AuthHelper.LoginAsync`) is single-step - don't carry one flow's assumption
-to the other.
+The sign-in button label is English or German depending on locale.
+
+Live Keycloak and local Aspire Keycloak (step 7's `AuthHelper.LoginAsync`)
+are now the same single-step form - the custom theme's `login.ftl` renders
+username and password together. This section used to describe live as a
+two-step flow (fill username, submit, fill password, submit). That recipe
+kept passing only by accident: the first submit posted an empty password,
+came back with a credentials error, and the second submit then succeeded.
+Both inputs carry `required` now, so the browser blocks that first submit
+and the old recipe hangs instead. Fill both fields before submitting.
 
 ## 5. Exercise the changed behaviour, then clean up
 
