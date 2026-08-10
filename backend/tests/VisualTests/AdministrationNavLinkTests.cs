@@ -25,7 +25,9 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await link.ClickAsync();
-		await Page.WaitForURLAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		// /administration is a shell that redirects to its first section.
+		await Page.WaitForURLAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration/organizations");
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Administration");
 	}
 
@@ -78,7 +80,7 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GotoAsync($"{origin}/administration");
 
-		await Page.WaitForURLAsync($"{origin}/administration", new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync($"{origin}/administration/organizations", new() { Timeout = 15_000 });
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Administration");
 	}
 }

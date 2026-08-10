@@ -66,7 +66,7 @@ public class AdminReportsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		reportResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{origin}/administration");
+		await Page.GotoAsync($"{origin}/administration/reports");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.GetByText("Failed to load reports.")).Not.ToBeVisibleAsync();

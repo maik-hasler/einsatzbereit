@@ -57,6 +57,18 @@ const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
+const AdminOrganizationsPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminOrganizationsPage,
+}));
+const AdminUsersPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminUsersPage,
+}));
+const AdminReportsPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminReportsPage,
+}));
+const AdminAuditLogPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminAuditLogPage,
+}));
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
 const OrgOpportunitiesPage = lazy(
@@ -197,6 +209,8 @@ export default function App() {
 					}
 				/>
 				<Route path="/users/:userId" element={<UserProfilePage />} />
+				{/* One section per route behind a shared left rail, rather than
+				all four stacked on a single ~2000px scroll. */}
 				<Route
 					path="/administration"
 					element={
@@ -204,7 +218,13 @@ export default function App() {
 							<AdministrationPage />
 						</ProtectedRoute>
 					}
-				/>
+				>
+					<Route index element={<Navigate to="organizations" replace />} />
+					<Route path="organizations" element={<AdminOrganizationsPage />} />
+					<Route path="users" element={<AdminUsersPage />} />
+					<Route path="reports" element={<AdminReportsPage />} />
+					<Route path="audit-log" element={<AdminAuditLogPage />} />
+				</Route>
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

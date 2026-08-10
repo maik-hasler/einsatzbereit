@@ -962,9 +962,9 @@
         "confirm": "Ja, löschen"
       },
       "adminShadowDelete": {
-        "title": "Inhalt schattenlöschen?",
+        "title": "Inhalt verbergen?",
         "message": "Möchtest du \"{{name}}\" wirklich vor allen anderen verbergen? Dies kann mit \"Wiederherstellen\" rückgängig gemacht werden und löst alle offenen Meldungen dazu auf.",
-        "confirm": "Ja, schattenlöschen"
+        "confirm": "Ja, verbergen"
       },
       "adminRestore": {
         "title": "Inhalt wiederherstellen?",
@@ -1144,6 +1144,8 @@
     },
     "administration": {
       "title": "Administration",
+      "eyebrow": "Plattform",
+      "subNavLabel": "Administrationsbereiche",
       "organizationsHeading": "Organisationen",
       "usersHeading": "Nutzer:innen",
       "reportsHeading": "Meldungen",
@@ -1202,10 +1204,10 @@
         "dismiss": "Verwerfen",
         "dismissSuccess": "Meldung verworfen.",
         "dismissError": "Meldung konnte nicht verworfen werden.",
-        "shadowDelete": "Schattenlöschen",
-        "shadowDeleteNamed": "{{name}} schattenlöschen",
+        "shadowDelete": "Verbergen",
+        "shadowDeleteNamed": "{{name}} verbergen",
         "deleteSuccess": "Inhalt verborgen und offene Meldungen aufgelöst.",
-        "deleteError": "Inhalt konnte nicht schattengelöscht werden.",
+        "deleteError": "Inhalt konnte nicht verborgen werden.",
         "restore": "Wiederherstellen",
         "restoreNamed": "{{name}} wiederherstellen",
         "restoreSuccess": "Inhalt wiederhergestellt.",

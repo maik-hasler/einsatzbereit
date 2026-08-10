@@ -94,7 +94,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
 
 		await Page.GotoAsync(
-			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration/organizations");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Frontend-wiring sanity check: the page actually rendered organization

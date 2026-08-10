@@ -1420,13 +1420,33 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// One case per administration section: they are separate routes behind a
+	// shared left rail now, not four stacked sections on one page, so a single
+	// scan of /administration would only ever cover the first of them.
 	[Test]
-	public async Task AdministrationPage_HasNoSeriousA11yViolations()
+	[Arguments("organizations")]
+	[Arguments("users")]
+	[Arguments("reports")]
+	[Arguments("audit-log")]
+	public async Task AdministrationPage_HasNoSeriousA11yViolations(string section)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration/{section}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OpportunitiesPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

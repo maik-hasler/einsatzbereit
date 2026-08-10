@@ -101,7 +101,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await route.ContinueAsync();
 		});
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration/organizations");
 
 		// See the comment in HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
 		// above on why this is scoped to ":has(.animate-pulse)" - AdministrationPage

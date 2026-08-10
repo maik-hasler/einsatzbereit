@@ -962,9 +962,9 @@
         "confirm": "Yes, delete"
       },
       "adminShadowDelete": {
-        "title": "Shadow-delete this content?",
+        "title": "Hide this content?",
         "message": "Are you sure you want to hide \"{{name}}\" from everyone? This can be undone with Restore, and resolves all open reports against it.",
-        "confirm": "Yes, shadow-delete"
+        "confirm": "Yes, hide it"
       },
       "adminRestore": {
         "title": "Restore this content?",
@@ -1144,6 +1144,8 @@
     },
     "administration": {
       "title": "Administration",
+      "eyebrow": "Platform",
+      "subNavLabel": "Administration sections",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
       "reportsHeading": "Reports",
@@ -1202,10 +1204,10 @@
         "dismiss": "Dismiss",
         "dismissSuccess": "Report dismissed.",
         "dismissError": "Failed to dismiss report.",
-        "shadowDelete": "Shadow delete",
-        "shadowDeleteNamed": "Shadow delete {{name}}",
+        "shadowDelete": "Hide",
+        "shadowDeleteNamed": "Hide {{name}}",
         "deleteSuccess": "Content hidden and open reports resolved.",
-        "deleteError": "Failed to shadow-delete content.",
+        "deleteError": "Failed to hide content.",
         "restore": "Restore",
         "restoreNamed": "Restore {{name}}",
         "restoreSuccess": "Content restored.",
