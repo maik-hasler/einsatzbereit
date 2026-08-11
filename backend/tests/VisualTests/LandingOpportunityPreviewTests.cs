@@ -89,8 +89,13 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 		var preview = Page.GetByTestId("landing-latest-opportunities");
 		await Expect(preview).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// h3, not h2 - the card takes a headingLevel prop and this section
+		// passes 3, because its own "These opportunities need people" heading is
+		// the h2 these cards sit under. On /opportunities the same card renders
+		// an h2, directly below that page's h1. Asserting the level here rather
+		// than matching "h2, h3" keeps that distinction pinned.
 		var firstCard = preview.Locator("li").First;
-		var title = (await firstCard.Locator("h2").InnerTextAsync()).Trim();
+		var title = (await firstCard.Locator("h3").InnerTextAsync()).Trim();
 
 		// The stretched-link pattern the card uses (an absolutely positioned
 		// <a> covering the <li>) is easy to break with a later z-index change,
