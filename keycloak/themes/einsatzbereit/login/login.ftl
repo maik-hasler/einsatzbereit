@@ -1,19 +1,25 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError("username","password")
-	displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
+	displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??
+	pageTitle="loginTitle"
+	eyebrow="stepSignIn"; section>
 
 	<#if section = "header">
 		${msg("loginTitle")}
 
 	<#elseif section = "form">
 		<#if realm.password>
+			<#-- No positive tabindex values anywhere in this theme. They used to
+			run 2,3,5,6,7,8 here, which puts every one of these controls ahead of
+			every element without a tabindex - including the language switcher and
+			the logo above them - regardless of where they sit in the document. DOM
+			order is already the order a person reads the form in. -->
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
 				<div class="form-group">
 					<div class="form-field">
 						<input
-							tabindex="2"
 							id="username"
 							class="${properties.kcInputClass!}"
 							name="username"
@@ -50,7 +56,6 @@
 				<div class="form-group">
 					<div class="form-field form-field--with-toggle">
 						<input
-							tabindex="3"
 							id="password"
 							class="${properties.kcInputClass!}"
 							name="password"
@@ -83,19 +88,18 @@
 					<div class="form-options-wrapper">
 						<#if realm.rememberMe>
 							<label>
-								<input tabindex="5" id="rememberMe" name="rememberMe" type="checkbox" <#if login.rememberMe??>checked</#if>>
+								<input id="rememberMe" name="rememberMe" type="checkbox" <#if login.rememberMe??>checked</#if>>
 								<span>${msg("rememberMe")}</span>
 							</label>
 						</#if>
 					</div>
 					<#if realm.resetPasswordAllowed>
-						<a tabindex="6" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+						<a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
 					</#if>
 				</div>
 
 				<div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
 					<input
-						tabindex="7"
 						class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
 						name="login"
 						id="kc-login"
@@ -109,7 +113,7 @@
 
 	<#elseif section = "info">
 		<#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-			${msg("noAccount")} <a tabindex="8" href="${url.registrationUrl}">${msg("doRegister")}</a>
+			${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a>
 		</#if>
 	</#if>
 

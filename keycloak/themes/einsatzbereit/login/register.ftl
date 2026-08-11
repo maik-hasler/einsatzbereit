@@ -1,9 +1,19 @@
 <#import "template.ftl" as layout>
+<#--
+	With verifyEmail on, Keycloak deliberately leaves the password fields off
+	this form and collects the password after the address is confirmed instead
+	(RegistrationPassword.buildPage). Nothing said so, so the form just looked
+	like it had lost a field - and the next screen, asking for a password, came
+	out of nowhere. The `lead` below is the missing half of that flow, and it
+	appears only in the case that actually needs explaining.
+-->
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError("email","username","password","password-confirm")
 	displayRequiredFields=true
 	displayInfo=true
-	pageTitle="registerTitle"; section>
+	pageTitle="registerTitle"
+	eyebrow="stepRegister"
+	lead=(passwordRequired??)?then("", "registerNoPasswordLead"); section>
 
 	<#if section = "header">
 		${msg("registerTitle")}
@@ -23,7 +33,7 @@
 						autocomplete="email"
 						placeholder=" "
 					/>
-					<label for="email" class="${properties.kcLabelClass!}">${msg("email")}<span class="required">&#42;</span></label>
+					<label for="email" class="${properties.kcLabelClass!}">${msg("email")}<span class="required" aria-hidden="true">&#42;</span></label>
 				</div>
 				<#if messagesPerField.existsError('email')>
 					<span id="input-error-email" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -45,7 +55,7 @@
 							autocomplete="username"
 							placeholder=" "
 						/>
-						<label for="username" class="${properties.kcLabelClass!}">${msg("username")}<span class="required">&#42;</span></label>
+						<label for="username" class="${properties.kcLabelClass!}">${msg("username")}<span class="required" aria-hidden="true">&#42;</span></label>
 					</div>
 					<#if messagesPerField.existsError('username')>
 						<span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -55,6 +65,8 @@
 				</div>
 			</#if>
 
+			<#-- Only rendered when the realm collects the password here, i.e. when
+			verifyEmail is off. See the lead above. -->
 			<#if passwordRequired??>
 				<div class="form-group">
 					<div class="form-field form-field--with-toggle">
@@ -67,7 +79,7 @@
 							autocomplete="new-password"
 							placeholder=" "
 						/>
-						<label for="password" class="${properties.kcLabelClass!}">${msg("password")}<span class="required">&#42;</span></label>
+						<label for="password" class="${properties.kcLabelClass!}">${msg("password")}<span class="required" aria-hidden="true">&#42;</span></label>
 						<#if properties.kcFormPasswordVisibilityButtonClass?has_content>
 							<button
 								class="${properties.kcFormPasswordVisibilityButtonClass!}"
@@ -102,7 +114,7 @@
 							autocomplete="new-password"
 							placeholder=" "
 						/>
-						<label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}<span class="required">&#42;</span></label>
+						<label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}<span class="required" aria-hidden="true">&#42;</span></label>
 						<#if properties.kcFormPasswordVisibilityButtonClass?has_content>
 							<button
 								class="${properties.kcFormPasswordVisibilityButtonClass!}"
@@ -131,7 +143,10 @@
 				<div id="kc-registration-terms-text">
 					<p>${msg("termsIntro")}</p>
 					<details class="terms-details">
-						<summary>${msg("termsSummary")}</summary>
+						<summary>
+							<svg class="terms-summary-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+							${msg("termsSummary")}
+						</summary>
 						${kcSanitize(msg("termsDetails"))?no_esc}
 					</details>
 				</div>
@@ -142,7 +157,7 @@
 						type="checkbox"
 						id="termsAccepted"
 						name="termsAccepted"
-						class="terms-checkbox"
+						class="checkbox-control"
 						aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
 					/>
 					<label for="termsAccepted">${msg("acceptTerms")}</label>
@@ -165,7 +180,7 @@
 		</form>
 
 	<#elseif section = "info">
-		<span>${msg("alreadyHaveAccount")} <a tabindex="6" href="${url.loginUrl}">${msg("doLogIn")}</a></span>
+		<span>${msg("alreadyHaveAccount")} <a href="${url.loginUrl}">${msg("doLogIn")}</a></span>
 
 	</#if>
 </@layout.registrationLayout>

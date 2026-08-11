@@ -1,17 +1,27 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle">
+<#--
+	Shared shell for every page in this theme.
+
+	`eyebrow` and `lead` are message keys, not markup: each page names the step
+	of the funnel it belongs to and, where the step is not self-explanatory,
+	says in one line what is about to happen. They are macro parameters rather
+	than <#nested> sections so that a template which has nothing to add simply
+	omits them, and so the strings stay in the message bundles with everything
+	else that gets translated.
+-->
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle" eyebrow="" lead="">
 <!DOCTYPE html>
-<html lang="${locale.currentLanguageTag!'de'}" class="<#if locale.currentLanguageTag?? && locale.currentLanguageTag == 'de'>lang-de<#else>lang-en</#if>">
+<html lang="${locale.currentLanguageTag!'de'}">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>${msg(pageTitle, realm.displayName!'Einsatzbereit')}</title>
-	<link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/logo.svg">
+	<meta name="color-scheme" content="light">
+	<#-- Every page used to inherit login.ftl's default pageTitle, so the browser
+	tab read "Anmelden" while the page itself said "Es ist ein Fehler
+	aufgetreten" - and a visitor with the reset-password and sign-in pages open
+	side by side had two identical tabs. Each template passes its own now. -->
+	<title>${msg(pageTitle, realm.displayName!'Einsatzbereit')} - Einsatzbereit</title>
+	<link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/favicon.svg">
 	<link rel="stylesheet" href="${url.resourcesPath}/css/einsatzbereit.css">
-	<#if properties.stylesCommon?has_content>
-		<#list properties.stylesCommon?split(' ') as style>
-			<link rel="stylesheet" href="${url.resourcesCommonPath}/${style}">
-		</#list>
-	</#if>
 </head>
 <body>
 <div class="auth-page">
@@ -21,11 +31,12 @@
 		<details class="lang-switcher">
 			<summary class="lang-trigger">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-				<span>${locale.current?upper_case?substring(0, 2)}</span>
+				<span>${(locale.currentLanguageTag!'de')?upper_case}</span>
+				<svg class="lang-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
 			</summary>
-			<ul class="lang-menu" role="menu">
+			<ul class="lang-menu">
 				<#list locale.supported as l>
-					<li role="none"><a href="${l.url}" class="lang-item" role="menuitem">${l.label}</a></li>
+					<li><a href="${l.url}" class="lang-item"<#if (l.locale!'') == (locale.currentLanguageTag!'')> aria-current="true"</#if>>${l.label}</a></li>
 				</#list>
 			</ul>
 		</details>
@@ -35,14 +46,23 @@
 	<main class="auth-main">
 		<div class="auth-card">
 
-			<div class="auth-brand">
+			<#-- The logo is the one control present on every page in this theme,
+			so it carries the way back to the product rather than sitting there
+			as decoration. -->
+			<a class="auth-brand" href="${properties.siteUrl}">
 				<img src="${url.resourcesPath}/img/logo.svg" alt="Einsatzbereit" class="auth-logo">
-			</div>
+			</a>
 
 			<div class="card-header">
+				<#if eyebrow?has_content>
+					<p class="card-eyebrow">${msg(eyebrow)}</p>
+				</#if>
 				<h1 class="card-title"><#nested "header"></h1>
+				<#if lead?has_content>
+					<p class="card-lead">${msg(lead)}</p>
+				</#if>
 				<#if displayRequiredFields>
-					<p class="card-subtitle">${msg("requiredFields")}</p>
+					<p class="card-required">${msg("requiredFields")}</p>
 				</#if>
 			</div>
 
@@ -77,7 +97,7 @@
 		pages and changes their mind is stuck on an origin (login.*) that has
 		no other link on it - browser Back is the only exit. -->
 		<p class="auth-back">
-			<a href="https://einsatzbereit.maik-hasler.de" class="back-link">
+			<a href="${properties.siteUrl}" class="back-link">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 					stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 					<path d="m15 18-6-6 6-6"/>
