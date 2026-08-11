@@ -19,10 +19,19 @@ import { CategoryGlyph } from "./CategoryGlyph";
 
 export default function OpportunityListItem({
 	item,
+	headingLevel = 2,
 }: {
 	item: VolunteerOpportunitySummary;
+	/**
+	 * Level for the card's title. Defaults to 2 for /opportunities, where the
+	 * page header band's h1 is the only heading above the grid. The landing
+	 * page's preview passes 3: its own section heading is an h2, and cards
+	 * belong under it rather than beside it.
+	 */
+	headingLevel?: 2 | 3;
 }) {
 	const { t, i18n } = useTranslation();
+	const Heading = headingLevel === 3 ? "h3" : "h2";
 	const isUnlimited = item.totalMaxParticipants == null;
 	const spotsLeft =
 		item.totalMaxParticipants != null && item.totalMaxParticipants > 0
@@ -102,15 +111,17 @@ export default function OpportunityListItem({
 						opportunity's own page, where the reader has the full listing
 						in front of them to judge. */}
 					</div>
-					{/* h2, not h3: this list used to sit inside the landing page
-					behind a "Current Opportunities" <h2> section heading, which is
-					what made an h3 card title the next level down. #1755 gave the
-					list its own route, where the page header band's <h1> is the
-					only heading above it - so an h3 here skipped a level and axe
-					failed the page on heading-order. */}
-					<h2 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+					{/* h2 by default, h3 when a section heading sits above the grid -
+					see the headingLevel prop. This list used to be fixed at h3
+					because it lived inside the landing page behind a "Current
+					Opportunities" <h2>; #1755 gave it its own route, where the page
+					header band's <h1> is the only heading above it, so a fixed h3
+					skipped a level and axe failed the page on heading-order. The
+					landing page has a section heading over these cards again, hence
+					a prop rather than a second fixed level. */}
+					<Heading className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
-					</h2>
+					</Heading>
 					{/* One slot, one meaning. The start date used to render as a bare
 					datetime in brand green while the application deadline rendered
 					as "Apply by {date}" in grey - same position, different colour,

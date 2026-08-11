@@ -15,13 +15,14 @@ src/
 │   ├── Header/             Header with auth state (login/logout buttons, org switcher, notifications) + optional per-page breadcrumb/action bar (see `breadcrumb` prop) - split across Header.tsx (orchestrator), DesktopHeader.tsx, MobileHeader.tsx, MobileMenu.tsx, AccountControls.tsx, NotificationDropdown.tsx, NotificationItem.tsx, OrganizationSwitcher.tsx, LanguageSelector.tsx, BreadcrumbBar.tsx - all exclusive to Header, nothing here is imported outside this folder
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
-│   ├── VolunteerOpportunitiesList/     Paginated list (size=10), filter bar - split across VolunteerOpportunitiesList.tsx (orchestrator), icons.tsx, MiniCalendar.tsx, FilterDropdown.tsx, OpportunityListItem.tsx, OpportunityResultsList.tsx, useVolunteerOpportunitiesData.ts, useCitySuggestions.ts - all exclusive to this folder, nothing here is imported outside it
+│   ├── VolunteerOpportunitiesList/     Paginated list (size=10), filter bar - split across VolunteerOpportunitiesList.tsx (orchestrator), icons.tsx, MiniCalendar.tsx, FilterDropdown.tsx, OpportunityListItem.tsx, OpportunityResultsList.tsx, useVolunteerOpportunitiesData.ts, useCitySuggestions.ts - exclusive to this folder except `OpportunityListItem.tsx`, which `LatestOpportunitiesSection.tsx` (the landing page's three-card preview) also renders, so both surfaces show a visitor the same card
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
 ├── layouts/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
 ├── pages/
-│   ├── HomePage.tsx                    Main page with VolunteerOpportunitiesList
+│   ├── HomePage.tsx                    Landing page: hero search, LatestOpportunitiesSection preview, org CTA, founder band, FAQ
+│   ├── OpportunitiesPage.tsx           /opportunities - the browse/search route that owns VolunteerOpportunitiesList
 │   ├── app/OrgDashboardPage/           Customizable widget dashboard (calendar, to-do, quick check-in, etc. - see widgetCatalog.ts) - org app shell's landing tab
 │   ├── AdministrationPage.tsx          Platform-admin only: list/verify organizations, list users, toggle admin/enabled status
 │   ├── PrivacyPolicyPage.tsx           Privacy policy (static)

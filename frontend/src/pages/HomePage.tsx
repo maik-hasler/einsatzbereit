@@ -7,6 +7,7 @@ import type { CitySuggestion } from "../components/VolunteerOpportunitiesList/us
 import LocationSearchInput from "../components/LocationSearchInput";
 import Button from "../components/Button";
 import FaqAccordion from "../components/FaqAccordion";
+import LatestOpportunitiesSection from "../components/LatestOpportunitiesSection";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -354,8 +355,15 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* Org CTA - the landing page's other half, placed right after the
-			hero and ahead of the founder band. Everything else
+			{/* Newest opportunities - the hero's promise, answered. See
+			LatestOpportunitiesSection for why it is three cards and not the
+			grid, and why it disappears rather than rendering an empty state. It
+			sits here, between the hero and the org pitch, so the page stays
+			volunteer-facing right up to the point where it changes audience. */}
+			<LatestOpportunitiesSection />
+
+			{/* Org CTA - the landing page's other half, placed after the
+			opportunity preview and ahead of the founder band. Everything else
 			on this page pitches a volunteer; this is the one section that
 			pitches an organization instead. A full-bleed wavy band now, not
 			a plain white section - breaks out of <main>'s max-w-page column
