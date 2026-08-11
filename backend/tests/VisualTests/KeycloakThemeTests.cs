@@ -28,6 +28,10 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	private const string Realm = "einsatzbereit";
 	private const string FrontendClientId = "frontend";
 
+	// Mirrors theme.properties' siteUrl. Declared there rather than derived,
+	// because the frontend client carries no baseUrl - see keycloak/AGENTS.md.
+	private const string SiteUrl = "https://einsatzbereit.maik-hasler.de";
+
 	// Satisfies the realm's passwordPolicy (upperCase(1), length(8)) - a
 	// weaker one is rejected by the admin API at user-creation time, not at
 	// login, so it would fail in CreateThrowawayUserAsync with an error that
@@ -295,6 +299,12 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 			"el => { const s = getComputedStyle(el); return [s.color, s.backgroundColor]; }");
 		contrast[0].Should().NotBe(contrast[1],
 			"error page: the back-to-application button's label must not be the same color as its fill");
+
+		// A button that is visible but points nowhere is the same dead end with
+		// extra steps. This is the assertion that actually pins the
+		// properties.siteUrl fallback down - contrast alone would still pass if
+		// the href collapsed back to base's empty ${client.baseUrl}.
+		await Expect(backLink).ToHaveAttributeAsync("href", SiteUrl);
 	}
 
 	[Test]
@@ -338,6 +348,32 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		loginTitle.Should().Contain("Einsatzbereit");
 		new[] { loginTitle, registerTitle, logoutTitle }.Distinct().Should().HaveCount(3,
 			"each page should carry its own pageTitle rather than inheriting login.ftl's");
+	}
+
+	[Test]
+	public async Task GermanPages_KeepTheProductsDuRegister()
+	{
+		// Keycloak's stock German addresses the user as "Sie"; the product says
+		// "du" throughout. Any base message that reaches a user therefore has to
+		// be overridden in messages_de.properties, and German is the default
+		// served locale - so a missed override shows the mixed register to most
+		// visitors, on the first screen they see. Nothing else in CI checks
+		// this: the bundles are not TypeScript, so i18n-check never sees them,
+		// and key parity (which is checked) says nothing about the wording.
+		foreach (var (endpoint, marker) in new[] { ("auth", "#username"), ("registrations", "#email") })
+		{
+			await Page.GotoAsync(AuthUrl(endpoint, locale: "de"));
+			await Expect(Page.Locator(marker)).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+			var card = await Page.Locator(".auth-card").InnerTextAsync();
+
+			// Word-boundary matched: "Sie" as its own word, not the "sie" inside
+			// "diese" or a sentence-initial lowercase form.
+			card.Should().NotMatchRegex(@"\bSie\b",
+				$"{endpoint}: the German copy should address the user as du, not Sie");
+			card.Should().NotMatchRegex(@"\bIhre[nmrs]?\b",
+				$"{endpoint}: the German copy should use dein/deine, not Ihre");
+		}
 	}
 
 	[Test]
