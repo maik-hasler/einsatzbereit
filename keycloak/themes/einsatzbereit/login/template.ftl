@@ -72,6 +72,19 @@
 			</#if>
 
 		</div>
+
+		<#-- Way back to the product. Without it, a visitor who reaches these
+		pages and changes their mind is stuck on an origin (login.*) that has
+		no other link on it - browser Back is the only exit. -->
+		<p class="auth-back">
+			<a href="https://einsatzbereit.maik-hasler.de" class="back-link">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+					stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<path d="m15 18-6-6 6-6"/>
+				</svg>
+				${msg("backToSite")}
+			</a>
+		</p>
 	</main>
 
 </div>

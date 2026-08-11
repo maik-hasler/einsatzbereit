@@ -134,7 +134,10 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
+		// Matched on href rather than by accessible name: #1755 gave the mobile
+		// menu an account section whose "Settings" entry (/profile/settings)
+		// shares this one's exact label, so a name lookup resolves to two links.
+		await banner.Locator("a[href*='/dashboard/settings']")
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/settings"), new() { Timeout = 15_000 });
 

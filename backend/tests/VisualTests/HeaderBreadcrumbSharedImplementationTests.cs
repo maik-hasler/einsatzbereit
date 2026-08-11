@@ -18,7 +18,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	public async Task AccountPages_ReplaceActionBar_WithBandHomeLinkAndQuickActions()
 	{
 		// #758 made /profile the canonical example of the shared action bar.
-		// #1755 gave the three account pages (/profile, /my-engagements,
+		// #1755 gave the three account pages (/profile, /my-signups,
 		// /profile/settings) the same PageHeaderBand the legal pages use, and a
 		// band page renders no action bar - the title would otherwise be stated
 		// twice with a grey strip cutting through the treatment.
@@ -26,8 +26,9 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		// The bar itself is unchanged and still covered on the org app shell by
 		// OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression
 		// below. What this pins instead is that the two things the bar carried
-		// for /profile survived the move: the way back home, and the Edit
-		// quick action.
+		// for /profile survived the move: the way back home, and the ability to
+		// edit - the latter now as the Profile details section's own button
+		// rather than a quick action in the page chrome.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -44,34 +45,40 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(homeLink).ToBeVisibleAsync();
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
 
-		// useEditModeQuickActions publishes through QuickActionsContext, which
-		// PageHeaderBand now reads in the action bar's place - same key and the
-		// same data-testid, so the edit-mode tests keep working unchanged.
-		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync();
+		// Edit sits inside the Profile details section, next to the fields it
+		// edits, matching how /profile/settings has always saved. It used to be
+		// published through QuickActionsContext for the page chrome to render,
+		// which left the account area running two editing paradigms at once.
+		var editButton = Page.GetByTestId("profile-edit");
+		await Expect(editButton).ToBeVisibleAsync();
+		await Expect(Page.Locator("main section").Filter(new() { Has = editButton }))
+			.ToBeVisibleAsync();
 
 		// The sub-nav is what ties the three pages together now that each has
 		// its own band; all three must offer all three destinations.
 		var subNav = Page.Locator("main nav[aria-label]").First;
-		foreach (var tab in new[] { "Profile", "Activity", "Settings" })
+		foreach (var tab in new[] { "Profile", "Sign-ups", "Settings" })
 			await Expect(subNav.GetByRole(AriaRole.Link, new() { Name = tab })).ToBeVisibleAsync();
 	}
 
 	[Test]
-	public async Task OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression()
+	public async Task OrgAppShell_UsesTheSameBandAsEveryOtherPage_NoActionBarLeft()
 	{
-		// #758 acceptance criterion: the org app shell's action bar must behave
-		// exactly as before now that it shares Header.tsx's implementation
-		// instead of its own copy - home icon + current tab label, directly
-		// beneath <header>, with the org switcher remaining a separate control.
+		// #758 gave the org app shell the shared action bar; this replaces that
+		// acceptance criterion. The bar is gone from the whole product now - the
+		// org app was the last surface still rendering it, which is what made it
+		// read as a third visual system next to the public site and the account
+		// area. What has to survive the removal is what the bar carried: the
+		// page's own name, a way back up one level, and the org switcher
+		// remaining a separate control in the header.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardViaCtaAsync(Page, frontend);
 
-		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
-		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();

@@ -44,6 +44,11 @@ const CATEGORY_VALUES = [
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 
+// No heading of its own: the only route that renders this list is
+// /opportunities, whose PageHeaderBand already states the eyebrow, title and
+// lead in display type. This briefly carried a `showHeading` prop instead,
+// but with one call site passing false the heading block was unreachable and
+// kept three locale keys alive that nothing could render.
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
 	const locale = resolveDateLocale(i18n.language);
@@ -301,17 +306,6 @@ export default function VolunteerOpportunitiesList() {
 			to sitting directly on the page background, matching how
 			idealist.org/betterplace.org treat their own search/filter bars (no
 			card, no background tint). */}
-			<div className="mb-8 text-center">
-				<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">
-					{t("opportunities.eyebrow")}
-				</p>
-				<h2 className="font-display text-3xl font-bold text-gray-900 sm:text-4xl">
-					{t("opportunities.currentNeeds")}
-				</h2>
-				<p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
-					{t("opportunities.subtitle")}
-				</p>
-			</div>
 
 			{/* Filter bar */}
 			<div ref={filterBarRef} className="mb-2">

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { EnvelopeIcon, GlobeIcon, MapPinIcon, PhoneIcon } from "./icons";
 import { cardClass } from "../lib/surfaceClasses";
+import { getInitials } from "../lib/initials";
 import { pageTitleClass } from "../lib/headingClasses";
 
 interface OrganizationAddress {
@@ -143,7 +144,7 @@ export default function OrganizationProfileView({
 							/>
 						) : (
 							<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-								{name.charAt(0).toUpperCase()}
+								{getInitials(name)}
 							</span>
 						)}
 						<div>

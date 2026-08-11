@@ -19,4 +19,12 @@ export const inputClass = `mt-1 block ${inputSurfaceClass} text-gray-900`;
 
 export const textareaClass = `${inputClass} resize-y`;
 
+// Native <select>s were left entirely unstyled in four places (the org app's
+// Sign-ups status filter and Members invite-role picker, plus the engagement
+// management page's two), so they rendered in raw OS chrome next to fully
+// styled inputs. appearance-none plus an inline chevron gives them the same
+// surface as everything else; bg-position keeps the chevron clear of the
+// text on both paddings.
+export const selectClass = `${inputClass} appearance-none bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-9 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke-width=%221.5%22 stroke=%22%236b7280%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22m19.5 8.25-7.5 7.5-7.5-7.5%22/%3E%3C/svg%3E')]`;
+
 export const labelClass = "block text-xs font-medium text-gray-600";

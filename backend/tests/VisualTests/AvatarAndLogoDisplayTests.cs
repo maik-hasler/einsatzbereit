@@ -137,7 +137,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
 			.EnsureSuccessStatusCode();
 
-		await Page.GotoAsync($"{origin}/?tag={tag}");
+		await Page.GotoAsync($"{origin}/opportunities?tag={tag}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var card = Page.Locator("li", new() { HasText = oppTitle });
@@ -242,8 +242,8 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Page.GetByTestId("profile-edit").ClickAsync();
+		await Expect(Page.GetByTestId("profile-save")).ToBeVisibleAsync();
 
 		var removeButton = Page.GetByTestId("avatar-remove");
 		await Expect(removeButton).ToBeVisibleAsync(new() { Timeout = 10_000 });

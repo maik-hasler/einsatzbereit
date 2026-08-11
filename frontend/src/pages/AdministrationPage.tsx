@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 import type {
 	AdminUserListItem,
 	ReportHistoryEntry,
@@ -11,14 +12,14 @@ import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
-import { pageTitleClass } from "../lib/headingClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import { formatDateLong, formatDateTime } from "../lib/format";
 import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import Chip from "../components/Chip";
+import PageHeaderBand from "../components/PageHeaderBand";
 import PageSectionHeading from "../components/PageSectionHeading";
+import SubNavRail from "../components/SubNavRail";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
@@ -40,45 +41,119 @@ interface OrgRow {
 	createdOn: string;
 }
 
+export const ADMIN_TABS = [
+	{
+		key: "organizations",
+		href: "/administration/organizations",
+		labelKey: "administration.organizationsHeading",
+	},
+	{
+		key: "users",
+		href: "/administration/users",
+		labelKey: "administration.usersHeading",
+	},
+	{
+		key: "reports",
+		href: "/administration/reports",
+		labelKey: "administration.reportsHeading",
+	},
+	{
+		key: "auditLog",
+		href: "/administration/audit-log",
+		labelKey: "administration.auditLogHeading",
+	},
+] as const;
+
+// Shell for the administration area. The four sections used to be stacked on
+// one ~2000px scroll behind the last BreadcrumbBar left in the volunteer app,
+// in a full-bleed container while every other page centres a ~1030px column -
+// so this was the one page that looked like a different product. It now uses
+// PageHeaderBand and the same left rail as the account area, with one section
+// per route: two of the four are permanently empty on a healthy instance, and
+// the audit log grows without bound, so stacking them meant the useful ones
+// kept moving down the page.
 export default function AdministrationPage() {
 	const { t } = useTranslation();
+	const { pathname } = useLocation();
 	usePageTitle(t("administration.title"));
-	usePageToolbar([{ label: t("administration.title") }]);
+
+	const active =
+		ADMIN_TABS.find((tab) => pathname.startsWith(tab.href))?.key ??
+		"organizations";
 
 	return (
 		<>
-			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
-				{t("administration.title")}
-			</h1>
-			<section className="mb-10">
-				<PageSectionHeading>
-					{t("administration.organizationsHeading")}
-				</PageSectionHeading>
-				<OrganizationsSection />
-			</section>
-			<section className="mb-10">
-				<PageSectionHeading>
-					{t("administration.usersHeading")}
-				</PageSectionHeading>
-				<UsersSection />
-			</section>
-			<section className="mb-10">
-				<PageSectionHeading>
-					{t("administration.reportsHeading")}
-				</PageSectionHeading>
-				<ReportsSection />
-			</section>
-			<section>
-				{/* Was a hand-rolled h2 carrying PageSectionHeading's pre-#1755
-				recipe verbatim, so it kept the old text-lg body-face styling while
-				the three sections above it moved to the display face - the last
-				section on the page rendering visibly smaller than its siblings. */}
-				<PageSectionHeading>
-					{t("administration.auditLogHeading")}
-				</PageSectionHeading>
-				<AuditLogSection />
-			</section>
+			<PageHeaderBand
+				eyebrow={t("administration.eyebrow")}
+				title={t("administration.title")}
+			/>
+
+			<div
+				data-content-wrapper
+				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			>
+				<SubNavRail
+					ariaLabel={t("administration.subNavLabel")}
+					active={active}
+					items={ADMIN_TABS.map((tab) => ({
+						key: tab.key,
+						href: tab.href,
+						label: t(tab.labelKey),
+					}))}
+				/>
+				<div className="min-w-0">
+					<Outlet />
+				</div>
+			</div>
 		</>
+	);
+}
+
+function AdminSection({
+	headingKey,
+	children,
+}: {
+	headingKey: string;
+	children: ReactNode;
+}) {
+	const { t } = useTranslation();
+	return (
+		<section>
+			<PageSectionHeading>{t(headingKey)}</PageSectionHeading>
+			{children}
+		</section>
+	);
+}
+
+export function AdminOrganizationsPage() {
+	return (
+		<AdminSection headingKey="administration.organizationsHeading">
+			<OrganizationsSection />
+		</AdminSection>
+	);
+}
+
+export function AdminUsersPage() {
+	return (
+		<AdminSection headingKey="administration.usersHeading">
+			<UsersSection />
+		</AdminSection>
+	);
+}
+
+export function AdminReportsPage() {
+	return (
+		<AdminSection headingKey="administration.reportsHeading">
+			<ReportsSection />
+		</AdminSection>
+	);
+}
+
+export function AdminAuditLogPage() {
+	return (
+		<AdminSection headingKey="administration.auditLogHeading">
+			<AuditLogSection />
+		</AdminSection>
 	);
 }
 

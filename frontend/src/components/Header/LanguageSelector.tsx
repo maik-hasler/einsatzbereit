@@ -34,13 +34,12 @@ export default function LanguageSelector({
 				aria-label={t("language.switchLanguage")}
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
-				<span
-					aria-hidden="true"
-					className={`rounded border px-1 py-0.5 text-xs leading-none font-bold tracking-wide ${transparent ? "border-white/30 text-white" : "border-gray-300 text-gray-600"}`}
-				>
-					{current.short}
-				</span>
-				<span className="font-medium">{t(`language.${current.code}`)}</span>
+				{/* Code only in the header. This used to show a bordered "DE"
+				badge *and* the word "Deutsch" - the same fact twice, in the
+				widest control in the bar, sitting where the primary navigation
+				belongs. The full language name is still spelled out in the open
+				menu below, which is where someone changing it is looking. */}
+				<span className="font-semibold tracking-wide">{current.short}</span>
 				<ChevronDownIcon
 					open={open}
 					className={`h-3.5 w-3.5 ${transparent ? "text-white/70" : "text-gray-400"}`}

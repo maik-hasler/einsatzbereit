@@ -14,7 +14,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
 		// into a single cohesive page - no tab bar, all content on one page.
 		// #1684: invitations/sign-ups (formerly also on this page) moved to
-		// their own page at /my-engagements - see MyEngagementsTests.cs.
+		// their own page at /my-signups - see MyEngagementsTests.cs.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -68,7 +68,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	[Test]
 	public async Task ProfileEngagementsTabDeepLink_RedirectsToMyEngagementsPage()
 	{
-		// #1684: /profile?tab=engagements used to be where /my-engagements
+		// #1684: /profile?tab=engagements used to be where /my-signups
 		// redirected *to* - now it's the other way around, so old links using
 		// this legacy query param (and backend-generated notification action
 		// URLs still using ?tab=invitations) keep working.
@@ -80,7 +80,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/my-engagements$"));
+		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/my-signups$"));
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
@@ -434,8 +434,8 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{origin}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -479,8 +479,8 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{origin}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 

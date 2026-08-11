@@ -68,7 +68,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var engagementId = engagement.GetProperty("id").GetString();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Page heading must be visible.

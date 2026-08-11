@@ -99,7 +99,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// Wait for opportunity cards (not footer links which also match ul>li a)
@@ -278,7 +278,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
 		// into a single page. #1684: it was later split again - Profile
 		// Details and Badges render here; invitations/sign-ups moved to
-		// /my-engagements and notifications/export/deletion moved to
+		// /my-signups and notifications/export/deletion moved to
 		// /profile/settings (both scanned separately below).
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -305,8 +305,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Page.GetByTestId("profile-edit").ClickAsync();
+		await Expect(Page.GetByTestId("profile-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
 
@@ -323,10 +323,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
+		// Pinned to the page's <h1>: #1755 gave the page a header band whose
+		// title carries this name, and the section heading further down the
+		// page still carries it too, so an unqualified lookup matches both.
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
@@ -385,8 +388,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Page.GetByTestId("profile-edit").ClickAsync();
+		await Expect(Page.GetByTestId("profile-save")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();
@@ -406,7 +409,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// link is a genuine failure, not a "not seeded yet" skip.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgLink = Page.GetByTestId("opportunity-org-link").First;
@@ -592,7 +595,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// #771: the tab bar is gone - reach the page via the dashboard's own
 		// widget links instead.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -1217,7 +1220,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// opportunities (seed data has two, both with open capacity) and follow
 		// the first card's link in, matching the navigation pattern
 		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above uses.
-		await Page.GotoAsync($"{frontend}?participationType=ScheduledSlots");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities?participationType=ScheduledSlots");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -1420,14 +1424,61 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// One case per administration section: they are separate routes behind a
+	// shared left rail now, not four stacked sections on one page, so a single
+	// scan of /administration would only ever cover the first of them.
 	[Test]
-	public async Task AdministrationPage_HasNoSeriousA11yViolations()
+	[Arguments("organizations")]
+	[Arguments("users")]
+	[Arguments("reports")]
+	[Arguments("audit-log")]
+	public async Task AdministrationPage_HasNoSeriousA11yViolations(string section)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration/{section}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OpportunitiesPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Assert something rendered before scanning - a scan of a page whose
+		// list failed to load passes vacuously.
+		await Expect(Page.GetByTestId("opportunities-keyword-input"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	// The row overflow menu is an overlay with hand-rolled markup, so it gets
+	// scanned in its open state the way NotificationDropdown_Open and the
+	// sign-up modal's slot dropdown do - closed, it contributes nothing.
+	[Test]
+	public async Task OrgOpportunitiesPage_RowActionsMenuOpen_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var organizationId = await AuthHelper.FastSignInAsync(
+			Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var trigger = Page.GetByTestId("row-actions-trigger").First;
+		await Expect(trigger).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await trigger.ClickAsync();
+		await Expect(Page.GetByTestId("opportunity-delete").First).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -1672,6 +1723,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		await Page.GetByTestId("row-actions-trigger").First.ClickAsync();
 		await Page.GetByTestId("opportunity-cancel").First.ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync();
@@ -1755,8 +1807,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
@@ -1802,8 +1854,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
@@ -1839,8 +1891,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-engagements.
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
+		// its own page at /my-signups.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Confirmed-but-not-checked-in, so this lands in the default "Current &
@@ -1918,7 +1970,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task HomePage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
+	public async Task OpportunitiesPage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297/#1292: none of the seven home-page filter popovers
 		// were ever scanned - MiniCalendar's day-grid gained full ARIA
@@ -1926,7 +1978,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// covering the open state those semantics live in.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
@@ -1937,7 +1989,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task HomePage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
+	public async Task OpportunitiesPage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
 	{
 		// #1090: the "notify me about new matches" toggle only renders once a
 		// signed-in volunteer has a filter active - neither existing HomePage
@@ -1946,7 +1998,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-frequency").ClickAsync();

@@ -134,7 +134,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		});
 
 		// Opportunities: reachable via a dashboard widget's "opportunities" link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForURLAsync(
 			$"{origin}/app/{organizationId}/dashboard/opportunities", new() { Timeout = 10_000 });
 

@@ -39,7 +39,16 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// A throwaway org rather than whichever seeded one olaf happens to be
+		// pinned to, for the same reason the Organizer-role invite test below
+		// uses one: vera is a baseline member of one of the two seeded orgs, so
+		// on that org she never surfaces as an invitable candidate at all
+		// ("No users found."). Which of the two is pinned is decided by
+		// alphabetical order (activeOrg.ts's resolveActiveOrg fallback), which
+		// a rename of the seed data silently flips - and did.
+		await CreateOrganizationAsync("Visual579 InviteMember", pinnedOrgId!.Value);
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -51,17 +60,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
 
-		// Seed data never makes vera a member of "Fairview Animal Welfare
-		// Association" (she's only ever a baseline member of olaf's OTHER
-		// seeded org, Fairview Red Cross), and FastSignInAsync(olaf)
-		// deterministically pins this test to that org. fixture.ResetAsync()
-		// (this class opts in) only clears vera's own Organizer-role
-		// membership rows and her global Keycloak organisator role - it does
-		// NOT clear organization_invitation, so "vera is never already
-		// invited here" holds only because no other test in the suite
-		// invites her into this specific seeded org, not because of
-		// anything ResetAsync does. Assert the invite button directly
-		// instead of tolerating "No users found." as an alternate outcome.
+		// A freshly created org has olaf as its only member and no invitation
+		// rows at all, so vera is always an invitable candidate here. Assert
+		// the invite button directly instead of tolerating "No users found."
+		// as an alternate outcome.
 		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await inviteButton.First.ClickAsync();
@@ -318,11 +320,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// invite someone as an Organizer instead, shown on the pending
 		// invitation.
 		//
-		// Uses a throwaway org (not olaf's pinned/seeded one) because
+		// Uses a throwaway org (not olaf's pinned/seeded one) so that inviting
+		// vera here can never collide with the invitation
 		// Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403
-		// above already invites vera into that shared org, and
-		// organization_invitation rows aren't cleared between tests -
-		// inviting her there a second time would 409 with
+		// above sends: organization_invitation rows aren't cleared between
+		// tests, so a second invite into the same org would 409 with
 		// OrganizationInvitation.AlreadyInvited depending on run order.
 		var frontend = Fixture.GetEndpoint("frontend");
 

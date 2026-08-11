@@ -30,7 +30,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		try
 		{
 			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-			await Page.GotoAsync($"{origin}/administration");
+			await Page.GotoAsync($"{origin}/administration/users");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
@@ -80,7 +80,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			// first and only shrink afterwards - see OrganizationDashboardNavLinkTests.
 			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
 			await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-			await Page.GotoAsync($"{origin}/administration");
+			await Page.GotoAsync($"{origin}/administration/users");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
@@ -140,7 +140,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{origin}/administration");
+		await Page.GotoAsync($"{origin}/administration/users");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.Locator("#admin-user-search").FillAsync("admin");

@@ -6,7 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
-import { pageTitleClass, statusTitleClass } from "../lib/headingClasses";
+import { statusTitleClass } from "../lib/headingClasses";
 import {
 	getApiErrorMessage,
 	isApiForbiddenError,
@@ -16,11 +16,9 @@ import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
 } from "../contexts/OrgBreadcrumbContext";
-import {
-	QuickActionsProvider,
-	useQuickActionsList,
-} from "../contexts/QuickActionsContext";
+import { QuickActionsProvider } from "../contexts/QuickActionsContext";
 import Header from "../components/Header/Header";
+import PageHeaderBand from "../components/PageHeaderBand";
 import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import SkipLink from "../components/SkipLink";
@@ -40,11 +38,10 @@ export interface OrgAppContext {
 }
 
 // Renders the org app shell body inside OrgBreadcrumbProvider so it can read
-// the nested-page breadcrumb extra (see useSetOrgBreadcrumbExtra) and pass
-// the resulting trail into Header's shared breadcrumb/action-bar prop -
-// normally just the active tab's own name, current-page style; a nested page
-// (e.g. engagement management) can add a further segment, which demotes the
-// tab name to a link back to that tab.
+// the nested-page title extra (see useSetOrgBreadcrumbExtra). Normally the
+// band shows the active tab's own name; a nested page (e.g. engagement
+// management) overrides it with its own, which demotes the tab name to the
+// band's back link.
 function OrgAppShell({
 	organizationId,
 	org,
@@ -65,38 +62,32 @@ function OrgAppShell({
 	const { t } = useTranslation();
 	const location = useLocation();
 	const extra = useOrgBreadcrumbExtra();
-	const quickActions = useQuickActionsList();
 	// Answered from organization_membership (see OrganizationDetailsResponse's
 	// requestingUserRole), not by scanning the Keycloak-sourced org.members roster
 	// below - so the shell's own nav/actions still know the caller's role even
 	// when that roster couldn't be loaded (#1709).
 	const isOrganizer = org.requestingUserRole === "Organizer";
 
-	// Now that the tab bar is gone (dashboard UX redesign), the breadcrumb is
-	// the only thing that shows an organizer where they are relative to the
-	// dashboard - so every non-dashboard tab gets an explicit leading
-	// "Dashboard" crumb (linking back to it) instead of starting directly at
-	// the tab's own name.
+	// The way back, one level up. This used to be a full BreadcrumbBar strip
+	// below the header - the last surface in the app still using it, and the
+	// reason the org app read as a third visual system next to the public site
+	// and the account area. PageHeaderBand carries it now, same as everywhere
+	// else, so "back" is a single link rather than a trail: from a nested page
+	// to its tab, and from a tab to the dashboard.
 	const dashboardTab = ORG_TABS.find((tab) => tab.key === "dashboard");
 	const isDashboardTab = activeTabKey === "dashboard";
-	const breadcrumbItems = [
-		...(isDashboardTab || !organizationId || !dashboardTab
-			? []
-			: [
-					{
-						label: t(dashboardTab.labelKey),
+	const back =
+		extra && organizationId
+			? {
+					href: orgTabPath(organizationId, activeTabKey),
+					label: activeTabLabel,
+				}
+			: !isDashboardTab && organizationId && dashboardTab
+				? {
 						href: `/app/${organizationId}/dashboard`,
-					},
-				]),
-		{
-			label: activeTabLabel,
-			href:
-				extra && organizationId
-					? orgTabPath(organizationId, activeTabKey)
-					: undefined,
-		},
-		...(extra ? [{ label: extra }] : []),
-	];
+						label: t(dashboardTab.labelKey),
+					}
+				: null;
 
 	// #973: OrgAppShell is the only place that knows the current tab/nested-page
 	// title (activeTabLabel/extra, same source as the breadcrumb's last item) -
@@ -105,23 +96,31 @@ function OrgAppShell({
 	const pageTitle = extra ?? activeTabLabel;
 
 	return (
+		// bg-gray-50 stays: it is the app canvas that makes the dashboard's
+		// white widget cards read as cards, and is a deliberate app-vs-marketing
+		// distinction rather than drift. What was drift - the breadcrumb strip
+		// and a bare <h1> where every other page has the brand band - is gone.
 		<div className="flex min-h-screen flex-col bg-gray-50">
 			<SkipLink />
 			<Header
 				orgSwitcher={{ currentOrgId: org.id, currentTab: activeTabKey }}
-				breadcrumb={{
-					homeHref: `/app/${organizationId}/dashboard`,
-					items: breadcrumbItems,
-					actions: quickActions,
-				}}
 			/>
 
 			<main
 				id="main-content"
 				tabIndex={-1}
-				className="mx-auto w-full max-w-page flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
+				className="mx-auto w-full max-w-page flex-1 scroll-mt-24 px-4 pt-[var(--main-top-padding)] pb-8 focus:outline-none sm:px-6 lg:px-8"
 			>
-				<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>{pageTitle}</h1>
+				{/* Same band as the public site and the account area. It reads
+				QuickActionsContext itself, so the org app's "Create opportunity"
+				and dashboard edit-mode actions land in it without the bar. */}
+				<PageHeaderBand
+					fullWidth
+					eyebrow={org.name}
+					title={pageTitle}
+					backHref={back?.href ?? `/app/${organizationId}/dashboard`}
+					backLabel={back?.label ?? t("orgOverview.tabDashboard")}
+				/>
 				{/* Scoped to this route (remounts, clearing any caught error, whenever
 				the location changes) so a render crash in a single tab replaces just
 				the content below Header/Footer instead of the whole app - see the

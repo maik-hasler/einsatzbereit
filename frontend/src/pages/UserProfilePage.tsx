@@ -15,7 +15,6 @@ import LoadMoreError from "../components/LoadMoreError";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { pageTitleClass } from "../lib/headingClasses";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 
 export default function UserProfilePage() {
@@ -32,8 +31,11 @@ export default function UserProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [retrying, setRetrying] = useState(false);
 
+	// No usePageToolbar: this was the last page still publishing a breadcrumb
+	// trail, and the bar restated a name the identity block below already
+	// renders at display size. The header's primary navigation is the way out
+	// now, same as on every other page.
 	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
-	usePageToolbar([{ label: profile?.displayName ?? t("userProfile.loading") }]);
 
 	function load() {
 		if (!userId) return Promise.resolve();

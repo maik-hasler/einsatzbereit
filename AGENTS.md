@@ -141,7 +141,7 @@ After every bug fix or feature implementation, **always** cut a release candidat
    ```
 5. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
 6. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - there is no committed `scripts/` directory or root `package.json` anymore) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
-7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this. This is the durable, reviewable record of the fix; the scratch script from step 6 is not - it gets deleted once it has served its purpose.
+7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). Keycloak uses a single-step login (username + password on one form) in both places - locally and on staging, where `publish.yml`'s "Bind single-step Keycloak browser flow" step selects it - so `AuthHelper.LoginAsync` and the step 6 scratch script drive the same form. This is the durable, reviewable record of the fix; the scratch script from step 6 is not - it gets deleted once it has served its purpose.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.
 

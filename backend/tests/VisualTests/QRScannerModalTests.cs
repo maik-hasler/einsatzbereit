@@ -134,7 +134,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
 			unknownId);
 
-		await Expect(dialog.GetByText("Engagement not found."))
+		await Expect(dialog.GetByText("Sign-up not found."))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		checkInStatuses.Should().ContainSingle().Which.Should().Be(404);
@@ -173,7 +173,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
 			unknownId);
 
-		await Expect(dialog.GetByText("Engagement not found."))
+		await Expect(dialog.GetByText("Sign-up not found."))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.EvaluateAsync(

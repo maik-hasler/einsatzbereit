@@ -34,6 +34,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 // synchronous commit - a lazy HomePage's chunk-load delay pushes its mount
 // past Header's request already having settled, so the "shared" fetch
 // fires twice instead of once.
+const OpportunitiesPage = lazy(() => import("./pages/OpportunitiesPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
@@ -56,6 +57,18 @@ const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
+const AdminOrganizationsPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminOrganizationsPage,
+}));
+const AdminUsersPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminUsersPage,
+}));
+const AdminReportsPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminReportsPage,
+}));
+const AdminAuditLogPage = lazy(async () => ({
+	default: (await import("./pages/AdministrationPage")).AdminAuditLogPage,
+}));
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
 const OrgOpportunitiesPage = lazy(
@@ -146,6 +159,10 @@ export default function App() {
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
+				{/* The browse/search list, previously an "#opportunities" anchor
+				inside HomePage. A real route is what lets the header carry a
+				"Find opportunities" nav item at all. */}
+				<Route path="/opportunities" element={<OpportunitiesPage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
 				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
@@ -162,10 +179,13 @@ export default function App() {
 					element={<OrganizationProfilePage />}
 				/>
 				{/* #1684: previously just redirected into /profile?tab=engagements -
-				now the real destination for engagement notifications and the
-				header's notification-bell fallback, which already pointed here. */}
+				now the real destination for sign-up notifications and the
+				header's notification-bell fallback, which already pointed here.
+				Renamed off /my-signups so the URL matches the one word the
+				UI now uses for this ("Anmeldungen" / "sign-ups"); no redirect
+				from the old path, there are no users with saved links yet. */}
 				<Route
-					path="/my-engagements"
+					path="/my-signups"
 					element={
 						<ProtectedRoute>
 							<MyEngagementsPage />
@@ -189,6 +209,8 @@ export default function App() {
 					}
 				/>
 				<Route path="/users/:userId" element={<UserProfilePage />} />
+				{/* One section per route behind a shared left rail, rather than
+				all four stacked on a single ~2000px scroll. */}
 				<Route
 					path="/administration"
 					element={
@@ -196,7 +218,13 @@ export default function App() {
 							<AdministrationPage />
 						</ProtectedRoute>
 					}
-				/>
+				>
+					<Route index element={<Navigate to="organizations" replace />} />
+					<Route path="organizations" element={<AdminOrganizationsPage />} />
+					<Route path="users" element={<AdminUsersPage />} />
+					<Route path="reports" element={<AdminReportsPage />} />
+					<Route path="audit-log" element={<AdminAuditLogPage />} />
+				</Route>
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

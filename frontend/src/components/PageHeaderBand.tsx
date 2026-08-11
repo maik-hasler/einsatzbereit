@@ -20,6 +20,20 @@ interface Props {
 	lead?: string;
 	/** Optional trailing row (a "last updated" chip, a CTA). */
 	children?: ReactNode;
+	/**
+	 * Where the in-band back link goes, and what it is called. Defaults to the
+	 * site root. The org app overrides both: inside that shell "back" means the
+	 * organization's dashboard, not the public landing page.
+	 */
+	backHref?: string;
+	backLabel?: string;
+	/**
+	 * Drop the inner max-w-5xl measure so the band's text starts on the same
+	 * left edge as a page whose content fills the full max-w-page column. The
+	 * org app's pages do; the account and legal pages centre a 5xl column and
+	 * want the default.
+	 */
+	fullWidth?: boolean;
 }
 
 // Shared title band for the standalone public pages (help, contact, imprint,
@@ -56,6 +70,9 @@ export default function PageHeaderBand({
 	title,
 	lead,
 	children,
+	backHref = "/",
+	backLabel,
+	fullWidth = false,
 }: Props) {
 	const { t } = useTranslation();
 	useOverlaysHeader();
@@ -87,16 +104,23 @@ export default function PageHeaderBand({
 				alone lands ~175px off. The band's *background* still runs edge
 				to edge; only its text is brought into the document measure. */}
 				<div className="relative mx-auto max-w-page px-4 sm:px-6 lg:px-8">
-					<div className="mx-auto max-w-5xl pt-[calc(var(--header-height)+2rem)] pb-14 sm:pt-[calc(var(--header-height)+3rem)] sm:pb-20">
+					{/* Vertical padding tightened from pt+3rem/pb-20. At the old
+					values the band ran ~420px tall to hold an eyebrow, a title and
+					at most two lines of lead - so on /help, /contact and the account
+					pages roughly 60% of the tallest, darkest surface on the page was
+					empty. The type scale is unchanged; only the air around it is. */}
+					<div
+						className={`pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14 ${fullWidth ? "" : "mx-auto max-w-5xl"}`}
+					>
 						{/* Replaces the BreadcrumbBar these pages used to render - one
 						way back, in the band, instead of a grey strip above it
 						repeating the title. */}
 						<Link
-							to="/"
+							to={backHref}
 							className="animate-fade-up -ml-1 inline-flex items-center gap-1 rounded-lg px-1 py-1 text-sm font-medium text-brand-100 transition-colors hover:text-white"
 						>
 							<ChevronLeftIcon className="h-4 w-4" />
-							{t("breadcrumb.home")}
+							{backLabel ?? t("breadcrumb.home")}
 						</Link>
 						{actions.length > 0 && (
 							<div className="animate-fade-up-d1 float-right ml-4 flex shrink-0 items-center gap-2">

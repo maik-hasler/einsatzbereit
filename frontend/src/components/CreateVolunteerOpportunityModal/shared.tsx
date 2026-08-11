@@ -49,15 +49,17 @@ export function Stepper({
 											: "bg-gray-200 group-hover:bg-brand-200"
 								}`}
 							/>
+							{/* The rule above carries the error state; the label keeps
+							its normal colour. Turning the step's *name* red read as
+							"this step is broken" rather than "a field in here needs
+							attention" - the fields themselves already say which. */}
 							<span
 								className={`truncate text-xs font-semibold ${
-									hasError
-										? "text-red-600"
-										: isActive
-											? "text-brand-700"
-											: isDone
-												? "text-gray-700"
-												: "text-gray-500 group-hover:text-gray-600"
+									isActive
+										? "text-brand-700"
+										: isDone
+											? "text-gray-700"
+											: "text-gray-500 group-hover:text-gray-600"
 								}`}
 							>
 								{label}

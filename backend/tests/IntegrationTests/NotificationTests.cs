@@ -56,7 +56,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementConfirmed");
 		notification.RelatedTitle.Should().Be(opportunityTitle);
-		notification.ActionUrl.Should().Be("/my-engagements");
+		notification.ActionUrl.Should().Be("/my-signups");
 	}
 
 	[Test]
@@ -81,7 +81,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementCancelled");
 		notification.RelatedTitle.Should().Be(opportunityTitle);
-		notification.ActionUrl.Should().Be("/my-engagements");
+		notification.ActionUrl.Should().Be("/my-signups");
 	}
 
 	[Test]
@@ -136,7 +136,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		var notification = veraNotifications.Items.Single(n => n.Kind == "InvitationReceived");
 		notification.RelatedTitle.Should().Be(organizationName);
 		// einsatzbereit#1684: invitations moved off /profile onto their own page.
-		notification.ActionUrl.Should().Be("/my-engagements");
+		notification.ActionUrl.Should().Be("/my-signups");
 	}
 
 	[Test]

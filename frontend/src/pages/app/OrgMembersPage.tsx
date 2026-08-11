@@ -9,7 +9,7 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { inputClass, labelClass } from "../../lib/formClasses";
+import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
@@ -301,7 +301,7 @@ export default function OrgMembersPage() {
 									onChange={(e) =>
 										setInviteRole(e.target.value as "Member" | "Organizer")
 									}
-									className={inputClass}
+									className={selectClass}
 								>
 									<option value="Member">{t("orgSettings.roleMember")}</option>
 									<option value="Organizer">

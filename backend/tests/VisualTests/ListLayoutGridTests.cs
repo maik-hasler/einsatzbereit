@@ -123,7 +123,7 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		await CreateOpportunityAsync(http, organizationId, "Grid Card A", isDraft: false);
 		await CreateOpportunityAsync(http, organizationId, "Grid Card B", isDraft: false);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var list = Page.Locator("#opportunities ul").First;

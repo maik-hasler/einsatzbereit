@@ -8,7 +8,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { formatDate } from "../../lib/format";
-import { inputClass, labelClass } from "../../lib/formClasses";
+import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { cardClass } from "../../lib/surfaceClasses";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -179,7 +179,7 @@ export default function OrgEngagementsPage() {
 						id="org-engagement-status-filter"
 						value={statusFilter}
 						onChange={(e) => handleStatusChange(e.target.value)}
-						className={inputClass}
+						className={selectClass}
 					>
 						<option value="">{t("orgEngagements.allStatuses")}</option>
 						{Object.entries(STATUS_LABELS).map(([value, label]) => (

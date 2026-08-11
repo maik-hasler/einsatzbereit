@@ -68,22 +68,27 @@ function UpcomingOpportunitiesWidget({
 
 	const items = useMemo<UpcomingItem[] | null>(() => {
 		if (!opportunities) return null;
-		return opportunities
-			.map((o): UpcomingItem => ({
-				id: o.id,
-				title: o.title || t("orgDashboard.unnamedDraft"),
-				nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
-				bookedCount: o.currentParticipantCount,
-				maxParticipants: o.totalMaxParticipants ?? null,
-			}))
-			.sort((a, b) => {
-				if (a.nextStart && b.nextStart)
-					return a.nextStart.getTime() - b.nextStart.getTime();
-				if (a.nextStart) return -1;
-				if (b.nextStart) return 1;
-				return 0;
-			})
-			.slice(0, MAX_ITEMS);
+		return (
+			opportunities
+				.map((o): UpcomingItem => ({
+					id: o.id,
+					title: o.title || t("orgDashboard.unnamedDraft"),
+					nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
+					bookedCount: o.currentParticipantCount,
+					maxParticipants: o.totalMaxParticipants ?? null,
+				}))
+				// "Upcoming" means it has a next slot. Interest-based opportunities
+				// have no time slot at all, so they used to fill this list with
+				// rows carrying nothing but a title, under a heading promising
+				// dates - and pushed the ones that actually are upcoming out of
+				// the visible MAX_ITEMS.
+				.filter((item) => item.nextStart !== null)
+				.sort(
+					(a, b) =>
+						(a.nextStart as Date).getTime() - (b.nextStart as Date).getTime(),
+				)
+				.slice(0, MAX_ITEMS)
+		);
 	}, [opportunities, t]);
 
 	return (
@@ -159,7 +164,7 @@ function UpcomingOpportunitiesWidget({
 											)}
 										{item.maxParticipants === null
 											? t("orgOpportunities.participantsUnlimited", {
-													booked: item.bookedCount,
+													count: item.bookedCount,
 												})
 											: item.maxParticipants > 0 &&
 												t("orgOpportunities.participants", {

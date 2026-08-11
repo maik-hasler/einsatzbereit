@@ -44,11 +44,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		// #1755 moved the opportunity list (and with it the org links on its
+		// cards) off the landing page onto /opportunities.
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch and could silently skip this test instead of failing.
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
 		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -79,11 +81,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		// #1755 moved the opportunity list off the landing page onto
+		// /opportunities.
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
 		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -123,7 +127,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// "Manage sign-ups" only appears for published opportunities on the
@@ -144,11 +148,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		await Expect(breadcrumb).ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
-			.ToBeVisibleAsync();
-		await Expect(breadcrumb.GetByText(opportunityTitle, new() { Exact = true }))
+		// The band replaced the breadcrumb bar: the nested page's own title as
+		// the h1, and one link back up to the tab that owns it.
+		var band = Page.Locator("main");
+		await Expect(band.GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToHaveTextAsync(opportunityTitle, new() { Timeout = 15_000 });
+		await Expect(band.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
 			.ToBeVisibleAsync();
 	}
 
@@ -166,7 +171,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
@@ -185,12 +190,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
-		var breadcrumbOpportunitiesLink = breadcrumb.GetByRole(
+		var backToOpportunities = Page.Locator("main").GetByRole(
 			AriaRole.Link, new() { Name = "Opportunities", Exact = true });
-		await Expect(breadcrumbOpportunitiesLink).ToBeVisibleAsync();
+		await Expect(backToOpportunities).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await breadcrumbOpportunitiesLink.ClickAsync();
+		await backToOpportunities.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities$"), new() { Timeout = 15_000 });
 	}
 
@@ -258,7 +262,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var organizationId = match.Groups[1].Value;
 
 		var errorBoundaryHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" });
-		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
 
 		foreach (var (path, activePageLabel) in new[]
 		{
@@ -275,11 +278,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Expect(errorBoundaryHeading).ToHaveCountAsync(0);
 
 			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
-			// above it, at the app root), taking the breadcrumb down with it -
-			// so its current-page label is present precisely when the page
+			// above it, at the app root), taking the header band down with it -
+			// so the band's h1 carries the page's name precisely when the page
 			// rendered for real, regardless of whether the org has any
 			// opportunities/members/etc. to show.
-			await Expect(breadcrumb.Locator("[aria-current='page']"))
+			await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
 				.ToHaveTextAsync(activePageLabel, new() { Timeout = 10_000 });
 		}
 	}
@@ -377,48 +380,47 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Footer_ParticipateLink_FromHomePage_ScrollsToOpportunitiesSection()
+	public async Task Footer_CtaLink_FromHomePage_NavigatesToOpportunitiesPage()
 	{
-		// #1031: the footer's "Get involved" link used a react-router Link,
-		// which navigates via the history API without triggering native
-		// browser fragment scrolling - clicking it from the home page did
-		// nothing visible. Now a plain <a href="/#opportunities"> like the
-		// hero CTA, so the browser handles the scroll itself.
+		// #1031 covered a fragment link ("/#opportunities") that had to scroll
+		// the landing page. #1755 gave the list its own route, so the footer
+		// CTA is a plain destination link now - what still needs guarding is
+		// that it actually lands on the populated list rather than the
+		// landing page it used to scroll.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var participateLink = Page.Locator("footer").GetByRole(
-			AriaRole.Link, new() { Name = "Get involved" });
-		await Expect(participateLink).ToHaveAttributeAsync("href", "/#opportunities");
+		var ctaLink = Page.Locator("footer").GetByRole(
+			AriaRole.Link, new() { Name = "Find opportunities" }).First;
+		await Expect(ctaLink).ToHaveAttributeAsync("href", "/opportunities");
 
-		await participateLink.ClickAsync();
+		await ctaLink.ClickAsync();
 
-		await Page.WaitForURLAsync(new Regex(@"/#opportunities$"), new() { Timeout = 10_000 });
-		await Expect(Page.Locator("#opportunities")).ToBeInViewportAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/opportunities$"), new() { Timeout = 10_000 });
+		await Expect(Page.Locator("#opportunities")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]
-	public async Task Footer_ParticipateLink_FromAnotherPage_NavigatesHomeAndScrollsToOpportunitiesSection()
+	public async Task Footer_CtaLink_FromAnotherPage_NavigatesToOpportunitiesPage()
 	{
-		// #1031: from any page other than home, the old Link-based footer
-		// link navigated to "/" but stayed scrolled to the top. A plain
-		// anchor tag forces a full navigation to "/#opportunities", which
-		// the browser scrolls to once the home page has rendered.
+		// The companion to the test above from a page that is not the landing
+		// page: the footer is shared by every route, so the CTA has to reach
+		// the list from anywhere, not just from "/".
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync($"{frontend}organizations");
+		await Page.GotoAsync($"{frontend}help");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var participateLink = Page.Locator("footer").GetByRole(
-			AriaRole.Link, new() { Name = "Get involved" });
-		await Expect(participateLink).ToHaveAttributeAsync("href", "/#opportunities");
+		var ctaLink = Page.Locator("footer").GetByRole(
+			AriaRole.Link, new() { Name = "Find opportunities" }).First;
+		await Expect(ctaLink).ToHaveAttributeAsync("href", "/opportunities");
 
-		await participateLink.ClickAsync();
+		await ctaLink.ClickAsync();
 
-		await Page.WaitForURLAsync(new Regex(@"/#opportunities$"), new() { Timeout = 10_000 });
-		await Expect(Page.Locator("#opportunities")).ToBeInViewportAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/opportunities$"), new() { Timeout = 10_000 });
+		await Expect(Page.Locator("#opportunities")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]

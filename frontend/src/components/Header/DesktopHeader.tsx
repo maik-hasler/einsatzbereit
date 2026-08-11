@@ -1,12 +1,24 @@
 import { useTranslation } from "react-i18next";
+import { NavLink } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
 import Button from "../Button";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 
-// Desktop-width-only nav: signed-in account controls (or sign-in/register
-// buttons) plus the language selector.
+// Desktop-width-only nav: primary destinations, then signed-in account
+// controls (or sign-in/register buttons) plus the language selector.
+//
+// The destinations are the point of this component. Until /opportunities
+// became a route of its own, this <nav aria-label="Main navigation"> held no
+// links at all - just account controls - so a signed-in volunteer had no
+// route to the opportunity list except the account dropdown, while the mobile
+// hamburger did carry these same links. Desktop was the worse of the two.
+const LINKS = [
+	{ key: "findOpportunities", to: "/opportunities", hash: false },
+	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
+	{ key: "help", to: "/help", hash: false },
+] as const;
 export default function DesktopHeader({
 	isLoggedIn,
 	isTransparent,
@@ -39,6 +51,50 @@ export default function DesktopHeader({
 			aria-label={t("nav.primaryLabel")}
 			className="hidden items-center gap-3 md:flex"
 		>
+			<ul className="mr-2 flex items-center gap-1 lg:gap-2">
+				{LINKS.map((link) => {
+					const base =
+						"rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+					const idle = isTransparent
+						? "text-brand-100 hover:text-white"
+						: "text-gray-600 hover:text-brand-800";
+					const activeClass = isTransparent ? "text-white" : "text-brand-800";
+
+					return (
+						<li key={link.key}>
+							{/* The hash destination is a plain <a>, not a NavLink:
+							NavLink would match it against the "/" route (making it
+							look active on the landing page) and would hand the
+							navigation to the router, which doesn't scroll to the
+							fragment. Same reasoning as Button's anchor branch. */}
+							{link.hash ? (
+								<a
+									href={link.to}
+									data-testid={`nav-${link.key}`}
+									className={`${base} ${idle}`}
+								>
+									{t(`nav.${link.key}`)}
+								</a>
+							) : (
+								<NavLink
+									to={link.to}
+									data-testid={`nav-${link.key}`}
+									className={({ isActive }) =>
+										`${base} ${isActive ? activeClass : idle}`
+									}
+								>
+									{t(`nav.${link.key}`)}
+								</NavLink>
+							)}
+						</li>
+					);
+				})}
+			</ul>
+
+			<div
+				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+			/>
+
 			{isLoggedIn ? (
 				<AccountControls
 					transparent={isTransparent}

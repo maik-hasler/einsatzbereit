@@ -190,15 +190,15 @@ internal sealed class NotificationReadRepository(
 					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
 						? $"/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements"
 						: null)
-					: "/my-engagements";
+					: "/my-signups";
 			}
 			else if (InvitationKinds.Contains(n.Kind))
 			{
 				invitationOrganizationNames.TryGetValue(n.RelatedEntityId, out relatedTitle);
 				actionUrl = n.Kind == NotificationKind.InvitationReceived
 					// einsatzbereit#1684: invitations moved off /profile onto their own
-					// page at /my-engagements.
-					? "/my-engagements"
+					// page at /my-signups.
+					? "/my-signups"
 					: (invitationOrganizationIds.TryGetValue(n.RelatedEntityId, out var invitationOrganizationId)
 						? $"/app/{invitationOrganizationId}/dashboard/members"
 						: null);
@@ -209,7 +209,7 @@ internal sealed class NotificationReadRepository(
 
 				actionUrl = n.Kind is NotificationKind.OpportunityUpdated or NotificationKind.NewMatchingOpportunity
 					? $"/volunteer-opportunities/{n.RelatedEntityId}"
-					: "/my-engagements";
+					: "/my-signups";
 			}
 
 			return new NotificationSummary(

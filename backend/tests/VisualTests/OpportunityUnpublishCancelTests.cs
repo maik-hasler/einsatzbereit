@@ -40,7 +40,7 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		var row = publishedSection.Locator("li", new() { HasText = title });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await row.GetByTestId("opportunity-unpublish").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(row, "opportunity-unpublish");
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Yes, unpublish" }).ClickAsync();
 
@@ -83,7 +83,7 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		var row = publishedSection.Locator("li", new() { HasText = title });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await row.GetByTestId("opportunity-cancel").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(row, "opportunity-cancel");
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 		await Page.Locator("#cancel-opportunity-reason").FillAsync("Venue is no longer available");
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Yes, cancel opportunity" }).ClickAsync();
@@ -93,12 +93,17 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		await Expect(cancelledRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(cancelledRow.GetByTestId("opportunity-status-badge")).ToHaveTextAsync("Cancelled");
 
-		// Terminal - Cancelled offers no Edit/Publish/Unpublish/Cancel, only Delete.
-		await Expect(cancelledRow.GetByTestId("opportunity-edit")).Not.ToBeVisibleAsync();
+		// Terminal - Cancelled offers no Edit/Publish/Unpublish/Cancel, only
+		// Delete. Publish is the one primary action rendered on the card
+		// itself; the rest live in the row's overflow menu, so open it before
+		// asserting on what it does and does not contain.
 		await Expect(cancelledRow.GetByTestId("opportunity-publish")).Not.ToBeVisibleAsync();
+		await OpportunityRowHelper.OpenActionsAsync(cancelledRow);
+		await Expect(cancelledRow.GetByTestId("opportunity-delete")).ToBeVisibleAsync();
+		await Expect(cancelledRow.GetByTestId("opportunity-edit")).Not.ToBeVisibleAsync();
 		await Expect(cancelledRow.GetByTestId("opportunity-unpublish")).Not.ToBeVisibleAsync();
 		await Expect(cancelledRow.GetByTestId("opportunity-cancel")).Not.ToBeVisibleAsync();
-		await Expect(cancelledRow.GetByTestId("opportunity-delete")).ToBeVisibleAsync();
+		await Page.Keyboard.PressAsync("Escape");
 
 		await PollUntilAsync(
 			async () =>

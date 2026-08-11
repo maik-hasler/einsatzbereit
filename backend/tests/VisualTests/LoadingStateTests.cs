@@ -14,7 +14,7 @@ namespace VisualTests;
 public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch()
+	public async Task OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -25,7 +25,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await route.ContinueAsync();
 		});
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 
 		// The skeleton's accessible name comes from a sr-only span; the
 		// pulsing placeholder blocks themselves are aria-hidden. Scoped to
@@ -62,7 +62,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync(detailUrl);
 
-		// See the comment in HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
+		// See the comment in OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
 		// above on why this is scoped to ":has(.animate-pulse)".
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
@@ -101,9 +101,9 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await route.ContinueAsync();
 		});
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration/organizations");
 
-		// See the comment in HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
+		// See the comment in OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
 		// above on why this is scoped to ":has(.animate-pulse)" - AdministrationPage
 		// is lazy-loaded (#1403), so AppLayout's own Suspense fallback (a spinner,
 		// also role="status") briefly races this one for "first role='status' on

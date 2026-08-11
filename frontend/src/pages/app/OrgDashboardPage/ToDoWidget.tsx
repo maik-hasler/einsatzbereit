@@ -69,49 +69,51 @@ function ToDoWidget({ organizationId, size }: Props) {
 				// Side by side once there's room for two columns to breathe;
 				// stacked when the widget only got a narrow slice of the grid
 				// (#771 follow-up review feedback - adaptive layouts per size).
+				// Compact used to stack the two stats with space-y-4 at text-3xl,
+				// which overflowed the fixed dashboard row height: the second
+				// number rendered sliced in half at the tile's bottom edge, which
+				// reads as a broken widget rather than as "scroll for more".
+				// Compact now keeps both stats on one row at a smaller step.
 				<div
 					className={
-						size === "compact" ? "space-y-4" : "grid grid-cols-2 gap-4"
+						size === "compact" ? "flex gap-6" : "grid grid-cols-2 gap-4"
 					}
 				>
-					<div>
+					<div className="min-w-0">
 						<p
 							data-testid="todo-widget-stat-pending"
-							className="text-3xl font-bold text-gray-900"
+							className={`font-bold text-gray-900 ${size === "compact" ? "text-2xl" : "text-3xl"}`}
 						>
 							{kpis.pendingEngagements}
 						</p>
-						<p className="text-sm text-gray-500">
+						<p className="text-xs text-gray-500 sm:text-sm">
 							{t("orgDashboard.pendingEngagements", {
 								count: kpis.pendingEngagements,
 							})}
 						</p>
 					</div>
-					<div>
+					<div className="min-w-0">
 						<p
 							data-testid="todo-widget-stat-confirmed"
-							className="text-3xl font-bold text-gray-900"
+							className={`font-bold text-gray-900 ${size === "compact" ? "text-2xl" : "text-3xl"}`}
 						>
 							{kpis.confirmedEngagementsTotal}
 						</p>
-						<p className="text-sm text-gray-500">
+						<p className="text-xs text-gray-500 sm:text-sm">
 							{t("orgDashboard.signedUpVolunteers")}
 						</p>
 					</div>
 				</div>
 			)}
-			<div className="mt-4 flex flex-col gap-2">
+			{/* One link out, not two: "View opportunities" repeated a destination
+			the org app's own tab bar already carries, and the second row was
+			part of what pushed this tile past its allotted height. */}
+			<div className="mt-4">
 				<Link
 					to={`/app/${organizationId}/dashboard/engagements?status=Pending`}
 					className="text-sm font-medium text-brand-700 hover:underline"
 				>
 					{t("orgDashboard.viewPendingEngagements")}
-				</Link>
-				<Link
-					to={`/app/${organizationId}/dashboard/opportunities`}
-					className="text-sm font-medium text-brand-700 hover:underline"
-				>
-					{t("orgDashboard.viewOpportunities")}
 				</Link>
 			</div>
 		</WidgetCard>

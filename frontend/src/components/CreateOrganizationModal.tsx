@@ -12,6 +12,7 @@ import {
 	ORGANIZATION_FORM_DEFAULT_VALUES,
 } from "../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../lib/organizationFormSchema";
+import { getInitials } from "../lib/initials";
 import Modal from "./Modal";
 import Button from "./Button";
 import ConfirmDialog from "./ConfirmDialog";
@@ -171,7 +172,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								/>
 							) : (
 								<span className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-100 text-xl font-semibold text-brand-700">
-									{name.charAt(0).toUpperCase() || "?"}
+									{name.trim() ? getInitials(name) : "?"}
 								</span>
 							)}
 							<div>

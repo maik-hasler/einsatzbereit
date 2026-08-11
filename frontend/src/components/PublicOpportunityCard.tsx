@@ -37,7 +37,13 @@ export default function PublicOpportunityCard({
 				aria-label={opportunity.title}
 			/>
 
-			<p className="flex items-center gap-2 text-sm font-semibold text-brand-700">
+			{/* Muted, matching OpportunityListItem's date line. This led in
+				brand-700 while the list card's equivalent slot was grey, so the
+				same fact was styled as the card's loudest element in one place and
+				as supporting metadata in the other - most visible on the
+				opportunity detail page, which shows the list card's siblings above
+				and these below. */}
+			<p className="flex items-center gap-2 text-sm font-medium text-gray-500">
 				<CalendarIcon className="h-4 w-4 shrink-0" />
 				{formatOccurrence(opportunity.occurrence, t)}
 			</p>

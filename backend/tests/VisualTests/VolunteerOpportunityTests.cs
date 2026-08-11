@@ -24,8 +24,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task OccurrenceFilter_UpdatesUrlWithOccurrenceParam()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-frequency").ClickAsync();
@@ -38,8 +39,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task ParticipationTypeFilter_UpdatesUrlWithParticipationTypeParam()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-type").ClickAsync();
@@ -52,8 +54,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task MultipleFilters_AllReflectedInUrl()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-frequency").ClickAsync();
@@ -69,8 +72,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task FrequencyFilter_PanelStaysBelowHeader()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-frequency").ClickAsync();
@@ -87,28 +91,34 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task HomePage_OpportunitiesSection_IsCenteredWithStyledCards()
+	public async Task OpportunitiesPage_HeaderBandIntroducesTheStyledCards()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 
-		// Section heading is rendered and centre-aligned (matches "How it works").
+		// #1755 moved the list off the landing page onto its own route, so the
+		// old centred "Current Opportunities" section heading is gone - the
+		// page header band's <h1> is what introduces the list now.
 		var heading = Page
-			.GetByRole(AriaRole.Heading, new() { Name = "Current Opportunities" })
+			.GetByRole(AriaRole.Heading, new() { Name = "Find opportunities", Level = 1 })
 			.First;
 		await Expect(heading).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(heading).ToHaveCSSAsync("text-align", "center");
 
-		// Subtitle line is present below the heading.
+		// Lead line is present below the heading.
 		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
 			.ToBeVisibleAsync();
 
 		// Seed data always publishes opportunities, so a rendered card must
-		// carry the redesigned visuals: a clickable organisation link and the
-		// brand-gradient banner tile (one muted brand-green tint for every
-		// category, not the per-category rainbow fill an earlier design used -
-		// see OpportunityListItem.tsx's own comment on why that was rejected).
+		// carry the redesigned visuals: a clickable organisation link and a
+		// title that is an <h2> (an <h3> skipped a level under the band's <h1>
+		// once the "Current Opportunities" section heading went away, which
+		// axe fails on heading-order - see OpportunityListItem). Deliberately
+		// no banner-tile assertion any more: the brand-gradient tile only
+		// backs a real uploaded photo now, since on a photo-less card (almost
+		// all of them) it made the grid's top third a tinted rectangle with
+		// one small icon in it.
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
@@ -120,7 +130,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Expect(firstCard.Locator("a[href*='/organizations/']"))
 			.ToBeVisibleAsync();
-		await Expect(firstCard.Locator("[class*='from-brand-50']")).Not.ToHaveCountAsync(0);
+		await Expect(firstCard.Locator("h2")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -205,16 +215,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task DetailPage_ShowsBreadcrumbAndShareButton()
+	public async Task DetailPage_ShowsOrgEyebrowAndShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -249,11 +259,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the browse page's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -283,11 +293,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		// #1708: seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the home page's
+		// CountAsync() right after the h1 check above raced the browse page's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -406,11 +416,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task HomePage_LoadsWithoutError_WhenPublishedOpportunitiesExist()
+	public async Task OpportunitiesPage_LoadsWithoutError_WhenPublishedOpportunitiesExist()
 	{
 		// Regression: EF Core 10 query translation failure caused HTTP 500 on all
 		// volunteer opportunity list endpoints (GetPagedSummaries + org queries).
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		// Verify the backend endpoint works directly before involving the browser.
 		// This surfaces the actual HTTP status code if the backend is misbehaving.
@@ -430,7 +441,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 				apiResponseStatuses.Add((response.Url, response.Status));
 		};
 
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{origin}/opportunities");
 
 		// The main element must be present - a 500 would show an error page instead.
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -492,13 +503,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var statusBadge = draftsSection.GetByTestId("opportunity-status-badge").First;
 		await Expect(statusBadge).ToHaveTextAsync("Draft");
 
-		// The public home page must NOT show the draft.
-		await Page.GotoAsync(frontend.ToString());
+		// The public browse page must NOT show the draft.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Filter the <li> card, not the stretched <a> overlay - the card link
 		// carries the title only as aria-label (empty text content), so
-		// HasText never matches it. The <li> contains the visible <h3> title.
+		// HasText never matches it. The <li> contains the visible <h2> title.
 		var draftInPublicList = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
@@ -583,7 +594,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Reopen the draft's edit wizard directly from the list row (inline edit).
 		var draftRow = draftsSection.Locator("li", new() { HasText = uniqueTitle });
 		await Expect(draftRow).ToBeVisibleAsync();
-		await draftRow.GetByTestId("opportunity-edit").ClickAsync();
+		await OpportunityRowHelper.ClickActionAsync(draftRow, "opportunity-edit");
 
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
 
@@ -768,10 +779,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// The newly published opportunity is visible in the public list. Filter
 		// the <li> card, not the stretched <a> overlay - the card link carries
 		// the title only as aria-label (empty text content), so HasText never
-		// matches it; the <li> contains the visible <h3> title. Keep the 30s
+		// matches it; the <li> contains the visible <h2> title. Keep the 30s
 		// window: under the shared, contended CI stack the listing can lag
 		// behind the publish call by more than 15s even when nothing is wrong.
-		await Page.GotoAsync(frontend.ToString());
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var listedCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
@@ -997,7 +1008,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task DetailPage_TagChip_IsClickableLink_FiltersHomeList()
+	public async Task DetailPage_TagChip_IsClickableLink_FiltersBrowseList()
 	{
 		// Regression for #1021: tag chips used to render as plain,
 		// non-interactive <span> elements - nothing in the UI could ever
@@ -1023,7 +1034,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
 			title,
-			description = "Created by DetailPage_TagChip_IsClickableLink_FiltersHomeList",
+			description = "Created by DetailPage_TagChip_IsClickableLink_FiltersBrowseList",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1046,9 +1057,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// Explicit timeout (default is 5s): switching the URL also re-queries
 		// the filtered list, which can outrun the default under CI load.
-		await Expect(Page).ToHaveURLAsync($"{origin}/?tag={Uri.EscapeDataString(tag)}", new() { Timeout = 15_000 });
+		await Expect(Page).ToHaveURLAsync($"{origin}/opportunities?tag={Uri.EscapeDataString(tag)}", new() { Timeout = 15_000 });
 
-		// It's not just a link to the right URL - the home list actually
+		// It's not just a link to the right URL - the browse list actually
 		// applies the filter and still shows the matching opportunity.
 		await Expect(Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])").Filter(new() { HasText = title }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -1060,7 +1071,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters()
 	{
-		// Companion to DetailPage_TagChip_IsClickableLink_FiltersHomeList
+		// Companion to DetailPage_TagChip_IsClickableLink_FiltersBrowseList
 		// (#1021): list cards must expose the same clickable tag chips, since
 		// that's where most volunteers actually browse before ever opening a
 		// detail page. Also covers two edge cases: an opportunity with more
@@ -1102,7 +1113,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// Land on the list already filtered by tagA, so the card is visible
 		// without depending on how many other opportunities are seeded.
-		await Page.GotoAsync($"{origin}/?tag={Uri.EscapeDataString(tagA)}");
+		await Page.GotoAsync($"{origin}/opportunities?tag={Uri.EscapeDataString(tagA)}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var card = Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])").Filter(new() { HasText = title });
@@ -1124,7 +1135,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// already uses.
 		await tagBChip.ClickAsync();
 		await Expect(Page).ToHaveURLAsync(
-			new Regex($"^{Regex.Escape($"{origin}/?tag={Uri.EscapeDataString(tagB)}")}$"),
+			new Regex($"^{Regex.Escape($"{origin}/opportunities?tag={Uri.EscapeDataString(tagB)}")}$"),
 			new() { Timeout = 15_000 });
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}

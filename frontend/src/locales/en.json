@@ -18,10 +18,13 @@
     },
     "nav": {
       "primaryLabel": "Main navigation",
+      "findOpportunities": "Find opportunities",
+      "forOrganizations": "For organizations",
+      "help": "Help",
       "userMenu": "User menu",
       "myProfile": "My Profile",
-      "myEngagements": "My Activity",
-      "profileSettings": "Notifications & Privacy",
+      "myEngagements": "My sign-ups",
+      "profileSettings": "Settings",
       "administration": "Administration",
       "organization": "Organization",
       "signOut": "Sign out",
@@ -32,24 +35,24 @@
     },
     "footer": {
       "ctaTitle": "Ready when you are.",
-      "ctaButton": "Start browsing",
+      "ctaButton": "Find opportunities",
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
-      "participate": "Get involved",
+      "forOrganizations": "For organizations",
+      "support": "Support",
       "legal": "Legal",
       "imprint": "Imprint",
       "terms": "Terms of Use",
       "privacy": "Privacy Policy",
       "contact": "Contact",
       "help": "Help",
-      "followUs": "Follow us",
       "license": "AGPL-3.0",
       "copyright": "© {{year}} Einsatzbereit. Licensed under <licenseLink>AGPL-3.0</licenseLink>."
     },
     "landing": {
       "pageTitle": "Find volunteer opportunities near you",
       "heroTitle": "Your volunteering starts here.",
-      "heroSubtitle": "Find a cause that fits you in just a few clicks.",
+      "heroSubtitle": "Find an opportunity that fits you in just a few clicks.",
       "heroSearchLocationLabel": "Location",
       "heroSearchLocationPlaceholder": "City or postal code",
       "heroSearchKeywordLabel": "Keyword",
@@ -57,18 +60,18 @@
       "heroSearchButton": "Search",
       "heroCtaOrg": "Create an organization",
       "heroCtaOrgOverview": "Organization overview",
-      "missionLabel": "Our Mission",
+      "missionLabel": "From the founder",
       "missionTitle": "Why I built Einsatzbereit",
       "missionText": "Volunteering shouldn't require paperwork. I kept watching people who wanted to help get stuck on registration forms, waitlists, or simply not knowing where to start. Einsatzbereit removes every one of those barriers: micro-volunteering that fits into a real week - free, no account required, and fully open source.",
       "missionAuthor": "Maik Hasler, Founder of Einsatzbereit",
-      "missionCta": "Find an opportunity now",
+      "missionCta": "Find opportunities",
       "orgCtaLabel": "For organizations",
       "orgCtaTitle": "Does your organization need volunteers?",
       "orgCtaText": "Everything you need to publish opportunities and find volunteers.",
       "orgFeature1Title": "Post opportunities",
       "orgFeature1Desc": "Create opportunities in minutes and reach volunteers in your region.",
       "orgFeature2Title": "Manage volunteers",
-      "orgFeature2Desc": "Keep signups, time slots, and engagements in one place.",
+      "orgFeature2Desc": "Keep opportunities, time slots, and sign-ups in one place.",
       "orgFeature3Title": "Free & open source",
       "orgFeature3Desc": "No hidden costs, transparent code, full control.",
       "faqLabel": "Frequently asked questions",
@@ -83,10 +86,12 @@
       "faqA4": "Yes, the entire source code is available on GitHub under the AGPL-3.0 license.",
       "faqMoreLink": "More questions in the Help Center"
     },
-    "opportunities": {
+    "opportunitiesPage": {
       "eyebrow": "Volunteering",
-      "currentNeeds": "Current Opportunities",
-      "subtitle": "Find a cause near you and lend a hand - most take just a few hours.",
+      "title": "Find opportunities",
+      "lead": "Find an opportunity near you and lend a hand - most take just a few hours."
+    },
+    "opportunities": {
       "oneTime": "One-time",
       "recurring": "Recurring",
       "waitlist": "Scheduled slots",
@@ -170,6 +175,7 @@
       "notFound": "Not found.",
       "flexibleDate": "Flexible date",
       "applyBy": "Apply by {{date}}",
+      "startsOn": "Starts {{date}}",
       "full": "Full",
       "spotsLeft": "{{count}} spots left",
       "spotsLeft_one": "{{count}} spot left",
@@ -191,7 +197,7 @@
       "yourApplication": "Your sign-up",
       "aboutOrganization": "About this organization",
       "aboutOrganizationLoadError": "Couldn't load this organization's contact details.",
-      "moreFromOrganization": "More from this organization",
+      "moreFromOrganization": "More opportunities from this organization",
       "postedToday": "Posted today",
       "postedDaysAgo": "Posted {{count}} days ago",
       "postedDaysAgo_one": "Posted {{count}} day ago",
@@ -254,7 +260,7 @@
       "creating": "Creating…",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
-      "fieldRequired": "Required",
+      "fieldRequired": "Please fill this in.",
       "useOrgAddress": "Use organization address",
       "publish": "Publish",
       "saveDraft": "Save as draft",
@@ -387,8 +393,11 @@
       "cancelledDesc": "Permanently cancelled. This cannot be undone - create a new opportunity if plans resume.",
       "cancelledBadge": "Cancelled",
       "manageApplications": "Manage sign-ups",
-      "participants": "{{booked}}/{{max}} participants",
-      "participantsUnlimited": "{{booked}} participants (no cap)",
+      "moreActionsFor": "More actions for {{title}}",
+      "participants": "{{booked}}/{{max}} sign-ups",
+      "participantsUnlimited": "{{count}} sign-ups (no cap)",
+      "participantsUnlimited_one": "{{count}} sign-up (no cap)",
+      "participantsUnlimited_other": "{{count}} sign-ups (no cap)",
       "editLoading": "Opening…",
       "loadMore": "Load more"
     },
@@ -400,7 +409,6 @@
       "pendingEngagements": "Pending Sign-ups",
       "pendingEngagements_one": "Pending Sign-up",
       "pendingEngagements_other": "Pending Sign-ups",
-      "viewOpportunities": "View opportunities →",
       "viewPendingEngagements": "View pending sign-ups →",
       "unnamedDraft": "Unnamed Draft",
       "signedUpVolunteers": "Signed-up Volunteers",
@@ -466,7 +474,7 @@
       "fieldHouseNumber": "House number",
       "fieldZip": "ZIP",
       "fieldCity": "City",
-      "fieldRequired": "Required",
+      "fieldRequired": "Please fill this in.",
       "fieldTooLong": "Must not exceed {{max}} characters.",
       "zipInvalid": "ZIP code must be exactly 5 characters.",
       "websiteInvalid": "Website must be a valid http:// or https:// URL.",
@@ -524,10 +532,10 @@
       "fieldFirstName": "First name",
       "fieldLastName": "Last name",
       "dangerZoneTitle": "Danger zone",
-      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your account will be deleted.",
+      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your sign-ups will be anonymised and your account will be deleted.",
       "deleteAccountButton": "Delete my account",
       "deleteConfirmTitle": "Delete account?",
-      "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your engagements will be anonymised. This cannot be undone.",
+      "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your sign-ups will be anonymised. This cannot be undone.",
       "deleteConfirmButton": "Yes, delete permanently",
       "deleteError": "Failed to delete account. Please try again or contact support."
     },
@@ -633,7 +641,7 @@
       "noResultsHint": "Try a different status, time slot, or search term.",
       "volunteer": "Volunteer: {{id}}",
       "anonymizedVolunteer": "Anonymized volunteer",
-      "receivedOn": "Received: {{date}}",
+      "receivedOn": "Signed up: {{date}}",
       "confirm": "Confirm",
       "cancel": "Cancel",
       "revoke": "Revoke",
@@ -694,7 +702,7 @@
       "searchPlaceholder": "Search by volunteer name",
       "searchButton": "Search",
       "loadMore": "Load more",
-      "receivedOn": "Received: {{date}}",
+      "receivedOn": "Signed up: {{date}}",
       "volunteer": "Volunteer: {{id}}",
       "anonymizedVolunteer": "Anonymized volunteer",
       "confirm": "Confirm",
@@ -729,7 +737,7 @@
       "section3aTitle": "Signing up for an opportunity",
       "section3aBody": "Opportunities on this platform are published by independent organizations. As described in our <termsLink>Terms of Use</termsLink>, these organizations are independent third parties and not part of our company; we are not a party to any agreement between you and the organization. When you sign up for an opportunity, we pass your name and email address, your phone number if you have added one to your profile, and any message you attach to your sign-up, to the publishing organization so it can reach you to coordinate the opportunity. The organization processes this data as an independent controller under Art. 4(7) GDPR in its own right and not as our processor; we have no influence over how the organization subsequently uses the data. The legal basis for this transfer is performance of the usage agreement with you (Art. 6(1)(b) GDPR), which signing up for an opportunity fulfills.",
       "section3bTitle": "Public profiles",
-      "section3bBody": "Your profile - display name, profile picture, bio, listed skills and languages, earned badges, and your number of confirmed engagements - is visible on a public profile page, without login, to anyone on the internet. Your email address and phone number are never shown on this page. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in making visible to organizations and other users who is active as a volunteer.",
+      "section3bBody": "Your profile - display name, profile picture, bio, listed skills and languages, earned badges, and your number of confirmed opportunities - is visible on a public profile page, without login, to anyone on the internet. Your email address and phone number are never shown on this page. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in making visible to organizations and other users who is active as a volunteer.",
       "section3cTitle": "Map display and location search (OpenStreetMap, Nominatim)",
       "section3cBody": "To display maps, your browser requests map tiles from our own backend, which in turn fetches them from the map-tile service provided by OpenStreetMap; the city search in the opportunity list filter is proxied the same way, through our backend, which queries the public Nominatim geocoding service (also operated by the OpenStreetMap Foundation). In both cases, only our backend server's IP address is transmitted to the OpenStreetMap Foundation - your own IP address and the search terms you type are never sent to it directly. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in providing functioning map and location-search features without disclosing your IP address to a third party. This is not data processing under Art. 28 GDPR; the OpenStreetMap Foundation only ever receives requests from our own infrastructure, not from you.",
       "section3cLinksIntro": "Further information:",
@@ -771,6 +779,7 @@
       "reportSectionTitle": "Reporting abusive content",
       "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
       "otherSectionTitle": "Other questions or concerns",
+      "email": "maikhslr@gmail.com",
       "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint.",
       "eyebrow": "Support",
       "intro": "Report a problem, or find the right place to ask your question."
@@ -784,7 +793,7 @@
       "volunteersQ2": "How do I check in when I arrive?",
       "volunteersA2": "Opportunities that require check-in show a \"Check in\" button once your time slot starts. The organization may also check you in on-site using a QR code or your name.",
       "volunteersQ3": "Where can I see my sign-ups?",
-      "volunteersA3": "Open your profile and go to the \"My Engagements\" tab to see every opportunity you've signed up for, past and upcoming.",
+      "volunteersA3": "Open your profile and go to the \"My sign-ups\" tab to see every past and upcoming sign-up.",
       "organizersTitle": "For organizations",
       "organizersQ1": "How do I get started as an organization?",
       "organizersA1": "Create an organization from the home page, then publish your first volunteer opportunity from your organization's dashboard.",
@@ -802,13 +811,13 @@
       "section1Title": "Scope and acceptance",
       "section1Body": "These Terms of Use govern your use of Einsatzbereit (the \"Platform\"). By creating an account, registering for a volunteer opportunity, or otherwise using the Platform, you agree to be bound by these Terms. If you do not agree, please do not use the Platform.",
       "section2Title": "Our role as a platform",
-      "section2Body": "Einsatzbereit is an intermediary that connects volunteers with opportunities published by independent organizations. We do not organize, supervise, or take part in the activities listed on the Platform, and we are not a party to any arrangement made between a volunteer and an organization. Organizations are solely responsible for the opportunities they publish, including their content, safety, and suitability.",
+      "section2Body": "Einsatzbereit is an intermediary that connects volunteers with opportunities published by independent organizations. We do not organize, supervise, or take part in the opportunities listed on the Platform, and we are not a party to any arrangement made between a volunteer and an organization. Organizations are solely responsible for the opportunities they publish, including their content, safety, and suitability.",
       "section3Title": "Acceptable use",
       "section3Body": "When using the Platform, you agree to provide accurate information about yourself and keep it up to date, to treat other users, organizations, and the people you assist with respect, to follow the on-site instructions of the organization hosting an opportunity, and to refrain from posting or sharing content that is illegal, fraudulent, harassing, or otherwise harmful. You may not use the Platform to solicit paid work, collect personal data for unrelated purposes, or misrepresent your identity or affiliation with an organization.",
       "section4Title": "Organizations and volunteer opportunities",
-      "section4Body": "Organizations that publish volunteer opportunities are responsible for the accuracy of their listings and for providing a safe environment at the location and time stated. If you come across content that looks like spam, fraud, or otherwise illegal, please use the report function described on our <contactLink>Contact page</contactLink>.",
+      "section4Body": "Organizations that publish volunteer opportunities are responsible for the accuracy of their opportunities and for providing a safe environment at the location and time stated. If you come across content that looks like spam, fraud, or otherwise illegal, please use the report function described on our <contactLink>Contact page</contactLink>.",
       "section5Title": "Liability",
-      "section5Body": "The Platform is provided on a best-effort, non-commercial basis. We do not guarantee the availability, accuracy, or completeness of any listing, and we are not liable for the conduct of volunteers or organizations, or for any loss, injury, or damage arising from participation in a volunteer opportunity. You take part in volunteer opportunities at your own risk. Nothing in this section limits liability that cannot be excluded under applicable law.",
+      "section5Body": "The Platform is provided on a best-effort, non-commercial basis. We do not guarantee the availability, accuracy, or completeness of any opportunity, and we are not liable for the conduct of volunteers or organizations, or for any loss, injury, or damage arising from participation in a volunteer opportunity. You take part in volunteer opportunities at your own risk. Nothing in this section limits liability that cannot be excluded under applicable law.",
       "section6Title": "Suspension and termination",
       "section6Body": "We may suspend or disable an account that violates these Terms, publishes fraudulent or unsafe content, or is the subject of substantiated reports from other users. Wherever possible, we will inform the affected account of the reason. You may stop using the Platform and request deletion of your account at any time; see our <privacyLink>Privacy Policy</privacyLink> for details on how your data is handled.",
       "section7Title": "Changes to these terms",
@@ -955,9 +964,9 @@
         "confirm": "Yes, delete"
       },
       "adminShadowDelete": {
-        "title": "Shadow-delete this content?",
+        "title": "Hide this content?",
         "message": "Are you sure you want to hide \"{{name}}\" from everyone? This can be undone with Restore, and resolves all open reports against it.",
-        "confirm": "Yes, shadow-delete"
+        "confirm": "Yes, hide it"
       },
       "adminRestore": {
         "title": "Restore this content?",
@@ -971,7 +980,7 @@
       },
       "deleteFeedback": {
         "title": "Delete feedback?",
-        "message": "This removes your rating and comment from this engagement. You can leave new feedback afterwards.",
+        "message": "This removes your rating and comment from this sign-up. You can leave new feedback afterwards.",
         "confirm": "Yes, delete"
       }
     },
@@ -994,6 +1003,7 @@
       "noOpportunities": "No current opportunities available.",
       "report": "Report",
       "reportOrganization": "Report organization",
+      "visitWebsite": "Visit website",
       "eyebrow": "Organization"
     },
     "profileOverview": {
@@ -1047,23 +1057,23 @@
       "loadError": "Could not load profile.",
       "loading": "Loading…",
       "removeChip": "Remove",
-      "subNavActivity": "Activity",
+      "subNavActivity": "Sign-ups",
       "eyebrow": "Account"
     },
     "profileSettings": {
       "title": "Settings"
     },
     "myEngagementsPage": {
-      "title": "My Activity"
+      "title": "My sign-ups"
     },
     "notificationPreferences": {
       "title": "Email notifications",
       "description": "Choose which transactional emails you want to receive. Every email also includes an unsubscribe link for the type it belongs to.",
       "newSignUp": "New sign-ups for opportunities you organize",
       "withdrawal": "Volunteer withdrawals from opportunities you organize",
-      "engagementConfirmed": "Your engagement is confirmed",
-      "engagementCancelled": "Your engagement is cancelled",
-      "engagementReminder": "Reminder before your engagement starts",
+      "engagementConfirmed": "Your sign-up is confirmed",
+      "engagementCancelled": "Your sign-up is cancelled",
+      "engagementReminder": "Reminder before your opportunity starts",
       "save": "Save preferences",
       "saving": "Saving…",
       "savedSuccess": "Notification preferences saved.",
@@ -1077,8 +1087,10 @@
       "unlockedOn": "Unlocked: {{date}}",
       "lockedBadge": "Mystery Badge",
       "badgesTitle": "Badges",
-      "loginStreak": "Login streak",
       "activityStreak": "Activity streak",
+      "engagementStatLabel": "Confirmed opportunities",
+      "engagementStatLabel_one": "Confirmed opportunity",
+      "engagementStatLabel_other": "Confirmed opportunities",
       "newBadge": "🏆 New badge unlocked: {{name}}!",
       "types": {
         "Milestone": "Milestone",
@@ -1088,15 +1100,15 @@
       "badges": {
         "first-step": {
           "name": "First Step",
-          "description": "Earned on your first confirmed engagement."
+          "description": "Earned on your first confirmed opportunity."
         },
         "dedicated-5": {
           "name": "Dedicated",
-          "description": "Earned after 5 confirmed engagements."
+          "description": "Earned after 5 confirmed opportunities."
         },
         "centurion-100": {
           "name": "Century",
-          "description": "Earned after 100 confirmed engagements."
+          "description": "Earned after 100 confirmed opportunities."
         },
         "on-a-roll-7": {
           "name": "On a Roll",
@@ -1113,7 +1125,6 @@
       }
     },
     "breadcrumb": {
-      "label": "Breadcrumb",
       "home": "Home"
     },
     "error": {
@@ -1130,13 +1141,15 @@
     "userProfile": {
       "loading": "Loading profile…",
       "notFound": "User not found.",
-      "engagementCount": "{{count}} confirmed engagements",
-      "engagementCount_other": "{{count}} confirmed engagements",
+      "engagementCount": "{{count}} confirmed opportunities",
+      "engagementCount_other": "{{count}} confirmed opportunities",
       "reportUser": "Report user",
-      "engagementCount_one": "{{count}} confirmed engagement"
+      "engagementCount_one": "{{count}} confirmed opportunity"
     },
     "administration": {
       "title": "Administration",
+      "eyebrow": "Platform",
+      "subNavLabel": "Administration sections",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
       "reportsHeading": "Reports",
@@ -1195,10 +1208,10 @@
         "dismiss": "Dismiss",
         "dismissSuccess": "Report dismissed.",
         "dismissError": "Failed to dismiss report.",
-        "shadowDelete": "Shadow delete",
-        "shadowDeleteNamed": "Shadow delete {{name}}",
+        "shadowDelete": "Hide",
+        "shadowDeleteNamed": "Hide {{name}}",
         "deleteSuccess": "Content hidden and open reports resolved.",
-        "deleteError": "Failed to shadow-delete content.",
+        "deleteError": "Failed to hide content.",
         "restore": "Restore",
         "restoreNamed": "Restore {{name}}",
         "restoreSuccess": "Content restored.",
@@ -1249,13 +1262,13 @@
           "OrganizationRestored": "Restored organization",
           "VolunteerOpportunityShadowDeleted": "Shadow-deleted opportunity",
           "VolunteerOpportunityRestored": "Restored opportunity",
-          "EngagementCancelled": "Cancelled engagement"
+          "EngagementCancelled": "Cancelled sign-up"
         },
         "subjectType": {
           "User": "User",
           "Organization": "Organization",
           "VolunteerOpportunity": "Opportunity",
-          "Engagement": "Engagement"
+          "Engagement": "Sign-up"
         }
       }
     },
@@ -1366,7 +1379,7 @@
         "NameTooLong": "Organization name must not exceed 100 characters.",
         "NotFound": "Organization not found.",
         "MultipleMembers": "Only the organization's sole remaining member can delete it. Remove the other members first.",
-        "HasBlockingOpportunities": "This organization has opportunities with future time slots or active engagements. Resolve or cancel these first.",
+        "HasBlockingOpportunities": "This organization has opportunities with future time slots or active sign-ups. Resolve or cancel these first.",
         "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
         "SoleOrganizerDemote": "You cannot demote the only organizer of this organization. Promote another member first, or delete the organization.",
         "NotOrganizer": "You do not have permission to modify this resource.",
@@ -1410,9 +1423,9 @@
         "TimeSlotNotAllowed": "Time slots can only be added to opportunities with Scheduled slots participation type.",
         "TimeSlotNotFound": "Time slot not found.",
         "NotFound": "Volunteer opportunity not found.",
-        "ParticipationTypeLocked": "Participation type cannot be changed while active engagements exist.",
+        "ParticipationTypeLocked": "Participation type cannot be changed while active sign-ups exist.",
         "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
-        "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first.",
+        "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected sign-ups first.",
         "InvalidColor": "Color must be a #rrggbb hex value.",
         "ColorContrastTooLow": "This color is too close to white to stay readable - choose a darker or more saturated one.",
         "ColorTextContrastTooLow": "This color doesn't leave enough contrast for its chip text to stay readable - choose a different shade.",
@@ -1452,31 +1465,31 @@
       },
       "Engagement": {
         "MessageRequired": "A message is required when expressing interest via individual contact.",
-        "NotPending": "Only pending engagements can be confirmed.",
-        "AlreadyTerminated": "Engagement is already terminated.",
-        "CheckedIn": "A checked-in engagement can no longer be withdrawn.",
-        "NotTerminated": "Only withdrawn or cancelled engagements can be reactivated.",
-        "NotConfirmed": "Only confirmed engagements can be checked in.",
-        "NotCheckedIn": "Feedback can only be submitted for checked-in engagements.",
-        "CheckInNotActive": "Only checked-in engagements can have their check-in undone.",
-        "FeedbackAlreadySubmitted": "Feedback has already been submitted for this engagement.",
+        "NotPending": "Only pending sign-ups can be confirmed.",
+        "AlreadyTerminated": "Sign-up is already terminated.",
+        "CheckedIn": "A checked-in sign-up can no longer be withdrawn.",
+        "NotTerminated": "Only withdrawn or cancelled sign-ups can be reactivated.",
+        "NotConfirmed": "Only confirmed sign-ups can be checked in.",
+        "NotCheckedIn": "Feedback can only be submitted for checked-in sign-ups.",
+        "CheckInNotActive": "Only checked-in sign-ups can have their check-in undone.",
+        "FeedbackAlreadySubmitted": "Feedback has already been submitted for this sign-up.",
         "FeedbackNotSubmitted": "Feedback has not been submitted yet.",
         "FeedbackEditWindowExpired": "Feedback can no longer be edited more than 14 days after it was submitted.",
         "RatingOutOfRange": "Rating must be between 1 and 5.",
         "CommentTooLong": "Comment must not exceed 500 characters.",
-        "NotFound": "Engagement not found.",
-        "NotOwner": "You can only manage your own engagements.",
+        "NotFound": "Sign-up not found.",
+        "NotOwner": "You can only manage your own sign-ups.",
         "AlreadySignedUp": "You are already signed up for this opportunity.",
         "TimeSlotNotInOpportunity": "The selected time slot does not belong to this opportunity.",
         "TimeSlotFull": "This time slot has reached its capacity and cannot accept more sign-ups.",
         "InvalidPin": "Invalid PIN. Please try again.",
         "CheckInLocked": "Too many failed PIN attempts. Try again later.",
         "OpportunityNotPublished": "Only a published opportunity can be signed up for.",
-        "AlreadyCheckedIn": "Engagement is already checked in.",
-        "Anonymized": "This engagement's volunteer has deleted their account and can no longer be acted on.",
+        "AlreadyCheckedIn": "Sign-up is already checked in.",
+        "Anonymized": "This sign-up's volunteer has deleted their account and can no longer be acted on.",
         "CheckInMethodNotPin": "This opportunity does not use PIN check-in.",
         "PinRequired": "PIN is required.",
-        "ReactivationLimitReached": "This engagement has been withdrawn and re-applied for too many times. Please contact the organizer directly.",
+        "ReactivationLimitReached": "This sign-up has been withdrawn and re-applied for too many times. Please contact the organizer directly.",
         "TimeSlotEnded": "This time slot has already ended.",
         "TimeSlotNotAllowed": "This opportunity does not use time slots.",
         "TimeSlotRequired": "A time slot is required to sign up for this opportunity."

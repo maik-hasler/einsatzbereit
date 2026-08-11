@@ -10,6 +10,14 @@ import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { ChevronDownIcon } from "../icons";
 
+// Kept in sync with DesktopHeader's own LINKS - the two are the same primary
+// navigation at different breakpoints, so they must not drift apart.
+const PRIMARY_LINKS = [
+	{ key: "findOpportunities", to: "/opportunities", hash: false },
+	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
+	{ key: "help", to: "/help", hash: false },
+] as const;
+
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
 export default function MobileMenu({
@@ -156,6 +164,40 @@ export default function MobileMenu({
 					</div>
 				)}
 				<div className="relative space-y-2 px-4 py-4">
+					{/* Primary destinations, mirroring DesktopHeader's LINKS. Shown
+					in both signed-in and signed-out states: this panel used to jump
+					straight from the language selector to account items (or to a
+					bare sign-in/register pair), so the menu offered no way to reach
+					the opportunity list either. */}
+					<div
+						className={`space-y-1 border-b pb-3 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
+					>
+						{PRIMARY_LINKS.map((link) =>
+							// Plain <a> for the hash destination so the browser does the
+							// fragment scroll - see DesktopHeader's LINKS for why.
+							link.hash ? (
+								<a
+									key={link.key}
+									href={link.to}
+									onClick={onClose}
+									data-testid={`mobile-nav-${link.key}`}
+									className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+								>
+									{t(`nav.${link.key}`)}
+								</a>
+							) : (
+								<Link
+									key={link.key}
+									to={link.to}
+									onClick={onClose}
+									data-testid={`mobile-nav-${link.key}`}
+									className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+								>
+									{t(`nav.${link.key}`)}
+								</Link>
+							),
+						)}
+					</div>
 					<div className="pb-2">
 						<LanguageSelector transparent={isTransparent} />
 					</div>
@@ -190,7 +232,7 @@ export default function MobileMenu({
 								{t("nav.myProfile")}
 							</Link>
 							<Link
-								to="/my-engagements"
+								to="/my-signups"
 								onClick={onClose}
 								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>

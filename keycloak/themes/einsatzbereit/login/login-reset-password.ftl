@@ -10,6 +10,8 @@
 	<#elseif section = "form">
 		<form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
+			<p class="form-intro">${msg("emailForgotIntro")}</p>
+
 			<div class="form-group">
 				<div class="form-field">
 					<input
@@ -22,6 +24,7 @@
 						aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
 						autocomplete="username"
 						autofocus
+						required
 						placeholder=" "
 					/>
 					<label for="username" class="${properties.kcLabelClass!}">
@@ -46,14 +49,23 @@
 					tabindex="4"
 					class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
 					type="submit"
-					value="${msg('doSubmit')}"
+					value="${msg('doSubmitResetPassword')}"
 				/>
 			</div>
 
 		</form>
 
 	<#elseif section = "info">
-		<a href="${url.loginUrl}">&larr; ${msg("backToLogin")}</a>
+		<#-- Chevron, matching the app's own back links (PageHeaderBand uses a
+		ChevronLeftIcon). A literal &larr; is a different glyph in a different
+		weight from anything else in the product. -->
+		<a href="${url.loginUrl}" class="back-link">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+				stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="m15 18-6-6 6-6"/>
+			</svg>
+			${msg("backToLogin")}
+		</a>
 
 	</#if>
 
