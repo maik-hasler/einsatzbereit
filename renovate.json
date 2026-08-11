@@ -45,6 +45,21 @@
       ],
       "groupName": "TUnit",
       "groupSlug": "tunit"
+    },
+    {
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchPackageNames": [
+        "Microsoft.AspNetCore.OpenApi",
+        "Microsoft.OpenApi"
+      ],
+      "groupName": "OpenAPI",
+      "groupSlug": "openapi",
+      "prBodyNotes": [
+        "**`Microsoft.OpenApi` is a transitive pin, not a real dependency.** It exists only because every `Microsoft.AspNetCore.OpenApi` 10.0.x depends on `Microsoft.OpenApi` 2.0.0, which is inside GHSA-v5pm-xwqc-g5wc - and `TreatWarningsAsErrors` turns the resulting NU1903 into a restore failure.",
+        "**If this PR bumps `Microsoft.AspNetCore.OpenApi` to 10.0.11 or later**, check whether it now depends on `Microsoft.OpenApi` >= 2.7.5 (the upstream fix is dotnet/aspnetcore#67543). If it does, delete the `Microsoft.OpenApi` `PackageVersion` line from `backend/Directory.Packages.props` as part of this PR - the pin has done its job. See the comment above that line."
+      ]
     }
   ],
   "customManagers": [

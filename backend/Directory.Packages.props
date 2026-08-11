@@ -55,10 +55,16 @@
 			10.0.303 / ASP.NET Core 10.0.11. Neither had shipped when this was
 			written (newest SDK 10.0.302, newest package 10.0.10). Once
 			Microsoft.AspNetCore.OpenApi is bumped to a release that asks for a
-			patched Microsoft.OpenApi, delete this pin. Until then do not lower
-			it below 2.7.5.
+			patched Microsoft.OpenApi, delete this pin - renovate.json groups the
+			two packages so that bump arrives in one PR carrying a note to do it.
+
+			2.7.5 is the first version outside the advisory, and is deliberately
+			what this pins to rather than climbing further up the 2.x line than
+			the advisory requires (same choice as agent-framework#6853). Left
+			unbracketed on purpose: it is a floor, not an exact pin, so anything
+			that genuinely needs a higher 2.x can still float up. Never lower it.
 		-->
-		<PackageVersion Include="Microsoft.OpenApi" Version="2.11.0" />
+		<PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
 		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.4.6]" />
 		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.4.6]" />
 		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.4.6]" />
