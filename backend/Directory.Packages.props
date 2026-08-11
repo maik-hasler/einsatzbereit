@@ -35,13 +35,15 @@
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.17.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.17.0]" />
 		<!--
-			Microsoft.AspNetCore.OpenApi 10.0.10 depends on exactly Microsoft.OpenApi
-			2.0.0, which falls inside GHSA-v5pm-xwqc-g5wc's affected range
-			([2.0.0-preview.11, 2.7.4], High). This pin forces the patched 2.11.0
-			instead. Api.csproj also references it directly - Program.cs consumes
-			OpenApiInfo/OpenApiSchema/OpenApiSpecVersion from it - so this is a
-			direct version pin, not only a transitive one. Do not lower it below
-			2.7.5 without re-checking that advisory.
+			Transitive pin, and the only lever available on .NET 10: every single
+			Microsoft.AspNetCore.OpenApi 10.0.x - including the newest, 10.0.10 -
+			depends on exactly Microsoft.OpenApi 2.0.0, which falls inside
+			GHSA-v5pm-xwqc-g5wc's affected range ([2.0.0-preview.11, 2.7.4], High).
+			So there is nothing to upgrade Microsoft.AspNetCore.OpenApi *to* that
+			would bring a patched Microsoft.OpenApi along; pinning the transitive
+			here is the only way to get one. Delete this pin once we move to
+			.NET 11 - 11.0.0-preview already asks for [3.9.0, 4.0.0), which is
+			clear of the advisory. Until then, do not lower it below 2.7.5.
 		-->
 		<PackageVersion Include="Microsoft.OpenApi" Version="2.11.0" />
 		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.4.6]" />
