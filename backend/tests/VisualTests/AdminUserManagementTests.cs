@@ -60,7 +60,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Unblock {username}" })).ToBeVisibleAsync();
 
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
-			await ConfirmDialogAsync("Yes, make admin");
+			await ConfirmDialogAsync("Yes, promote");
 			await Expect(row.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Remove admin from {username}" })).ToBeVisibleAsync();
 		}

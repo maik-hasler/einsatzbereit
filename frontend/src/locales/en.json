@@ -978,7 +978,7 @@
       },
       "adminBlockUser": {
         "title": "Block this account?",
-        "message": "{{name}} will not be able to sign in again until you unblock the account. A session that is already open stays valid until it expires.",
+        "message": "{{name}} will not be able to sign in again until you unblock the account. A session that is already open is not ended immediately.",
         "confirm": "Yes, block"
       },
       "adminUnblockUser": {
@@ -987,13 +987,13 @@
         "confirm": "Yes, unblock"
       },
       "adminPromoteUser": {
-        "title": "Grant platform admin?",
-        "message": "{{name}} gets full platform administration: every organization, all user data, and the ability to block accounts and make other people admins. This takes effect the next time they sign in.",
-        "confirm": "Yes, make admin"
+        "title": "Promote to platform admin?",
+        "message": "{{name}} gets full admin rights: every organization, all user data, and the ability to block accounts and make other people admins. This only takes effect the next time they sign in.",
+        "confirm": "Yes, promote"
       },
       "adminDemoteUser": {
         "title": "Remove platform admin?",
-        "message": "{{name}} loses access to the administration area and to every organization they are not a member of. This takes effect the next time they sign in.",
+        "message": "{{name}} loses access to the administration area and to every organization they are not a member of. This only takes effect the next time they sign in.",
         "confirm": "Yes, remove admin"
       },
       "clearReadNotifications": {

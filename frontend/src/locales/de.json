@@ -978,7 +978,7 @@
       },
       "adminBlockUser": {
         "title": "Konto sperren?",
-        "message": "{{name}} kann sich erst wieder anmelden, wenn du das Konto entsperrst. Eine bereits offene Sitzung bleibt bis zu ihrem Ablauf gültig.",
+        "message": "{{name}} kann sich erst wieder anmelden, wenn du das Konto entsperrst. Eine bereits offene Sitzung wird nicht sofort beendet.",
         "confirm": "Ja, sperren"
       },
       "adminUnblockUser": {
@@ -988,12 +988,12 @@
       },
       "adminPromoteUser": {
         "title": "Zum Plattform-Admin machen?",
-        "message": "{{name}} erhält die vollen Administrationsrechte: Zugriff auf alle Organisationen und Nutzerdaten sowie die Möglichkeit, Konten zu sperren und weitere Personen zu Admins zu machen. Die Änderung wirkt sich bei der nächsten Anmeldung aus.",
+        "message": "{{name}} erhält die vollen Admin-Rechte: Zugriff auf alle Organisationen und Nutzerdaten sowie die Möglichkeit, Konten zu sperren und weitere Personen zu Admins zu machen. Die Änderung wirkt sich erst bei der nächsten Anmeldung aus.",
         "confirm": "Ja, zum Admin machen"
       },
       "adminDemoteUser": {
         "title": "Admin-Rechte entziehen?",
-        "message": "{{name}} verliert den Zugriff auf die Administration und auf alle Organisationen, in denen die Person kein Mitglied ist. Die Änderung wirkt sich bei der nächsten Anmeldung aus.",
+        "message": "{{name}} verliert den Zugriff auf die Administration und auf alle Organisationen, in denen die Person kein Mitglied ist. Die Änderung wirkt sich erst bei der nächsten Anmeldung aus.",
         "confirm": "Ja, Admin-Rechte entziehen"
       },
       "clearReadNotifications": {
