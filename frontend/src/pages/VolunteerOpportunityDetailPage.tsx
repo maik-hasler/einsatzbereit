@@ -324,13 +324,12 @@ export default function VolunteerOpportunityDetailPage() {
 			and the CTA is better off in reading order anyway. */}
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
 					<div className="min-w-0">
-						{/* Flush left inside the max-w-4xl wrapper, not centred within it.
-			#1727 deliberately let the banner and the time-slot list span the
-			full wrapper while prose stayed at a reading measure - but centring
-			the prose meant the page alternated between two column widths
-			(672px title, 896px slot rows, 672px again), reading as three
-			misaligned blocks rather than one document. Sharing a left edge
-			keeps #1727's wider media and a readable measure at the same time. */}
+						{/* Flush left inside the outer wrapper, not centred within it.
+			#1727 deliberately let the banner span the full wrapper while prose
+			stayed at a reading measure - but centring the prose meant the page
+			alternated between two column widths, reading as misaligned blocks
+			rather than one document. Sharing a left edge keeps #1727's wider
+			banner and a readable measure at the same time. */}
 						<div className="max-w-2xl">
 							{/* Report (and the owner's draft controls) sit on the same line
 							as the at-a-glance panel's top edge rather than floating alone
@@ -405,7 +404,10 @@ export default function VolunteerOpportunityDetailPage() {
 						it. One tinted panel with labelled columns gives them a hierarchy
 						and puts the page's first real colour below the band; the loose
 						lines collapse into a single meta row beneath it. */}
-							<dl className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6">
+							<dl
+								className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6"
+								data-testid="opportunity-at-a-glance"
+							>
 								<div>
 									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 										<CalendarIcon className="h-4 w-4 shrink-0" />
@@ -492,11 +494,19 @@ export default function VolunteerOpportunityDetailPage() {
 								)}
 						</div>
 
-						{/* Time slots - a reading column has no reason to constrain a list of
-			date/spot rows, so this spans the wider outer wrapper (#1727). */}
+						{/* Time slots - held to the same max-w-2xl measure as the blocks
+			above and below it (#1794). #1727 had let this list span the full grid
+			column on the grounds that date/spot rows aren't prose, but at 1440px
+			that gave the main column a second right edge 120px out from its
+			neighbours', so the page read as three misaligned blocks rather than
+			one. One measure for the whole column wins over the marginally roomier
+			rows. */}
 						{opportunity.participationType === "ScheduledSlots" &&
 							opportunity.timeSlots.length > 0 && (
-								<div className="mb-6">
+								<div
+									className="mb-6 max-w-2xl"
+									data-testid="opportunity-time-slots"
+								>
 									<SectionHeading>
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
