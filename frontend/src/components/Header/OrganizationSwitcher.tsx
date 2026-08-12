@@ -6,8 +6,8 @@ import type {
 	OrganizationSummaryDto,
 } from "../../client/api-client";
 import { orgTabPath } from "../../lib/orgTabs";
-import { getInitials } from "../../lib/initials";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import OrgAvatar from "./OrgAvatar";
 import ModalLoadingFallback from "../ModalLoadingFallback";
 import Skeleton from "../Skeleton";
 import { ChevronDownIcon, PlusIcon } from "../icons";
@@ -83,22 +83,13 @@ export default function OrganizationSwitcher({
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
-					{!error &&
-						(currentOrg?.logoUrl ? (
-							<img
-								src={currentOrg.logoUrl}
-								alt=""
-								width={24}
-								height={24}
-								className="h-6 w-6 shrink-0 rounded-md object-cover"
-							/>
-						) : (
-							<span
-								className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
-								aria-hidden="true"
-								data-initial={currentOrg ? getInitials(currentOrg.name) : "?"}
-							/>
-						))}
+					{!error && (
+						// No name until an org resolves - OrgAvatar renders "?" for it.
+						<OrgAvatar
+							name={currentOrg?.name ?? ""}
+							logoUrl={currentOrg?.logoUrl}
+						/>
+					)}
 					{/* title so a truncated name is still readable on hover - two
 					seeded orgs share a leading word, so the visible text can be
 					identical for both once cut. */}
@@ -133,22 +124,7 @@ export default function OrganizationSwitcher({
 												: "text-gray-700 hover:bg-gray-50"
 										}`}
 									>
-										{org.logoUrl ? (
-											<img
-												src={org.logoUrl}
-												alt=""
-												width={24}
-												height={24}
-												loading="lazy"
-												className="h-6 w-6 shrink-0 rounded-md object-cover"
-											/>
-										) : (
-											<span
-												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
-												aria-hidden="true"
-												data-initial={getInitials(org.name)}
-											/>
-										)}
+										<OrgAvatar name={org.name} logoUrl={org.logoUrl} lazy />
 										<span className="truncate">{org.name}</span>
 									</button>
 								</li>

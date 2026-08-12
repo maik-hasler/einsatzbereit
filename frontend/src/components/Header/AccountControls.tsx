@@ -1,27 +1,26 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
-import type { OrganizationSummaryDto } from "../../client/api-client";
-import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import NotificationDropdown from "./NotificationDropdown";
 import {
 	ArrowRightOnRectangleIcon,
 	ChevronDownIcon,
-	ChevronRightIcon,
 	Cog6ToothIcon,
 	HandRaisedIcon,
-	Squares2x2Icon,
 	UserCircleIcon,
 } from "../icons";
 
+// This dropdown carries personal items only. It used to also hide the whole
+// org app behind a second disclosure inside it ("Organisation" -> a tab list),
+// which put an organizer's main workspace two clicks deep in a personal-account
+// menu and left it invisible until both were open; the organization is a
+// top-level nav destination now instead (#1785, see lib/headerNav).
 export default function AccountControls({
 	transparent = false,
 	menu,
 	displayName,
 	initials,
 	isAdmin = false,
-	activeOrg,
 	onSignOut,
 	onNotificationNavigate,
 }: {
@@ -30,22 +29,12 @@ export default function AccountControls({
 	displayName: string;
 	initials: string;
 	isAdmin?: boolean;
-	// When set, the avatar dropdown grows a collapsible "Organization
-	// Dashboard" entry linking to each ORG_TABS page - the desktop
-	// counterpart to the mobile burger menu's own org submenu (see
-	// Header.tsx), so the entry point into the org app isn't mobile-only.
-	activeOrg?: OrganizationSummaryDto | null;
 	onSignOut: () => void;
 	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 }) {
 	const { t } = useTranslation();
-	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const { avatarUrl, notifRef, dropdownOpen, setDropdownOpen, dropdownRef } =
 		menu;
-
-	useEffect(() => {
-		if (!dropdownOpen) setOrgMenuOpen(false);
-	}, [dropdownOpen]);
 
 	return (
 		<>
@@ -117,39 +106,6 @@ export default function AccountControls({
 									<Cog6ToothIcon className="h-4 w-4" />
 									{t("nav.administration")}
 								</Link>
-							)}
-							{activeOrg && (
-								<div className="relative">
-									<button
-										type="button"
-										onClick={() => setOrgMenuOpen((o) => !o)}
-										aria-expanded={orgMenuOpen}
-										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
-									>
-										<span className="flex items-center gap-3">
-											<Squares2x2Icon className="h-4 w-4" />
-											{t("nav.organization")}
-										</span>
-										<ChevronRightIcon
-											open={orgMenuOpen}
-											className="h-4 w-4 shrink-0 text-gray-400"
-										/>
-									</button>
-									{orgMenuOpen && (
-										<div className="absolute top-0 right-full mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-modal">
-											{ORG_TABS.map((tab) => (
-												<Link
-													key={tab.key}
-													to={orgTabPath(activeOrg.id, tab.key)}
-													onClick={() => setDropdownOpen(false)}
-													className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
-												>
-													{t(tab.labelKey)}
-												</Link>
-											))}
-										</div>
-									)}
-								</div>
 							)}
 							<button
 								type="button"
