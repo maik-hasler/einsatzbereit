@@ -34,7 +34,10 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Logo replaces the old text link and sits top-left in the header.
-		var logoLink = Page.Locator("header a[href='/']");
+		// Narrowed to the link wrapping the wordmark: the header's primary nav
+		// carries a "Home" entry pointing at "/" as well, so a bare href
+		// selector matches two links.
+		var logoLink = Page.Locator("header a[href='/']:has(img)");
 		await Expect(logoLink.Locator("img")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Back to Einsatzbereit")).Not.ToBeVisibleAsync();
 
