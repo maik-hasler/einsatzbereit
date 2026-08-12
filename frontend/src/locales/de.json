@@ -18,6 +18,7 @@
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
+      "home": "Startseite",
       "findOpportunities": "Einsätze finden",
       "forOrganizations": "Für Organisationen",
       "help": "Hilfe",
@@ -1125,9 +1126,6 @@
           "description": "Einer der ersten Freiwilligen auf der Plattform."
         }
       }
-    },
-    "breadcrumb": {
-      "home": "Startseite"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",

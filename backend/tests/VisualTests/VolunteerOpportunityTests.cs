@@ -236,12 +236,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #394 wanted a way back from this page; #1755 moved that into the
-		// PageHeaderBand and dropped the bar, so the Home link now lives in
-		// <main> rather than in a nav[aria-label='Breadcrumb'] strip.
+		// #394 wanted a way back from this page. #1755 moved that into the
+		// PageHeaderBand and dropped the bar; the band's own "Home" link is
+		// gone in turn, because a link home is not a property of this page -
+		// it is a site destination, and it now sits in the header nav where it
+		// is reachable from every page rather than being restated inside each
+		// one's hero.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
+			.ToHaveCountAsync(0);
+		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
 
 		// #373 added a Share button here; it is gone again - every browser and
 		// OS this page runs on already offers sharing the current URL, so the

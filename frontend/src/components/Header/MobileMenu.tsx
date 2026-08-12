@@ -13,6 +13,7 @@ import { ChevronDownIcon } from "../icons";
 // Kept in sync with DesktopHeader's own LINKS - the two are the same primary
 // navigation at different breakpoints, so they must not drift apart.
 const PRIMARY_LINKS = [
+	{ key: "home", to: "/", hash: false },
 	{ key: "findOpportunities", to: "/opportunities", hash: false },
 	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
 	{ key: "help", to: "/help", hash: false },

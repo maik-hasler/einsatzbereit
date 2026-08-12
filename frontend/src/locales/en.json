@@ -18,6 +18,7 @@
     },
     "nav": {
       "primaryLabel": "Main navigation",
+      "home": "Home",
       "findOpportunities": "Find opportunities",
       "forOrganizations": "For organizations",
       "help": "Help",
@@ -1125,9 +1126,6 @@
           "description": "One of the first volunteers on the platform."
         }
       }
-    },
-    "breadcrumb": {
-      "home": "Home"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",
