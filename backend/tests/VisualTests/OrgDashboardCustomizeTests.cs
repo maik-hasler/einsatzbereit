@@ -568,10 +568,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// close gaps vertically (sliding widgets up), so removing or shrinking
 		// a widget could leave a horizontal hole next to it that nothing ever
 		// reflowed into - the grid only felt "automatic" on one axis. DEFAULT_
-		// LAYOUT places CreateOpportunity and ToDo side by side in the same
-		// row (x=1/x=5, both width=4) - removing CreateOpportunity should now
-		// slide ToDo all the way left into column 1, not leave it at column 5
-		// with an empty gap to its left.
+		// LAYOUT places CreateOpportunity, ToDo and VolunteerStats across the
+		// same row (x=1 width=3, x=4 width=3, x=7 width=2 - see #1780) -
+		// removing CreateOpportunity should now slide ToDo all the way left
+		// into column 1, not leave it at column 4 with an empty gap to its
+		// left. VolunteerStats is asserted too: compaction runs to a fixed
+		// point, so the tile beyond the one that moved has to follow it left
+		// rather than stopping at the hole ToDo just vacated.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -584,7 +587,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" })
 			.ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 3, height: 1);
+		await AssertWidgetOccupiesCellsAsync("VolunteerStats", x: 4, y: 1, width: 2, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -593,7 +597,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 3, height: 1);
+		await AssertWidgetOccupiesCellsAsync("VolunteerStats", x: 4, y: 1, width: 2, height: 1);
 	}
 
 	[Test]
@@ -606,7 +611,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await CreateOrganizationAsync("Visual DashKeyboardPlace", pinnedOrgId!.Value);
 
-		// ToDo starts at (x=5, y=1, width=4, height=1) in DEFAULT_LAYOUT.
+		// ToDo starts at (x=4, y=1, width=3, height=1) in DEFAULT_LAYOUT
+		// (#1780 made room for VolunteerStats in the same row).
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
@@ -614,11 +620,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		// Enter/Space on the focused button advances the same state machine
 		// a mouse click on a grid cell does: first press starts placing
-		// (cursor defaults to the widget's current top-left corner, x=5/y=1),
+		// (cursor defaults to the widget's current top-left corner, x=4/y=1),
 		// second press locks that as the first corner, then ArrowRight and
-		// ArrowDown move the cursor to (col=6, row=2) before the third press
+		// ArrowDown move the cursor to (col=5, row=2) before the third press
 		// commits the second corner there - resizing the tile from
-		// (width=4, height=1) to (width=2, height=2) while keeping the same
+		// (width=3, height=1) to (width=2, height=2) while keeping the same
 		// top-left corner.
 		await Page.Keyboard.PressAsync("Enter");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
@@ -628,7 +634,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Keyboard.PressAsync("Enter");
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -637,7 +643,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
 	}
 
 	[Test]
