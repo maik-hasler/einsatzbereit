@@ -341,7 +341,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// quick actions - the read-only scan above never opens the edit form,
 		// so scan it separately here. Also asserts the Badges section stays
 		// mounted and visible alongside the open edit form, since it doesn't
-		// live behind a separate tab. #1684: My Sign-ups no longer lives on
+		// live behind a separate tab. #1684: My sign-ups no longer lives on
 		// this page - see MyEngagementsPage_HasNoSeriousA11yViolations below.
 		var frontend = Fixture.GetEndpoint("frontend");
 
