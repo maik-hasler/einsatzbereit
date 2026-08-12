@@ -127,7 +127,14 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
-		await Page.SetViewportSizeAsync(width, height);
+		// Sign in at the default (desktop) viewport - FastSignInAsync's own
+		// success check waits for the "User menu" button, which only exists in
+		// the header's desktop nav (`hidden md:flex`); at mobile width it stays
+		// hidden behind the hamburger, so signing in at 375px times out (see
+		// OrgAppMobileResponsiveTests for the same ordering). Resize only after
+		// landing in the app - the alignment under test is decided by the
+		// filter row's own layout at the final viewport, not by which width the
+		// session was established at.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -136,6 +143,7 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 		await SeedPublishedOpportunitiesAsync(http);
 
+		await Page.SetViewportSizeAsync(width, height);
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 	}
