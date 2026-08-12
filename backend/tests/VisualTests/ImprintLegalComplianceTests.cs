@@ -47,7 +47,7 @@ public class ImprintLegalComplianceTests(AspireFixture fixture) : VisualTestBase
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Angaben gemäß § 5 DDG" })).ToBeVisibleAsync();
