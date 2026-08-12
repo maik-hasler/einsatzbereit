@@ -595,6 +595,40 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_KpiLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1780: the KPI endpoint is a different request from the layout fetch
+		// covered above - GET .../dashboard, not .../dashboard/layout - and
+		// since the split it feeds two tiles at once (ToDo and VolunteerStats),
+		// so one failure renders two inline banners side by side. Both are
+		// deliberately role="status"/aria-live="polite" rather than
+		// ErrorBanner's default assertive alert, so a single passive load
+		// failure doesn't interrupt a screen reader twice.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		// Anchored so it can't also swallow .../dashboard/layout, which has to
+		// keep succeeding for the widget grid to render at all.
+		await Page.RouteAsync("**/v1/organizations/*/dashboard", async route =>
+		{
+			if (route.Request.Method == "GET")
+				await route.AbortAsync();
+			else
+				await route.ContinueAsync();
+		});
+
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+
+		await Expect(Page.GetByTestId("widget-tile-ToDo").GetByText("Failed to load summary."))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("widget-tile-VolunteerStats")
+				.GetByText("Failed to load the volunteer count."))
+			.ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrgDashboardPage_CalendarWidgetColorDialog_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #762 rebuilt the dashboard as a widget grid; the Calendar widget's
@@ -964,6 +998,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// almost certainly already has opportunities by the time this suite
 		// runs - a fresh, otherwise-untouched org is the only deterministic
 		// way to reach this branch.
+		//
+		// A fresh org also has zero pending sign-ups, so this is the scan that
+		// reaches ToDoWidget's #1780 "resolved" branch (the check chip plus
+		// "Nothing pending - every sign-up is handled.") for real - keep the
+		// org fresh here, or that state loses its only axe coverage.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 

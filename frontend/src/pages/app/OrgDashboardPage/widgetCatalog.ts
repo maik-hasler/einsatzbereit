@@ -3,6 +3,7 @@
 // to/from the API as these same string literals.
 export type WidgetKey =
 	| "ToDo"
+	| "VolunteerStats"
 	| "UpcomingOpportunities"
 	| "Calendar"
 	| "Settings"
@@ -42,6 +43,13 @@ export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	},
 	ToDo: {
 		titleKey: "orgDashboard.todoWidgetTitle",
+		defaultWidth: 4,
+		defaultHeight: 1,
+		minWidth: 2,
+		minHeight: 1,
+	},
+	VolunteerStats: {
+		titleKey: "orgDashboard.volunteerStatsWidgetTitle",
 		defaultWidth: 4,
 		defaultHeight: 1,
 		minWidth: 2,
@@ -119,20 +127,29 @@ export interface PlacedWidget {
 }
 
 // Layout applied when an organizer hasn't customized their dashboard yet:
-// ToDo+CreateOpportunity side by side, then UpcomingOpportunities, Calendar
-// and Settings each full-width below. Heights match each widget's own
-// defaultHeight above so no card leaves dead space, and each row starts
-// exactly where the one above it ends so the stack has no vertical gaps -
-// widgetCatalog.test.ts asserts both, so shrinking a widget here (as #1795
-// did to the Calendar) can't silently leave a hole below it.
+// CreateOpportunity+ToDo+VolunteerStats across the top row, then
+// UpcomingOpportunities, Calendar and Settings each full-width below. Heights
+// match each widget's own defaultHeight above so no card leaves dead space,
+// and each row starts exactly where the one above it ends so the stack has no
+// vertical gaps - widgetCatalog.test.ts asserts both, so shrinking a widget
+// here (as #1795 did to the Calendar) can't silently leave a hole below it.
+// Widths are free to differ from the catalog defaults and do: the top row's
+// three tiles split the 8 columns 3/3/2, and UpcomingOpportunities is
+// stretched to the full width.
+//
+// VolunteerStats (#1780) fits into that existing top row rather than claiming
+// a row of its own: it's one number, so a full-width band for it would be
+// mostly whitespace, and this way every widget below keeps the row it has
+// always started on.
 //
 // Only organizations that have never customized their dashboard ever see
 // this - OrgDashboardPage/index.tsx falls back to it solely when the API
 // reports hasCustomLayout: false, and nothing migrates or rewrites a saved
 // layout, so editing it leaves every stored layout exactly as it was.
 export const DEFAULT_LAYOUT: PlacedWidget[] = [
-	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 1 },
-	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 1 },
+	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 3, height: 1 },
+	{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+	{ widgetKey: "VolunteerStats", x: 7, y: 1, width: 2, height: 1 },
 	{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
 	{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
 	{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },

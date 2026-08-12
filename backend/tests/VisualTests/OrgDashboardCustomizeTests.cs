@@ -889,8 +889,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByTestId("dashboard-grid-guide-cell").First).ToBeVisibleAsync();
 
 		// UpcomingOpportunities sits at y=2..3 in DEFAULT_LAYOUT - row 1 (host
-		// to CreateOpportunity/ToDo, neither of which grew) is the unaffected
-		// baseline; row 2 falls inside the now-overflowing widget's own rows.
+		// to CreateOpportunity/ToDo/VolunteerStats, none of which grew) is the
+		// unaffected baseline; row 2 falls inside the now-overflowing widget's
+		// own rows.
 		// Both rows' cell heights read in a single EvaluateAsync call rather
 		// than two separate locator round trips, so nothing can reflow
 		// between sampling the two.
@@ -1084,13 +1085,14 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		{
 			("CreateOpportunity", "Create opportunity"),
 			("ToDo", "Needs your attention"),
+			("VolunteerStats", "Volunteers"),
 			("UpcomingOpportunities", "Upcoming opportunities"),
 			("Calendar", "Calendar"),
 			("Settings", "Organization"),
 		})
 		{
 			// Per-widget control flow, not a test-precondition skip: if
-			// DEFAULT_LAYOUT (widgetCatalog.ts) ever drops one of these five
+			// DEFAULT_LAYOUT (widgetCatalog.ts) ever drops one of these
 			// widgets, there's simply nothing to remove for it here - move on
 			// to the next one instead of aborting every test that calls this
 			// helper (a bare Skip.When here would do exactly that, since it

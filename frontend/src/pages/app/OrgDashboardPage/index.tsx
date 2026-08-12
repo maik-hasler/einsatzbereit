@@ -21,6 +21,7 @@ import AddWidgetModal from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
 import ToDoWidget from "./ToDoWidget";
+import VolunteerStatsWidget from "./VolunteerStatsWidget";
 import SettingsWidget from "./SettingsWidget";
 import CreateOpportunityWidget from "./CreateOpportunityWidget";
 import QuickCheckInWidget from "./QuickCheckInWidget";
@@ -300,6 +301,14 @@ export default function OrgDashboardPage() {
 			case "ToDo":
 				return (
 					<ToDoWidget
+						organizationId={organizationId}
+						refreshKey={refreshKey}
+						size={size}
+					/>
+				);
+			case "VolunteerStats":
+				return (
+					<VolunteerStatsWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
