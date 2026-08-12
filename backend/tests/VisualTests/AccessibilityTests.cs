@@ -373,6 +373,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Pinned to the page's <h1>: #1755 gave the page a header band whose
 		// title carries this name, and the section heading further down the
 		// page still carries it too, so an unqualified lookup matches both.
+		// #1796 made that second one sr-only (it is structure now, not a
+		// visible eyebrow) - it keeps its accessible name, so it keeps
+		// matching an unqualified lookup and the level pin is still needed.
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
