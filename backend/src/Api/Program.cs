@@ -41,7 +41,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // accepted unbounded/missing values on every endpoint.
 builder.Services.AddValidation();
 
-builder.Services.AddApiVersioning(options =>
+var apiVersioning = builder.Services.AddApiVersioning(options =>
 	{
 		options.DefaultApiVersion = new ApiVersion(1);
 		options.ReportApiVersions = true;
@@ -132,8 +132,10 @@ builder.Services.AddExceptionHandler<ResultFailureExceptionHandler>();
 builder.Services.AddExceptionHandler<ConcurrencyExceptionHandler>();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
 
-builder.Services.AddOpenApi("v1", options =>
+apiVersioning.AddOpenApi(versioned =>
 {
+	var options = versioned.Document;
+
 	options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
 	options.AddDocumentTransformer((document, _, _) =>
 	{
@@ -222,7 +224,7 @@ if (app.Environment.IsDevelopment())
 		app.Logger.LogError(ex, "An exception occurred while seeding the database");
 	}
 
-	app.MapOpenApi();
+	app.MapOpenApi().WithDocumentPerVersion();
 }
 else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 {

@@ -3,6 +3,7 @@
 	<ItemGroup>
 		<PackageReference Include="Asp.Versioning.Http" />
 		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+		<PackageReference Include="Asp.Versioning.OpenApi" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" />
 		<PackageReference Include="Microsoft.Extensions.ApiDescription.Server" />
@@ -20,14 +21,16 @@
 	</ItemGroup>
 
 	<PropertyGroup>
+		<Description>API for the Einsatzbereit application</Description>
 		<OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/wwwroot</OpenApiDocumentsDirectory>
 		<OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
 	</PropertyGroup>
 
 	<Target Name="RenameOpenApiDocuments" AfterTargets="GenerateOpenApiDocuments">
+		<Error Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/$(MSBuildProjectName).json')"
+					Text="GenerateOpenApiDocuments did not produce wwwroot/$(MSBuildProjectName).json. The OpenAPI document name has most likely changed - check what landed in wwwroot/ and update this target to match instead of letting openapi-v1.json go stale." />
 		<Move SourceFiles="$(MSBuildProjectDirectory)/wwwroot/$(MSBuildProjectName).json"
-					DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json"
-					Condition="Exists('$(MSBuildProjectDirectory)/wwwroot/$(MSBuildProjectName).json')" />
+					DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json" />
 	</Target>
 
 	<PropertyGroup>
