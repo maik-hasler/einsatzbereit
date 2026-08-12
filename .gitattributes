@@ -1,19 +1,9 @@
-# https://git-scm.com/docs/gitattributes
-#
-# Normalize line endings to LF everywhere, matching .editorconfig's
-# `end_of_line = lf` root rule. This keeps Windows checkouts (autocrlf)
-# from showing the whole repo as modified due to CRLF/LF churn.
-
 * text=auto eol=lf
 
-# Explicit for extensions that use tab indentation per .editorconfig
-# (kept explicit so they're never mistaken for binary by the `text=auto`
-# heuristic).
 *.sh text eol=lf
 *.adoc text eol=lf
 *.puml text eol=lf
 
-# Binary assets - never text-normalize, never diff as text.
 *.png binary
 *.jpg binary
 *.jpeg binary
@@ -29,6 +19,4 @@
 *.zip binary
 *.pdf binary
 
-# SVGs are XML text, but treat as text explicitly since some are used as
-# binary-ish assets (logos, icons) and shouldn't have EOL rewritten.
 *.svg text eol=lf

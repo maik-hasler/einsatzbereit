@@ -1,4 +1,3 @@
-# https://editorconfig.org
 root = true
 
 [*]
@@ -9,26 +8,21 @@ tab_width = 4
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-# JS/TS/CSS: 2-wide tabs to match Prettier's tabWidth: 2
 [*.{js,ts,jsx,tsx,css}]
 tab_width = 2
 
-# JSON: spaces per ecosystem convention (jq, formatters, renovatebot all default to spaces)
 [*.json]
 indent_style = space
 indent_size = 2
 
-# YAML requires space indentation; tabs cause parse errors in yamllint and GitHub Actions
 [*.{yaml,yml}]
 indent_style = space
 indent_size = 2
 
-# Markdown: code blocks use space indentation; size varies (list continuation, trees)
 [*.md]
 indent_style = space
 trim_trailing_whitespace = false
 
-# Python: PEP 8 mandates space indentation, not tabs
 [*.py]
 indent_style = space
 indent_size = 4
