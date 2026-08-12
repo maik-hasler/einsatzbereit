@@ -137,7 +137,7 @@ export default function MobileMenu({
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"
-				className="fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 md:hidden"
+				className="fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 lg:hidden"
 			/>
 			<div
 				ref={panelRef}
@@ -150,7 +150,7 @@ export default function MobileMenu({
 				// landscape-phone viewport) - overscroll-contain keeps a drag past
 				// this panel's own scroll bounds from rubber-banding the (locked)
 				// body underneath.
-				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
+				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{/* Blur-blob lighting, matching the band the transparent header
 				sits over - a flat brand-900 panel dropping out of a lit band
