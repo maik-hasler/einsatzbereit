@@ -22,7 +22,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Park cleanup", slotStart, cancellationToken);
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "River cleanup", slotStart.AddHours(3), cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.1");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -55,7 +55,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			},
 			cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.2");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -79,7 +79,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var slotStart = UtcDayAt(daysFromToday: 7, hour: 23, minute: 30);
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Late night shift", slotStart, cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.3");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -103,7 +103,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Inside the window", inside, cancellationToken);
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Outside the window", outside, cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.4");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -135,7 +135,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.5");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -180,7 +180,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			},
 			cancellationToken);
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.6");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -205,7 +205,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		await CreateOpportunityWithTimeSlotAsync(
 			authenticatedClient, orgId, "Chess club", other, cancellationToken, category: "Culture");
 
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.7");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
@@ -225,7 +225,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldReturnBadRequest_WhenToIsBeforeFrom(
 		CancellationToken cancellationToken)
 	{
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.8");
 
 		var act = () => sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(10),
@@ -240,7 +240,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldReturnBadRequest_WhenTheWindowIsWiderThanTwoMonths(
 		CancellationToken cancellationToken)
 	{
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.9");
 
 		var act = () => sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow,
@@ -255,7 +255,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldReturnBadRequest_WhenACategoryIsNotAKnownOne(
 		CancellationToken cancellationToken)
 	{
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var sut = CreateAnonymousClient("10.0.3.10");
 
 		var act = () => sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow,
@@ -275,6 +275,19 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		new DateTimeOffset(DateTimeOffset.UtcNow.AddDays(daysFromToday).Date, TimeSpan.Zero)
 			.AddHours(hour)
 			.AddMinutes(minute);
+
+	// Every anonymous request in this class gets its own X-Forwarded-For, the isolation
+	// OutputCachingTests.cs and RateLimitingTests.cs already use. Without it these reads
+	// join the single anonymous-IP bucket (60 req/60s - IntegrationTestFixture restores
+	// the production default on purpose) that the whole ~500-test suite shares, and what
+	// breaks is not these tests but whichever unrelated ones happen to run once the
+	// bucket is spent.
+	private EinsatzbereitApi CreateAnonymousClient(string clientIp)
+	{
+		var httpClient = fixture.CreateHttpClient();
+		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", clientIp);
+		return new EinsatzbereitApi(httpClient);
+	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync()
 	{
