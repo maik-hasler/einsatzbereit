@@ -44,7 +44,7 @@ const SHAPE_CLASS = { default: "rounded-xl", pill: "rounded-full" } as const;
 // issue #1105: eight different visual treatments for delete/withdraw/
 // cancel/revoke actions before these two existed).
 // success: solid positive-confirmation action (e.g. "Confirm" an engagement
-// request), for the row-level counterpart to dangerOutline's cancel/revoke -
+// request), for the row-level counterpart to dangerOutline's cancel action -
 // built on the brand ramp like every other variant here rather than raw
 // Tailwind green, since brand-700 (#226947) already reads as "confirming
 // green" (see issue #1673: two visibly different greens side by side in the

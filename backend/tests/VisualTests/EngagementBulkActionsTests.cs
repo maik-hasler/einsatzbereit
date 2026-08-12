@@ -56,7 +56,7 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// The engagement the backend actually confirmed flips to Confirmed (and
-		// gains its Revoke control) in the UI...
+		// gains its cancel control) in the UI...
 		await Expect(Page.Locator($"[data-testid='engagement-revoke-{firstEngagementId}']"))
 			.ToBeVisibleAsync();
 
