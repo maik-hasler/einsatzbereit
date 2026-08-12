@@ -399,7 +399,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
-		// #580: the new "Delete Organization" action, enabled only for the
+		// #580: the new "Delete organization" action, enabled only for the
 		// sole remaining member, must actually delete the org and go home.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -413,7 +413,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 
-		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
+		// #1792 dropped the button's Title Case so it doesn't clash with the
+		// panel heading right above it.
+		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(deleteButton).ToBeEnabledAsync();
 		await deleteButton.ClickAsync();
@@ -646,7 +648,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
+		// #1792: the panel heading is per-surface now ("Delete organization"
+		// here, "Delete account" on /profile/settings) instead of a shared
+		// "Danger zone".
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await AssertMaxWidthContentLeftAlignedAsync("Organization settings page");

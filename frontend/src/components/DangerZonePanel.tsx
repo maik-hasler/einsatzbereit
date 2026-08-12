@@ -25,7 +25,10 @@ export default function DangerZonePanel({
 			className={`rounded-card border border-red-100 bg-red-50 p-6 ${className}`.trim()}
 		>
 			<h2 className="mb-1 text-base font-semibold text-red-800">{title}</h2>
-			<p className="mb-4 text-sm text-red-700">{description}</p>
+			{/* Body colour, not an error colour (#1792): setting the whole
+			    explanation in red spent the signal on prose - the heading and
+			    the destructive button carry it instead. */}
+			<p className="mb-4 text-sm text-gray-600">{description}</p>
 			<Button
 				type="button"
 				variant="dangerOutline"
