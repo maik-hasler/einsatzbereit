@@ -45,7 +45,12 @@ public class DateFilterCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 			await Expect(dayButtons.Nth(i)).ToHaveAttributeAsync("aria-disabled", "true");
 		}
 
-		await dayButtons.Nth(0).ClickAsync();
+		// Force, because Playwright's own actionability check honours aria-disabled and
+		// otherwise spends its whole timeout refusing to click - which is half of what
+		// this test is asserting, and the half a real pointer already gets for free.
+		// Dispatching the click anyway is what exercises the other half: clickDay's
+		// past-day guard, the thing that keeps the button inert rather than the styling.
+		await dayButtons.Nth(0).ClickAsync(new() { Force = true });
 
 		Page.Url.Should().NotContain("dateFrom",
 			"clicking a past day must not apply a date filter that can only ever return an empty list");
