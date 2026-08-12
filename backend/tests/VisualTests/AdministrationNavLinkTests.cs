@@ -80,6 +80,11 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Administration");
 		// ...and the URL is still the one that was asked for, rather than "/".
 		await Expect(Page).ToHaveURLAsync($"{origin}/administration");
+		// AdministrationPage is what would normally set the tab title, and it is
+		// precisely the component being kept from mounting - so the state has to
+		// set one itself, or the address bar says /administration while the tab
+		// says nothing at all.
+		await Expect(Page).ToHaveTitleAsync("Admin rights required | Einsatzbereit");
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
 			.ToBeVisibleAsync();
 	}

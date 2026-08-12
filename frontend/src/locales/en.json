@@ -216,7 +216,7 @@
       "factFormat": "How it works",
       "factWhere": "Where",
       "offline": "You are offline. We will load the opportunities as soon as your connection is back.",
-      "offlineLoadMore": "You are offline. These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as it is back."
+      "offlineLoadMore": "You are offline. These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as you are back online."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -1181,10 +1181,7 @@
     "routeState": {
       "offline": {
         "title": "You are offline",
-        "message": "We cannot reach Einsatzbereit without a connection. This page reloads itself as soon as you are back online."
-      },
-      "forbidden": {
-        "title": "No access"
+        "message": "We cannot reach Einsatzbereit without a connection. As soon as you are back online we load the page again - you do not have to do anything."
       },
       "adminOnly": {
         "title": "Admin rights required",

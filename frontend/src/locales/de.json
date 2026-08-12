@@ -216,7 +216,7 @@
       "factFormat": "Ablauf",
       "factWhere": "Wo",
       "offline": "Du bist offline. Sobald deine Verbindung zurück ist, laden wir die Einsätze.",
-      "offlineLoadMore": "Du bist offline. Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald sie zurück ist."
+      "offlineLoadMore": "Du bist offline. Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist."
     },
     "createOpportunity": {
       "title": "Einsatz erstellen",
@@ -385,11 +385,11 @@
       "retry": "Erneut versuchen",
       "notFoundTitle": "Organisation nicht gefunden",
       "notFoundMessage": "Diese Organisation existiert nicht oder wurde gelöscht. Prüfe den Link, dem du gefolgt bist - die ID darin könnte unvollständig sein.",
-      "notAuthorizedMessage": "Du bist kein Mitglied dieser Organisation. Bitte eine:n Organisator:in der Organisation, dich einzuladen."
+      "notAuthorizedMessage": "Du bist kein Mitglied dieser Organisation. Bitte eine:n der Organisator:innen darum, dich einzuladen."
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "emptyTitle": "Noch keine Einsätze",
       "emptyDesc": "Erstelle deinen ersten Einsatz, um loszulegen.",
       "draftsHeading": "Entwürfe",
@@ -566,7 +566,7 @@
       "submit": "Feedback absenden",
       "submitting": "Wird gesendet…",
       "cancel": "Abbrechen",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "submitError": "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
       "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
       "itemRatingLabel": "{{rating}} von 5 Sternen",
@@ -620,7 +620,7 @@
     "myEngagements": {
       "title": "Meine Anmeldungen",
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "noEngagements": "Noch keine Anmeldungen.",
       "noEngagementsHint": "Stöbre durch verfügbare Einsätze und melde dich für einen an.",
       "noPastEngagements": "Noch keine vergangenen Anmeldungen.",
@@ -652,7 +652,7 @@
     "engagementManagement": {
       "title": "Anmeldungen verwalten",
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "opportunityLoadError": "Die Details zu diesem Einsatz konnten nicht geladen werden.",
       "checkInPinLoadError": "Die Check-in-PIN konnte nicht geladen werden.",
       "noApplications": "Noch keine Anmeldungen.",
@@ -709,7 +709,7 @@
     "orgEngagements": {
       "pageDescription": "Ausstehende und bearbeitete Anmeldungen über alle Einsätze deiner Organisation hinweg, an einem Ort.",
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "noApplications": "Noch keine Anmeldungen.",
       "noApplicationsHint": "Sobald sich Freiwillige für einen deiner Einsätze anmelden, erscheinen sie hier.",
       "noResults": "Keine Anmeldungen entsprechen den Filtern.",
@@ -880,7 +880,7 @@
       "switchLanguage": "Sprache wechseln"
     },
     "auth": {
-      "authError": "{{message}}",
+      "authError": "Authentifizierungsfehler: {{message}}",
       "completing": "Anmeldung wird abgeschlossen…",
       "loading": "Wird geladen…"
     },
@@ -1039,7 +1039,7 @@
     },
     "orgProfile": {
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "notFound": "Organisation nicht gefunden.",
       "currentNeeds": "Aktuelle Einsätze",
       "noOpportunities": "Keine aktuellen Einsätze vorhanden.",
@@ -1123,7 +1123,7 @@
     },
     "achievements": {
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "noAchievements": "Noch keine Errungenschaften. Beginne mit dem Ehrenamt, um Abzeichen zu verdienen!",
       "unlockedOn": "Freigeschaltet: {{date}}",
       "lockedBadge": "Geheimes Abzeichen",
@@ -1181,14 +1181,11 @@
     "routeState": {
       "offline": {
         "title": "Du bist offline",
-        "message": "Ohne Verbindung erreichen wir Einsatzbereit nicht. Diese Seite lädt sich neu, sobald du wieder online bist."
-      },
-      "forbidden": {
-        "title": "Kein Zugriff"
+        "message": "Ohne Verbindung erreichen wir Einsatzbereit nicht. Sobald du wieder online bist, laden wir die Seite erneut - du musst nichts tun."
       },
       "adminOnly": {
         "title": "Admin-Rechte erforderlich",
-        "message": "Dieser Bereich ist nur für Plattform-Admins. Dein Konto hat keine Admin-Rechte - wenn das anders sein sollte, wende dich an eine:n Administrator:in."
+        "message": "Dieser Bereich ist nur für Plattform-Administrator:innen. Dein Konto hat keine Admin-Rechte - wenn das anders sein sollte, bitte eine:n Administrator:in, dir die Rechte zu geben."
       }
     },
     "userProfile": {

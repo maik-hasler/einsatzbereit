@@ -70,6 +70,11 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
 			.Not.ToBeVisibleAsync();
+		// A route-level state is the page, so it owns the tab title. This branch
+		// used to get that for free by rendering NotFoundPage, which sets one;
+		// dropping to a chrome-less state component would have silently left the
+		// tab reading the bare app name.
+		await Expect(Page).ToHaveTitleAsync("Organization not found | Einsatzbereit");
 	}
 
 	/// <summary>

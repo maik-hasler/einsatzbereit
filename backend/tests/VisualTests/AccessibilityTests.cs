@@ -1579,6 +1579,41 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// The third RouteState combination the two scans around this one don't
+	// reach: the `offline` variant, and the only user of `inline` - the mode
+	// that deliberately renders no heading, which is exactly what the escalated
+	// heading-order/page-has-heading-one rules police. Reaches the state the
+	// same way OfflineStateTests does, and for the same reasons (service
+	// workers are blocked here and the route is lazy-loaded, so it has to be
+	// visited once online first) - see that file's class doc.
+	[Test]
+	public async Task OpportunityListOffline_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Expect(Page.GetByTestId("opportunities-keyword-input"))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Page.GetByTestId("nav-home").ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
+
+		await Context.SetOfflineAsync(true);
+		try
+		{
+			await Page.GetByTestId("nav-findOpportunities").ClickAsync();
+			await Expect(Page.GetByTestId("opportunities-offline"))
+				.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+			var result = await Page.RunAxe();
+			AssertNoViolations(result);
+		}
+		finally
+		{
+			await Context.SetOfflineAsync(false);
+		}
+	}
+
 	[Test]
 	public async Task OrgAppUnknownOrganization_HasNoSeriousA11yViolations()
 	{

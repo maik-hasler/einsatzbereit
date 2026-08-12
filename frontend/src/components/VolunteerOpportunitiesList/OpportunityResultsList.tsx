@@ -41,6 +41,16 @@ export default function OpportunityResultsList({
 				: t("opportunities.resultCount", { count: items.length })
 			: "";
 
+	// #1774: the same node is also how going offline gets announced. The
+	// offline notice further down is mounted only once the failure has already
+	// happened, so a live region inside it would be inserted already populated
+	// - the exact thing the comment below says does not reliably announce.
+	// This one was mounted and empty long before the connection dropped, so
+	// writing into it does. An *online* failure stays silent here: it renders
+	// LoadMoreError, whose ErrorBanner is already role="alert".
+	const liveMessage =
+		error && !online ? t("opportunities.offline") : countMessage;
+
 	return (
 		<>
 			{/* Always mounted (not conditional on the message) so the live region
@@ -62,17 +72,22 @@ export default function OpportunityResultsList({
 			useLoadMore empties `items` a frame before `loading` flips on a
 			filter change, so a visible zero would flash on every refetch.
 			Screen readers still get the zero - there the announcement is the
-			only signal that the filter landed. */}
+			only signal that the filter landed.
+
+			The `!error` in the visibility test is #1774's: with a failure on
+			screen the list is hidden and this node carries the offline
+			announcement instead of a count, which must not render as visible
+			body copy above the offline notice that already says it. */}
 			<p
 				role="status"
 				data-testid="opportunities-result-count"
 				className={
-					items.length > 0
+					!error && items.length > 0
 						? "mb-4 text-center text-sm text-gray-600"
 						: "sr-only"
 				}
 			>
-				{countMessage}
+				{liveMessage}
 			</p>
 			{loading && items.length === 0 && (
 				<div

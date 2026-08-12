@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { statusTitleClass } from "../lib/headingClasses";
 import {
 	ExclamationTriangleIcon,
@@ -73,6 +74,13 @@ export default function RouteState({
 	const { t } = useTranslation();
 	const Icon = VARIANT_ICONS[variant];
 	const canRetry = variant === "error" && !!onRetry;
+	// A route-level state is the page, so it owns the tab title - the
+	// unknown-organization branch used to get this for free from NotFoundPage,
+	// and /administration as a non-admin never had it at all (the page whose
+	// usePageTitle would have run is exactly the one being kept from mounting).
+	// `null`, not undefined, for `inline`: that mode replaces one block of a
+	// page whose own title still applies.
+	usePageTitle(inline ? null : title);
 
 	return (
 		<div
@@ -97,20 +105,21 @@ export default function RouteState({
 
 			{/* The error variant keeps ErrorBanner's role="alert"/aria-live: a
 			retry that fails again re-renders this same branch with no navigation,
-			which a screen reader would otherwise never hear (#1224). `offline`
-			gets the polite equivalent - it is reached by a state change rather
-			than by navigation too, but it is not an emergency and it clears
-			itself. notFound/forbidden are navigation results, announced by the
-			heading like any other page. */}
+			which a screen reader would otherwise never hear (#1224).
+
+			The other three carry no live region of their own, deliberately. This
+			whole component is mounted by its callers only once the state it
+			describes is already true, so any region here would be inserted into
+			the DOM already populated - which this repo has three times found
+			does not reliably announce (see OpportunityResultsList's own sr-only
+			region, CheckInModal and ToastContext). Announcing a transition into
+			one of these states is therefore the caller's job, through a region
+			that was already mounted and empty before the transition -
+			OpportunityResultsList does exactly that for the offline case. */}
 			{variant === "error" ? (
 				<ErrorBanner message={message} className="mt-4 max-w-md" />
 			) : (
-				<p
-					role={variant === "offline" ? "status" : undefined}
-					className="mt-4 max-w-md leading-relaxed text-gray-600"
-				>
-					{message}
-				</p>
+				<p className="mt-4 max-w-md leading-relaxed text-gray-600">{message}</p>
 			)}
 
 			{(canRetry || action) && (

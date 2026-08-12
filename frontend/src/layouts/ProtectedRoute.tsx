@@ -9,29 +9,34 @@ import ErrorBanner from "../components/ErrorBanner";
 import Button from "../components/Button";
 import RouteState from "../components/RouteState";
 
-// Copy for the roles a route actually guards. Only "admin" does today
-// (App.tsx's /administration), and it gets wording that names admin rights
-// rather than echoing a raw Keycloak role identifier at the user; a role with
-// no entry here falls back to the generic 403 wording rather than rendering
-// a missing translation key.
-const ROLE_COPY: Record<string, { titleKey: string; messageKey: string }> = {
+// Copy for each guardable role, keyed by the Keycloak role name. Only "admin"
+// is guarded today (App.tsx's /administration), and it gets wording that names
+// admin rights rather than echoing a raw role identifier at the user. This map
+// - not the set of known roles - is what `requiredRole` accepts below, so
+// guarding a second route on a new role is a compile error until that role has
+// something to say for itself.
+const ROLE_COPY = {
 	admin: {
 		titleKey: "routeState.adminOnly.title",
 		messageKey: "routeState.adminOnly.message",
 	},
-};
-
-const GENERIC_ROLE_COPY = {
-	titleKey: "routeState.forbidden.title",
-	messageKey: "error.forbidden",
-};
+} as const;
 
 interface Props {
 	children: ReactNode;
 	// Role a signed-in user must have to render `children` (see the flat
 	// roles array shape documented in frontend/AGENTS.md's Role Checks
 	// section). Omit for routes that only require being signed in.
-	requiredRole?: string;
+	//
+	// The 403 state below renders no landmark of its own, which is correct
+	// only because every route using this prop today sits under AppLayout and
+	// inherits its <main>. This same component also wraps OrgAppLayout (see
+	// App.tsx), which bypasses AppLayout entirely - guarding *that* route on a
+	// role would put an <h1> outside any landmark and fail the
+	// landmark-one-main / page-has-heading-one rules AccessibilityTests
+	// escalates to CI-blocking. Wrap the state in a <main> the way
+	// OrgAppLayout's own stateScreen does before doing that.
+	requiredRole?: keyof typeof ROLE_COPY;
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
@@ -97,7 +102,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 			// Staying on the requested URL and saying why is both honest and
 			// keeps the address bar meaningful, so the link can be handed to
 			// someone whose account can open it.
-			const copy = ROLE_COPY[requiredRole] ?? GENERIC_ROLE_COPY;
+			const copy = ROLE_COPY[requiredRole];
 			return (
 				<RouteState
 					variant="forbidden"

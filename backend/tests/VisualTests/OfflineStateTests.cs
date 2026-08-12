@@ -49,6 +49,17 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			// control elsewhere in the chrome.
 			await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
 			await Expect(offline.GetByRole(AriaRole.Button)).ToHaveCountAsync(0);
+
+			// The announcement has to come from the list's own always-mounted
+			// sr-only region, not from a region inside the notice above: a
+			// role="status" node inserted into the DOM already populated does not
+			// reliably announce (this repo has hit that three times - see
+			// CheckInModal and ToastContext). That region is empty before the
+			// connection drops and is written into here, which is what makes the
+			// offline state audible rather than only visible.
+			await Expect(Page.Locator("#opportunities p[role='status']").First)
+				.ToHaveTextAsync(new Regex("You are offline"));
+			await Expect(offline.Locator("[role='status'], [role='alert']")).ToHaveCountAsync(0);
 		}
 		finally
 		{
