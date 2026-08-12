@@ -2,14 +2,28 @@ import { describe, it, expect, vi } from "vitest";
 import type {
 	EinsatzbereitApi,
 	PagedListOfVolunteerOpportunitySummary,
+	VolunteerOpportunityAvailableDate,
 } from "../client/api-client";
-import { fetchVolunteerOpportunities } from "./volunteerOpportunities";
+import {
+	fetchVolunteerOpportunities,
+	fetchVolunteerOpportunityDateAvailability,
+} from "./volunteerOpportunities";
 
 function fakeApi(): { getVolunteerOpportunities: ReturnType<typeof vi.fn> } {
 	return {
 		getVolunteerOpportunities: vi
 			.fn()
 			.mockResolvedValue({} as PagedListOfVolunteerOpportunitySummary),
+	};
+}
+
+function fakeAvailabilityApi(): {
+	getVolunteerOpportunityDateAvailability: ReturnType<typeof vi.fn>;
+} {
+	return {
+		getVolunteerOpportunityDateAvailability: vi
+			.fn()
+			.mockResolvedValue([] as VolunteerOpportunityAvailableDate[]),
 	};
 }
 
@@ -97,5 +111,95 @@ describe("fetchVolunteerOpportunities", () => {
 		);
 
 		expect(result).toBe(page);
+	});
+});
+
+describe("fetchVolunteerOpportunityDateAvailability", () => {
+	it("forwards the window and offset, leaving every filter undefined", async () => {
+		const api = fakeAvailabilityApi();
+		const from = new Date("2026-08-01T00:00:00");
+		const to = new Date("2026-08-31T23:59:59.999");
+
+		await fetchVolunteerOpportunityDateAvailability(
+			api as unknown as EinsatzbereitApi,
+			{ from, to, utcOffsetMinutes: 120 },
+		);
+
+		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
+			from,
+			to,
+			120,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+		);
+	});
+
+	it("forwards every option in the positional order the generated client expects", async () => {
+		const api = fakeAvailabilityApi();
+		const from = new Date("2026-08-01T00:00:00");
+		const to = new Date("2026-08-31T23:59:59.999");
+		const signal = new AbortController().signal;
+
+		await fetchVolunteerOpportunityDateAvailability(
+			api as unknown as EinsatzbereitApi,
+			{
+				from,
+				to,
+				utcOffsetMinutes: -60,
+				occurrence: "Recurring",
+				participationType: "ScheduledSlots",
+				isRemote: false,
+				centerLatitude: 5,
+				centerLongitude: 6,
+				radiusKm: 7,
+				categories: ["Environment"],
+				tag: "cleanup",
+				keyword: "beach",
+			},
+			signal,
+		);
+
+		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
+			from,
+			to,
+			-60,
+			"Recurring",
+			"ScheduledSlots",
+			false,
+			5,
+			6,
+			7,
+			["Environment"],
+			"cleanup",
+			"beach",
+			signal,
+		);
+	});
+
+	it("returns whatever the underlying API call resolves with", async () => {
+		const api = fakeAvailabilityApi();
+		const days: VolunteerOpportunityAvailableDate[] = [
+			{ date: "2026-08-13", opportunityCount: 2 },
+		];
+		api.getVolunteerOpportunityDateAvailability.mockResolvedValue(days);
+
+		const result = await fetchVolunteerOpportunityDateAvailability(
+			api as unknown as EinsatzbereitApi,
+			{
+				from: new Date("2026-08-01T00:00:00"),
+				to: new Date("2026-08-31T23:59:59.999"),
+				utcOffsetMinutes: 0,
+			},
+		);
+
+		expect(result).toBe(days);
 	});
 });

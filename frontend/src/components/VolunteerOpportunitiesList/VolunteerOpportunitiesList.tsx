@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
@@ -11,6 +11,10 @@ import FilterDropdown, {
 import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
+import {
+	useOpportunityDateAvailability,
+	type VisibleMonth,
+} from "./useOpportunityDateAvailability";
 import type { CitySuggestion } from "./useCitySuggestions";
 import { useSearchAlert } from "./useSearchAlert";
 import { resolveDateLocale } from "../../lib/format";
@@ -88,6 +92,41 @@ export default function VolunteerOpportunitiesList() {
 		save: saveSearchAlert,
 		remove: removeSearchAlert,
 	} = useSearchAlert();
+
+	// Null until the date popover is opened and its calendar reports the month it
+	// mounted on - that report is also what keeps this in step with the grid's own
+	// prev/next and arrow-key navigation.
+	const [visibleCalendarMonth, setVisibleCalendarMonth] =
+		useState<VisibleMonth | null>(null);
+
+	// Same value in, same object out, so MiniCalendar's report effect can't loop.
+	const handleVisibleMonthChange = useCallback(
+		(year: number, month: number) => {
+			setVisibleCalendarMonth((prev) =>
+				prev?.year === year && prev.month === month ? prev : { year, month },
+			);
+		},
+		[],
+	);
+
+	// Closing the popover unmounts the calendar but leaves the month it reported
+	// behind, so this gates on the popover itself - otherwise every later filter
+	// change would keep refetching availability for a grid nobody is looking at.
+	const { availability: dateAvailability, loading: dateAvailabilityLoading } =
+		useOpportunityDateAvailability(
+			openFilter === "date" ? visibleCalendarMonth : null,
+			{
+				occurrence,
+				participationType,
+				isRemoteParam,
+				categoriesParam,
+				tag,
+				keyword,
+				lat,
+				lng,
+				radius,
+			},
+		);
 
 	const {
 		items,
@@ -557,6 +596,9 @@ export default function VolunteerOpportunitiesList() {
 							fromStr={dateFrom}
 							toStr={dateTo}
 							onChange={handleDateChange}
+							availability={dateAvailability}
+							availabilityLoading={dateAvailabilityLoading}
+							onVisibleMonthChange={handleVisibleMonthChange}
 						/>
 					</FilterDropdown>
 
