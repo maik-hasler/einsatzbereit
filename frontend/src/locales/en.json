@@ -14,7 +14,8 @@
       "loading": "Loading…",
       "pageLoading": "Loading page…",
       "skipToContent": "Skip to content",
-      "onThisPage": "On this page"
+      "onThisPage": "On this page",
+      "requiredField": "Required field"
     },
     "nav": {
       "primaryLabel": "Main navigation",
@@ -348,7 +349,7 @@
       "selectTimeSlot": "Select time slot",
       "noTimeSlots": "No time slots available.",
       "selectPlaceholder": "Please select…",
-      "message": "Message (required)",
+      "message": "Message",
       "messagePlaceholder": "Briefly describe why you want to volunteer…",
       "submitting": "Submitting…",
       "submit": "Sign up",
@@ -467,7 +468,7 @@
       "logoRemove": "Remove",
       "logoRemoving": "Removing…",
       "logoRemoveError": "Failed to remove logo.",
-      "fieldName": "Name *",
+      "fieldName": "Name",
       "fieldDescription": "Description",
       "fieldContactEmail": "Contact email",
       "fieldPhone": "Phone",
@@ -546,7 +547,7 @@
       "buttonLabel": "Leave feedback",
       "submitted": "Feedback given",
       "title": "Rate your experience",
-      "ratingLabel": "Rating (required)",
+      "ratingLabel": "Rating",
       "commentLabel": "Comment (optional)",
       "commentPlaceholder": "Share your experience…",
       "submit": "Submit feedback",

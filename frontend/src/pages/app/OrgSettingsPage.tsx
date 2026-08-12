@@ -18,6 +18,7 @@ import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
+import { RequiredFieldsLegend } from "../../components/RequiredMark";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
@@ -282,6 +283,8 @@ export default function OrgSettingsPage() {
 							onSubmit={(e) => void handleSubmit(onSubmit)(e)}
 							className="space-y-5"
 						>
+							<RequiredFieldsLegend />
+
 							<div>
 								<p className={`mb-1 ${labelClass}`}>
 									{t("orgSettings.fieldLogo")}
@@ -347,7 +350,7 @@ export default function OrgSettingsPage() {
 								</div>
 							</div>
 
-							<Field label={t("orgSettings.fieldName")} id="org-name">
+							<Field label={t("orgSettings.fieldName")} id="org-name" required>
 								<input
 									id="org-name"
 									maxLength={100}

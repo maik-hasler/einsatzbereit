@@ -7,6 +7,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import { StarIcon } from "./icons";
+import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
 import { labelClass } from "../lib/formClasses";
 
 interface SubmitFeedbackModalProps {
@@ -77,12 +78,22 @@ export default function SubmitFeedbackModal({
 			<p className="mb-5 text-sm text-gray-500">{opportunityTitle}</p>
 
 			<form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
+				<RequiredFieldsLegend />
+
 				<div>
-					<p className={`mb-2 ${labelClass}`}>{t("feedback.ratingLabel")}</p>
+					<p className={`mb-2 ${labelClass}`}>
+						{t("feedback.ratingLabel")}
+						<RequiredMark />
+					</p>
+					{/* The stars are aria-pressed toggle buttons, so this is a plain
+					`group` - and ARIA does not allow aria-required on `group` (axe's
+					aria-allowed-attr would flag it). Folding "required" into the
+					group's own name is what carries the asterisk across to screen
+					readers here; it lives in the component, not in the string. */}
 					<div
 						className="flex gap-1"
 						role="group"
-						aria-label={t("feedback.ratingLabel")}
+						aria-label={`${t("feedback.ratingLabel")} (${t("common.requiredField")})`}
 					>
 						{[1, 2, 3, 4, 5].map((star) => (
 							<button
