@@ -338,11 +338,11 @@ export default function VolunteerOpportunityDetailPage() {
 							anchor this row moved into the band's eyebrow. */}
 							{hasActionRow && (
 								<div
-									className="mb-4 flex items-center justify-between gap-3"
+									className="mb-4 flex items-center gap-3"
 									data-testid="opportunity-detail-actions"
 								>
-									<div className="flex min-w-0 items-center gap-2">
-										{isDraft && isOwner && (
+									{isDraft && isOwner && (
+										<div className="flex min-w-0 items-center gap-2">
 											<Chip
 												tone="warning"
 												size="sm"
@@ -350,9 +350,13 @@ export default function VolunteerOpportunityDetailPage() {
 											>
 												{t("opportunities.draftBadge")}
 											</Chip>
-										)}
-									</div>
-									<div className="flex shrink-0 gap-2">
+										</div>
+									)}
+									{/* ml-auto rather than justify-between on the row: the draft
+									chip beside it is conditional, and justify-between would have
+									needed an empty placeholder div to keep the actions right of
+									the column for everyone who doesn't see the chip. */}
+									<div className="ml-auto flex shrink-0 gap-2">
 										{isAuthenticated && !isOwner && (
 											<Button
 												variant="outline"
