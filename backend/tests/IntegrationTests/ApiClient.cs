@@ -13024,6 +13024,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         public string CheckInMethod { get; set; } = "None";
 
+        [System.Text.Json.Serialization.JsonPropertyName("opportunityValidUntil")]
+        public System.DateTimeOffset? OpportunityValidUntil { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

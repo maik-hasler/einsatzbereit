@@ -23,4 +23,8 @@ public sealed record EngagementSummary(
 	int? FeedbackRating = null,
 	string? FeedbackComment = null,
 	DateTimeOffset? FeedbackSubmittedAt = null,
-	string CheckInMethod = "None");
+	string CheckInMethod = "None",
+	// The opportunity's application deadline, so /my-signups can state one for a
+	// sign-up that has no time slot: an interest-based engagement has no date of
+	// its own, and the deadline is the only date that applies to it (#1777).
+	DateTimeOffset? OpportunityValidUntil = null);

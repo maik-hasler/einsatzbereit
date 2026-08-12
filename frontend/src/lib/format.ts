@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { differenceInCalendarDays } from "date-fns";
+import type { OpportunityCapacity } from "./opportunityCapacity";
 
 export function formatOccurrence(occurrence: string, t: TFunction): string {
 	return occurrence === "Recurring"
@@ -27,6 +28,35 @@ export function isSlotFull(
 ): boolean {
 	const spotsLeft = computeSpotsLeft(maxParticipants, bookedCount);
 	return spotsLeft !== null && spotsLeft <= 0;
+}
+
+/**
+ * The organizer-facing sign-up count - "3/10 sign-ups", "3 sign-ups (no
+ * cap)" - for every state of the capacity contract (`lib/opportunityCapacity`).
+ *
+ * Lives here rather than in either caller because the organizer list and the
+ * dashboard's upcoming widget had grown the same two-branch version of this
+ * line independently, and both dropped it entirely in the third state (#1777).
+ */
+export function formatSignUpCount(
+	capacity: OpportunityCapacity,
+	t: TFunction,
+): string {
+	switch (capacity.kind) {
+		case "unlimited":
+			return t("orgOpportunities.participantsUnlimited", {
+				count: capacity.booked,
+			});
+		case "notApplicable":
+			return capacity.reason === "interest"
+				? t("orgOpportunities.participantsInterest", { count: capacity.booked })
+				: t("orgOpportunities.participantsNoSlots", { count: capacity.booked });
+		case "capped":
+			return t("orgOpportunities.participants", {
+				booked: capacity.booked,
+				max: capacity.max,
+			});
+	}
 }
 
 /** i18n's UI language ("de"/"en") -> the Intl/date-fns locale used for date

@@ -1,0 +1,436 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using AwesomeAssertions;
+using Microsoft.Playwright;
+
+namespace VisualTests;
+
+/// <summary>
+/// #1777: the same slots on an opportunity card meant different things - or
+/// nothing - across the surfaces that show them.
+///
+/// - The public grid's line under the title was either a start date or an
+///   application deadline, rendered with identical classes and the same
+///   calendar icon, so only its label said which. The capacity chip appeared
+///   on some cards and not others.
+/// - The organizer list dropped the sign-up count entirely for any opportunity
+///   with no time slots.
+/// - /my-signups put the volunteer's own application message in the region
+///   where the card beside it stated its date.
+/// - The detail page framed capacity as a per-slot maximum where the card that
+///   linked to it had said free places, and never showed the remaining places
+///   to an anonymous visitor at all.
+///
+/// The shared cause of the two capacity faults is one backend value:
+/// `VolunteerOpportunitySummary.TotalMaxParticipants` is tri-state (null =
+/// unlimited, 0 = no time slots, &gt; 0 = capped) and every surface handled
+/// only two of the three. These pin the contract on each surface, since
+/// nothing else fails when a card silently states nothing.
+///
+/// The grid cases build their own opportunities and reach them through the
+/// list's `?q=` keyword filter rather than asserting against seed data on page
+/// one: this suite runs in parallel against one shared stack, and other tests
+/// publish opportunities that would otherwise push the expected cards out of
+/// the first page.
+/// </summary>
+[ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBase(fixture)
+{
+	private const int SlotCapacity = 20;
+
+	[Test]
+	public async Task PublicGrid_EveryCard_StatesADateKindAndACapacity()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var dateLines = Page.GetByTestId("opportunity-date-line");
+		await Expect(dateLines.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var cardCount = await dateLines.CountAsync();
+		cardCount.Should().BeGreaterThan(1, "the seed data publishes several opportunities");
+
+		// Every card, not most of them: the failure being pinned here is a slot
+		// that renders nothing on some cards, which reads as an absent property
+		// of the opportunity rather than of the data.
+		var capacities = Page.GetByTestId("opportunity-capacity");
+		(await capacities.CountAsync()).Should().Be(cardCount,
+			"a capacity chip has to render on every card, including the ones with no places to count");
+
+		for (var i = 0; i < cardCount; i++)
+		{
+			var kind = await dateLines.Nth(i).GetAttributeAsync("data-date-kind");
+			kind.Should().BeOneOf("start", "deadline", "flexible");
+			(await dateLines.Nth(i).InnerTextAsync()).Trim().Should().NotBeEmpty();
+			(await capacities.Nth(i).InnerTextAsync()).Trim().Should().NotBeEmpty();
+		}
+	}
+
+	/// <summary>
+	/// The acceptance criterion the previous code deliberately failed: a
+	/// deadline card and a start-date card have to be distinguishable without
+	/// reading the label. Asserted on the rendered colour and glyph rather than
+	/// on class names - what matters is that the eye can separate them.
+	/// </summary>
+	[Test]
+	public async Task PublicGrid_ADeadlineCard_LooksDifferentFromAStartDateCard()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardKinds{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+
+		await PublishSlotBasedOpportunityAsync(organizer, organizationId, $"{keyword} with a slot");
+		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} with a deadline");
+
+		await Page.GotoAsync($"{origin}/opportunities?q={keyword}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var startLine = Page.Locator("[data-testid='opportunity-date-line'][data-date-kind='start']").First;
+		var deadlineLine = Page.Locator("[data-testid='opportunity-date-line'][data-date-kind='deadline']").First;
+
+		await Expect(startLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(deadlineLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(startLine).ToContainTextAsync("Starts");
+		await Expect(deadlineLine).ToContainTextAsync("Apply by");
+
+		var startColor = await startLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
+		var deadlineColor = await deadlineLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
+		deadlineColor.Should().NotBe(startColor,
+			"a start date and an application deadline are different kinds of fact in the same slot");
+
+		// A different glyph too, so the distinction survives for a reader who
+		// cannot separate the two tones.
+		var startGlyph = await startLine.Locator("svg path").First.GetAttributeAsync("d");
+		var deadlineGlyph = await deadlineLine.Locator("svg path").First.GetAttributeAsync("d");
+		deadlineGlyph.Should().NotBe(startGlyph);
+	}
+
+	/// <summary>
+	/// An interest-based opportunity has no time slots, so its
+	/// TotalMaxParticipants is 0 - the value that used to fall through both
+	/// branches of the chip logic and render nothing.
+	/// </summary>
+	[Test]
+	public async Task PublicGrid_AnInterestBasedCard_StillStatesItsCapacity()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardInterest{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		await PublishInterestBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		await Page.GotoAsync($"{origin}/opportunities?q={keyword}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("li", new() { HasText = keyword }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Expect(card.GetByTestId("opportunity-capacity"))
+			.ToHaveTextAsync("By expression of interest");
+	}
+
+	/// <summary>
+	/// The card and the page it links to have to state the same capacity, and
+	/// the number has to be there for the anonymous visitor who makes up most
+	/// of the detail page's traffic - "N spots left" used to be gated on
+	/// `isAuthenticated &amp;&amp; !isOwner &amp;&amp; !cue &amp;&amp; !isDraft`,
+	/// leaving a signed-out reader with the per-slot maximum instead.
+	/// </summary>
+	[Test]
+	public async Task OpportunityDetail_StatesTheSameRemainingPlacesAsItsCard_ToAnAnonymousVisitor()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardCapacity{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		var (opportunityId, timeSlotId) =
+			await PublishSlotBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		using var volunteer = await CreateVolunteerClientAsync(keycloak, backend);
+		(await volunteer.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { type = "ScheduledSlots", timeSlotId, message = (string?)null }))
+			.EnsureSuccessStatusCode();
+
+		var expected = $"{SlotCapacity - 1} spots left";
+
+		await Page.GotoAsync($"{origin}/opportunities?q={keyword}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("li", new() { HasText = keyword }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(card.GetByTestId("opportunity-capacity")).ToHaveTextAsync(expected);
+
+		await card.Locator("a[href*='/volunteer-opportunities/']").First.ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/volunteer-opportunities/{opportunityId}",
+			new() { Timeout = 15_000 });
+
+		// Same number, same framing, and visible without signing in.
+		await Expect(Page.GetByTestId("opportunity-capacity")).ToHaveTextAsync(expected);
+
+		// The per-slot line moved to the same free-places framing, so the
+		// parenthetical maximum the review saw is gone from the page entirely.
+		(await Page.Locator("main").InnerTextAsync()).Should().NotContain("max. ",
+			"one capacity framing across list and detail - free places, not a maximum");
+	}
+
+	/// <summary>
+	/// AC: hovering or tabbing to a card title has to show it is a link. The
+	/// grid's title is not focusable itself - the stretched link covering the
+	/// card is - so hover is asserted on the title and the keyboard half is
+	/// asserted as the card no longer clipping that link's focus ring, which is
+	/// what made tabbing through the grid move an invisible focus.
+	/// </summary>
+	[Test]
+	public async Task PublicGrid_ACardTitle_IsDiscoverablyALink()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("li", new() { Has = Page.GetByTestId("opportunity-date-line") }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var title = card.Locator("h2, h3").First;
+		await card.HoverAsync();
+		var decoration = await title.EvaluateAsync<string>(
+			"el => getComputedStyle(el).textDecorationLine");
+		decoration.Should().Be("underline", "a title that never changes on hover reads as plain text");
+
+		// global.css's shared focus ring (#992) draws at outline-offset 2px,
+		// entirely outside the stretched link's box - which is the card's box.
+		var overflow = await card.EvaluateAsync<string>("el => getComputedStyle(el).overflow");
+		overflow.Should().NotBe("hidden",
+			"clipping the card's descendants clips the stretched link's focus ring away entirely");
+	}
+
+	[Test]
+	public async Task OrgOpportunityList_EveryRow_ShowsItsSignUpCount()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		pinnedOrgId.Should().NotBeNull();
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId.Value);
+
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var rows = Page.GetByTestId("opportunity-row");
+		await Expect(rows.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var rowCount = await rows.CountAsync();
+		var counts = Page.GetByTestId("opportunity-signup-count");
+		(await counts.CountAsync()).Should().Be(rowCount,
+			"the sign-up count is the number this page exists for - it rendered on one published row in five");
+
+		for (var i = 0; i < rowCount; i++)
+		{
+			(await counts.Nth(i).InnerTextAsync()).Trim().Should().Contain("sign-up");
+		}
+	}
+
+	/// <summary>
+	/// An interest-based sign-up has no date of its own, so /my-signups used to
+	/// render the volunteer's application message in the slot where the card
+	/// beside it stated "Scheduled: ...". The date region now always says what
+	/// kind of date applies, and the message is labelled, below it.
+	/// </summary>
+	[Test]
+	public async Task MySignUps_AnInterestBasedSignUp_StatesNoFixedDateAndItsDeadline()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardMySignUps{Guid.NewGuid():N}";
+		const string ApplicationMessage = "I would love to help out with this one";
+
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		var opportunityId = await PublishInterestBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		using var volunteer = await CreateVolunteerClientAsync(keycloak, backend);
+		(await volunteer.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { type = "IndividualContact", message = ApplicationMessage }))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("#activity [data-testid='engagement-card']")
+			.Filter(new() { HasText = keyword }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var dateRegion = card.Locator("[data-testid='engagement-date'][data-date-kind='interest']");
+		await Expect(dateRegion).ToHaveTextAsync("No fixed date - expression of interest");
+		await Expect(card.GetByText("Apply by")).ToBeVisibleAsync();
+
+		// The message is still on the card - labelled, and outside the date
+		// region rather than standing in for it.
+		await Expect(card.GetByText("Your message:")).ToBeVisibleAsync();
+		(await dateRegion.InnerTextAsync()).Should().NotContain(ApplicationMessage,
+			"the application message occupying the date slot is the #1777 defect");
+	}
+
+	[Test]
+	public async Task MySignUps_ACardTitle_IsDiscoverablyALink()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("#activity [data-testid='engagement-card']").First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var title = card.Locator("a[href*='/volunteer-opportunities/']").First;
+		await Expect(title).ToBeVisibleAsync();
+
+		// It carried no underline and exactly the classes of the plain-text
+		// fallback span used for a deleted opportunity, so a real route read as
+		// static text.
+		await title.HoverAsync();
+		var decoration = await title.EvaluateAsync<string>(
+			"el => getComputedStyle(el).textDecorationLine");
+		decoration.Should().Be("underline", "a link a reader cannot recognize is not an entry point");
+	}
+
+	private static Task<HttpClient> CreateOrganizerClientAsync(Uri keycloak, Uri backend) =>
+		CreateClientAsync(keycloak, backend, "olaf", "olaf123");
+
+	private static Task<HttpClient> CreateVolunteerClientAsync(Uri keycloak, Uri backend) =>
+		CreateClientAsync(keycloak, backend, "vera", "vera123");
+
+	private static async Task<HttpClient> CreateClientAsync(
+		Uri keycloak,
+		Uri backend,
+		string username,
+		string password)
+	{
+		var token = await GetTokenAsync(keycloak, username, password);
+		var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+		return http;
+	}
+
+	private static async Task<string> CreateOrganizationAsync(HttpClient organizer, string keyword)
+	{
+		var response = await organizer.PostAsJsonAsync("/v1/organizations", new { name = $"Org {keyword}" });
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("id").GetProperty("value").GetString()
+			?? throw new InvalidOperationException("organization id missing");
+	}
+
+	/// <summary>Published, one capped time slot - a card whose date line is a start date.</summary>
+	private static async Task<(string OpportunityId, string TimeSlotId)> PublishSlotBasedOpportunityAsync(
+		HttpClient organizer,
+		string organizationId,
+		string title)
+	{
+		var response = await organizer.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Created by OpportunityCardContractTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = body.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("opportunity id missing");
+
+		var start = DateTimeOffset.UtcNow.AddDays(21);
+		var slotResponse = await organizer.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new
+			{
+				startDateTime = start,
+				endDateTime = start.AddHours(3),
+				maxParticipants = SlotCapacity,
+				recurrenceCount = 1,
+			});
+		slotResponse.EnsureSuccessStatusCode();
+		var slots = await slotResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var timeSlotId = slots[0].GetProperty("id").GetString()
+			?? throw new InvalidOperationException("time slot id missing");
+
+		(await organizer.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		return (opportunityId, timeSlotId);
+	}
+
+	/// <summary>
+	/// Published, no time slots, with an application deadline - the
+	/// TotalMaxParticipants == 0 case, and a card whose date line is a deadline.
+	/// </summary>
+	private static async Task<string> PublishInterestBasedOpportunityAsync(
+		HttpClient organizer,
+		string organizationId,
+		string title)
+	{
+		var response = await organizer.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Created by OpportunityCardContractTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "Recurring",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+		});
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("opportunity id missing");
+	}
+
+	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		var response = await http.PostAsync(
+			"/realms/einsatzbereit/protocol/openid-connect/token",
+			new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "password",
+				["client_id"] = "frontend-test",
+				["username"] = username,
+				["password"] = password,
+				["scope"] = "openid",
+			}));
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()
+			?? throw new InvalidOperationException("no access_token in the token response");
+	}
+}
