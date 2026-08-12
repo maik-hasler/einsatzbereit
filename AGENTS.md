@@ -17,7 +17,7 @@ einsatzbereit/
 
 | | |
 |---|---|
-| Backend | .NET 10 (SDK 10.0.302, see `backend/global.json`), EF Core 10, PostgreSQL 18 |
+| Backend | .NET 10 (SDK 10.0.400, see `backend/global.json`), EF Core 10, PostgreSQL 18 |
 | Auth | Keycloak 26.7.1 (OIDC, JWT) |
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4 |
 | API client | NSwag-generated - **never hand-edit** `api-client.ts` |
@@ -27,7 +27,7 @@ einsatzbereit/
 
 ## Development Setup
 
-Required: .NET SDK **10.0.302** (enforced via `backend/global.json`).
+Required: .NET SDK **10.0.400** (enforced via `backend/global.json`).
 
 ```bash
 dotnet run --project backend/src/Aspire/AppHost

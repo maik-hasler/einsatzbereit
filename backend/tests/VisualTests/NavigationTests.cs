@@ -133,8 +133,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
-		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
-		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		// Reached through the page header's own section rail (OrgPageHeader.tsx).
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// "Manage sign-ups" only appears for published opportunities on the
@@ -178,7 +178,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
-		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
@@ -216,11 +216,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link instead (its accessible name is
-		// "N member(s)" - #834 made the count grammatically correct German/
-		// English plural forms, so match "member" to cover both N=1 and N>1).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });

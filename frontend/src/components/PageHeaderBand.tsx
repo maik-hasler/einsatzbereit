@@ -1,21 +1,8 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
 import { WAVE_PATH } from "../lib/wavePath";
 import { useOverlaysHeader } from "../contexts/HeaderOverlayContext";
 import { useQuickActionsList } from "../contexts/QuickActionsContext";
 import Button from "./Button";
-import { ChevronLeftIcon } from "./icons";
-
-// Where the in-band back link goes, and what it is called - one level *up*,
-// never "home": the header's own nav carries the landing page now (see
-// DesktopHeader's LINKS), so the only caller left is the org app shell, whose
-// "up" is a nested page's tab or the dashboard. One object rather than two
-// optional strings, so a destination can't arrive without a name (an
-// unlabelled chevron) or the other way round.
-interface Back {
-	href: string;
-	label: string;
-}
 
 interface Props {
 	/**
@@ -37,8 +24,6 @@ interface Props {
 	 * want the default.
 	 */
 	fullWidth?: boolean;
-	/** One level up, when there is one. See the Back type above. */
-	back?: Back;
 }
 
 // Shared title band for the standalone public pages (help, contact, imprint,
@@ -71,18 +56,18 @@ interface Props {
 // duplication, and it drove a hard white line straight through the middle of
 // the treatment.
 //
-// They carry no "back to the home page" link either. Every subpage repeating
-// the same one destination inside its hero was the wrong place for it: a link
-// home is not a property of any individual page, it belongs in the site nav
-// that is on screen everywhere - which is where it lives now (see
-// DesktopHeader's LINKS and MobileMenu's PRIMARY_LINKS). What stays here is
-// only a genuine one-level-up link, which today just means the org app shell.
+// They carry no "back to the home page" link either, and no back link of any
+// kind. Every subpage repeating the same one destination inside its hero was
+// the wrong place for it: a link home is not a property of any individual
+// page, it belongs in the site nav that is on screen everywhere - which is
+// where it lives now (see DesktopHeader's LINKS and MobileMenu's
+// PRIMARY_LINKS). The one surface that does need a genuine one-level-up link,
+// the org app shell, has its own header component (OrgPageHeader) since #1767.
 export default function PageHeaderBand({
 	eyebrow,
 	title,
 	lead,
 	children,
-	back,
 	fullWidth = false,
 }: Props) {
 	useOverlaysHeader();
@@ -122,17 +107,6 @@ export default function PageHeaderBand({
 					<div
 						className={`pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14 ${fullWidth ? "" : "mx-auto max-w-5xl"}`}
 					>
-						{/* One level up, when there is one. See the Back type above
-						for why this is not a link home. */}
-						{back && (
-							<Link
-								to={back.href}
-								className="animate-fade-up -ml-1 inline-flex items-center gap-1 rounded-lg px-1 py-1 text-sm font-medium text-brand-100 transition-colors hover:text-white"
-							>
-								<ChevronLeftIcon className="h-4 w-4" />
-								{back.label}
-							</Link>
-						)}
 						{actions.length > 0 && (
 							<div className="animate-fade-up-d1 float-right ml-4 flex shrink-0 items-center gap-2">
 								{actions.map((action) => (
@@ -155,11 +129,7 @@ export default function PageHeaderBand({
 								))}
 							</div>
 						)}
-						{/* mt-6 only separates the eyebrow from a back link above it -
-						without one it would just be dead space at the top of the band. */}
-						<p
-							className={`animate-fade-up text-xs font-semibold tracking-widest text-brand-200 uppercase ${back ? "mt-6" : ""}`}
-						>
+						<p className="animate-fade-up text-xs font-semibold tracking-widest text-brand-200 uppercase">
 							{eyebrow}
 						</p>
 						<h1 className="animate-fade-up-d1 mt-3 max-w-4xl font-display text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">

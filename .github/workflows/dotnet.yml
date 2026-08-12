@@ -118,7 +118,7 @@ jobs:
       - name: Check for pending EF Core model changes
         working-directory: backend
         run: |
-          dotnet tool install --global dotnet-ef --version 10.0.10
+          dotnet tool install --global dotnet-ef --version 10.0.11
           dotnet ef migrations has-pending-model-changes -p src/Infrastructure -s src/Api --no-build
 
       # visual-tests actually launches a browser on its own runner (a

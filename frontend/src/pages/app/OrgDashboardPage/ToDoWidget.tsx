@@ -14,10 +14,16 @@ interface Kpis {
 
 interface Props {
 	organizationId: string;
+	// Bumped by the dashboard whenever an opportunity is published from one of
+	// the action widgets. These two counts are the first thing an organizer
+	// reads on the page, so they have to move with the rest of the board -
+	// before this they were fetched exactly once per mount and then sat stale
+	// while Calendar and Upcoming Opportunities refreshed around them.
+	refreshKey: number;
 	size: WidgetSizeClass;
 }
 
-function ToDoWidget({ organizationId, size }: Props) {
+function ToDoWidget({ organizationId, refreshKey, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -26,20 +32,34 @@ function ToDoWidget({ organizationId, size }: Props) {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		// Switching organizations from the header switcher issues a second
+		// request while the first is still open; without this guard the slower
+		// response wins whichever order they land in, and one org's dashboard
+		// can end up showing another's counts. Same pattern as OrgAppLayout's
+		// own latestRequestRef.
+		let alive = true;
 		setLoading(true);
 		setError(null);
 		api
 			.getOrganizationDashboard(organizationId)
-			.then((data) =>
+			.then((data) => {
+				if (!alive) return;
 				setKpis({
 					pendingEngagements: data.pendingEngagements,
 					confirmedEngagementsTotal: data.confirmedEngagementsTotal,
-				}),
-			)
-			.catch(() => setError(t("orgDashboard.todoError")))
-			.finally(() => setLoading(false));
+				});
+			})
+			.catch(() => {
+				if (alive) setError(t("orgDashboard.todoError"));
+			})
+			.finally(() => {
+				if (alive) setLoading(false);
+			});
+		return () => {
+			alive = false;
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
+	}, [organizationId, refreshKey]);
 
 	return (
 		<WidgetCard

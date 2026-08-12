@@ -13,9 +13,11 @@ namespace VisualTests;
 /// collapsed behind the hamburger) is identical to the public site's and
 /// already covered by <c>MobileHeaderTests</c>. What's specific to the org app
 /// here is that the org switcher's own name must not overflow onto the
-/// bell/hamburger. There is no tab bar in the current org app UX - opportunities/
-/// members/settings are reached via the dashboard's own widget links and the
-/// burger menu's org submenu (see <c>OrganizationDashboardNavLinkTests</c>).
+/// bell/hamburger. The org app's sections (opportunities/sign-ups/members/
+/// settings) live in the page header's own section rail, covered by
+/// <c>OrgAppCompactHeaderTests</c> - including at this width, where it scrolls
+/// horizontally rather than widening the page. The burger menu's org submenu
+/// (see <c>OrganizationDashboardNavLinkTests</c>) still reaches them too.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase(fixture)

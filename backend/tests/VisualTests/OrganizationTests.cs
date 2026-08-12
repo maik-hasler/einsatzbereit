@@ -50,11 +50,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// a rename of the seed data silently flips - and did.
 		await CreateOrganizationAsync("Visual579 InviteMember", pinnedOrgId!.Value);
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link instead (its accessible name is
-		// "N member(s)" - #834 made the count grammatically correct German/
-		// English plural forms, so match "member" to cover both N=1 and N>1).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -91,7 +91,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual1170 MemberSearch", pinnedOrgId!.Value);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("ver");
 		await Page.WaitForTimeoutAsync(800);
@@ -116,11 +116,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual580 Leave", pinnedOrgId!.Value);
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link instead (its accessible name is
-		// "N member(s)" - #834 made the count grammatically correct German/
-		// English plural forms, so match "member" to cover both N=1 and N>1).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -169,9 +169,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// pre-membership snapshot (olaf as sole member) - force a refetch.
 		await Page.ReloadAsync();
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link, same as the sole-member test above.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -211,7 +213,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// as the SoleOrganizer test above.
 		await Page.ReloadAsync();
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		// Scope to vera's row by her stable seed email rather than her display
 		// name: other tests in this shared session (e.g. ProfileOverviewTests)
@@ -271,7 +273,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// pre-membership snapshot - force a refetch, same as other tests above.
 		await Page.ReloadAsync();
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		// Scope to vera's row by her stable seed email rather than her display
 		// name - see RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm
@@ -333,7 +335,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual1050 InviteRole", pinnedOrgId!.Value);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -372,7 +374,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// reusing it here could 409 with AlreadyInvited depending on run order.
 		await CreateOrganizationAsync("Visual1040 DismissPending", pinnedOrgId!.Value);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
@@ -664,7 +666,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// #834: the widget link's accessible name is "1 member" (singular) for
 		// a fresh single-member org, so match "member" rather than "members".
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await AssertMaxWidthContentLeftAlignedAsync("Organization members page");

@@ -167,11 +167,8 @@
       },
       "edit": "Bearbeiten",
       "delete": "Löschen",
-      "share": "Teilen",
-      "shareOpportunity": "Einsatz teilen",
       "report": "Melden",
       "reportOpportunity": "Einsatz melden",
-      "linkCopied": "Link in die Zwischenablage kopiert",
       "deleteError": "Fehler beim Löschen",
       "availableTimeSlots": "Verfügbare Zeitslots",
       "joinWaitlist": "Zeitslot auswählen",
@@ -377,6 +374,8 @@
     },
     "orgApp": {
       "backToSite": "Zurück zu Einsatzbereit",
+      "sectionsNavLabel": "Bereiche der Organisation",
+      "backTo": "Zurück zu {{section}}",
       "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
       "retry": "Erneut versuchen"
     },

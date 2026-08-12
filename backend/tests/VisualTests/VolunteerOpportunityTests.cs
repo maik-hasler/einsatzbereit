@@ -215,7 +215,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task DetailPage_ShowsOrgEyebrowAndShareButton()
+	public async Task DetailPage_ShowsHomeLink_AndNoShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -247,9 +247,18 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.ToHaveCountAsync(0);
 		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
 
-		// #373 share button present (matched by stable test id, locale-independent).
-		await Expect(Page.GetByTestId("share-opportunity"))
-			.ToBeVisibleAsync();
+		// #373 added a Share button here; it is gone again - every browser and
+		// OS this page runs on already offers sharing the current URL, so the
+		// in-page duplicate only spent room in the action row. Pinned by the
+		// same stable test id it used to render with, so a re-introduction
+		// fails here rather than shipping unnoticed.
+		await Expect(Page.GetByTestId("share-opportunity")).ToHaveCountAsync(0);
+
+		// With Share gone the whole action row is conditional, and an
+		// anonymous visitor gets none of its contents - it must not render as
+		// an empty strip with its mb-4 left behind between the band and the
+		// at-a-glance panel.
+		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToHaveCountAsync(0);
 	}
 
 	[Test]
@@ -257,9 +266,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	{
 		// Regression for #979: the anonymous sign-up CTA used to be an
 		// underlined text link inside a grey notice, with less visual weight
-		// than the Share button beside the title. It must now use the shared
-		// primary Button component (solid brand background), matching the
-		// prominence of the signed-in sign-up CTA below it.
+		// than the (since removed) Share button beside the title. It must now
+		// use the shared primary Button component (solid brand background),
+		// matching the prominence of the signed-in sign-up CTA below it.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 

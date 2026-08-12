@@ -124,6 +124,50 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_SignedInNonOwner_AsVera_HasNoSeriousA11yViolations()
+	{
+		// The action row above the at-a-glance panel used to render for every
+		// visitor (the Share button was its one unconditional child), so the
+		// anonymous scan above incidentally covered it. Share is gone and the
+		// row is now conditional, which leaves the signed-in-non-owner state -
+		// the row holding nothing but Report - as the only render path of it
+		// that no axe scan reaches. Vera is a plain user, never an organizer,
+		// so isOwner is false for every opportunity.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		// Same card-link locator (and skip-on-empty handling) as the anonymous
+		// scan above: footer links also match a bare ul>li a.
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("no opportunities seeded");
+		}
+
+		var href = await firstCard.GetAttributeAsync("href");
+		Skip.When(href is null, "opportunity card had no href attribute");
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw the state this test exists for,
+		// rather than passing against a page where the row never rendered.
+		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1027: the draftBadge chip plus owner-only Edit/Publish actions
@@ -593,9 +637,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// #771: the tab bar is gone - reach the page via the dashboard's own
-		// widget links instead.
-		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		// Reached through the page header's own section rail (OrgPageHeader.tsx),
+		// the way an organizer reaches it.
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -611,11 +655,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link instead (its accessible name is
-		// "N member(s)" - #834 made the count grammatically correct German/
-		// English plural forms, so match "member" to cover both N=1 and N>1).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -660,7 +704,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// OrgAppLayout only refetches org details on organizationId change -
 		// force a refetch, same as OrganizationTests.cs's equivalent setup.
 		await Page.ReloadAsync();
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		// einsatzbereit#1294: this button's accessible name now interpolates
 		// the member's own name in the middle ("Promote {name} to Organizer"),
 		// so match with a regex rather than the old literal substring.
