@@ -215,6 +215,7 @@
     "createOpportunity": {
       "title": "Create opportunity",
       "stepOf": "Step {{current}} of {{total}}",
+      "stepBlocked": "Step {{target}} is not available yet: please complete step {{blocking}} ({{blockingTitle}}) first.",
       "step1Title": "Basics",
       "step1Subtitle": "Give your opportunity a clear title and description so volunteers know what to expect.",
       "step2Title": "Location",
