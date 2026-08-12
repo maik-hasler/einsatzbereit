@@ -66,6 +66,31 @@
       ],
       "datasourceTemplate": "docker",
       "depNameTemplate": "quay.io/keycloak/keycloak"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^AGENTS\\.md$/",
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "SDK (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+), see `backend/global\\.json`",
+        "\\.NET SDK \\*\\*(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)\\*\\*",
+        "pinned in `backend/global\\.json` \\((?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)\\)"
+      ],
+      "datasourceTemplate": "dotnet-version",
+      "depNameTemplate": "dotnet-sdk"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/dotnet\\.yml$/"
+      ],
+      "matchStrings": [
+        "dotnet tool install --global dotnet-ef --version (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
+      ],
+      "datasourceTemplate": "nuget",
+      "depNameTemplate": "dotnet-ef"
     }
   ]
 }
