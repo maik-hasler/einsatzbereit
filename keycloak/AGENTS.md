@@ -8,9 +8,40 @@ Custom Keycloak 26.7.1 image with the `einsatzbereit` realm pre-baked. Built and
 keycloak/
 ├── Dockerfile              Multi-stage build (builder + optimized runtime)
 ├── README.md               Runtime env vars documentation
-└── realms/
-    └── einsatzbereit-realm.json    Realm config - source of truth for auth setup
+├── realms/
+│   └── einsatzbereit-realm.json    Realm config - source of truth for auth setup
+└── themes/einsatzbereit/login/     Custom login theme (see "Login Theme" below)
 ```
+
+## Login Theme
+
+**Directory:** `themes/einsatzbereit/login/`, selected by the realm's `loginTheme`. `parent=base`, so any template not overridden here falls through to Keycloak's own - which is how the pages a real signup walks through ended up rendering stock markup inside this theme's card (#1758).
+
+The theme now overrides every template a visitor can reach with this realm's settings:
+
+| Template | Reached by |
+|---|---|
+| `login.ftl` | sign-in |
+| `register.ftl` | `/registrations` |
+| `login-reset-password.ftl` | "forgot password" |
+| `login-verify-email.ftl` | every registration (`verifyEmail: true`) |
+| `login-update-password.ftl` | after email confirmation, and from the reset mail |
+| `login-update-profile.ftl` | UPDATE_PROFILE required action |
+| `terms.ftl` | TERMS_AND_CONDITIONS required action (not enabled today) |
+| `info.ftl` / `error.ftl` | action-token outcomes, expired links |
+| `login-page-expired.ftl` | an idle login form |
+| `logout-confirm.ftl` | RP-initiated logout without an `id_token_hint` |
+
+**There is no password field on the registration form, and that is Keycloak's design, not a bug.** With `verifyEmail: true`, `RegistrationPassword.buildPage` deliberately omits it and sets UPDATE_PASSWORD once the address is confirmed instead. `register.ftl` renders the password fields whenever `passwordRequired` *is* set, so turning `verifyEmail` off restores them - and `KeycloakThemeTests.Register_OmitsPasswordFields_AndSaysWhy` fails, which is the correct signal that the explanatory lead needs to go too.
+
+Two constraints that are easy to trip over:
+
+- **The `frontend` client has no `baseUrl`.** Base's `error.ftl`, `info.ftl` and `logout-confirm.ftl` all gate their only way out on `${client.baseUrl}`, so all three rendered with nothing to click. The overrides fall back to `properties.siteUrl` (declared in `theme.properties`) instead. Keep that fallback on any new template with an exit.
+- **Keycloak's stock German is "Sie"; the product is "du".** Any base message that reaches a user has to be overridden in `messages/messages_de.properties` (and its English twin) or the funnel mixes both registers on one screen.
+
+Colors, radii, shadows and the control recipes are mirrored from the frontend's `@theme` block and `lib/formClasses.ts` / `lib/surfaceClasses.ts` - change them there first, then here. `resources/img/logo.svg` and `favicon.svg` are byte-identical copies of `frontend/public/`; re-copy rather than hand-editing.
+
+Covered by `backend/tests/VisualTests/KeycloakThemeTests.cs`, which drives Keycloak's origin directly and creates throwaway users to reach the required-action pages (`AspireFixture.CreateThrowawayUserAsync`). Not covered, and deliberately: the TOTP/WebAuthn/identity-provider/consent templates, none of which this realm can reach. They fall back to base markup, over the class-hook mappings in `theme.properties` and the fallback rules at the end of `einsatzbereit.css`, so they degrade to plain rather than to unstyled.
 
 ## Realm Configuration
 

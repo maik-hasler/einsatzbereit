@@ -2,7 +2,9 @@
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError("username")
 	displayInfo=true
-	pageTitle="emailForgotTitle"; section>
+	pageTitle="emailForgotTitle"
+	eyebrow="stepRecovery"
+	lead="emailForgotIntro"; section>
 
 	<#if section = "header">
 		${msg("emailForgotTitle")}
@@ -10,12 +12,9 @@
 	<#elseif section = "form">
 		<form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
-			<p class="form-intro">${msg("emailForgotIntro")}</p>
-
 			<div class="form-group">
 				<div class="form-field">
 					<input
-						tabindex="1"
 						id="username"
 						class="${properties.kcInputClass!}"
 						name="username"
@@ -46,7 +45,6 @@
 
 			<div class="${properties.kcFormButtonsClass!}">
 				<input
-					tabindex="4"
 					class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
 					type="submit"
 					value="${msg('doSubmitResetPassword')}"

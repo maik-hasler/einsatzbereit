@@ -396,6 +396,71 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 			token.AccessToken, token.IdToken, token.RefreshToken, token.ExpiresIn, token.TokenType, authority, userId);
 	}
 
+	/// <summary>
+	/// Creates a throwaway Keycloak user for tests that need to land on a page
+	/// only a required action can reach - <c>login-update-password.ftl</c>,
+	/// <c>login-update-profile.ftl</c>, <c>login-verify-email.ftl</c>. Those are
+	/// the pages a real signup actually walks through (the realm has
+	/// <c>verifyEmail</c> on, so Keycloak defers the password to UPDATE_PASSWORD
+	/// after confirmation rather than collecting it on the registration form -
+	/// see <c>RegistrationPassword.buildPage</c>), and there is no way to reach
+	/// them from the seeded vera/olaf/admin accounts without leaving a required
+	/// action pinned to a shared account for the rest of the session.
+	///
+	/// Always pair with <see cref="DeleteUserAsync"/> in a finally: this suite
+	/// shares one realm across ~50 classes, and an abandoned user carrying
+	/// UPDATE_PASSWORD is exactly the kind of debris that makes a later,
+	/// unrelated login test fail.
+	///
+	/// <paramref name="password"/> must satisfy the realm's password policy
+	/// (<c>upperCase(1)</c>, <c>length(8)</c>) or Keycloak rejects the create.
+	/// </summary>
+	public async Task<Guid> CreateThrowawayUserAsync(
+		string username, string password, bool emailVerified, string[] requiredActions,
+		CancellationToken cancellationToken = default)
+	{
+		var adminToken = await GetAdminTokenAsync(cancellationToken);
+
+		using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{Realm}/users")
+		{
+			Content = JsonContent.Create(new
+			{
+				username,
+				email = $"{username}@example.invalid",
+				emailVerified,
+				enabled = true,
+				requiredActions,
+				credentials = new[] { new { type = "password", value = password, temporary = false } },
+			}),
+		};
+		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await _keycloakClient.SendAsync(request, cancellationToken);
+		await EnsureSuccessAsync(response);
+
+		// Keycloak returns the new user's id only in the Location header.
+		var location = response.Headers.Location?.ToString()
+			?? throw new InvalidOperationException("Keycloak returned no Location header for the created user.");
+		return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
+	}
+
+	/// <summary>Removes a user created by <see cref="CreateThrowawayUserAsync"/>.</summary>
+	public async Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+	{
+		var adminToken = await GetAdminTokenAsync(cancellationToken);
+
+		using var request = new HttpRequestMessage(
+			HttpMethod.Delete, $"/admin/realms/{Realm}/users/{userId}");
+		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await _keycloakClient.SendAsync(request, cancellationToken);
+		// A 404 means some earlier cleanup already removed it - not a failure
+		// worth blowing up a test's finally block over.
+		if (response.StatusCode == HttpStatusCode.NotFound)
+			return;
+		await EnsureSuccessAsync(response);
+	}
+
 	// Test-only escape hatch to simulate an opportunity row removed without
 	// going through the command handler that cancels its engagements first -
 	// e.g. data predating that cancellation safeguard (#703).

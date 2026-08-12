@@ -21,27 +21,49 @@
 	src: url('../fonts/source-sans-3-latin-wght-normal.woff2') format('woff2');
 }
 
+/* Token names and values are lifted from the frontend's @theme block
+ * (frontend/src/styles/global.css) rather than re-picked by eye. Anything
+ * that has a counterpart there - the brand ramp, the card recipe in
+ * lib/surfaceClasses.ts, the control recipe in lib/formClasses.ts, the
+ * elevation scale - is mirrored exactly, because a value that only *nearly*
+ * matches is what made these pages read as a different product. */
 :root {
 	--font-display: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
 	--font-sans: 'Source Sans 3 Variable', ui-sans-serif, system-ui, sans-serif;
 
 	--brand-50:   #f0faf5;
 	--brand-100:  #d6f0e3;
+	--brand-200:  #a8dfc3;
 	--brand-500:  #3eaf78;
 	--brand-600:  #2d8a5e;
 	--brand-700:  #226947;
 	--brand-800:  #1a3c2b;
-	--brand-900:  #0f2219;
 
 	--background:  var(--brand-50);
 	--card:        #ffffff;
 	--foreground:  #111827;
-	--label-fg:    #374151;
+	/* gray-500. The frontend's a11y notes call out gray-400 (2.6:1 on white)
+	 * as below the 4.5:1 AA floor for text - this is the muted tone that
+	 * clears it, and the one every muted string on these pages uses. */
 	--muted-fg:    #6b7280;
-	--border:      #d1d5db;
-	--ring:        var(--brand-500);
+	/* Two borders, not one. Cards take gray-100 and controls take gray-200,
+	 * matching surfaceClasses.cardClass and formClasses.inputSurfaceClass.
+	 * The single gray-300 both used to share drew the card's outline heavier
+	 * than the inputs inside it, which is backwards. */
+	--border-card: #f3f4f6;
+	--border-ctl:  #e5e7eb;
+	--ring:        var(--brand-700);
 	--destructive: #dc2626;
-	--radius:      0.5rem;
+
+	/* rounded-card (16px) for the card; rounded-xl (12px) for every
+	 * interactive control. The frontend keeps these deliberately distinct -
+	 * see its Design System notes - and this theme used a single 8px radius
+	 * doubled to 16px for the card, so the controls came out 4px too round. */
+	--radius-card: 1rem;
+	--radius-ctl:  0.75rem;
+
+	--shadow-resting: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+	--shadow-raised:  0 8px 20px -4px rgb(0 0 0 / 0.15), 0 4px 8px -4px rgb(0 0 0 / 0.1);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,6 +71,10 @@
 html {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	/* Mirrors the frontend's own guard (issue #1120): every surface here is
+	 * hard-coded light, so without this a browser that auto-inverts unstyled
+	 * pages is free to invert the brand colors into something broken. */
+	color-scheme: light;
 }
 
 body {
@@ -61,80 +87,112 @@ body {
 
 a { color: inherit; }
 
+/* One focus treatment for the whole theme, copied from the frontend's global
+ * :focus-visible rule (issue #992) - brand outline plus a white halo so it
+ * stays visible on the card and on the tinted field alike. Individual
+ * components below deliberately do not define their own. */
+:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px rgb(255 255 255 / 0.9);
+}
+
 /* ── Page shell ──────────────────────────────────────────────────────────── */
 .auth-page {
 	position: relative;
 	min-height: 100svh;
 }
 
-.top-controls {
-	position: fixed;
-	top: 1rem;
-	right: 1rem;
-	z-index: 100;
+.auth-main {
+	display: flex;
+	/* column, not the default row. This single missing declaration is what put
+	 * the "back to Einsatzbereit" link *beside* the card instead of under it -
+	 * the two are siblings, so a row axis laid them out side by side on every
+	 * page in the theme. On a phone the link then claimed a third of the
+	 * viewport and squeezed the card to ~262px, wrapping "remember me" and
+	 * "forgot password" onto two lines each. */
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100svh;
+	padding: 5rem 1rem 3rem;
 }
 
 /* ── Language switcher ───────────────────────────────────────────────────── */
+/* Absolute, not fixed: the register form with its terms disclosure open runs
+ * well past one viewport, and a fixed pill floats over the form the whole way
+ * down. Anchored to the top of the page it scrolls away like page chrome. */
+.top-controls {
+	position: absolute;
+	top: 1.25rem;
+	right: 1.25rem;
+	z-index: 20;
+}
+
 .lang-switcher { position: relative; }
 
 .lang-trigger {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
-	padding: 0.375rem 0.75rem;
-	border: 1px solid var(--border);
-	border-radius: 9999px;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--border-ctl);
+	border-radius: var(--radius-ctl);
 	background: var(--card);
-	font-size: 0.75rem;
+	font-size: 0.8125rem;
 	font-weight: 500;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.04em;
 	cursor: pointer;
 	list-style: none;
 	color: var(--foreground);
-	transition: background-color 150ms;
+	box-shadow: var(--shadow-resting);
+	transition: background-color 150ms, border-color 150ms;
 	-webkit-user-select: none;
 	user-select: none;
 }
 .lang-trigger::-webkit-details-marker { display: none; }
-.lang-trigger::marker { display: none; }
-.lang-trigger:hover { background-color: var(--brand-100); }
+.lang-trigger::marker { content: ""; }
+.lang-trigger:hover { background-color: #f9fafb; }
+
+.lang-chevron {
+	width: 0.875rem;
+	height: 0.875rem;
+	color: var(--muted-fg);
+	transition: transform 150ms ease;
+}
+.lang-switcher[open] .lang-chevron { transform: rotate(180deg); }
 
 .lang-menu {
 	display: none;
 	position: absolute;
 	top: calc(100% + 0.375rem);
 	right: 0;
-	min-width: 9rem;
+	min-width: 10rem;
 	background: var(--card);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.12), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+	border: 1px solid var(--border-ctl);
+	border-radius: var(--radius-ctl);
+	box-shadow: var(--shadow-raised);
 	list-style: none;
 	padding: 0.25rem;
-	z-index: 101;
+	z-index: 21;
 }
 .lang-switcher[open] .lang-menu { display: block; }
 
 .lang-item {
 	display: block;
-	padding: 0.5rem 0.75rem;
-	border-radius: calc(var(--radius) - 2px);
+	padding: 0.5rem 0.625rem;
+	border-radius: calc(var(--radius-ctl) - 0.25rem);
 	font-size: 0.875rem;
 	color: var(--foreground);
 	text-decoration: none;
 	transition: background-color 150ms;
 }
 .lang-item:hover { background-color: var(--brand-50); }
+.lang-item[aria-current="true"] { font-weight: 600; color: var(--brand-700); }
 
-/* ── Centered card layout ────────────────────────────────────────────────── */
-.auth-main {
-	display: flex;
-	min-height: 100svh;
-	align-items: center;
-	justify-content: center;
-	padding: 5rem 1rem 2rem;
-}
-
+/* ── Card ────────────────────────────────────────────────────────────────── */
+/* cardClass from the frontend's lib/surfaceClasses.ts: rounded-card,
+ * border-gray-100, bg-white, shadow-resting. */
 .auth-card {
 	width: 100%;
 	max-width: 26rem;
@@ -143,75 +201,101 @@ a { color: inherit; }
 	flex-direction: column;
 	gap: 1.25rem;
 	padding: 2rem;
-	border-radius: calc(var(--radius) * 2);
-	border: 1px solid var(--border);
-	box-shadow:
-		0 1px 3px 0 rgb(0 0 0 / 0.08),
-		0 4px 16px -4px rgb(0 0 0 / 0.10);
+	border-radius: var(--radius-card);
+	border: 1px solid var(--border-card);
+	box-shadow: var(--shadow-resting);
 }
 
-@media (max-width: 480px) {
-	.auth-card {
-		border: none;
-		box-shadow: none;
-		padding: 1.25rem;
-		max-width: 100%;
-	}
-}
-
-/* ── Brand / logo ────────────────────────────────────────────────────────── */
+/* ── Brand ───────────────────────────────────────────────────────────────── */
+/* A link, not a bare image: on this origin it is the only always-present route
+ * back to the product, and a logo that does nothing is a dead control. */
 .auth-brand {
-	display: flex;
-	justify-content: center;
+	display: inline-flex;
+	align-self: flex-start;
+	border-radius: 0.25rem;
 }
 
 .auth-logo {
-	height: 2.25rem;
+	height: 2rem;
 	width: auto;
+	display: block;
 }
 
 /* ── Card header ─────────────────────────────────────────────────────────── */
+/* The border-top that used to sit here drew a rule between the logo and the
+ * title for no reason a reader could name - the title is already 2.25rem of
+ * condensed display type against 2rem of logo, which is all the separation
+ * the two need. */
 .card-header {
 	display: flex;
 	flex-direction: column;
-	gap: 0.25rem;
-	padding-top: 0.25rem;
-	border-top: 1px solid var(--border);
+	gap: 0.5rem;
 }
 
-/* Display face, matching every other page title in the product. */
+/* Names which step of the funnel you are on. It earns its place on a chain
+ * like register -> verify email -> set password, where three consecutive
+ * Keycloak screens otherwise arrive with no indication they belong to one
+ * sequence; it is not decoration applied to every heading for texture.
+ *
+ * brand-700, not brand-600, for the same reason the primary button is:
+ * brand-600 on white measures ~4.3:1, and at 11px this is the smallest text
+ * on the page - the last place to spend contrast. */
+.card-eyebrow {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--brand-700);
+}
+
+/* Display face, matching every other page title in the product. The frontend
+ * sets its page titles at text-5xl and up; inside a 26rem card that is far
+ * too big, but 1.75rem left Barlow Condensed reading as body copy rather than
+ * as the display face it is. */
 .card-title {
 	font-family: var(--font-display);
-	font-size: 1.75rem;
+	font-size: 2.25rem;
 	font-weight: 700;
 	color: var(--foreground);
 	letter-spacing: -0.01em;
-	line-height: 1.2;
+	line-height: 1.05;
+	text-wrap: balance;
 }
 
-.card-subtitle {
-	font-size: 0.8125rem;
+.card-lead {
+	font-size: 0.9375rem;
+	line-height: 1.5;
 	color: var(--muted-fg);
 }
 
-/* ── Card body ───────────────────────────────────────────────────────────── */
+.card-required {
+	font-size: 0.75rem;
+	color: var(--muted-fg);
+	margin-top: -0.125rem;
+}
+
+/* ── Card body / footer ──────────────────────────────────────────────────── */
 .card-body {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 }
 
-/* ── Card footer (info / back-to-login link) ─────────────────────────────── */
+/* Left, like everything else in the card. Centring worked for the two-word
+ * "No account yet? Register" and fell apart on the verify-email footer, where
+ * a full sentence wrapped to two ragged centred lines with the link split
+ * across the break. */
 .card-footer {
-	text-align: center;
 	font-size: 0.875rem;
 	color: var(--muted-fg);
+	line-height: 1.5;
 	padding-top: 1rem;
-	border-top: 1px solid var(--border);
+	border-top: 1px solid var(--border-card);
+	text-wrap: pretty;
 }
 .card-footer a {
-	color: var(--brand-600);
-	font-weight: 500;
+	color: var(--brand-700);
+	font-weight: 600;
 	text-decoration: none;
 	text-underline-offset: 3px;
 }
@@ -223,23 +307,30 @@ a { color: inherit; }
 	align-items: flex-start;
 	gap: 0.625rem;
 	padding: 0.75rem 1rem;
-	border-radius: var(--radius);
+	border-radius: var(--radius-ctl);
 	font-size: 0.875rem;
 	border: 1px solid transparent;
 	line-height: 1.5;
 }
 .alert svg { flex-shrink: 0; margin-top: 0.125rem; }
 
-.alert-error,
-.alert-warning {
+.alert-error {
 	background: rgb(220 38 38 / 0.06);
 	border-color: rgb(220 38 38 / 0.25);
 	color: #b91c1c;
 }
+/* Warnings used to share the error styling outright, so "your session will
+ * expire soon" arrived in the same red as "that password is wrong". Amber is
+ * the frontend's own caution tone (its warning chip uses amber-700). */
+.alert-warning {
+	background: rgb(180 83 9 / 0.07);
+	border-color: rgb(180 83 9 / 0.25);
+	color: #b45309;
+}
 .alert-success {
-	background: rgb(62 175 120 / 0.08);
-	border-color: rgb(62 175 120 / 0.3);
-	color: var(--brand-600);
+	background: rgb(34 105 71 / 0.07);
+	border-color: rgb(34 105 71 / 0.25);
+	color: var(--brand-700);
 }
 .alert-info {
 	background: rgb(59 130 246 / 0.07);
@@ -251,7 +342,7 @@ a { color: inherit; }
 .auth-form {
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
+	gap: 0.875rem;
 }
 
 /* Outer group: field wrapper + optional error message below */
@@ -261,8 +352,14 @@ a { color: inherit; }
 	gap: 0.25rem;
 }
 
-/* Position context for the floating label and optional action button */
-.form-field {
+/* Position context for the floating label and optional action button.
+ * `.input-group` is the class Keycloak's own base templates put around an
+ * input/visibility-button pair (kcInputGroup in theme.properties) - it is
+ * listed here so that any base template this theme does not override still
+ * gets a positioned ancestor for its label instead of one that escapes to
+ * the page corner. */
+.form-field,
+.input-group {
 	position: relative;
 	display: block;
 }
@@ -273,14 +370,14 @@ a { color: inherit; }
 	width: 100%;
 	height: 3.5rem;
 	padding: 1.375rem 0.875rem 0.375rem;
-	border: 1.5px solid var(--border);
-	border-radius: var(--radius);
+	border: 1px solid var(--border-ctl);
+	border-radius: var(--radius-ctl);
 	background: #ffffff;
 	font-size: 0.9375rem;
 	font-family: inherit;
 	color: var(--foreground);
-	outline: none;
-	transition: border-color 150ms, box-shadow 150ms;
+	box-shadow: var(--shadow-resting);
+	transition: border-color 150ms;
 	-webkit-appearance: none;
 	appearance: none;
 }
@@ -288,22 +385,18 @@ a { color: inherit; }
 /* Hide the single-space placeholder used for :placeholder-shown detection */
 .form-input::placeholder { color: transparent; }
 
-.form-input:focus {
-	border-color: var(--ring);
-	box-shadow: 0 0 0 3px rgb(62 175 120 / 0.2);
-}
+/* Border shift only. The ring itself comes from the global :focus-visible
+ * rule at the top of this file, exactly as it does in the app - a second,
+ * component-local ring was what made these inputs glow differently from
+ * every other input in the product. */
+.form-input:focus { border-color: var(--brand-500); }
 
-.form-input[aria-invalid="true"] {
-	border-color: var(--destructive);
-}
-.form-input[aria-invalid="true"]:focus {
-	box-shadow: 0 0 0 3px rgb(220 38 38 / 0.2);
-}
+.form-input[aria-invalid="true"] { border-color: var(--destructive); }
 
 .form-input:disabled {
-	opacity: 0.5;
+	opacity: 0.6;
 	cursor: not-allowed;
-	background: var(--brand-50);
+	background: #f9fafb;
 }
 
 /* ── Floating label ──────────────────────────────────────────────────────── */
@@ -325,7 +418,7 @@ a { color: inherit; }
 	text-overflow: ellipsis;
 }
 
-/* Float when focused or when input has content (placeholder not shown) */
+/* Float when focused or when the input has content (placeholder not shown) */
 .form-input:focus + .form-label,
 .form-input:not(:placeholder-shown) + .form-label,
 .form-field.has-value .form-label {
@@ -333,20 +426,17 @@ a { color: inherit; }
 	transform: translateY(0);
 	font-size: 0.6875rem;
 	font-weight: 600;
-	color: var(--brand-600);
+	color: var(--brand-700);
 	letter-spacing: 0.04em;
 }
 
-/* Red label on validation error */
 .form-input[aria-invalid="true"]:focus + .form-label,
 .form-input[aria-invalid="true"]:not(:placeholder-shown) + .form-label {
 	color: var(--destructive);
 }
 
 /* ── Password input + toggle button ─────────────────────────────────────── */
-.form-field--with-toggle .form-input {
-	padding-right: 3.25rem;
-}
+.form-field--with-toggle .form-input { padding-right: 3.25rem; }
 
 .btn-password-toggle {
 	position: absolute;
@@ -356,6 +446,7 @@ a { color: inherit; }
 	padding: 0 0.875rem;
 	background: none;
 	border: none;
+	border-radius: var(--radius-ctl);
 	cursor: pointer;
 	color: var(--muted-fg);
 	display: flex;
@@ -368,12 +459,27 @@ a { color: inherit; }
 .form-input::-ms-reveal,
 .form-input::-ms-clear { display: none; }
 
-.btn-password-toggle .icon-eye::before    { content: ""; display: inline-block; width: 1rem; height: 1rem;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
-	background-repeat: no-repeat; background-size: contain; }
-.btn-password-toggle .icon-eye-off::before { content: ""; display: inline-block; width: 1rem; height: 1rem;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94'/%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
-	background-repeat: no-repeat; background-size: contain; }
+/* currentColor, not a baked-in grey: the icon used to stay #6b7280 through
+ * hover and focus while the button around it darkened. */
+.btn-password-toggle .icon-eye,
+.btn-password-toggle .icon-eye-off {
+	display: inline-block;
+	width: 1rem;
+	height: 1rem;
+	background-color: currentColor;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-size: contain;
+	mask-size: contain;
+}
+.btn-password-toggle .icon-eye {
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+}
+.btn-password-toggle .icon-eye-off {
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94'/%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94'/%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+}
 
 /* ── Inline field error ──────────────────────────────────────────────────── */
 .form-error {
@@ -384,18 +490,12 @@ a { color: inherit; }
 }
 
 /* ── "Remember me" + "Forgot password" row ──────────────────────────────── */
-.form-setting {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-}
 .form-options {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 0.5rem;
+	gap: 0.75rem;
+	flex-wrap: wrap;
 	width: 100%;
 }
 .form-options label {
@@ -410,23 +510,43 @@ a { color: inherit; }
 	display: flex;
 	align-items: center;
 }
-.form-options input[type="checkbox"] {
-	width: 1rem;
-	height: 1rem;
-	accent-color: var(--brand-600);
-	cursor: pointer;
-}
-.form-options-wrapper a,
-#kc-form-options a {
+.form-options a,
+.form-options-wrapper a {
 	font-size: 0.875rem;
 	color: var(--muted-fg);
 	text-decoration: none;
 	text-underline-offset: 3px;
+	white-space: nowrap;
 }
-.form-options-wrapper a:hover,
-#kc-form-options a:hover {
+.form-options a:hover,
+.form-options-wrapper a:hover {
 	color: var(--foreground);
 	text-decoration: underline;
+}
+
+/* One checkbox treatment for the whole theme. Previously "remember me" was
+ * styled through .form-options and the registration consent box through
+ * .terms-checkbox, so the two checkboxes in the same theme looked unrelated. */
+.form-options input[type="checkbox"],
+.checkbox-control {
+	width: 1rem;
+	height: 1rem;
+	flex: none;
+	accent-color: var(--brand-700);
+	cursor: pointer;
+}
+
+.form-field-checkbox {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+.form-field-checkbox .checkbox-control { margin-top: 0.1875rem; }
+.form-field-checkbox label {
+	font-size: 0.875rem;
+	line-height: 1.4;
+	color: var(--foreground);
+	cursor: pointer;
 }
 
 /* ── Submit / action buttons ─────────────────────────────────────────────── */
@@ -442,22 +562,17 @@ a { color: inherit; }
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	border-radius: var(--radius);
+	border-radius: var(--radius-ctl);
 	font-size: 0.9375rem;
-	font-weight: 500;
+	font-weight: 600;
 	font-family: inherit;
 	cursor: pointer;
 	border: none;
-	outline: none;
 	text-decoration: none;
-	transition: background-color 150ms, opacity 150ms;
+	transition: background-color 150ms, border-color 150ms;
 	white-space: nowrap;
 	-webkit-appearance: none;
 	appearance: none;
-}
-.btn:focus-visible {
-	outline: 2px solid var(--ring);
-	outline-offset: 2px;
 }
 .btn:disabled,
 .btn[disabled] {
@@ -466,84 +581,102 @@ a { color: inherit; }
 	pointer-events: none;
 }
 
+/* brand-700, not brand-600. Button.tsx documents why: white text on
+ * brand-600 measures ~4.3:1, under the WCAG AA 4.5:1 floor that the
+ * frontend's own axe-core suite enforces - and brand-700 is the green every
+ * primary button in the product already uses, so the auth pages were also
+ * the only place a "primary" button was a different green. */
 .btn-primary {
-	background: var(--brand-600);
+	background: var(--brand-700);
 	color: #ffffff;
 	padding: 0.5rem 1rem;
 }
-.btn-primary:hover { background: var(--brand-700); }
+.btn-primary:hover { background: var(--brand-800); }
 
+/* Matches Button.tsx's `outline` variant - the frontend's treatment for a
+ * secondary action on a light surface (cancel, dismiss). */
 .btn-secondary {
-	background: var(--brand-50);
-	color: var(--brand-600);
+	background: #ffffff;
+	color: #374151;
+	font-weight: 500;
 	padding: 0.5rem 1rem;
-	border: 1px solid var(--border);
+	border: 1px solid var(--border-ctl);
 }
-.btn-secondary:hover { background: var(--brand-100); }
+.btn-secondary:hover { background: #f9fafb; }
 
-.btn-block  { width: 100%; }
-.btn-lg     { height: 2.75rem; padding: 0 1.5rem; }
+.btn-block { width: 100%; }
+.btn-lg    { min-height: 2.75rem; padding: 0.625rem 1.5rem; }
 
-input[type="submit"].btn { cursor: pointer; }
+input[type="submit"].btn,
+button.btn { cursor: pointer; }
 
 /* ── Required star ───────────────────────────────────────────────────────── */
-label > span.required { color: var(--destructive); margin-left: 0.125rem; }
+/* aria-hidden in the markup; the field's own `required` attribute is what
+ * actually carries this to assistive tech. */
+.required { color: var(--destructive); margin-left: 0.125rem; }
 
-/* ── Info / error message pages (e.g. email verify, logout confirm) ────── */
+/* ── Prose inside the card ───────────────────────────────────────────────── */
+/* `.instruction` is Keycloak's own class for the body copy on its info,
+ * error, verify-email and page-expired templates. It had no rule at all, so
+ * every one of those pages rendered its single most important sentence as
+ * unstyled default-serif-metrics text.
+ *
+ * One colour, on every page that uses it. On the four pages above the
+ * instruction *is* the page - it is the whole reason the page exists - so it
+ * takes the foreground tone, not the muted one reserved for `.card-lead`'s
+ * secondary line under a title. An earlier version of this block muted it
+ * only inside #kc-info-message/#kc-error-message, which left the identical
+ * sentence reading darker on verify-email than on the error page. */
+.instruction,
 #kc-info-message,
 #kc-error-message {
 	font-size: 0.9375rem;
-	color: var(--foreground);
 	line-height: 1.6;
+	color: var(--foreground);
 }
-#kc-info-message a,
-#kc-error-message a {
-	color: var(--brand-600);
-	font-weight: 500;
+
+.instruction + .instruction { margin-top: 0.75rem; }
+
+/* :not(.btn) is load-bearing. These selectors carry an id, so at 1-0-1 they
+ * outrank .btn-primary's 0-1-0 - and info.ftl and error.ftl both put their
+ * "back to Einsatzbereit" button inside one of these containers. Without the
+ * exclusion that button renders brand-700 text on a brand-700 fill: a solid
+ * green bar with an invisible label, on the two pages a stuck visitor is most
+ * likely to be looking at. */
+#kc-info-message a:not(.btn),
+#kc-error-message a:not(.btn),
+.instruction a:not(.btn) {
+	color: var(--brand-700);
+	font-weight: 600;
 	text-decoration: underline;
 	text-underline-offset: 3px;
 }
 
-/* ── Select input ────────────────────────────────────────────────────────── */
+/* Keycloak's own trace id on the error page - support metadata, not a
+ * sentence the visitor is meant to read as prose. */
+#traceId {
+	font-size: 0.75rem;
+	color: var(--muted-fg);
+	word-break: break-all;
+}
+
+/* ── Select / textarea ───────────────────────────────────────────────────── */
+/* Same inline chevron the frontend's selectClass uses, so a native select
+ * here reads as the same control as one in the app. */
 select.form-input {
-	padding-right: 2rem;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	padding-right: 2.25rem;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right 0.75rem center;
+	background-position: right 0.625rem center;
+	background-size: 1.25rem;
 	cursor: pointer;
 }
 
-/* ── Textarea ────────────────────────────────────────────────────────────── */
 textarea.form-input {
 	height: auto;
 	min-height: 6rem;
-	padding: 0.5rem 0.75rem;
+	padding: 0.625rem 0.875rem;
 	resize: vertical;
-}
-
-/* ── Divider / separator ─────────────────────────────────────────────────── */
-.separator {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	color: var(--muted-fg);
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-.separator::before,
-.separator::after {
-	content: "";
-	flex: 1;
-	height: 1px;
-	background: var(--border);
-}
-
-/* ── Form intro copy ─────────────────────────────────────────────────────── */
-.form-intro {
-	font-size: 0.875rem;
-	line-height: 1.5;
-	color: var(--muted-fg);
 }
 
 /* ── Terms block on the registration form ────────────────────────────────── */
@@ -557,54 +690,61 @@ textarea.form-input {
 	color: var(--muted-fg);
 }
 
-#kc-registration-terms-text p {
-	margin: 0 0 0.5rem;
-}
+#kc-registration-terms-text p { margin: 0 0 0.5rem; }
 
 .terms-details > summary {
-	cursor: pointer;
-	color: var(--brand-600);
-	font-weight: 500;
-}
-
-.terms-details > summary:focus-visible {
-	outline: 2px solid var(--brand-600);
-	outline-offset: 2px;
-	border-radius: 0.25rem;
-}
-
-.terms-details[open] > summary {
-	margin-bottom: 0.5rem;
-}
-
-.terms-details p {
-	margin: 0 0 0.5rem;
-}
-
-/* The consent checkbox rendered completely unstyled - the only checkbox rule
- * in this file was scoped to .form-options (the login form's "remember me"),
- * which this is not, so the two checkboxes in the same theme looked unrelated. */
-.form-field-checkbox {
 	display: flex;
-	align-items: flex-start;
-	gap: 0.5rem;
-}
-
-.form-field-checkbox label {
-	font-size: 0.875rem;
-	line-height: 1.4;
-	color: var(--foreground);
-}
-
-.terms-checkbox {
-	width: 1rem;
-	height: 1rem;
-	margin-top: 0.125rem;
-	flex: none;
-	accent-color: var(--brand-600);
+	align-items: center;
+	gap: 0.375rem;
 	cursor: pointer;
+	color: var(--brand-700);
+	font-weight: 600;
+	list-style: none;
+	border-radius: 0.25rem;
+	padding: 0.125rem 0;
 }
+/* The default disclosure triangle is the browser's glyph in the browser's
+ * color - the one arrow on the page that did not match the theme's icon set. */
+.terms-details > summary::-webkit-details-marker { display: none; }
+.terms-details > summary::marker { content: ""; }
 
+.terms-summary-chevron {
+	width: 0.875rem;
+	height: 0.875rem;
+	flex: none;
+	transition: transform 150ms ease;
+}
+.terms-details[open] .terms-summary-chevron { transform: rotate(90deg); }
+
+.terms-details[open] > summary { margin-bottom: 0.5rem; }
+.terms-details p { margin: 0 0 0.5rem; }
+.terms-details a { color: var(--brand-700); text-underline-offset: 3px; }
+
+/* Scrollable rather than unbounded: terms.ftl renders the realm's full terms
+ * text, which can be arbitrarily long, and an unbounded block pushes the
+ * accept/decline buttons off the bottom of a phone screen.
+ *
+ * Bordered and tinted (the frontend's cardSubtleClass recipe) so the clipped
+ * edge reads as a panel you can scroll rather than as text that just stops
+ * mid-sentence - capping the height without drawing the box is what makes a
+ * scroll container look like a rendering fault. */
+#kc-terms-text {
+	max-height: 20rem;
+	overflow-y: auto;
+	font-size: 0.875rem;
+	line-height: 1.6;
+	color: var(--foreground);
+	padding: 0.875rem 1rem;
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-ctl);
+	background: #f9fafb;
+	overscroll-behavior: contain;
+}
+#kc-terms-text p { margin: 0 0 0.75rem; }
+#kc-terms-text p:last-child { margin-bottom: 0; }
+#kc-terms-text a { color: var(--brand-700); text-underline-offset: 3px; }
+
+/* ── Back links ──────────────────────────────────────────────────────────── */
 /* Shared by the card footer's "back to sign in" and the page's "back to
  * Einsatzbereit" - one back-link treatment, chevron included. */
 .back-link {
@@ -620,7 +760,6 @@ textarea.form-input {
 	flex: none;
 }
 
-/* ── Back to the product ─────────────────────────────────────────────────── */
 .auth-back {
 	margin-top: 1.25rem;
 	text-align: center;
@@ -630,13 +769,94 @@ textarea.form-input {
 .auth-back a {
 	color: var(--muted-fg);
 	text-decoration: none;
+	border-radius: 0.25rem;
 }
 
 .auth-back a:hover {
-	color: var(--brand-600);
+	color: var(--brand-700);
 	text-decoration: underline;
 }
 
-/* ── Legacy wrapper classes the base Keycloak templates may output ──────── */
-.kcContentWrapperClass { display: flex; flex-direction: column; gap: 1rem; }
-.kcInputWrapperClass   { display: flex; flex-direction: column; gap: 0.25rem; }
+/* ── Wrappers the un-overridden base templates emit ──────────────────────── */
+/* This theme overrides every template a visitor can currently reach. These
+ * rules are the floor for the rest of Keycloak's base login theme (TOTP
+ * enrolment, WebAuthn, identity-provider linking, consent) - none of which
+ * this realm can reach today, but any of which is one realm setting away, and
+ * all of which would otherwise arrive as raw unstyled markup. */
+#kc-content-wrapper,
+.content-wrapper { display: flex; flex-direction: column; gap: 1rem; }
+
+.form-input-wrapper { display: flex; flex-direction: column; gap: 0.25rem; }
+
+/* flex, so user-profile-commons.ftl's required marker - a <span> sibling of
+ * the label, not a child of it - sits on the label's line instead of dropping
+ * to one of its own. */
+.form-label-wrapper {
+	display: flex;
+	align-items: baseline;
+	margin-bottom: 0.25rem;
+}
+
+/* The base templates put their label in a wrapper *above* the input rather
+ * than as the input's sibling, so the floating-label rules cannot apply.
+ * Rendering those labels statically is the honest fallback - a label that
+ * cannot float should look like a plain label, not like one stuck mid-field.
+ * Matches formClasses.labelClass in the frontend. */
+.form-label-wrapper .form-label {
+	position: static;
+	transform: none;
+	display: block;
+	max-width: 100%;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #374151;
+	pointer-events: auto;
+}
+
+/* A field whose label is rendered statically above it has no floating label
+ * to leave room for, so the input's top-heavy padding would strand its value
+ * against the bottom edge. */
+.form-label-wrapper + .form-input-wrapper .form-input {
+	height: auto;
+	min-height: 2.75rem;
+	padding: 0.625rem 0.875rem;
+}
+.form-label-wrapper + .form-input-wrapper .input-group .form-input { padding-right: 3.25rem; }
+
+.content-area { display: flex; flex-direction: column; gap: 1rem; }
+.form-actions { display: block; }
+.clearfix { clear: both; }
+.checkbox label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+/* The frontend's own fade-up keyframe and 0.12s stagger, gated on the same
+ * media query it uses. Two steps only - the card, then the way out from under
+ * it - because the whole page is one card; a longer orchestration on four
+ * form fields would be motion for its own sake. */
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes auth-fade-up {
+		from { opacity: 0; transform: translateY(12px); }
+		to   { opacity: 1; transform: translateY(0); }
+	}
+
+	.auth-card { animation: auth-fade-up 0.45s ease-out both; }
+	.auth-back { animation: auth-fade-up 0.45s ease-out 0.12s both; }
+}
+
+/* ── Small screens ───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+	.auth-main { padding: 4.5rem 1rem 2rem; }
+
+	.auth-card {
+		padding: 1.5rem 1.25rem;
+		gap: 1rem;
+	}
+
+	.card-title { font-size: 2rem; }
+
+	.top-controls {
+		top: 1rem;
+		right: 1rem;
+	}
+}
