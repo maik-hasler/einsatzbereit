@@ -1330,18 +1330,19 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var trigger = Page.Locator("header [data-testid='language-selector-trigger']").First;
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var trigger = banner.GetByTestId("language-selector-trigger");
 		await Expect(trigger).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await trigger.ClickAsync();
 
-		var menu = Page.Locator("header [data-testid='language-selector-menu']").First;
+		var menu = banner.GetByTestId("language-selector-menu");
 		await Expect(menu).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
-		// The exact shape the fix replaced: no listbox roles on the wrappers,
-		// and the active language marked with aria-current on the focusable
-		// element instead of aria-selected on a non-focusable <li>.
-		await Expect(menu.Locator("[role='option']")).ToHaveCountAsync(0);
-		await Expect(menu.Locator("button[aria-current='true']")).ToHaveCountAsync(1);
+		// Pins the claim the comment above makes. isTransparent is
+		// `overlaysBand && !scrolled` (Header.tsx), so a future page that
+		// restores scroll position past 100px would silently flip this scan to
+		// the light variant and keep passing while covering the wrong thing.
+		await Expect(menu).ToHaveClassAsync(new Regex("bg-brand-800"));
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

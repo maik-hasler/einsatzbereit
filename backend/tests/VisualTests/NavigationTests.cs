@@ -304,14 +304,65 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var langBtn = Page.Locator("header [data-testid='language-selector-trigger']").First;
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var langBtn = banner.GetByTestId("language-selector-trigger");
 		await langBtn.ClickAsync();
 
-		var dropdown = Page.Locator("header [data-testid='language-selector-menu']").First;
+		var dropdown = banner.GetByTestId("language-selector-menu");
 		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");
 		await Expect(dropdown).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
+
+	[Test]
+	public async Task HomePage_LanguageSelector_AnnouncesDisclosureSemantics()
+	{
+		// #1772: the selector used to wrap each <button> in an <li role="option">
+		// under a role="listbox" <ul>, with the trigger advertising
+		// aria-haspopup="listbox" - a keyboard model (arrow keys,
+		// aria-activedescendant) the component has never implemented, since
+		// Escape via useDismissableOverlay is the only key it handles. The axe
+		// side of that defect is guarded by
+		// LanguageSelector_Open_HasNoSeriousA11yViolations in
+		// AccessibilityTests.cs; this is the DOM-shape half, so a regression
+		// names itself instead of surfacing as a generic nested-interactive
+		// scan failure.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var langBtn = banner.GetByTestId("language-selector-trigger");
+		await Expect(langBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		// The trigger shows only the active language's code ("EN"/"DE"); the
+		// chevron beside it is an SVG and contributes no text. Read it rather
+		// than hardcoding a language, so this doesn't depend on which locale
+		// the browser context happens to resolve to.
+		var activeCode = (await langBtn.InnerTextAsync()).Trim();
+
+		// A disclosure promises only expand/collapse - not a popup role whose
+		// keyboard model this does not implement.
+		await Expect(langBtn).Not.ToHaveAttributeAsync("aria-haspopup", new Regex(".*"));
+		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "false");
+
+		await langBtn.ClickAsync();
+
+		var dropdown = banner.GetByTestId("language-selector-menu");
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "true");
+
+		await Expect(dropdown).Not.ToHaveAttributeAsync("role", new Regex(".*"));
+		await Expect(dropdown.Locator("[role='option']")).ToHaveCountAsync(0);
+		await Expect(dropdown.Locator("[aria-selected]")).ToHaveCountAsync(0);
+
+		// The active language is marked on the focusable element itself, so a
+		// keyboard user tabbing the list is told which one they are on.
+		await Expect(dropdown.GetByRole(AriaRole.Button)).ToHaveCountAsync(2);
+		await Expect(dropdown.Locator("button[aria-current='true']")).ToHaveCountAsync(1);
+		await Expect(dropdown.Locator("button[aria-current='true']")).ToContainTextAsync(activeCode);
 	}
 
 	[Test]
@@ -330,9 +381,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			"Your volunteering starts here.", new() { Timeout = 15_000 });
 		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
-		var langBtn = Page.Locator("header [data-testid='language-selector-trigger']").First;
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var langBtn = banner.GetByTestId("language-selector-trigger");
 		await langBtn.ClickAsync();
-		var dropdown = Page.Locator("header [data-testid='language-selector-menu']").First;
+		var dropdown = banner.GetByTestId("language-selector-menu");
 		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await dropdown.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
@@ -379,7 +431,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await hamburger!.ClickAsync();
 
-		var mobileLangBtn = Page.Locator("[data-testid='language-selector-trigger']").Last;
+		// Both header variants are mounted at this point (the desktop one is
+		// only hidden by CSS), and the mobile menu's copy is the later of the
+		// two in the DOM.
+		var mobileLangBtn = Page.GetByTestId("language-selector-trigger").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");
