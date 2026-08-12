@@ -44,13 +44,15 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		//
 		// #1754 gave /profile a PageHeaderBand and dropped the
 		// nav[aria-label='Breadcrumb'] bar in favor of a plain "way back home"
-		// link inside the band - see VolunteerOpportunityTests's identical
-		// update and HeaderBreadcrumbSharedImplementationTests
-		// .AccountPages_ReplaceActionBar_WithBandHomeLinkAndQuickActions, which
-		// already pins this page's fuller behavior (heading, no breadcrumb bar,
-		// Home link, Edit quick action, sub-nav). This keeps #590's original
-		// regression - that /profile has *some* way back to the home page -
-		// covered under its own name.
+		// link inside the band; that link has since moved into the header nav,
+		// which every page carries anyway - see VolunteerOpportunityTests's
+		// identical update and HeaderBreadcrumbSharedImplementationTests
+		// .AccountPages_ReplaceActionBar_WithHeaderNavHomeAndSectionLevelEditing,
+		// which already pins this page's fuller behavior (heading, no
+		// breadcrumb bar, no in-band Home link, section-level Edit, sub-nav).
+		// This keeps #590's original regression - that /profile has *some* way
+		// back to the home page - covered under its own name, wherever that
+		// way happens to live.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -60,9 +62,11 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
-		var homeLink = Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" });
+		var homeLink = Page.GetByTestId("nav-home");
 		await Expect(homeLink).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToHaveCountAsync(0);
 	}
 
 	[Test]

@@ -14,7 +14,13 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 // links at all - just account controls - so a signed-in volunteer had no
 // route to the opportunity list except the account dropdown, while the mobile
 // hamburger did carry these same links. Desktop was the worse of the two.
+//
+// "home" leads the list because every subpage used to carry its own "back to
+// the home page" link inside its title band (see PageHeaderBand): the same one
+// destination re-stated per page, in the one place a visitor does not look for
+// site navigation. It is a nav destination, so it belongs in the nav.
 const LINKS = [
+	{ key: "home", to: "/", hash: false },
 	{ key: "findOpportunities", to: "/opportunities", hash: false },
 	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
 	{ key: "help", to: "/help", hash: false },
@@ -78,6 +84,9 @@ export default function DesktopHeader({
 							) : (
 								<NavLink
 									to={link.to}
+									// "/" is a prefix of every route, so without `end` the
+									// home link would render as the active one everywhere.
+									end={link.to === "/"}
 									data-testid={`nav-${link.key}`}
 									className={({ isActive }) =>
 										`${base} ${isActive ? activeClass : idle}`

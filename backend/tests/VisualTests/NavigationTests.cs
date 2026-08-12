@@ -62,14 +62,19 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #1755 replaced this page's breadcrumb bar with a PageHeaderBand: the
-		// band states the org name as the h1 and carries the way back home, so
-		// the bar restating both directly above it was pure duplication.
+		// band states the org name as the h1, so the bar restating it directly
+		// above was pure duplication.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
 		orgName.Should().NotBeNullOrWhiteSpace();
+
+		// The band carried a "Home" link too, until every subpage repeating the
+		// same one destination inside its own hero was replaced by a single
+		// "Home" entry in the header nav - on screen on every page at once.
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
+			.ToHaveCountAsync(0);
+		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -103,8 +108,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// link to the owning organization in its eyebrow, which is where the
 		// middle crumb's job moved.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
+		// No in-band "Home" link either - that destination is a header nav
+		// entry now, see HeaderPrimaryNavTests.
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
+			.ToHaveCountAsync(0);
 		await Expect(Page.Locator("main a[href*='/organizations/']").First).ToBeVisibleAsync();
 
 		var title = await Page.Locator("h1").First.InnerTextAsync();

@@ -12,7 +12,7 @@ namespace VisualTests;
 public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task TermsOfUsePage_ShowsInBandHomeLink_AndCoreSections()
+	public async Task TermsOfUsePage_HasNoActionBar_AndShowsCoreSections()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -21,13 +21,15 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #1755 replaced this page's breadcrumb action bar with a Home link
-		// inside the title band - see
-		// HeaderBreadcrumbSharedImplementationTests.ImprintAndPrivacyPolicyPages_ReplaceActionBar_WithInBandHomeLink
+		// inside the title band; that link is gone in turn, since the header
+		// nav now carries "Home" on every page - see
+		// HeaderBreadcrumbSharedImplementationTests.ImprintAndPrivacyPolicyPages_CarryNeitherAnActionBarNorAnInBandHomeLink
 		// for the rationale and the cross-page guard.
 		await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
 			.ToHaveCountAsync(0);
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+			.ToHaveCountAsync(0);
+		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Terms of Use", Level = 1 })).ToBeVisibleAsync();

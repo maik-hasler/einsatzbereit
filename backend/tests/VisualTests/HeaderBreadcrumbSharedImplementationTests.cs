@@ -15,7 +15,7 @@ namespace VisualTests;
 public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task AccountPages_ReplaceActionBar_WithBandHomeLinkAndQuickActions()
+	public async Task AccountPages_ReplaceActionBar_WithHeaderNavHomeAndSectionLevelEditing()
 	{
 		// #758 made /profile the canonical example of the shared action bar.
 		// #1755 gave the three account pages (/profile, /my-signups,
@@ -28,7 +28,11 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		// below. What this pins instead is that the two things the bar carried
 		// for /profile survived the move: the way back home, and the ability to
 		// edit - the latter now as the Profile details section's own button
-		// rather than a quick action in the page chrome.
+		// rather than a quick action in the page chrome, and the former as the
+		// header nav's "Home" entry rather than a link inside this page's band.
+		// The band's own copy of that link is gone: it said the same thing on
+		// every subpage, in the one place a visitor does not look for site
+		// navigation.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -41,7 +45,9 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
 			.ToHaveCountAsync(0);
 
-		var homeLink = Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" });
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToHaveCountAsync(0);
+		var homeLink = Page.GetByTestId("nav-home");
 		await Expect(homeLink).ToBeVisibleAsync();
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
 
@@ -85,7 +91,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	}
 
 	[Test]
-	public async Task ImprintAndPrivacyPolicyPages_ReplaceActionBar_WithInBandHomeLink()
+	public async Task ImprintAndPrivacyPolicyPages_CarryNeitherAnActionBarNorAnInBandHomeLink()
 	{
 		// Follow-up to #758: the legal pages were missed in the initial rollout
 		// (still on ToolbarContext.tsx, no action bar) and used German slugs
@@ -98,9 +104,10 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		// 72px display type, so a grey strip immediately above it repeating
 		// that same title was pure duplication - and it drew a hard white line
 		// through the middle of the band treatment. The Home link #758 added
-		// still exists, it just lives inside the band now. The slugs, and the
-		// action bar on every *other* subpage, are unchanged - see
-		// ProfilePage_ActionBar_RendersDirectlyBeneathHeader_IconLed above.
+		// moved into that band, and has since moved on again into the header
+		// nav: one "Home" entry beside the other primary destinations, instead
+		// of a per-page link inside every subpage's hero. The slugs are
+		// unchanged.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -118,7 +125,8 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 			await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
 				.ToHaveCountAsync(0);
 			await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-				.ToBeVisibleAsync();
+				.ToHaveCountAsync(0);
+			await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
 		}
 	}
 

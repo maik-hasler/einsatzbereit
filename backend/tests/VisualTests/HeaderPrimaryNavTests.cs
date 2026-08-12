@@ -8,6 +8,10 @@ namespace VisualTests;
 /// opportunity list lived inside the landing page behind an "#opportunities"
 /// fragment. These pin the destinations, on both breakpoints, signed out and
 /// signed in.
+///
+/// "Home" is one of those destinations now: it used to be a link inside every
+/// subpage's own PageHeaderBand hero instead, which put site navigation in a
+/// per-page surface and repeated it once per page.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -69,6 +73,62 @@ public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixtu
 
 		await link.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task DesktopHeader_OnASubpage_CarriesTheWayHome_TheBandDoesNot()
+	{
+		// Every subpage used to open with its own "back to the home page" link
+		// inside PageHeaderBand's hero - the same single destination restated
+		// per page, in the one place a visitor does not look for site
+		// navigation, and next to nothing else that navigates. It is a site
+		// destination, so it is a nav entry now: one "Home" link beside the
+		// other primary ones, on screen from every page at once.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/help");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToHaveCountAsync(0);
+
+		var link = Page.GetByTestId("nav-home");
+		await Expect(link).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(link).ToHaveAttributeAsync("href", "/");
+
+		await link.ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("hero-keyword-input"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task MobileMenu_OnASubpage_CarriesTheSameWayHome()
+	{
+		// The two breakpoints render the same primary destinations from two
+		// separate arrays (DesktopHeader's LINKS, MobileMenu's PRIMARY_LINKS),
+		// so "home" being added to one and not the other is a live failure
+		// mode - and the band link this replaces was visible on both.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+		await Page.GotoAsync($"{origin}/help");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToHaveCountAsync(0);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).ClickAsync();
+
+		var link = Page.GetByTestId("mobile-nav-home");
+		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await link.ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
 	}
 
 	[Test]

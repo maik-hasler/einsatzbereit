@@ -71,9 +71,14 @@ function OrgAppShell({
 	// The way back, one level up. This used to be a full BreadcrumbBar strip
 	// below the header - the last surface in the app still using it, and the
 	// reason the org app read as a third visual system next to the public site
-	// and the account area. PageHeaderBand carries it now, same as everywhere
-	// else, so "back" is a single link rather than a trail: from a nested page
-	// to its tab, and from a tab to the dashboard.
+	// and the account area. PageHeaderBand carries it now, so "back" is a
+	// single link rather than a trail: from a nested page to its tab, and from
+	// a tab to the dashboard. Null on the dashboard itself - it is the top of
+	// this shell, and the band used to fall back to linking it to itself.
+	//
+	// This is the only remaining caller passing a back link to the band. The
+	// public and account pages used to pass none and get a "Home" link by
+	// default; that destination lives in the header nav now.
 	const dashboardTab = ORG_TABS.find((tab) => tab.key === "dashboard");
 	const isDashboardTab = activeTabKey === "dashboard";
 	const back =
@@ -118,8 +123,7 @@ function OrgAppShell({
 					fullWidth
 					eyebrow={org.name}
 					title={pageTitle}
-					backHref={back?.href ?? `/app/${organizationId}/dashboard`}
-					backLabel={back?.label ?? t("orgOverview.tabDashboard")}
+					back={back ?? undefined}
 				/>
 				{/* Scoped to this route (remounts, clearing any caught error, whenever
 				the location changes) so a render crash in a single tab replaces just
