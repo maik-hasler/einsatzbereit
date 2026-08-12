@@ -38,6 +38,13 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 {
 	private const int SlotCapacity = 20;
 
+	/// <summary>
+	/// Upper bound on "Load more" clicks when hunting for a card on
+	/// /my-signups - see <see cref="RevealMySignUpCardAsync"/>. Ten sign-ups
+	/// per page, so this covers 120 of vera's engagements.
+	/// </summary>
+	private const int MaxLoadMorePages = 12;
+
 	[Test]
 	public async Task PublicGrid_EveryCard_StatesADateKindAndACapacity()
 	{
@@ -279,9 +286,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var card = Page.Locator("#activity [data-testid='engagement-card']")
-			.Filter(new() { HasText = keyword }).First;
-		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var card = await RevealMySignUpCardAsync(keyword);
 
 		var dateRegion = card.Locator("[data-testid='engagement-date'][data-date-kind='interest']");
 		await Expect(dateRegion).ToHaveTextAsync("No fixed date - expression of interest");
@@ -304,7 +309,12 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var card = Page.Locator("#activity [data-testid='engagement-card']").First;
+		// The first card that actually links somewhere, not simply the first
+		// card: an engagement whose opportunity was deleted renders its title as
+		// a plain span on purpose, and ordering decides which lands first.
+		var card = Page.Locator("#activity [data-testid='engagement-card']")
+			.Filter(new() { Has = Page.Locator("a[href*='/volunteer-opportunities/']") })
+			.First;
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var title = card.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -317,6 +327,45 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		var decoration = await title.EvaluateAsync<string>(
 			"el => getComputedStyle(el).textDecorationLine");
 		decoration.Should().Be("underline", "a link a reader cannot recognize is not an entry point");
+	}
+
+	/// <summary>
+	/// Pages /my-signups until the card whose title contains <paramref name="keyword"/>
+	/// is on screen.
+	///
+	/// It is not on the first page. "Current &amp; Upcoming" orders by the
+	/// shift's own start time and sorts entries that have no time slot last -
+	/// they have no shift to sort by (see
+	/// <c>EngagementReadRepository.GetByVolunteerAsync</c>) - so an
+	/// interest-based sign-up lands at the very end of a list that grows all
+	/// suite long, since every test here shares the one `vera` account and the
+	/// page shows ten at a time.
+	/// </summary>
+	private async Task<ILocator> RevealMySignUpCardAsync(string keyword)
+	{
+		var card = Page.Locator("#activity [data-testid='engagement-card']")
+			.Filter(new() { HasText = keyword }).First;
+		// The test id, not the accessible name: the button's label flips to
+		// "Loading…" while a page is in flight, so a name-based locator matches
+		// nothing mid-load (see LoadMoreButton.tsx's own note).
+		var loadMore = Page.GetByTestId("load-more");
+
+		for (var page = 0; page < MaxLoadMorePages; page++)
+		{
+			if (await card.CountAsync() > 0)
+				break;
+
+			if (await loadMore.CountAsync() == 0)
+				break;
+
+			// ClickAsync auto-waits for enabled, i.e. for the previous page to
+			// have landed. A spurious extra click costs one page and nothing else.
+			await loadMore.ClickAsync();
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		}
+
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		return card;
 	}
 
 	private static Task<HttpClient> CreateOrganizerClientAsync(Uri keycloak, Uri backend) =>
