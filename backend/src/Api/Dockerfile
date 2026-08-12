@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.10 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.11 AS base
 # GitHub Actions runners live on Azure, where the generic archive.ubuntu.com /
 # security.ubuntu.com mirrors are known to be unreliable; route both pockets
 # through the Azure-optimized mirror instead (same one the runner host itself uses).
@@ -12,7 +12,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.302 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /repo
 COPY . .
