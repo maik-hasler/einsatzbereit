@@ -239,7 +239,26 @@ function CalendarWidget({
 		`calendarEvents:${organizationId}:${refreshKey}:${rangeFrom.toISOString()}:${rangeTo.toISOString()}`,
 		() => api.getOrganizationCalendarEvents(organizationId, rangeFrom, rangeTo),
 	);
-	const calLoading = calData === null && !calError;
+
+	// The fetch key above changes on every view switch and every step forward
+	// or back through the calendar, and useSharedOrgFetch clears its data on a
+	// key change - so a plain `calData === null` loading flag tore the whole
+	// <Calendar> out of the tree and replaced it with a skeleton on every
+	// single navigation. That unmounted the toolbar button the organizer had
+	// just clicked (dropping keyboard focus to <body>, so "next month, next
+	// month" was impossible without a mouse) and made stepping through months
+	// flash the widget empty each time. Keeping the last loaded range on screen
+	// while the next one is in flight - stale-while-revalidate, marked with
+	// aria-busy - keeps the calendar mounted, so focus stays where it was and
+	// only the events swap. The skeleton is now what it says it is: a
+	// first-load placeholder.
+	const lastLoadedRef = useRef<OrganizationCalendarEventDto[] | null>(null);
+	useEffect(() => {
+		if (calData !== null) lastLoadedRef.current = calData;
+	}, [calData]);
+	const displayedCalData = calData ?? lastLoadedRef.current;
+	const calLoading = displayedCalData === null && !calError;
+	const calRefreshing = calData === null && displayedCalData !== null;
 
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
 	const [pickerColor, setPickerColor] = useState<string>(() =>
@@ -258,7 +277,7 @@ function CalendarWidget({
 
 	const calEvents: CalEvent[] = useMemo(
 		() =>
-			(calData ?? []).flatMap((opp) =>
+			(displayedCalData ?? []).flatMap((opp) =>
 				opp.timeSlots.map((slot) => ({
 					id: slot.timeSlotId,
 					title: opp.title,
@@ -270,7 +289,7 @@ function CalendarWidget({
 					maxParticipants: slot.maxParticipants ?? null,
 				})),
 			),
-		[calData],
+		[displayedCalData],
 	);
 
 	// #983: opening on the current month whenever the organizer happens to
@@ -399,7 +418,13 @@ function CalendarWidget({
 					/>
 				)}
 				{!calLoading && !calError && (
-					<div className="rbc-container h-full">
+					// aria-busy while the next range is being fetched, so a screen
+					// reader isn't told the events on screen are the ones it just
+					// navigated to before they actually are.
+					<div
+						aria-busy={calRefreshing || undefined}
+						className={`rbc-container h-full transition-opacity ${calRefreshing ? "opacity-60" : ""}`}
+					>
 						<Calendar
 							localizer={localizer}
 							culture={resolveDateLocale(i18n.language)}

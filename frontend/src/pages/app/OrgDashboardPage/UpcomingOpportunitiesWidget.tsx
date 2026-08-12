@@ -15,10 +15,12 @@ import { formatDateTime } from "../../../lib/format";
 const MAX_ITEMS = 5;
 const OPPORTUNITY_PAGE_SIZE = 100;
 
+// nextStart is non-nullable by construction: an opportunity without one isn't
+// "upcoming" and never reaches this list (see the filter below).
 interface UpcomingItem {
 	id: string;
 	title: string;
-	nextStart: Date | null;
+	nextStart: Date;
 	bookedCount: number;
 	maxParticipants: number | null;
 }
@@ -70,23 +72,29 @@ function UpcomingOpportunitiesWidget({
 		if (!opportunities) return null;
 		return (
 			opportunities
-				.map((o): UpcomingItem => ({
-					id: o.id,
-					title: o.title || t("orgDashboard.unnamedDraft"),
-					nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
-					bookedCount: o.currentParticipantCount,
-					maxParticipants: o.totalMaxParticipants ?? null,
-				}))
 				// "Upcoming" means it has a next slot. Interest-based opportunities
 				// have no time slot at all, so they used to fill this list with
 				// rows carrying nothing but a title, under a heading promising
 				// dates - and pushed the ones that actually are upcoming out of
-				// the visible MAX_ITEMS.
-				.filter((item) => item.nextStart !== null)
-				.sort(
-					(a, b) =>
-						(a.nextStart as Date).getTime() - (b.nextStart as Date).getTime(),
+				// the visible MAX_ITEMS. Filtering before mapping is what lets
+				// UpcomingItem.nextStart be a plain Date rather than a nullable one
+				// every consumer below then has to re-check. flatMap rather than
+				// filter+map so TypeScript narrows the optional away for real,
+				// instead of the narrowing being asserted with a cast.
+				.flatMap((o): UpcomingItem[] =>
+					o.nextTimeSlotStart
+						? [
+								{
+									id: o.id,
+									title: o.title || t("orgDashboard.unnamedDraft"),
+									nextStart: o.nextTimeSlotStart,
+									bookedCount: o.currentParticipantCount,
+									maxParticipants: o.totalMaxParticipants ?? null,
+								},
+							]
+						: [],
 				)
+				.sort((a, b) => a.nextStart.getTime() - b.nextStart.getTime())
 				.slice(0, MAX_ITEMS)
 		);
 	}, [opportunities, t]);
@@ -147,32 +155,25 @@ function UpcomingOpportunitiesWidget({
 							<p className="truncate text-sm font-medium text-gray-900">
 								{item.title}
 							</p>
-							{size !== "compact" &&
-								(item.nextStart ||
-									item.maxParticipants === null ||
-									item.maxParticipants > 0) && (
-									<p className="mt-0.5 text-xs text-gray-500">
-										{item.nextStart &&
-											formatDateTime(
-												item.nextStart as unknown as string,
-												i18n.language,
-											)}
-										{item.nextStart &&
-											(item.maxParticipants === null ||
-												item.maxParticipants > 0) && (
-												<span className="mx-1.5">&middot;</span>
-											)}
-										{item.maxParticipants === null
-											? t("orgOpportunities.participantsUnlimited", {
-													count: item.bookedCount,
-												})
-											: item.maxParticipants > 0 &&
-												t("orgOpportunities.participants", {
-													booked: item.bookedCount,
-													max: item.maxParticipants,
-												})}
-									</p>
-								)}
+							{size !== "compact" && (
+								<p className="mt-0.5 text-xs text-gray-500">
+									{formatDateTime(item.nextStart.toISOString(), i18n.language)}
+									{(item.maxParticipants === null ||
+										item.maxParticipants > 0) && (
+										<>
+											<span className="mx-1.5">&middot;</span>
+											{item.maxParticipants === null
+												? t("orgOpportunities.participantsUnlimited", {
+														count: item.bookedCount,
+													})
+												: t("orgOpportunities.participants", {
+														booked: item.bookedCount,
+														max: item.maxParticipants,
+													})}
+										</>
+									)}
+								</p>
+							)}
 						</li>
 					))}
 				</ul>
