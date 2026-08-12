@@ -398,6 +398,29 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	[Test]
+	public async Task ProfileSettingsPage_AsOrganizationMember_HasNoSeriousA11yViolations()
+	{
+		// #1783 gated the two organizer-only email preferences on organization
+		// membership, and the scan above signs in as vera, who has none - so
+		// without this sibling scan those two rows would render in production
+		// and never be scanned at all. Olaf belongs to seeded organizations,
+		// which is what makes them render here.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Waiting on the gated checkbox itself, not the page chrome: the scan
+		// must not run before the rows it exists to cover have rendered.
+		await Expect(Page.Locator("#notifyOnNewSignUp"))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	// Keyed [NotInParallel] shared with AvatarAndLogoDisplayTests - this is the
 	// third and last writer of vera's single avatar_url field, and its upload
 	// racing that class's upload/delete pair is what produced the intermittent
