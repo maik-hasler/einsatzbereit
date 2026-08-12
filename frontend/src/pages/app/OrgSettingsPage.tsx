@@ -262,7 +262,16 @@ export default function OrgSettingsPage() {
 							<DangerZonePanel
 								className="mt-8"
 								title={t("orgSettings.dangerZone")}
-								description={t("orgSettings.deleteOrganizationHint")}
+								// #1789: the "remove the other members first" sentence
+								// used to be passed unconditionally, so a sole member -
+								// the only person who *can* delete - read it next to an
+								// enabled button. Same predicate as `disabled` below, so
+								// text and control can no longer disagree.
+								description={t(
+									isSoleMember
+										? "orgSettings.deleteOrganizationSoleMemberHint"
+										: "orgSettings.deleteOrganizationHint",
+								)}
 								actionLabel={t("orgSettings.deleteOrganization")}
 								onAction={() => setShowDeleteConfirm(true)}
 								disabled={!isSoleMember}

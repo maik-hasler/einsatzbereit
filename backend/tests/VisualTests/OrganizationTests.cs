@@ -438,6 +438,51 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task DangerZoneHint_BranchesOnMemberCount_TheWayTheDeleteButtonAlreadyDid()
+	{
+		// Regression for #1789: the danger zone's hint was one static string
+		// ("...Remove other members first.") passed unconditionally as
+		// DangerZonePanel's description, while only the button's `disabled`
+		// prop branched on member count. So the sole member - the one person
+		// who *can* delete - was told to remove members who are not there,
+		// next to an enabled Delete button.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1789 DangerZoneHint", pinnedOrgId!.Value);
+		var organizationId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+
+		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
+		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Sole member: enabled button, and copy that agrees with it.
+		await Expect(deleteButton).ToBeEnabledAsync();
+		await Expect(Page.GetByText("You are this organization's sole remaining member, so you can delete it."))
+			.ToBeVisibleAsync();
+		await Expect(Page.GetByText("Remove other members first.")).ToHaveCountAsync(0);
+
+		// A second plain member (same escape hatch as the two-member members
+		// page test above, since accepting an invitation would grant Organizer
+		// too) makes the original sentence true again - and it must come back.
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change, so
+		// without a reload the page keeps its pre-membership snapshot.
+		await Page.ReloadAsync();
+
+		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(deleteButton).ToBeDisabledAsync();
+		await Expect(Page.GetByText(
+			"Only the organization's sole remaining member can delete it. Remove other members first."))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task CreateOrganizationModal_AcceptsFullDetails_AndAppliesThemAtCreation()
 	{
 		// #712: the create-organization modal used to collect only Name -
