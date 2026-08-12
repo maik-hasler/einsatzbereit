@@ -1313,6 +1313,41 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task LanguageSelector_Open_HasNoSeriousA11yViolations()
+	{
+		// #1772: the header's language switcher wrapped each <button> in an
+		// <li role="option">, which axe reports as nested-interactive
+		// ("Interactive controls must not be nested", serious). This control
+		// sits in the header of every page, so the violation was site-wide -
+		// and still invisible to every scan in this file, because none of them
+		// opens this particular overlay. Scanned on /opportunities (where the
+		// review found it) rather than the home page: that route renders a
+		// PageHeaderBand, so the header is transparent and this covers the
+		// selector's white-on-dark variant, which no other scan reaches with
+		// the menu open.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var trigger = Page.Locator("header [data-testid='language-selector-trigger']").First;
+		await Expect(trigger).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await trigger.ClickAsync();
+
+		var menu = Page.Locator("header [data-testid='language-selector-menu']").First;
+		await Expect(menu).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		// The exact shape the fix replaced: no listbox roles on the wrappers,
+		// and the active language marked with aria-current on the focusable
+		// element instead of aria-selected on a non-focusable <li>.
+		await Expect(menu.Locator("[role='option']")).ToHaveCountAsync(0);
+		await Expect(menu.Locator("button[aria-current='true']")).ToHaveCountAsync(1);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations()
 	{
 		// #676 Pitch 2 rewrote this modal with custom ARIA machinery (a manual

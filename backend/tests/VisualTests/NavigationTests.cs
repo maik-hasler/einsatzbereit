@@ -304,10 +304,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
+		var langBtn = Page.Locator("header [data-testid='language-selector-trigger']").First;
 		await langBtn.ClickAsync();
 
-		var dropdown = Page.Locator("header ul[role='listbox']").First;
+		var dropdown = Page.Locator("header [data-testid='language-selector-menu']").First;
 		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");
@@ -330,9 +330,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			"Your volunteering starts here.", new() { Timeout = 15_000 });
 		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
-		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
+		var langBtn = Page.Locator("header [data-testid='language-selector-trigger']").First;
 		await langBtn.ClickAsync();
-		var dropdown = Page.Locator("header ul[role='listbox']").First;
+		var dropdown = Page.Locator("header [data-testid='language-selector-menu']").First;
 		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await dropdown.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
@@ -379,7 +379,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await hamburger!.ClickAsync();
 
-		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
+		var mobileLangBtn = Page.Locator("[data-testid='language-selector-trigger']").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");
