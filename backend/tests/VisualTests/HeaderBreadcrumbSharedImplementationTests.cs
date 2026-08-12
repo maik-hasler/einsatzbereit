@@ -40,7 +40,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Profile", Level = 1 }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My profile", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
 			.ToHaveCountAsync(0);

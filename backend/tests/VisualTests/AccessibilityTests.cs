@@ -363,7 +363,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #1684: invitations/sign-ups split out of /profile onto their own
 		// page - this scan is what ProfileOverviewPage_EditMode's "My
-		// Sign-ups" heading assertion used to (indirectly) cover.
+		// sign-ups" heading assertion used to (indirectly) cover.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -672,7 +672,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgMembersPage_MemberRowWithPromoteDemoteButtons_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1050: the new "Promote to Organizer"/"Demote to Member" button pair
+		// #1050: the new "Promote to organizer"/"Demote to member" button pair
 		// only renders for a non-self member row - NavigateToOrgAppDashboardAsOlafAsync
 		// pins an org where Olaf is the only member, so the scan above never
 		// reaches it. Create a fresh org rather than adding a second member to
@@ -870,7 +870,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }).ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
@@ -1857,7 +1857,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
 		// Past (it represents a shift that already happened), not "Current &
-		// Upcoming" - see EngagementReadRepository.GetByVolunteerAsync.
+		// upcoming" - see EngagementReadRepository.GetByVolunteerAsync.
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
@@ -1940,7 +1940,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Confirmed-but-not-checked-in, so this lands in the default "Current &
-		// Upcoming" scope - where this test's own slot-less engagement sorts last
+		// upcoming" scope - where this test's own slot-less engagement sorts last
 		// behind everything the rest of the suite has left on vera, several pages
 		// down. Page to it rather than assuming it is on page 1.
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");

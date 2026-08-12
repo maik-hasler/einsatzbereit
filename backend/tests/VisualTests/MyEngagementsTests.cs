@@ -78,7 +78,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// IndividualContact engagements have no time slot, and
 		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this card can
 		// land past the first (10-item) page instead of being visible immediately,

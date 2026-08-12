@@ -72,7 +72,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByText("Could not send invitation.")).Not.ToBeVisibleAsync();
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -251,7 +251,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #1050: OrganizationMembership.Role was create-only, so every member
 		// was forcibly an Organizer with no promote/demote path. Verifies the
-		// new "Promote to Organizer"/"Demote to Member" actions round-trip
+		// new "Promote to organizer"/"Demote to member" actions round-trip
 		// through the API and persist (survive a reload), not just update
 		// local state optimistically.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -382,24 +382,24 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await inviteButton.First.ClickAsync();
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
 
 		var dismissButton = Page.GetByRole(AriaRole.Button, new() { Name = "Dismiss" });
 		await Expect(dismissButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await dismissButton.ClickAsync();
 
 		await Expect(Page.GetByText("Could not dismiss invitation.")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.ReloadAsync();
 		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
-		// #580: the new "Delete Organization" action, enabled only for the
+		// #580: the new "Delete organization" action, enabled only for the
 		// sole remaining member, must actually delete the org and go home.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -413,7 +413,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 
-		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
+		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(deleteButton).ToBeEnabledAsync();
 		await deleteButton.ClickAsync();

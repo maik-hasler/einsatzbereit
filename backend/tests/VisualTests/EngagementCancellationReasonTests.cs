@@ -11,7 +11,7 @@ namespace VisualTests;
 /// always called cancelEngagement with a null body, and EngagementSummary had no
 /// CancellationReason field for the volunteer's own activity list to render. Now
 /// the organizer's cancel dialog collects an optional reason and the volunteer's
-/// "My Profile -> Engagements" list shows it on the Cancelled row.
+/// "My profile -> Engagements" list shows it on the Cancelled row.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementCancellationReasonTests(AspireFixture fixture) : VisualTestBase(fixture)

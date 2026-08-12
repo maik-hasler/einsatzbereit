@@ -99,7 +99,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}/opportunities");
 
 		// #1755 moved the list off the landing page onto its own route, so the
-		// old centred "Current Opportunities" section heading is gone - the
+		// old centred "Current opportunities" section heading is gone - the
 		// page header band's <h1> is what introduces the list now.
 		var heading = Page
 			.GetByRole(AriaRole.Heading, new() { Name = "Find opportunities", Level = 1 })
@@ -113,7 +113,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Seed data always publishes opportunities, so a rendered card must
 		// carry the redesigned visuals: a clickable organisation link and a
 		// title that is an <h2> (an <h3> skipped a level under the band's <h1>
-		// once the "Current Opportunities" section heading went away, which
+		// once the "Current opportunities" section heading went away, which
 		// axe fails on heading-order - see OpportunityListItem). Deliberately
 		// no banner-tile assertion any more: the brand-gradient tile only
 		// backs a real uploaded photo now, since on a photo-less card (almost

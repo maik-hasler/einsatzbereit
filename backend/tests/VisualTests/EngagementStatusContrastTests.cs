@@ -44,7 +44,7 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #675 split the tab into "Current & Upcoming" (default) and "Past" -
+		// #675 split the tab into "Current & upcoming" (default) and "Past" -
 		// a Withdrawn engagement now only shows up under "Past".
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 

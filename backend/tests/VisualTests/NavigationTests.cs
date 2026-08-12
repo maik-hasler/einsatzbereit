@@ -442,7 +442,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
 		await userMenuBtn.ClickAsync();
 
-		var profileLink = Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" });
+		var profileLink = Page.GetByRole(AriaRole.Link, new() { Name = "My profile" });
 		await Expect(profileLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");

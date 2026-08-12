@@ -7,7 +7,7 @@ namespace VisualTests;
 
 /// <summary>
 /// Regression for #667: GetByVolunteerAsync (backing GET /v1/me/engagements,
-/// the volunteer's "My Profile -> Engagements" list) used an inner join
+/// the volunteer's "My profile -> Engagements" list) used an inner join
 /// against VolunteerOpportunitiesQuery. Deleting an opportunity hard-deletes
 /// that row while only cancelling (not deleting) affected Engagement rows,
 /// so the inner join silently dropped the volunteer's own engagement entirely
@@ -75,7 +75,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #675 split the tab into "Current & Upcoming" (default) and "Past" -
+		// #675 split the tab into "Current & upcoming" (default) and "Past" -
 		// the opportunity's deletion cancels the engagement, so it now only
 		// shows up under "Past".
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
@@ -89,7 +89,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 	/// whose opportunity was removed without going through
 	/// DeleteVolunteerOpportunityCommandHandler's cancellation step (e.g. data
 	/// predating that safeguard) has no date field left to compare against and
-	/// no code path to re-evaluate it, so it stayed in "Current & Upcoming"
+	/// no code path to re-evaluate it, so it stayed in "Current & upcoming"
 	/// forever. The row is deleted directly here (bypassing the DELETE
 	/// endpoint, which already cancels active engagements on the normal path)
 	/// to reproduce that stale state.
@@ -114,7 +114,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Default tab is "Current & Upcoming" - the orphaned Pending engagement
+		// Default tab is "Current & upcoming" - the orphaned Pending engagement
 		// must not appear here.
 		await Expect(Page.GetByText("This opportunity has been removed"))
 			.Not.ToBeVisibleAsync(new() { Timeout = 15_000 });

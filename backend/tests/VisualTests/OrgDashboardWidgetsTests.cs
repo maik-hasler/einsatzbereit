@@ -12,7 +12,7 @@ namespace VisualTests;
 /// To-Do) so an organizer sees pending-application and signed-up-volunteer
 /// counts without navigating to another tab. #771 review feedback made the
 /// grid customizable (add/remove/place via the "Edit" quick action) and
-/// added a "Create Opportunity" widget to the default layout - see
+/// added a "Create opportunity" widget to the default layout - see
 /// OrgDashboardCustomizeTests for coverage of the customization itself.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
@@ -32,11 +32,11 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// navigating to another tab needed.
 		var todoWidget = Page.Locator("section", new()
 		{
-			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Needs Your Attention" }),
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Needs your attention" }),
 		});
 		var upcomingWidget = Page.Locator("section", new()
 		{
-			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Upcoming Opportunities" }),
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Upcoming opportunities" }),
 		});
 		var calendarWidget = Page.Locator("section", new()
 		{
@@ -54,8 +54,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// A brand-new organization has no applications and no confirmed
 		// volunteers yet - both KPI stats read 0.
-		await Expect(todoWidget).ToContainTextAsync("Pending Sign-ups");
-		await Expect(todoWidget).ToContainTextAsync("Signed-up Volunteers");
+		await Expect(todoWidget).ToContainTextAsync("Pending sign-ups");
+		await Expect(todoWidget).ToContainTextAsync("Signed-up volunteers");
 		// Selects on data-testid rather than the text-3xl Tailwind utility
 		// class - see #1328, a purely cosmetic restyle of that class would
 		// otherwise silently make these locators match nothing.
@@ -85,11 +85,11 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// Regression guard: many existing Playwright flows across this suite
 		// (see AuthHelper.GoToOrgAppDashboardAsync callers) expect this button
 		// on the dashboard - #771 review feedback moved it from a bare button
-		// above the grid into its own "Create Opportunity" widget tile (part
+		// above the grid into its own "Create opportunity" widget tile (part
 		// of the default layout), but the testid/click target is unchanged.
 		var createOpportunityWidget = Page.Locator("section", new()
 		{
-			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Create Opportunity" }),
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Create opportunity" }),
 		});
 		await Expect(createOpportunityWidget).ToBeVisibleAsync();
 		await Expect(createOpportunityWidget.GetByTestId("create-opportunity-btn"))

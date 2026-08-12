@@ -324,7 +324,7 @@ export default function ProfileOverviewPage() {
 
 	// ProfileFieldsView renders nothing at all once every field below is
 	// empty (a fresh account has none of them set) - previously that left the
-	// "Profile Details" heading sitting over a blank gap on every new user's
+	// "Profile details" heading sitting over a blank gap on every new user's
 	// very first view of this page (#985).
 	//
 	// preferredLanguage is deliberately not part of this check: it always has

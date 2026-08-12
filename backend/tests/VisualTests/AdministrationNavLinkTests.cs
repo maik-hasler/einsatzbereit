@@ -41,7 +41,7 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "User menu" }).ClickAsync();
 
-		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" }))
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My profile" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.Not.ToBeVisibleAsync();

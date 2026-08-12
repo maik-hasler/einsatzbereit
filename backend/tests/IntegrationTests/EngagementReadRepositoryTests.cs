@@ -315,7 +315,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 	// Regression for #1051: EngagementSummary never carried CancellationReason,
 	// so a reason set via Engagement.Cancel(reason) never reached the
-	// volunteer's own "My Profile -> Engagements" list (GetByVolunteerAsync)
+	// volunteer's own "My profile -> Engagements" list (GetByVolunteerAsync)
 	// nor the organizer's "Manage applications" list (GetPagedByOpportunityAsync),
 	// even though the domain model, command, and email already supported it.
 	[Test]

@@ -10,7 +10,7 @@ namespace VisualTests;
 /// CreatedOn with the re-application time, breaking the audit-trail
 /// invariant that CreatedOn reflects when a row was first created. This
 /// deliberately supersedes #648's fix, which refreshed CreatedOn on
-/// reactivation so the volunteer's "My Profile -> Engagements" tab and the
+/// reactivation so the volunteer's "My profile -> Engagements" tab and the
 /// organizer's "Manage sign-ups" page would show the latest activity date -
 /// #1215 accepts that those views again show the original application date
 /// after a withdraw + reapply, in exchange for an immutable CreatedOn.

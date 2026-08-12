@@ -12,7 +12,7 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-// Replaces the dashboard's former standalone "+ Create Opportunity" button
+// Replaces the dashboard's former standalone "+ Create opportunity" button
 // (see PR #771 review feedback) - the same action, now a widget an organizer
 // can place/remove like any other, auto-sized to whatever room it gets.
 function CreateOpportunityWidget({ organizationId, onCreated, size }: Props) {

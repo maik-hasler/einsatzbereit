@@ -70,7 +70,7 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 
 		// EngagementReadRepository.GetByVolunteerAsync orders "Current &
-		// Upcoming" by time-slot start, and this opportunity has none - so on a
+		// upcoming" by time-slot start, and this opportunity has none - so on a
 		// shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this row can
 		// land past the first (10-item) page instead of being visible
