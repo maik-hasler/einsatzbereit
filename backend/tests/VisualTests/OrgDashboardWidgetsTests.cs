@@ -537,6 +537,88 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(reloadedEvent).ToHaveCSSAsync("background-color", "rgb(51, 102, 204)");
 	}
 
+	[Test]
+	public async Task UpcomingOpportunitiesWidget_ListsAPublishedOpportunity_WithItsNextSlotTime()
+	{
+		// The suite only ever asserted this widget's *empty* state, so nothing
+		// covered the one branch that touches the data: a populated row. A
+		// change that called a Date method on nextTimeSlotStart shipped past
+		// every frontend check because the generated API client types that
+		// field as Date while handing callers the raw JSON string (it parses
+		// with a plain JSON.parse and no reviver) - the widget threw and fell
+		// into its error boundary for any organization that actually had an
+		// upcoming opportunity. See lib/upcomingOpportunities.ts, whose unit
+		// tests pin the same contract at the pure-function level.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual Upcoming {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"Visual Upcoming Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by the Upcoming Opportunities widget test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(3);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+
+		var upcomingWidget = Page.GetByTestId("widget-tile-UpcomingOpportunities");
+		await Expect(upcomingWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// The row itself, its formatted slot time, and its capacity line - a
+		// crash inside the widget would replace all three with the tile's
+		// error-boundary fallback instead.
+		await Expect(upcomingWidget.GetByRole(AriaRole.Link, new() { Name = oppTitle }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(upcomingWidget).ToContainTextAsync(start.ToString("yyyy"));
+		await Expect(upcomingWidget).ToContainTextAsync("0/5 sign-ups");
+		await Expect(upcomingWidget.GetByText("This widget couldn't be displayed"))
+			.ToHaveCountAsync(0);
+	}
+
 	private async Task CreateOrganizationAsync(string namePrefix, Guid organizationId)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry
