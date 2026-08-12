@@ -51,13 +51,80 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 			await Expect(row.GetByText("Active")).ToBeVisibleAsync();
 
+			// Both actions confirm first since einsatzbereit#1773 - see
+			// AdministrationPage_BlockAndPromote_RequireConfirmationNamingTheUser
+			// below for why, and for the dismissal half of the behaviour.
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" }).ClickAsync();
+			await ConfirmDialogAsync("Yes, block");
 			await Expect(row.GetByText("Blocked")).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Unblock {username}" })).ToBeVisibleAsync();
 
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
+			await ConfirmDialogAsync("Yes, make admin");
 			await Expect(row.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Remove admin from {username}" })).ToBeVisibleAsync();
+		}
+		finally
+		{
+			await DeleteKeycloakUserAsync(keycloak, userId);
+		}
+	}
+
+	/// <summary>
+	/// Regression for einsatzbereit#1773: blocking an account and granting
+	/// platform admin fired straight from onClick with no confirmation, while
+	/// the lower-stakes organization shadow-delete one tab over already had a
+	/// ConfirmDialog. One mis-click on a dense row of two adjacent buttons
+	/// handed a stranger full platform administration, or locked a volunteer
+	/// out, with no undo. Asserts the dialog names the person and that
+	/// dismissing it leaves Keycloak untouched - not just the row's rendering,
+	/// which would also stay put if the request had merely failed.
+	/// </summary>
+	[Test]
+	public async Task AdministrationPage_BlockAndPromote_RequireConfirmationNamingTheUser()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var (username, userId) = await CreateDisposableUserAsync(keycloak);
+		try
+		{
+			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+			await Page.GotoAsync($"{origin}/administration/users");
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+			await Page.Locator("#admin-user-search").FillAsync(username);
+			await Page.Locator("form")
+				.Filter(new() { Has = Page.Locator("#admin-user-search") })
+				.GetByRole(AriaRole.Button, new() { Name = "Search" })
+				.ClickAsync();
+
+			var row = Page.Locator("li").Filter(new() { HasTextString = username });
+			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
+			await Expect(row.GetByText("Active")).ToBeVisibleAsync();
+
+			var dialog = Page.GetByRole(AriaRole.Dialog);
+
+			await row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" }).ClickAsync();
+			await Expect(dialog).ToBeVisibleAsync();
+			await Expect(dialog.GetByText(username)).ToBeVisibleAsync();
+			await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
+			await Expect(dialog).Not.ToBeVisibleAsync();
+
+			await Expect(row.GetByText("Active")).ToBeVisibleAsync();
+			(await IsUserEnabledAsync(keycloak, userId)).Should()
+				.BeTrue("dismissing the block confirmation must not block the account");
+
+			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
+			await Expect(dialog).ToBeVisibleAsync();
+			await Expect(dialog.GetByText(username)).ToBeVisibleAsync();
+			await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
+			await Expect(dialog).Not.ToBeVisibleAsync();
+
+			await Expect(row.GetByText("Admin", new() { Exact = true })).Not.ToBeVisibleAsync();
+			(await HasAdminRealmRoleAsync(keycloak, userId)).Should()
+				.BeFalse("dismissing the promote confirmation must not grant platform admin");
 		}
 		finally
 		{
@@ -156,6 +223,46 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(ownRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(ownRow.GetByText("You cannot change your own account here.")).ToBeVisibleAsync();
 		await Expect(ownRow.GetByRole(AriaRole.Button)).Not.ToBeVisibleAsync();
+	}
+
+	/// <summary>
+	/// Clicks a ConfirmDialog's danger action and waits for it to close. The
+	/// dialog is portaled to document.body (see Modal.tsx), so it is never
+	/// inside the row locator that opened it.
+	/// </summary>
+	private async Task ConfirmDialogAsync(string confirmLabel)
+	{
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByRole(AriaRole.Button, new() { Name = confirmLabel }).ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+	}
+
+	private static async Task<bool> IsUserEnabledAsync(Uri keycloak, string userId)
+	{
+		var adminToken = await GetAdminTokenAsync(keycloak);
+
+		using var adminHttp = new HttpClient { BaseAddress = keycloak };
+		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await adminHttp.GetAsync($"/admin/realms/{Realm}/users/{userId}");
+		response.EnsureSuccessStatusCode();
+		var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return user.GetProperty("enabled").GetBoolean();
+	}
+
+	private static async Task<bool> HasAdminRealmRoleAsync(Uri keycloak, string userId)
+	{
+		var adminToken = await GetAdminTokenAsync(keycloak);
+
+		using var adminHttp = new HttpClient { BaseAddress = keycloak };
+		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await adminHttp.GetAsync($"/admin/realms/{Realm}/users/{userId}/role-mappings/realm");
+		response.EnsureSuccessStatusCode();
+		var roles = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return roles.EnumerateArray()
+			.Any(role => role.GetProperty("name").GetString() == "admin");
 	}
 
 	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(Uri keycloak)

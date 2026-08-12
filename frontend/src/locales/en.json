@@ -976,6 +976,26 @@
         "message": "Are you sure you want to restore \"{{name}}\"? It will become visible again.",
         "confirm": "Yes, restore"
       },
+      "adminBlockUser": {
+        "title": "Block this account?",
+        "message": "{{name}} will not be able to sign in again until you unblock the account. A session that is already open stays valid until it expires.",
+        "confirm": "Yes, block"
+      },
+      "adminUnblockUser": {
+        "title": "Unblock this account?",
+        "message": "{{name}} will be able to sign in again.",
+        "confirm": "Yes, unblock"
+      },
+      "adminPromoteUser": {
+        "title": "Grant platform admin?",
+        "message": "{{name}} gets full platform administration: every organization, all user data, and the ability to block accounts and make other people admins. This takes effect the next time they sign in.",
+        "confirm": "Yes, make admin"
+      },
+      "adminDemoteUser": {
+        "title": "Remove platform admin?",
+        "message": "{{name}} loses access to the administration area and to every organization they are not a member of. This takes effect the next time they sign in.",
+        "confirm": "Yes, remove admin"
+      },
       "clearReadNotifications": {
         "title": "Clear read notifications?",
         "message": "This permanently deletes all read notifications. This cannot be undone.",
