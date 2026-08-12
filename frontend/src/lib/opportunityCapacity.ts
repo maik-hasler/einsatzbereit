@@ -36,6 +36,22 @@ const INDIVIDUAL_CONTACT = "IndividualContact";
  */
 export const FEW_SPOTS_THRESHOLD = 5;
 
+/**
+ * A real cap across the opportunity's time slots.
+ *
+ * Named rather than inlined into the union below: Prettier aligns a wrapped
+ * inline member's closing brace with a tab plus two spaces, which the
+ * editorconfig CI gate rejects as mixed indentation.
+ */
+export interface CappedCapacity {
+	kind: "capped";
+	booked: number;
+	max: number;
+	/** Never negative - see the clamp in getOpportunityCapacity. */
+	spotsLeft: number;
+	isFull: boolean;
+}
+
 export type OpportunityCapacity =
 	/** At least one uncapped time slot - sign-ups are not limited. */
 	| { kind: "unlimited"; booked: number }
@@ -46,14 +62,7 @@ export type OpportunityCapacity =
 	 * one simply has none yet.
 	 */
 	| { kind: "notApplicable"; booked: number; reason: "interest" | "noSlots" }
-	/** A real cap across the opportunity's time slots. */
-	| {
-			kind: "capped";
-			booked: number;
-			max: number;
-			spotsLeft: number;
-			isFull: boolean;
-	  };
+	| CappedCapacity;
 
 export interface OpportunityCapacityInput {
 	/** The tri-state total documented above. */
