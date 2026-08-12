@@ -213,6 +213,7 @@ All versions centrally managed in `Directory.Packages.props`.
 | Package | Used in |
 |---|---|
 | `Asp.Versioning.Http` | Api - URL-segment versioning |
+| `Asp.Versioning.OpenApi` | Api - one OpenAPI document per API version |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Api - JWT validation |
 | `NSwag.MSBuild` | Api - generates OpenAPI spec + TS client on build |
 | `EFCore.NamingConventions` | Infrastructure - snake_case |
