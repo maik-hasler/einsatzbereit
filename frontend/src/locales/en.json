@@ -844,6 +844,7 @@
       "deleteNamed": "Delete: {{notification}}",
       "deleteError": "Failed to delete notification.",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
+      "unread": "Unread",
       "kinds": {
         "EngagementCreated": "New sign-up received for {{title}}",
         "EngagementConfirmed": "Your sign-up for {{title}} was confirmed",

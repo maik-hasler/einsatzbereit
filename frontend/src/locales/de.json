@@ -844,6 +844,7 @@
       "deleteNamed": "Löschen: {{notification}}",
       "deleteError": "Benachrichtigung konnte nicht gelöscht werden.",
       "deletedOpportunityPlaceholder": "einen gelöschten Einsatz",
+      "unread": "Ungelesen",
       "kinds": {
         "EngagementCreated": "Neue Anmeldung eingegangen für {{title}}",
         "EngagementConfirmed": "Deine Anmeldung für {{title}} wurde bestätigt",
