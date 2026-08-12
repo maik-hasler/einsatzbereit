@@ -32,9 +32,12 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 	/// <c>scrollTo()</c> still moves a locked document, because
 	/// <c>overflow: hidden</c> only blocks user input, not programmatic scrolls.
 	/// </summary>
-	private async Task<int> WheelOverDialogAsync(int ticks = 8)
+	private Task<int> WheelOverDialogAsync(int ticks = 8) =>
+		WheelAtAsync(ViewportWidth / 2f, ViewportHeight / 2f, ticks);
+
+	private async Task<int> WheelAtAsync(float x, float y, int ticks = 8)
 	{
-		await Page.Mouse.MoveAsync(ViewportWidth / 2f, ViewportHeight / 2f);
+		await Page.Mouse.MoveAsync(x, y);
 		for (var i = 0; i < ticks; i++)
 			await Page.Mouse.WheelAsync(0, 400);
 		// One settle beat: under this suite's own CPU contention
@@ -181,7 +184,24 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var baseline = await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)");
-		(await WheelOverDialogAsync()).Should().Be(baseline,
+
+		// Wheel over the scrim, below the panel - not over the panel itself.
+		// The panel is its own overscroll-contain scroll container, so a wheel
+		// inside it is absorbed there and never reaches the document, which
+		// would leave this assertion holding even with the lock deleted.
+		var panelBox = await Page.Locator("[role='dialog']").BoundingBoxAsync();
+		panelBox.Should().NotBeNull();
+		var scrimY = panelBox!.Y + panelBox.Height + 40;
+		scrimY.Should().BeLessThan(ViewportHeight - 5,
+			$"the open menu panel (bottom edge {panelBox.Y + panelBox.Height:F0}px) must leave scrim below it inside the "
+			+ $"{ViewportHeight}px viewport, or there is nowhere to probe background scrolling from");
+
+		var overScrim = await Page.EvaluateAsync<bool>(
+			"([x, y]) => { const el = document.elementFromPoint(x, y); return el !== null && el.closest('[role=\"dialog\"]') === null; }",
+			new[] { ViewportWidth / 2f, scrimY });
+		overScrim.Should().BeTrue("the wheel has to land outside the menu panel for this to test the page behind it");
+
+		(await WheelAtAsync(ViewportWidth / 2f, scrimY)).Should().Be(baseline,
 			"the page behind the mobile menu scrim must not scroll - #1672's body-level lock never actually reached the viewport");
 
 		await Page.Keyboard.PressAsync("Escape");

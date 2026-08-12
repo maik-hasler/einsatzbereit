@@ -142,7 +142,7 @@ export default function MobileMenu({
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				// max-h + overflow-y-auto so the body scroll lock above doesn't
+				// max-h + overflow-y-auto so the scroll lock above doesn't
 				// strand content taller than the viewport with no way to reach it
 				// (e.g. an organizer with the org submenu expanded on a short
 				// landscape-phone viewport) - overscroll-contain keeps a drag past

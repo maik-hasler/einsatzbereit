@@ -75,6 +75,25 @@ export default function Header({
 		if (!mobileOpen) setOrgMenuOpen(false);
 	}, [mobileOpen]);
 
+	// The menu and its scrim are md:hidden, but nothing unmounted them when the
+	// viewport crossed that breakpoint - an open menu just went invisible while
+	// staying mounted. Since #1787 that also means it keeps holding the
+	// background scroll lock, freezing the page with no visible dialog to
+	// explain why. Both a phone rotated into landscape and a desktop user
+	// adjusting zoom at 300%+ (the low-vision reflow workflow WCAG 1.4.10 is
+	// about) cross 768px this way. Closing here also restores the Tab trap,
+	// which goes dormant in that state: MobileMenu's focusable filter drops
+	// every display:none element, finds none, and bails out - letting focus
+	// walk into the page behind a dialog that is still nominally open.
+	useEffect(() => {
+		const desktop = window.matchMedia("(min-width: 768px)");
+		const closeIfDesktop = () => {
+			if (desktop.matches) setMobileOpen(false);
+		};
+		desktop.addEventListener("change", closeIfDesktop);
+		return () => desktop.removeEventListener("change", closeIfDesktop);
+	}, []);
+
 	// Only while the band is actually behind the header - once scrolled past
 	// it there's white page underneath, so the header has to take its own
 	// background back or its white-on-dark controls would sit on white.
