@@ -213,7 +213,11 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			categories: ["Environment"],
 			cancellationToken: cancellationToken);
 
-		result.Select(d => d.Date).Should().Equal(matching.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+		// The expected days go in as an array, not as a loose argument: with a plain
+		// string first, this binds to Equal(params string[]) and the "because" text
+		// below is read as a second expected day rather than as an explanation.
+		result.Select(d => d.Date).Should().Equal(
+			new[] { matching.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
 			"a day is only worth marking if the filters already applied would let its opportunity through");
 	}
 
