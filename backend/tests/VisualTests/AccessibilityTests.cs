@@ -124,6 +124,50 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_SignedInNonOwner_AsVera_HasNoSeriousA11yViolations()
+	{
+		// The action row above the at-a-glance panel used to render for every
+		// visitor (the Share button was its one unconditional child), so the
+		// anonymous scan above incidentally covered it. Share is gone and the
+		// row is now conditional, which leaves the signed-in-non-owner state -
+		// the row holding nothing but Report - as the only render path of it
+		// that no axe scan reaches. Vera is a plain user, never an organizer,
+		// so isOwner is false for every opportunity.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		// Same card-link locator (and skip-on-empty handling) as the anonymous
+		// scan above: footer links also match a bare ul>li a.
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("no opportunities seeded");
+		}
+
+		var href = await firstCard.GetAttributeAsync("href");
+		Skip.When(href is null, "opportunity card had no href attribute");
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw the state this test exists for,
+		// rather than passing against a page where the row never rendered.
+		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1027: the draftBadge chip plus owner-only Edit/Publish actions
