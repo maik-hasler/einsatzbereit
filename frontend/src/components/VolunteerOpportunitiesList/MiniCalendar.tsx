@@ -361,8 +361,13 @@ export default function MiniCalendar({
 										onBlur={clearHoverIfPicking}
 										className={[
 											"relative flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
+											// gray-500 (4.8:1), not the gray-400 the rest of the app
+											// reserves for decorative icons and placeholders: these
+											// buttons stay focusable on purpose, so a keyboard user
+											// arrowing across them still reads the number to know
+											// where in the grid they are.
 											isPast
-												? "cursor-not-allowed text-gray-400"
+												? "cursor-not-allowed text-gray-500"
 												: isEdge
 													? "bg-brand-600 font-semibold text-white"
 													: isToday
@@ -372,10 +377,15 @@ export default function MiniCalendar({
 									>
 										{day.getDate()}
 										{isMarked && (
+											// brand-600, not brand-500 (2.8:1 on white, 2.3:1 on an
+											// in-range cell): this dot is the only non-assistive
+											// signal that a day has anything on it, so it has to
+											// clear WCAG 1.4.11's 3:1 floor for non-text content on
+											// both backgrounds it can land on.
 											<span
 												aria-hidden="true"
 												className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
-													isEdge ? "bg-white" : "bg-brand-500"
+													isEdge ? "bg-white" : "bg-brand-600"
 												}`}
 											/>
 										)}
@@ -394,7 +404,7 @@ export default function MiniCalendar({
 				<p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
 					<span
 						aria-hidden="true"
-						className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500"
+						className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600"
 					/>
 					{t("opportunities.daysWithOpportunitiesLegend")}
 				</p>

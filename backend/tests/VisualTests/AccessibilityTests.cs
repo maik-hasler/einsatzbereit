@@ -2033,6 +2033,82 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OpportunitiesPage_DateRangeFilterWithMarkedDays_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1779: the day grid gained two states the scan above can
+		// never see, because it seeds nothing and only ever opens on the current
+		// month - a marked day (dot + "N opportunities" in its accessible name)
+		// and the legend that only renders once some day in view is marked. This
+		// seeds a slot into the month that is open on arrival so both are in the
+		// DOM when axe runs, rather than hoping another test in the shared
+		// session published one first.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"MarkedDayA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"MarkedDayA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		// Tomorrow midday, so the marked day is inside the month the calendar
+		// opens on for all but one day of each month - and today itself is never
+		// used, since a slot starting today would have to be later than "now".
+		var slotStart = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero).AddHours(12);
+		var slotResponse = await olafHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+			{
+				startDateTime = slotStart,
+				endDateTime = slotStart.AddHours(2),
+				maxParticipants = 10,
+				recurrenceCount = 1,
+			});
+		slotResponse.EnsureSuccessStatusCode();
+
+		var publishResponse = await olafHttp.PostAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/publish", null);
+		publishResponse.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Grid)).ToBeVisibleAsync();
+
+		// The day slotStart falls on is only off-screen when it belongs to next
+		// month; either way, waiting for a marked cell is what makes the scan
+		// below deterministic instead of a race with the availability request.
+		if (await Page.Locator("[data-marked='true']").CountAsync() == 0)
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Next month" }).ClickAsync();
+
+		await Expect(Page.Locator("[data-marked='true']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OpportunitiesPage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
 	{
 		// #1090: the "notify me about new matches" toggle only renders once a

@@ -138,7 +138,7 @@
       "dateFromDisplay": "Ab {{date}}",
       "prevMonth": "Vorheriger Monat",
       "nextMonth": "Nächster Monat",
-      "dayInPast": "in der Vergangenheit, nicht auswählbar",
+      "dayInPast": "in der Vergangenheit",
       "dayOpportunityCount_one": "{{count}} Einsatz",
       "dayOpportunityCount_other": "{{count}} Einsätze",
       "daysWithOpportunitiesLegend": "Tage mit Einsätzen",

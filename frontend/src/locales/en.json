@@ -138,7 +138,7 @@
       "dateFromDisplay": "From {{date}}",
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
-      "dayInPast": "in the past, cannot be selected",
+      "dayInPast": "in the past",
       "dayOpportunityCount_one": "{{count}} opportunity",
       "dayOpportunityCount_other": "{{count}} opportunities",
       "daysWithOpportunitiesLegend": "Days with opportunities",
