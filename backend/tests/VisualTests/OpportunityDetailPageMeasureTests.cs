@@ -99,7 +99,9 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		updateResponse.EnsureSuccessStatusCode();
 
 		// Draft first, then slots, then publish - time slots are seeded against
-		// the draft the same way MyEngagementsTimeSlotTests does it.
+		// the draft the same way MyEngagementsTimeSlotTests does it. No
+		// `validUntil`: VolunteerOpportunity.EnsureValidValidUntil rejects a
+		// deadline on anything but IndividualContact, so sending one here 400s.
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
 			title = $"Measure1794 {suffix}",
@@ -109,7 +111,6 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 			occurrence = "OneTime",
 			participationType = "ScheduledSlots",
 			checkInMethod = "None",
-			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = true,
 		});
 		oppResponse.EnsureSuccessStatusCode();
@@ -144,10 +145,11 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 	}
 
 	/// <summary>
-	/// The narrow viewports the fix had to leave alone: below `lg` the two-column
-	/// grid collapses and the viewport, not `max-w-2xl`, is the constraining
-	/// width - so the blocks shared an edge before the fix and must still do so
-	/// after it, with the time-slot list no narrower than its neighbours.
+	/// The narrow viewports the fix had to leave alone. Below `lg` the two-column
+	/// grid collapses to one column, so whichever of the viewport or `max-w-2xl`
+	/// is narrower decides the width - at 375px that is the viewport, at 768px
+	/// still `max-w-2xl`. Either way all three blocks must land on the same edge,
+	/// with the time-slot list no narrower than its neighbours.
 	/// </summary>
 	[Test]
 	[Arguments(768, 1024)]
@@ -176,6 +178,6 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 			});
 		widths[0].Should().BeApproximately(widths[1], MaxEdgeDeltaPx,
 			$"at {width}px the time-slot list must still fill the same width as the at-a-glance band - "
-			+ "#1794's max-w-2xl must not narrow it below lg, where the viewport is the constraint");
+			+ "#1794's max-w-2xl must not leave it narrower than its neighbours below lg");
 	}
 }
