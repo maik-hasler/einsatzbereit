@@ -214,7 +214,9 @@
       "participantsJoined_other": "{{count}} people have already joined",
       "factWhen": "When",
       "factFormat": "How it works",
-      "factWhere": "Where"
+      "factWhere": "Where",
+      "offline": "You are offline. We will load the opportunities as soon as your connection is back.",
+      "offlineLoadMore": "You are offline. These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as it is back."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -380,7 +382,10 @@
       "sectionsNavLabel": "Organization sections",
       "backTo": "Back to {{section}}",
       "notAuthorized": "You don't have access to this organization.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "notFoundTitle": "Organization not found",
+      "notFoundMessage": "This organization does not exist, or it has been deleted. Check the link you followed - the id in it may be incomplete.",
+      "notAuthorizedMessage": "You are not a member of this organization. Ask one of its organizers to invite you."
     },
     "orgOpportunities": {
       "loading": "Loading…",
@@ -1172,6 +1177,19 @@
       "reload": "Reload",
       "dismiss": "Dismiss",
       "toastRegionLabel": "Notifications"
+    },
+    "routeState": {
+      "offline": {
+        "title": "You are offline",
+        "message": "We cannot reach Einsatzbereit without a connection. This page reloads itself as soon as you are back online."
+      },
+      "forbidden": {
+        "title": "No access"
+      },
+      "adminOnly": {
+        "title": "Admin rights required",
+        "message": "This area is for platform administrators. Your account does not have admin rights - if you think it should, ask an administrator to grant them."
+      }
     },
     "userProfile": {
       "loading": "Loading profile…",

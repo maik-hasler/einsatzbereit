@@ -1,17 +1,14 @@
 import { Suspense, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
-import { statusTitleClass } from "../lib/headingClasses";
-import {
-	getApiErrorMessage,
-	isApiForbiddenError,
-	isApiNotFoundError,
-} from "../lib/apiError";
+import { getApiErrorMessage, getApiErrorStatus } from "../lib/apiError";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -23,9 +20,8 @@ import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import SkipLink from "../components/SkipLink";
 import Button from "../components/Button";
-import ErrorBanner from "../components/ErrorBanner";
 import ErrorBoundary from "../components/ErrorBoundary";
-import NotFoundPage from "../pages/NotFoundPage";
+import RouteState from "../components/RouteState";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
@@ -174,6 +170,7 @@ export default function OrgAppLayout() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const location = useLocation();
+	const online = useOnlineStatus();
 
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
 	const [status, setStatus] = useState<LoadStatus>("loading");
@@ -198,15 +195,29 @@ export default function OrgAppLayout() {
 			})
 			.catch((err) => {
 				if (requestId !== latestRequestRef.current) return;
-				if (isApiForbiddenError(err)) {
+				// #1774: the HTTP status is the only thing that tells these
+				// failures apart once the client has thrown, and this branch used
+				// to keep just the message string - so anything that wasn't a
+				// clean 403/404 (notably the 400 an all-zero organization id
+				// produces, which NSwag generates no branch for and therefore
+				// throws as a bare ApiException) landed in the generic bucket.
+				const httpStatus = getApiErrorStatus(err);
+				if (httpStatus === 403) {
 					setStatus("forbidden");
-				} else if (isApiNotFoundError(err)) {
+				} else if (httpStatus === 404 || httpStatus === 400) {
+					// 400 means the id in the URL is not a usable organization id at
+					// all (OrganizationId.Create rejects Guid.Empty) - this endpoint
+					// takes no other input, so there is nothing else a 400 can be
+					// about, and "that organization does not exist" is the honest
+					// reading of it rather than "something went wrong".
 					setStatus("notFound");
 				} else {
-					// Covers everything that isn't a permanent 403/404 - a dropped
-					// connection, a 500, an unexpected exception - so it gets a
-					// recoverable "try again" state instead of being mislabeled as
-					// "not authorized" (#1224).
+					// Covers everything that isn't a permanent 400/403/404 - a
+					// dropped connection, a 500, an unexpected exception - so it gets
+					// a recoverable state instead of being mislabeled as "not
+					// authorized" (#1224). Whether that state offers a retry is
+					// decided at render time from the live connection status: while
+					// the browser reports itself offline, retrying cannot work.
 					setErrorMessage(getApiErrorMessage(err, t("error.serverError")));
 					setStatus("error");
 				}
@@ -217,6 +228,15 @@ export default function OrgAppLayout() {
 		load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
+
+	// The offline state deliberately has no retry button, so regaining the
+	// connection is what has to drive the recovery (#1774). Scoped to a failed
+	// load: a shell that is already showing an organization is never refetched
+	// out from under the user just because a tunnel ended.
+	useEffect(() => {
+		if (online && status === "error") load();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [online]);
 
 	// #9: every tab now lives under /dashboard/... (App.tsx's pathless
 	// "dashboard" parent route), so the segment right after "dashboard" -
@@ -244,48 +264,65 @@ export default function OrgAppLayout() {
 		);
 	}
 
-	if (status === "notFound") {
-		// NotFoundPage has no <main> of its own - it relies on AppLayout to
-		// supply one on its usual wildcard route. OrgAppLayout bypasses
-		// AppLayout entirely, so it must supply the landmark here instead.
+	// RouteState renders no landmark of its own - the org app bypasses
+	// AppLayout entirely, so every one of these states has to supply the
+	// <main> (and the app canvas background) itself.
+	const backToSite = { to: "/", label: t("orgApp.backToSite") };
+	function stateScreen(node: ReactNode) {
 		return (
-			<main>
-				<NotFoundPage />
+			<main className="flex min-h-screen flex-col justify-center bg-gray-50">
+				{node}
 			</main>
+		);
+	}
+
+	if (status === "notFound") {
+		// Not the site-wide NotFoundPage any more (#1774): "Page not found" is
+		// true of a URL that routes nowhere, but this URL routes fine - it names
+		// an organization that does not exist, which is what the copy should
+		// say.
+		return stateScreen(
+			<RouteState
+				variant="notFound"
+				title={t("orgApp.notFoundTitle")}
+				message={t("orgApp.notFoundMessage")}
+				action={backToSite}
+			/>,
 		);
 	}
 
 	if (status === "error") {
-		return (
-			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
-				<h1 className={`text-gray-900 ${statusTitleClass}`}>
-					{t("error.boundaryTitle")}
-				</h1>
-				{/* role="alert"/aria-live (via ErrorBanner) so a retry that fails again
-				- re-rendering this same branch, no navigation - is still announced to
-				screen reader users, not just sighted ones. */}
-				<ErrorBanner
+		// Offline is a distinct, self-clearing situation, not a server fault -
+		// and while it lasts, the retry button the error state offers is a lie
+		// (#1774). The effect above reloads as soon as the connection is back.
+		return stateScreen(
+			online ? (
+				<RouteState
+					variant="error"
+					title={t("error.boundaryTitle")}
 					message={errorMessage ?? t("error.serverError")}
-					className="max-w-md"
+					onRetry={load}
+					action={backToSite}
 				/>
-				<div className="flex gap-3">
-					<Button onClick={load}>{t("orgApp.retry")}</Button>
-					<Button to="/" variant="secondary">
-						{t("orgApp.backToSite")}
-					</Button>
-				</div>
-			</main>
+			) : (
+				<RouteState
+					variant="offline"
+					title={t("routeState.offline.title")}
+					message={t("routeState.offline.message")}
+					action={backToSite}
+				/>
+			),
 		);
 	}
 
 	if (status === "forbidden" || !org) {
-		return (
-			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
-				<h1 className={`text-gray-900 ${statusTitleClass}`}>
-					{t("orgApp.notAuthorized")}
-				</h1>
-				<Button to="/">{t("orgApp.backToSite")}</Button>
-			</main>
+		return stateScreen(
+			<RouteState
+				variant="forbidden"
+				title={t("orgApp.notAuthorized")}
+				message={t("orgApp.notAuthorizedMessage")}
+				action={backToSite}
+			/>,
 		);
 	}
 

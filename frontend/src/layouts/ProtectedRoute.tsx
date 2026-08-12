@@ -1,12 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { Navigate, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import type { ReactNode } from "react";
 import { signinLocaleArgs } from "../lib/authLocale";
 import Spinner from "../components/Spinner";
 import ErrorBanner from "../components/ErrorBanner";
 import Button from "../components/Button";
+import RouteState from "../components/RouteState";
+
+// Copy for the roles a route actually guards. Only "admin" does today
+// (App.tsx's /administration), and it gets wording that names admin rights
+// rather than echoing a raw Keycloak role identifier at the user; a role with
+// no entry here falls back to the generic 403 wording rather than rendering
+// a missing translation key.
+const ROLE_COPY: Record<string, { titleKey: string; messageKey: string }> = {
+	admin: {
+		titleKey: "routeState.adminOnly.title",
+		messageKey: "routeState.adminOnly.message",
+	},
+};
+
+const GENERIC_ROLE_COPY = {
+	titleKey: "routeState.forbidden.title",
+	messageKey: "error.forbidden",
+};
 
 interface Props {
 	children: ReactNode;
@@ -72,7 +90,22 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 			Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 		) as string[];
 		if (!roles.includes(requiredRole)) {
-			return <Navigate to="/" replace />;
+			// #1774: this used to be <Navigate to="/" replace />, which dumped a
+			// visitor following a bookmarked or shared /administration link onto
+			// the landing page with no explanation - nothing distinguished "you
+			// may not go there" from "that link is dead" or "you got signed out".
+			// Staying on the requested URL and saying why is both honest and
+			// keeps the address bar meaningful, so the link can be handed to
+			// someone whose account can open it.
+			const copy = ROLE_COPY[requiredRole] ?? GENERIC_ROLE_COPY;
+			return (
+				<RouteState
+					variant="forbidden"
+					title={t(copy.titleKey)}
+					message={t(copy.messageKey)}
+					action={{ to: "/", label: t("notFound.backHome") }}
+				/>
+			);
 		}
 	}
 

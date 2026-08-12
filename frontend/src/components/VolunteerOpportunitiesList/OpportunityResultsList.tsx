@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 import EmptyState from "../EmptyState";
 import Skeleton from "../Skeleton";
 import LoadMoreError from "../LoadMoreError";
 import LoadMoreButton from "../LoadMoreButton";
+import RouteState from "../RouteState";
 import OpportunityListItem from "./OpportunityListItem";
 
 export default function OpportunityResultsList({
@@ -30,6 +32,7 @@ export default function OpportunityResultsList({
 	onRetryLoadMore: () => void;
 }) {
 	const { t } = useTranslation();
+	const online = useOnlineStatus();
 	const isInitialLoad = loading && items.length === 0;
 	const countMessage =
 		!error && !isInitialLoad
@@ -93,14 +96,29 @@ export default function OpportunityResultsList({
 					))}
 				</div>
 			)}
-			{error && (
-				<LoadMoreError
-					message={t("opportunities.error", { message: error })}
-					retrying={loading}
-					onRetry={onRetryLoadMore}
-					data-testid="opportunities-error"
-				/>
-			)}
+			{/* #1774: the service worker precaches the app shell, so a reload with
+			no connection brings back the header, hero, filter chips and footer
+			and then used to throw all of that away by reporting "an unexpected
+			error occurred" here, next to a retry button that could not succeed
+			while the connection was down. useLoadMore refetches on its own once
+			the connection returns, so this state needs no action at all. */}
+			{error &&
+				(online ? (
+					<LoadMoreError
+						message={t("opportunities.error", { message: error })}
+						retrying={loading}
+						onRetry={onRetryLoadMore}
+						data-testid="opportunities-error"
+					/>
+				) : (
+					<RouteState
+						inline
+						variant="offline"
+						title={t("routeState.offline.title")}
+						message={t("opportunities.offline")}
+						data-testid="opportunities-offline"
+					/>
+				))}
 
 			{!error && (
 				<>
@@ -130,11 +148,23 @@ export default function OpportunityResultsList({
 					{items.length > 0 &&
 						hasMore &&
 						(loadMoreError ? (
-							<LoadMoreError
-								message={t("opportunities.error", { message: loadMoreError })}
-								retrying={loadingMore}
-								onRetry={onRetryLoadMore}
-							/>
+							// Same offline split as the initial-load branch above, with
+							// wording for the case where rows are already on screen.
+							online ? (
+								<LoadMoreError
+									message={t("opportunities.error", { message: loadMoreError })}
+									retrying={loadingMore}
+									onRetry={onRetryLoadMore}
+								/>
+							) : (
+								<RouteState
+									inline
+									variant="offline"
+									title={t("routeState.offline.title")}
+									message={t("opportunities.offlineLoadMore")}
+									data-testid="opportunities-offline-load-more"
+								/>
+							)
 						) : (
 							<LoadMoreButton
 								loading={loadingMore}

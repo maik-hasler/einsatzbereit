@@ -52,10 +52,17 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 	// a non-admin who typed the URL directly still got the page shell (the
 	// "Administration" heading) with every section immediately failing its
 	// API call and rendering an error banner, instead of being kept off the
-	// page entirely. ProtectedRoute's requiredRole="admin" now redirects
-	// such visitors to "/" before AdministrationPage ever mounts.
+	// page entirely. ProtectedRoute's requiredRole="admin" now keeps such
+	// visitors out before AdministrationPage ever mounts.
+	//
+	// Amended by #1774: keeping them out used to mean <Navigate to="/" />,
+	// which silently dumped anyone following a bookmarked or shared admin link
+	// on the landing page - nothing there distinguished "you may not go
+	// there" from "that link is dead" or "you got signed out". The guard now
+	// holds the requested URL and says which of the three it is, so the link
+	// stays in the address bar to hand to someone whose account can open it.
 	[Test]
-	public async Task Administration_DirectNavigationAsNonAdmin_RedirectsToHome()
+	public async Task Administration_DirectNavigationAsNonAdmin_StaysOnTheUrlAndExplainsWhy()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -65,8 +72,16 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GotoAsync($"{origin}/administration");
 
-		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Admin rights required" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByText("Your account does not have admin rights", new() { Exact = false }))
+			.ToBeVisibleAsync();
+		// The page itself still never mounts - the point of #1026 stands.
 		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Administration");
+		// ...and the URL is still the one that was asked for, rather than "/".
+		await Expect(Page).ToHaveURLAsync($"{origin}/administration");
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
+			.ToBeVisibleAsync();
 	}
 
 	[Test]

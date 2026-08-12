@@ -101,7 +101,7 @@
       "waitlist": "Zeitslots",
       "individualContact": "Interessenbekundung",
       "loading": "Wird geladen…",
-      "error": "{{message}}",
+      "error": "Fehler: {{message}}",
       "noResults": "Keine Einsätze gefunden.",
       "noResultsWithFilters": "Passe deine Filter an oder setze sie zurück.",
       "resultCount": "{{count}} Einsätze gefunden.",
@@ -214,7 +214,9 @@
       "participantsJoined_other": "{{count}} Personen haben sich bereits angemeldet",
       "factWhen": "Wann",
       "factFormat": "Ablauf",
-      "factWhere": "Wo"
+      "factWhere": "Wo",
+      "offline": "Du bist offline. Sobald deine Verbindung zurück ist, laden wir die Einsätze.",
+      "offlineLoadMore": "Du bist offline. Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald sie zurück ist."
     },
     "createOpportunity": {
       "title": "Einsatz erstellen",
@@ -380,7 +382,10 @@
       "sectionsNavLabel": "Bereiche der Organisation",
       "backTo": "Zurück zu {{section}}",
       "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "notFoundTitle": "Organisation nicht gefunden",
+      "notFoundMessage": "Diese Organisation existiert nicht oder wurde gelöscht. Prüfe den Link, dem du gefolgt bist - die ID darin könnte unvollständig sein.",
+      "notAuthorizedMessage": "Du bist kein Mitglied dieser Organisation. Bitte eine:n Organisator:in der Organisation, dich einzuladen."
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",
@@ -1172,6 +1177,19 @@
       "reload": "Neu laden",
       "dismiss": "Schließen",
       "toastRegionLabel": "Benachrichtigungen"
+    },
+    "routeState": {
+      "offline": {
+        "title": "Du bist offline",
+        "message": "Ohne Verbindung erreichen wir Einsatzbereit nicht. Diese Seite lädt sich neu, sobald du wieder online bist."
+      },
+      "forbidden": {
+        "title": "Kein Zugriff"
+      },
+      "adminOnly": {
+        "title": "Admin-Rechte erforderlich",
+        "message": "Dieser Bereich ist nur für Plattform-Admins. Dein Konto hat keine Admin-Rechte - wenn das anders sein sollte, wende dich an eine:n Administrator:in."
+      }
     },
     "userProfile": {
       "loading": "Profil wird geladen…",

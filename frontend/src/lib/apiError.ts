@@ -28,18 +28,27 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
 }
 
 /**
- * Detects a 404 from a rejected API call.
+ * Reads the HTTP status off a rejected API call, or null when the rejection
+ * carries none (a network failure, an aborted request).
  *
  * Both shapes the NSwag client can throw - the raw ProblemDetails object
  * (when the response has a JSON body) or an ApiException instance (when it
- * doesn't) - carry a numeric `.status` field, so this works for either.
+ * doesn't, which is what an unmapped status such as 400 produces, since the
+ * generator only emits branches for the statuses the endpoint declares) -
+ * carry a numeric `.status` field, so this works for either. It is the only
+ * thing that tells one failure apart from another once the client has thrown:
+ * a caller that keeps just the message string cannot distinguish "that
+ * organization does not exist" from "the server fell over" (#1774).
  */
+export function getApiErrorStatus(err: unknown): number | null {
+	if (!err || typeof err !== "object") return null;
+	const status = (err as { status?: unknown }).status;
+	return typeof status === "number" ? status : null;
+}
+
+/** Detects a 404 from a rejected API call - see getApiErrorStatus. */
 export function isApiNotFoundError(err: unknown): boolean {
-	return (
-		!!err &&
-		typeof err === "object" &&
-		(err as { status?: unknown }).status === 404
-	);
+	return getApiErrorStatus(err) === 404;
 }
 
 /**
@@ -56,14 +65,7 @@ export function isApiErrorCode(err: unknown, code: string): boolean {
 	);
 }
 
-/**
- * Detects a 403 from a rejected API call - see isApiNotFoundError above for
- * why `.status` works across both shapes the NSwag client can throw.
- */
+/** Detects a 403 from a rejected API call - see getApiErrorStatus. */
 export function isApiForbiddenError(err: unknown): boolean {
-	return (
-		!!err &&
-		typeof err === "object" &&
-		(err as { status?: unknown }).status === 403
-	);
+	return getApiErrorStatus(err) === 403;
 }

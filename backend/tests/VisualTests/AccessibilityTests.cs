@@ -1557,6 +1557,44 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// #1774 introduced one shared route-level state component (RouteState) for
+	// the four ways a route can fail to show what was asked for. Two scans, one
+	// per shell it renders in: inside AppLayout (header/main/footer already
+	// present, so this is the heading-order and landmark case) and inside the
+	// org app, which bypasses AppLayout entirely and has to supply its own
+	// <main> - the exact landmark the previous 404 branch got wrong by handing
+	// a chrome-less NotFoundPage to a route with no layout above it.
+	[Test]
+	public async Task AdminOnlyRouteAsNonAdmin_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Admin rights required" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgAppUnknownOrganization_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{Guid.NewGuid()}/dashboard");
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Organization not found" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	[Test]
 	public async Task OpportunitiesPage_HasNoSeriousA11yViolations()
 	{
