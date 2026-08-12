@@ -376,6 +376,8 @@
     },
     "orgApp": {
       "backToSite": "Zurück zu Einsatzbereit",
+      "sectionsNavLabel": "Bereiche der Organisation",
+      "backTo": "Zurück zu {{section}}",
       "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
       "retry": "Erneut versuchen"
     },

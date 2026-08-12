@@ -133,8 +133,13 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Organization", Exact = true }),
 		});
 
-		// Opportunities: reachable via a dashboard widget's "opportunities" link.
-		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		// Opportunities: reachable via a dashboard widget's "opportunities" link -
+		// scoped to that widget, since the page header's section rail (added with
+		// OrgPageHeader.tsx) carries its own "Opportunities" link now too and this
+		// test is specifically about the widgets being an independent second way
+		// to reach every subpage.
+		await Page.GetByTestId("widget-tile-UpcomingOpportunities")
+			.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForURLAsync(
 			$"{origin}/app/{organizationId}/dashboard/opportunities", new() { Timeout = 10_000 });
 
