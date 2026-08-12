@@ -26,8 +26,8 @@ export default function DangerZonePanel({
 		>
 			<h2 className="mb-1 text-base font-semibold text-red-800">{title}</h2>
 			{/* Body colour, not an error colour (#1792): setting the whole
-			    explanation in red spent the signal on prose - the heading and
-			    the destructive button carry it instead. */}
+			explanation in red spent the signal on prose - the heading and the
+			destructive button carry it instead. */}
 			<p className="mb-4 text-sm text-gray-600">{description}</p>
 			<Button
 				type="button"
