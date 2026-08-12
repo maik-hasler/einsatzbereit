@@ -11,17 +11,12 @@ import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 import { formatDateTime } from "../../../lib/format";
+import {
+	selectUpcomingOpportunities,
+	type UpcomingItem,
+} from "../../../lib/upcomingOpportunities";
 
-const MAX_ITEMS = 5;
 const OPPORTUNITY_PAGE_SIZE = 100;
-
-interface UpcomingItem {
-	id: string;
-	title: string;
-	nextStart: Date | null;
-	bookedCount: number;
-	maxParticipants: number | null;
-}
 
 interface Props {
 	organizationId: string;
@@ -66,30 +61,19 @@ function UpcomingOpportunitiesWidget({
 	);
 	const error = opportunitiesError;
 
-	const items = useMemo<UpcomingItem[] | null>(() => {
-		if (!opportunities) return null;
-		return (
+	// Picking, ordering and capping lives in lib/upcomingOpportunities.ts so it
+	// can be unit-tested against the shapes this API client actually returns -
+	// notably that its "Date" fields arrive as strings (see that module).
+	const items = useMemo<UpcomingItem[] | null>(
+		() =>
 			opportunities
-				.map((o): UpcomingItem => ({
-					id: o.id,
-					title: o.title || t("orgDashboard.unnamedDraft"),
-					nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
-					bookedCount: o.currentParticipantCount,
-					maxParticipants: o.totalMaxParticipants ?? null,
-				}))
-				// "Upcoming" means it has a next slot. Interest-based opportunities
-				// have no time slot at all, so they used to fill this list with
-				// rows carrying nothing but a title, under a heading promising
-				// dates - and pushed the ones that actually are upcoming out of
-				// the visible MAX_ITEMS.
-				.filter((item) => item.nextStart !== null)
-				.sort(
-					(a, b) =>
-						(a.nextStart as Date).getTime() - (b.nextStart as Date).getTime(),
-				)
-				.slice(0, MAX_ITEMS)
-		);
-	}, [opportunities, t]);
+				? selectUpcomingOpportunities(
+						opportunities,
+						t("orgDashboard.unnamedDraft"),
+					)
+				: null,
+		[opportunities, t],
+	);
 
 	return (
 		<WidgetCard
@@ -147,32 +131,25 @@ function UpcomingOpportunitiesWidget({
 							<p className="truncate text-sm font-medium text-gray-900">
 								{item.title}
 							</p>
-							{size !== "compact" &&
-								(item.nextStart ||
-									item.maxParticipants === null ||
-									item.maxParticipants > 0) && (
-									<p className="mt-0.5 text-xs text-gray-500">
-										{item.nextStart &&
-											formatDateTime(
-												item.nextStart as unknown as string,
-												i18n.language,
-											)}
-										{item.nextStart &&
-											(item.maxParticipants === null ||
-												item.maxParticipants > 0) && (
-												<span className="mx-1.5">&middot;</span>
-											)}
-										{item.maxParticipants === null
-											? t("orgOpportunities.participantsUnlimited", {
-													count: item.bookedCount,
-												})
-											: item.maxParticipants > 0 &&
-												t("orgOpportunities.participants", {
-													booked: item.bookedCount,
-													max: item.maxParticipants,
-												})}
-									</p>
-								)}
+							{size !== "compact" && (
+								<p className="mt-0.5 text-xs text-gray-500">
+									{formatDateTime(item.nextStart, i18n.language)}
+									{(item.maxParticipants === null ||
+										item.maxParticipants > 0) && (
+										<>
+											<span className="mx-1.5">&middot;</span>
+											{item.maxParticipants === null
+												? t("orgOpportunities.participantsUnlimited", {
+														count: item.bookedCount,
+													})
+												: t("orgOpportunities.participants", {
+														booked: item.bookedCount,
+														max: item.maxParticipants,
+													})}
+										</>
+									)}
+								</p>
+							)}
 						</li>
 					))}
 				</ul>

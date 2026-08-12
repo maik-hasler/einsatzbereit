@@ -593,9 +593,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// #771: the tab bar is gone - reach the page via the dashboard's own
-		// widget links instead.
-		await Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		// Reached through the page header's own section rail (OrgPageHeader.tsx),
+		// the way an organizer reaches it.
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -611,11 +611,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// The tab bar is gone (dashboard UX redesign) - reach Members via the
-		// Settings widget's member-count link instead (its accessible name is
-		// "N member(s)" - #834 made the count grammatically correct German/
-		// English plural forms, so match "member" to cover both N=1 and N>1).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
+		// the same rail an organizer uses, and unambiguous unlike a bare
+		// "member" name match, which the Settings widget's own member-count link
+		// also answers to.
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
@@ -660,7 +660,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// OrgAppLayout only refetches org details on organizationId change -
 		// force a refetch, same as OrganizationTests.cs's equivalent setup.
 		await Page.ReloadAsync();
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByTestId("org-tab-members").ClickAsync();
 		// einsatzbereit#1294: this button's accessible name now interpolates
 		// the member's own name in the middle ("Promote {name} to Organizer"),
 		// so match with a regex rather than the old literal substring.

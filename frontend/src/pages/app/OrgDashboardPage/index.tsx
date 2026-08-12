@@ -298,7 +298,13 @@ export default function OrgDashboardPage() {
 	function renderWidget(key: WidgetKey, size: WidgetSizeClass) {
 		switch (key) {
 			case "ToDo":
-				return <ToDoWidget organizationId={organizationId} size={size} />;
+				return (
+					<ToDoWidget
+						organizationId={organizationId}
+						refreshKey={refreshKey}
+						size={size}
+					/>
+				);
 			case "UpcomingOpportunities":
 				return (
 					<UpcomingOpportunitiesWidget
