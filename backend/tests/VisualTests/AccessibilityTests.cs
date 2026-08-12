@@ -706,9 +706,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.ReloadAsync();
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 		// einsatzbereit#1294: this button's accessible name now interpolates
-		// the member's own name in the middle ("Promote {name} to Organizer"),
+		// the member's own name in the middle ("Promote {name} to organizer"),
 		// so match with a regex rather than the old literal substring.
-		await Expect(Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();

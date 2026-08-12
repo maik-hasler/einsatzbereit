@@ -283,16 +283,16 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// Plain member: no Organizer badge, a "Promote" action, no "Demote".
 		// einsatzbereit#1294: these buttons' accessible names now interpolate
-		// the member's own name in the middle ("Promote {name} to Organizer"),
+		// the member's own name in the middle ("Promote {name} to organizer"),
 		// so match with a regex rather than the old literal substring.
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync();
-		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") });
+		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
 		await Expect(promoteButton).ToBeVisibleAsync();
 
 		await promoteButton.ClickAsync();
 
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to Member") });
+		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") });
 		await Expect(demoteButton).ToBeVisibleAsync();
 
 		// Reload to prove the promotion was actually persisted server-side,
@@ -307,10 +307,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
 
 		// Demote back to Member - olaf remains an organizer, so this is allowed.
-		await veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to Member") }).ClickAsync();
+		await veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") }).ClickAsync();
 
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") })).ToBeVisibleAsync();
+		await Expect(veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") })).ToBeVisibleAsync();
 	}
 
 	[Test]
