@@ -4,6 +4,7 @@ import type { UseFormRegister, UseFormWatch } from "react-hook-form";
 import { FloatingField } from "./shared";
 import type { OpportunityFormValues } from "./schema";
 import { PhotoIcon } from "../icons";
+import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 
 interface Props {
 	register: UseFormRegister<OpportunityFormValues>;
@@ -26,7 +27,7 @@ export default function BasicsStep({
 	onBannerChange,
 	onBannerRemove,
 }: Props) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const title = watch("title");
 	const description = watch("description");
 
@@ -86,12 +87,12 @@ export default function BasicsStep({
 							{t("createOpportunity.bannerUpload")}
 						</span>
 						<span className="text-xs text-gray-500">
-							{t("createOpportunity.bannerHint")}
+							{getImageUploadHint(t, i18n.language)}
 						</span>
 						<input
 							id="opportunity-banner"
 							type="file"
-							accept="image/jpeg,image/png,image/webp"
+							accept={IMAGE_UPLOAD_ACCEPT}
 							className="sr-only"
 							onChange={onBannerChange}
 							aria-invalid={bannerError ? true : undefined}

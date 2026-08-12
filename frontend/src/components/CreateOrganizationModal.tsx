@@ -13,6 +13,11 @@ import {
 } from "../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../lib/organizationFormSchema";
 import { getInitials } from "../lib/initials";
+import {
+	IMAGE_UPLOAD_ACCEPT,
+	getImageUploadHint,
+	validateImageUpload,
+} from "../lib/imageUpload";
 import Modal from "./Modal";
 import Button from "./Button";
 import ConfirmDialog from "./ConfirmDialog";
@@ -25,12 +30,9 @@ interface Props {
 	onSuccess: (organization: Organization) => void;
 }
 
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
-const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const schema = useMemo(() => buildOrganizationFormSchema(t), [t]);
 	const {
 		register,
@@ -72,12 +74,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 		const file = e.target.files?.[0];
 		e.target.value = "";
 		if (!file) return;
-		if (!LOGO_TYPES.includes(file.type)) {
-			setLogoError(t("orgSettings.logoHint"));
-			return;
-		}
-		if (file.size > MAX_LOGO_BYTES) {
-			setLogoError(t("orgSettings.logoHint"));
+		const rejection = validateImageUpload(file, t, i18n.language);
+		if (rejection) {
+			setLogoError(rejection);
 			return;
 		}
 		setLogoError(null);
@@ -179,7 +178,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								<FileUploadButton
 									id="create-org-logo-upload"
 									label={t("orgSettings.logoUpload")}
-									accept="image/jpeg,image/png,image/webp"
+									accept={IMAGE_UPLOAD_ACCEPT}
 									onChange={handleLogoChange}
 									inputRef={logoInputRef}
 									ariaDescribedBy={
@@ -187,7 +186,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 									}
 								/>
 								<p className="mt-1 text-xs text-gray-500">
-									{t("orgSettings.logoHint")}
+									{getImageUploadHint(t, i18n.language)}
 								</p>
 								{logoError && (
 									<p

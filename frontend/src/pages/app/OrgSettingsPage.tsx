@@ -8,6 +8,11 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
+import {
+	IMAGE_UPLOAD_ACCEPT,
+	getImageUploadHint,
+	validateImageUpload,
+} from "../../lib/imageUpload";
 import { buildOrganizationFormSchema } from "../../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -20,9 +25,6 @@ import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
-
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
-const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function OrgSettingsPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
@@ -115,8 +117,9 @@ export default function OrgSettingsPage() {
 	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		if (!LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) {
-			setLogoError(t("orgSettings.logoHint"));
+		const rejection = validateImageUpload(file, t, i18n.language);
+		if (rejection) {
+			setLogoError(rejection);
 			if (logoInputRef.current) logoInputRef.current.value = "";
 			return;
 		}
@@ -309,7 +312,7 @@ export default function OrgSettingsPage() {
 														? t("orgSettings.logoUploading")
 														: t("orgSettings.logoUpload")
 												}
-												accept="image/jpeg,image/png,image/webp"
+												accept={IMAGE_UPLOAD_ACCEPT}
 												onChange={handleLogoChange}
 												disabled={uploadingLogo || removingLogo}
 												inputRef={logoInputRef}
@@ -331,8 +334,11 @@ export default function OrgSettingsPage() {
 												</button>
 											)}
 										</div>
-										<p className="mt-1 text-xs text-gray-500">
-											{t("orgSettings.logoHint")}
+										<p
+											data-testid="logo-upload-hint"
+											className="mt-1 text-xs text-gray-500"
+										>
+											{getImageUploadHint(t, i18n.language)}
 										</p>
 										{logoError && (
 											<p
