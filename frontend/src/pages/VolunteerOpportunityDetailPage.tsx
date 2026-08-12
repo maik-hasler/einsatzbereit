@@ -39,7 +39,6 @@ import {
 	GlobeIcon,
 	MapPinIcon,
 	PhoneIcon,
-	ShareIcon,
 	UserGroupIcon,
 } from "../components/icons";
 
@@ -172,23 +171,6 @@ export default function VolunteerOpportunityDetailPage() {
 			});
 	}
 
-	async function handleShare() {
-		const url = window.location.href;
-		try {
-			if (navigator.share) {
-				await navigator.share({
-					title: opportunity?.title ?? document.title,
-					url,
-				});
-			} else {
-				await navigator.clipboard.writeText(url);
-				dispatchToast("success", t("opportunities.linkCopied"));
-			}
-		} catch {
-			// User dismissed the share sheet or clipboard access was denied - ignore.
-		}
-	}
-
 	async function handleReportSubmit(reason: ReportReason, details: string) {
 		if (!opportunity) return;
 		await api.reportVolunteerOpportunity(opportunity.id, {
@@ -268,6 +250,12 @@ export default function VolunteerOpportunityDetailPage() {
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
 
+	// Everything in the action row above the at-a-glance panel is conditional,
+	// so the row itself has to be too - otherwise an anonymous visitor (the
+	// bulk of this page's traffic) gets an empty flex row and its mb-4 as a
+	// dead gap between the band and the panel.
+	const hasActionRow = (isDraft && isOwner) || (isAuthenticated && !isOwner);
+
 	const cue = opportunity.currentUserEngagement;
 
 	const hasUnlimitedSlot = opportunity.timeSlots.some(
@@ -344,74 +332,67 @@ export default function VolunteerOpportunityDetailPage() {
 			misaligned blocks rather than one document. Sharing a left edge
 			keeps #1727's wider media and a readable measure at the same time. */}
 						<div className="max-w-2xl">
-							{/* Share/Report (and the owner's draft controls) sit on the
-							same line as the at-a-glance panel's top edge rather than
-							floating alone above an empty stretch of column - the org chip
-							that used to anchor this row moved into the band's eyebrow. */}
-							<div className="mb-4 flex items-center justify-between gap-3">
-								<div className="flex min-w-0 items-center gap-2">
-									{isDraft && isOwner && (
-										<Chip
-											tone="warning"
-											size="sm"
-											data-testid="opportunity-detail-draft-badge"
-										>
-											{t("opportunities.draftBadge")}
-										</Chip>
-									)}
-								</div>
-								<div className="flex shrink-0 gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={handleShare}
-										data-testid="share-opportunity"
-										aria-label={t("opportunities.shareOpportunity")}
-									>
-										<ShareIcon className="h-4 w-4" />
-										<span className="hidden sm:inline">
-											{t("opportunities.share")}
-										</span>
-									</Button>
-									{isAuthenticated && !isOwner && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => setShowReport(true)}
-											data-testid="report-opportunity"
-											aria-label={t("opportunities.reportOpportunity")}
-										>
-											<FlagIcon className="h-4 w-4" />
-											<span className="hidden sm:inline">
-												{t("opportunities.report")}
-											</span>
-										</Button>
-									)}
-									{isDraft && isOwner && (
-										<>
+							{/* Report (and the owner's draft controls) sit on the same line
+							as the at-a-glance panel's top edge rather than floating alone
+							above an empty stretch of column - the org chip that used to
+							anchor this row moved into the band's eyebrow. */}
+							{hasActionRow && (
+								<div
+									className="mb-4 flex items-center justify-between gap-3"
+									data-testid="opportunity-detail-actions"
+								>
+									<div className="flex min-w-0 items-center gap-2">
+										{isDraft && isOwner && (
+											<Chip
+												tone="warning"
+												size="sm"
+												data-testid="opportunity-detail-draft-badge"
+											>
+												{t("opportunities.draftBadge")}
+											</Chip>
+										)}
+									</div>
+									<div className="flex shrink-0 gap-2">
+										{isAuthenticated && !isOwner && (
 											<Button
 												variant="outline"
 												size="sm"
-												onClick={() => setShowEditModal(true)}
-												data-testid="opportunity-detail-edit"
+												onClick={() => setShowReport(true)}
+												data-testid="report-opportunity"
+												aria-label={t("opportunities.reportOpportunity")}
 											>
-												{t("opportunities.edit")}
+												<FlagIcon className="h-4 w-4" />
+												<span className="hidden sm:inline">
+													{t("opportunities.report")}
+												</span>
 											</Button>
-											<Button
-												type="button"
-												size="sm"
-												onClick={() => void handlePublish()}
-												disabled={publishing}
-												data-testid="opportunity-detail-publish"
-											>
-												{publishing
-													? t("opportunities.publishing")
-													: t("opportunities.publish")}
-											</Button>
-										</>
-									)}
+										)}
+										{isDraft && isOwner && (
+											<>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => setShowEditModal(true)}
+													data-testid="opportunity-detail-edit"
+												>
+													{t("opportunities.edit")}
+												</Button>
+												<Button
+													type="button"
+													size="sm"
+													onClick={() => void handlePublish()}
+													disabled={publishing}
+													data-testid="opportunity-detail-publish"
+												>
+													{publishing
+														? t("opportunities.publishing")
+														: t("opportunities.publish")}
+												</Button>
+											</>
+										)}
+									</div>
 								</div>
-							</div>
+							)}
 
 							{/* At-a-glance panel (#1755). The three facts a volunteer decides
 						on - when, how, where - were three identical grey icon rows in a

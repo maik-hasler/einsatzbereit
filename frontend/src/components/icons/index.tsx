@@ -522,18 +522,6 @@ export function EyeSlashIcon({ className = "h-4 w-4" }: IconProps) {
 	);
 }
 
-export function ShareIcon({ className = "h-4 w-4" }: IconProps) {
-	return (
-		<StrokeIcon className={className}>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-			/>
-		</StrokeIcon>
-	);
-}
-
 export function PhotoIcon({ className = "h-6 w-6" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
