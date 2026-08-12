@@ -189,17 +189,24 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// The panel is its own overscroll-contain scroll container, so a wheel
 		// inside it is absorbed there and never reaches the document, which
 		// would leave this assertion holding even with the lock deleted.
-		var panelBox = await Page.Locator("[role='dialog']").BoundingBoxAsync();
-		panelBox.Should().NotBeNull();
-		var scrimY = panelBox!.Y + panelBox.Height + 40;
-		scrimY.Should().BeLessThan(ViewportHeight - 5,
-			$"the open menu panel (bottom edge {panelBox.Y + panelBox.Height:F0}px) must leave scrim below it inside the "
-			+ $"{ViewportHeight}px viewport, or there is nowhere to probe background scrolling from");
-
-		var overScrim = await Page.EvaluateAsync<bool>(
-			"([x, y]) => { const el = document.elementFromPoint(x, y); return el !== null && el.closest('[role=\"dialog\"]') === null; }",
-			new[] { ViewportWidth / 2f, scrimY });
-		overScrim.Should().BeTrue("the wheel has to land outside the menu panel for this to test the page behind it");
+		//
+		// Geometry and the hit test happen together inside one evaluate, both
+		// so they describe the same instant and because passing coordinates
+		// back in as an argument is what broke the first version of this test:
+		// the float[] arrived as undefined and elementFromPoint threw on a
+		// non-finite double. A returned -1 means no usable scrim point exists.
+		var scrimY = await Page.EvaluateAsync<float>(@"() => {
+			const panel = document.querySelector('[role=""dialog""]');
+			if (!panel) return -1;
+			const y = panel.getBoundingClientRect().bottom + 40;
+			if (y > window.innerHeight - 5) return -1;
+			const el = document.elementFromPoint(window.innerWidth / 2, y);
+			return el !== null && el.closest('[role=""dialog""]') === null ? y : -1;
+		}");
+		scrimY.Should().BePositive(
+			$"the open mobile menu must leave scrim below its panel inside the {ViewportHeight}px viewport, "
+			+ "and the point below it must hit the scrim rather than the panel - otherwise there is nowhere to "
+			+ "probe background scrolling from and the assertion below would be vacuous");
 
 		(await WheelAtAsync(ViewportWidth / 2f, scrimY)).Should().Be(baseline,
 			"the page behind the mobile menu scrim must not scroll - #1672's body-level lock never actually reached the viewport");
