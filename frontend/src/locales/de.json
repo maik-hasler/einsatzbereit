@@ -524,6 +524,7 @@
       "dangerZone": "Gefahrenzone",
       "deleteOrganization": "Organisation löschen",
       "deleteOrganizationHint": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
+      "deleteOrganizationSoleMemberHint": "Du bist das letzte verbleibende Mitglied und kannst die Organisation löschen.",
       "deleteOrganizationError": "Organisation konnte nicht gelöscht werden.",
       "editDisabledNotOrganizerHint": "Nur Organisatoren können die Organisationseinstellungen bearbeiten."
     },

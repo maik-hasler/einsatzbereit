@@ -524,6 +524,7 @@
       "dangerZone": "Danger zone",
       "deleteOrganization": "Delete Organization",
       "deleteOrganizationHint": "Only the organization's sole remaining member can delete it. Remove other members first.",
+      "deleteOrganizationSoleMemberHint": "You are this organization's sole remaining member, so you can delete it.",
       "deleteOrganizationError": "Could not delete organization.",
       "editDisabledNotOrganizerHint": "Only organizers can edit organization settings."
     },
