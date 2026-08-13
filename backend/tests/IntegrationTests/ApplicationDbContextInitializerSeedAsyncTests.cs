@@ -1,10 +1,14 @@
+using System.Text.RegularExpressions;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using AwesomeAssertions;
+using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
 using Infrastructure.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using TUnit.Core.Interfaces;
 // ApiClient.cs (generated, same "IntegrationTests" namespace) also declares an
 // "Organization"/"OrganizationId" DTO, which would otherwise shadow the domain types.
@@ -108,6 +112,144 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 
 		(await dbContext.Set<DomainOrganization>().AnyAsync(cancellationToken)).Should().BeFalse(
 			"nothing should have been persisted - SaveChangesAsync never had a chance to run");
+	}
+
+	// #1776: staging served "First Aid Course" / "Fairview Animal Welfare Association" /
+	// "+1 555 0100" under German chrome for months. The seed set itself had already been
+	// translated by then - what nothing checked was that it *stays* translated, so this
+	// pins the property the issue actually asserts: the default locale's demo content
+	// matches the default locale (German is what the app serves by default, see root
+	// AGENTS.md).
+	//
+	// Matching on English function words rather than on the exact German strings is
+	// deliberate. An expected-titles list would be a change-detector - every legitimate
+	// edit to the seed set would fail it, and it would be updated without thought. These
+	// words are only the ones with no German homograph, so they cannot appear in correct
+	// German prose but appear almost immediately in English prose; "in", "an", "was",
+	// "will" and "so" are all excluded precisely because German uses them too.
+	private static readonly string[] EnglishMarkers =
+	[
+		"the", "and", "with", "for", "your", "our", "you", "we", "from", "this", "that",
+		"help", "join", "learn", "course", "volunteer", "association", "welfare", "aid",
+	];
+
+	[Test]
+	public async Task SeedAsync_SeedsDemoContentInTheDefaultServedLocale(CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var initializer = new ApplicationDbContextInitializer(
+			dbContext,
+			new FakeKeycloakOrganizationService(),
+			new RandomPinGenerator(),
+			NullLogger<ApplicationDbContextInitializer>.Instance);
+
+		await initializer.SeedAsync(cancellationToken);
+
+		var organizations = await dbContext.Set<DomainOrganization>().ToListAsync(cancellationToken);
+		var opportunities = await dbContext.Set<VolunteerOpportunity>().ToListAsync(cancellationToken);
+
+		// Prose only - emails and websites are deliberately not scanned, since a host
+		// like "nachbarschaftshilfe-lindenau.example" is not prose and has no locale.
+		var prose = organizations.Select(o => o.Name)
+			.Concat(organizations.Select(o => o.Description ?? string.Empty))
+			.Concat(opportunities.Select(o => o.Title))
+			.Concat(opportunities.Select(o => o.Description))
+			.Where(text => !string.IsNullOrWhiteSpace(text))
+			.ToList();
+
+		prose.Should().NotBeEmpty("the seed set has organizations and opportunities to check");
+
+		foreach (var text in prose)
+		{
+			var hits = EnglishMarkers
+				.Where(marker => Regex.IsMatch(text, $@"\b{marker}\b", RegexOptions.IgnoreCase))
+				.ToList();
+
+			hits.Should().BeEmpty(
+				"seeded demo content is what a visitor to the German UI reads, so it must be German too - "
+				+ $"\"{text}\" reads as English ({string.Join(", ", hits)})");
+		}
+
+		organizations.Should().OnlyContain(
+			o => o.ContactPhone != null && o.ContactPhone.StartsWith("+49"),
+			"a German contact block showing a +1 555 number is the same half-translated seam as English copy");
+	}
+
+	// The other half of the same finding: staging advertised the one-day
+	// "Erste-Hilfe-Kurs" as running 23:05-07:05 across two dates, because slot times
+	// used to inherit DateTimeOffset.UtcNow's time-of-day - whatever o'clock the seeder
+	// happened to boot at. ApplicationDbContextInitializer.DayAt pins them instead;
+	// this is what keeps it pinned, since the bug only ever showed up on a deployment
+	// that restarted at an unlucky hour and never in a local run.
+	[Test]
+	public async Task SeedAsync_SeedsDaytimeSlotsThatDoNotRunOvernight(CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var initializer = new ApplicationDbContextInitializer(
+			dbContext,
+			new FakeKeycloakOrganizationService(),
+			new RandomPinGenerator(),
+			NullLogger<ApplicationDbContextInitializer>.Instance);
+
+		await initializer.SeedAsync(cancellationToken);
+
+		var slots = (await dbContext.Set<VolunteerOpportunity>()
+				.Include(o => o.TimeSlots)
+				.ToListAsync(cancellationToken))
+			.SelectMany(o => o.TimeSlots.Select(slot => (o.Title, slot.StartDateTime, slot.EndDateTime)))
+			.ToList();
+
+		slots.Should().NotBeEmpty("the seed set publishes slot-based opportunities");
+
+		foreach (var (title, start, end) in slots)
+		{
+			var startUtc = start.UtcDateTime;
+			var endUtc = end.UtcDateTime;
+
+			startUtc.Hour.Should().BeInRange(6, 20,
+				$"\"{title}\" is demo content a visitor reads as a real shift, and {startUtc:HH:mm} UTC is not a "
+				+ "time anyone volunteers at");
+			endUtc.Date.Should().Be(startUtc.Date,
+				$"\"{title}\" advertises a shift within one day, so it must not cross midnight "
+				+ $"({startUtc:yyyy-MM-dd HH:mm} - {endUtc:yyyy-MM-dd HH:mm} UTC)");
+		}
+	}
+
+	// The guard itself is correct and stays - re-seeding a populated database would have
+	// to delete rows that are no longer demo data. What #1776 cost was the silence: a
+	// long-lived environment restarts, skips seeding, and looks exactly like one that
+	// seeded successfully. This pins the log line that tells them apart.
+	[Test]
+	public async Task SeedAsync_DatabaseAlreadyHasOrganizations_SkipsAndWarnsTheSeedSetWasNotApplied(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		await new ApplicationDbContextInitializer(
+			dbContext,
+			new FakeKeycloakOrganizationService(),
+			new RandomPinGenerator(),
+			NullLogger<ApplicationDbContextInitializer>.Instance).SeedAsync(cancellationToken);
+
+		var logger = new FakeLogger<ApplicationDbContextInitializer>();
+		var keycloak = new FakeKeycloakOrganizationService();
+
+		// A second boot of an environment that is already seeded - what every staging
+		// restart since the seed set was translated has actually been doing.
+		await new ApplicationDbContextInitializer(
+			dbContext, keycloak, new RandomPinGenerator(), logger).SeedAsync(cancellationToken);
+
+		keycloak.CreateOrganizationCallCount.Should().Be(0, "seeding must not run a second time");
+		(await dbContext.Set<DomainOrganization>().CountAsync(cancellationToken)).Should().Be(
+			2, "the existing data is left exactly as it was");
+
+		var record = logger.Collector.GetSnapshot().Should().ContainSingle(r => r.Level == LogLevel.Warning).Subject;
+		record.Message.Should().Contain("NOT",
+			"the warning has to say the seed set was not applied, not just that seeding was skipped");
+		record.Message.Should().Contain("reset-staging.yml",
+			"an operator reading this line needs to be told what to do about it");
 	}
 
 	private sealed class FakeKeycloakOrganizationService : IKeycloakOrganizationService

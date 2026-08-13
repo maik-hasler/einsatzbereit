@@ -49,15 +49,31 @@ internal sealed class ApplicationDbContextInitializer(
 	// startup outright (everywhere else). Silently swallowing here used to mean a
 	// SaveChangesAsync failure after the Keycloak-dependent seeding below had already
 	// run left orphaned Keycloak organizations with nothing pointing at them locally,
-	// and re-seeding on the next boot (the AnyAsync guard below still sees an empty
-	// table) made it worse by risking creating a *second* orphaned set. SeedOrg1Async/
+	// and re-seeding on the next boot (the empty-database guard below still sees an
+	// empty table) made it worse by risking creating a *second* orphaned set. SeedOrg1Async/
 	// SeedOrg2Async now look up an existing organization by name before creating one,
 	// so a retry after a partial failure reuses what already exists instead.
 	public async ValueTask SeedAsync(
 		CancellationToken cancellationToken = default)
 	{
-		if (await dbContext.Set<Organization>().AnyAsync(cancellationToken))
+		// Skipping is still the right behavior - re-seeding a populated database
+		// would have to delete rows that are no longer demo data - but it is no
+		// longer silent (#1776). Staging kept serving an English demo data set for
+		// months after the seed set was translated to German, because this guard
+		// trips on every restart of a long-lived environment and nothing anywhere
+		// said the seed set had not been applied. The only way to pick up a changed
+		// seed set is to wipe the database (staging: reset-staging.yml), so the one
+		// signal that makes that decidable is this log line.
+		var existingOrganizations = await dbContext.Set<Organization>().CountAsync(cancellationToken);
+		if (existingOrganizations > 0)
+		{
+			logger.LogWarning(
+				"Seeding skipped: {OrganizationCount} organization(s) already exist, so the current seed set has NOT "
+				+ "been applied and this environment is serving whatever it was first seeded with. Wipe the database "
+				+ "to pick up a changed seed set (staging: .github/workflows/reset-staging.yml).",
+				existingOrganizations);
 			return;
+		}
 
 		var org1Id = await SeedOrg1Async(cancellationToken);
 		var org2Id = await SeedOrg2Async(cancellationToken);
