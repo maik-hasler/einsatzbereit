@@ -10,6 +10,7 @@ Every contribution counts - bug reports, ideas, documentation, or code.
 | UI source strings (i18n keys in `frontend/src/locales/en.json`) | English - add or edit new keys here first |
 | UI German translation (`frontend/src/locales/de.json`) | German - keep in parity with `en.json` via `pnpm i18n:check` |
 | End-user-facing app and documentation | German (`<html lang="de">` is the default served locale; Einsatzbereit's primary audience is German-speaking) |
+| Installed-app metadata (the web app manifest in `frontend/vite.config.ts`) | German only, deliberately - `lang: "de"`, with German `name`/`description`/`shortcuts`. It is built once at build time and served as a single static file, so localising it would mean serving a different manifest per locale; that is not worth building for a German-first audience |
 | Code, commits, issues, pull requests | English |
 
 A PR that adds or changes UI text must update both `en.json` (the source) and `de.json` (the translation) - see `frontend/AGENTS.md`.
