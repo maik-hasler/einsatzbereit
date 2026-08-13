@@ -373,6 +373,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Pinned to the page's <h1>: #1755 gave the page a header band whose
 		// title carries this name, and the section heading further down the
 		// page still carries it too, so an unqualified lookup matches both.
+		// #1796 made that second one sr-only (it is structure now, not a
+		// visible eyebrow) - it keeps its accessible name, so it keeps
+		// matching an unqualified lookup and the level pin is still needed.
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
@@ -391,7 +394,32 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
+		// #1792: this panel's heading is "Delete account" now, not the shared
+		// "Danger zone".
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete account" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task ProfileSettingsPage_AsOrganizationMember_HasNoSeriousA11yViolations()
+	{
+		// #1783 gated the two organizer-only email preferences on organization
+		// membership, and the scan above signs in as vera, who has none - so
+		// without this sibling scan those two rows would render in production
+		// and never be scanned at all. Olaf belongs to seeded organizations,
+		// which is what makes them render here.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Waiting on the gated checkbox itself, not the page chrome: the scan
+		// must not run before the rows it exists to cover have rendered.
+		await Expect(Page.Locator("#notifyOnNewSignUp"))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
@@ -1313,6 +1341,42 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task LanguageSelector_Open_HasNoSeriousA11yViolations()
+	{
+		// #1772: the header's language switcher wrapped each <button> in an
+		// <li role="option">, which axe reports as nested-interactive
+		// ("Interactive controls must not be nested", serious). This control
+		// sits in the header of every page, so the violation was site-wide -
+		// and still invisible to every scan in this file, because none of them
+		// opens this particular overlay. Scanned on /opportunities (where the
+		// review found it) rather than the home page: that route renders a
+		// PageHeaderBand, so the header is transparent and this covers the
+		// selector's white-on-dark variant, which no other scan reaches with
+		// the menu open.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var trigger = banner.GetByTestId("language-selector-trigger");
+		await Expect(trigger).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await trigger.ClickAsync();
+
+		var menu = banner.GetByTestId("language-selector-menu");
+		await Expect(menu).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		// Pins the claim the comment above makes. isTransparent is
+		// `overlaysBand && !scrolled` (Header.tsx), so a future page that
+		// restores scroll position past 100px would silently flip this scan to
+		// the light variant and keep passing while covering the wrong thing.
+		await Expect(menu).ToHaveClassAsync(new Regex("bg-brand-800"));
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations()
 	{
 		// #676 Pitch 2 rewrote this modal with custom ARIA machinery (a manual
@@ -2027,6 +2091,82 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Grid)).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OpportunitiesPage_DateRangeFilterWithMarkedDays_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1779: the day grid gained two states the scan above can
+		// never see, because it seeds nothing and only ever opens on the current
+		// month - a marked day (dot + "N opportunities" in its accessible name)
+		// and the legend that only renders once some day in view is marked. This
+		// seeds a slot into the month that is open on arrival so both are in the
+		// DOM when axe runs, rather than hoping another test in the shared
+		// session published one first.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"MarkedDayA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"MarkedDayA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		// Tomorrow midday, so the marked day is inside the month the calendar
+		// opens on for all but one day of each month - and today itself is never
+		// used, since a slot starting today would have to be later than "now".
+		var slotStart = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero).AddHours(12);
+		var slotResponse = await olafHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+			{
+				startDateTime = slotStart,
+				endDateTime = slotStart.AddHours(2),
+				maxParticipants = 10,
+				recurrenceCount = 1,
+			});
+		slotResponse.EnsureSuccessStatusCode();
+
+		var publishResponse = await olafHttp.PostAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/publish", null);
+		publishResponse.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Grid)).ToBeVisibleAsync();
+
+		// The day slotStart falls on is only off-screen when it belongs to next
+		// month; either way, waiting for a marked cell is what makes the scan
+		// below deterministic instead of a race with the availability request.
+		if (await Page.Locator("[data-marked='true']").CountAsync() == 0)
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Next month" }).ClickAsync();
+
+		await Expect(Page.Locator("[data-marked='true']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

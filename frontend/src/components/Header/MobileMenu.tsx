@@ -8,6 +8,7 @@ import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import { lockScroll } from "../../lib/scrollLock";
 import { ChevronDownIcon } from "../icons";
 
 // Kept in sync with DesktopHeader's own LINKS - the two are the same primary
@@ -87,16 +88,13 @@ export default function MobileMenu({
 		panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
 	}, []);
 
-	// Body scroll lock - without this, the page behind the scrim (#1672) keeps
-	// scrolling under a touch drag, which both feels broken and can scroll the
-	// open menu itself out of view since it's positioned in flow, not fixed.
-	useEffect(() => {
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
-		return () => {
-			document.body.style.overflow = previousOverflow;
-		};
-	}, []);
+	// Background scroll lock - without this, the page behind the scrim (#1672)
+	// keeps scrolling under a touch drag, which both feels broken and can
+	// scroll the open menu itself out of view since it's positioned in flow,
+	// not fixed. Shared with Modal.tsx since #1787: the local
+	// `document.body.style.overflow = "hidden"` this used to run was a no-op
+	// against this app's `html { overflow-x: clip }` - see lib/scrollLock.ts.
+	useEffect(() => lockScroll(), []);
 
 	// Tab focus trap, mirroring Modal.tsx's - Escape is already handled by
 	// useDismissableOverlay above, so this only needs to own Tab. Without it,
@@ -137,20 +135,20 @@ export default function MobileMenu({
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"
-				className="fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 md:hidden"
+				className="fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 lg:hidden"
 			/>
 			<div
 				ref={panelRef}
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				// max-h + overflow-y-auto so the body scroll lock above doesn't
+				// max-h + overflow-y-auto so the scroll lock above doesn't
 				// strand content taller than the viewport with no way to reach it
 				// (e.g. an organizer with the org submenu expanded on a short
 				// landscape-phone viewport) - overscroll-contain keeps a drag past
 				// this panel's own scroll bounds from rubber-banding the (locked)
 				// body underneath.
-				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
+				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{/* Blur-blob lighting, matching the band the transparent header
 				sits over - a flat brand-900 panel dropping out of a lit band

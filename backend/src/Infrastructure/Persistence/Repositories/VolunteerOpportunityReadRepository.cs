@@ -4,12 +4,14 @@ using Application.Common.Sitemap;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
+using Application.VolunteerOpportunities.GetVolunteerOpportunityDateAvailability.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Infrastructure.Persistence.Repositories;
 
@@ -41,23 +43,16 @@ internal sealed class VolunteerOpportunityReadRepository(
 		// No Join to Organizations here - org name/logo are looked up separately below,
 		// for just the page actually returned, keeping this query focused on filtering
 		// and paging VolunteerOpportunity rows.
-		var query = dbContext.VolunteerOpportunitiesQuery
-			.Where(vo => vo.Status == OpportunityStatus.Published)
-			// ScheduledSlots opportunities expire once their last time slot ends.
-			// IndividualContact opportunities can never have time slots (see
-			// VolunteerOpportunity.AddTimeSlot) and instead expire via ValidUntil -
-			// a null ValidUntil (a legacy row published before ValidUntil existed)
-			// is treated as already expired rather than kept forever (#1086).
-			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
-
-		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
-			query = query.Where(vo => vo.Occurrence == occ);
-
-		if (!string.IsNullOrWhiteSpace(filter.ParticipationType) && Enum.TryParse<ParticipationType>(filter.ParticipationType, ignoreCase: true, out var pt))
-			query = query.Where(vo => vo.ParticipationType == pt);
-
-		if (filter.IsRemote is bool isRemote)
-			query = query.Where(vo => vo.IsRemote == isRemote);
+		var query = ApplyPubliclyListedFilters(
+			dbContext.VolunteerOpportunitiesQuery,
+			now,
+			filter.Occurrence,
+			filter.ParticipationType,
+			filter.IsRemote,
+			filter.Categories,
+			filter.Tag,
+			filter.Keyword,
+			ResolveBoundingBox(filter.CenterLatitude, filter.CenterLongitude, filter.RadiusKm));
 
 		// Opportunities without time slots (IndividualContact - see VolunteerOpportunity.AddTimeSlot)
 		// have no dates to compare against, so a date filter must not exclude them - matches the
@@ -67,51 +62,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (filter.DateTo is DateTimeOffset dateTo)
 			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
-
-		if (filter.Categories is { Length: > 0 })
-		{
-			var parsedCategories = filter.Categories
-				.Select(c => Enum.TryParse<Domain.VolunteerOpportunities.Category>(c, ignoreCase: true, out var cat)
-					? (Domain.VolunteerOpportunities.Category?)cat
-					: null)
-				.Where(c => c.HasValue)
-				.Select(c => c!.Value)
-				.ToList();
-
-			if (parsedCategories.Count > 0)
-				query = query.Where(vo => vo.Category.HasValue && parsedCategories.Contains(vo.Category.Value));
-		}
-
-		if (!string.IsNullOrWhiteSpace(filter.Tag))
-			query = query.Where(vo => vo.Tags.Contains(filter.Tag));
-
-		// Same .ToLower().Contains(...) pattern as OrganizationReadRepository's
-		// own (now-removed) name search - Npgsql translates this to a
-		// parameterized "lower(column) LIKE '%...%'", the established
-		// convention in this repo for case-insensitive substring matching (no
-		// EF.Functions.ILike usage exists elsewhere to follow instead). The
-		// organization-name clause is an Any(...) subquery rather than a real
-		// Join, specifically so it doesn't change query's element type (still
-		// bare VolunteerOpportunity) - a real Join would ripple into every
-		// vo.* reference in the projection below (see #869's comment) and the
-		// HasRadius branch's CountAsync(query)/baseQuery reuse.
-		if (!string.IsNullOrWhiteSpace(filter.Keyword))
-		{
-			var keyword = filter.Keyword.ToLower();
-			query = query.Where(vo =>
-				vo.Title.ToLower().Contains(keyword) ||
-				vo.Description.ToLower().Contains(keyword) ||
-				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(keyword)));
-		}
-
-		var boundingBox = ResolveBoundingBox(filter);
-
-		if (boundingBox is GeoBoundingBox box)
-			query = query.Where(vo =>
-				vo.Address != null &&
-				vo.Address.Latitude != null && vo.Address.Longitude != null &&
-				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
-				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
 
 		// Order on the entity itself, before the Select below - ordering by a
 		// value-object id's unwrapped .Value (whether accessed directly in the key
@@ -272,6 +222,70 @@ internal sealed class VolunteerOpportunityReadRepository(
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
 	}
 
+	public async ValueTask<IReadOnlyList<VolunteerOpportunityAvailableDate>> GetDateAvailabilityAsync(
+		VolunteerOpportunityDateAvailabilityFilter filter,
+		CancellationToken cancellationToken = default)
+	{
+		var now = DateTimeOffset.UtcNow;
+
+		var query = ApplyPubliclyListedFilters(
+			dbContext.VolunteerOpportunitiesQuery,
+			now,
+			filter.Occurrence,
+			filter.ParticipationType,
+			filter.IsRemote,
+			filter.Categories,
+			filter.Tag,
+			filter.Keyword,
+			ResolveBoundingBox(filter.CenterLatitude, filter.CenterLongitude, filter.RadiusKm));
+
+		// One row per (opportunity, slot) in the window instead of a GROUP BY on a day
+		// expression: which calendar day an instant falls on depends on the caller's UTC
+		// offset, and there is no dependable Npgsql translation for date_trunc over a
+		// shifted timestamptz to group by. The endpoint caps the window at ~2 months, so
+		// what this materializes stays in the order of one calendar page of time slots.
+		//
+		// Matches GetPagedSummariesAsync's date filter exactly - on StartDateTime only,
+		// with no second look at EndDateTime. A slot that started earlier today and has
+		// already ended still puts today in the listing's results (its opportunity is
+		// only listed at all if some other slot is still ahead), so it has to put today
+		// in this answer too or the calendar would deny a day the list then fills.
+		var slots = await query
+			.SelectMany(vo => vo.TimeSlots
+				.Where(ts => ts.StartDateTime >= filter.From && ts.StartDateTime <= filter.To)
+				.Select(ts => new
+				{
+					OpportunityId = vo.Id.Value,
+					ts.StartDateTime,
+					Latitude = vo.Address != null ? vo.Address.Latitude : null,
+					Longitude = vo.Address != null ? vo.Address.Longitude : null,
+				}))
+			.ToListAsync(cancellationToken);
+
+		// The bounding box above is the cheap DB-side narrowing; the exact haversine
+		// distance is the same second pass the radius branch of GetPagedSummariesAsync
+		// makes, just run in memory here over the already-bounded window rather than
+		// duplicating that inline formula a second time (GeoMath is the shared one).
+		var withinRadius = filter.HasRadius
+			? slots.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
+				GeoMath.DistanceKm(
+					filter.CenterLatitude!.Value,
+					filter.CenterLongitude!.Value,
+					s.Latitude.Value,
+					s.Longitude.Value) <= filter.RadiusKm!.Value)
+			: slots;
+
+		var offset = TimeSpan.FromMinutes(filter.UtcOffsetMinutes);
+
+		return withinRadius
+			.GroupBy(s => DateOnly.FromDateTime(s.StartDateTime.ToOffset(offset).DateTime))
+			.OrderBy(g => g.Key)
+			.Select(g => new VolunteerOpportunityAvailableDate(
+				g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+				g.Select(s => s.OpportunityId).Distinct().Count()))
+			.ToList();
+	}
+
 	private async Task<Dictionary<Guid, (string Name, string? LogoUrl)>> LoadOrganizationSummariesAsync(
 		IEnumerable<Guid> organizationGuids,
 		CancellationToken cancellationToken)
@@ -290,9 +304,88 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.ToDictionaryAsync(x => x.Id.Value, x => (x.Name, x.LogoUrl), cancellationToken);
 	}
 
-	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter) =>
-		filter.HasRadius
-			? GeoMath.BoundingBoxFor(filter.CenterLatitude!.Value, filter.CenterLongitude!.Value, filter.RadiusKm!.Value)
+	// Every clause the public listing and the date-availability calendar have to agree
+	// on, so an opportunity that can't show up in the results can't put a dot on a day
+	// cell either (#1779). Paging and the picked date range stay with their callers -
+	// those are the two things the two queries deliberately differ on.
+	private IQueryable<VolunteerOpportunity> ApplyPubliclyListedFilters(
+		IQueryable<VolunteerOpportunity> source,
+		DateTimeOffset now,
+		string? occurrence,
+		string? participationType,
+		bool? isRemote,
+		string[]? categories,
+		string? tag,
+		string? keyword,
+		GeoBoundingBox? boundingBox)
+	{
+		var query = source
+			.Where(vo => vo.Status == OpportunityStatus.Published)
+			// ScheduledSlots opportunities expire once their last time slot ends.
+			// IndividualContact opportunities can never have time slots (see
+			// VolunteerOpportunity.AddTimeSlot) and instead expire via ValidUntil -
+			// a null ValidUntil (a legacy row published before ValidUntil existed)
+			// is treated as already expired rather than kept forever (#1086).
+			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
+
+		if (!string.IsNullOrWhiteSpace(occurrence) && Enum.TryParse<Occurrence>(occurrence, ignoreCase: true, out var occ))
+			query = query.Where(vo => vo.Occurrence == occ);
+
+		if (!string.IsNullOrWhiteSpace(participationType) && Enum.TryParse<ParticipationType>(participationType, ignoreCase: true, out var pt))
+			query = query.Where(vo => vo.ParticipationType == pt);
+
+		if (isRemote is bool isRemoteValue)
+			query = query.Where(vo => vo.IsRemote == isRemoteValue);
+
+		if (categories is { Length: > 0 })
+		{
+			var parsedCategories = categories
+				.Select(c => Enum.TryParse<Domain.VolunteerOpportunities.Category>(c, ignoreCase: true, out var cat)
+					? (Domain.VolunteerOpportunities.Category?)cat
+					: null)
+				.Where(c => c.HasValue)
+				.Select(c => c!.Value)
+				.ToList();
+
+			if (parsedCategories.Count > 0)
+				query = query.Where(vo => vo.Category.HasValue && parsedCategories.Contains(vo.Category.Value));
+		}
+
+		if (!string.IsNullOrWhiteSpace(tag))
+			query = query.Where(vo => vo.Tags.Contains(tag));
+
+		// Same .ToLower().Contains(...) pattern as OrganizationReadRepository's
+		// own (now-removed) name search - Npgsql translates this to a
+		// parameterized "lower(column) LIKE '%...%'", the established
+		// convention in this repo for case-insensitive substring matching (no
+		// EF.Functions.ILike usage exists elsewhere to follow instead). The
+		// organization-name clause is an Any(...) subquery rather than a real
+		// Join, specifically so it doesn't change query's element type (still
+		// bare VolunteerOpportunity) - a real Join would ripple into every
+		// vo.* reference in the caller's projection (see #869's comment) and
+		// the HasRadius branch's CountAsync(query)/baseQuery reuse.
+		if (!string.IsNullOrWhiteSpace(keyword))
+		{
+			var loweredKeyword = keyword.ToLower();
+			query = query.Where(vo =>
+				vo.Title.ToLower().Contains(loweredKeyword) ||
+				vo.Description.ToLower().Contains(loweredKeyword) ||
+				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(loweredKeyword)));
+		}
+
+		if (boundingBox is GeoBoundingBox box)
+			query = query.Where(vo =>
+				vo.Address != null &&
+				vo.Address.Latitude != null && vo.Address.Longitude != null &&
+				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
+				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
+
+		return query;
+	}
+
+	private static GeoBoundingBox? ResolveBoundingBox(double? centerLatitude, double? centerLongitude, double? radiusKm) =>
+		centerLatitude.HasValue && centerLongitude.HasValue && radiusKm is > 0
+			? GeoMath.BoundingBoxFor(centerLatitude.Value, centerLongitude.Value, radiusKm.Value)
 			: null;
 
 	private async Task<(Dictionary<Guid, int?> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>

@@ -1,13 +1,7 @@
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-function RequiredMark() {
-	return (
-		<span className="ml-0.5 text-red-400" aria-hidden="true">
-			*
-		</span>
-	);
-}
+import { RequiredMark } from "../RequiredMark";
 
 export function Stepper({
 	current,
@@ -15,12 +9,20 @@ export function Stepper({
 	onStepClick,
 	steps,
 	stepLabel,
+	blocked,
 }: {
 	current: number;
 	errorSteps: Set<number>;
 	onStepClick: (n: number) => void;
 	steps: string[];
 	stepLabel: (n: number, label: string) => string;
+	/**
+	 * The step whose last click was refused, plus the id of the element that
+	 * says why. The refusal message is announced once when it appears; wiring
+	 * it up as the button's description means re-focusing that same button
+	 * re-reads the reason instead of leaving it to be inferred (#1782).
+	 */
+	blocked?: { step: number; messageId: string };
 }) {
 	return (
 		<ol className="mt-4 flex items-stretch gap-1.5">
@@ -36,6 +38,9 @@ export function Stepper({
 							onClick={() => onStepClick(n)}
 							aria-current={isActive ? "step" : undefined}
 							aria-label={stepLabel(n, label)}
+							aria-describedby={
+								blocked?.step === n ? blocked.messageId : undefined
+							}
 							data-testid={`wizard-stepper-${n}`}
 							className="group flex w-full flex-col gap-1.5 rounded-md px-0.5 pb-1 text-left"
 						>

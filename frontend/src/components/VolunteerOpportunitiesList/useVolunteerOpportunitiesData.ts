@@ -87,8 +87,18 @@ export function useVolunteerOpportunitiesData(
 					: isRemoteParam === "false"
 						? false
 						: undefined;
-			const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
-			const dateToParsed = dateTo ? new Date(dateTo) : undefined;
+			// Both ends pinned to the visitor's own day boundaries. A bare
+			// `new Date("2026-08-15")` is UTC midnight, so east of Greenwich the
+			// range used to start two hours into its first day and stop the instant
+			// its last day began - dropping everything actually happening on the day
+			// the visitor clicked last, and contradicting the availability marks the
+			// calendar now draws (#1779). Same parse as MiniCalendar's own parseIso.
+			const dateFromParsed = dateFrom
+				? new Date(`${dateFrom}T00:00:00`)
+				: undefined;
+			const dateToParsed = dateTo
+				? new Date(`${dateTo}T23:59:59.999`)
+				: undefined;
 			const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
 			const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
 			const radiusKm = hasLocation ? parseFloat(radius) : undefined;

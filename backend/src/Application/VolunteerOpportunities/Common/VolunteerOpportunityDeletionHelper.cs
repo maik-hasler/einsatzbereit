@@ -73,6 +73,10 @@ internal static class VolunteerOpportunityDeletionHelper
 			opportunity.Title,
 			NotificationKind.OpportunityDeleted,
 			"Opportunity was deleted.",
+			// Kept on: the OpportunityDeleted text says the opportunity was removed
+			// but not that the sign-up went with it, so the volunteer would otherwise
+			// never be told their engagement is cancelled (contrast #1790's cancel flow).
+			notifyPerEngagement: true,
 			logger,
 			cancellationToken);
 

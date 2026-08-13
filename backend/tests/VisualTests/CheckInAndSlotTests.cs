@@ -397,11 +397,16 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// The sign-up CTA badge must read "Unlimited spots", never a full/near-capacity
-		// warning. Scoped to a <p> tag - the per-time-slot list also renders
-		// "Unlimited spots" in a <span>, which would otherwise make this locator ambiguous.
-		await Expect(Page.Locator("p", new() { HasTextString = "Unlimited spots" }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		// The page's capacity line must read "Unlimited spots", never a
+		// full/near-capacity warning. Addressed by test id rather than by tag:
+		// #1777 moved this statement out of the sign-up CTA (where it was gated
+		// on being signed in and not the owner) into the meta row, so every
+		// visitor reads the same capacity the list card stated - and the
+		// per-time-slot list renders the same string, which is what made a
+		// tag-scoped locator necessary before.
+		await Expect(Page.GetByTestId("opportunity-capacity"))
+			.ToHaveTextAsync("Unlimited spots", new() { Timeout = 10_000 });
+		await Expect(Page.GetByText("This opportunity is currently full.")).ToHaveCountAsync(0);
 
 		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
 		await Expect(signUpBtn).ToBeVisibleAsync();

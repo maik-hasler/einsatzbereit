@@ -11,8 +11,7 @@ import LatestOpportunitiesSection from "../components/LatestOpportunitiesSection
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { useApiClient } from "../hooks/useApiClient";
-import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
+import { useMyOrganizations } from "../hooks/useMyOrganizations";
 import { WAVE_PATH } from "../lib/wavePath";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
@@ -23,10 +22,7 @@ import {
 	UserGroupIcon,
 	ShieldCheckIcon,
 } from "../components/icons";
-import type {
-	Organization,
-	OrganizationSummaryDto,
-} from "../client/api-client";
+import type { Organization } from "../client/api-client";
 
 // Lazy-loaded: HomePage is eager (App.tsx keeps it out of the lazy route
 // map, see the comment there), so a static import here would pull
@@ -43,7 +39,6 @@ export default function HomePage() {
 	usePageTitle(t("landing.pageTitle"));
 	const auth = useAuth();
 	const navigate = useNavigate();
-	const api = useApiClient();
 
 	const heroTitleId = useId();
 	const missionTitleId = useId();
@@ -53,20 +48,18 @@ export default function HomePage() {
 	const [showOrgModal, setShowOrgModal] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	// Shared with Header, which independently needs the same top-level
-	// organization list on the same mount (#1396) - see useSharedOrgFetch.
-	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
-		`organizations:${auth.isAuthenticated}`,
-		() => (auth.isAuthenticated ? api.getOrganizations() : Promise.resolve([])),
-	);
-	const orgs = auth.isAuthenticated ? (orgsData ?? []) : [];
-	// useSharedOrgFetch leaves orgsData null both while the fetch is still in
-	// flight and after it rejects - without distinguishing those, a signed-in
-	// organizer could see the "create an organization" CTA (and, if clicked,
-	// create a duplicate org) while their real org list was still loading or
-	// had failed to load (see HomePageOrgCtaTests.cs's regression test).
-	const orgsLoading = auth.isAuthenticated && orgsData === null && !orgsError;
-	const orgsFailed = auth.isAuthenticated && orgsData === null && !!orgsError;
+	// Shared with Header, which independently needs the same organization list
+	// on the same mount (#1396) - see useMyOrganizations/useSharedOrgFetch.
+	// Loading and failed are deliberately distinct there: without
+	// distinguishing them, a signed-in organizer could see the "create an
+	// organization" CTA (and, if clicked, create a duplicate org) while their
+	// real org list was still loading or had failed to load (see
+	// HomePageOrgCtaTests.cs's regression test).
+	const {
+		orgs,
+		loading: orgsLoading,
+		failed: orgsFailed,
+	} = useMyOrganizations();
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
 	// Hero search - initialized from the URL so a back-navigation (or a

@@ -19,6 +19,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import ErrorBanner from "./ErrorBanner";
 import ImageCropModal from "./ImageCropModal";
 import FileUploadButton from "./FileUploadButton";
+import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
 
 interface Props {
 	onClose: () => void;
@@ -159,6 +160,8 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				className="flex min-h-0 flex-1 flex-col"
 			>
 				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+					<RequiredFieldsLegend />
+
 					<div>
 						<p className={labelClass}>{t("orgSettings.fieldLogo")}</p>
 						<div className="mt-1 flex items-center gap-4">
@@ -205,6 +208,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					<div ref={nameFieldRef}>
 						<label htmlFor="create-org-name" className={`mb-1 ${labelClass}`}>
 							{t("organization.nameLabel")}
+							<RequiredMark />
 						</label>
 						<input
 							id="create-org-name"

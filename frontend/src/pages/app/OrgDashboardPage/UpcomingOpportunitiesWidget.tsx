@@ -10,7 +10,8 @@ import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteer
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
-import { formatDateTime } from "../../../lib/format";
+import { formatDateTime, formatSignUpCount } from "../../../lib/format";
+import { getOpportunityCapacity } from "../../../lib/opportunityCapacity";
 import {
 	selectUpcomingOpportunities,
 	type UpcomingItem,
@@ -134,19 +135,14 @@ function UpcomingOpportunitiesWidget({
 							{size !== "compact" && (
 								<p className="mt-0.5 text-xs text-gray-500">
 									{formatDateTime(item.nextStart, i18n.language)}
-									{(item.maxParticipants === null ||
-										item.maxParticipants > 0) && (
-										<>
-											<span className="mx-1.5">&middot;</span>
-											{item.maxParticipants === null
-												? t("orgOpportunities.participantsUnlimited", {
-														count: item.bookedCount,
-													})
-												: t("orgOpportunities.participants", {
-														booked: item.bookedCount,
-														max: item.maxParticipants,
-													})}
-										</>
+									<span className="mx-1.5">&middot;</span>
+									{formatSignUpCount(
+										getOpportunityCapacity({
+											totalMaxParticipants: item.maxParticipants,
+											currentParticipantCount: item.bookedCount,
+											participationType: item.participationType,
+										}),
+										t,
 									)}
 								</p>
 							)}

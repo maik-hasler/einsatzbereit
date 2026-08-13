@@ -363,11 +363,11 @@ export default function OrgEngagementsPage() {
 											size="sm"
 											data-testid={`org-engagement-revoke-${e.id}`}
 											onClick={() => setConfirmCancelId(e.id)}
-											aria-label={t("orgEngagements.revokeNamed", {
+											aria-label={t("orgEngagements.cancelNamed", {
 												name: volunteerDisplayName(e),
 											})}
 										>
-											{t("orgEngagements.revoke")}
+											{t("orgEngagements.cancel")}
 										</Button>
 									)}
 								</div>

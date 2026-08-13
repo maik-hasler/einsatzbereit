@@ -31,6 +31,12 @@ export default function OpportunityResultsList({
 }) {
 	const { t } = useTranslation();
 	const isInitialLoad = loading && items.length === 0;
+	const countMessage =
+		!error && !isInitialLoad
+			? hasMore
+				? t("opportunities.resultCountPartial", { count: items.length })
+				: t("opportunities.resultCount", { count: items.length })
+			: "";
 
 	return (
 		<>
@@ -39,18 +45,31 @@ export default function OpportunityResultsList({
 			identical pattern for why. Silent during the initial full-page
 			loading skeleton and on error; otherwise announces the settled
 			result count whenever a filter change, search, or "Load more"
-			rewrites the list - previously nothing did, so a screen-reader user
-			had no way to tell whether anything changed. Two different messages
-			depending on hasMore - "N found" implies N is the total match count,
-			which is false while more pages are still behind "Load more"; that
-			case gets its own "N loaded, more available" wording instead of
-			overclaiming a total the screen-reader user hasn't seen yet. */}
-			<p role="status" className="sr-only">
-				{!error && !isInitialLoad
-					? hasMore
-						? t("opportunities.resultCountPartial", { count: items.length })
-						: t("opportunities.resultCount", { count: items.length })
-					: ""}
+			rewrites the list. Two different messages depending on hasMore -
+			"N found" implies N is the total match count, which is false while
+			more pages are still behind "Load more"; that case gets its own
+			"N loaded, more available" wording instead of overclaiming a total
+			the user hasn't seen yet.
+
+			#1778: this one node is the sighted user's count too, rather than a
+			second visible copy of the same sentence that screen readers would
+			then meet twice. It stays sr-only while the list is empty, for two
+			reasons: "0 opportunities found." rendered directly above
+			EmptyState's "No opportunities found." is pure duplication, and
+			useLoadMore empties `items` a frame before `loading` flips on a
+			filter change, so a visible zero would flash on every refetch.
+			Screen readers still get the zero - there the announcement is the
+			only signal that the filter landed. */}
+			<p
+				role="status"
+				data-testid="opportunities-result-count"
+				className={
+					items.length > 0
+						? "mb-4 text-center text-sm text-gray-600"
+						: "sr-only"
+				}
+			>
+				{countMessage}
 			</p>
 			{loading && items.length === 0 && (
 				<div

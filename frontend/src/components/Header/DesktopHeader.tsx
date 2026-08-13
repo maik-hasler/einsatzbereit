@@ -9,6 +9,19 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 // Desktop-width-only nav: primary destinations, then signed-in account
 // controls (or sign-in/register buttons) plus the language selector.
 //
+// The swap to the burger happens at `lg`, not `md` (issue #1793). Everything
+// this bar carries measures ~904px wide with the German labels - the four
+// links alone are 415px, the sign-in/register pair 213px, and the wordmark
+// 158px - so a `md` (768px) swap left the row 184px short and the two long
+// German labels ("Einsaetze finden", "Fuer Organisationen") broke across two
+// lines at every width from 768 to ~951. Tightening gaps and padding recovers
+// at most ~120px of that, so the labels genuinely do not fit a tablet-width
+// row; `lg` is the first breakpoint where they do. English is shorter and was
+// unaffected, which is why the wrap only showed in the served-by-default
+// locale. `whitespace-nowrap` on the links below states the same guarantee
+// locally: these labels are never allowed to wrap, at any width that renders
+// them.
+//
 // The destinations are the point of this component. Until /opportunities
 // became a route of its own, this <nav aria-label="Main navigation"> held no
 // links at all - just account controls - so a signed-in volunteer had no
@@ -55,12 +68,12 @@ export default function DesktopHeader({
 	return (
 		<nav
 			aria-label={t("nav.primaryLabel")}
-			className="hidden items-center gap-3 md:flex"
+			className="hidden items-center gap-3 lg:flex"
 		>
-			<ul className="mr-2 flex items-center gap-1 lg:gap-2">
+			<ul className="mr-2 flex items-center gap-2">
 				{LINKS.map((link) => {
 					const base =
-						"rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+						"rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";

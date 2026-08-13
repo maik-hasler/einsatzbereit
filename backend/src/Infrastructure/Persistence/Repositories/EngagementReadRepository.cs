@@ -359,7 +359,7 @@ internal sealed class EngagementReadRepository(
 		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => opportunityIds.Contains(o.Id))
-			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId, o.CheckInMethod })
+			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId, o.CheckInMethod, o.ValidUntil })
 			.ToDictionaryAsync(o => o.Id, cancellationToken);
 
 		var organizationIds = opportunities.Values.Select(o => o.OrganizationId).Distinct().ToList();
@@ -424,7 +424,8 @@ internal sealed class EngagementReadRepository(
 				FeedbackRating: e.FeedbackRating,
 				FeedbackComment: e.FeedbackComment,
 				FeedbackSubmittedAt: e.FeedbackSubmittedAt,
-				CheckInMethod: (opportunity?.CheckInMethod ?? CheckInMethod.None).ToString());
+				CheckInMethod: (opportunity?.CheckInMethod ?? CheckInMethod.None).ToString(),
+				OpportunityValidUntil: opportunity?.ValidUntil);
 		}).ToList();
 	}
 

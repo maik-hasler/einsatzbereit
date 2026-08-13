@@ -185,7 +185,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// becomes "Benutzermenü"), so setting the locale that early makes
 		// FastSignInAsync's own "User menu" wait time out.
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		var calendarWidget = Page.Locator("section", new()
 		{
@@ -279,7 +279,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
 		var agendaButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true });

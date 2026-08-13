@@ -73,6 +73,41 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldCreateExactlyOneNotification_ForAVolunteerWhoIsAlsoHavingAnEngagementCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Regression for einsatzbereit#1790: the cascade used to write an
+		// OpportunityCancelled row *and* an EngagementCancelled row for the same
+		// volunteer in the same handler run, so Vera saw the same fact twice,
+		// timestamped in the same minute, with the unread badge counting both.
+		var opportunity = CreatePublishedOpportunity();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(opportunity.Id, Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([volunteerId.Value]);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(opportunity.Id, cancellationToken)
+			.Returns([engagement]);
+
+		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "Venue flooded");
+
+		// Act
+		await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert - one row, and it's the opportunity-level one.
+		await _notifRepo.Received(1).AddAsync(Arg.Any<Notification>(), cancellationToken);
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == volunteerId && n.Kind == NotificationKind.OpportunityCancelled),
+			cancellationToken);
+
+		// The engagement itself is still cancelled - only its notification is skipped,
+		// and Cancel() still raises the event that sends the volunteer's email.
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+	}
+
+	[Test]
 	public async Task Handle_ShouldCancelActiveEngagements_WithOrganizerReasonIncluded(
 		CancellationToken cancellationToken)
 	{

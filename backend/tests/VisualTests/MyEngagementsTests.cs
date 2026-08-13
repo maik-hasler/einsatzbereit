@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -104,5 +105,48 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Leave vera's account clean for the rest of this shared Aspire session.
 		var withdrawResponse = await veraHttp.PostAsync($"/v1/engagements/{engagementId}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
+	}
+
+	[Test]
+	public async Task MyEngagementsPage_StatesItsTitleOnce_WithTheInContentHeadingSrOnly()
+	{
+		// #1796: /my-signups printed its own title twice - once as the header
+		// band's <h1> ("My sign-ups", myEngagementsPage.title) and again
+		// roughly 200px below it as a SectionHeading eyebrow rendering a second
+		// key with the same string ("My sign-ups", myEngagements.title), where
+		// every other page's eyebrow carries a *category* the title does not
+		// repeat. That second one is sr-only now: it still marks where the
+		// invitations block ends and the sign-ups list begins for a screen
+		// reader, but it no longer costs vertical space on a page that is short
+		// of content, and the scope tabs move up into the space it held.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		// Accessible-name matching is case-insensitive, so this finds the
+		// in-content heading whichever of the two casings it carries.
+		var inContentTitle = Page.Locator("#activity")
+			.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups" });
+		await Expect(inContentTitle).ToHaveCountAsync(1);
+
+		// sr-only clips it to a 1px box: still in the accessibility tree, gone
+		// from the page. The eyebrow this replaces rendered ~16px tall, so a
+		// regression would blow well past this bound. Playwright counts an
+		// sr-only element as visible (it has a non-empty box), which is why
+		// this asserts geometry rather than Not.ToBeVisibleAsync().
+		var box = await inContentTitle.BoundingBoxAsync();
+		box.Should().NotBeNull();
+		box!.Height.Should().BeLessThan(4,
+			"the in-content heading must stay sr-only - a second visible copy of the <h1> is what #1796 removed");
+
+		// What sits where that eyebrow did: the scope switcher, which now
+		// carries the group name the heading above it used to imply.
+		await Expect(Page.GetByRole(AriaRole.Group, new() { Name = "Time range" }))
+			.ToBeVisibleAsync();
 	}
 }

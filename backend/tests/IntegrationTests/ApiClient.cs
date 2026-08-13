@@ -90,6 +90,11 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<VolunteerOpportunityAvailableDate>> GetVolunteerOpportunityDateAvailabilityAsync(System.DateTimeOffset from, System.DateTimeOffset to, int? utcOffsetMinutes = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1888,6 +1893,147 @@ namespace IntegrationTests
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<VolunteerOpportunityAvailableDate>> GetVolunteerOpportunityDateAvailabilityAsync(System.DateTimeOffset from, System.DateTimeOffset to, int? utcOffsetMinutes = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (from == null)
+                throw new System.ArgumentNullException("from");
+
+            if (to == null)
+                throw new System.ArgumentNullException("to");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "v1/volunteer-opportunities/date-availability"
+                    urlBuilder_.Append("v1/volunteer-opportunities/date-availability");
+                    urlBuilder_.Append('?');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("From")).Append('=').Append(System.Uri.EscapeDataString(from.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("To")).Append('=').Append(System.Uri.EscapeDataString(to.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    if (utcOffsetMinutes != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("UtcOffsetMinutes")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(utcOffsetMinutes, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (occurrence != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Occurrence")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(occurrence, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (participationType != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("ParticipationType")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(participationType, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (isRemote != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("IsRemote")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(isRemote, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (centerLatitude != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("CenterLatitude")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(centerLatitude, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (centerLongitude != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("CenterLongitude")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(centerLongitude, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (radiusKm != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("RadiusKm")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(radiusKm, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (categories != null)
+                    {
+                            foreach (var item_ in categories) { urlBuilder_.Append(System.Uri.EscapeDataString("Categories")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(item_, System.Globalization.CultureInfo.InvariantCulture))).Append('&'); }
+                    }
+                    if (tag != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Tag")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tag, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (keyword != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Keyword")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(keyword, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<VolunteerOpportunityAvailableDate>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
@@ -13024,6 +13170,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         public string CheckInMethod { get; set; } = "None";
 
+        [System.Text.Json.Serialization.JsonPropertyName("opportunityValidUntil")]
+        public System.DateTimeOffset? OpportunityValidUntil { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -14675,6 +14824,30 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
         public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class VolunteerOpportunityAvailableDate
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("date")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Date { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("opportunityCount")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int OpportunityCount { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

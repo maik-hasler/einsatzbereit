@@ -58,7 +58,7 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Nutzungsbedingungen", Level = 1 })).ToBeVisibleAsync();
@@ -107,7 +107,7 @@ public class TermsOfUsePageTests(AspireFixture fixture) : VisualTestBase(fixture
 			.Not.ToBeVisibleAsync();
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading,
 			new() { Name = "Organisationen und Einsätze" })).ToBeVisibleAsync();

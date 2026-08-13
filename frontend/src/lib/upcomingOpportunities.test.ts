@@ -152,6 +152,24 @@ describe("selectUpcomingOpportunities", () => {
 		]);
 	});
 
+	// The widget resolves its sign-up count through the shared capacity
+	// contract, which needs the participation type to word the "no places to
+	// count" state (#1777).
+	it("carries the participation type through", () => {
+		const items = selectUpcomingOpportunities(
+			[
+				makeOpportunity({
+					id: "slots",
+					nextTimeSlotStart: "2026-08-15T09:00:00Z" as unknown as Date,
+					participationType: "ScheduledSlots",
+				}),
+			],
+			"Untitled draft",
+		);
+
+		expect(items[0].participationType).toBe("ScheduledSlots");
+	});
+
 	it("returns an empty array for an empty input", () => {
 		expect(selectUpcomingOpportunities([], "Untitled draft")).toEqual([]);
 	});

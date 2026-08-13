@@ -94,7 +94,7 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 		// Switch to German only after signing in - FastSignInAsync itself waits on
 		// the English "User menu" aria-label (see OrgDashboardWidgetsTests).
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await row.GetByRole(AriaRole.Button, new() { Name = "Einchecken" }).ClickAsync();

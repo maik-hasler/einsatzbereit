@@ -85,6 +85,45 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_OpportunityCancelled_GivesTheVolunteerExactlyOneNotification(
+		CancellationToken cancellationToken)
+	{
+		// Regression for einsatzbereit#1790: cancelling an opportunity used to write
+		// both an OpportunityCancelled and an EngagementCancelled notification for the
+		// same volunteer inside one cascade run, so Vera got two rows in the same minute
+		// telling her the same thing and the unread badge counted both. Exactly one
+		// notification per affected volunteer is the assertion whose absence let that ship.
+		const string opportunityTitle = "Notification Opportunity Cancel Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.CancelVolunteerOpportunityAsync(
+			opportunity.Id,
+			new CancelVolunteerOpportunityRequest { Reason = "Venue flooded" },
+			cancellationToken);
+
+		// The cascade runs in VolunteerOpportunityCancelledDomainEventHandler, dispatched
+		// async by OutboxProcessorJob (polls every 5s) - same budget as OutboxTests.cs.
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.VolunteerOpportunities.VolunteerOpportunityCancelledDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the cancelled event within a few poll cycles");
+
+		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = veraNotifications.Items.Should().ContainSingle().Which;
+		notification.Kind.Should().Be("OpportunityCancelled");
+		notification.RelatedTitle.Should().Be(opportunityTitle);
+	}
+
+	[Test]
 	public async Task GetMyNotifications_EngagementWithdrawn_HasRelatedTitleAndOrganizerDashboardUrl(
 		CancellationToken cancellationToken)
 	{
