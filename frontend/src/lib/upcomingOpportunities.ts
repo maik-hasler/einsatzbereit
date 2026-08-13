@@ -23,6 +23,12 @@ export interface UpcomingItem {
 	nextStartMs: number;
 	bookedCount: number;
 	maxParticipants: number | null;
+	/**
+	 * Carried through so the widget's sign-up count goes through the same
+	 * capacity contract as the organizer list and the public card, rather than
+	 * re-deriving a two-state version of it (#1777).
+	 */
+	participationType: string;
 }
 
 /**
@@ -56,6 +62,7 @@ export function selectUpcomingOpportunities(
 					nextStartMs,
 					bookedCount: o.currentParticipantCount,
 					maxParticipants: o.totalMaxParticipants ?? null,
+					participationType: o.participationType,
 				},
 			];
 		})

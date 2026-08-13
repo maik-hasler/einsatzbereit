@@ -74,10 +74,27 @@ export default defineConfig({
 				navigateFallbackDenylist: [/^\/v1\//],
 			},
 			manifest: {
+				// The installed app's identity, pinned independently of start_url
+				// (#1799). Without an explicit id, the browser derives one from
+				// start_url, so moving the entry point later would look like a
+				// brand new app to an already-installed client - it would install
+				// a second copy alongside the first rather than update it.
+				id: "/",
 				name: "Einsatzbereit",
 				short_name: "Einsatzbereit",
 				description:
 					"Einsatzbereit verbindet engagierte Freiwillige mit regionalen Hilfsangeboten. Finde lokale Einsätze, hilf spontan und mach einen Unterschied in deiner Gemeinde.",
+				// Deliberately German-only, not localised per visitor (#1799).
+				// German is the default served locale for everything end-user-
+				// facing (index.html's <html lang="de">, the meta description and
+				// og: tags right next to it) - see CONTRIBUTING.md's Language
+				// Convention. A localised manifest would have to be served
+				// per-locale (a content-negotiated route, or a runtime
+				// <link rel="manifest"> swap), which this static nginx deployment
+				// has no mechanism for and which is not worth building for a
+				// German-first audience. English-locale visitors therefore install
+				// an app whose name and description are German, the same language
+				// the site itself serves them.
 				lang: "de",
 				start_url: "/",
 				display: "standalone",
@@ -99,6 +116,97 @@ export default defineConfig({
 						sizes: "512x512",
 						type: "image/png",
 						purpose: "maskable",
+					},
+				],
+				// Captured from the real app so the Android install prompt shows
+				// an actual listing (Chrome's "richer install UI") instead of the
+				// bare name + icon it falls back to without screenshots. Chrome
+				// only qualifies for that UI when at least one narrow (mobile)
+				// screenshot is present, and only shows the wide ones on desktop,
+				// hence both form factors. Its other constraints, all enforced by
+				// scripts/check-pwa-manifest.js: every dimension between 320 and
+				// 3840 px, the longer side at most 2.3x the shorter, and one
+				// shared aspect ratio per form factor (16:9 wide, 9:16 narrow).
+				//
+				// These live in public/screenshots/ rather than public/icons/ so
+				// workbox.globPatterns above ("icons/*.png") does not sweep half a
+				// megabyte of install-prompt artwork into the service worker's
+				// precache - the browser fetches them at install time, and a
+				// visitor who never installs never needs them at all.
+				screenshots: [
+					{
+						src: "/screenshots/wide-home.png",
+						sizes: "1920x1080",
+						type: "image/png",
+						form_factor: "wide",
+						label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
+					},
+					{
+						src: "/screenshots/wide-opportunities.png",
+						sizes: "1920x1080",
+						type: "image/png",
+						form_factor: "wide",
+						label: "Übersicht der gefundenen Einsätze mit Filtern",
+					},
+					{
+						src: "/screenshots/narrow-home.png",
+						sizes: "1080x1920",
+						type: "image/png",
+						form_factor: "narrow",
+						label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
+					},
+					{
+						src: "/screenshots/narrow-opportunities.png",
+						sizes: "1080x1920",
+						type: "image/png",
+						form_factor: "narrow",
+						label: "Liste der gefundenen Einsätze",
+					},
+					{
+						src: "/screenshots/narrow-detail.png",
+						sizes: "1080x1920",
+						type: "image/png",
+						form_factor: "narrow",
+						label: "Detailansicht eines Einsatzes mit Ort und Zeitraum",
+					},
+				],
+				// Long-press / jump-list entries on the installed app. Both point
+				// at static paths, which is all a build-time manifest can express:
+				// the organizer dashboard was considered too (#1799) and left out
+				// for exactly that reason - its URL is organization-scoped
+				// (/app/:organizationId/dashboard, resolved at runtime from the
+				// user's memberships and the active-org cookie, see
+				// lib/activeOrg.ts), so there is no single URL to bake in here.
+				// /my-signups is the member-facing shortcut instead; signed-out
+				// users hitting it land in Keycloak via ProtectedRoute and come
+				// back to it, which is the right behaviour for a shortcut only a
+				// signed-in member would tap.
+				shortcuts: [
+					{
+						name: "Einsätze finden",
+						short_name: "Einsätze",
+						description: "Freiwilligeneinsätze in deiner Nähe durchsuchen",
+						url: "/opportunities",
+						icons: [
+							{
+								src: "/icons/shortcut-search.png",
+								sizes: "96x96",
+								type: "image/png",
+							},
+						],
+					},
+					{
+						name: "Meine Anmeldungen",
+						short_name: "Anmeldungen",
+						description: "Deine Anmeldungen zu Einsätzen ansehen",
+						url: "/my-signups",
+						icons: [
+							{
+								src: "/icons/shortcut-signups.png",
+								sizes: "96x96",
+								type: "image/png",
+							},
+						],
 					},
 				],
 			},

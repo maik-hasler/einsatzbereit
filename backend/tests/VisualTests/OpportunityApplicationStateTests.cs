@@ -35,7 +35,10 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.Locator("textarea").FillAsync("Applying via VisualTests regression check.");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		// The submit button now carries the same label as the trigger behind it
+		// ("Express interest" end to end, #1775), so the click is scoped to the
+		// dialog rather than matching both.
+		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Genuine hard navigation (full reload), not an SPA transition - this is
@@ -65,7 +68,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.Locator("textarea").FillAsync("Applying via race-guard regression check.");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Delay any unauthenticated GET to the details endpoint so it resolves
@@ -121,13 +124,13 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await page2.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await page2.Locator("textarea").FillAsync("Second (duplicate) sign-up attempt.");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var secondSignUpResponseTask = page2.WaitForResponseAsync(r =>
 			r.Url.Contains($"/volunteer-opportunities/{opportunityId}/engagements") &&
 			r.Request.Method == "POST");
-		await page2.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await page2.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		var secondSignUpResponse = await secondSignUpResponseTask;
 		secondSignUpResponse.Status.Should().Be(409);
 

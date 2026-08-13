@@ -448,7 +448,10 @@ export default function ProfileOverviewPage() {
 											</div>
 										)}
 										{streaks && streaks.activityStreak > 0 && (
-											<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
+											<div
+												data-testid="profile-stat-streak"
+												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+											>
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
 													<FireIcon />
 												</span>

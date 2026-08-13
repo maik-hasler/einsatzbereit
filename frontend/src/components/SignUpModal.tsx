@@ -9,6 +9,7 @@ import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
+import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
 
 interface Props {
 	opportunityId: string;
@@ -132,8 +133,12 @@ export default function SignUpModal({
 
 				{!isScheduledSlots && (
 					<div>
+						{/* Scoped to this branch: the slot-picker variant has no required
+						field, so its legend would explain an absent asterisk. */}
+						<RequiredFieldsLegend className="mb-2" />
 						<label htmlFor="sign-up-message" className={`mb-1 ${labelClass}`}>
 							{t("signUp.message")}
+							<RequiredMark />
 						</label>
 						<textarea
 							id="sign-up-message"
@@ -159,7 +164,11 @@ export default function SignUpModal({
 							submitting || (isScheduledSlots && timeSlots.length === 0)
 						}
 					>
-						{submitting ? t("signUp.submitting") : t("signUp.submit")}
+						{submitting
+							? t("signUp.submitting")
+							: isScheduledSlots
+								? t("signUp.submitWaitlist")
+								: t("signUp.submitInterest")}
 					</Button>
 				</div>
 			</form>

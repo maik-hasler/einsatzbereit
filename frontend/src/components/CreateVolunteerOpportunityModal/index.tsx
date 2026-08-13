@@ -16,7 +16,9 @@ import { validateImageUpload } from "../../lib/imageUpload";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
+import ErrorBanner from "../ErrorBanner";
 import ImageCropModal from "../ImageCropModal";
+import { RequiredFieldsLegend } from "../RequiredMark";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -32,6 +34,9 @@ import {
 	TOTAL_STEPS,
 } from "./schema";
 import type { OpportunityFormValues } from "./schema";
+
+/** Ties the refused-jump message to the step button that was refused. */
+const BLOCKED_JUMP_MESSAGE_ID = "create-opportunity-step-blocked";
 
 function advanceDate(
 	origin: Date,
@@ -219,6 +224,16 @@ export default function CreateVolunteerOpportunityModal({
 	// changing anything) - lets DetailsStep re-scroll/re-focus the error each
 	// time, since a dependency on the string alone wouldn't change.
 	const [errorToken, setErrorToken] = useState(0);
+	// Set when a stepper jump was refused because an earlier step is invalid:
+	// `target` is the step that was clicked, `blocking` the first one standing
+	// in its way. `attempt` is bumped on every refusal so an unchanged message
+	// still re-mounts (and gets re-announced) on a repeat click, same reason as
+	// `errorToken` above.
+	const [blockedJump, setBlockedJump] = useState<{
+		target: number;
+		blocking: number;
+		attempt: number;
+	} | null>(null);
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 	const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -286,6 +301,7 @@ export default function CreateVolunteerOpportunityModal({
 
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
+	const isRemote = watch("isRemote");
 	const isScheduledSlots = participationType === "ScheduledSlots";
 
 	useEffect(() => {
@@ -339,6 +355,11 @@ export default function CreateVolunteerOpportunityModal({
 		};
 	}, [bannerPreview]);
 
+	// Any navigation that did go through retires the refusal message.
+	useEffect(() => {
+		setBlockedJump(null);
+	}, [step]);
+
 	function requestClose() {
 		// isDirty only tracks react-hook-form's own fields - time slots, the
 		// banner file and its removal all live in separate useState outside the
@@ -386,12 +407,30 @@ export default function CreateVolunteerOpportunityModal({
 		// Jumping ahead skips every step in between - validate all of their
 		// fields, not just the currently active one, so a step revisited and
 		// broken (e.g. going back to blank out the title) still blocks the
-		// jump instead of only surfacing at Publish-time.
-		const fields = Object.entries(STEP_FIELDS)
-			.filter(([s]) => Number(s) >= step && Number(s) < n)
-			.flatMap(([, stepFields]) => stepFields);
-		const valid = fields.length === 0 || (await trigger(fields));
-		if (!valid) return;
+		// jump instead of only surfacing at Publish-time. Validating one step
+		// at a time rather than one trigger() over the union of their fields
+		// still paints every offending step's rule red, and additionally tells
+		// us *which* step to name below.
+		let blocking: number | null = null;
+		for (let s = step; s < n; s++) {
+			const fields = STEP_FIELDS[s];
+			if (fields.length === 0) continue;
+			if (!(await trigger(fields)) && blocking === null) blocking = s;
+		}
+		if (blocking !== null) {
+			// Refusing in silence left the reason to be inferred from a field
+			// turning red - and the offending field can sit on a step that
+			// isn't even rendered, leaving nothing but an unexplained red rule
+			// somewhere in the stepper (#1782). Name the step that blocks the
+			// jump instead.
+			const blockingStep = blocking;
+			setBlockedJump((prev) => ({
+				target: n,
+				blocking: blockingStep,
+				attempt: (prev?.attempt ?? 0) + 1,
+			}));
+			return;
+		}
 		setStep(n);
 	}
 
@@ -858,6 +897,18 @@ export default function CreateVolunteerOpportunityModal({
 		t("createOpportunity.step3Title"),
 		t("createOpportunity.step4Title"),
 	];
+	// Only while the named step is in fact still invalid: fixing the field
+	// (revalidated on blur) retires the message on its own, without the user
+	// having to click the step again to find out whether it would work now.
+	const blockedJumpMessage =
+		blockedJump && errorSteps.has(blockedJump.blocking)
+			? t("createOpportunity.stepBlocked", {
+					target: blockedJump.target,
+					blocking: blockedJump.blocking,
+					blockingTitle: stepTitles[blockedJump.blocking - 1],
+				})
+			: null;
+
 	const stepSubtitles = [
 		t("createOpportunity.step1Subtitle"),
 		t("createOpportunity.step2Subtitle"),
@@ -964,7 +1015,26 @@ export default function CreateVolunteerOpportunityModal({
 						stepLabel={(n, label) =>
 							`${t("createOpportunity.stepOf", { current: n, total: TOTAL_STEPS })}: ${label}`
 						}
+						blocked={
+							blockedJump && blockedJumpMessage
+								? {
+										step: blockedJump.target,
+										messageId: BLOCKED_JUMP_MESSAGE_ID,
+									}
+								: undefined
+						}
 					/>
+					{blockedJump && blockedJumpMessage && (
+						// Keyed on the attempt counter so a repeat click on the same
+						// still-blocked step re-inserts the alert - an assertive live
+						// region whose text didn't change is not re-announced.
+						<ErrorBanner
+							key={blockedJump.attempt}
+							id={BLOCKED_JUMP_MESSAGE_ID}
+							message={blockedJumpMessage}
+							className="mt-3"
+						/>
+					)}
 				</div>
 
 				{/* Announces the active step to screen readers whenever it changes. */}
@@ -981,6 +1051,13 @@ export default function CreateVolunteerOpportunityModal({
 					<p className="mb-4 text-sm leading-relaxed text-gray-500">
 						{stepSubtitles[step - 1]}
 					</p>
+
+					{/* Only steps 1 and 2 carry required fields, and step 2's are the
+					address ones - a remote opportunity has none, so the legend would
+					explain an asterisk that isn't on screen. */}
+					{(step === 1 || (step === 2 && !isRemote)) && (
+						<RequiredFieldsLegend className="-mt-2 mb-4" />
+					)}
 
 					{step === 1 && (
 						<BasicsStep

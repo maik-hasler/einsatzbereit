@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
@@ -11,6 +11,10 @@ import FilterDropdown, {
 import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
+import {
+	useOpportunityDateAvailability,
+	type VisibleMonth,
+} from "./useOpportunityDateAvailability";
 import type { CitySuggestion } from "./useCitySuggestions";
 import { useSearchAlert } from "./useSearchAlert";
 import { resolveDateLocale } from "../../lib/format";
@@ -88,6 +92,41 @@ export default function VolunteerOpportunitiesList() {
 		save: saveSearchAlert,
 		remove: removeSearchAlert,
 	} = useSearchAlert();
+
+	// Null until the date popover is opened and its calendar reports the month it
+	// mounted on - that report is also what keeps this in step with the grid's own
+	// prev/next and arrow-key navigation.
+	const [visibleCalendarMonth, setVisibleCalendarMonth] =
+		useState<VisibleMonth | null>(null);
+
+	// Same value in, same object out, so MiniCalendar's report effect can't loop.
+	const handleVisibleMonthChange = useCallback(
+		(year: number, month: number) => {
+			setVisibleCalendarMonth((prev) =>
+				prev?.year === year && prev.month === month ? prev : { year, month },
+			);
+		},
+		[],
+	);
+
+	// Closing the popover unmounts the calendar but leaves the month it reported
+	// behind, so this gates on the popover itself - otherwise every later filter
+	// change would keep refetching availability for a grid nobody is looking at.
+	const { availability: dateAvailability, loading: dateAvailabilityLoading } =
+		useOpportunityDateAvailability(
+			openFilter === "date" ? visibleCalendarMonth : null,
+			{
+				occurrence,
+				participationType,
+				isRemoteParam,
+				categoriesParam,
+				tag,
+				keyword,
+				lat,
+				lng,
+				radius,
+			},
+		);
 
 	const {
 		items,
@@ -309,7 +348,15 @@ export default function VolunteerOpportunitiesList() {
 
 			{/* Filter bar */}
 			<div ref={filterBarRef} className="mb-2">
-				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
+				{/* Left-aligned, not centred (#1798): the row sits directly above a
+				full-width results grid, so centring the chips put the first one at
+				x=375 at a 1440 viewport while the cards below started at x=32 - two
+				competing left edges on one page. Flex's default `flex-start` keeps
+				every wrapped line starting at the grid's left edge. */}
+				<div
+					data-testid="opportunities-filter-bar"
+					className="flex flex-wrap items-center gap-2 pb-3"
+				>
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<MapPinIcon className="h-3.5 w-3.5" />}
@@ -557,6 +604,9 @@ export default function VolunteerOpportunitiesList() {
 							fromStr={dateFrom}
 							toStr={dateTo}
 							onChange={handleDateChange}
+							availability={dateAvailability}
+							availabilityLoading={dateAvailabilityLoading}
+							onVisibleMonthChange={handleVisibleMonthChange}
 						/>
 					</FilterDropdown>
 

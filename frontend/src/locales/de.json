@@ -14,7 +14,8 @@
       "loading": "Wird geladen…",
       "pageLoading": "Seite wird geladen…",
       "skipToContent": "Zum Inhalt springen",
-      "onThisPage": "Auf dieser Seite"
+      "onThisPage": "Auf dieser Seite",
+      "requiredField": "Pflichtfeld"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
@@ -138,6 +139,10 @@
       "dateFromDisplay": "Ab {{date}}",
       "prevMonth": "Vorheriger Monat",
       "nextMonth": "Nächster Monat",
+      "dayInPast": "in der Vergangenheit",
+      "dayOpportunityCount_one": "{{count}} Einsatz",
+      "dayOpportunityCount_other": "{{count}} Einsätze",
+      "daysWithOpportunitiesLegend": "Tage mit Einsätzen",
       "nCategoriesSelected": "{{count}} Kategorien",
       "radiusLabel": "Umkreis",
       "locationPlaceholder": "Stadt eingeben…",
@@ -186,15 +191,17 @@
       "fewSpotsLeft_other": "Nur noch {{count}} Plätze!",
       "noSpotsLeft": "Dieser Einsatz ist aktuell ausgebucht.",
       "unlimitedSpots": "Unbegrenzt viele Plätze",
+      "byInterest": "Interessenbekundung",
+      "noSpotsYet": "Noch keine Plätze",
       "draftBadge": "Entwurf",
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Einsatz veröffentlicht.",
-      "unpublish": "Zurückziehen",
-      "unpublishSuccess": "Einsatz zurückgezogen.",
+      "unpublish": "Veröffentlichung zurücknehmen",
+      "unpublishSuccess": "Veröffentlichung zurückgenommen.",
       "cancel": "Absagen",
       "cancelSuccess": "Einsatz abgesagt.",
-      "loginPrompt": "Melde dich an, um dich für diesen Einsatz anzumelden.",
+      "loginPrompt": "Melde dich an, um mitzumachen.",
       "yourApplication": "Deine Anmeldung",
       "aboutOrganization": "Über diese Organisation",
       "aboutOrganizationLoadError": "Die Kontaktdaten dieser Organisation konnten nicht geladen werden.",
@@ -206,8 +213,6 @@
       "participantsJoined": "{{count}} Personen haben sich bereits angemeldet",
       "participantsJoined_one": "{{count}} Person hat sich bereits angemeldet",
       "participantsJoined_other": "{{count}} Personen haben sich bereits angemeldet",
-      "maxParticipants_one": "(max. {{count}} Person)",
-      "maxParticipants_other": "(max. {{count}} Personen)",
       "factWhen": "Wann",
       "factFormat": "Ablauf",
       "factWhere": "Wo"
@@ -215,6 +220,7 @@
     "createOpportunity": {
       "title": "Einsatz erstellen",
       "stepOf": "Schritt {{current}} von {{total}}",
+      "stepBlocked": "Schritt {{target}} ist noch nicht verfügbar: Bitte fülle zuerst Schritt {{blocking}} ({{blockingTitle}}) aus.",
       "step1Title": "Grunddaten",
       "step1Subtitle": "Gib deinem Einsatz einen klaren Titel und eine Beschreibung, damit Freiwillige wissen, was sie erwartet.",
       "step2Title": "Ort",
@@ -345,10 +351,11 @@
       "selectTimeSlot": "Zeitslot wählen",
       "noTimeSlots": "Keine Zeitslots verfügbar.",
       "selectPlaceholder": "Bitte wählen…",
-      "message": "Nachricht (Pflichtfeld)",
+      "message": "Nachricht",
       "messagePlaceholder": "Beschreibe kurz, warum du dich engagieren möchtest…",
       "submitting": "Wird gesendet…",
-      "submit": "Anmelden",
+      "submitWaitlist": "Mitmachen",
+      "submitInterest": "Interesse bekunden",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
       "selectTimeSlotRequired": "Bitte wähle einen Zeitslot aus."
@@ -386,9 +393,9 @@
       "publishedHeading": "Veröffentlicht",
       "publishedDesc": "Live und für Freiwillige sichtbar.",
       "publishedBadge": "Veröffentlicht",
-      "unpublishedHeading": "Zurückgezogen",
+      "unpublishedHeading": "Zurückgenommen",
       "unpublishedDesc": "Von der öffentlichen Liste entfernt. Veröffentliche erneut, um ihn wieder sichtbar zu machen.",
-      "unpublishedBadge": "Zurückgezogen",
+      "unpublishedBadge": "Zurückgenommen",
       "cancelledHeading": "Abgesagt",
       "cancelledDesc": "Endgültig abgesagt. Dies kann nicht rückgängig gemacht werden - lege stattdessen einen neuen Einsatz an, falls die Pläne wieder aufgenommen werden.",
       "cancelledBadge": "Abgesagt",
@@ -398,6 +405,12 @@
       "participantsUnlimited": "{{count}} Anmeldungen (kein Limit)",
       "participantsUnlimited_one": "{{count}} Anmeldung (kein Limit)",
       "participantsUnlimited_other": "{{count}} Anmeldungen (kein Limit)",
+      "participantsInterest": "{{count}} Anmeldungen (Interessenbekundung)",
+      "participantsInterest_one": "{{count}} Anmeldung (Interessenbekundung)",
+      "participantsInterest_other": "{{count}} Anmeldungen (Interessenbekundung)",
+      "participantsNoSlots": "{{count}} Anmeldungen (noch keine Zeitslots)",
+      "participantsNoSlots_one": "{{count}} Anmeldung (noch keine Zeitslots)",
+      "participantsNoSlots_other": "{{count}} Anmeldungen (noch keine Zeitslots)",
       "editLoading": "Wird geöffnet…",
       "loadMore": "Mehr laden"
     },
@@ -463,7 +476,7 @@
       "logoRemove": "Entfernen",
       "logoRemoving": "Wird entfernt…",
       "logoRemoveError": "Logo konnte nicht entfernt werden.",
-      "fieldName": "Name *",
+      "fieldName": "Name",
       "fieldDescription": "Beschreibung",
       "fieldContactEmail": "Kontakt-E-Mail",
       "fieldPhone": "Telefon",
@@ -517,9 +530,10 @@
       "resendError": "Einladung konnte nicht erneut gesendet werden.",
       "resendSent": "Einladung erneut gesendet.",
       "invitationSentOn": "Gesendet am {{date}}",
-      "dangerZone": "Gefahrenzone",
+      "dangerZone": "Organisation löschen",
       "deleteOrganization": "Organisation löschen",
       "deleteOrganizationHint": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
+      "deleteOrganizationSoleMemberHint": "Du bist das letzte verbleibende Mitglied und kannst die Organisation löschen.",
       "deleteOrganizationError": "Organisation konnte nicht gelöscht werden.",
       "editDisabledNotOrganizerHint": "Nur Organisatoren können die Organisationseinstellungen bearbeiten."
     },
@@ -530,7 +544,7 @@
       "emailHint": "E-Mail-Adresse kann nicht geändert werden.",
       "fieldFirstName": "Vorname",
       "fieldLastName": "Nachname",
-      "dangerZoneTitle": "Gefahrenzone",
+      "dangerZoneTitle": "Konto löschen",
       "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft löschen. Diese Aktion ist unwiderruflich. Anmeldungen werden anonymisiert und dein Konto wird gelöscht.",
       "deleteAccountButton": "Mein Konto löschen",
       "deleteConfirmTitle": "Konto löschen?",
@@ -542,7 +556,7 @@
       "buttonLabel": "Feedback geben",
       "submitted": "Feedback gegeben",
       "title": "Erfahrung bewerten",
-      "ratingLabel": "Bewertung (Pflichtfeld)",
+      "ratingLabel": "Bewertung",
       "commentLabel": "Kommentar (optional)",
       "commentPlaceholder": "Teile deine Erfahrung…",
       "submit": "Feedback absenden",
@@ -607,10 +621,13 @@
       "noEngagementsHint": "Stöbre durch verfügbare Einsätze und melde dich für einen an.",
       "noPastEngagements": "Noch keine vergangenen Anmeldungen.",
       "exploreNeeds": "Einsätze erkunden",
+      "scopeLabel": "Zeitraum",
       "scopeUpcoming": "Aktuell & Bevorstehend",
       "scopePast": "Vergangen",
       "loadMore": "Mehr laden",
       "scheduledFor": "Termin: {{range}}",
+      "noFixedDate": "Kein festes Datum - Interessenbekundung",
+      "yourMessage": "Deine Nachricht:",
       "registeredOn": "Angemeldet: {{date}}",
       "deletedOpportunityTitle": "Dieser Einsatz wurde entfernt",
       "cancellationReason": "Grund: {{reason}}",
@@ -643,10 +660,8 @@
       "receivedOn": "Angemeldet: {{date}}",
       "confirm": "Bestätigen",
       "cancel": "Absagen",
-      "revoke": "Stornieren",
       "confirmNamed": "{{name}} bestätigen",
       "cancelNamed": "{{name}} absagen",
-      "revokeNamed": "{{name}} stornieren",
       "processing": "…",
       "confirmSuccess": "Anmeldung bestätigt.",
       "confirmError": "Fehler beim Bestätigen",
@@ -706,10 +721,8 @@
       "anonymizedVolunteer": "Anonymisierte:r Freiwillige:r",
       "confirm": "Bestätigen",
       "cancel": "Absagen",
-      "revoke": "Stornieren",
       "confirmNamed": "{{name}} bestätigen",
       "cancelNamed": "{{name}} absagen",
-      "revokeNamed": "{{name}} stornieren",
       "processing": "…",
       "confirmSuccess": "Anmeldung bestätigt.",
       "confirmError": "Fehler beim Bestätigen",
@@ -788,7 +801,7 @@
       "intro": "Antworten auf häufige Fragen für Freiwillige und Organisationen auf Einsatzbereit. Nicht gefunden, was du suchst? Siehe „Noch Hilfe nötig?“ unten.",
       "volunteersTitle": "Für Freiwillige",
       "volunteersQ1": "Wie melde ich mich für einen Einsatz an?",
-      "volunteersA1": "Durchsuche die Einsätze auf der Startseite, öffne den gewünschten Einsatz und klicke auf „Anmelden“. Je nach Einsatz wählst du einen konkreten Zeitslot oder sendest eine kurze Nachricht mit deinem Interesse.",
+      "volunteersA1": "Durchsuche die Einsätze auf der Startseite und öffne den gewünschten Einsatz. Bei Einsätzen mit festen Zeitslots klickst du auf „Zeitslot auswählen“, wählst deinen Termin und bestätigst mit „Mitmachen“. Bei allen anderen klickst du auf „Interesse bekunden“ und sendest eine kurze Nachricht.",
       "volunteersQ2": "Wie checke ich vor Ort ein?",
       "volunteersA2": "Bei Einsätzen mit Check-in erscheint eine Schaltfläche „Einchecken“, sobald dein Zeitslot beginnt. Die Organisation kann dich vor Ort auch per QR-Code oder Namen einchecken.",
       "volunteersQ3": "Wo sehe ich meine Anmeldungen?",
@@ -840,6 +853,7 @@
       "deleteNamed": "Löschen: {{notification}}",
       "deleteError": "Benachrichtigung konnte nicht gelöscht werden.",
       "deletedOpportunityPlaceholder": "einen gelöschten Einsatz",
+      "unread": "Ungelesen",
       "kinds": {
         "EngagementCreated": "Neue Anmeldung eingegangen für {{title}}",
         "EngagementConfirmed": "Deine Anmeldung für {{title}} wurde bestätigt",
@@ -848,7 +862,7 @@
         "OpportunityUpdated": "{{title}} wurde aktualisiert",
         "OpportunityDeleted": "Ein Einsatz, für den du dich angemeldet hast, wurde entfernt",
         "OpportunityUnpublished": "{{title}} wurde zurückgezogen und deine Anmeldung wurde abgesagt",
-        "OpportunityCancelled": "{{title}} wurde abgesagt und deine Anmeldung wurde abgesagt",
+        "OpportunityCancelled": "Der Einsatz {{title}} wurde abgesagt - deine Anmeldung ist damit hinfällig",
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",
         "InvitationAccepted": "Deine Einladung, {{title}} beizutreten, wurde angenommen",
         "InvitationDeclined": "Deine Einladung, {{title}} beizutreten, wurde abgelehnt",
@@ -929,9 +943,9 @@
         "confirm": "Ja, absagen"
       },
       "unpublish": {
-        "title": "Einsatz zurückziehen?",
+        "title": "Veröffentlichung zurücknehmen?",
         "message": "Dies entfernt ihn von der öffentlichen Liste und sagt alle ausstehenden oder bestätigten Anmeldungen ab - Freiwillige werden informiert. Du kannst ihn später erneut veröffentlichen.",
-        "confirm": "Ja, zurückziehen"
+        "confirm": "Ja, zurücknehmen"
       },
       "cancelOpportunity": {
         "title": "Einsatz absagen?",
@@ -971,6 +985,26 @@
         "title": "Inhalt wiederherstellen?",
         "message": "Möchtest du \"{{name}}\" wirklich wiederherstellen? Der Inhalt wird wieder sichtbar.",
         "confirm": "Ja, wiederherstellen"
+      },
+      "adminBlockUser": {
+        "title": "Konto sperren?",
+        "message": "{{name}} kann sich erst wieder anmelden, wenn du das Konto entsperrst. Eine bereits offene Sitzung wird nicht sofort beendet.",
+        "confirm": "Ja, sperren"
+      },
+      "adminUnblockUser": {
+        "title": "Konto entsperren?",
+        "message": "{{name}} kann sich danach wieder anmelden.",
+        "confirm": "Ja, entsperren"
+      },
+      "adminPromoteUser": {
+        "title": "Zum Plattform-Admin machen?",
+        "message": "{{name}} erhält die vollen Admin-Rechte: Zugriff auf alle Organisationen und Nutzerdaten sowie die Möglichkeit, Konten zu sperren und weitere Personen zu Admins zu machen. Die Änderung wirkt sich erst bei der nächsten Anmeldung aus.",
+        "confirm": "Ja, zum Admin machen"
+      },
+      "adminDemoteUser": {
+        "title": "Admin-Rechte entziehen?",
+        "message": "{{name}} verliert den Zugriff auf die Administration und auf alle Organisationen, in denen die Person kein Mitglied ist. Die Änderung wirkt sich erst bei der nächsten Anmeldung aus.",
+        "confirm": "Ja, Admin-Rechte entziehen"
       },
       "clearReadNotifications": {
         "title": "Gelesene Benachrichtigungen löschen?",
@@ -1090,7 +1124,9 @@
       "unlockedOn": "Freigeschaltet: {{date}}",
       "lockedBadge": "Geheimes Abzeichen",
       "badgesTitle": "Abzeichen",
-      "activityStreak": "Aktivitätsserie",
+      "activityStreak": "Wochen in Serie",
+      "activityStreak_one": "Woche in Serie",
+      "activityStreak_other": "Wochen in Serie",
       "engagementStatLabel": "Bestätigte Einsätze",
       "engagementStatLabel_one": "Bestätigter Einsatz",
       "engagementStatLabel_other": "Bestätigte Einsätze",
@@ -1110,12 +1146,12 @@
           "description": "Verdient nach 5 bestätigten Einsätzen."
         },
         "centurion-100": {
-          "name": "Hundertschaft",
+          "name": "100 Einsätze",
           "description": "Verdient nach 100 bestätigten Einsätzen."
         },
         "on-a-roll-7": {
-          "name": "Auf Kurs",
-          "description": "Verdient für eine 7-tägige Login-Serie."
+          "name": "Aktive Woche",
+          "description": "Verdient für sieben Tage in Folge."
         },
         "weekly-hero-4": {
           "name": "Wochenheld",

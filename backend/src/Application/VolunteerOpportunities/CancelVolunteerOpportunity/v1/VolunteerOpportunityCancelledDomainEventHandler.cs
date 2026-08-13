@@ -60,6 +60,10 @@ internal sealed class VolunteerOpportunityCancelledDomainEventHandler(
 			opportunity.Title,
 			NotificationKind.OpportunityCancelled,
 			engagementCancellationReason,
+			// The OpportunityCancelled notification above already tells the volunteer
+			// their sign-up is gone, so a second EngagementCancelled row per volunteer
+			// only repeated the same fact and inflated the unread badge (#1790).
+			notifyPerEngagement: false,
 			logger,
 			cancellationToken);
 

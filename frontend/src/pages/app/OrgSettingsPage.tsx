@@ -15,6 +15,7 @@ import {
 } from "../../lib/imageUpload";
 import { buildOrganizationFormSchema } from "../../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
+import Button from "../../components/Button";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
@@ -23,6 +24,7 @@ import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
+import { RequiredFieldsLegend } from "../../components/RequiredMark";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
@@ -90,6 +92,36 @@ export default function OrgSettingsPage() {
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const isSoleMember = org.members.length === 1;
+	const settingsErrorRef = useRef<HTMLParagraphElement>(null);
+	// Bumped on every failed save so two consecutive failures carrying the
+	// same message still re-run the scroll effect below - a token, rather than
+	// keying that effect on `settingsError` itself, for the same reason
+	// CreateVolunteerOpportunityModal's DetailsStep keeps one.
+	const [saveErrorToken, setSaveErrorToken] = useState(0);
+
+	// The form's own Save sits at its end (see the action row below), which is
+	// past the fold - but the error banner is above the first field. Failing a
+	// save from down there would otherwise look like nothing happened at all,
+	// so bring the banner into view; role="alert" only covers the
+	// screen-reader half of that.
+	//
+	// Focused as well as scrolled, same pairing as DetailsStep's publish error
+	// (#688, the same "the error is a screen away from the button that caused
+	// it" problem): whichever control submitted goes `disabled` for the
+	// duration of the request, which blurs it to <body>, so without this a
+	// keyboard user is left at the top of the document with the message
+	// nowhere near their tab position.
+	useEffect(() => {
+		if (!saveErrorToken) return;
+		const reduceMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		settingsErrorRef.current?.scrollIntoView({
+			behavior: reduceMotion ? "auto" : "smooth",
+			block: "center",
+		});
+		settingsErrorRef.current?.focus();
+	}, [saveErrorToken]);
 
 	useEditModeQuickActions({
 		editing,
@@ -203,6 +235,7 @@ export default function OrgSettingsPage() {
 			reloadOrg();
 		} catch {
 			setSettingsError(t("orgSettings.saveError"));
+			setSaveErrorToken((n) => n + 1);
 		} finally {
 			setSaving(false);
 		}
@@ -265,7 +298,16 @@ export default function OrgSettingsPage() {
 							<DangerZonePanel
 								className="mt-8"
 								title={t("orgSettings.dangerZone")}
-								description={t("orgSettings.deleteOrganizationHint")}
+								// #1789: the "remove the other members first" sentence
+								// used to be passed unconditionally, so a sole member -
+								// the only person who *can* delete - read it next to an
+								// enabled button. Same predicate as `disabled` below, so
+								// text and control can no longer disagree.
+								description={t(
+									isSoleMember
+										? "orgSettings.deleteOrganizationSoleMemberHint"
+										: "orgSettings.deleteOrganizationHint",
+								)}
 								actionLabel={t("orgSettings.deleteOrganization")}
 								onAction={() => setShowDeleteConfirm(true)}
 								disabled={!isSoleMember}
@@ -277,7 +319,12 @@ export default function OrgSettingsPage() {
 				{editing && (
 					<>
 						{settingsError && (
-							<ErrorBanner message={settingsError} className="mb-4" />
+							<ErrorBanner
+								ref={settingsErrorRef}
+								message={settingsError}
+								tabIndex={-1}
+								className="mb-4 focus:outline-none"
+							/>
 						)}
 
 						<form
@@ -285,6 +332,8 @@ export default function OrgSettingsPage() {
 							onSubmit={(e) => void handleSubmit(onSubmit)(e)}
 							className="space-y-5"
 						>
+							<RequiredFieldsLegend />
+
 							<div>
 								<p className={`mb-1 ${labelClass}`}>
 									{t("orgSettings.fieldLogo")}
@@ -353,7 +402,7 @@ export default function OrgSettingsPage() {
 								</div>
 							</div>
 
-							<Field label={t("orgSettings.fieldName")} id="org-name">
+							<Field label={t("orgSettings.fieldName")} id="org-name" required>
 								<input
 									id="org-name"
 									maxLength={100}
@@ -587,6 +636,37 @@ export default function OrgSettingsPage() {
 									</div>
 								</div>
 							</fieldset>
+
+							{/* Cancel/Save also live in the page header
+							(useEditModeQuickActions), but this form runs well past the
+							fold - having filled in the address right above, the organizer
+							had to scroll all the way back up to commit (#1784). Repeating
+							the pair here ends the form where the work ends.
+
+							The Save is a real type="submit", not another
+							requestSubmit() caller: it makes this the form's only submit
+							button, which is also what implicit submission needs, so
+							pressing Enter in a field now submits too - exactly the
+							behaviour the header's requestSubmit() path has always been
+							written to mirror. */}
+							<div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-5">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleCancelEdit}
+									disabled={saving}
+									data-testid="org-settings-form-cancel"
+								>
+									{t("common.cancel")}
+								</Button>
+								<Button
+									type="submit"
+									disabled={saving}
+									data-testid="org-settings-form-save"
+								>
+									{saving ? t("common.saving") : t("common.save")}
+								</Button>
+							</div>
 						</form>
 					</>
 				)}
