@@ -459,8 +459,8 @@ internal sealed class ApplicationDbContext(
 	{
 		// Contains against a List<TimeSlotId?> (nullable-wrapped) translates
 		// fine - unwrapping the nullable value object inside the query (e.g.
-		// e.TimeSlotId!.Value) does not, see the GroupBy/.Value gotcha this
-		// mirrors elsewhere in this class.
+		// e.TimeSlotId!.Value) does not, see the same GroupBy/.Value gotcha in
+		// VolunteerOpportunityReadRepository.GetCalendarEventsAsync.
 		var nullableIds = timeSlotIds.Select(id => (TimeSlotId?)id).ToList();
 
 		// VolunteerId != null - see GetActiveEngagementsForOpportunityAsync above

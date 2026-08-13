@@ -1212,8 +1212,6 @@ public class VolunteerOpportunityTests
 		result.Error.Description.Should().Be("Check-in PIN must be 4 to 6 digits.");
 	}
 
-	// --- AddTimeSlot ---
-
 	[Test]
 	public void AddTimeSlot_ShouldAddSlot_WhenParticipationTypeIsScheduledSlots()
 	{

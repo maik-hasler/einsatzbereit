@@ -32,7 +32,6 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
-		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.Locator("#opportunity-description").FillAsync(
 			"Regression test for the #1227 retry-duplicate-draft bug.");

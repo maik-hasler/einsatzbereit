@@ -540,7 +540,6 @@ export default function VolunteerOpportunityDetailPage() {
 								</span>
 							</div>
 
-							{/* Map */}
 							{!opportunity.isRemote &&
 								opportunity.latitude != null &&
 								opportunity.longitude != null && (
@@ -602,7 +601,6 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							)}
 						<div className="max-w-2xl">
-							{/* About this organization */}
 							{orgProfileError && !orgProfile && (
 								<div className="mb-6" data-testid="about-organization">
 									<SectionHeading>
@@ -718,7 +716,6 @@ export default function VolunteerOpportunityDetailPage() {
 									</div>
 								)}
 
-							{/* Your application status */}
 							{isAuthenticated && !isOwner && cue && !isDraft && (
 								<div
 									data-testid="application-status"
@@ -791,7 +788,6 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							)}
 
-							{/* Login prompt */}
 							{!isAuthenticated && !isDraft && (
 								<div
 									data-testid="login-prompt"

@@ -543,7 +543,6 @@ export default function VolunteerOpportunitiesList() {
 						/>
 					</FilterDropdown>
 
-					{/* Frequency */}
 					<FilterDropdown
 						testId="filter-frequency"
 						icon={<ClockIcon className="h-3.5 w-3.5" />}

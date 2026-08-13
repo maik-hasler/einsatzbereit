@@ -90,7 +90,6 @@ export default function ActivitySection() {
 		null,
 	);
 
-	// --- Invitations ---
 	const [invitations, setInvitations] = useState<MyInvitationDto[]>([]);
 	const [invitationsLoading, setInvitationsLoading] = useState(true);
 	const [invitationsError, setInvitationsError] = useState<string | null>(null);

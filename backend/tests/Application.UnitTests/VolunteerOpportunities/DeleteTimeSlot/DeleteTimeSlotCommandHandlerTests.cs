@@ -79,7 +79,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlot);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo

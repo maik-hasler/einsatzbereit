@@ -237,7 +237,6 @@ export default function CreateVolunteerOpportunityModal({
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 	const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-	// Banner
 	const [bannerFile, setBannerFile] = useState<File | null>(null);
 	const [bannerPreview, setBannerPreview] = useState<string | null>(
 		initialOpportunity?.bannerImageUrl ?? null,
@@ -1005,7 +1004,6 @@ export default function CreateVolunteerOpportunityModal({
 					</button>
 				</div>
 
-				{/* Stepper lives in its own row in the body, not the header. */}
 				<div className="border-b border-gray-100 px-6 pt-3 pb-3">
 					<Stepper
 						current={step}

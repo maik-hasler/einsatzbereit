@@ -140,7 +140,6 @@ public class SearchMemberCandidatesQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller is not an organizer of the target organization.
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);

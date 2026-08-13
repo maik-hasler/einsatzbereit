@@ -42,8 +42,7 @@ export function useOrgBreadcrumbExtra() {
 }
 
 // Lets a page nested under OrgAppLayout add a trailing breadcrumb segment
-// beyond its tab (e.g. the specific opportunity being managed), the same way
-// usePageToolbar lets AppLayout pages set their own breadcrumb trail.
+// beyond its tab (e.g. the specific opportunity being managed).
 export function useSetOrgBreadcrumbExtra(label: string | null | undefined) {
 	const { setExtra } = useOrgBreadcrumbCtx();
 	useEffect(() => {

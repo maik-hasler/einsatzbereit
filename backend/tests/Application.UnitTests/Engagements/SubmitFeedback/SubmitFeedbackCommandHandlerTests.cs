@@ -78,7 +78,7 @@ public class SubmitFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a different volunteer attempts to submit feedback for someone else's engagement.
+		// Arrange
 		var (engagement, _) = CreateCheckedInEngagementWithVolunteer();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);

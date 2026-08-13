@@ -11,8 +11,6 @@ import {
 	UserGroupIcon,
 } from "../icons";
 
-// Decorative banner icon shown on an opportunity card when it has no
-// uploaded banner image, mapped from the opportunity's category.
 export function CategoryGlyph({
 	category,
 	className = "h-10 w-10",

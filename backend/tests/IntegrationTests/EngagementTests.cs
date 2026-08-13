@@ -1133,7 +1133,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// vera (organisator of org2, NOT org1) tries to confirm org1's engagement
 		var act = () => veraClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
@@ -1206,7 +1205,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		// the delete itself silently not having taken effect.
 		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id)).Should().Be(0);
 
-		// vera (organisator of org2, NOT org1) tries to check in org1's engagement.
 		// With no opportunity row left to resolve an owning organization from, the
 		// ownership guard can no longer be evaluated at all - the handler must
 		// reject with NotFound rather than silently skipping the guard and letting
@@ -1891,7 +1889,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new SubmitFeedbackRequest { Rating = 5, Comment = "Great first session" },
 			cancellationToken);
 
-		// Organizer cancels the attended engagement to free up a spot for vera.
 		await olafClient.CancelEngagementAsync(
 			firstEngagement.Id,
 			new CancelEngagementRequest { Reason = "Freeing up a spot" },

@@ -6,7 +6,6 @@ public sealed record CitySuggestion(string Label, double Latitude, double Longit
 
 public enum GeocodingOutcome
 {
-	/// <summary>A coordinate match was found.</summary>
 	Found,
 
 	/// <summary>The geocoding provider confirmed no match exists for this address; retrying the same query won't help.</summary>

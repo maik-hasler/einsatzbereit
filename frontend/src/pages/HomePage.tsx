@@ -32,8 +32,6 @@ const CreateOrganizationModal = lazy(
 	() => import("../components/CreateOrganizationModal"),
 );
 
-// ── Page ─────────────────────────────────────────────────────────────────────
-
 export default function HomePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("landing.pageTitle"));

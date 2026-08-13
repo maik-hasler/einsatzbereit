@@ -15,7 +15,6 @@ public class SearchAlertTests
 	private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 	private static readonly IPinGenerator PinGenerator = Substitute.For<IPinGenerator>();
 
-	// Berlin.
 	private const double BerlinLatitude = 52.5200;
 	private const double BerlinLongitude = 13.4050;
 
