@@ -2,9 +2,11 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
+import OrgAvatar from "./OrgAvatar";
 import Button from "../Button";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";
+import { buildPrimaryNav } from "../../lib/headerNav";
 
 // Desktop-width-only nav: primary destinations, then signed-in account
 // controls (or sign-in/register buttons) plus the language selector.
@@ -32,12 +34,10 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 // the home page" link inside its title band (see PageHeaderBand): the same one
 // destination re-stated per page, in the one place a visitor does not look for
 // site navigation. It is a nav destination, so it belongs in the nav.
-const LINKS = [
-	{ key: "home", to: "/", hash: false },
-	{ key: "findOpportunities", to: "/opportunities", hash: false },
-	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
-	{ key: "help", to: "/help", hash: false },
-] as const;
+//
+// The destinations themselves (including a member's own organization, #1785)
+// come from lib/headerNav, shared with MobileMenu so the two breakpoints
+// cannot list different things.
 export default function DesktopHeader({
 	isLoggedIn,
 	isTransparent,
@@ -57,6 +57,9 @@ export default function DesktopHeader({
 	displayName: string;
 	initials: string;
 	isAdmin: boolean;
+	// The viewer's organization, when one should be offered as a top-level
+	// destination - Header withholds it inside the org app, where the switcher
+	// beside this nav already names the same organization (#1785).
 	activeOrg: OrganizationSummaryDto | null | undefined;
 	onSignOut: () => void;
 	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
@@ -71,13 +74,47 @@ export default function DesktopHeader({
 			className="hidden items-center gap-3 lg:flex"
 		>
 			<ul className="mr-2 flex items-center gap-2">
-				{LINKS.map((link) => {
+				{buildPrimaryNav(activeOrg).map((link) => {
 					const base =
 						"rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";
 					const activeClass = isTransparent ? "text-white" : "text-brand-800";
+
+					if (link.kind === "organization") {
+						return (
+							<li key={link.key}>
+								{/* The name is the label (the repo owner's call on #1785:
+								it is more recognisable than a generic "Organisation" and
+								it states which organization you are working in), so it
+								has to survive names as long as "Lindenauer
+								Nachbarschaftshilfe e.V." in a row the paragraph above
+								has already accounted for down to the pixel. Capped and
+								truncated rather than wrapped: at 1024px this entry costs
+								~210px against the ~137px "Fuer Organisationen" it takes
+								the place of, which the signed-in row (no sign-in/register
+								pair) has the slack for - a fifth entry of this width
+								would not have fit. `title` keeps the full name readable
+								on hover, as in the org switcher. */}
+								<NavLink
+									to={link.to}
+									title={link.org.name}
+									data-testid={`nav-${link.key}`}
+									className={({ isActive }) =>
+										`${base} flex items-center gap-1.5 ${isActive ? activeClass : idle}`
+									}
+								>
+									<OrgAvatar
+										name={link.org.name}
+										logoUrl={link.org.logoUrl}
+										size="sm"
+									/>
+									<span className="max-w-40 truncate">{link.org.name}</span>
+								</NavLink>
+							</li>
+						);
+					}
 
 					return (
 						<li key={link.key}>
@@ -124,7 +161,6 @@ export default function DesktopHeader({
 					displayName={displayName}
 					initials={initials}
 					isAdmin={isAdmin}
-					activeOrg={activeOrg}
 					onSignOut={onSignOut}
 					onNotificationNavigate={onNotificationNavigate}
 				/>

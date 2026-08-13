@@ -1502,8 +1502,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// when this suite's other scans ran, and every other scan here runs
 		// at the default desktop viewport (the panel is md:hidden), so
 		// nothing has ever axe-scanned it. Olaf, not Vera, so the org
-		// submenu (issue #775) is also present and gets expanded below -
-		// the whole panel's markup exercised in one scan, not just the
+		// entry and its section links (#775, promoted out of the account
+		// section's disclosure by #1785) are present too - the whole
+		// panel's markup exercised in one scan, not just the
 		// anonymous/no-org subset.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -1523,9 +1524,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Menu" });
 		await Expect(dialog).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
-			.ClickAsync();
-		await Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true }))
+		// The org rows are on screen as soon as the panel opens now, so there is
+		// no disclosure left to click - but the scan still needs one row in a
+		// real :hover state, which is what catches a too-light hover colour
+		// (see MobileMenu's menuItemVariant comment).
+		await dialog.GetByTestId("mobile-nav-organization").HoverAsync();
+		await Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }))
 			.ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		var result = await Page.RunAxe();
