@@ -7,6 +7,7 @@ import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
 
 const WIDGET_DESC_KEY: Record<WidgetKey, string> = {
 	ToDo: "orgDashboard.todoWidgetDesc",
+	VolunteerStats: "orgDashboard.volunteerStatsWidgetDesc",
 	UpcomingOpportunities: "orgDashboard.upcomingWidgetDesc",
 	Calendar: "orgDashboard.calendarWidgetDesc",
 	Settings: "orgDashboard.settingsWidgetDesc",
@@ -28,17 +29,21 @@ function Bar({ className = "" }: { className?: string }) {
 // live instance of the widget (double data fetch, duplicate side effects).
 function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
+		// One stat plus the link out to the pending queue - the second stat
+		// block moved to VolunteerStats below (#1780).
 		case "ToDo":
 			return (
-				<div className="grid grid-cols-2 gap-3" aria-hidden="true">
-					<div className="space-y-1.5">
-						<div className="h-4 w-8 rounded bg-brand-100" />
-						<Bar className="w-3/4" />
-					</div>
-					<div className="space-y-1.5">
-						<div className="h-4 w-8 rounded bg-brand-100" />
-						<Bar className="w-3/4" />
-					</div>
+				<div className="space-y-1.5" aria-hidden="true">
+					<div className="h-4 w-8 rounded bg-brand-100" />
+					<Bar className="w-3/4" />
+					<div className="h-2 w-1/2 rounded-full bg-brand-200" />
+				</div>
+			);
+		case "VolunteerStats":
+			return (
+				<div className="space-y-1.5" aria-hidden="true">
+					<div className="h-4 w-8 rounded bg-brand-100" />
+					<Bar className="w-3/4" />
 				</div>
 			);
 		case "UpcomingOpportunities":

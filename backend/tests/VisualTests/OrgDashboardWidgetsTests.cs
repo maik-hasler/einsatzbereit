@@ -14,12 +14,15 @@ namespace VisualTests;
 /// grid customizable (add/remove/place via the "Edit" quick action) and
 /// added a "Create opportunity" widget to the default layout - see
 /// OrgDashboardCustomizeTests for coverage of the customization itself.
+/// #1780 then split those two counts apart: the pending queue stays in the
+/// "Needs your attention" tile (and reads as resolved when it's empty),
+/// while the signed-up total moved to its own neutral "Volunteers" tile.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task Dashboard_ShowsAllFourWidgets_ForFreshOrganization()
+	public async Task Dashboard_ShowsEveryDefaultWidget_ForFreshOrganization()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -28,11 +31,15 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		await CreateOrganizationAsync("Visual762 Widgets", pinnedOrgId!.Value);
 
-		// All four fixed widgets render on the dashboard tab itself - no
-		// navigating to another tab needed.
+		// Every widget in DEFAULT_LAYOUT renders on the dashboard tab itself -
+		// no navigating to another tab needed.
 		var todoWidget = Page.Locator("section", new()
 		{
 			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Needs your attention" }),
+		});
+		var volunteersWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Volunteers", Exact = true }),
 		});
 		var upcomingWidget = Page.Locator("section", new()
 		{
@@ -48,19 +55,31 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		});
 
 		await Expect(todoWidget).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(volunteersWidget).ToBeVisibleAsync();
 		await Expect(upcomingWidget).ToBeVisibleAsync();
 		await Expect(calendarWidget).ToBeVisibleAsync();
 		await Expect(settingsWidget).ToBeVisibleAsync();
 
-		// A brand-new organization has no applications and no confirmed
-		// volunteers yet - both KPI stats read 0.
-		await Expect(todoWidget).ToContainTextAsync("Pending sign-ups");
-		await Expect(todoWidget).ToContainTextAsync("Signed-up volunteers");
+		// A brand-new organization has nothing waiting, so the attention
+		// widget reads as resolved (#1780) instead of putting "0 Pending
+		// sign-ups" and a live call to action under an urgency headline -
+		// see ToDoWidget_ReadsAsResolvedAndOffersNoCta_... below for the pair.
+		await Expect(todoWidget.GetByTestId("todo-widget-resolved"))
+			.ToHaveTextAsync("Nothing pending - every sign-up is handled.");
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveCountAsync(0);
+
+		// #1780 also moved the neutral confirmed-volunteer total out of the
+		// attention widget into its own plain stats tile, so a queue to work
+		// through and a running total stop sharing one urgent framing. The
+		// label reads "Confirmed", not "Signed-up", because that is what the
+		// API counts - see VolunteerStatsWidget.tsx.
+		await Expect(todoWidget).Not.ToContainTextAsync("Confirmed volunteers");
+		await Expect(volunteersWidget).ToContainTextAsync("Confirmed volunteers");
 		// Selects on data-testid rather than the text-3xl Tailwind utility
 		// class - see #1328, a purely cosmetic restyle of that class would
 		// otherwise silently make these locators match nothing.
-		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveTextAsync("0");
-		await Expect(todoWidget.GetByTestId("todo-widget-stat-confirmed")).ToHaveTextAsync("0");
+		await Expect(volunteersWidget.GetByTestId("volunteer-stats-stat-confirmed"))
+			.ToHaveTextAsync("0");
 
 		// No opportunities yet, so the Upcoming Opportunities widget shows its
 		// empty state instead of a stale/placeholder list.
@@ -94,6 +113,155 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(createOpportunityWidget).ToBeVisibleAsync();
 		await Expect(createOpportunityWidget.GetByTestId("create-opportunity-btn"))
 			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task ToDoWidget_ReadsAsResolvedAndOffersNoCta_UntilASignUpIsActuallyWaiting()
+	{
+		// #1780: the widget branched only on loading / error / kpis-present,
+		// so an empty queue rendered "0 Pending sign-ups" under the "Needs
+		// your attention" headline next to a live "View pending sign-ups"
+		// link that led to a list with no rows - an urgency headline over a
+		// zero, training the organizer to ignore the one tile meant to catch
+		// their eye. Both directions are asserted here: nothing waiting reads
+		// as resolved with no call to action, and a real pending sign-up
+		// brings the count and the link back.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// A dedicated fresh organization rather than olaf's shared seed org -
+		// that org accumulates sign-ups across a full suite run, and this test
+		// asserts on an exact pending count.
+		var suffix = Guid.NewGuid().ToString("N");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add(
+			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"Visual1780 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+
+		var todoWidget = Page.GetByTestId("widget-tile-ToDo");
+		await Expect(todoWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var pendingCta = todoWidget.GetByRole(
+			AriaRole.Link, new() { Name = "View pending sign-ups" });
+
+		await Expect(todoWidget.GetByTestId("todo-widget-resolved"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(pendingCta).ToHaveCountAsync(0);
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveCountAsync(0);
+
+		// Now give the queue something to hold: an open opportunity vera signs
+		// up for, left unconfirmed so it stays Pending.
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"Pending Queue Opportunity {suffix}",
+			description = "Created by ToDoWidget_ReadsAsResolvedAndOffersNoCta_UntilASignUpIsActuallyWaiting",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add(
+			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		(await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "Sign-up for the #1780 pending queue" }))
+			.EnsureSuccessStatusCode();
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending"))
+			.ToHaveTextAsync("1", new() { Timeout = 15_000 });
+		// Exact match, so this also pins the singular label (i18n's
+		// pendingEngagements_one) rather than passing on "Pending sign-ups".
+		await Expect(todoWidget.GetByText("Pending sign-up", new() { Exact = true }))
+			.ToBeVisibleAsync();
+		await Expect(pendingCta).ToBeVisibleAsync();
+		await Expect(todoWidget.GetByTestId("todo-widget-resolved")).ToHaveCountAsync(0);
+	}
+
+	[Test]
+	public async Task ToDoWidget_OffersNoCta_WhenTheDashboardCountsFailToLoad()
+	{
+		// #1780's second defect, found while verifying the first: the "View
+		// pending sign-ups" link sat outside the kpis-present branch
+		// altogether, so a failed fetch still rendered a live call to action
+		// beside the error banner - offering to work a queue whose size the
+		// page had just failed to read. Both count tiles now surface their own
+		// failure and nothing else.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add(
+			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"Visual1780 Error {Guid.NewGuid():N}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		// Only the KPI endpoint fails - the layout endpoint below it
+		// (.../dashboard/layout) is deliberately left alone by this glob, so
+		// the widget grid itself still renders and the tiles can be asserted
+		// on.
+		await Page.RouteAsync($"**/v1/organizations/{organizationId}/dashboard", async route =>
+		{
+			if (route.Request.Method != "GET")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			await route.FulfillAsync(new()
+			{
+				Status = 500,
+				ContentType = "application/json",
+				Headers = new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
+				Body = "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.6.1\",\"status\":500}",
+			});
+		});
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+
+		var todoWidget = Page.GetByTestId("widget-tile-ToDo");
+		await Expect(todoWidget.GetByText("Failed to load summary."))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(todoWidget.GetByRole(AriaRole.Link, new() { Name = "View pending sign-ups" }))
+			.ToHaveCountAsync(0);
+		await Expect(todoWidget.GetByTestId("todo-widget-resolved")).ToHaveCountAsync(0);
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveCountAsync(0);
+
+		var volunteersWidget = Page.GetByTestId("widget-tile-VolunteerStats");
+		await Expect(volunteersWidget.GetByText("Failed to load the volunteer count."))
+			.ToBeVisibleAsync();
+		await Expect(volunteersWidget.GetByTestId("volunteer-stats-stat-confirmed"))
+			.ToHaveCountAsync(0);
 	}
 
 	[Test]
@@ -640,5 +808,28 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+	}
+
+	/// <summary>
+	/// Mints a token straight from Keycloak's password grant, for the
+	/// second actor in a test (vera signing up while the browser stays
+	/// logged in as olaf) - same helper as EngagementManagementFiltersTests.
+	/// </summary>
+	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		var response = await http.PostAsync(
+			"/realms/einsatzbereit/protocol/openid-connect/token",
+			new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "password",
+				["client_id"] = "frontend-test",
+				["username"] = username,
+				["password"] = password,
+				["scope"] = "openid",
+			}));
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()!;
 	}
 }
