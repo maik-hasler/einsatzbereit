@@ -701,9 +701,6 @@
       "bulkCancelSuccess_other": "{{count}} abgesagt.",
       "bulkCancelPartial": "{{succeeded}} abgesagt, {{failed}} fehlgeschlagen.",
       "bulkCancelError": "Fehler beim Absagen der Auswahl",
-      "exportButton": "Exportieren",
-      "exportButtonLoading": "Wird exportiert…",
-      "exportError": "Fehler beim Exportieren der Anmeldungen",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",

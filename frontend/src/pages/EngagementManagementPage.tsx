@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, Link, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "react-oidc-context";
 import type {
 	EngagementSummary,
 	FeedbackItemDto,
@@ -10,13 +9,11 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
-import { runtimeConfig } from "../lib/runtimeConfig";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import Button from "../components/Button";
 import Chip from "../components/Chip";
-import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
@@ -35,12 +32,7 @@ import {
 	selectClass,
 } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import {
-	ArrowDownTrayIcon,
-	CheckIconSolid,
-	QrCodeIcon,
-	StarIcon,
-} from "../components/icons";
+import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -54,7 +46,6 @@ export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const { isOrganizer } = useOutletContext<OrgAppContext>();
 	const api = useApiClient();
-	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
@@ -100,8 +91,6 @@ export default function EngagementManagementPage() {
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
 	const [undoingCheckIn, setUndoingCheckIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
-	const [exporting, setExporting] = useState(false);
-	const [exportError, setExportError] = useState<string | null>(null);
 
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkConfirming, setBulkConfirming] = useState(false);
@@ -511,46 +500,6 @@ export default function EngagementManagementPage() {
 		setCancelError(null);
 	}
 
-	// Not routed through useApiClient()/EinsatzbereitApi: NSwag has no typed
-	// response for a file-returning endpoint (see GetEngagementCalendar's
-	// generated client method, which discards the body and returns void), so
-	// this needs a raw authenticated fetch + blob download instead.
-	async function handleExport() {
-		if (!opportunityId) return;
-		setExporting(true);
-		setExportError(null);
-		try {
-			const response = await fetch(
-				`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${opportunityId}/engagements/export`,
-				{
-					headers: {
-						Authorization: `Bearer ${auth.user?.access_token ?? ""}`,
-					},
-				},
-			);
-			if (!response.ok) {
-				throw new Error(t("engagementManagement.exportError"));
-			}
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `engagements-${opportunityId}.csv`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-		} catch (err) {
-			setExportError(
-				err instanceof Error
-					? err.message
-					: t("engagementManagement.exportError"),
-			);
-		} finally {
-			setExporting(false);
-		}
-	}
-
 	if (notFound) {
 		return <NotFoundPage />;
 	}
@@ -600,28 +549,11 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 
-			{/* Export, the filters and the bulk-select row are one toolbar for
-			the list below, boxed like the Sign-ups and Members toolbars (#1755).
-			They were three separate bare rows - a right-floating Export button on
-			nothing, then two form fields on the page background, then a
-			full-width card holding a single checkbox. */}
+			{/* The filters and the bulk-select row are one toolbar for the list
+			below, boxed like the Sign-ups and Members toolbars (#1755). They
+			were separate bare rows - two form fields on the page background,
+			then a full-width card holding a single checkbox. */}
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
-				<div className="mb-4 flex justify-end">
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={handleExport}
-						disabled={exporting}
-					>
-						<ArrowDownTrayIcon className="h-4 w-4" />
-						{exporting
-							? t("engagementManagement.exportButtonLoading")
-							: t("engagementManagement.exportButton")}
-					</Button>
-				</div>
-				{exportError && <ErrorBanner message={exportError} className="mb-4" />}
-
 				<div className="flex flex-wrap items-end gap-3">
 					<div>
 						<label htmlFor="engagement-status-filter" className={labelClass}>
