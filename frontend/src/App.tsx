@@ -16,10 +16,12 @@ import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
-// Eager, not lazy: OrgAppLayout (eager, above) and EngagementManagementPage
-// both statically import this too, so it always lands in the entry chunk
-// regardless - a lazy() wrapper here just contradicted that and tripped
-// Vite's INEFFECTIVE_DYNAMIC_IMPORT warning on every build.
+// Eager, not lazy: this is the wildcard route's element, so it belongs in the
+// entry chunk regardless, and EngagementManagementPage statically imports it
+// too - a lazy() wrapper here just contradicted that and tripped Vite's
+// INEFFECTIVE_DYNAMIC_IMPORT warning on every build. (OrgAppLayout used to be
+// a third static importer; since #1774 its unknown-organization branch renders
+// the shared RouteState with org-specific copy instead of this page.)
 import NotFoundPage from "./pages/NotFoundPage";
 
 // Route pages are lazy-loaded so each one becomes its own build chunk instead

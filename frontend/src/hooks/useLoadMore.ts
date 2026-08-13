@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { useOnlineStatus } from "./useOnlineStatus";
 
 export interface LoadMorePage<T> {
 	items: T[];
@@ -148,6 +149,22 @@ export function useLoadMore<T>(
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [page, resetToken, retryToken]);
+
+	// #1774: a fetch that failed because the connection was down is shown as an
+	// honest offline state with no retry button - retrying is guaranteed to
+	// fail while offline - so regaining the connection is what has to drive the
+	// recovery. Deliberately edge-triggered on the offline -> online
+	// transition and gated on a failure actually being on screen: a settled
+	// list is never refetched behind the user's back, and a retry that fails
+	// again while online cannot loop back into this.
+	const online = useOnlineStatus();
+	const hasFailure = error !== null || loadMoreError !== null;
+	const wasOnlineRef = useRef(online);
+	useEffect(() => {
+		const cameBackOnline = online && !wasOnlineRef.current;
+		wasOnlineRef.current = online;
+		if (cameBackOnline && hasFailure) setRetryToken((n) => n + 1);
+	}, [online, hasFailure]);
 
 	const loadMore = useCallback(() => {
 		setPage((p) => p + 1);

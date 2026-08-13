@@ -14,6 +14,7 @@ vi.mock("../i18n", () => ({
 
 import {
 	getApiErrorMessage,
+	getApiErrorStatus,
 	isApiErrorCode,
 	isApiForbiddenError,
 	isApiNotFoundError,
@@ -86,6 +87,38 @@ describe("getApiErrorMessage", () => {
 	it("does not log when detail is only whitespace", () => {
 		getApiErrorMessage({ detail: "   " }, "fallback text");
 		expect(console.error).not.toHaveBeenCalled();
+	});
+});
+
+describe("getApiErrorStatus", () => {
+	it("reads the status off a ProblemDetails-shaped rejection", () => {
+		expect(getApiErrorStatus({ status: 403, errorCode: "Org.Forbidden" })).toBe(
+			403,
+		);
+	});
+
+	// The case #1774 turns on: NSwag emits no 400 branch for
+	// GetOrganizationDetails, so an all-zero organization id (rejected by
+	// OrganizationId.Create) arrives as a bare ApiException whose only usable
+	// signal is this status.
+	it("reads the status off an ApiException-shaped rejection carrying no errorCode", () => {
+		expect(getApiErrorStatus({ status: 400, response: "{}" })).toBe(400);
+	});
+
+	it("returns null when the rejection carries no status (e.g. a network failure)", () => {
+		expect(getApiErrorStatus(new TypeError("Failed to fetch"))).toBeNull();
+	});
+
+	it("returns null when status is not a number", () => {
+		expect(getApiErrorStatus({ status: "404" })).toBeNull();
+	});
+
+	it("returns null for null", () => {
+		expect(getApiErrorStatus(null)).toBeNull();
+	});
+
+	it("returns null for a non-object value", () => {
+		expect(getApiErrorStatus("500")).toBeNull();
 	});
 });
 
