@@ -57,7 +57,16 @@ export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	Calendar: {
 		titleKey: "orgDashboard.calendarWidgetTitle",
 		defaultWidth: 8,
-		defaultHeight: 6,
+		// 4 rows, not the 6 this started at (#1795): at 1440px a row is
+		// ~150px, so 6 rows handed a month grid holding two event bars over
+		// 900px of the first screen an organizer opens. 4 rows sits exactly on
+		// minHeight below - still comfortably above CalendarWidget's own
+		// 400px floor, so the month grid it opens on at full width keeps
+		// rendering legibly - and gives back ~300px to the widgets carrying
+		// actionable information. The view stays month at this width
+		// (defaultViewForSize in CalendarWidget.tsx); the footprint was the
+		// problem, not the view.
+		defaultHeight: 4,
 		minWidth: 4,
 		minHeight: 4,
 	},
@@ -112,13 +121,21 @@ export interface PlacedWidget {
 // Layout applied when an organizer hasn't customized their dashboard yet:
 // ToDo+CreateOpportunity side by side, then UpcomingOpportunities, Calendar
 // and Settings each full-width below. Heights match each widget's own
-// defaultHeight above so no card leaves dead space.
+// defaultHeight above so no card leaves dead space, and each row starts
+// exactly where the one above it ends so the stack has no vertical gaps -
+// widgetCatalog.test.ts asserts both, so shrinking a widget here (as #1795
+// did to the Calendar) can't silently leave a hole below it.
+//
+// Only organizations that have never customized their dashboard ever see
+// this - OrgDashboardPage/index.tsx falls back to it solely when the API
+// reports hasCustomLayout: false, and nothing migrates or rewrites a saved
+// layout, so editing it leaves every stored layout exactly as it was.
 export const DEFAULT_LAYOUT: PlacedWidget[] = [
 	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 1 },
 	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 1 },
 	{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
-	{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 6 },
-	{ widgetKey: "Settings", x: 1, y: 10, width: 8, height: 1 },
+	{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
+	{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },
 ];
 
 export function classifyWidth(width: number): WidgetSizeClass {
