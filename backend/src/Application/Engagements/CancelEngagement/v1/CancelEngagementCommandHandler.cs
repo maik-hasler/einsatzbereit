@@ -31,15 +31,18 @@ internal sealed class CancelEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var cancelled = await EngagementCancellationHelper.CancelAndNotifyAsync(
+		var cancelled = await EngagementCancellationHelper.CancelAsync(
 			dbContext,
 			engagement,
 			request.Reason,
 			opportunity.Title,
+			// The volunteer hears about this only here - no opportunity-level
+			// notification accompanies a single engagement cancellation.
+			notifyVolunteer: true,
 			logger,
 			cancellationToken);
 
-		// Only when a cancellation actually happened - CancelAndNotifyAsync leaves an
+		// Only when a cancellation actually happened - CancelAsync leaves an
 		// already-anonymized engagement (its volunteer deleted their account) untouched
 		// rather than throwing (einsatzbereit#1724), and an audit entry claiming
 		// "EngagementCancelled" for a no-op would be misleading.

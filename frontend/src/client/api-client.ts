@@ -775,6 +775,113 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param utcOffsetMinutes (optional) 
+     * @param occurrence (optional) 
+     * @param participationType (optional) 
+     * @param isRemote (optional) 
+     * @param centerLatitude (optional) 
+     * @param centerLongitude (optional) 
+     * @param radiusKm (optional) 
+     * @param categories (optional) 
+     * @param tag (optional) 
+     * @param keyword (optional) 
+     * @return OK
+     */
+    getVolunteerOpportunityDateAvailability(from: Date, to: Date, utcOffsetMinutes: number | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, keyword: string | undefined, signal?: AbortSignal): Promise<VolunteerOpportunityAvailableDate[]> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/date-availability?";
+        if (from === undefined || from === null)
+            throw new globalThis.Error("The parameter 'from' must be defined and cannot be null.");
+        else
+            url_ += "From=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
+        if (to === undefined || to === null)
+            throw new globalThis.Error("The parameter 'to' must be defined and cannot be null.");
+        else
+            url_ += "To=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
+        if (utcOffsetMinutes === null)
+            throw new globalThis.Error("The parameter 'utcOffsetMinutes' cannot be null.");
+        else if (utcOffsetMinutes !== undefined)
+            url_ += "UtcOffsetMinutes=" + encodeURIComponent("" + utcOffsetMinutes) + "&";
+        if (occurrence === null)
+            throw new globalThis.Error("The parameter 'occurrence' cannot be null.");
+        else if (occurrence !== undefined)
+            url_ += "Occurrence=" + encodeURIComponent("" + occurrence) + "&";
+        if (participationType === null)
+            throw new globalThis.Error("The parameter 'participationType' cannot be null.");
+        else if (participationType !== undefined)
+            url_ += "ParticipationType=" + encodeURIComponent("" + participationType) + "&";
+        if (isRemote === null)
+            throw new globalThis.Error("The parameter 'isRemote' cannot be null.");
+        else if (isRemote !== undefined)
+            url_ += "IsRemote=" + encodeURIComponent("" + isRemote) + "&";
+        if (centerLatitude === null)
+            throw new globalThis.Error("The parameter 'centerLatitude' cannot be null.");
+        else if (centerLatitude !== undefined)
+            url_ += "CenterLatitude=" + encodeURIComponent("" + centerLatitude) + "&";
+        if (centerLongitude === null)
+            throw new globalThis.Error("The parameter 'centerLongitude' cannot be null.");
+        else if (centerLongitude !== undefined)
+            url_ += "CenterLongitude=" + encodeURIComponent("" + centerLongitude) + "&";
+        if (radiusKm === null)
+            throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
+        else if (radiusKm !== undefined)
+            url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
+        if (categories === null)
+            throw new globalThis.Error("The parameter 'categories' cannot be null.");
+        else if (categories !== undefined)
+            categories && categories.forEach(item => { url_ += "Categories=" + encodeURIComponent("" + item) + "&"; });
+        if (tag === null)
+            throw new globalThis.Error("The parameter 'tag' cannot be null.");
+        else if (tag !== undefined)
+            url_ += "Tag=" + encodeURIComponent("" + tag) + "&";
+        if (keyword === null)
+            throw new globalThis.Error("The parameter 'keyword' cannot be null.");
+        else if (keyword !== undefined)
+            url_ += "Keyword=" + encodeURIComponent("" + keyword) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetVolunteerOpportunityDateAvailability(_response);
+        });
+    }
+
+    protected processGetVolunteerOpportunityDateAvailability(response: Response): Promise<VolunteerOpportunityAvailableDate[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VolunteerOpportunityAvailableDate[];
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<VolunteerOpportunityAvailableDate[]>(null as any);
+    }
+
+    /**
      * @param occurrence (optional) 
      * @param participationType (optional) 
      * @param isRemote (optional) 
@@ -6622,6 +6729,7 @@ export interface EngagementSummary {
     feedbackComment?: string | undefined;
     feedbackSubmittedAt?: Date | undefined;
     checkInMethod?: string;
+    opportunityValidUntil?: Date | undefined;
 
     [key: string]: any;
 }
@@ -7122,6 +7230,13 @@ export interface UpdateVolunteerOpportunityRequest {
     tags: string[] | undefined;
     checkInPin: string | undefined;
     validUntil: Date | undefined;
+
+    [key: string]: any;
+}
+
+export interface VolunteerOpportunityAvailableDate {
+    date: string;
+    opportunityCount: number;
 
     [key: string]: any;
 }

@@ -30,7 +30,19 @@ export default function NotificationItem({
 			>
 				<span className="flex items-start gap-2">
 					{!n.isRead && (
-						<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+						<>
+							{/* Unread was signalled by this dot's colour and the row's font
+							weight alone (#1786) - the span is empty, so a screen reader
+							read an unread row exactly like a read one. The marker goes
+							inside the row's own button to join its accessible name,
+							rather than being a standalone live region like the bell's
+							aggregate count in NotificationDropdown. */}
+							<span
+								aria-hidden="true"
+								className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500"
+							/>
+							<span className="sr-only">{t("notifications.unread")}</span>
+						</>
 					)}
 					<span className={!n.isRead ? "" : "pl-4"}>
 						{text}

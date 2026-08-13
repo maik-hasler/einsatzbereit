@@ -26,12 +26,22 @@ export default function LanguageSelector({
 
 	return (
 		<div className="relative" ref={ref}>
+			{/* #1772: a disclosure, not a listbox - same call RowActionsMenu.tsx
+			documents. This used to advertise aria-haspopup="listbox" and wrap each
+			<button> in an <li role="option">, which axe flags as nested-interactive
+			(serious, on every page since this sits in the header) and which promised
+			arrow-key/aria-activedescendant navigation the component never
+			implemented - Escape, via useDismissableOverlay, is the only key it
+			handles. Tab through a labelled list of buttons is what it actually does,
+			so that is what it announces; the active language is marked with
+			aria-current instead of aria-selected. Dropdown.tsx is the real
+			listbox in this repo, for picking a form value. */}
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
-				aria-haspopup="listbox"
 				aria-expanded={open}
 				aria-label={t("language.switchLanguage")}
+				data-testid="language-selector-trigger"
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
 				{/* Code only in the header. This used to show a bordered "DE"
@@ -48,18 +58,15 @@ export default function LanguageSelector({
 
 			{open && (
 				<ul
-					role="listbox"
 					aria-label={t("language.switchLanguage")}
+					data-testid="language-selector-menu"
 					className={`absolute top-full left-0 z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
 				>
 					{LANGUAGES.map((lang) => (
-						<li
-							key={lang.code}
-							role="option"
-							aria-selected={lang.code === currentCode}
-						>
+						<li key={lang.code}>
 							<button
 								type="button"
+								aria-current={lang.code === currentCode ? "true" : undefined}
 								onClick={() => {
 									void i18n.changeLanguage(lang.code);
 									localStorage.setItem(

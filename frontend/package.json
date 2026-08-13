@@ -23,7 +23,8 @@
     "check:nginx-gzip-static": "node scripts/check-nginx-gzip-static.js",
     "check:nginx-hsts": "node scripts/check-nginx-hsts.js",
     "check:nginx-permissions-policy": "node scripts/check-nginx-permissions-policy.js",
-    "check:pwa-precache": "node scripts/check-pwa-precache.js"
+    "check:pwa-precache": "node scripts/check-pwa-precache.js",
+    "check:pwa-manifest": "node scripts/check-pwa-manifest.js"
   },
   "dependencies": {
     "@fontsource-variable/source-sans-3": "5.3.0",

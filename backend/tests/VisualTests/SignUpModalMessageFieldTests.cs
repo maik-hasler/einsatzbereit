@@ -56,9 +56,13 @@ public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBas
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
-		var messageField = Page.GetByLabel("Message (required)");
+		// The accessible name is the field name alone since #1797 unified the
+		// required marker: the visible marker is an aria-hidden asterisk and
+		// the native `required` below is what announces the field as required.
+		var messageField = Page.GetByRole(AriaRole.Textbox, new() { Name = "Message", Exact = true });
 		await Expect(messageField).ToBeVisibleAsync();
 		await Expect(messageField).ToHaveAttributeAsync("required", "");
+		await Expect(Page.Locator("label[for='sign-up-message']")).ToHaveTextAsync("Message*");
 	}
 
 	private async Task<string> CreateIndividualContactOpportunityAsync(string label)

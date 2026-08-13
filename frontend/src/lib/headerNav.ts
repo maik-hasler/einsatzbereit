@@ -57,11 +57,14 @@ const STATIC_LINKS: readonly StaticNavLink[] = [
  * - That slot is a hash link into the landing page's pitch *for people without
  *   an organization*. For a member it is the least useful of the four, and the
  *   organization they already belong to is what "organizations" means to them.
- * - The desktop nav has no room for a fifth label. Measured on live staging at
- *   768px in German, the four existing labels already need 627px of the 562px
- *   the row can give them (#1793 - they wrap); at 1024px only ~163px is free,
- *   less than an untruncated organization name. Swapping the slot keeps the
- *   entry count, and hence the wrap pressure, where it is today.
+ * - The desktop nav has no room for a fifth label. It renders from `lg`
+ *   (1024px) up and no narrower, because the German labels do not fit a
+ *   tablet-width row at all (#1793/#1811 - see DesktopHeader's own note), and
+ *   1024px is therefore the tightest fit it ever has to survive: measured on
+ *   live staging, a signed-in viewer has ~163px of slack there, while this
+ *   entry costs ~210px. Added as a fifth label it would overflow the row;
+ *   swapping the slot leaves ~90px spare, since it only has to pay the
+ *   difference against the ~137px label it replaces.
  *
  * Gated on membership rather than on the `organisator` role: `activeOrg` is
  * already resolved from the viewer's organization list (see resolveActiveOrg),

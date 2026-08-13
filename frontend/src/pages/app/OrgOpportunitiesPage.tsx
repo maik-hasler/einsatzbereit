@@ -12,6 +12,8 @@ import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { labelClass, textareaClass } from "../../lib/formClasses";
 import { cardClass } from "../../lib/surfaceClasses";
+import { getOpportunityCapacity } from "../../lib/opportunityCapacity";
+import { formatSignUpCount } from "../../lib/format";
 import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -371,22 +373,17 @@ export default function OrgOpportunitiesPage() {
 							{item.description}
 						</p>
 					)}
-					{item.totalMaxParticipants == null ? (
-						<p className="mt-1 text-xs text-gray-500">
-							{t("orgOpportunities.participantsUnlimited", {
-								count: item.currentParticipantCount,
-							})}
-						</p>
-					) : (
-						item.totalMaxParticipants > 0 && (
-							<p className="mt-1 text-xs text-gray-500">
-								{t("orgOpportunities.participants", {
-									booked: item.currentParticipantCount,
-									max: item.totalMaxParticipants,
-								})}
-							</p>
-						)
-					)}
+					{/* Unconditional: this is the number an organizer opens the page
+					for. It used to render on one published row in five, because the
+					two-branch check it replaced dropped the whole line whenever
+					`totalMaxParticipants` was 0 - which is every opportunity with no
+					time slots, i.e. every interest-based one (#1777). */}
+					<p
+						data-testid="opportunity-signup-count"
+						className="mt-1 text-xs text-gray-500"
+					>
+						{formatSignUpCount(getOpportunityCapacity(item), t)}
+					</p>
 				</div>
 				{/* One visible primary action per card plus an overflow menu, not
 				five side-by-side buttons. Publish is the exception: on a draft it

@@ -947,11 +947,11 @@ export default function EngagementManagementPage() {
 													size="sm"
 													data-testid={`engagement-revoke-${e.id}`}
 													onClick={() => setConfirmCancelId(e.id)}
-													aria-label={t("engagementManagement.revokeNamed", {
+													aria-label={t("engagementManagement.cancelNamed", {
 														name: volunteerDisplayName(e),
 													})}
 												>
-													{t("engagementManagement.revoke")}
+													{t("engagementManagement.cancel")}
 												</Button>
 											</div>
 										)}

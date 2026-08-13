@@ -1,10 +1,22 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
-import Chip from "../Chip";
+import Chip, { type ChipTone } from "../Chip";
 import { getInitials } from "../../lib/initials";
-import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
+import {
+	FEW_SPOTS_THRESHOLD,
+	getOpportunityCapacity,
+	type OpportunityCapacity,
+} from "../../lib/opportunityCapacity";
+import {
+	ArrowsRightLeftIcon,
+	CalendarIcon,
+	ClockIcon,
+	GlobeIcon,
+	MapPinIcon,
+} from "../icons";
 import { CategoryGlyph } from "./CategoryGlyph";
 
 // A card carries a banner only when the organization uploaded a photo; there
@@ -16,6 +28,96 @@ import { CategoryGlyph } from "./CategoryGlyph";
 // since almost no opportunity has a photo. Cross-checked against
 // idealist.org and betterplace.org, neither of which recolors a listing by
 // category. Category is carried by the icon+label chip instead.
+
+/**
+ * The capacity chip always renders, in every one of the contract's states -
+ * including the "no places to count" one, which used to render nothing at all
+ * and made the chip's presence look like a property of the opportunity rather
+ * than of the data (#1777).
+ */
+function capacityChip(
+	capacity: OpportunityCapacity,
+	t: TFunction,
+): { tone: ChipTone; label: string } {
+	switch (capacity.kind) {
+		case "unlimited":
+			return { tone: "brand", label: t("opportunities.unlimitedSpots") };
+		case "notApplicable":
+			return {
+				tone: "neutral",
+				label:
+					capacity.reason === "interest"
+						? t("opportunities.byInterest")
+						: t("opportunities.noSpotsYet"),
+			};
+		case "capped":
+			if (capacity.isFull) {
+				return { tone: "danger", label: t("opportunities.full") };
+			}
+			return {
+				tone: capacity.spotsLeft <= FEW_SPOTS_THRESHOLD ? "warning" : "neutral",
+				label: t("opportunities.spotsLeft", { count: capacity.spotsLeft }),
+			};
+	}
+}
+
+/**
+ * The date line's three kinds, each with its own glyph and tone.
+ *
+ * They used to share one icon and one tone, differing only in their label
+ * text, on the reasoning that a shared tone made two cards comparable - and
+ * it did fix the older bug where a bare unlabelled datetime in brand green sat
+ * in the same slot as a grey "Apply by" line. But identical styling traded one
+ * failure for another: a start date and an application deadline are not the
+ * same kind of fact, and reading which one a card states required reading the
+ * label on every card in the grid. Keeping both labels *and* giving each kind
+ * its own glyph and tone (calendar/neutral for a date that is set,
+ * clock/amber for a deadline running down, arrows/muted for no fixed date)
+ * makes the kind legible at a glance without going back to an unlabelled
+ * slot. Deliberate reversal of the previous decision, per #1777.
+ */
+function dateLine(
+	item: VolunteerOpportunitySummary,
+	t: TFunction,
+	language: string,
+): {
+	kind: "start" | "deadline" | "flexible";
+	Icon: typeof CalendarIcon;
+	tone: string;
+	label: string;
+} {
+	if (item.nextTimeSlotStart) {
+		return {
+			kind: "start",
+			Icon: CalendarIcon,
+			tone: "text-gray-700",
+			label: t("opportunities.startsOn", {
+				date: formatDateTime(
+					item.nextTimeSlotStart as unknown as string,
+					language,
+				),
+			}),
+		};
+	}
+
+	if (item.validUntil) {
+		return {
+			kind: "deadline",
+			Icon: ClockIcon,
+			tone: "text-amber-700",
+			label: t("opportunities.applyBy", {
+				date: formatDate(item.validUntil as unknown as string, language),
+			}),
+		};
+	}
+
+	return {
+		kind: "flexible",
+		Icon: ArrowsRightLeftIcon,
+		tone: "text-gray-500",
+		label: t("opportunities.flexibleDate"),
+	};
+}
 
 export default function OpportunityListItem({
 	item,
@@ -32,17 +134,23 @@ export default function OpportunityListItem({
 }) {
 	const { t, i18n } = useTranslation();
 	const Heading = headingLevel === 3 ? "h3" : "h2";
-	const isUnlimited = item.totalMaxParticipants == null;
-	const spotsLeft =
-		item.totalMaxParticipants != null && item.totalMaxParticipants > 0
-			? item.totalMaxParticipants - item.currentParticipantCount
-			: null;
+	const capacity = capacityChip(getOpportunityCapacity(item), t);
+	const date = dateLine(item, t, i18n.language);
+	const DateIcon = date.Icon;
 
+	// No overflow-hidden on the card any more. The stretched link below is what
+	// a keyboard user actually lands on (the title is inside it, not focusable
+	// itself), and global.css's shared :focus-visible ring draws at
+	// outline-offset 2px - i.e. entirely outside the link's box, which is the
+	// card's box, so clipping descendants clipped the whole ring away and
+	// tabbing through the grid moved an invisible focus (#1777). The banner
+	// below carries the top rounding itself now, which is all the clipping was
+	// for.
 	return (
-		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
+		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
-				className="absolute inset-0 z-10"
+				className="absolute inset-0 z-10 rounded-card"
 				aria-label={item.title}
 			/>
 			<div className="flex h-full flex-col">
@@ -55,7 +163,7 @@ export default function OpportunityListItem({
 				the grid's top third was a tinted rectangle with a small icon
 				centred in it. A photo-less card is a text card now. */}
 				{item.bannerImageUrl && (
-					<div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100">
+					<div className="relative h-32 w-full shrink-0 overflow-hidden rounded-t-card bg-gradient-to-br from-brand-50 to-brand-100">
 						<img
 							src={item.bannerImageUrl}
 							alt=""
@@ -78,30 +186,14 @@ export default function OpportunityListItem({
 						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>
-						{isUnlimited ? (
-							<Chip tone="brand" size="sm" className="ml-auto shrink-0">
-								{t("opportunities.unlimitedSpots")}
-							</Chip>
-						) : (
-							spotsLeft !== null &&
-							(spotsLeft <= 0 ? (
-								<Chip tone="danger" size="sm" className="ml-auto shrink-0">
-									{t("opportunities.full")}
-								</Chip>
-							) : spotsLeft <= 3 ? (
-								<Chip tone="warning" size="sm" className="ml-auto shrink-0">
-									{t("opportunities.spotsLeft", {
-										count: spotsLeft,
-									})}
-								</Chip>
-							) : (
-								<Chip tone="neutral" size="sm" className="ml-auto shrink-0">
-									{t("opportunities.spotsLeft", {
-										count: spotsLeft,
-									})}
-								</Chip>
-							))
-						)}
+						<Chip
+							data-testid="opportunity-capacity"
+							tone={capacity.tone}
+							size="sm"
+							className="ml-auto shrink-0"
+						>
+							{capacity.label}
+						</Chip>
 						{/* No report control here. It sat inline in this metadata row,
 						immediately after the category and capacity chips, giving a
 						moderation action the same weight and adjacency as the
@@ -119,46 +211,19 @@ export default function OpportunityListItem({
 					skipped a level and axe failed the page on heading-order. The
 					landing page has a section heading over these cards again, hence
 					a prop rather than a second fixed level. */}
-					<Heading className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+					<Heading className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg">
 						{item.title}
 					</Heading>
-					{/* One slot, one meaning. The start date used to render as a bare
-					datetime in brand green while the application deadline rendered
-					as "Apply by {date}" in grey - same position, different colour,
-					different fact, no label on the first of them. Two cards side by
-					side were not comparable. Both are labelled and share a tone
-					now; the calendar icon is the only thing they still share
-					silently. */}
-					{item.nextTimeSlotStart ? (
-						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
-							<CalendarIcon className="h-4 w-4 shrink-0" />
-							<span>
-								{t("opportunities.startsOn", {
-									date: formatDateTime(
-										item.nextTimeSlotStart as unknown as string,
-										i18n.language,
-									),
-								})}
-							</span>
-						</p>
-					) : item.validUntil ? (
-						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
-							<CalendarIcon className="h-4 w-4 shrink-0" />
-							<span>
-								{t("opportunities.applyBy", {
-									date: formatDate(
-										item.validUntil as unknown as string,
-										i18n.language,
-									),
-								})}
-							</span>
-						</p>
-					) : (
-						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
-							<CalendarIcon className="h-4 w-4 shrink-0" />
-							<span>{t("opportunities.flexibleDate")}</span>
-						</p>
-					)}
+					{/* See dateLine() above for the three kinds this slot can state and
+					why each one carries its own glyph and tone. */}
+					<p
+						data-testid="opportunity-date-line"
+						data-date-kind={date.kind}
+						className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${date.tone}`}
+					>
+						<DateIcon className="h-4 w-4 shrink-0" />
+						<span>{date.label}</span>
+					</p>
 					{item.description && (
 						<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
 							{item.description}

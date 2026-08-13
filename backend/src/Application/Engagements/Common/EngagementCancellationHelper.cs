@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 namespace Application.Engagements.Common;
 
 /// <summary>
-/// Cancels an engagement and creates the same in-app notification that
-/// <see cref="CancelEngagement.v1.CancelEngagementCommandHandler"/> creates for an
-/// organizer-triggered cancellation - shared so engagements auto-cancelled by an
-/// opportunity deletion notify the volunteer identically instead of only via the
+/// Cancels an engagement and - unless the caller opts out - creates the same in-app
+/// notification that <see cref="CancelEngagement.v1.CancelEngagementCommandHandler"/>
+/// creates for an organizer-triggered cancellation, shared so engagements auto-cancelled
+/// by an opportunity deletion notify the volunteer identically instead of only via the
 /// opportunity-level notification (einsatzbereit#1057). The volunteer's cancellation
 /// email itself is not sent here (#1150): Cancel() raises EngagementCancelledDomainEvent,
 /// consumed post-commit by EngagementCancelledNotificationHandler, so it fires correctly
@@ -19,14 +19,24 @@ namespace Application.Engagements.Common;
 /// </summary>
 internal static class EngagementCancellationHelper
 {
+	/// <param name="notifyVolunteer">
+	/// Whether to create the <see cref="NotificationKind.EngagementCancelled"/> row.
+	/// False only where the caller has already notified this volunteer about the same
+	/// event through another path - see
+	/// <see cref="VolunteerOpportunities.Common.VolunteerOpportunityEngagementCascadeHelper"/>
+	/// (einsatzbereit#1790). The cancellation itself, and the
+	/// EngagementCancelledDomainEvent it raises (and with it the volunteer's email),
+	/// happen either way; only the in-app row is skipped.
+	/// </param>
 	// Returns whether the engagement was actually cancelled - callers that record their
 	// own audit trail (CancelEngagementCommandHandler) use this to avoid logging an
 	// "EngagementCancelled" entry for an engagement that was in fact left untouched.
-	public static async Task<bool> CancelAndNotifyAsync(
+	public static async Task<bool> CancelAsync(
 		IApplicationDbContext dbContext,
 		Engagement engagement,
 		string? reason,
 		string opportunityTitle,
+		bool notifyVolunteer,
 		ILogger logger,
 		CancellationToken cancellationToken)
 	{
@@ -46,6 +56,9 @@ internal static class EngagementCancellationHelper
 		}
 
 		engagement.Cancel(reason, opportunityTitle).ThrowIfFailure();
+
+		if (!notifyVolunteer)
+			return true;
 
 		var notification = Notification.Create(
 			engagement.VolunteerId!.Value,

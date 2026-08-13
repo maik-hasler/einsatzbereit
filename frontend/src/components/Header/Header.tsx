@@ -4,18 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
-import { useApiClient } from "../../hooks/useApiClient";
-import { useSharedOrgFetch } from "../../hooks/useSharedOrgFetch";
+import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
-import {
-	clearActiveOrgId,
-	getActiveOrgId,
-	resolveActiveOrg,
-} from "../../lib/activeOrg";
+import { clearActiveOrgId } from "../../lib/activeOrg";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import { getInitials } from "../../lib/initials";
-import type { OrganizationSummaryDto } from "../../client/api-client";
 import DesktopHeader from "./DesktopHeader";
 import MobileHeader from "./MobileHeader";
 import MobileMenu from "./MobileMenu";
@@ -37,7 +31,6 @@ export default function Header({
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -48,21 +41,22 @@ export default function Header({
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isAdmin = roles.includes("admin");
-	// Shared with HomePage, which independently needs the same top-level
-	// organization list on the same mount (#1396) - see useSharedOrgFetch.
-	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
-		`organizations:${isLoggedIn}`,
-		() => (isLoggedIn ? api.getOrganizations() : Promise.resolve([])),
-	);
-	const orgs = isLoggedIn ? (orgsData ?? []) : [];
-	const orgsLoading = isLoggedIn && orgsData === null && !orgsError;
-	const activeOrg = resolveActiveOrg(orgs, getActiveOrgId());
+	// Shared with HomePage and the profile settings page, which independently
+	// need the same organization list on the same mount (#1396) - the request
+	// itself is deduplicated, see useMyOrganizations/useSharedOrgFetch.
+	const {
+		orgs,
+		activeOrg,
+		loading: orgsLoading,
+		error: orgsError,
+	} = useMyOrganizations();
 	// #1785: a member's organization is a top-level nav destination - except
 	// inside the org app itself, where the switcher rendered below already
-	// names the same organization and a second copy of the name in the nav
-	// would only repeat it (and, at 768px, cost the nav width it does not have
-	// - see lib/headerNav). Both breakpoints are gated together so the desktop
-	// nav and the burger menu never disagree about what exists.
+	// names the same organization, and a second copy of the name in the nav
+	// would only repeat it (and cost the row width it has little of at the
+	// desktop nav's own breakpoint - see lib/headerNav). Both breakpoints are
+	// gated together so the desktop nav and the burger menu never disagree
+	// about what exists.
 	const navOrg = orgSwitcher ? null : activeOrg;
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -75,6 +69,25 @@ export default function Header({
 		const onScroll = () => setScrolled(window.scrollY > 100);
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
+
+	// The menu and its scrim are md:hidden, but nothing unmounted them when the
+	// viewport crossed that breakpoint - an open menu just went invisible while
+	// staying mounted. Since #1787 that also means it keeps holding the
+	// background scroll lock, freezing the page with no visible dialog to
+	// explain why. Both a phone rotated into landscape and a desktop user
+	// adjusting zoom at 300%+ (the low-vision reflow workflow WCAG 1.4.10 is
+	// about) cross 768px this way. Closing here also restores the Tab trap,
+	// which goes dormant in that state: MobileMenu's focusable filter drops
+	// every display:none element, finds none, and bails out - letting focus
+	// walk into the page behind a dialog that is still nominally open.
+	useEffect(() => {
+		const desktop = window.matchMedia("(min-width: 768px)");
+		const closeIfDesktop = () => {
+			if (desktop.matches) setMobileOpen(false);
+		};
+		desktop.addEventListener("change", closeIfDesktop);
+		return () => desktop.removeEventListener("change", closeIfDesktop);
 	}, []);
 
 	// Only while the band is actually behind the header - once scrolled past

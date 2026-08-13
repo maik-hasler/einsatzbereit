@@ -79,7 +79,10 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 		await Page.Locator("#sign-up-message").FillAsync($"Delivery check for {suffix}");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		// The submit button now carries the same label as the trigger behind it
+		// ("Express interest" end to end, #1775), so the click is scoped to the
+		// dialog rather than matching both.
+		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { State = WaitForSelectorState.Detached });
 
 		await AssertMailpitReceivedMessageToAsync(mailpit, "vera@example.com", subjectContains: suffix);

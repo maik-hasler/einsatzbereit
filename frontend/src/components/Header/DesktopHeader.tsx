@@ -11,6 +11,19 @@ import { buildPrimaryNav } from "../../lib/headerNav";
 // Desktop-width-only nav: primary destinations, then signed-in account
 // controls (or sign-in/register buttons) plus the language selector.
 //
+// The swap to the burger happens at `lg`, not `md` (issue #1793). Everything
+// this bar carries measures ~904px wide with the German labels - the four
+// links alone are 415px, the sign-in/register pair 213px, and the wordmark
+// 158px - so a `md` (768px) swap left the row 184px short and the two long
+// German labels ("Einsaetze finden", "Fuer Organisationen") broke across two
+// lines at every width from 768 to ~951. Tightening gaps and padding recovers
+// at most ~120px of that, so the labels genuinely do not fit a tablet-width
+// row; `lg` is the first breakpoint where they do. English is shorter and was
+// unaffected, which is why the wrap only showed in the served-by-default
+// locale. `whitespace-nowrap` on the links below states the same guarantee
+// locally: these labels are never allowed to wrap, at any width that renders
+// them.
+//
 // The destinations are the point of this component. Until /opportunities
 // became a route of its own, this <nav aria-label="Main navigation"> held no
 // links at all - just account controls - so a signed-in volunteer had no
@@ -58,12 +71,12 @@ export default function DesktopHeader({
 	return (
 		<nav
 			aria-label={t("nav.primaryLabel")}
-			className="hidden items-center gap-3 md:flex"
+			className="hidden items-center gap-3 lg:flex"
 		>
-			<ul className="mr-2 flex items-center gap-1 lg:gap-2">
+			<ul className="mr-2 flex items-center gap-2">
 				{buildPrimaryNav(activeOrg).map((link) => {
 					const base =
-						"rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+						"rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";
@@ -76,11 +89,14 @@ export default function DesktopHeader({
 								it is more recognisable than a generic "Organisation" and
 								it states which organization you are working in), so it
 								has to survive names as long as "Lindenauer
-								Nachbarschaftshilfe e.V." in a row that is already full at
-								768px. It truncates rather than wraps, capped tighter
-								below `lg` so this entry is never wider than the "for
-								organizations" label it replaces; `title` keeps the full
-								name readable on hover, as in the org switcher. */}
+								Nachbarschaftshilfe e.V." in a row the paragraph above
+								has already accounted for down to the pixel. Capped and
+								truncated rather than wrapped: at 1024px this entry costs
+								~210px against the ~137px "Fuer Organisationen" it takes
+								the place of, which the signed-in row (no sign-in/register
+								pair) has the slack for - a fifth entry of this width
+								would not have fit. `title` keeps the full name readable
+								on hover, as in the org switcher. */}
 								<NavLink
 									to={link.to}
 									title={link.org.name}
@@ -94,9 +110,7 @@ export default function DesktopHeader({
 										logoUrl={link.org.logoUrl}
 										size="sm"
 									/>
-									<span className="max-w-20 truncate lg:max-w-40">
-										{link.org.name}
-									</span>
+									<span className="max-w-40 truncate">{link.org.name}</span>
 								</NavLink>
 							</li>
 						);

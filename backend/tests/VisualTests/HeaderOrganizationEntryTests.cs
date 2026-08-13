@@ -14,8 +14,9 @@ namespace VisualTests;
 ///
 /// It takes the "for organizations" slot rather than adding a fifth label: that
 /// slot pitches the landing page's section to people who have no organization
-/// yet, and the desktop nav has no width to spare for a fifth entry at tablet
-/// widths (#1793). The width case below is what keeps that swap honest.
+/// yet, and the desktop nav - which since #1811 renders only from `lg` up,
+/// because the German labels do not fit a tablet row at all - has no width to
+/// spare for a fifth entry even there. The width case below keeps that honest.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -23,10 +24,11 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 	private const int MobileWidth = 390;
 	private const int MobileHeight = 844;
 
-	// Tailwind's `md`, inclusive: the exact width at which the desktop nav
-	// takes over from the burger strip, and where the labels already fill the
-	// header row (#1793).
-	private const int TabletWidth = 768;
+	// Tailwind's `lg`, inclusive: since #1811 this is the narrowest width that
+	// renders the desktop nav at all, and therefore the tightest fit this entry
+	// ever has to survive - see HeaderNavBreakpointTests for the anonymous
+	// half of the same guarantee.
+	private const int DesktopWidth = 1024;
 
 	[Test]
 	public async Task DesktopHeader_Member_ReachesTheOrgAppWithoutTheAccountMenu()
@@ -118,39 +120,48 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	[Test]
-	public async Task DesktopHeader_At768_TheEntryFitsTheSlotItReplaced()
+	public async Task DesktopHeader_AtTheDesktopBreakpoint_TheEntryFitsWithoutOverflowingTheRow()
 	{
-		// #1793: at exactly 768px the header row is already full - measured on
-		// live staging in German, the four labels need 627px of the 562px the
-		// row can give them, and two of them wrap. That is why this entry takes
-		// the "for organizations" slot instead of adding a fifth one, and why
-		// it has to stay inside that slot's width: the longest German label,
-		// "Fuer Organisationen", renders a 137px box there.
+		// This entry is the widest thing the nav carries (~210px against the
+		// ~137px "Fuer Organisationen" it takes the place of), and #1811 left
+		// the labels `whitespace-nowrap` - so the next shape of #1793 would not
+		// be a wrapped label but a horizontally scrolling page. 1024px is where
+		// that would show first: a signed-in row has ~163px of slack there,
+		// which is why this entry replaces a label instead of joining them.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Page.SetViewportSizeAsync(TabletWidth, 1024);
+		await Page.SetViewportSizeAsync(DesktopWidth, 1024);
 
 		var entry = Page.GetByTestId("nav-organization");
 		await Expect(entry).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var box = await entry.BoundingBoxAsync();
-		box.Should().NotBeNull();
-		box!.Width.Should().BeLessThanOrEqualTo(137,
-			"the organization entry must not cost the nav more width than the label it "
-			+ "replaces, or it deepens the wrap #1793 is about");
+		var overflow = await Page.EvaluateAsync<int>(
+			"() => document.documentElement.scrollWidth - document.documentElement.clientWidth");
+		overflow.Should().BeLessThanOrEqualTo(0,
+			"the organization entry must not push the page into horizontal scroll");
 
-		// A long name truncates rather than wrapping (the row would grow to two
-		// lines otherwise), and still shows more than a sliver of the name - the
-		// failure mode #809/#1117 hit in the org switcher. Only a name long
-		// enough to be truncated at all can show that.
+		// Measured against "Hilfe", a single short word that cannot wrap at any
+		// width - the same self-calibrating reference HeaderNavBreakpointTests
+		// uses, rather than a hardcoded pixel height that drifts with the type
+		// scale. The entry is taller than a plain label by its 20px avatar, so
+		// this only has to rule out a second line.
+		var reference = await Page.GetByTestId("nav-help").BoundingBoxAsync();
+		var box = await entry.BoundingBoxAsync();
+		reference.Should().NotBeNull();
+		box.Should().NotBeNull();
+		box!.Height.Should().BeLessThan(reference!.Height * 2,
+			"a long organization name must truncate, not wrap the entry onto a second line");
+
+		// ...and still show more than a sliver of the name - the failure mode
+		// #809/#1117 hit in the org switcher. Only a name long enough to be
+		// truncated at all can show that.
 		var label = (await entry.InnerTextAsync()).Trim();
 		if (label.Length < 20)
 			Skip.Test("seed data changed - the resolved organization's name is too short to truncate");
 
-		box.Height.Should().BeLessThan(44, "the entry renders on one line");
 		box.Width.Should().BeGreaterThan(60, "the name must stay readable, not collapse to its first letter");
 	}
 

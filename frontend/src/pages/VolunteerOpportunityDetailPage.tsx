@@ -2,18 +2,26 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type {
 	PublicOrganizationProfileResponse,
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
+	computeSpotsLeft,
 	formatDate,
 	formatDateTime,
 	formatOccurrence,
 	formatParticipationType,
 	formatPostedAgo,
+	isSlotFull,
 } from "../lib/format";
+import {
+	FEW_SPOTS_THRESHOLD,
+	getCapacityFromTimeSlots,
+	type OpportunityCapacity,
+} from "../lib/opportunityCapacity";
 import Chip from "../components/Chip";
 import SectionHeading from "../components/SectionHeading";
 import SignUpModal from "../components/SignUpModal";
@@ -53,6 +61,61 @@ const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
 const CreateVolunteerOpportunityModal = lazy(
 	() => import("../components/CreateVolunteerOpportunityModal"),
 );
+
+/**
+ * The page's one capacity sentence, in the same "free places" framing the
+ * cards use - never the per-slot maximum, which is what let the list and this
+ * page describe the same opportunity two different ways (#1777).
+ */
+function describeCapacity(
+	capacity: OpportunityCapacity,
+	t: TFunction,
+): { label: string; tone: string } {
+	switch (capacity.kind) {
+		case "unlimited":
+			return {
+				label: t("opportunities.unlimitedSpots"),
+				tone: "text-teal-700",
+			};
+		case "notApplicable":
+			// No cap to report, so the sign-up count is the only real number -
+			// and before anyone has signed up, not even that.
+			return {
+				label:
+					capacity.booked > 0
+						? t("opportunities.participantsJoined", { count: capacity.booked })
+						: t("opportunities.byInterest"),
+				tone: "text-gray-700",
+			};
+		case "capped":
+			if (capacity.isFull) {
+				return { label: t("opportunities.full"), tone: "text-red-600" };
+			}
+			return capacity.spotsLeft <= FEW_SPOTS_THRESHOLD
+				? {
+						label: t("opportunities.fewSpotsLeft", {
+							count: capacity.spotsLeft,
+						}),
+						tone: "text-orange-700",
+					}
+				: {
+						label: t("opportunities.spotsLeft", { count: capacity.spotsLeft }),
+						tone: "text-gray-700",
+					};
+	}
+}
+
+/** A single slot's remaining places, sharing the sign-up modal's helpers. */
+function slotCapacityLabel(
+	slot: { maxParticipants?: number | undefined; bookedCount: number },
+	t: TFunction,
+): string {
+	const spotsLeft = computeSpotsLeft(slot.maxParticipants, slot.bookedCount);
+	if (spotsLeft === null) return t("opportunities.unlimitedSpots");
+	return isSlotFull(slot.maxParticipants, slot.bookedCount)
+		? t("opportunities.full")
+		: t("opportunities.spotsLeft", { count: spotsLeft });
+}
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -258,27 +321,19 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const cue = opportunity.currentUserEngagement;
 
-	const hasUnlimitedSlot = opportunity.timeSlots.some(
-		(ts) => ts.maxParticipants == null,
+	// Folded down by the shared contract, with the same rule the list
+	// projection uses - so this page can no longer state a different capacity
+	// than the card the reader clicked to get here (#1777).
+	const capacity = getCapacityFromTimeSlots(
+		opportunity.timeSlots,
+		opportunity.currentParticipantCount,
+		opportunity.participationType,
 	);
-	const totalMax = hasUnlimitedSlot
-		? null
-		: opportunity.timeSlots.reduce(
-				(sum, ts) => sum + (ts.maxParticipants ?? 0),
-				0,
-			);
-	const totalBooked = opportunity.timeSlots.reduce(
-		(sum, ts) => sum + ts.bookedCount,
-		0,
+	const isFull = capacity.kind === "capped" && capacity.isFull;
+	const { label: capacityLabel, tone: capacityTone } = describeCapacity(
+		capacity,
+		t,
 	);
-	const spotsLeft =
-		totalMax === null ? null : totalMax > 0 ? totalMax - totalBooked : Infinity;
-	const isFull =
-		!hasUnlimitedSlot &&
-		opportunity.timeSlots.length > 0 &&
-		opportunity.timeSlots.every(
-			(ts) => ts.bookedCount >= (ts.maxParticipants ?? 0),
-		);
 
 	const otherOrgOpportunities =
 		orgProfile?.openOpportunities
@@ -324,13 +379,12 @@ export default function VolunteerOpportunityDetailPage() {
 			and the CTA is better off in reading order anyway. */}
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
 					<div className="min-w-0">
-						{/* Flush left inside the max-w-4xl wrapper, not centred within it.
-			#1727 deliberately let the banner and the time-slot list span the
-			full wrapper while prose stayed at a reading measure - but centring
-			the prose meant the page alternated between two column widths
-			(672px title, 896px slot rows, 672px again), reading as three
-			misaligned blocks rather than one document. Sharing a left edge
-			keeps #1727's wider media and a readable measure at the same time. */}
+						{/* Flush left inside the outer wrapper, not centred within it.
+			#1727 deliberately let the banner span the full wrapper while prose
+			stayed at a reading measure - but centring the prose meant the page
+			alternated between two column widths, reading as misaligned blocks
+			rather than one document. Sharing a left edge keeps #1727's wider
+			banner and a readable measure at the same time. */}
 						<div className="max-w-2xl">
 							{/* Report (and the owner's draft controls) sit on the same line
 							as the at-a-glance panel's top edge rather than floating alone
@@ -405,7 +459,10 @@ export default function VolunteerOpportunityDetailPage() {
 						it. One tinted panel with labelled columns gives them a hierarchy
 						and puts the page's first real colour below the band; the loose
 						lines collapse into a single meta row beneath it. */}
-							<dl className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6">
+							<dl
+								className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6"
+								data-testid="opportunity-at-a-glance"
+							>
 								<div>
 									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
 										<CalendarIcon className="h-4 w-4 shrink-0" />
@@ -461,13 +518,20 @@ export default function VolunteerOpportunityDetailPage() {
 										{tag}
 									</Chip>
 								))}
-								{opportunity.currentParticipantCount > 0 && (
-									<span className="text-sm font-medium text-gray-700">
-										{t("opportunities.participantsJoined", {
-											count: opportunity.currentParticipantCount,
-										})}
-									</span>
-								)}
+								{/* Capacity, stated once and to everyone. It used to live only
+							inside the sign-up box, gated on `isAuthenticated && !isOwner &&
+							!cue && !isDraft`, so an anonymous visitor - most of this page's
+							traffic - never saw the remaining places at all and read the
+							per-slot maximum instead. That is what made a card saying "19
+							spots left" open a page saying "(max. 20 people)" (#1777).
+							Where there are no places to count, the sign-up count is the
+							only honest number, so that state says how many have joined. */}
+								<span
+									data-testid="opportunity-capacity"
+									className={`text-sm font-medium ${capacityTone}`}
+								>
+									{capacityLabel}
+								</span>
 								<span className="text-xs text-gray-500">
 									{formatPostedAgo(
 										opportunity.createdOn as unknown as string,
@@ -492,11 +556,19 @@ export default function VolunteerOpportunityDetailPage() {
 								)}
 						</div>
 
-						{/* Time slots - a reading column has no reason to constrain a list of
-			date/spot rows, so this spans the wider outer wrapper (#1727). */}
+						{/* Time slots - held to the same max-w-2xl measure as the blocks
+			above and below it (#1794). #1727 had let this list span the full grid
+			column on the grounds that date/spot rows aren't prose, but at 1440px
+			that gave the main column a second right edge 120px out from its
+			neighbours', so the page read as three misaligned blocks rather than
+			one. One measure for the whole column wins over the marginally roomier
+			rows. */}
 						{opportunity.participationType === "ScheduledSlots" &&
 							opportunity.timeSlots.length > 0 && (
-								<div className="mb-6">
+								<div
+									className="mb-6 max-w-2xl"
+									data-testid="opportunity-time-slots"
+								>
 									<SectionHeading>
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
@@ -517,12 +589,12 @@ export default function VolunteerOpportunityDetailPage() {
 														i18n.language,
 													)}
 												</span>
+												{/* Free places, the same framing the cards and the sign-up
+												modal's slot picker use. This said "(max. N people)" while the
+												card that linked here said "N spots left", so the two
+												disagreed about the same opportunity (#1777). */}
 												<span className="ml-3 shrink-0 text-xs text-gray-600">
-													{ts.maxParticipants == null
-														? t("opportunities.unlimitedSpots")
-														: t("opportunities.maxParticipants", {
-																count: ts.maxParticipants,
-															})}
+													{slotCapacityLabel(ts, t)}
 												</span>
 											</li>
 										))}
@@ -686,34 +758,14 @@ export default function VolunteerOpportunityDetailPage() {
 									data-testid="signup-cta"
 									className={`space-y-3 ${cardClass} sm:p-5`}
 								>
-									{hasUnlimitedSlot ? (
-										<p className="text-sm font-medium text-teal-700">
-											{t("opportunities.unlimitedSpots")}
+									{/* Only the full state speaks here now: it explains why the
+									button below is disabled. The remaining places themselves are
+									stated in the meta row above, where every visitor sees them
+									rather than only signed-in non-owners (#1777). */}
+									{isFull && (
+										<p className="text-sm font-medium text-red-600">
+											{t("opportunities.noSpotsLeft")}
 										</p>
-									) : (
-										totalMax !== null &&
-										totalMax > 0 &&
-										spotsLeft !== null && (
-											<p
-												className={`text-sm font-medium ${
-													isFull
-														? "text-red-600"
-														: spotsLeft <= 5
-															? "text-orange-700"
-															: "text-gray-600"
-												}`}
-											>
-												{isFull
-													? t("opportunities.noSpotsLeft")
-													: spotsLeft <= 5
-														? t("opportunities.fewSpotsLeft", {
-																count: spotsLeft,
-															})
-														: t("opportunities.spotsLeft", {
-																count: spotsLeft,
-															})}
-											</p>
-										)
 									)}
 									<Button
 										onClick={() => setShowSignUp(true)}
