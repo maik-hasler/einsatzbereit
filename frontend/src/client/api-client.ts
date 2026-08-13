@@ -6729,6 +6729,7 @@ export interface EngagementSummary {
     feedbackComment?: string | undefined;
     feedbackSubmittedAt?: Date | undefined;
     checkInMethod?: string;
+    opportunityValidUntil?: Date | undefined;
 
     [key: string]: any;
 }

@@ -24,7 +24,12 @@ import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
-import { CheckIconSolid } from "../../components/icons";
+import {
+	ArrowsRightLeftIcon,
+	CalendarIcon,
+	CheckIconSolid,
+	ClockIcon,
+} from "../../components/icons";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -416,7 +421,11 @@ export default function ActivitySection() {
 									{e.opportunityTitle ? (
 										<Link
 											to={`/volunteer-opportunities/${e.opportunityId}`}
-											className="text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
+											// Underlined on hover/focus: this carried no underline
+											// and exactly the classes of the non-link fallback span
+											// below it, so a route back to the opportunity read as
+											// plain text (#1777).
+											className="text-sm font-semibold text-gray-900 underline-offset-2 transition-colors hover:text-brand-700 hover:underline focus-visible:text-brand-700 focus-visible:underline"
 										>
 											{e.opportunityTitle}
 										</Link>
@@ -435,10 +444,53 @@ export default function ActivitySection() {
 											</Link>
 										</p>
 									)}
-									{e.message && (
-										<p className="mt-1 truncate text-sm text-gray-500 italic">
-											&ldquo;{e.message}&rdquo;
+									{/* The date region, which always answers the question this page
+									exists for: "when do I have to be somewhere?". The volunteer's own
+									application message used to occupy this spot for every sign-up
+									without a time slot, because the message and the Termin line were
+									two independent conditionals rendering into the same region - so an
+									interest-based sign-up showed a quoted fragment of its own message
+									where the next card showed a date. The message is still on the card,
+									labelled, below. Same three glyphs as the opportunity cards: a
+									calendar for a date that is set, a clock for a deadline running
+									down, arrows for no fixed date (#1777). */}
+									{e.timeSlotStartDateTime && e.timeSlotEndDateTime ? (
+										<p
+											data-testid="engagement-date"
+											data-date-kind="scheduled"
+											className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700"
+										>
+											<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+											<span>
+												{t("myEngagements.scheduledFor", {
+													range: `${formatDateTime(e.timeSlotStartDateTime as unknown as string, i18n.language)} - ${formatDateTime(e.timeSlotEndDateTime as unknown as string, i18n.language)}`,
+												})}
+											</span>
 										</p>
+									) : (
+										<>
+											<p
+												data-testid="engagement-date"
+												data-date-kind="interest"
+												className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500"
+											>
+												<ArrowsRightLeftIcon className="h-3.5 w-3.5 shrink-0" />
+												<span>{t("myEngagements.noFixedDate")}</span>
+											</p>
+											{e.opportunityValidUntil && (
+												<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
+													<ClockIcon className="h-3.5 w-3.5 shrink-0" />
+													<span>
+														{t("opportunities.applyBy", {
+															date: formatDate(
+																e.opportunityValidUntil as unknown as string,
+																i18n.language,
+															),
+														})}
+													</span>
+												</p>
+											)}
+										</>
 									)}
 									{e.status === "Cancelled" && e.cancellationReason && (
 										<p className="mt-1 text-xs text-gray-500">
@@ -447,11 +499,15 @@ export default function ActivitySection() {
 											})}
 										</p>
 									)}
-									{e.timeSlotStartDateTime && e.timeSlotEndDateTime && (
-										<p className="mt-1 text-xs font-medium text-gray-700">
-											{t("myEngagements.scheduledFor", {
-												range: `${formatDateTime(e.timeSlotStartDateTime as unknown as string, i18n.language)} - ${formatDateTime(e.timeSlotEndDateTime as unknown as string, i18n.language)}`,
-											})}
+									{/* Labelled, and out of the date region above - a quoted sentence
+									in the slot where a sibling card states a date reads as that
+									card's date, not as something the reader wrote. */}
+									{e.message && (
+										<p className="mt-1.5 truncate text-xs text-gray-500">
+											<span className="font-medium">
+												{t("myEngagements.yourMessage")}
+											</span>{" "}
+											<span className="italic">&ldquo;{e.message}&rdquo;</span>
 										</p>
 									)}
 									<p className="mt-1.5 text-xs text-gray-500">

@@ -8343,6 +8343,13 @@
           "checkInMethod": {
             "type": "string",
             "default": "None"
+          },
+          "opportunityValidUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
