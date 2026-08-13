@@ -4,18 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
-import { useApiClient } from "../../hooks/useApiClient";
-import { useSharedOrgFetch } from "../../hooks/useSharedOrgFetch";
+import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
-import {
-	clearActiveOrgId,
-	getActiveOrgId,
-	resolveActiveOrg,
-} from "../../lib/activeOrg";
+import { clearActiveOrgId } from "../../lib/activeOrg";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import { getInitials } from "../../lib/initials";
-import type { OrganizationSummaryDto } from "../../client/api-client";
 import DesktopHeader from "./DesktopHeader";
 import MobileHeader from "./MobileHeader";
 import MobileMenu from "./MobileMenu";
@@ -37,7 +31,6 @@ export default function Header({
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -48,15 +41,15 @@ export default function Header({
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isAdmin = roles.includes("admin");
-	// Shared with HomePage, which independently needs the same top-level
-	// organization list on the same mount (#1396) - see useSharedOrgFetch.
-	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
-		`organizations:${isLoggedIn}`,
-		() => (isLoggedIn ? api.getOrganizations() : Promise.resolve([])),
-	);
-	const orgs = isLoggedIn ? (orgsData ?? []) : [];
-	const orgsLoading = isLoggedIn && orgsData === null && !orgsError;
-	const activeOrg = resolveActiveOrg(orgs, getActiveOrgId());
+	// Shared with HomePage and the profile settings page, which independently
+	// need the same organization list on the same mount (#1396) - the request
+	// itself is deduplicated, see useMyOrganizations/useSharedOrgFetch.
+	const {
+		orgs,
+		activeOrg,
+		loading: orgsLoading,
+		error: orgsError,
+	} = useMyOrganizations();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { NotificationPreferencesResponse } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { cardClass } from "../../lib/surfaceClasses";
 import Button from "../../components/Button";
@@ -17,9 +18,24 @@ type PreferenceKey =
 	| "notifyOnEngagementCancelled"
 	| "notifyOnEngagementReminder";
 
-const PREFERENCE_ROWS: { key: PreferenceKey; labelKey: string }[] = [
-	{ key: "notifyOnNewSignUp", labelKey: "notificationPreferences.newSignUp" },
-	{ key: "notifyOnWithdrawal", labelKey: "notificationPreferences.withdrawal" },
+const PREFERENCE_ROWS: {
+	key: PreferenceKey;
+	labelKey: string;
+	// Both emails are sent to the organizer of an opportunity, which nobody
+	// can be without belonging to an organization first - so these two rows
+	// are filtered out for everyone else, see organizerRowsVisible below.
+	organizerOnly?: boolean;
+}[] = [
+	{
+		key: "notifyOnNewSignUp",
+		labelKey: "notificationPreferences.newSignUp",
+		organizerOnly: true,
+	},
+	{
+		key: "notifyOnWithdrawal",
+		labelKey: "notificationPreferences.withdrawal",
+		organizerOnly: true,
+	},
 	{
 		key: "notifyOnEngagementConfirmed",
 		labelKey: "notificationPreferences.engagementConfirmed",
@@ -41,10 +57,15 @@ const PREFERENCE_ROWS: { key: PreferenceKey; labelKey: string }[] = [
 export default function NotificationPreferencesSection() {
 	const api = useApiClient();
 	const { t } = useTranslation();
+	const {
+		orgs,
+		loading: orgsLoading,
+		failed: orgsFailed,
+	} = useMyOrganizations();
 
 	const [preferences, setPreferences] =
 		useState<NotificationPreferencesResponse | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [preferencesLoading, setPreferencesLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
@@ -62,7 +83,7 @@ export default function NotificationPreferencesSection() {
 				if (!cancelled) setLoadError(t("notificationPreferences.loadError"));
 			})
 			.finally(() => {
-				if (!cancelled) setLoading(false);
+				if (!cancelled) setPreferencesLoading(false);
 			});
 
 		return () => {
@@ -70,6 +91,23 @@ export default function NotificationPreferencesSection() {
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// #1783: a volunteer who belongs to no organization can never organize an
+	// opportunity, so the two organizer emails can never fire for her - and
+	// their labels ("... you organize") read as if she does. Hide them rather
+	// than offer settings with no effect. Their stored values are still saved
+	// untouched below, so they survive her later joining an organization.
+	//
+	// Fail open when the organization list itself failed to load: that state
+	// is indistinguishable from "no organizations" here, and silently dropping
+	// a real organizer's own settings is the worse of the two outcomes.
+	const organizerRowsVisible = orgs.length > 0 || orgsFailed;
+	const visibleRows = PREFERENCE_ROWS.filter(
+		(row) => !row.organizerOnly || organizerRowsVisible,
+	);
+	// Held until the organization list resolves too, so the two organizer rows
+	// appear with the rest of the list instead of popping in a beat later.
+	const loading = preferencesLoading || orgsLoading;
 
 	function toggle(key: PreferenceKey) {
 		setPreferences((prev) => (prev ? { ...prev, [key]: !prev[key] } : prev));
@@ -117,7 +155,11 @@ export default function NotificationPreferencesSection() {
 			{loading && (
 				<div className="space-y-2" role="status">
 					<span className="sr-only">{t("profile.loading")}</span>
-					{PREFERENCE_ROWS.map((row) => (
+					{/* visibleRows, not PREFERENCE_ROWS: membership is still
+					unknown here, so this is the volunteer-sized list - the card
+					then grows into the organizer rows rather than five
+					placeholders collapsing into three for everyone else. */}
+					{visibleRows.map((row) => (
 						<Skeleton key={row.key} className="h-5 w-64" />
 					))}
 				</div>
@@ -136,7 +178,7 @@ export default function NotificationPreferencesSection() {
 					)}
 
 					<div className="space-y-3">
-						{PREFERENCE_ROWS.map((row) => (
+						{visibleRows.map((row) => (
 							<label
 								key={row.key}
 								htmlFor={row.key}
