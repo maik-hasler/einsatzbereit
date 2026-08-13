@@ -391,7 +391,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
+		// #1792: this panel's heading is "Delete account" now, not the shared
+		// "Danger zone".
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete account" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		var result = await Page.RunAxe();
