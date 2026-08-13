@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode, RefObject } from "react";
+import { lockScroll } from "../lib/scrollLock";
 
 // Exported so other hand-rolled dialogs (e.g. MobileMenu.tsx, which can't use
 // this component itself since it's anchored under the header instead of
@@ -98,6 +99,14 @@ export default function Modal({
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [onClose, suspended, closeDisabled]);
+
+	// Lock the page behind the dialog (#1787) - the wrapper below is its own
+	// scroll container, so a wheel past the end of a tall dialog used to chain
+	// straight through to the page underneath and leave the reader somewhere
+	// else entirely by the time they closed the dialog. Mounted only while
+	// open, so the lock's lifetime is this component's; nested dialogs each
+	// take their own reference and the page is handed back on the last release.
+	useEffect(() => lockScroll(), []);
 
 	// Portaled to document.body rather than rendered in place - a modal opened
 	// from inside a dashboard widget would otherwise live inside
