@@ -309,7 +309,15 @@ export default function VolunteerOpportunitiesList() {
 
 			{/* Filter bar */}
 			<div ref={filterBarRef} className="mb-2">
-				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
+				{/* Left-aligned, not centred (#1798): the row sits directly above a
+				full-width results grid, so centring the chips put the first one at
+				x=375 at a 1440 viewport while the cards below started at x=32 - two
+				competing left edges on one page. Flex's default `flex-start` keeps
+				every wrapped line starting at the grid's left edge. */}
+				<div
+					data-testid="opportunities-filter-bar"
+					className="flex flex-wrap items-center gap-2 pb-3"
+				>
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<MapPinIcon className="h-3.5 w-3.5" />}
