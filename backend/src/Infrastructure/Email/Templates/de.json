@@ -16,8 +16,8 @@
     "body": "Hallo {VolunteerName},\n\ndeine Bewerbung für \"{OpportunityTitle}\" wurde bestätigt.\n\nWir freuen uns auf dich!\n\nEinsatzbereit"
   },
   "EngagementCancelled": {
-    "subject": "Deine Teilnahme wurde storniert",
-    "body": "Hallo {VolunteerName},\n\nleider wurde deine Bewerbung für \"{OpportunityTitle}\" storniert.{ReasonBlock}\n\nWir hoffen, dich bei einer anderen Gelegenheit zu sehen.\n\nEinsatzbereit"
+    "subject": "Deine Teilnahme wurde abgesagt",
+    "body": "Hallo {VolunteerName},\n\nleider wurde deine Anmeldung für \"{OpportunityTitle}\" abgesagt.{ReasonBlock}\n\nWir hoffen, dich bei einer anderen Gelegenheit zu sehen.\n\nEinsatzbereit"
   },
   "EngagementCancelledReasonSuffix": {
     "subject": "",

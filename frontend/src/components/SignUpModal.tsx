@@ -159,7 +159,11 @@ export default function SignUpModal({
 							submitting || (isScheduledSlots && timeSlots.length === 0)
 						}
 					>
-						{submitting ? t("signUp.submitting") : t("signUp.submit")}
+						{submitting
+							? t("signUp.submitting")
+							: isScheduledSlots
+								? t("signUp.submitWaitlist")
+								: t("signUp.submitInterest")}
 					</Button>
 				</div>
 			</form>
