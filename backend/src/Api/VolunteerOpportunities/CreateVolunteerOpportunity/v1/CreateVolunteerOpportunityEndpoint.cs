@@ -86,7 +86,6 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			? OpportunityStatus.Draft
 			: OpportunityStatus.Published;
 
-		// Remote opportunities have no address. Drafts may omit address fields too.
 		var hasAnyAddressField =
 			!string.IsNullOrWhiteSpace(request.Street) ||
 			!string.IsNullOrWhiteSpace(request.HouseNumber) ||

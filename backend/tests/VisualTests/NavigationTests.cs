@@ -281,7 +281,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Page.GotoAsync($"{origin}/app/{organizationId}/{path}");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-			// The path should render real content, not the ErrorBoundary fallback.
 			await Expect(errorBoundaryHeading).ToHaveCountAsync(0);
 
 			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits

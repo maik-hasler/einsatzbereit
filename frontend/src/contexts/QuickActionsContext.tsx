@@ -56,10 +56,10 @@ export function useQuickActionsList() {
 }
 
 // Opt-in mechanism for a page nested under either AppLayout or OrgAppLayout
-// to publish the action-bar quick actions rendered right of the breadcrumb
-// (see Header.tsx's `breadcrumb.actions`) - the same shape as
-// useSetOrgBreadcrumbExtra/usePageToolbar. Not calling it means no quick
-// actions render for that page.
+// to publish the action-bar quick actions rendered by PageHeaderBand/
+// OrgPageHeader (both call useQuickActionsList) - the same shape as
+// useSetOrgBreadcrumbExtra. Not calling it means no quick actions render for
+// that page.
 //
 // `actions` MUST be a referentially stable array (useMemo, or a literal with
 // no per-render-changing dependencies) - a fresh array/objects on every

@@ -72,7 +72,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Page heading must be visible.
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");

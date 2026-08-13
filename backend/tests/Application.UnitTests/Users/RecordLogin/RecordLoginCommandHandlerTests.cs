@@ -96,7 +96,6 @@ public class RecordLoginCommandHandlerTests
 	public async Task Handle_ShouldNotSendAwardCommand_WhenStreakIsBelow7(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
-		// Streak of 6: login 6 consecutive days then record the 7th day NOT via the handler
 		var streak = BuildStreakWithLoginCount(userId, 5);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
@@ -151,7 +150,6 @@ public class RecordLoginCommandHandlerTests
 		// Same day as last login - RecordLogin is a no-op, streak stays 7
 		await _sut.Handle(new RecordLoginCommand(userId, streak.LastLoginDate!.Value), cancellationToken);
 
-		// No award sent for repeated same-day call
 		await _sender.DidNotReceive().Send(
 			Arg.Any<AwardAchievementCommand>(),
 			Arg.Any<CancellationToken>());

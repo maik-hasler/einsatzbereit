@@ -55,7 +55,6 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();
 
-		// Clicking the logo navigates to the main site.
 		await logoLink.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
 	}

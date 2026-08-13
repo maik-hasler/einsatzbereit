@@ -321,7 +321,6 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldUpdateCapacityOnTargetAndFollowingSlots_WhenScopeIsThisAndFollowing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a 3-occurrence weekly series.
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var seriesId = Guid.CreateVersion7();
 		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;

@@ -471,7 +471,6 @@ export default function ProfileOverviewPage() {
 								</div>
 							)}
 
-							{/* Profile details */}
 							<section className="mb-10">
 								<div className="flex items-center justify-between gap-3">
 									<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>

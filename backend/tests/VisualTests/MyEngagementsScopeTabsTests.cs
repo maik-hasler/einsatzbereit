@@ -56,7 +56,6 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		await Expect(upcomingText).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByText("ScopeTabsPast")).Not.ToBeVisibleAsync();
 
-		// Switching to "Past" flips which one is visible.
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 		await Expect(Page.GetByText("ScopeTabsPast").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });

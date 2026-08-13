@@ -81,7 +81,7 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a different volunteer attempts to delete someone else's feedback.
+		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);

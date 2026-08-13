@@ -12,7 +12,6 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MobileHeader_NotificationBell_IsAdjacentToBurger_NotCentered()
 	{
-		// Resize to a typical mobile viewport before navigating.
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -50,7 +49,6 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.WaitForTimeoutAsync(1_000);
 
-		// Bell should be visible on mobile viewport.
 		var bell = Page.GetByTestId("notification-bell-mobile");
 		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -63,14 +61,12 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var burgerBox = await burger.BoundingBoxAsync();
 		burgerBox.Should().NotBeNull("Could not get bounding box for burger button");
 
-		// Bell center must be in the right half of the viewport (not in the middle).
 		double bellCenterX = bellBox!.X + bellBox.Width / 2.0;
 		bellCenterX.Should().BeGreaterThan(
 			MobileWidth / 2.0,
 			$"Bell center ({bellCenterX:F0}px) should be in the right half of the {MobileWidth}px viewport - it was centered before fix #497");
 
-		// Bell and burger must be adjacent: gap between bell's right edge and burger's
-		// left edge must be at most 60px (they are in the same flex wrapper).
+		// They sit in the same flex wrapper, so the gap between them should stay tight.
 		double gap = burgerBox!.X - (bellBox.X + bellBox.Width);
 		gap.Should().BeLessThanOrEqualTo(
 			60.0,

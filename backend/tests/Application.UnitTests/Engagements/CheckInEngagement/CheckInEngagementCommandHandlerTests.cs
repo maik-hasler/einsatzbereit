@@ -71,7 +71,7 @@ public class CheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateConfirmedEngagement(opportunity.Id);
 		var engagementId = engagement.Id;

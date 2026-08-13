@@ -148,7 +148,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var dialog = Page.Locator("[role='dialog']");
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
-		// Step 1 content visible.
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
 
 		// Plain header (#676 Pitch 2 dropped the one-off gradient accent bar
@@ -551,7 +550,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
 
-		// Saving a draft routes to the Opportunities tab.
 		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
 
 		// The success toast now names the Opportunities tab, instead of the old
@@ -702,7 +700,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var draftsSection = Page.GetByTestId("drafts-section");
 		var publishedSection = Page.GetByTestId("published-section");
 
-		// Both statuses are visible in one place, each under its own heading.
 		await Expect(draftsSection.GetByText(draftTitle)).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(publishedSection.GetByText(publishedTitle)).ToBeVisibleAsync();
 
@@ -711,7 +708,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var draftRow = draftsSection.Locator("li", new() { HasText = draftTitle });
 		await draftRow.GetByTestId("opportunity-publish").ClickAsync();
 
-		// It moves out of Drafts and into the Published section.
 		await Expect(publishedSection.GetByText(draftTitle)).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
