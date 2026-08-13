@@ -1,24 +1,16 @@
 import { useEffect, useRef } from "react";
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import Button from "../Button";
 import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
+import OrgAvatar from "./OrgAvatar";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
+import { buildPrimaryNav } from "../../lib/headerNav";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { lockScroll } from "../../lib/scrollLock";
-import { ChevronDownIcon } from "../icons";
-
-// Kept in sync with DesktopHeader's own LINKS - the two are the same primary
-// navigation at different breakpoints, so they must not drift apart.
-const PRIMARY_LINKS = [
-	{ key: "home", to: "/", hash: false },
-	{ key: "findOpportunities", to: "/opportunities", hash: false },
-	{ key: "forOrganizations", to: "/#for-organizations", hash: true },
-	{ key: "help", to: "/help", hash: false },
-] as const;
 
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
@@ -30,8 +22,6 @@ export default function MobileMenu({
 	displayName,
 	isAdmin,
 	activeOrg,
-	orgMenuOpen,
-	setOrgMenuOpen,
 	triggerRef,
 	onClose,
 	onSignIn,
@@ -44,9 +34,10 @@ export default function MobileMenu({
 	initials: string;
 	displayName: string;
 	isAdmin: boolean;
+	// The viewer's organization, when it should be offered as a primary
+	// destination here - withheld by Header inside the org app, where the
+	// switcher in the header bar already names it (#1785).
 	activeOrg: OrganizationSummaryDto | null | undefined;
-	orgMenuOpen: boolean;
-	setOrgMenuOpen: Dispatch<SetStateAction<boolean>>;
 	// The hamburger button that toggles this menu open/closed - rendered as a
 	// sibling in MobileHeader, not a descendant here. Without treating it as
 	// "inside", the outside-click check below would see the very click that
@@ -58,16 +49,16 @@ export default function MobileMenu({
 	onSignOut: () => void;
 }) {
 	const { t } = useTranslation();
-	// Shared by the profile link, admin link, and org-menu toggle below - the
-	// only exact repeat of this variant in the file (other isTransparent
+	// Shared by the primary destinations, the profile link and the admin link -
+	// the only exact repeat of this variant in the file (other isTransparent
 	// ternaries here use their own one-off colors).
 	//
 	// On the opaque side: hover:text-brand-700, not the lighter brand-600 -
 	// brand-600 on brand-50 measures ~4.0:1, under axe-core's WCAG AA 4.5:1
 	// floor (caught by AccessibilityTests.cs's
-	// MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations, which leaves the
-	// org-menu toggle in a real :hover state via Playwright's ClickAsync
-	// before scanning), while brand-700 clears it.
+	// MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations, which leaves a menu
+	// row in a real :hover state via Playwright's HoverAsync before scanning),
+	// while brand-700 clears it.
 	const menuItemVariant = isTransparent
 		? "text-white/90 hover:bg-white/10 hover:text-white"
 		: "text-gray-700 hover:bg-brand-50 hover:text-brand-700";
@@ -142,12 +133,12 @@ export default function MobileMenu({
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				// max-h + overflow-y-auto so the scroll lock above doesn't
-				// strand content taller than the viewport with no way to reach it
-				// (e.g. an organizer with the org submenu expanded on a short
-				// landscape-phone viewport) - overscroll-contain keeps a drag past
-				// this panel's own scroll bounds from rubber-banding the (locked)
-				// body underneath.
+				// max-h + overflow-y-auto so the scroll lock above doesn't strand
+				// content taller than the viewport with no way to reach it (e.g. a
+				// member, whose panel also lists their organization's sections, on
+				// a short landscape-phone viewport) - overscroll-contain keeps a
+				// drag past this panel's own scroll bounds from rubber-banding the
+				// (locked) body underneath.
 				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{/* Blur-blob lighting, matching the band the transparent header
@@ -163,24 +154,69 @@ export default function MobileMenu({
 					</div>
 				)}
 				<div className="relative space-y-2 px-4 py-4">
-					{/* Primary destinations, mirroring DesktopHeader's LINKS. Shown
-					in both signed-in and signed-out states: this panel used to jump
-					straight from the language selector to account items (or to a
-					bare sign-in/register pair), so the menu offered no way to reach
-					the opportunity list either. */}
+					{/* Primary destinations, the same list DesktopHeader renders (see
+					lib/headerNav). Shown in both signed-in and signed-out states:
+					this panel used to jump straight from the language selector to
+					account items (or to a bare sign-in/register pair), so the menu
+					offered no way to reach the opportunity list either. */}
 					<div
 						className={`space-y-1 border-b pb-3 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
 					>
-						{PRIMARY_LINKS.map((link) =>
+						{buildPrimaryNav(activeOrg).map((link) => {
+							const rowBase = `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`;
+
+							if (link.kind === "organization") {
+								return (
+									<div key={link.key}>
+										<Link
+											to={link.to}
+											onClick={onClose}
+											data-testid={`mobile-nav-${link.key}`}
+											className={`${rowBase} flex items-center gap-2`}
+										>
+											<OrgAvatar
+												name={link.org.name}
+												logoUrl={link.org.logoUrl}
+												size="sm"
+											/>
+											<span className="truncate">{link.org.name}</span>
+										</Link>
+										{/* The organization's remaining sections, indented
+										under it - they were the payload of the account
+										menu's old org disclosure (#775, #1680) and stay
+										directly reachable here, just no longer behind two
+										disclosures. ORG_TABS minus "dashboard": the entry
+										above already leads there, and two adjacent links to
+										one destination read as a mistake. */}
+										<div
+											className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
+										>
+											{ORG_TABS.filter((tab) => tab.key !== "dashboard").map(
+												(tab) => (
+													<Link
+														key={tab.key}
+														to={orgTabPath(link.org.id, tab.key)}
+														onClick={onClose}
+														className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
+													>
+														{t(tab.labelKey)}
+													</Link>
+												),
+											)}
+										</div>
+									</div>
+								);
+							}
+
 							// Plain <a> for the hash destination so the browser does the
-							// fragment scroll - see DesktopHeader's LINKS for why.
-							link.hash ? (
+							// fragment scroll - see DesktopHeader's render branch for why.
+							return link.hash ? (
 								<a
 									key={link.key}
 									href={link.to}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`${rowBase} block`}
 								>
 									{t(`nav.${link.key}`)}
 								</a>
@@ -190,12 +226,12 @@ export default function MobileMenu({
 									to={link.to}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`${rowBase} block`}
 								>
 									{t(`nav.${link.key}`)}
 								</Link>
-							),
-						)}
+							);
+						})}
 					</div>
 					<div className="pb-2">
 						<LanguageSelector transparent={isTransparent} />
@@ -252,38 +288,6 @@ export default function MobileMenu({
 								>
 									{t("nav.administration")}
 								</Link>
-							)}
-							{activeOrg && (
-								<div>
-									<button
-										type="button"
-										onClick={() => setOrgMenuOpen((o) => !o)}
-										aria-expanded={orgMenuOpen}
-										className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
-									>
-										{t("nav.organization")}
-										<ChevronDownIcon
-											open={orgMenuOpen}
-											className="h-4 w-4 shrink-0"
-										/>
-									</button>
-									{orgMenuOpen && (
-										<div
-											className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
-										>
-											{ORG_TABS.map((tab) => (
-												<Link
-													key={tab.key}
-													to={orgTabPath(activeOrg.id, tab.key)}
-													onClick={onClose}
-													className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
-												>
-													{t(tab.labelKey)}
-												</Link>
-											))}
-										</div>
-									)}
-								</div>
 							)}
 							<button
 								type="button"

@@ -50,8 +50,15 @@ export default function Header({
 		loading: orgsLoading,
 		error: orgsError,
 	} = useMyOrganizations();
+	// #1785: a member's organization is a top-level nav destination - except
+	// inside the org app itself, where the switcher rendered below already
+	// names the same organization, and a second copy of the name in the nav
+	// would only repeat it (and cost the row width it has little of at the
+	// desktop nav's own breakpoint - see lib/headerNav). Both breakpoints are
+	// gated together so the desktop nav and the burger menu never disagree
+	// about what exists.
+	const navOrg = orgSwitcher ? null : activeOrg;
 	const [mobileOpen, setMobileOpen] = useState(false);
-	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
 	const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -63,10 +70,6 @@ export default function Header({
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
-
-	useEffect(() => {
-		if (!mobileOpen) setOrgMenuOpen(false);
-	}, [mobileOpen]);
 
 	// The menu and its scrim are md:hidden, but nothing unmounted them when the
 	// viewport crossed that breakpoint - an open menu just went invisible while
@@ -168,7 +171,7 @@ export default function Header({
 							displayName={displayName}
 							initials={initials}
 							isAdmin={isAdmin}
-							activeOrg={activeOrg}
+							activeOrg={navOrg}
 							onSignOut={handleSignOut}
 							onNotificationNavigate={handleNotificationNavigate}
 							onSignIn={handleSignIn}
@@ -196,9 +199,7 @@ export default function Header({
 						initials={initials}
 						displayName={displayName}
 						isAdmin={isAdmin}
-						activeOrg={activeOrg}
-						orgMenuOpen={orgMenuOpen}
-						setOrgMenuOpen={setOrgMenuOpen}
+						activeOrg={navOrg}
 						triggerRef={mobileMenuButtonRef}
 						onClose={() => setMobileOpen(false)}
 						onSignIn={handleSignIn}
