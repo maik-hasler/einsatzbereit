@@ -311,9 +311,25 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			<SectionHeading>{t("myEngagements.title")}</SectionHeading>
+			{/* No visible heading for the sign-ups list itself (#1796): this list
+			*is* the page, and PageHeaderBand's <h1> already names it in 72px
+			display type ~200px further up - so a SectionHeading repeating that
+			same string read as a category eyebrow that carried no category, and
+			pushed the scope tabs down a page that is short of content to begin
+			with. The invitations block above keeps its visible heading, because
+			that one names a section the <h1> does not.
 
-			<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+			The heading survives as an sr-only <h2> so the outline still marks
+			where the invitations block ends and the sign-ups list begins - the
+			one job the visible heading was doing that the <h1> can't do from
+			outside this section. */}
+			<h2 className="sr-only">{t("myEngagements.title")}</h2>
+
+			<div
+				role="group"
+				aria-label={t("myEngagements.scopeLabel")}
+				className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
+			>
 				<button
 					type="button"
 					data-testid="engagements-scope-upcoming"
