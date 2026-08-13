@@ -280,7 +280,7 @@ internal sealed class EngagementReadRepository(
 
 		// A non-terminal engagement whose opportunity was deleted can never be
 		// confirmed, checked into, or otherwise acted on again, so it belongs in
-		// Past rather than staying in "Current & Upcoming" forever (#703). Likewise
+		// Past rather than staying in "Current & upcoming" forever (#703). Likewise
 		// (#1163) a time slot that has already ended moves the engagement to Past
 		// regardless of status/check-in - previously only IsCheckedIn could do that,
 		// but check-in is optional (CheckInMethod.None has no check-in action at all),

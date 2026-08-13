@@ -5,10 +5,10 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #675: "My Profile -> Engagements" split into "Current &amp;
-/// Upcoming" (default) and "Past" tabs, each paginated, instead of one
+/// Regression for #675: "My profile -> Engagements" split into "Current &amp;
+/// upcoming" (default) and "Past" tabs, each paginated, instead of one
 /// unbounded flat list. A Pending engagement should only show up under
-/// "Current &amp; Upcoming", and a Withdrawn one only under "Past".
+/// "Current &amp; upcoming", and a Withdrawn one only under "Past".
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -37,12 +37,12 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Default "Current & Upcoming" scope: the still-pending engagement is
+		// Default "Current & upcoming" scope: the still-pending engagement is
 		// visible, the withdrawn one is not.
 		//
 		// The pending engagement has no time slot (IndividualContact), and
 		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, it can land past
 		// the first (10-item) page, so page through to it. Wait for the first page

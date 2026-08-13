@@ -23,7 +23,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Profile Details" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Profile details" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
@@ -196,7 +196,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// other. The component now owns its own spacing.
 		await AssertVerticalGapBetweenAsync(
 			Page.GetByText("Bio", new() { Exact = true }),
-			Page.GetByText("Skills & Interests", new() { Exact = true }),
+			Page.GetByText("Skills & interests", new() { Exact = true }),
 			"Profile overview page (#1112)");
 
 		await Page.GotoAsync($"{origin}/users/{userId}");
@@ -216,7 +216,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// moving spacing into ProfileFieldsView didn't remove it from this page.
 		await AssertVerticalGapBetweenAsync(
 			Page.GetByText("Bio", new() { Exact = true }),
-			Page.GetByText("Skills & Interests", new() { Exact = true }),
+			Page.GetByText("Skills & interests", new() { Exact = true }),
 			"Public user profile page (#1112)");
 
 		// Regression for #766: this bio/skills/contact wrapper had `mx-auto`,
@@ -443,7 +443,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
-		// Past, not "Current & Upcoming".
+		// Past, not "Current & upcoming".
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");

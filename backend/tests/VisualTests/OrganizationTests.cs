@@ -72,7 +72,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByText("Could not send invitation.")).Not.ToBeVisibleAsync();
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -251,7 +251,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #1050: OrganizationMembership.Role was create-only, so every member
 		// was forcibly an Organizer with no promote/demote path. Verifies the
-		// new "Promote to Organizer"/"Demote to Member" actions round-trip
+		// new "Promote to organizer"/"Demote to member" actions round-trip
 		// through the API and persist (survive a reload), not just update
 		// local state optimistically.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -283,16 +283,16 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// Plain member: no Organizer badge, a "Promote" action, no "Demote".
 		// einsatzbereit#1294: these buttons' accessible names now interpolate
-		// the member's own name in the middle ("Promote {name} to Organizer"),
+		// the member's own name in the middle ("Promote {name} to organizer"),
 		// so match with a regex rather than the old literal substring.
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync();
-		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") });
+		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
 		await Expect(promoteButton).ToBeVisibleAsync();
 
 		await promoteButton.ClickAsync();
 
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to Member") });
+		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") });
 		await Expect(demoteButton).ToBeVisibleAsync();
 
 		// Reload to prove the promotion was actually persisted server-side,
@@ -307,10 +307,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
 
 		// Demote back to Member - olaf remains an organizer, so this is allowed.
-		await veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to Member") }).ClickAsync();
+		await veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") }).ClickAsync();
 
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") })).ToBeVisibleAsync();
+		await Expect(veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") })).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -382,18 +382,18 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await inviteButton.First.ClickAsync();
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
 
 		var dismissButton = Page.GetByRole(AriaRole.Button, new() { Name = "Dismiss" });
 		await Expect(dismissButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await dismissButton.ClickAsync();
 
 		await Expect(Page.GetByText("Could not dismiss invitation.")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.ReloadAsync();
 		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -458,7 +458,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 
-		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
+		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Sole member: enabled button, and copy that agrees with it.

@@ -59,7 +59,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }))
 			.ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" }))
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "My profile" }))
 			.ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign out" }))
 			.ToBeVisibleAsync();

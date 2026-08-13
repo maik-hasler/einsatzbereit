@@ -158,7 +158,7 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	/// Exists because the seeded vera/olaf accounts accumulate unbounded state
 	/// across a shared session: ~15 classes leave vera engagements they never
 	/// withdraw, and EngagementReadRepository.GetByVolunteerAsync orders the
-	/// "Current &amp; Upcoming" scope by time-slot start with slot-less entries
+	/// "Current &amp; upcoming" scope by time-slot start with slot-less entries
 	/// last, tie-broken by the UUIDv7 engagement id. A test's own freshly
 	/// created IndividualContact engagement is therefore deterministically the
 	/// LAST row of the whole list, several 10-row pages down, rather than

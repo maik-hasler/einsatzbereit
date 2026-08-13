@@ -41,7 +41,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// Edit mode disables the widgets' own content (see EditableWidgetTile's
 		// `inert` wrapper) - the move/remove toolbar is still usable.
 		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")
-				.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" }))
+				.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" }))
 			.ToBeVisibleAsync();
 
 		await Page.GetByTestId("quick-action-cancel").ClickAsync();
@@ -65,7 +65,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("widget-tile-CreateOpportunity")
-			.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" })
+			.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" })
 			.ClickAsync();
 		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")).ToHaveCountAsync(0);
 
@@ -146,7 +146,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("widget-tile-CreateOpportunity")
-			.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" })
+			.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" })
 			.ClickAsync();
 		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")).ToHaveCountAsync(0);
 
@@ -315,7 +315,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
 		await dialog.GetByTestId("add-widget-done").ClickAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }).ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToContainTextAsync("Column 1, row 1");
 
 		// Hover a distant cell without clicking it - a real mouse move, so the
@@ -360,9 +360,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		var tile = Page.GetByTestId("widget-tile-ToDo");
 		await Expect(tile).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }))
 			.ToBeVisibleAsync();
-		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs Your Attention");
+		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs your attention");
 
 		// Drag four grid columns to the right (x=1 -> x=5) over many small
 		// steps, well beyond what a single animation frame could each get its
@@ -411,9 +411,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		var tile = Page.GetByTestId("widget-tile-ToDo");
 		await Expect(tile).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }))
 			.ToBeVisibleAsync();
-		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs Your Attention");
+		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs your attention");
 
 		// Drag two grid columns to the right (x=1 -> x=3) - well clear of the
 		// DRAG_THRESHOLD_PX below which a press+release is read as a plain
@@ -581,7 +581,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("widget-tile-CreateOpportunity")
-			.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" })
+			.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" })
 			.ClickAsync();
 
 		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 1);
@@ -609,7 +609,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// ToDo starts at (x=5, y=1, width=4, height=1) in DEFAULT_LAYOUT.
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
 		await moveButton.FocusAsync();
 
 		// Enter/Space on the focused button advances the same state machine
@@ -656,7 +656,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(tile).ToBeVisibleAsync();
 		var styleBefore = await tile.EvaluateAsync<string?>("el => el.getAttribute('style')");
 
-		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
 		await moveButton.FocusAsync();
 		await Page.Keyboard.PressAsync("Enter");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
@@ -1082,9 +1082,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	{
 		foreach (var (testId, widgetTitle) in new[]
 		{
-			("CreateOpportunity", "Create Opportunity"),
-			("ToDo", "Needs Your Attention"),
-			("UpcomingOpportunities", "Upcoming Opportunities"),
+			("CreateOpportunity", "Create opportunity"),
+			("ToDo", "Needs your attention"),
+			("UpcomingOpportunities", "Upcoming opportunities"),
 			("Calendar", "Calendar"),
 			("Settings", "Organization"),
 		})

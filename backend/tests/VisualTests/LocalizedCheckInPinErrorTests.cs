@@ -78,7 +78,7 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 
 		// This engagement has no time slot (IndividualContact), and
 		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this row can
 		// land past the first (10-item) page, so page through to it before

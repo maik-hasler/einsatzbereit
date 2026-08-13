@@ -10,7 +10,7 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 {
 	/// <summary>
 	/// Regression for #572: a Confirmed engagement with a time slot must show
-	/// an "Add to Calendar" menu in "My Sign-ups" with Google Calendar,
+	/// an "Add to calendar" menu in "My sign-ups" with Google Calendar,
 	/// Apple Calendar (webcal), and .ics download links scoped to that one
 	/// engagement - not the old opportunity-level file download.
 	/// </summary>
@@ -90,7 +90,7 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var calendarButton = row.GetByRole(AriaRole.Button, new() { Name = "Add to Calendar" });
+		var calendarButton = row.GetByRole(AriaRole.Button, new() { Name = "Add to calendar" });
 		await Expect(calendarButton).ToBeVisibleAsync();
 		await calendarButton.ClickAsync();
 

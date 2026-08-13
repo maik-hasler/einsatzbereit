@@ -79,7 +79,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// IndividualContact engagements have no time slot, and
 		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// upcoming" scope by time-slot start (entries with none sort last) - so on
 		// a shared session where other concurrently-running tests have already
 		// given vera their own time-slotted upcoming engagements, this card can
 		// land past the first (10-item) page instead of being visible immediately,
@@ -113,7 +113,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #1796: /my-signups printed its own title twice - once as the header
 		// band's <h1> ("My sign-ups", myEngagementsPage.title) and again
 		// roughly 200px below it as a SectionHeading eyebrow rendering a second
-		// key with the same string ("My Sign-ups", myEngagements.title), where
+		// key with the same string ("My sign-ups", myEngagements.title), where
 		// every other page's eyebrow carries a *category* the title does not
 		// repeat. That second one is sr-only now: it still marks where the
 		// invitations block ends and the sign-ups list begins for a screen

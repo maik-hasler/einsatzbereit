@@ -68,7 +68,7 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 		var banner = Page.GetByRole(AriaRole.Banner);
 		await banner.GetByRole(AriaRole.Button, new() { Name = "User menu" }).ClickAsync();
 
-		await Expect(banner.GetByRole(AriaRole.Link, new() { Name = "My Profile" }))
+		await Expect(banner.GetByRole(AriaRole.Link, new() { Name = "My profile" }))
 			.ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		// The disclosure is gone, and so are the org tab links it used to
