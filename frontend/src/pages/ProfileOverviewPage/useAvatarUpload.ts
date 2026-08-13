@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 import { notifyAvatarChanged } from "../../lib/avatarBus";
-
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import { validateImageUpload } from "../../lib/imageUpload";
 
 // Owns the avatar upload/remove-in-progress state (upload/remove flags, error,
 // file input ref, crop step) so ProfileOverviewPage doesn't have to - see
@@ -12,7 +10,7 @@ const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 // outside edit mode.
 export function useAvatarUpload(onChange: (url: string | null) => void) {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [uploading, setUploading] = useState(false);
 	const [removing, setRemoving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -33,12 +31,9 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 		const file = e.target.files?.[0];
 		e.target.value = "";
 		if (!file) return;
-		if (!AVATAR_TYPES.includes(file.type)) {
-			setError(t("profile.avatarHint"));
-			return;
-		}
-		if (file.size > MAX_AVATAR_BYTES) {
-			setError(t("profile.avatarHint"));
+		const rejection = validateImageUpload(file, t, i18n.language);
+		if (rejection) {
+			setError(rejection);
 			return;
 		}
 		setError(null);

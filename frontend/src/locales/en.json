@@ -274,10 +274,7 @@
       "draftSavedToast": "Draft saved. Find it under the Opportunities tab.",
       "fieldBanner": "Banner image (optional)",
       "bannerUpload": "Upload image",
-      "bannerHint": "JPG, PNG or WebP, max. 2 MB",
       "bannerRemove": "Remove",
-      "bannerTooLarge": "The image is too large (max. 2 MB).",
-      "bannerWrongType": "Only JPG, PNG or WebP images are allowed.",
       "bannerUploadFailed": "The opportunity was created, but the banner image could not be uploaded.",
       "orgAddressTip": "Tip: Save a default address in your organization settings and it will be pre-filled here automatically.",
       "orgSettingsLink": "Open organization settings",
@@ -473,7 +470,6 @@
       "createdOn": "Created on {{date}}",
       "fieldLogo": "Logo",
       "logoUpload": "Upload logo",
-      "logoHint": "JPEG, PNG or WebP, max 2 MB.",
       "logoUploading": "Uploading…",
       "logoUploadError": "Failed to upload logo.",
       "logoRemove": "Remove",
@@ -1020,6 +1016,11 @@
         "confirm": "Yes, delete"
       }
     },
+    "imageUpload": {
+      "hint": "JPEG, PNG or WebP, max. {{max}}.",
+      "wrongType": "“{{fileName}}” is not a supported image. Allowed formats are JPEG, PNG and WebP.",
+      "tooLarge": "“{{fileName}}” is {{size}} - the maximum is {{max}}."
+    },
     "imageCrop": {
       "loading": "Loading image…",
       "loadError": "Could not load this image.",
@@ -1067,7 +1068,6 @@
       "emptyStateCta": "Complete your profile",
       "fieldAvatar": "Profile picture",
       "avatarUpload": "Upload picture",
-      "avatarHint": "JPEG, PNG or WebP, max 2 MB.",
       "avatarUploading": "Uploading…",
       "avatarUploadError": "Failed to upload picture.",
       "avatarRemove": "Remove",
