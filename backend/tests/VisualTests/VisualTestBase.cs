@@ -276,6 +276,44 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		}
 	}
 
+	/// <summary>
+	/// Visits /opportunities once - so its lazy route chunk (see App.tsx) lands
+	/// in the module registry - and then returns to the home page by clicking
+	/// the header nav, leaving the SPA loaded. Returns the frontend origin.
+	///
+	/// Pair with <see cref="GoToOpportunitiesAsync"/> to reach the list again
+	/// with the browser context offline (#1774). Both halves are needed: this
+	/// suite blocks service workers (see <see cref="ContextOptions"/>), so an
+	/// offline <c>GotoAsync</c> could not load the app shell at all, and a
+	/// route chunk not yet fetched would fail to load - which would exercise a
+	/// chunk-load failure rather than the offline state under test.
+	/// </summary>
+	protected async Task<string> WarmOpportunitiesRouteThenLeaveAsync()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/opportunities");
+		await Expect(Page.GetByTestId("opportunities-keyword-input"))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		await Page.GetByTestId("nav-home").ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
+
+		return origin;
+	}
+
+	/// <summary>
+	/// Client-side navigation to /opportunities via the header nav - no
+	/// document load, so it works with the context offline. See
+	/// <see cref="WarmOpportunitiesRouteThenLeaveAsync"/>.
+	/// </summary>
+	protected async Task GoToOpportunitiesAsync(string origin)
+	{
+		await Page.GetByTestId("nav-findOpportunities").ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
+	}
+
 	private enum LoadMoreState
 	{
 		/// <summary>Mounted, rendered and enabled - safe to click.</summary>

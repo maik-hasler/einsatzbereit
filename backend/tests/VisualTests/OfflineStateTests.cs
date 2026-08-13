@@ -57,7 +57,7 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			// CheckInModal and ToastContext). That region is empty before the
 			// connection drops and is written into here, which is what makes the
 			// offline state audible rather than only visible.
-			await Expect(Page.Locator("#opportunities p[role='status']").First)
+			await Expect(Page.GetByTestId("opportunities-result-count"))
 				.ToHaveTextAsync(new Regex("You are offline"));
 			await Expect(offline.Locator("[role='status'], [role='alert']")).ToHaveCountAsync(0);
 		}
@@ -96,37 +96,12 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// Both of the above would also hold for a single frame the instant
 		// `online` flipped, before any refetch had happened - so settle on
-		// positive proof instead. OpportunityResultsList's sr-only result-count
-		// live region is written only once a fetch has completed with no error,
-		// and is deliberately empty while loading or failed, so non-empty text
-		// here means the refetch really ran and really succeeded.
-		await Expect(Page.Locator("#opportunities p[role='status']").First)
-			.ToHaveTextAsync(new Regex(@"\S"), new() { Timeout = 20_000 });
+		// positive proof instead. OpportunityResultsList's result-count live
+		// region carries a count only once a fetch has completed with no error
+		// (while failed it holds the offline text, and while loading it is
+		// empty), so a count here means the refetch really ran and succeeded.
+		await Expect(Page.GetByTestId("opportunities-result-count"))
+			.ToHaveTextAsync(new Regex(@"opportunit(y|ies)"), new() { Timeout = 20_000 });
 	}
 
-	/// <summary>
-	/// Visits /opportunities once (loading its lazy chunk) and then navigates
-	/// back to the home page, leaving the SPA loaded and the route's chunk
-	/// resident. Returns the frontend origin.
-	/// </summary>
-	private async Task<string> WarmOpportunitiesRouteThenLeaveAsync()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Expect(Page.GetByTestId("opportunities-keyword-input"))
-			.ToBeVisibleAsync(new() { Timeout = 20_000 });
-
-		await Page.GetByTestId("nav-home").ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
-
-		return origin;
-	}
-
-	private async Task GoToOpportunitiesAsync(string origin)
-	{
-		await Page.GetByTestId("nav-findOpportunities").ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
-	}
 }
