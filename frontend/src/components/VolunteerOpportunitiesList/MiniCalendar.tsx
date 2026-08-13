@@ -21,10 +21,24 @@ export default function MiniCalendar({
 	fromStr,
 	toStr,
 	onChange,
+	availability,
+	availabilityLoading = false,
+	onVisibleMonthChange,
 }: {
 	fromStr: string;
 	toStr: string;
 	onChange: (from: string, to: string) => void;
+	/**
+	 * How many opportunities each day has, keyed by ISO date (`YYYY-MM-DD`). Only
+	 * days present in the map are marked; a day missing from it is drawn plain
+	 * rather than as "nothing here", since opportunities that take sign-ups by
+	 * individual contact carry no dates at all and stay in the results whichever
+	 * range is picked.
+	 */
+	availability?: ReadonlyMap<string, number>;
+	availabilityLoading?: boolean;
+	/** Fires on mount and whenever the grid moves to another month. */
+	onVisibleMonthChange?: (year: number, month: number) => void;
 }) {
 	const { t, i18n } = useTranslation();
 	const locale = resolveDateLocale(i18n.language);
@@ -64,6 +78,14 @@ export default function MiniCalendar({
 	const shouldMoveDomFocusRef = useRef(false);
 	const gridRef = useRef<HTMLDivElement>(null);
 	const monthLabelId = useId();
+
+	// Reported rather than derived by the parent so the two can't disagree about
+	// which month is on screen: the grid owns calMonth/calYear (keyboard navigation
+	// moves it), and it only mounts once the date popover opens, which is also the
+	// first moment anything wants the availability behind it.
+	useEffect(() => {
+		onVisibleMonthChange?.(calYear, calMonth);
+	}, [calYear, calMonth, onVisibleMonthChange]);
 
 	useEffect(() => {
 		if (!shouldMoveDomFocusRef.current) return;
@@ -130,6 +152,12 @@ export default function MiniCalendar({
 	const rangeB = from && effTo ? (from <= effTo ? effTo : from) : null;
 
 	function clickDay(day: Date) {
+		// Past days are aria-disabled rather than natively disabled (so arrow keys
+		// can still cross them, per the APG date-picker grid pattern), which leaves
+		// them clickable - this is the guard that makes them inert. Selecting one
+		// used to be silently accepted and answered with an empty list (#1779).
+		if (day < todayMidnight) return;
+
 		// Keeps the roving-tabindex position in sync with mouse/pointer
 		// interaction too - native focus already lands on the clicked button,
 		// this just makes sure the next arrow-key press moves relative to it.
@@ -179,6 +207,13 @@ export default function MiniCalendar({
 	const weeks: (Date | null)[][] = [];
 	for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
+	const hasMarkedDays = cells.some(
+		(day) =>
+			day !== null &&
+			day.getTime() >= todayMidnight.getTime() &&
+			(availability?.get(fmtIso(day)) ?? 0) > 0,
+	);
+
 	return (
 		<div className="w-64 p-3 select-none">
 			<div className="mb-2 flex items-center justify-between">
@@ -225,6 +260,10 @@ export default function MiniCalendar({
 				ref={gridRef}
 				role="grid"
 				aria-labelledby={monthLabelId}
+				// So a screen reader isn't told the marks on screen are this month's
+				// before they actually are - same reasoning as the org dashboard's
+				// calendar widget while it refetches a range.
+				aria-busy={availabilityLoading || undefined}
 				className="grid grid-cols-7"
 			>
 				{weeks.map((week, wi) => (
@@ -245,6 +284,13 @@ export default function MiniCalendar({
 
 							const t0 = day.getTime();
 							const isToday = t0 === todayMidnight.getTime();
+							const isPast = t0 < todayMidnight.getTime();
+							const isoDate = fmtIso(day);
+							const opportunityCount = availability?.get(isoDate) ?? 0;
+							// A past day can still carry slots (the month in view starts
+							// before today), but it can't be picked, so marking it would
+							// only advertise something unreachable.
+							const isMarked = !isPast && opportunityCount > 0;
 							const isFrom = from !== null && t0 === from.getTime();
 							const isTo = to !== null && t0 === to.getTime();
 							const isEdge = isFrom || isTo;
@@ -287,9 +333,21 @@ export default function MiniCalendar({
 								>
 									<button
 										type="button"
-										data-date={fmtIso(day)}
+										data-date={isoDate}
+										data-marked={isMarked ? "true" : undefined}
 										tabIndex={isFocusTarget ? 0 : -1}
-										aria-label={fullDateFormatter.format(day)}
+										aria-label={
+											isPast
+												? `${fullDateFormatter.format(day)}, ${t("opportunities.dayInPast")}`
+												: isMarked
+													? `${fullDateFormatter.format(day)}, ${t("opportunities.dayOpportunityCount", { count: opportunityCount })}`
+													: fullDateFormatter.format(day)
+										}
+										// aria-disabled, not the disabled attribute: a natively
+										// disabled button drops out of the tab order entirely, which
+										// would strand the roving tabindex the moment an arrow key
+										// crossed into last month (WAI-ARIA APG date-picker grid).
+										aria-disabled={isPast || undefined}
 										aria-current={isToday ? "date" : undefined}
 										aria-pressed={isEdge || inRange}
 										onClick={() => clickDay(day)}
@@ -302,15 +360,35 @@ export default function MiniCalendar({
 										onFocus={setHoverIfPicking}
 										onBlur={clearHoverIfPicking}
 										className={[
-											"flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
-											isEdge
-												? "bg-brand-600 font-semibold text-white"
-												: isToday
-													? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
-													: "text-gray-700 hover:bg-gray-100",
+											"relative flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
+											// gray-500 (4.8:1), not the gray-400 the rest of the app
+											// reserves for decorative icons and placeholders: these
+											// buttons stay focusable on purpose, so a keyboard user
+											// arrowing across them still reads the number to know
+											// where in the grid they are.
+											isPast
+												? "cursor-not-allowed text-gray-500"
+												: isEdge
+													? "bg-brand-600 font-semibold text-white"
+													: isToday
+														? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
+														: "text-gray-700 hover:bg-gray-100",
 										].join(" ")}
 									>
 										{day.getDate()}
+										{isMarked && (
+											// brand-600, not brand-500 (2.8:1 on white, 2.3:1 on an
+											// in-range cell): this dot is the only non-assistive
+											// signal that a day has anything on it, so it has to
+											// clear WCAG 1.4.11's 3:1 floor for non-text content on
+											// both backgrounds it can land on.
+											<span
+												aria-hidden="true"
+												className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
+													isEdge ? "bg-white" : "bg-brand-600"
+												}`}
+											/>
+										)}
 									</button>
 								</div>
 							);
@@ -318,6 +396,19 @@ export default function MiniCalendar({
 					</div>
 				))}
 			</div>
+
+			{/* Only once the month in view actually has a marked day - a dot in a
+			legend that appears nowhere in the grid above reads as a promise the
+			calendar isn't keeping. */}
+			{hasMarkedDays && (
+				<p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+					<span
+						aria-hidden="true"
+						className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600"
+					/>
+					{t("opportunities.daysWithOpportunitiesLegend")}
+				</p>
+			)}
 
 			{from && (
 				<div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2">
