@@ -35,6 +35,14 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 	// off-screen assertions below.
 	private const int ViewportHeight = 720;
 
+	// The organization name field, located by its label alone. It used to be
+	// found as "Name *": the required marker was baked into the translation
+	// string with a literal space, until #1797/#1819 replaced it with the
+	// aria-hidden RequiredMark component the whole product shares - so the
+	// label renders "Name" plus a marker span, and the old lookup matched
+	// nothing.
+	private ILocator NameField => Page.GetByLabel("Name");
+
 	[Test]
 	public async Task EditMode_RepeatsSaveAtTheEndOfTheForm_ReachableFromTheLastField()
 	{
@@ -94,7 +102,7 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 		// same validation, same request, back to the read-only view with the
 		// new name reflected across the shell.
 		var newName = $"Renamed From The Form Footer {Guid.NewGuid():N}";
-		await Page.GetByLabel("Name *").FillAsync(newName);
+		await NameField.FillAsync(newName);
 		await formSave.ClickAsync();
 
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -126,9 +134,8 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 		// - even though onSave routes through requestSubmit() precisely so that
 		// it matches what pressing Enter does.
 		var newName = $"Renamed With The Enter Key {Guid.NewGuid():N}";
-		var nameField = Page.GetByLabel("Name *");
-		await nameField.FillAsync(newName);
-		await nameField.PressAsync("Enter");
+		await NameField.FillAsync(newName);
+		await NameField.PressAsync("Enter");
 
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByTestId("org-app-header")).ToContainTextAsync(newName, new() { Timeout = 15_000 });
@@ -179,7 +186,7 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 		// ClickAsync scrolls its target into view first, so the submit really
 		// is issued from the bottom of the form - which is the position that
 		// makes the banner above the first field invisible.
-		await Page.GetByLabel("Name *").FillAsync($"Save Will Fail {Guid.NewGuid():N}");
+		await NameField.FillAsync($"Save Will Fail {Guid.NewGuid():N}");
 		await formSave.ClickAsync();
 
 		// The banner sits above the first field, so from the bottom of the form

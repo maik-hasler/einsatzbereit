@@ -116,7 +116,11 @@ public class HeaderNavBreakpointTests(AspireFixture fixture) : VisualTestBase(fi
 		// that fetch the same way a real visitor's switch does.
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" })
 			.ClickAsync(new() { Timeout = 15_000 });
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		// A plain <button> inside the selector's <ul>, not an option: #1825 dropped
+		// the listbox/option roles this component never implemented the keyboard
+		// model for. Scoped to the open menu so it cannot match anything else.
+		await Page.GetByTestId("language-selector-menu")
+			.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 
 		await Expect(Page.GetByTestId("nav-findOpportunities"))
 			.ToHaveTextAsync("Einsätze finden", new() { Timeout = 10_000 });
