@@ -441,7 +441,7 @@ internal sealed class ApplicationDbContext(
 	// engagement left non-terminal on purpose when its volunteer deleted their account,
 	// see DeleteMyAccountCommandHandler) - Engagement.Cancel() refuses to act on an
 	// anonymized aggregate, so an unfiltered read here would hand one to
-	// EngagementCancellationHelper.CancelAndNotifyAsync and permanently 409 the whole
+	// EngagementCancellationHelper.CancelAsync and permanently 409 the whole
 	// deletion cascade (einsatzbereit#1724). Mirrors the same predicate already used by
 	// EngagementReadRepository.GetActiveVolunteerIdsByOpportunityAsync.
 	public async Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
