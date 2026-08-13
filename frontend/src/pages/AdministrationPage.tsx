@@ -479,6 +479,49 @@ function OrganizationsSection() {
 	);
 }
 
+// The four per-user actions and the copy each one confirms with. Every key is
+// spelled out in full rather than interpolated from the action name so they
+// stay greppable - and so scripts/check-i18n-keys.js sees each leaf key
+// referenced instead of reporting the whole subtree as dead.
+const USER_ACTION_COPY = {
+	block: {
+		title: "confirmDialog.adminBlockUser.title",
+		message: "confirmDialog.adminBlockUser.message",
+		confirm: "confirmDialog.adminBlockUser.confirm",
+		success: "administration.users.blockSuccess",
+		error: "administration.users.blockError",
+	},
+	unblock: {
+		title: "confirmDialog.adminUnblockUser.title",
+		message: "confirmDialog.adminUnblockUser.message",
+		confirm: "confirmDialog.adminUnblockUser.confirm",
+		success: "administration.users.unblockSuccess",
+		error: "administration.users.unblockError",
+	},
+	promote: {
+		title: "confirmDialog.adminPromoteUser.title",
+		message: "confirmDialog.adminPromoteUser.message",
+		confirm: "confirmDialog.adminPromoteUser.confirm",
+		success: "administration.users.promoteSuccess",
+		error: "administration.users.promoteError",
+	},
+	demote: {
+		title: "confirmDialog.adminDemoteUser.title",
+		message: "confirmDialog.adminDemoteUser.message",
+		confirm: "confirmDialog.adminDemoteUser.confirm",
+		success: "administration.users.demoteSuccess",
+		error: "administration.users.demoteError",
+	},
+} as const;
+
+type UserActionKind = keyof typeof USER_ACTION_COPY;
+
+function userDisplayName(row: AdminUserListItem): string {
+	return row.firstName && row.lastName
+		? `${row.firstName} ${row.lastName}`
+		: row.username;
+}
+
 function UsersSection() {
 	const { t } = useTranslation();
 	const auth = useAuth();
@@ -487,7 +530,18 @@ function UsersSection() {
 
 	const [search, setSearch] = useState("");
 	const [appliedSearch, setAppliedSearch] = useState("");
-	const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+	// Blocking an account and granting platform admin used to fire straight
+	// from onClick, while the lower-stakes organization shadow-delete one tab
+	// over already confirmed - so one slip on a dense row of two adjacent
+	// buttons handed a stranger full platform administration, or locked a
+	// volunteer out, with no undo (#1773). All four now go through the same
+	// ConfirmDialog the other two admin sections use.
+	const [confirmAction, setConfirmAction] = useState<{
+		row: AdminUserListItem;
+		kind: UserActionKind;
+	} | null>(null);
+	const [actioning, setActioning] = useState(false);
+	const [actionError, setActionError] = useState<string | null>(null);
 
 	const {
 		items: rows,
@@ -512,68 +566,44 @@ function UsersSection() {
 		reset();
 	}
 
-	async function toggleEnabled(userId: string, next: boolean) {
-		setPendingUserId(userId);
+	// Errors land in the dialog's own ErrorBanner rather than a toast, matching
+	// OrganizationsSection/ReportsSection: the dialog stays open so the action
+	// can be retried in place instead of the row silently not changing.
+	async function confirmActionSubmit() {
+		if (!confirmAction) return;
+		const { row, kind } = confirmAction;
+		const copy = USER_ACTION_COPY[kind];
+		setActioning(true);
+		setActionError(null);
 		try {
-			await api.setUserEnabled(userId, { enabled: next });
-			setRows((prev) =>
-				prev.map((r) => (r.id === userId ? { ...r, enabled: next } : r)),
-			);
-			dispatchToast(
-				"success",
-				next
-					? t("administration.users.unblockSuccess")
-					: t("administration.users.blockSuccess"),
-			);
+			if (kind === "block" || kind === "unblock") {
+				const enabled = kind === "unblock";
+				await api.setUserEnabled(row.id, { enabled });
+				setRows((prev) =>
+					prev.map((r) => (r.id === row.id ? { ...r, enabled } : r)),
+				);
+			} else {
+				const isAdmin = kind === "promote";
+				await api.setUserAdminStatus(row.id, { isAdmin });
+				setRows((prev) =>
+					prev.map((r) =>
+						r.id === row.id
+							? {
+									...r,
+									realmRoles: isAdmin
+										? [...r.realmRoles, "admin"]
+										: r.realmRoles.filter((role) => role !== "admin"),
+								}
+							: r,
+					),
+				);
+			}
+			dispatchToast("success", t(copy.success));
+			setConfirmAction(null);
 		} catch (err) {
-			dispatchToast(
-				"error",
-				getApiErrorMessage(
-					err,
-					next
-						? t("administration.users.unblockError")
-						: t("administration.users.blockError"),
-				),
-			);
+			setActionError(getApiErrorMessage(err, t(copy.error)));
 		} finally {
-			setPendingUserId(null);
-		}
-	}
-
-	async function toggleAdmin(userId: string, next: boolean) {
-		setPendingUserId(userId);
-		try {
-			await api.setUserAdminStatus(userId, { isAdmin: next });
-			setRows((prev) =>
-				prev.map((r) =>
-					r.id === userId
-						? {
-								...r,
-								realmRoles: next
-									? [...r.realmRoles, "admin"]
-									: r.realmRoles.filter((role) => role !== "admin"),
-							}
-						: r,
-				),
-			);
-			dispatchToast(
-				"success",
-				next
-					? t("administration.users.promoteSuccess")
-					: t("administration.users.demoteSuccess"),
-			);
-		} catch (err) {
-			dispatchToast(
-				"error",
-				getApiErrorMessage(
-					err,
-					next
-						? t("administration.users.promoteError")
-						: t("administration.users.demoteError"),
-				),
-			);
-		} finally {
-			setPendingUserId(null);
+			setActioning(false);
 		}
 	}
 
@@ -639,11 +669,7 @@ function UsersSection() {
 						{rows.map((row) => {
 							const isSelf = row.id === currentUserId;
 							const isAdmin = row.realmRoles.includes("admin");
-							const isPending = pendingUserId === row.id;
-							const displayName =
-								row.firstName && row.lastName
-									? `${row.firstName} ${row.lastName}`
-									: row.username;
+							const displayName = userDisplayName(row);
 
 							return (
 								<li
@@ -689,9 +715,11 @@ function UsersSection() {
 														type="button"
 														variant="outline"
 														size="sm"
-														disabled={isPending}
 														onClick={() =>
-															void toggleEnabled(row.id, !row.enabled)
+															setConfirmAction({
+																row,
+																kind: row.enabled ? "block" : "unblock",
+															})
 														}
 														aria-label={
 															row.enabled
@@ -711,8 +739,12 @@ function UsersSection() {
 														type="button"
 														variant="outline"
 														size="sm"
-														disabled={isPending}
-														onClick={() => void toggleAdmin(row.id, !isAdmin)}
+														onClick={() =>
+															setConfirmAction({
+																row,
+																kind: isAdmin ? "demote" : "promote",
+															})
+														}
 														aria-label={
 															isAdmin
 																? t("administration.users.demoteNamed", {
@@ -750,6 +782,23 @@ function UsersSection() {
 								onClick={loadMore}
 							/>
 						))}
+					{confirmAction && (
+						<ConfirmDialog
+							title={t(USER_ACTION_COPY[confirmAction.kind].title)}
+							message={t(USER_ACTION_COPY[confirmAction.kind].message, {
+								name: userDisplayName(confirmAction.row),
+							})}
+							confirmLabel={t(USER_ACTION_COPY[confirmAction.kind].confirm)}
+							onConfirm={() => void confirmActionSubmit()}
+							onClose={() => {
+								if (actioning) return;
+								setConfirmAction(null);
+								setActionError(null);
+							}}
+							loading={actioning}
+							error={actionError}
+						/>
+					)}
 				</>
 			)}
 		</>
