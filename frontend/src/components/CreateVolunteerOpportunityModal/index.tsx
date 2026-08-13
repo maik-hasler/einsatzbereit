@@ -17,6 +17,7 @@ import Modal from "../Modal";
 import Button from "../Button";
 import ErrorBanner from "../ErrorBanner";
 import ImageCropModal from "../ImageCropModal";
+import { RequiredFieldsLegend } from "../RequiredMark";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -302,6 +303,7 @@ export default function CreateVolunteerOpportunityModal({
 
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
+	const isRemote = watch("isRemote");
 	const isScheduledSlots = participationType === "ScheduledSlots";
 
 	useEffect(() => {
@@ -1054,6 +1056,13 @@ export default function CreateVolunteerOpportunityModal({
 					<p className="mb-4 text-sm leading-relaxed text-gray-500">
 						{stepSubtitles[step - 1]}
 					</p>
+
+					{/* Only steps 1 and 2 carry required fields, and step 2's are the
+					address ones - a remote opportunity has none, so the legend would
+					explain an asterisk that isn't on screen. */}
+					{(step === 1 || (step === 2 && !isRemote)) && (
+						<RequiredFieldsLegend className="-mt-2 mb-4" />
+					)}
 
 					{step === 1 && (
 						<BasicsStep

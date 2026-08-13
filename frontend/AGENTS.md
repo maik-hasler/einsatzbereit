@@ -169,6 +169,7 @@ Shared UI primitives live in `src/components/` and `src/lib/` (no separate desig
 | ------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `Button`      | `components/Button.tsx`      | Every clickable action, button or link - `variant` (`primary`/`secondary`), `size` (`sm`/`md`/`lg`), `fullWidth`                     |
 | `formClasses` | `lib/formClasses.ts`         | `inputClass`, `textareaClass`, `labelClass` for every form control                                                                   |
+| `RequiredMark` | `components/RequiredMark.tsx` | The product's only required-field marker - an aria-hidden `*` appended by the component, never written into a translation string, plus the `RequiredFieldsLegend` that explains it (one per form). The control still needs its own `required`/`aria-required`: that is the accessible half |
 | `ErrorBanner` | `components/ErrorBanner.tsx` | Inline "action failed" message - the one boxed style every page's error state should share                                          |
 | `SuccessBanner` | `components/SuccessBanner.tsx` | Inline "action succeeded" message - the `ErrorBanner` twin, same box style in green                                                |
 | `EmptyState`  | `components/EmptyState.tsx`  | "Nothing here yet" placeholder with an optional CTA button                                                                           |

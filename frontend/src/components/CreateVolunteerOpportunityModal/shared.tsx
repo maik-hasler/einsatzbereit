@@ -1,13 +1,7 @@
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-function RequiredMark() {
-	return (
-		<span className="ml-0.5 text-red-400" aria-hidden="true">
-			*
-		</span>
-	);
-}
+import { RequiredMark } from "../RequiredMark";
 
 export function Stepper({
 	current,

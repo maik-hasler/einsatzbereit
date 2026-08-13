@@ -14,7 +14,8 @@
       "loading": "Wird geladen…",
       "pageLoading": "Seite wird geladen…",
       "skipToContent": "Zum Inhalt springen",
-      "onThisPage": "Auf dieser Seite"
+      "onThisPage": "Auf dieser Seite",
+      "requiredField": "Pflichtfeld"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
@@ -349,7 +350,7 @@
       "selectTimeSlot": "Zeitslot wählen",
       "noTimeSlots": "Keine Zeitslots verfügbar.",
       "selectPlaceholder": "Bitte wählen…",
-      "message": "Nachricht (Pflichtfeld)",
+      "message": "Nachricht",
       "messagePlaceholder": "Beschreibe kurz, warum du dich engagieren möchtest…",
       "submitting": "Wird gesendet…",
       "submitWaitlist": "Mitmachen",
@@ -469,7 +470,7 @@
       "logoRemove": "Entfernen",
       "logoRemoving": "Wird entfernt…",
       "logoRemoveError": "Logo konnte nicht entfernt werden.",
-      "fieldName": "Name *",
+      "fieldName": "Name",
       "fieldDescription": "Beschreibung",
       "fieldContactEmail": "Kontakt-E-Mail",
       "fieldPhone": "Telefon",
@@ -549,7 +550,7 @@
       "buttonLabel": "Feedback geben",
       "submitted": "Feedback gegeben",
       "title": "Erfahrung bewerten",
-      "ratingLabel": "Bewertung (Pflichtfeld)",
+      "ratingLabel": "Bewertung",
       "commentLabel": "Kommentar (optional)",
       "commentPlaceholder": "Teile deine Erfahrung…",
       "submit": "Feedback absenden",
