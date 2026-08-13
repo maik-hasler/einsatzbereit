@@ -1110,7 +1110,9 @@
       "unlockedOn": "Freigeschaltet: {{date}}",
       "lockedBadge": "Geheimes Abzeichen",
       "badgesTitle": "Abzeichen",
-      "activityStreak": "Aktivitätsserie",
+      "activityStreak": "Wochen in Serie",
+      "activityStreak_one": "Woche in Serie",
+      "activityStreak_other": "Wochen in Serie",
       "engagementStatLabel": "Bestätigte Einsätze",
       "engagementStatLabel_one": "Bestätigter Einsatz",
       "engagementStatLabel_other": "Bestätigte Einsätze",
@@ -1130,12 +1132,12 @@
           "description": "Verdient nach 5 bestätigten Einsätzen."
         },
         "centurion-100": {
-          "name": "Hundertschaft",
+          "name": "100 Einsätze",
           "description": "Verdient nach 100 bestätigten Einsätzen."
         },
         "on-a-roll-7": {
-          "name": "Auf Kurs",
-          "description": "Verdient für eine 7-tägige Login-Serie."
+          "name": "Aktive Woche",
+          "description": "Verdient für sieben Tage in Folge."
         },
         "weekly-hero-4": {
           "name": "Wochenheld",
