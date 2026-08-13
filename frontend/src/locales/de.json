@@ -215,6 +215,7 @@
     "createOpportunity": {
       "title": "Einsatz erstellen",
       "stepOf": "Schritt {{current}} von {{total}}",
+      "stepBlocked": "Schritt {{target}} ist noch nicht verfügbar: Bitte fülle zuerst Schritt {{blocking}} ({{blockingTitle}}) aus.",
       "step1Title": "Grunddaten",
       "step1Subtitle": "Gib deinem Einsatz einen klaren Titel und eine Beschreibung, damit Freiwillige wissen, was sie erwartet.",
       "step2Title": "Ort",
