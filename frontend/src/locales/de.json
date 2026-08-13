@@ -28,7 +28,6 @@
       "myEngagements": "Meine Anmeldungen",
       "profileSettings": "Einstellungen",
       "administration": "Administration",
-      "organization": "Organisation",
       "signOut": "Abmelden",
       "signIn": "Anmelden",
       "register": "Registrieren",
@@ -275,10 +274,7 @@
       "draftSavedToast": "Entwurf gespeichert. Du findest ihn im Tab \"Einsätze\".",
       "fieldBanner": "Bannerbild (optional)",
       "bannerUpload": "Bild hochladen",
-      "bannerHint": "JPG, PNG oder WebP, max. 2 MB",
       "bannerRemove": "Entfernen",
-      "bannerTooLarge": "Das Bild ist zu groß (max. 2 MB).",
-      "bannerWrongType": "Nur JPG-, PNG- oder WebP-Bilder sind erlaubt.",
       "bannerUploadFailed": "Der Einsatz wurde erstellt, aber das Bannerbild konnte nicht hochgeladen werden.",
       "orgAddressTip": "Tipp: Hinterlege eine Standard-Adresse in den Organisationseinstellungen - sie wird hier automatisch vorausgefüllt.",
       "orgSettingsLink": "Zu den Organisationseinstellungen",
@@ -474,7 +470,6 @@
       "createdOn": "Erstellt am {{date}}",
       "fieldLogo": "Logo",
       "logoUpload": "Logo hochladen",
-      "logoHint": "JPEG, PNG oder WebP, max. 2 MB.",
       "logoUploading": "Wird hochgeladen…",
       "logoUploadError": "Logo-Upload fehlgeschlagen.",
       "logoRemove": "Entfernen",
@@ -1021,6 +1016,11 @@
         "confirm": "Ja, löschen"
       }
     },
+    "imageUpload": {
+      "hint": "JPEG, PNG oder WebP, max. {{max}}.",
+      "wrongType": "„{{fileName}}“ ist kein unterstütztes Bild. Erlaubt sind JPEG, PNG und WebP.",
+      "tooLarge": "„{{fileName}}“ ist {{size}} groß - erlaubt sind maximal {{max}}."
+    },
     "imageCrop": {
       "loading": "Bild wird geladen…",
       "loadError": "Dieses Bild konnte nicht geladen werden.",
@@ -1068,7 +1068,6 @@
       "emptyStateCta": "Profil vervollständigen",
       "fieldAvatar": "Profilbild",
       "avatarUpload": "Bild hochladen",
-      "avatarHint": "JPEG, PNG oder WebP, max. 2 MB.",
       "avatarUploading": "Wird hochgeladen…",
       "avatarUploadError": "Bild-Upload fehlgeschlagen.",
       "avatarRemove": "Entfernen",

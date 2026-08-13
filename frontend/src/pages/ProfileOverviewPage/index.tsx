@@ -7,6 +7,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
+import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
@@ -136,7 +137,7 @@ function ChipInput({
 export default function ProfileOverviewPage() {
 	const auth = useAuth();
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
@@ -602,7 +603,7 @@ export default function ProfileOverviewPage() {
 																			? t("profile.avatarUploading")
 																			: t("profile.avatarUpload")
 																	}
-																	accept="image/jpeg,image/png,image/webp"
+																	accept={IMAGE_UPLOAD_ACCEPT}
 																	onChange={avatarUpload.handleChange}
 																	disabled={
 																		avatarUpload.uploading ||
@@ -635,7 +636,7 @@ export default function ProfileOverviewPage() {
 																)}
 															</div>
 															<p className="mt-1 text-xs text-gray-500">
-																{t("profile.avatarHint")}
+																{getImageUploadHint(t, i18n.language)}
 															</p>
 															{avatarUpload.error && (
 																<p

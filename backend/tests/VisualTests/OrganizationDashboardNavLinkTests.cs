@@ -5,14 +5,17 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Adds an "Organization" submenu to the mobile burger menu (issue #775) so users
-/// with >=1 organization can reach the org dashboard tabs from mobile, not just via
-/// the desktop org switcher and homepage hero CTA. Gated the same way as the
-/// admin-only "Administration" entry (see AdministrationNavLinkTests) and resolved
-/// via the same active-org-cookie-then-alphabetical logic HomePage uses. Built from
-/// ORG_TABS (shared with OrgAppLayout's own tab bar) so every org tab, not just the
-/// dashboard, is reachable directly from the burger menu. The label matches the
-/// desktop avatar dropdown's own org-submenu toggle (see AccountControls.tsx).
+/// The mobile burger menu reaches every org dashboard tab (issue #775), not just
+/// the org app's landing tab, so a phone user isn't left with the desktop org
+/// switcher and the homepage hero CTA. Gated the same way as the admin-only
+/// "Administration" entry (see AdministrationNavLinkTests) and resolved via the
+/// same active-org-cookie-then-alphabetical logic HomePage uses.
+///
+/// #1785 promoted those links out of the account section: the organization is one
+/// of the panel's primary destinations now, labelled with its own name and linking
+/// to the dashboard, with the remaining ORG_TABS sections listed under it - no
+/// disclosure to expand first. The account menu's own copy of them is gone (see
+/// HeaderOrganizationEntryTests, which covers the promoted entry itself).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -21,7 +24,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	private const int MobileHeight = 812;
 
 	[Test]
-	public async Task MobileMenu_UserWithOrg_ShowsOrganizationSubmenu_AndNavigatesToEachTab()
+	public async Task MobileMenu_UserWithOrg_ListsEveryOrgSection_AndNavigatesToThem()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -70,89 +73,62 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		var toggle = banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true });
-		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		// Collapsed by default: the org tab links aren't reachable yet.
-		// Exact match - the homepage's hero/footer "Find opportunities" and
-		// "Browse opportunities" links are still in the DOM behind the mobile
-		// menu overlay and would otherwise ambiguously match too (Playwright's
-		// default name matching is a case-insensitive substring match).
-		var opportunitiesLink = banner.GetByRole(
-			AriaRole.Link,
-			new() { Name = "Opportunities", Exact = true }
-		);
-		await Expect(opportunitiesLink).Not.ToBeVisibleAsync();
-
-		await toggle.ClickAsync();
-		await Expect(opportunitiesLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await opportunitiesLink.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
-
 		// The whole point of leaving this sign-in unpinned: confirm the
 		// cookie-then-alphabetical fallback actually landed on whichever org was
 		// genuinely alphabetically first for olaf at sign-in time (queried above) -
-		// not just on *some* org that happens to satisfy the URL regex above, and
-		// not against a value pinned back at fixture boot
+		// not just on *some* org that happens to satisfy a /app/<id>/ URL regex,
+		// and not against a value pinned back at fixture boot
 		// (AspireFixture.GetPinnedOrganizerOrganizationId): that snapshot is only
 		// valid at the instant the fixture starts, before any other test has
 		// created a single org. AchievementsTests, for one, permanently adds two
 		// more Organizer orgs for olaf with no cleanup, sorting ahead of the
 		// seeded one alphabetically - so whether the boot-time snapshot still
 		// matched reality here depended on test scheduling, not on whether the
-		// resolution logic under test actually worked.
-		var resolvedOrgId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
+		// resolution logic under test actually worked. Every href below is
+		// asserted against that live-resolved id.
 		expectedOrgId.Should().NotBeNull("olaf organizes a seeded org, so the fallback should always resolve one for him");
-		resolvedOrgId.Should().Be(expectedOrgId!.Value);
+		var orgId = expectedOrgId!.Value;
 
-		// Re-open and confirm the remaining tabs are all reachable too.
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
-			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
+		// #1785: no disclosure to expand first - the organization leads the
+		// group and links to the dashboard, its sections are listed under it.
+		var entry = banner.GetByTestId("mobile-nav-organization");
+		await Expect(entry).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(entry).ToHaveAttributeAsync("href", $"/app/{orgId}/dashboard");
 
-		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
-
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
-			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
+		// Exact match - the homepage's hero/footer "Find opportunities" and
+		// "Browse opportunities" links are still in the DOM behind the mobile
+		// menu overlay and would otherwise ambiguously match too (Playwright's
+		// default name matching is a case-insensitive substring match).
+		await Expect(banner.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
+			.ToHaveAttributeAsync("href", $"/app/{orgId}/dashboard/opportunities");
 
 		// Regression coverage for #1680: the org-wide engagement queue
 		// ("Sign-ups") previously had exactly one entry point (the dashboard's
-		// To-Do widget) - it must now be reachable from ORG_TABS like every
-		// other tab, the same way this test already exercises Members/Settings.
-		await banner.GetByRole(AriaRole.Link, new() { Name = "Sign-ups", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/engagements"), new() { Timeout = 15_000 });
-
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
-			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
+		// To-Do widget) - it must stay reachable from ORG_TABS like every other
+		// section. Exact match again: the account section's own "My sign-ups"
+		// would otherwise match as well.
+		await Expect(banner.GetByRole(AriaRole.Link, new() { Name = "Sign-ups", Exact = true }))
+			.ToHaveAttributeAsync("href", $"/app/{orgId}/dashboard/engagements");
 
 		// Matched on href rather than by accessible name: #1755 gave the mobile
 		// menu an account section whose "Settings" entry (/profile/settings)
 		// shares this one's exact label, so a name lookup resolves to two links.
-		await banner.Locator("a[href*='/dashboard/settings']")
-			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/settings"), new() { Timeout = 15_000 });
+		await Expect(banner.Locator($"a[href='/app/{orgId}/dashboard/settings']"))
+			.ToHaveCountAsync(1);
 
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+		// One of them actually navigated, not just rendered with a right-looking
+		// href - and Members is also the section whose own link the dashboard's
+		// Settings widget shares, hence the banner scoping above.
+		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
-		await banner.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true })
-			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		var resolvedOrgId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
+		resolvedOrgId.Should().Be(orgId);
 	}
 
 	[Test]
-	public async Task MobileMenu_UserWithoutOrgs_HasNoOrganizationSubmenu()
+	public async Task MobileMenu_UserWithoutOrgs_HasNoOrganizationEntry()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -167,7 +143,12 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true }))
-			.Not.ToBeVisibleAsync();
+
+		// No org entry and no org sections - and the "for organizations" pitch
+		// this entry would have taken the slot of is still there for them.
+		await Expect(Page.GetByTestId("mobile-nav-organization")).ToHaveCountAsync(0);
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }))
+			.ToHaveCountAsync(0);
+		await Expect(Page.GetByTestId("mobile-nav-forOrganizations")).ToBeVisibleAsync();
 	}
 }

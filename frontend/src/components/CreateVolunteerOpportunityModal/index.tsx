@@ -12,6 +12,7 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
+import { validateImageUpload } from "../../lib/imageUpload";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
@@ -33,9 +34,6 @@ import {
 	TOTAL_STEPS,
 } from "./schema";
 import type { OpportunityFormValues } from "./schema";
-
-const MAX_BANNER_BYTES = 2 * 1024 * 1024;
-const BANNER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /** Ties the refused-jump message to the step button that was refused. */
 const BLOCKED_JUMP_MESSAGE_ID = "create-opportunity-step-blocked";
@@ -184,7 +182,7 @@ export default function CreateVolunteerOpportunityModal({
 	initialOpportunity,
 }: Props) {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const isEditMode = initialOpportunity !== undefined;
 	// A Draft, and an Unpublished opportunity (taken off the public listing but
 	// not re-validated the way Publish() would), accept lenient partial saves
@@ -440,12 +438,9 @@ export default function CreateVolunteerOpportunityModal({
 		const file = e.target.files?.[0];
 		e.target.value = "";
 		if (!file) return;
-		if (!BANNER_TYPES.includes(file.type)) {
-			setBannerError(t("createOpportunity.bannerWrongType"));
-			return;
-		}
-		if (file.size > MAX_BANNER_BYTES) {
-			setBannerError(t("createOpportunity.bannerTooLarge"));
+		const rejection = validateImageUpload(file, t, i18n.language);
+		if (rejection) {
+			setBannerError(rejection);
 			return;
 		}
 		setBannerError(null);

@@ -125,7 +125,11 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 	private async Task SwitchToGermanAsync()
 	{
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+		// A plain <button> inside the selector's <ul>, not an option: #1825 dropped
+		// the listbox/option roles this component never implemented the keyboard
+		// model for. Scoped to the open menu so it cannot match anything else.
+		await Page.GetByTestId("language-selector-menu")
+			.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sprache wechseln" }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
