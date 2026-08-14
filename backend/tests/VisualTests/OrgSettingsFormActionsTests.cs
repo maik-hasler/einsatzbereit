@@ -236,7 +236,7 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 	{
 		var backend = Fixture.GetEndpoint("backend");
 		using var http = await CreateAuthenticatedHttpClientAsync(backend);
-		var response = await http.PostAsJsonAsync("/v1/organizations", new { name });
+		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name });
 		response.EnsureSuccessStatusCode();
 		var org = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return org.GetProperty("id").GetProperty("value").GetString()!;

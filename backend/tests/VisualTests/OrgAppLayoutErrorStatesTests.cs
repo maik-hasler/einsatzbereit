@@ -192,7 +192,7 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var response = await http.PostAsJsonAsync("/v1/organizations", new
+		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new
 		{
 			name = $"VisualTests {label} {suffix}",
 		});

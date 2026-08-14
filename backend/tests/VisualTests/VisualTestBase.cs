@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Playwright;
 using TUnit.Core;
@@ -148,6 +150,44 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				throw new TimeoutException(timeoutMessage());
 			await Task.Delay(100);
 		}
+	}
+
+	/// <summary>
+	/// POSTs <paramref name="body"/> as JSON to <paramref name="requestUri"/> and
+	/// retries a handful of times with a short backoff if the response is a
+	/// transient 5xx, before returning whatever the final attempt returned.
+	/// Mirrors AspireFixture's PostTokenRequestWithRetryAsync, applied to the
+	/// same class of problem one level up: creating a test organization (POST
+	/// /v1/organizations) calls out to Keycloak's admin API in turn (create
+	/// organization, add member, assign the organisator role), and under this
+	/// suite's sustained concurrent load that chain can trip the same
+	/// resilience-pipeline rejection/timeout #1709 traces GetMembersAsync's
+	/// admin-API calls back to - surfacing as a 500 from our own backend that
+	/// is not attributable to the request this suite sent, and that a bare
+	/// re-run of just the failing test does not reproduce. Retrying the exact
+	/// same request is safe here in practice: the dominant failure mode is the
+	/// resilience pipeline rejecting or timing out the Keycloak call before any
+	/// organization exists, so there is nothing for a retry to collide with -
+	/// and on the rarer case where Keycloak's side did commit, the retry surfaces
+	/// as a 409 (never retried below) rather than silently duplicating anything.
+	/// Never retries a 4xx - that's a real failure, not a blip.
+	/// </summary>
+	protected static async Task<HttpResponseMessage> PostJsonWithRetryAsync(
+		HttpClient client, string requestUri, object body, CancellationToken cancellationToken = default)
+	{
+		const int maxAttempts = 3;
+		HttpResponseMessage response;
+		for (var attempt = 1; ; attempt++)
+		{
+			response = await client.PostAsJsonAsync(requestUri, body, cancellationToken);
+			if (response.StatusCode < HttpStatusCode.InternalServerError || attempt >= maxAttempts)
+				break;
+
+			response.Dispose();
+			await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
+		}
+
+		return response;
 	}
 
 	/// <summary>
