@@ -1,16 +1,5 @@
 name: Promote release branch to tag
 
-# Lets agents that cannot push tag refs directly (e.g. Claude Code on the web,
-# whose git proxy restricts pushes to the current working branch) request a
-# release by pushing a branch named `release/vX.Y.Z[-rc.N]`. This workflow
-# validates the name, promotes it to a real annotated tag, and deletes the
-# branch. The tag push then triggers `publish.yml` end-to-end.
-#
-# IMPORTANT: the tag is pushed using RELEASE_TOKEN (a fine-grained PAT with
-# contents: write on this repo), NOT the default GITHUB_TOKEN. A tag pushed
-# with GITHUB_TOKEN does not trigger other workflows, so publish.yml would
-# never run.
-
 on:
   push:
     branches:

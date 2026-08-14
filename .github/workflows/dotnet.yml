@@ -54,13 +54,6 @@ jobs:
         working-directory: backend
         run: dotnet format --verify-no-changes --no-restore
 
-  # Single restore+build for the whole solution, shared by format-check/
-  # fast-tests/integration-tests/visual-tests below via upload-artifact/
-  # download-artifact instead of each of those four jobs redoing it.
-  # format-check only strictly needs a restore (no build output), but
-  # depends on this anyway to keep the whole workflow down to one restore -
-  # at the cost of format-check's own signal landing later than it would
-  # standalone, now behind this job's setup+build time.
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -79,11 +72,6 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Building the whole solution here compiles tests/VisualTests.csproj,
-      # which downloads Chrome for Testing + Chrome Headless Shell (~290 MiB
-      # combined) from cdn.playwright.dev via its InstallPlaywrightBrowsers
-      # MSBuild target. Caching this means that download only happens when
-      # the pinned TUnit.Playwright version changes, not on every run.
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -98,12 +86,6 @@ jobs:
         working-directory: backend
         run: dotnet build --no-restore
 
-      # NSwag (Api.csproj's Debug-only MSBuild target) just regenerated these
-      # three files into the working tree above. All three are committed, so
-      # a PR that changes a DTO or route and forgets to commit the
-      # regenerated client would otherwise pass every check here - the
-      # frontend type-checks against the stale client and only breaks at
-      # runtime against the new API.
       - name: Verify generated API client and OpenAPI doc are committed
         run: |
           if ! git diff --exit-code -- \
@@ -121,10 +103,6 @@ jobs:
           dotnet tool install --global dotnet-ef --version 10.0.11
           dotnet ef migrations has-pending-model-changes -p src/Infrastructure -s src/Api --no-build
 
-      # visual-tests actually launches a browser on its own runner (a
-      # different machine from this job), so it needs its own Playwright
-      # browser cache restore below - this artifact only carries the .NET
-      # build output (bin/obj), not ~/.cache/ms-playwright.
       - name: Upload build output
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -132,12 +110,6 @@ jobs:
           path: |
             backend/**/bin/**
             backend/**/obj/**
-          # tests/VisualTests's Playwright driver lives under a dot-prefixed
-          # bin/.../.playwright/ folder (upload-artifact excludes dotfiles by
-          # default), which silently dropped it from the artifact on the
-          # first real run of this shape and failed visual-tests with
-          # "Driver not found" - no test build output here is actually
-          # sensitive, so including hidden files is safe.
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -154,11 +126,6 @@ jobs:
         with:
           global-json-file: backend/global.json
 
-      # Restoring (not re-running `dotnet restore`) the same NuGet cache key
-      # the build job just populated - --no-restore/--no-build still need the
-      # actual package contents on disk (analyzers/build targets they
-      # contribute get imported during MSBuild evaluation), not just the
-      # bin/obj output below.
       - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -172,20 +139,10 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
-      # TUnit's Microsoft.Testing.Platform runner ships coverage support out of the
-      # box (Microsoft.Testing.Extensions.CodeCoverage arrives transitively via
-      # TUnit itself - no extra PackageReference needed in any test project) - a
-      # fixed --coverage-output name keeps the path below predictable instead of
-      # the tool's default GUID-named file.
       - name: Test - Application.UnitTests
         working-directory: backend
         run: dotnet run --project tests/Application.UnitTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output application-unittests.cobertura.xml
@@ -194,11 +151,6 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/ArchitectureTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output architecturetests.cobertura.xml
 
-      # Report-only (einsatzbereit#1327): no threshold gate, so a low or
-      # dropping number never blocks a merge - visibility is the point.
-      # Written straight to the job's own step summary rather than via a
-      # third-party action, to avoid per-class noise and a dependency on a
-      # Node 20 runtime GitHub Actions is deprecating.
       - name: Publish coverage summary
         if: github.event_name == 'pull_request'
         working-directory: backend
@@ -252,11 +204,6 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
@@ -310,22 +257,10 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
-      # Restores the same Playwright browser cache the build job just
-      # populated - the build job's download happened on that job's own
-      # runner, a different machine from this one, so the browser binary
-      # itself (~/.cache/ms-playwright, not part of the artifact above) has
-      # to be fetched again here. `needs: build` guarantees this restore
-      # lands after that job's cache save, so this is a guaranteed hit rather
-      # than a fresh download.
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -356,10 +291,6 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/VisualTests --no-restore --no-build
 
-      # VisualTestBase only keeps a trace for tests that actually failed (see
-      # TeardownTracingAsync) - upload whatever landed so a flake can be
-      # inspected (playwright.dev/dotnet/docs/trace-viewer) instead of
-      # re-guessed from a bare assertion message.
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

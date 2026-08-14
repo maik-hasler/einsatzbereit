@@ -1,19 +1,11 @@
 #!/bin/bash
-# Safety net for the unattended, no-human-review routine: before Claude ends
-# its turn, if backend/frontend source actually changed, build/lint it once
-# so a broken build never silently ships to a PR.
-#
-# Hard-capped at 2 blocks per session (via a counter file keyed by
-# session_id) regardless of outcome - this repo has no documented
-# loop-prevention field on Stop hook input, so the cap is self-imposed
-# rather than relied upon from the framework.
+# Before finishing, verify changed backend/frontend source.
+# Block the turn if the check fails, but only retry twice per session.
 
 INPUT=$(cat)
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
-# SessionStart only adds this to ~/.bashrc, which a non-interactive hook
-# shell doesn't source - without it, `dotnet` is "not found" and every
-# backend change would falsely fail the build check below.
+# Make dotnet available in non-interactive hooks.
 export PATH="$HOME/.dotnet:$PATH"
 
 SESSION_ID=$(printf '%s' "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed -E 's/.*:[[:space:]]*"(.*)"$/\1/')
