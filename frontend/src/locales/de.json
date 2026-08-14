@@ -1160,6 +1160,9 @@
       "activityStreak": "Wochen in Serie",
       "activityStreak_one": "Woche in Serie",
       "activityStreak_other": "Wochen in Serie",
+      "loginStreak": "{{count}} Tage in Folge angemeldet",
+      "loginStreak_one": "{{count}} Tag in Folge angemeldet",
+      "loginStreak_other": "{{count}} Tage in Folge angemeldet",
       "engagementStatLabel": "Bestätigte Einsätze",
       "engagementStatLabel_one": "Bestätigter Einsatz",
       "engagementStatLabel_other": "Bestätigte Einsätze",
@@ -1183,8 +1186,8 @@
           "description": "Verdient nach 100 bestätigten Einsätzen."
         },
         "on-a-roll-7": {
-          "name": "Aktive Woche",
-          "description": "Verdient für sieben Tage in Folge."
+          "name": "Anmeldeserie",
+          "description": "Verdient für 7 aufeinanderfolgende Tage mit Anmeldung."
         },
         "weekly-hero-4": {
           "name": "Wochenheld",
