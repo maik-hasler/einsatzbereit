@@ -333,7 +333,13 @@ export default function ActivitySection() {
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
-				className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
+				// max-w-full + overflow-x-auto: whitespace-nowrap below no longer
+				// lets an overlong label wrap onto a second line as a fallback, and
+				// global.css's html { overflow-x: clip } would otherwise make an
+				// overflow (e.g. from large OS/browser text-scaling) unreachable
+				// rather than just clipped - same safety net as .rbc-btn-group in
+				// global.css.
+				className="mb-4 inline-flex max-w-full overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1"
 			>
 				<button
 					type="button"
