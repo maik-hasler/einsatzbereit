@@ -183,5 +183,4 @@ By participating, you agree to uphold it.
 
 ## Questions?
 
-If you're unsure where to start, open an Issue and ask.
-No question is too small.
+Unsure where to start? Open an Issue - see "Reporting Bugs" above.

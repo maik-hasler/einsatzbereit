@@ -7,8 +7,9 @@ disallowedTools: Write, Edit
 
 Scope is deliberately narrow: `eslint-plugin-jsx-a11y` (recommended ruleset,
 CI-blocking) already deterministically catches missing `alt`, unlabelled form
-controls, and bare `onClick` on non-interactive elements - don't re-check
-those, ESLint already guarantees them. Only check what nothing else catches:
+controls, bare `onClick` on non-interactive elements, and `href="#"`/missing
+`href` on anchors - don't re-check those, ESLint already guarantees them.
+Only check what nothing else catches:
 
 Read the changed `.tsx` files (`git diff`) and check them against the
 project-specific patterns in the "Accessibility (a11y)" section of
@@ -24,8 +25,6 @@ project-specific patterns in the "Accessibility (a11y)" section of
 - **SVG icons**: decorative ones get `aria-hidden="true"`; meaningful
   standalone ones need a `<title>` or `aria-label` (jsx-a11y has no rule for
   this - `alt-text` only covers `<img>`).
-- **Links**: never `href="#"` - use a `<button>` if there's no navigation
-  target (not caught by any jsx-a11y rule).
 
 If the diff adds a new page/route (a new entry in `src/App.tsx`), also check
 `backend/tests/VisualTests/AccessibilityTests.cs` for a matching

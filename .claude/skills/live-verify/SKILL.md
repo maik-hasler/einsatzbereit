@@ -3,14 +3,14 @@ name: live-verify
 description: >
   Writes and runs a throwaway Playwright script against live staging
   (https://einsatzbereit.maik-hasler.de) to prove a fix or feature actually
-  works in production - step 6 of the mandatory deploy-and-verify flow in
+  works in production - step 5 of the mandatory deploy-and-verify flow in
   root AGENTS.md. Use once deploy-staging succeeds, or whenever asked to
   smoke-test staging, verify on live, or run "/live-verify".
 ---
 
 # Live verify
 
-Step 6 of the mandatory deploy-and-verify flow (root `AGENTS.md`, "Mandatory:
+Step 5 of the mandatory deploy-and-verify flow (root `AGENTS.md`, "Mandatory:
 Deploy and verify"). Two hard gates: the health check, and a live Playwright
 script that must exit 0 with every assertion green.
 
@@ -26,7 +26,7 @@ There is no committed `scripts/` directory and no root `package.json`
 anymore. Write the Playwright script to a scratch directory outside the
 repo (this session's scratchpad, or `/tmp`) and delete it once it has
 served its purpose - it is throwaway proof the change works right now,
-never a durable artifact (that's step 7's C# TUnit test, below).
+never a durable artifact (that's step 6's C# TUnit test, below).
 
 ```bash
 cd <scratch-dir> && npm init -y && npm install playwright
@@ -79,7 +79,7 @@ await page.waitForLoadState("networkidle", { timeout: 30000 });
 
 The sign-in button label is English or German depending on locale.
 
-Live Keycloak and local Aspire Keycloak (step 7's `AuthHelper.LoginAsync`)
+Live Keycloak and local Aspire Keycloak (step 6's `AuthHelper.LoginAsync`)
 are now the same single-step form - the custom theme's `login.ftl` renders
 username and password together. This section used to describe live as a
 two-step flow (fill username, submit, fill password, submit). That recipe
@@ -96,6 +96,6 @@ success. Delete the scratch script once done - it never gets committed.
 ## Then: the durable record
 
 Add the same assertions as an automated C# TUnit test in
-`backend/tests/VisualTests/` (step 7 of the mandatory flow, runs against the
+`backend/tests/VisualTests/` (step 6 of the mandatory flow, runs against the
 local Aspire stack in CI). That test is the durable, reviewable record of
 the fix; this scratch script is not.
