@@ -1678,6 +1678,23 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	[Test]
+	public async Task OrganizationsPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Assert something rendered before scanning - a scan of a page whose
+		// list failed to load passes vacuously.
+		await Expect(Page.GetByTestId("organizations-search"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	// The row overflow menu is an overlay with hand-rolled markup, so it gets
 	// scanned in its open state the way NotificationDropdown_Open and the
 	// sign-up modal's slot dropdown do - closed, it contributes nothing.
