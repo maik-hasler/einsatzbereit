@@ -158,8 +158,10 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 			"Authorization", $"Bearer {(await Fixture.SignInAsync("vera", "vera123")).AccessToken}");
 
 		// Any authenticated request would trip LoginStreakMiddleware - this one
-		// happens to also be the endpoint the profile page itself calls.
-		(await veraHttp.GetAsync("/v1/users/me/streaks")).EnsureSuccessStatusCode();
+		// happens to also be the endpoint the profile page itself calls
+		// (GetMyStreaksEndpoint maps "/me/streaks" directly under /v1, not
+		// under the /v1/users/... group other user endpoints use).
+		(await veraHttp.GetAsync("/v1/me/streaks")).EnsureSuccessStatusCode();
 	}
 
 	private async Task SeedConfirmedEngagementForVeraAsync(Uri backend)
