@@ -5,7 +5,7 @@ description: >
   staging site (https://github.com/maik-hasler/einsatzbereit,
   https://einsatzbereit.maik-hasler.de). Each run triages where review
   effort is most valuable right now, then goes deep on exactly ONE lens -
-  bugs, dead code, dead features, repo hygiene, docs drift, test gaps, CI
+  bugs, dead code, dead features, repo hygiene, docs quality, test gaps, CI
   health, security, contributor accessibility, live personas (Volunteer
   Vera/Organizer Olaf/Platform Admin - functional friction and visual/
   content quality together), accessibility, code/comment complexity, or
@@ -124,7 +124,8 @@ lens; it is not the review. Do not start investigating findings here.
 | Churn hotspots | `git log --since=21.days --name-only --pretty=format: \| sort \| uniq -c \| sort -rn \| head -25` | bugs, test-gaps, complexity |
 | Fix density | `git log --since=60.days --oneline \| grep -i "fix"` - count and cluster by area | bugs |
 | Tracked-file scan | `git ls-files` - eyeball for junk, secrets-shaped names, size outliers | repo-hygiene, security |
-| Docs staleness | last-commit date of each `*.md` vs churn of the code it describes | docs-drift |
+| Docs staleness | last-commit date of each `*.md` vs churn of the code it describes | docs |
+| Doc context budget | `wc -l` each `AGENTS.md`/`CLAUDE.md` against the documented ~200-line adherence target | docs |
 | CI signal | GitHub API `actions/runs?per_page=30` - failure rate, durations | ci |
 | Community signal | GitHub API open issues/PRs - age, labels, unanswered | contributor-dx, bugs |
 | Test-to-src churn | ratio of changed test files to changed src files (from churn probe) | test-gaps |
@@ -152,7 +153,7 @@ Then read exactly one lens file:
 | Dead code | `references/lens-dead-code.md` | static |
 | Dead features | `references/lens-dead-features.md` | static |
 | Repo & filesystem hygiene | `references/lens-repo-hygiene.md` | static |
-| Docs quality & drift | `references/lens-docs-drift.md` | static |
+| Docs quality | `references/lens-docs.md` | static |
 | Test gaps | `references/lens-test-gaps.md` | static |
 | CI health & performance | `references/lens-ci.md` | static |
 | Security smells | `references/lens-security.md` | static |
