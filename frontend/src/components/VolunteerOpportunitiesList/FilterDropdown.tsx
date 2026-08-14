@@ -165,6 +165,7 @@ export default function FilterDropdown({
 				<div
 					id={panelId}
 					ref={panelRef}
+					aria-label={label}
 					style={{ left: panelLeft }}
 					// Below Header.tsx's sticky z-40 - this panel's ancestors (the
 					// filter bar, <main>) are all unpositioned, so its z-index
