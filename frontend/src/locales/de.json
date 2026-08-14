@@ -641,7 +641,7 @@
       "deletedOpportunityTitle": "Dieser Einsatz wurde entfernt",
       "cancellationReason": "Grund: {{reason}}",
       "withdraw": "Zurückziehen",
-      "withdrawError": "Fehler beim Zurückziehen",
+      "withdrawError": "Anmeldung konnte nicht zurückgezogen werden. Bitte versuche es erneut.",
       "addToCalendar": "Zum Kalender hinzufügen",
       "addToCalendarGoogle": "Google Kalender",
       "addToCalendarOutlook": "Outlook.com",

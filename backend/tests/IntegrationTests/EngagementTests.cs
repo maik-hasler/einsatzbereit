@@ -1050,7 +1050,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	// ── Cross-user withdrawal ─────────────────────────────────────────────────
 
 	[Test]
-	public async Task WithdrawEngagement_ShouldReturn400_WhenUserWithdrawsAnotherUsersEngagement(
+	public async Task WithdrawEngagement_ShouldReturn403_WhenUserWithdrawsAnotherUsersEngagement(
 		CancellationToken cancellationToken)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -1066,7 +1066,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var act = () => olafClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
-		exception.Which.StatusCode.Should().Be(400);
+		exception.Which.StatusCode.Should().Be(403);
 	}
 
 	// ── Cross-org ownership ───────────────────────────────────────────────────
