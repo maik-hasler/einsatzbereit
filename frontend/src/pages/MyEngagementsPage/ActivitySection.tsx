@@ -341,7 +341,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("upcoming")}
 					disabled={engagementsLoading}
 					aria-current={engagementsScope === "upcoming" ? "true" : undefined}
-					className={`flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors ${
+					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "upcoming"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
@@ -355,7 +355,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("past")}
 					disabled={engagementsLoading}
 					aria-current={engagementsScope === "past" ? "true" : undefined}
-					className={`flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors ${
+					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "past"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
