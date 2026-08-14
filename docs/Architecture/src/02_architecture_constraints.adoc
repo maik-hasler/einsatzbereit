@@ -11,7 +11,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Constraint |Rationale
 
 |Docker required for local development
-|The .NET Aspire AppHost (`dotnet run --project backend/src/Aspire/AppHost`) provisions PostgreSQL, pgAdmin, Keycloak, MinIO, and Mailpit as containers, while the backend API and Vite frontend run as Aspire-managed host processes. This ensures a consistent development environment across all contributor machines. Docker Compose is the deployment mechanism (see chapter 7), not the local-development one.
+|The .NET Aspire AppHost provisions the local service containers (see <<section-concepts>> under Development and Build for the one-command orchestration), which requires Docker on every contributor machine. Docker Compose is the deployment mechanism (see chapter 7), not the local-development one.
 
 |GNU AGPL v3.0 license
 |All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform - including modifications - must be released under the same license.
@@ -23,7 +23,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.
 
 |NSwag-generated API client - never hand-edited
-|The frontend API client (`api-client.ts`) is generated from the OpenAPI spec. Manual edits to this file are prohibited; changes must go through the backend OpenAPI definition.
+|Enforced by the OpenAPI-to-client generation pipeline - see <<section-concepts>> under Development and Build.
 
 |AsciiDoc for documentation
 |Architecture documentation follows the arc42 template written in AsciiDoc. Markdown is not used for structured documentation.

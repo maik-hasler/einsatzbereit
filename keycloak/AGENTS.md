@@ -83,13 +83,7 @@ The realm's `defaultRole` (`default-roles-einsatzbereit`, composite over `user`)
 
 ### Test Users
 
-| Username | Password | Roles |
-|---|---|---|
-| `vera` | `vera123` | `user` |
-| `olaf` | `olaf123` | `user`, `organisator` |
-| `admin` | `admin123` | `admin` |
-
-These credentials are stored **pre-hashed** (PBKDF2-SHA256) in the realm file, not as plaintext `value`. The realm's `passwordPolicy` (`upperCase(1)`, `length(8)`) rejects these short dev passwords, and Keycloak validates plaintext credentials against the policy during `--import-realm` - a fresh import (CI, a clean local stack, a first-time deploy) crashes with `invalidPasswordMinUpperCaseCharsMessage` and never starts. Pre-hashed credentials skip that validation, so **do not** replace them with plaintext `value` fields. To rotate one: import the realm, set the password in the UI, then partial-export the user.
+See `README.md`'s Test users table for the username/password/role list. These credentials are stored **pre-hashed** (PBKDF2-SHA256) in the realm file, not as plaintext `value`. The realm's `passwordPolicy` (`upperCase(1)`, `length(8)`) rejects these short dev passwords, and Keycloak validates plaintext credentials against the policy during `--import-realm` - a fresh import (CI, a clean local stack, a first-time deploy) crashes with `invalidPasswordMinUpperCaseCharsMessage` and never starts. Pre-hashed credentials skip that validation, so **do not** replace them with plaintext `value` fields. To rotate one: import the realm, set the password in the UI, then partial-export the user.
 
 Because the same realm file ships in the published Keycloak image, these accounts (including `admin`) are also reachable on the public staging deployment with the exact passwords above, and `OVERWRITE_EXISTING` (see `docker-compose.yml`) recreates them on every restart even if someone changes or deletes them there. This is intentional, not an oversight: staging is disposable demo/QA infrastructure, not production, and gets fully wiped on demand via `.github/workflows/reset-staging.yml`. Do not "fix" this by removing the accounts from the shipped image or by trying to give staging its own secret password without checking with the repo owner first - see #1166.
 
@@ -103,10 +97,7 @@ Multi-stage Dockerfile:
 1. **Builder stage**: `quay.io/keycloak/keycloak:26.7.1` - runs `kc.sh build` with PostgreSQL provider
 2. **Runtime stage**: Copies optimized build, runs with `--optimized` flag
 
-Required environment variables at runtime (see `README.md`):
-- `KC_HOSTNAME` - public hostname
-- `KC_DB_URL` - JDBC connection string for Keycloak's own DB
-- `KC_DB_USERNAME` / `KC_DB_PASSWORD`
+See `README.md` for the required runtime environment variables.
 
 The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak with `KC_DB=dev-file` for local dev - Keycloak owns its own embedded H2 store there. The shared Postgres container hosts only the application `einsatzbereit` database.
 

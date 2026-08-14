@@ -158,13 +158,13 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for Convention
 
 ## Security
 
-Found a vulnerability? Please report it privately via the GitHub Security tab's "Report a vulnerability" option rather than a public issue - see [SECURITY.md](SECURITY.md) for details.
+Found a vulnerability? See [SECURITY.md](SECURITY.md) for how to report it privately.
 
 ---
 
 ## Versioning & Releases
 
-Einsatzbereit uses a single unified SemVer tag across the whole monorepo - see [VERSIONING.md](VERSIONING.md). Stable releases are tagged `vX.Y.Z`; release candidates are `vX.Y.Z-rc.N`. Every tag push builds and publishes Docker images for backend, frontend, and Keycloak to GitHub Container Registry (GHCR). Release notes are auto-generated on [GitHub Releases](https://github.com/maik-hasler/einsatzbereit/releases) - there is no separate changelog file.
+Einsatzbereit uses a single unified SemVer tag across the whole monorepo, published to GHCR - see [VERSIONING.md](VERSIONING.md) for the tag format and release process. Release notes are auto-generated on [GitHub Releases](https://github.com/maik-hasler/einsatzbereit/releases).
 
 ---
 

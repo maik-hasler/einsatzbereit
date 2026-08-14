@@ -68,15 +68,7 @@ For endpoints with many optional query params (e.g. `getVolunteerOpportunities`,
 
 ## Environment Variables
 
-Defined in `.env.development`. Exposed client-side via Vite (must use `VITE_` prefix).
-
-| Variable                      | Dev value                                    |
-| ----------------------------- | -------------------------------------------- |
-| `VITE_KEYCLOAK_AUTHORITY_URL` | `http://localhost:8080/realms/einsatzbereit` |
-| `VITE_KEYCLOAK_CLIENT_ID`     | `frontend`                                   |
-| `VITE_API_URL`                | `http://localhost:5000`                      |
-
-Accessed via `import.meta.env.VITE_*`.
+Dev values are defined in `.env.development` - see that file for the current list. Exposed client-side via Vite (must use `VITE_` prefix) and accessed via `import.meta.env.VITE_*`.
 
 ## Role Checks
 
@@ -103,7 +95,7 @@ Routes declared in `src/App.tsx`. Add new routes there.
 <Route path="/secure" element={<ProtectedRoute><SecurePage /></ProtectedRoute>} />
 ```
 
-**Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
+**Note:** During development, new page code may use `(api as any)` until the backend rebuilds and `api-client.ts` regenerates with the new method (see API Client above).
 
 ## Scripts
 
@@ -147,9 +139,7 @@ Conventions used across the existing suite:
 
 ## Linting
 
-Always run `pnpm format:write` before committing. The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit.
-
-Run lint before every commit. All errors must be fixed - zero warnings allowed (`--max-warnings 0`).
+The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit. All lint errors must be fixed - zero warnings allowed (`--max-warnings 0`).
 
 ```bash
 pnpm lint

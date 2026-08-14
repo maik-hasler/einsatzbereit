@@ -31,7 +31,7 @@ docs/
 - **arc42** template (standard German architecture documentation format)
 - Diagrams in **PlantUML** (`.puml`) embedded via `asciidoctor-diagram`
 - Built to HTML5 via `asciidoctor-action` in CI, deployed to GitHub Pages
-- **Indentation: tabs, not spaces** - `.adoc`/`.puml` fall under the EditorConfig default (`[*]` rule, tabs), unlike `.md` which is space-indented. CI's `editorconfig` job fails on space-indented lines - keep AsciiDoc paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuations, and don't indent PlantUML note/legend blocks with spaces
+- **Indentation: tabs, not spaces**, per root `AGENTS.md`'s Key Conventions - keep AsciiDoc paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuations, and don't indent PlantUML note/legend blocks with spaces
 
 ## Build
 

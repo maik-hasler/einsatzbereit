@@ -70,33 +70,7 @@ Contained Building Blocks::
 
 Important Interfaces::
 
-The external interfaces below are consistent with the technical context in <<section-context-and-scope>>, which remains the authoritative list; this table adds the two interfaces internal to the system boundary. The one context interface without a Level-1 counterpart is GitHub Actions to GHCR, which touches build artifacts rather than a running building block - see <<section-deployment-view>>.
-
-[cols="1,3" options="header"]
-|===
-|Interface |Description
-
-|Frontend to Backend API
-|REST over HTTPS, versioned (`/v1/...`). Authenticated requests carry a JWT Bearer token; public browsing is anonymous. Response format is JSON. The TypeScript client is generated from the OpenAPI spec.
-
-|Frontend to Keycloak
-|OIDC Authorization Code Flow with PKCE. Frontend redirects to Keycloak for login; receives access and refresh tokens on success.
-
-|Backend to Keycloak
-|Backend fetches Keycloak's JWKS endpoint to validate JWT signatures. For organization and user management it also calls Keycloak's Admin REST API (`/admin/realms/...`) using a service-account admin token.
-
-|Backend to PostgreSQL
-|EF Core 10 over TCP. Migrations are applied on startup in Development, and in other environments only when `Database:MigrateOnStartup` is enabled.
-
-|Backend to Object storage (MinIO / S3)
-|Stores and serves binary assets: organization logos, user avatars, and opportunity banners.
-
-|Backend to Mail server (SMTP)
-|Sends notification and reminder emails (Mailpit locally, a real SMTP relay on staging).
-
-|Backend to Geocoding (Nominatim)
-|Geocodes opportunity addresses at write time, throttled to about one request per second. Map tiles and city search are proxied through the backend so visitor IPs never reach OpenStreetMap. See ADR-4 and ADR-5.
-|===
+The interfaces of the four Level-1 containers are consistent with, and not repeated from, the technical context's External Interfaces table in <<section-context-and-scope>>, which remains the authoritative list. The one context interface without a Level-1 counterpart here is GitHub Actions to GHCR, which touches build artifacts rather than a running building block - see <<section-deployment-view>>.
 
 === Level 2: Backend API (Whitebox)
 
@@ -228,7 +202,7 @@ This asymmetry with the backend is deliberate, but it is an asymmetry: a feature
 |`frontend/src/components/`
 
 |API Client
-|NSwag-generated TypeScript client. Provides typed methods for all backend endpoints. Never hand-edited.
+|NSwag-generated TypeScript client providing typed methods for all backend endpoints - see <<section-concepts>> under Development and Build.
 |`frontend/src/client/api-client.ts`
 
 |Layouts
