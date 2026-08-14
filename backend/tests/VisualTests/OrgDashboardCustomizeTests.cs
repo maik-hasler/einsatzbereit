@@ -921,6 +921,66 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			+ $"(last observed delta: {rowHeightDelta}px, must be <2px)");
 	}
 
+	[Test]
+	public async Task MobileViewport_RendersWidgetsInPositionOrder_NotArrayOrder()
+	{
+		// #1845: settlePlacement (widgetCatalog.ts) always prepends whichever
+		// widget just moved to the front of the layout array. That's harmless
+		// at lg+, where every tile still gets an explicit gridColumn/gridRow
+		// (see index.tsx's gridStyle), but below `lg` the grid collapses to a
+		// single stacked column with no gridStyle at all - plain document
+		// flow, where DOM order IS the visual order. Moving CreateOpportunity
+		// (DEFAULT_LAYOUT's very first widget, x=1/y=1) below every other
+		// widget used to still render it FIRST on mobile, because it was now
+		// first in the array despite being last by saved position.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashMobileOrder", pinnedOrgId!.Value);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		// Settings (DEFAULT_LAYOUT's last widget) ends at y=8 - moving
+		// CreateOpportunity to y=9 puts it below every other widget, with no
+		// overlap/displacement of anything else involved.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Create opportunity" }).ClickAsync();
+		await ClickGridCellAsync(col: 1, row: 9);
+		await ClickGridCellAsync(col: 4, row: 9);
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		await AssertWidgetOccupiesCellsAsync("CreateOpportunity", x: 1, y: 9, width: 4, height: 1);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(375, 812);
+
+		// No fixed expected value to Expect() against up front - poll a fresh
+		// read of the rendered tile order until it settles (or the timeout
+		// proves it never does), rather than reading it once right after the
+		// viewport resize, since the isLargeViewport media-query listener's
+		// resulting re-render isn't necessarily synchronous with
+		// SetViewportSizeAsync returning.
+		string[] tileOrder = [];
+		await PollUntilAsync(async () =>
+		{
+			tileOrder = await Page.EvaluateAsync<string[]>(
+				"""
+				() => Array.from(document.querySelectorAll('[data-testid^="widget-tile-"]'))
+					.map(el => el.getAttribute('data-testid'))
+				""");
+			return tileOrder.Length > 0 && tileOrder[^1] == "widget-tile-CreateOpportunity";
+		}, () => "at mobile width, DOM order should follow each widget's saved position (y, then x) - "
+			+ "CreateOpportunity was moved below every other widget and should render last, but the "
+			+ $"last observed order was [{string.Join(", ", tileOrder)}]");
+	}
+
 	/// <summary>
 	/// Clicks the grid guide cell at 1-based (col, row) - the same cells an
 	/// organizer clicks to mark a placement's corners. Cells all share the

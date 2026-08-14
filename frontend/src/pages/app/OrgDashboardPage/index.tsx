@@ -38,6 +38,7 @@ import {
 	compactLayout,
 	placeNewWidget,
 	sanitizeWidgetKey,
+	sortByPosition,
 	type PlacedWidget,
 	type WidgetKey,
 	type WidgetSizeClass,
@@ -159,6 +160,15 @@ export default function OrgDashboardPage() {
 	const availableToAdd = WIDGET_KEYS.filter(
 		(key) => !layout.some((w) => w.widgetKey === key),
 	);
+
+	// Below `lg` the grid collapses to a single stacked column (see the
+	// `gridStyle` ternary in the render loop below) - plain document flow,
+	// where DOM order IS visual order. `layout` itself carries no such
+	// guarantee (see sortByPosition in widgetCatalog.ts), which on lg+ is
+	// harmless (each tile is placed explicitly via `gridStyle`'s gridColumn/
+	// gridRow) but on mobile let a widget dragged to the bottom on desktop
+	// render first (#1845).
+	const mobileLayout = isLargeViewport ? layout : sortByPosition(layout);
 
 	// Memoized so CreateOpportunityWidget's React.memo (see that component)
 	// actually skips re-rendering while a placement is in progress - a fresh
@@ -517,7 +527,7 @@ export default function OrgDashboardPage() {
 			collapses to a single stacked column below `lg`, where this wouldn't
 			mean anything. */}
 			{guideCells}
-			{layout.map((widget) => {
+			{mobileLayout.map((widget) => {
 				const isPlacingThis = activeKey === widget.widgetKey;
 				const rect = isPlacingThis && previewRect ? previewRect : widget;
 				const sizeClass = isLargeViewport

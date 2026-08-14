@@ -3,6 +3,7 @@ import {
 	DEFAULT_LAYOUT,
 	WIDGET_CATALOG,
 	isValidPlacement,
+	sortByPosition,
 	type PlacedWidget,
 } from "./widgetCatalog";
 
@@ -78,5 +79,60 @@ describe("DEFAULT_LAYOUT", () => {
 			expect(row).toBeDefined();
 			expect(row as number).toBeLessThan(calendarRow as number);
 		}
+	});
+});
+
+// #1845: mobile rendering (single stacked column below `lg`, see
+// OrgDashboardPage/index.tsx) falls back to this instead of trusting a
+// layout array's own order, which reflects edit history (settlePlacement
+// always prepends whichever widget just moved) rather than position.
+describe("sortByPosition", () => {
+	it("orders widgets top-to-bottom, then left-to-right, regardless of input array order", () => {
+		// Same shape the bug actually produced: CreateOpportunity moved below
+		// everything else on the grid, but still first in the array because
+		// settlePlacement prepends whatever just moved.
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "CreateOpportunity", x: 1, y: 9, width: 4, height: 1 },
+			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+			{ widgetKey: "VolunteerStats", x: 7, y: 1, width: 2, height: 1 },
+			{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
+		];
+
+		expect(sortByPosition(widgets).map((w) => w.widgetKey)).toEqual([
+			"ToDo",
+			"VolunteerStats",
+			"Calendar",
+			"CreateOpportunity",
+		]);
+	});
+
+	it("breaks a tied row left-to-right by x", () => {
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "VolunteerStats", x: 7, y: 1, width: 2, height: 1 },
+			{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 3, height: 1 },
+			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+		];
+
+		expect(sortByPosition(widgets).map((w) => w.widgetKey)).toEqual([
+			"CreateOpportunity",
+			"ToDo",
+			"VolunteerStats",
+		]);
+	});
+
+	it("does not mutate the input array", () => {
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },
+			{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
+		];
+		const original = [...widgets];
+
+		sortByPosition(widgets);
+
+		expect(widgets).toEqual(original);
+	});
+
+	it("already matches DEFAULT_LAYOUT's own order, since it was authored top-to-bottom", () => {
+		expect(sortByPosition(DEFAULT_LAYOUT)).toEqual(DEFAULT_LAYOUT);
 	});
 });
