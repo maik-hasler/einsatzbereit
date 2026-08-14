@@ -1111,6 +1111,8 @@
     "notificationPreferences": {
       "title": "Email notifications",
       "description": "Choose which transactional emails you want to receive. Every email also includes an unsubscribe link for the type it belongs to.",
+      "organizerGroupLabel": "As an organizer",
+      "volunteerGroupLabel": "As a volunteer",
       "newSignUp": "New sign-ups for opportunities you organize",
       "withdrawal": "Volunteer withdrawals from opportunities you organize",
       "engagementConfirmed": "Your sign-up is confirmed",
