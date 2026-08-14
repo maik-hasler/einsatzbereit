@@ -333,7 +333,20 @@ export default function ActivitySection() {
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
-				className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
+				// grid-cols-2 (not flex): an intrinsically-sized flex-1 track squeezes
+				// both segments to an equal share of the shrink-to-fit container width
+				// - which is sized to the *sum* of their natural widths - so the
+				// longer "Aktuell & Bevorstehend" label got compressed below its own
+				// single-line width and wrapped, while "Vergangen" sat in a mostly
+				// empty, oversized box. CSS Grid's minmax(0,1fr) columns size
+				// every track to the *widest* column's natural content width instead
+				// of splitting the sum evenly, so both stay equal width - keeping
+				// #1836's equal-width fix - without ever squeezing either below its
+				// own single-line size. max-w-full + overflow-x-auto is the same
+				// fallback as .rbc-btn-group in global.css, in case a locale's longer
+				// label still doesn't fit at all (e.g. under large text-scaling) -
+				// scrolls instead of colliding with html's page-wide overflow-x: clip.
+				className="mb-4 inline-grid max-w-full grid-cols-2 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1"
 			>
 				<button
 					type="button"
@@ -341,7 +354,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("upcoming")}
 					disabled={engagementsLoading}
 					aria-current={engagementsScope === "upcoming" ? "true" : undefined}
-					className={`flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors ${
+					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "upcoming"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
@@ -355,7 +368,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("past")}
 					disabled={engagementsLoading}
 					aria-current={engagementsScope === "past" ? "true" : undefined}
-					className={`flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors ${
+					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "past"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
