@@ -87,38 +87,18 @@ Reference implementations (newest first): `Organizations/RemoveMember/`, `Organi
 ## Key Patterns
 
 ### IEndpoint auto-discovery
-```csharp
-// Any class implementing IEndpoint is auto-registered via EndpointExtensions.cs
-public class MyEndpoint : IEndpoint
-{
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
-        app.MapPost("/v{version:apiVersion}/...", handler)
-           .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
-           .WithTags("TagName");
-}
-```
+Any class implementing `IEndpoint` is auto-registered via `Api/Common/Endpoints/EndpointExtensions.cs` (assembly scan into DI) and mapped under the versioned route group that `EndpointExtensions.MapEndpoints` builds once (`v{version:apiVersion}`) - individual endpoints map their own path relative to that group, they don't repeat the version prefix themselves. `Api/Organizations/RemoveMember/v1/RemoveMemberEndpoint.cs` is a real, current example: route mapping, auth policy, rate limiting, and CQRS dispatch all in one file.
 
 ### CQRS dispatch
-```csharp
-// In endpoint handler:
-var result = await sender.SendAsync(new MyCommand(...), cancellationToken);
-```
+`ISender.Send(request, cancellationToken)` (`Application/Common/Messaging/ISender.cs`) from the endpoint handler, e.g. `await sender.Send(command, cancellationToken)` in `RemoveMemberEndpoint.cs` above.
 
 ### Handler registration
 Auto-scanned from Application assembly - no manual DI registration needed.  
 Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's picked up.
 
 ### Error handling (Result pattern)
-Domain and Application logic signals failure with `Result`/`Result<T>` (`Domain/Primitives/Result.cs`), not exceptions. A domain method that can fail returns `Result` (or `Result<T>` when it also produces a value) built from `Error.Validation/NotFound/Conflict/Forbidden(code, description)`:
-```csharp
-public Result Confirm()
-{
-	if (Status != EngagementStatus.Pending)
-		return Result.Failure(Error.Conflict("Engagement.NotPending", "Only pending engagements can be confirmed."));
-	...
-	return Result.Success();
-}
-```
+Domain and Application logic signals failure with `Result`/`Result<T>` (`Domain/Primitives/Result.cs`), not exceptions. A domain method that can fail returns `Result` (or `Result<T>` when it also produces a value) built from `Error.Validation/NotFound/Conflict/Forbidden(code, description)` - see `Domain/Engagements/Engagement.cs`'s `Confirm()`/`Cancel()` for real, current examples, including the `IsAnonymized` guard every mutating method on `Engagement` starts with.
+
 Command/query handlers convert a `Result` to an exception at the Application boundary with `Application/Common/Exceptions/ResultExtensions.cs`:
 - `result.ThrowIfFailure()` for a plain `Result`
 - `result.GetValueOrThrow()` for a `Result<T>`, returning `T` on success

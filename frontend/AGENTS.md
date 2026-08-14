@@ -54,13 +54,7 @@ User clicks "Anmelden"
 
 `src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually - changes will be overwritten.
 
-Use `useApiClient()` hook in all components:
-
-```ts
-const api = useApiClient();
-await api.getVolunteerOpportunities(page, 10);
-await api.createOrganization({ name });
-```
+Use the `useApiClient()` hook in components to get an authenticated `EinsatzbereitApi` client instance, then call its generated methods directly (e.g. `api.getVolunteerOpportunities(...)`, `api.createOrganization(...)`).
 
 For one-off calls outside React (e.g., scripts), use `createApiClient(token)` directly.
 
@@ -93,15 +87,7 @@ Known roles: `user`, `organisator`, `admin`.
 
 ## Routing
 
-Routes declared in `src/App.tsx`. Add new routes there.
-
-```tsx
-// Public page
-<Route path="/my-page" element={<MyPage />} />
-
-// Protected page (requires login)
-<Route path="/secure" element={<ProtectedRoute><SecurePage /></ProtectedRoute>} />
-```
+Routes declared in `src/App.tsx`. Add new routes there, following the file's existing pattern: lazy-load the page component (`const MyPage = lazy(() => import("./pages/MyPage"))`) and declare the route (`<Route path="/my-page" element={<MyPage />} />`, wrapped in `<ProtectedRoute>` if it requires login) - see the file's own top-of-file comments for why pages are lazy-loaded (per-route build chunks, PWA precache size, Vite's `INEFFECTIVE_DYNAMIC_IMPORT` warning) and which pages are the deliberate exceptions.
 
 **Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
 
