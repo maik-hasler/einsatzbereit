@@ -33,8 +33,8 @@ the repo as it is - every friction point is a candidate finding.
    first-time contributor can tell what "done" means.
 6. **Comprehension:** is there a human-oriented architecture overview
    (docs/Architecture) that a newcomer can read in 15 minutes, and does
-   it match reality? (Deep drift analysis belongs to docs-drift - here
-   the question is existence and entry-level readability.)
+   it match reality? (Deep quality/drift analysis belongs to the docs
+   lens - here the question is existence and entry-level readability.)
 
 ## Verification bar
 
