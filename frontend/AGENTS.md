@@ -54,13 +54,7 @@ User clicks "Anmelden"
 
 `src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually - changes will be overwritten.
 
-Use `useApiClient()` hook in all components:
-
-```ts
-const api = useApiClient();
-await api.getVolunteerOpportunities(page, 10);
-await api.createOrganization({ name });
-```
+Use the `useApiClient()` hook in components to get an authenticated `EinsatzbereitApi` client instance, then call its generated methods directly (e.g. `api.getVolunteerOpportunities(...)`, `api.createOrganization(...)`).
 
 For one-off calls outside React (e.g., scripts), use `createApiClient(token)` directly.
 
@@ -85,15 +79,7 @@ Known roles: `user`, `organisator`, `admin`.
 
 ## Routing
 
-Routes declared in `src/App.tsx`. Add new routes there.
-
-```tsx
-// Public page
-<Route path="/my-page" element={<MyPage />} />
-
-// Protected page (requires login)
-<Route path="/secure" element={<ProtectedRoute><SecurePage /></ProtectedRoute>} />
-```
+Routes declared in `src/App.tsx`. Add new routes there, following the file's existing pattern: lazy-load the page component (`const MyPage = lazy(() => import("./pages/MyPage"))`) and declare the route (`<Route path="/my-page" element={<MyPage />} />`, wrapped in `<ProtectedRoute>` if it requires login) - see the file's own top-of-file comments for why pages are lazy-loaded (per-route build chunks, PWA precache size, Vite's `INEFFECTIVE_DYNAMIC_IMPORT` warning) and which pages are the deliberate exceptions.
 
 **Note:** During development, new page code may use `(api as any)` until the backend rebuilds and `api-client.ts` regenerates with the new method (see API Client above).
 
@@ -128,8 +114,6 @@ Conventions used across the existing suite:
 
 | Package              | Purpose                              |
 | -------------------- | ------------------------------------ |
-| `vite`               | Build tool + dev server              |
-| `react` 19           | UI framework                         |
 | `react-router` v8    | Client-side routing                  |
 | `react-oidc-context` | Keycloak OIDC (wraps oidc-client-ts) |
 | `oidc-client-ts`     | PKCE flow, token management          |
@@ -139,7 +123,7 @@ Conventions used across the existing suite:
 
 ## Linting
 
-The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit. All lint errors must be fixed - zero warnings allowed (`--max-warnings 0`).
+The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit.
 
 ```bash
 pnpm lint
@@ -180,12 +164,10 @@ Key conventions:
 
 - **Modal dialogs**: Use the backdrop-button pattern. Separate the clickable backdrop (`<button aria-hidden="true" tabIndex={-1}>`) from the dialog container (`<div role="dialog" aria-modal="true" aria-labelledby="...">`) inside a neutral wrapper div. Handle Escape via `useEffect` on `document`.
 - **Clickable cards**: Use a stretched `<Link className="absolute inset-0">` inside a `relative` `<li>` rather than putting `onClick` on the `<li>` directly. Any secondary links inside the card get `relative z-10` to sit above the stretched link.
-- **Interactive elements**: Only use native interactive elements (`<button>`, `<a>`, `<input>`, etc.) for interactions. Never add `onClick` to non-interactive elements (`div`, `span`, `li`, etc.) without an appropriate ARIA role.
 - **Dropdown panels are disclosures, not menus or listboxes** - a trigger with `aria-expanded` opening a `<ul aria-label>` of plain `<button>`s, marking the active one with `aria-current`. That is what `RowActionsMenu.tsx`, `OrganizationSwitcher.tsx` and `Header/LanguageSelector.tsx` all do. Don't reach for `role="menu"`/`"menuitem"` or `role="listbox"`/`"option"` (or the matching `aria-haspopup`) unless you actually implement that pattern's keyboard model - arrow keys, Home/End, and either roving tabindex or `aria-activedescendant`. Claiming the role without the keys tells a screen-reader user to press arrows and gives them nothing, and putting `role="option"` on an `<li>` that *wraps* a `<button>` is an axe `nested-interactive` violation (serious) on top (#1772). `Dropdown.tsx` is the one real listbox in this repo - use it when you need to pick a form value; `LocationSearchInput.tsx` is the one real combobox.
 - **Images**: All `<img>` tags need an `alt` attribute. Purely decorative images use `alt=""`.
 - **SVG icons**: Decorative SVGs get `aria-hidden="true"`. Meaningful standalone SVGs need a `<title>` or `aria-label`.
 - **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
-- **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
 - **Color contrast**: `text-gray-400` (2.6:1 on white) fails the WCAG AA 4.5:1 floor for text - reserve it for decorative icons and input placeholders only, never for body copy, labels, timestamps, or other real content. Use `text-gray-500` (4.9:1) or darker for content; an interactive control's resting label needs to clear at least the 3:1 UI-component floor too.
 
 Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page and several stateful views (edit mode, modals, widget dialogs) - grep that file for `HasNoSeriousA11yViolations` for the current, authoritative list rather than trusting a copy of it here. Tests fail on any "serious" or "critical" axe violation. A new page/route needs a matching test in that file - `a11y-check` flags a missing one.

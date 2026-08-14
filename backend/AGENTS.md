@@ -86,45 +86,23 @@ Reference implementations (newest first): `Organizations/RemoveMember/`, `Organi
 ## Key Patterns
 
 ### IEndpoint auto-discovery
-```csharp
-// Any class implementing IEndpoint is auto-registered via EndpointExtensions.cs
-public class MyEndpoint : IEndpoint
-{
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
-        app.MapPost("/v{version:apiVersion}/...", handler)
-           .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
-           .WithTags("TagName");
-}
-```
+Any class implementing `IEndpoint` is auto-registered via `Api/Common/Endpoints/EndpointExtensions.cs` (assembly scan into DI) and mapped under the versioned route group that `EndpointExtensions.MapEndpoints` builds once (`v{version:apiVersion}`) - individual endpoints map their own path relative to that group, they don't repeat the version prefix themselves. `Api/Organizations/RemoveMember/v1/RemoveMemberEndpoint.cs` is a real, current example: route mapping, auth policy, rate limiting, and CQRS dispatch all in one file.
 
 ### CQRS dispatch
-```csharp
-// In endpoint handler:
-var result = await sender.SendAsync(new MyCommand(...), cancellationToken);
-```
+`ISender.Send(request, cancellationToken)` (`Application/Common/Messaging/ISender.cs`) from the endpoint handler, e.g. `await sender.Send(command, cancellationToken)` in `RemoveMemberEndpoint.cs` above.
 
 ### Handler registration
 Auto-scanned from Application assembly - no manual DI registration needed.  
 Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's picked up.
 
 ### Error handling (Result pattern)
-Domain and Application logic signals failure with `Result`/`Result<T>` (`Domain/Primitives/Result.cs`), not exceptions. A domain method that can fail returns `Result` (or `Result<T>` when it also produces a value) built from `Error.Validation/NotFound/Conflict/Forbidden(code, description)`:
-```csharp
-public Result Confirm()
-{
-	if (Status != EngagementStatus.Pending)
-		return Result.Failure(Error.Conflict("Engagement.NotPending", "Only pending engagements can be confirmed."));
-	...
-	return Result.Success();
-}
-```
+Domain and Application logic signals failure with `Result`/`Result<T>` (`Domain/Primitives/Result.cs`), not exceptions. A domain method that can fail returns `Result` (or `Result<T>` when it also produces a value) built from `Error.Validation/NotFound/Conflict/Forbidden(code, description)` - see `Domain/Engagements/Engagement.cs`'s `Confirm()`/`Cancel()` for real, current examples, including the `IsAnonymized` guard every mutating method on `Engagement` starts with.
+
 Command/query handlers convert a `Result` to an exception at the Application boundary with `Application/Common/Exceptions/ResultExtensions.cs`:
 - `result.ThrowIfFailure()` for a plain `Result`
 - `result.GetValueOrThrow()` for a `Result<T>`, returning `T` on success
 
 Both throw `ResultFailureException(Error)`, caught by `Api/Common/ExceptionHandlers/ResultFailureExceptionHandler.cs` and mapped to a `ProblemDetails` response (`Validation`->400, `NotFound`->404, `Conflict`->409, `Forbidden`->403) with `errorCode` + `traceId`. Only use this Application-boundary throw; don't invent a second convention for new endpoints, and don't thread `Result` all the way to the endpoint layer.
-
-Reserve a raw `throw` (not wrapped in a `Result`) for truly exceptional/programmer-error cases that aren't part of a use case's expected failure modes.
 
 ### Domain events
 Aggregates raise events via `AddEvent(...)` (see `EngagementConfirmedDomainEvent` etc. in `Domain/Engagements/`). Dispatch is transactional-outbox based (#828), not direct:
@@ -132,7 +110,7 @@ Aggregates raise events via `AddEvent(...)` (see `EngagementConfirmedDomainEvent
 1. `Infrastructure/Persistence/Interceptors/ConvertDomainEventsToOutboxMessagesInterceptor.cs` collects an aggregate's events during `SavingChangesAsync` (before the write) and converts each into an `OutboxMessage` row (`Infrastructure/Persistence/Outbox/OutboxMessage.cs`) added to the same `DbContext` - so it's part of the *same* DB transaction as the triggering command, all-or-nothing.
 2. `Infrastructure/BackgroundJobs/OutboxProcessorJob.cs` polls for unprocessed `OutboxMessage` rows on its own timer, in its own DI scope/DbContext, well after the triggering command's transaction has committed. It deserializes each message back to a `DomainEvent` and calls `IDomainEventDispatcher.DispatchAsync`, which invokes `IPublisher`/`Publisher` -> the registered `INotificationHandler<T>`(s).
 
-Because dispatch now happens in a fresh scope after commit (not inline inside the triggering `SaveChangesAsync`), an `INotificationHandler<T>` **can** safely call `ISender.Send(...)` or write through its own injected `IApplicationDbContext` - there's no outer open transaction to conflict with. `EngagementCheckedInAuditLogHandler` (`Application/Engagements/CheckInEngagement/v1/`) is the first registered consumer (a structured audit log entry); it doesn't touch the DB itself, but nothing about the pipeline stops a future handler from doing so.
+Because dispatch now happens in a fresh scope after commit (not inline inside the triggering `SaveChangesAsync`), an `INotificationHandler<T>` **can** safely call `ISender.Send(...)` or write through its own injected `IApplicationDbContext` - there's no outer open transaction to conflict with.
 
 ### Pipeline behaviors (run in this order)
 1. `TransactionPipelineBehavior` - wraps commands in a DB transaction
@@ -191,7 +169,7 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - Largest and slowest suite (~50 test classes) - included in `dotnet.yml`'s CI run, not a separate job
 - `AccessibilityTests.cs` - axe-core scans per page, fails on serious/critical violations; add a case here for any new page
 - `AuthHelper.cs` - `LoginAsync` drives the real Keycloak login UI; `FastSignInAsync` seeds a minted token straight into `localStorage` to skip the redirect round trip for tests that only need an authenticated session as a precondition
-- Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 7
+- Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 6
 
 ### Run all tests
 TUnit uses Microsoft.Testing.Platform, not the `dotnet test` new testing

@@ -65,7 +65,7 @@ edit on your own initiative):
   toward a deliberate, non-generic visual direction - typography, color
   theming, motion, spatial composition - instead of generic AI-layout
   defaults; load it before visual/layout changes to frontend components
-  or pages. `.claude/skills/live-verify/` (`/live-verify`) is step 6 of
+  or pages. `.claude/skills/live-verify/` (`/live-verify`) is step 5 of
   "Mandatory: Deploy and verify" below - the throwaway live-staging
   Playwright recipe (TLS launch args, Keycloak login) lives there, not
   inlined in this file.
@@ -109,18 +109,16 @@ After every bug fix or feature implementation, **always** cut a release candidat
 **Steps (must be followed in order):**
 
 1. Self-review the diff (`/self-review`) and fix anything it flags before opening the PR.
-2. Confirm all CI checks on the PR are green.
-3. Determine the next RC version: check existing tags (`mcp__github__list_tags`) and increment the RC counter (e.g. `v1.0.0-rc.8` -> `v1.0.0-rc.9`).
-4. Create the release branch **from the feature branch** (so the fix is included):
+2. Determine the next RC version: check existing tags (`mcp__github__list_tags`) and increment the RC counter (e.g. `v1.0.0-rc.8` -> `v1.0.0-rc.9`).
+3. Create the release branch **from the feature branch** (so the fix is included):
    ```bash
    git checkout -b release/vX.Y.Z-rc.N <feature-branch>
    git commit --allow-empty -m "release: vX.Y.Z-rc.N"
    git push -u origin release/vX.Y.Z-rc.N
    ```
-5. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
-6. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - there is no committed `scripts/` directory or root `package.json` anymore) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
-7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). Keycloak uses a single-step login (username + password on one form) in both places - locally and on staging, where `publish.yml`'s "Bind single-step Keycloak browser flow" step selects it - so `AuthHelper.LoginAsync` and the step 6 scratch script drive the same form. This is the durable, reviewable record of the fix; the scratch script from step 6 is not - it gets deleted once it has served its purpose.
-8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
-9. Only then mark the task complete.
+4. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
+5. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - there is no committed `scripts/` directory or root `package.json` anymore) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
+6. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). Keycloak uses a single-step login (username + password on one form) in both places - locally and on staging, where `publish.yml`'s "Bind single-step Keycloak browser flow" step selects it - so `AuthHelper.LoginAsync` and the step 5 scratch script drive the same form. This is the durable, reviewable record of the fix; the scratch script from step 5 is not - it gets deleted once it has served its purpose.
+7. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 
 Live staging accumulates test debris over time from the shared `vera`/`olaf`/`admin` accounts - prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` (manual, destructive confirmation gate) wipes and reseeds staging when it gets bad enough - know it exists rather than working around dirty data by hand, but don't trigger it without the repo owner's go-ahead.

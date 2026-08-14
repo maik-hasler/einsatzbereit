@@ -45,13 +45,12 @@ File naming: `{number}_{snake_case_title}.adoc`
 Each ADR documents: context, decision, status (Accepted/Proposed/Deprecated), consequences.
 
 When creating a new ADR:
-- Next number in sequence
 - Status: `Proposed` initially, `Accepted` once agreed
 - Reference in `09_architecture_decisions.adoc` if needed
 
 ## TDR Conventions
 
-File naming: `{number}_{snake_case_title}.adoc`  
+File naming: same pattern as ADRs above (`{number}_{snake_case_title}.adoc`)  
 Each TDR documents follows the `TDRs\template.adoc`
 
 When creating a new TDR:
