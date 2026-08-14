@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using AwesomeAssertions;
+using Domain.Organizations;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
 using Infrastructure.VolunteerOpportunities;
@@ -215,6 +217,35 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 				$"\"{title}\" advertises a shift within one day, so it must not cross midnight "
 				+ $"({startUtc:yyyy-MM-dd HH:mm} - {endUtc:yyyy-MM-dd HH:mm} UTC)");
 		}
+	}
+
+	// #1846: Vera is a genuine, Keycloak-confirmed member of org1 - EnsureMemberAsync
+	// added her there - but SeedOrg1Async only ever wrote a local OrganizationMembership
+	// row for Olaf (the organizer), never for Vera. GetMemberOrganizationsAsync (the
+	// query behind GET /v1/organizations, "my organizations") reads only that local
+	// table, so Vera's own account saw zero organizations despite the org's own Members
+	// page (Keycloak-sourced) correctly listing her as an active member.
+	[Test]
+	public async Task SeedAsync_SeedsLocalMembershipRowForVera_SoHerOwnOrganizationsQueryFindsIt(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var initializer = new ApplicationDbContextInitializer(
+			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+
+		await initializer.SeedAsync(cancellationToken);
+
+		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
+		var veraOrganizations = await dbContext.GetMemberOrganizationsAsync(veraUserId, cancellationToken);
+
+		veraOrganizations.Should().ContainSingle(o => o.Name == "Lindenauer Nachbarschaftshilfe e.V.",
+			"Vera is a real, Keycloak-confirmed member of this organization - her own \"my organizations\" query "
+			+ "must see the same membership the organization's own Members page shows for her (#1846)");
+
+		var veraMembership = await dbContext.Set<OrganizationMembership>()
+			.SingleAsync(m => m.UserId == veraUserId, cancellationToken);
+		veraMembership.Role.Should().Be(OrganizationMemberRole.Member, "Vera was seeded as a plain member, not an organizer");
 	}
 
 	// The guard itself is correct and stays - re-seeding a populated database would have

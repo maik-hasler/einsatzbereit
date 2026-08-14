@@ -270,6 +270,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 		dbContext.Set<OrganizationMembership>().Add(
 			OrganizationMembership.Create(org.Id, UserId.Create(OlafId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
+		dbContext.Set<OrganizationMembership>().Add(
+			OrganizationMembership.Create(org.Id, UserId.Create(VeraId).GetValueOrThrow(), OrganizationMemberRole.Member));
 
 		return org.Id;
 	}
