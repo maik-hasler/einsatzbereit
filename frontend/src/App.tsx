@@ -58,6 +58,7 @@ const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
+const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 const AdminOrganizationsPage = lazy(async () => ({
 	default: (await import("./pages/AdministrationPage")).AdminOrganizationsPage,
@@ -176,6 +177,7 @@ export default function App() {
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}
 				/>
+				<Route path="/organizations" element={<OrganizationsPage />} />
 				<Route
 					path="/organizations/:organizationId"
 					element={<OrganizationProfilePage />}
