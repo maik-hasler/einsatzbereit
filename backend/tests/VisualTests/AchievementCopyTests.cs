@@ -42,7 +42,20 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 	public async Task ProfileBadgeGrid_UsesCivicGermanCopy_NotHundertschaftOrLoginSerie()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		// #1848: the page fires several authenticated requests concurrently on
+		// mount (profile, streaks, achievements...), and LoginStreakMiddleware
+		// only *awaits* RecordLoginCommand for whichever one wins the per-user
+		// dedup race - the other concurrent requests see the cache entry
+		// already set and skip straight to reading current DB state, which can
+		// race ahead of the winner's still-in-flight write. Relying on the
+		// page's own getMyStreaks() call to have deterministically recorded
+		// the streak by the time it responds is therefore flaky. Seed it with
+		// a single sequential HTTP call first instead, same reasoning as
+		// SeedConfirmedEngagementForVeraAsync below.
+		await SeedLoginStreakForVeraAsync(backend);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
@@ -75,12 +88,9 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// has a small, secondary indicator on the page too - unlike the other
 		// badges' progress metrics (confirmed opportunities, activity streak),
 		// it used to be tracked server-side with no visible counter anywhere.
-		// Signing in and loading this authenticated page is itself enough to
-		// give vera a same-day login streak of exactly 1 (LoginStreakMiddleware
-		// records it on the very request that serves getMyStreaks, before the
-		// query handler runs), regardless of what earlier tests in this shared
-		// session already did - RecordLogin is a same-day no-op past the first
-		// call, so the count never drifts above 1 within a single test run.
+		// SeedLoginStreakForVeraAsync above guarantees this is exactly 1 - a
+		// same-day RecordLogin is a no-op past the first call, so the count
+		// never drifts regardless of what else runs in this shared session.
 		var loginStreakIndicator = Page.GetByTestId("profile-stat-login-streak");
 		await Expect(loginStreakIndicator).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(loginStreakIndicator).ToContainTextAsync("1 Tag in Folge angemeldet");
@@ -139,6 +149,17 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// model for. Scoped to the open menu so it cannot match anything else.
 		await Page.GetByTestId("language-selector-menu")
 			.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
+	}
+
+	private async Task SeedLoginStreakForVeraAsync(Uri backend)
+	{
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add(
+			"Authorization", $"Bearer {(await Fixture.SignInAsync("vera", "vera123")).AccessToken}");
+
+		// Any authenticated request would trip LoginStreakMiddleware - this one
+		// happens to also be the endpoint the profile page itself calls.
+		(await veraHttp.GetAsync("/v1/users/me/streaks")).EnsureSuccessStatusCode();
 	}
 
 	private async Task SeedConfirmedEngagementForVeraAsync(Uri backend)
