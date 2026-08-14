@@ -350,6 +350,7 @@ export default function ProfileOverviewPage() {
 			<PageHeaderBand
 				eyebrow={t("profile.eyebrow")}
 				title={t("profile.title")}
+				compactTitle
 			/>
 
 			<div
