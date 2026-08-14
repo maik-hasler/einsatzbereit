@@ -879,7 +879,8 @@
     "language": {
       "de": "Deutsch",
       "en": "English",
-      "switchLanguage": "Sprache wechseln"
+      "switchLanguage": "Sprache wechseln",
+      "switchedFromAccount": "Zu {{language}} gewechselt, basierend auf deinem Konto"
     },
     "auth": {
       "authError": "Authentifizierungsfehler: {{message}}",
