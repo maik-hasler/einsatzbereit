@@ -224,8 +224,11 @@ export default function ProfileOverviewPage() {
 	// The headline stat is confirmed opportunities, not the login streak this
 	// used to lead with: a volunteering platform that puts "days in a row you
 	// opened the app" first is rewarding the wrong thing, and on a new account
-	// it opened with a 0. The activity streak stays (it counts weeks with real
-	// activity); the login streak is gone.
+	// it opened with a 0. The activity streak stays as an equal-weight chip
+	// (it counts weeks with real activity); the login streak is back too, but
+	// only as a small secondary line below the chips (#1848) - just enough for
+	// the "On a Roll" badge to have a visible progress metric, without
+	// re-promoting it to a headline stat.
 	useEffect(() => {
 		api
 			.getMyStreaks()
@@ -468,6 +471,17 @@ export default function ProfileOverviewPage() {
 											</div>
 										)}
 									</div>
+									{streaks && streaks.loginStreak > 0 && (
+										<p
+											data-testid="profile-stat-login-streak"
+											className="flex items-center gap-1.5 text-xs text-gray-500"
+										>
+											<FireIcon className="h-3.5 w-3.5" />
+											{t("achievements.loginStreak", {
+												count: streaks.loginStreak,
+											})}
+										</p>
+									)}
 								</div>
 							)}
 

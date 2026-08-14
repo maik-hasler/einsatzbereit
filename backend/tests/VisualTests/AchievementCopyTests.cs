@@ -6,19 +6,27 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #1788: three separate copy defects on /profile, all in the
+/// Regression for #1788 and #1848: copy defects on /profile, all in the
 /// German locale that the app actually serves by default.
 ///
 /// 1. The 100-confirmations badge was called "Hundertschaft" - in German first
 ///    a police/riot-unit term, a jarring association for a civic volunteering
 ///    product. Renamed to the plain, factual "100 Einsaetze".
-/// 2. "Auf Kurs" was described as a "Login-Serie" - Denglish, and it hid the
-///    rule behind English loan vocabulary. Renamed "Aktive Woche" with a German
-///    description that states the rule it actually measures (seven days in a
-///    row); the award rule in RecordLoginCommandHandler is deliberately
-///    unchanged, so the description must not start implying volunteering
-///    activity the badge does not track either.
-/// 3. The activity-streak stat tile rendered a bare number over the unit-less
+/// 2. (#1788) "Auf Kurs" was described as a "Login-Serie" - Denglish, and it
+///    hid the rule behind English loan vocabulary. Renamed "Aktive Woche" with
+///    a German description that states the rule it actually measures (seven
+///    days in a row).
+/// 3. (#1848) "Aktive Woche" turned out to be its own regression: it reads as
+///    a *weekly* activity concept, confusable with the very next badge on the
+///    same grid, "weekly-hero-4" / "Wochenheld" - a genuinely different,
+///    4-consecutive-*weeks* metric. Renamed again to "Anmeldeserie" (using the
+///    app's own established "anmelden" login terminology, not the Denglish
+///    "Login" noun #1788 removed) with a description that names the unit it
+///    actually measures - days, not weeks. The award rule in
+///    RecordLoginCommandHandler is unchanged throughout all of this, so the
+///    description must not start implying volunteering activity the badge
+///    does not track either.
+/// 4. The activity-streak stat tile rendered a bare number over the unit-less
 ///    label "Aktivitaetsserie" - one what: day, week, shift? Unlike
 ///    engagementStatLabel it had no _one/_other forms, so it could not even
 ///    inflect. UserStreak.ActivityStreak counts consecutive ISO *weeks* with a
@@ -49,16 +57,34 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.Locator("#badge-name-centurion-100"))
 			.ToHaveTextAsync("100 Einsätze", new() { Timeout = 20_000 });
 		await Expect(Page.Locator("#badge-name-on-a-roll-7"))
-			.ToHaveTextAsync("Aktive Woche");
+			.ToHaveTextAsync("Anmeldeserie");
 
 		// The description lives in the card for an unearned badge and in the
 		// tooltip either way; the tooltip is the one that is always present.
 		await Expect(Page.Locator("#badge-tooltip-on-a-roll-7"))
-			.ToContainTextAsync("Verdient für sieben Tage in Folge.");
+			.ToContainTextAsync("Verdient für 7 aufeinanderfolgende Tage mit Anmeldung.");
 
 		// Nowhere in the DOM, not merely invisible - the tooltip copy counts too.
 		await Expect(Page.GetByText("Hundertschaft")).ToHaveCountAsync(0);
 		await Expect(Page.GetByText("Login-Serie")).ToHaveCountAsync(0);
+		// #1848: must not read as a *weekly* concept confusable with the
+		// adjacent "Wochenheld" (weekly-hero-4) badge on the same grid.
+		await Expect(Page.GetByText("Aktive Woche")).ToHaveCountAsync(0);
+
+		// #1848: the badge's underlying metric (getMyStreaks().loginStreak) now
+		// has a small, secondary indicator on the page too - unlike the other
+		// badges' progress metrics (confirmed opportunities, activity streak),
+		// it used to be tracked server-side with no visible counter anywhere.
+		// Signing in and loading this authenticated page is itself enough to
+		// give vera a same-day login streak of exactly 1 (LoginStreakMiddleware
+		// records it on the very request that serves getMyStreaks, before the
+		// query handler runs), regardless of what earlier tests in this shared
+		// session already did - RecordLogin is a same-day no-op past the first
+		// call, so the count never drifts above 1 within a single test run.
+		var loginStreakIndicator = Page.GetByTestId("profile-stat-login-streak");
+		await Expect(loginStreakIndicator).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(loginStreakIndicator).ToContainTextAsync("1 Tag in Folge angemeldet");
+		await Expect(loginStreakIndicator).Not.ToContainTextAsync("Login-Serie");
 	}
 
 	[Test]
