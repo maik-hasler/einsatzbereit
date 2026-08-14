@@ -31,7 +31,7 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 			$"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback", Exact = true }))
 			.Not.ToBeVisibleAsync();
 	}
 
@@ -64,7 +64,7 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 		var pageTitle = Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 });
 		await Expect(pageTitle).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var feedbackHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback" });
+		var feedbackHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback", Exact = true });
 		await Expect(feedbackHeading).ToBeVisibleAsync();
 
 		// The bug was purely visual weight (same face/size family as the page's
