@@ -548,6 +548,123 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
+	// --- Checked-in engagement ahead of its time slot's end (#1855) ---
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldKeepCheckedInEngagement_InUpcomingBucket_WhenTimeSlotHasNotEndedYet(
+		CancellationToken cancellationToken)
+	{
+		// Engagement.CheckIn() has no time-based guard - an organizer can check a
+		// volunteer in as soon as it is Confirmed, e.g. at arrival for a
+		// still-ongoing multi-hour shift. Before #1855 IsCheckedIn alone moved a
+		// Confirmed engagement to Past regardless of the slot's own end time, so
+		// a shift that had not even started yet could show up as a completed,
+		// feedback-ready "Past" item.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.Manual, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var futureSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(14), DateTimeOffset.UtcNow.AddDays(14).AddHours(8), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, futureSlot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		engagement.CheckIn().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
+		past.Items.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldMoveCheckedInEngagement_ToPastBucket_OnceTimeSlotHasEnded(
+		CancellationToken cancellationToken)
+	{
+		// Complements the regression above: once the slot has genuinely ended,
+		// a checked-in engagement still belongs in Past - #1855 only defers the
+		// move until the slot's own end time actually arrives, it does not stop
+		// checked-in engagements from ever reaching Past.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.Manual, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
+		var endedSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(-10), DateTimeOffset.UtcNow.AddDays(-9), 10, pastNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, endedSlot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		engagement.CheckIn().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().BeEmpty();
+		past.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldKeepCheckedInEngagementWithNoTimeSlot_InPastBucket(
+		CancellationToken cancellationToken)
+	{
+		// A checked-in IndividualContact engagement has no TimeSlotId at all, so
+		// there is no date to compare "now" against - #1855's new carve-out is
+		// scoped to a resolvable TimeSlotEnd and must leave this case exactly as
+		// before (Past), not reclassify it for lack of information either way.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.Manual, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateIndividualContact(opportunity.Id, volunteerId, "Please let me help.").GetValueOrThrow();
+		engagement.Confirm().ThrowIfFailure();
+		engagement.CheckIn().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().BeEmpty();
+		past.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
+	}
+
 	// --- GetCheckedInByVolunteerAsync (engagement record, #1096) ---
 
 	[Test]
