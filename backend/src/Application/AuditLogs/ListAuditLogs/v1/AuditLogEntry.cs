@@ -7,5 +7,6 @@ public sealed record AuditLogEntry(
 	string ActionType,
 	string SubjectType,
 	Guid SubjectId,
+	string SubjectDisplayName,
 	string? Reason,
 	DateTimeOffset CreatedOn);

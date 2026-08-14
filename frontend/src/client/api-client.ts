@@ -6387,6 +6387,7 @@ export interface AuditLogEntry {
     actionType: string;
     subjectType: string;
     subjectId: string;
+    subjectDisplayName: string;
     reason: string | undefined;
     createdOn: Date;
 
