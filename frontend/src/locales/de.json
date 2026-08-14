@@ -40,7 +40,7 @@
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
       "forOrganizations": "Für Organisationen",
-      "browseOrganizations": "Organisationen durchsuchen",
+      "browseOrganizations": "Organisationen finden",
       "support": "Support",
       "legal": "Rechtliches",
       "imprint": "Impressum",
@@ -99,7 +99,7 @@
     "organizationsPage": {
       "eyebrow": "Organisationen",
       "title": "Organisationen",
-      "lead": "Durchsuche Organisationen auf Einsatzbereit, um eine bereits bekannte zu finden.",
+      "lead": "Finde Organisationen auf Einsatzbereit, die du schon kennst.",
       "searchLabel": "Organisationen durchsuchen",
       "searchPlaceholder": "Organisationen nach Namen suchen…",
       "loading": "Organisationen werden geladen…",
