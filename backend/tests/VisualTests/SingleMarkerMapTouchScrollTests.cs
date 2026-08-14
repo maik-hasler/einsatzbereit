@@ -13,11 +13,6 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 	private const int MobileWidth = 390;
 	private const int MobileHeight = 844;
 
-	// SingleMarkerMap.tsx's fix for #1664 is `dragging={!L.Browser.mobile}` -
-	// Leaflet's own Browser.mobile is UA-string based (contains "mobile"), not
-	// derived from the context's HasTouch flag or viewport size. A real
-	// mobile Safari UA is needed for the map to actually pick the fixed
-	// (dragging-disabled) code path under test.
 	private const string MobileUserAgent =
 		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
 		+ "(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
@@ -34,19 +29,21 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 	[Test]
 	public async Task SingleMarkerMap_OnMobile_DisablesTouchDragSoPageStillScrolls()
 	{
-		// Regression for #1664: SingleMarkerMap.tsx only disabled
-		// scrollWheelZoom (the desktop wheel trap), leaving Leaflet's default
-		// touch dragging on - which claims every touch gesture starting on
-		// the map (`touch-action: none`) and blocks the page's own vertical
-		// swipe-to-scroll. A real device's native touch-scroll suppression
-		// can't be reproduced by dispatching synthetic touch events in a test
-		// (untrusted events never trigger it), so this asserts the actual
-		// mechanism instead: with dragging disabled on mobile, Leaflet's own
-		// leaflet.css rule for `leaflet-touch-zoom` alone (no
-		// `leaflet-touch-drag`) computes `touch-action: pan-x pan-y`, not
-		// `none` - a swipe starting on the map is then free to scroll the
-		// page, exactly like the "computed touch-action: none" bug evidence
-		// on the issue describes, inverted.
+		// Regression for #1664, since folded into making the map fully
+		// static: SingleMarkerMap.tsx disables every interaction Leaflet
+		// offers (dragging, touchZoom included), not just scrollWheelZoom -
+		// leaving any of them enabled would claim touch gestures starting on
+		// the map (`touch-action: none`/`pinch-zoom`) and block the page's
+		// own vertical swipe-to-scroll. A real device's native touch-scroll
+		// suppression can't be reproduced by dispatching synthetic touch
+		// events in a test (untrusted events never trigger it), so this
+		// asserts the actual mechanism instead: with both the
+		// `leaflet-touch-drag` and `leaflet-touch-zoom` classes absent (see
+		// leaflet.css), no touch-action rule targets the container at all,
+		// so it resolves to the browser default `auto` - a swipe starting on
+		// the map is then free to scroll the page, exactly like the
+		// "computed touch-action: none" bug evidence on the issue describes,
+		// inverted.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -118,14 +115,20 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 		var hasTouchDragClass = await mapContainer.EvaluateAsync<bool>(
 			"el => el.classList.contains('leaflet-touch-drag')");
 		hasTouchDragClass.Should().BeFalse(
-			"dragging must be disabled on mobile (#1664) - Leaflet's Drag handler "
-			+ "only adds leaflet-touch-drag while dragging is enabled");
+			"dragging must be disabled - Leaflet's Drag handler only adds "
+			+ "leaflet-touch-drag while dragging is enabled");
+
+		var hasTouchZoomClass = await mapContainer.EvaluateAsync<bool>(
+			"el => el.classList.contains('leaflet-touch-zoom')");
+		hasTouchZoomClass.Should().BeFalse(
+			"touch pinch-zoom must be disabled too - the map is a fixed, static "
+			+ "view, not just non-draggable");
 
 		var touchAction = await mapContainer.EvaluateAsync<string>(
 			"el => getComputedStyle(el).touchAction");
-		touchAction.Should().Be("pan-x pan-y",
+		touchAction.Should().Be("auto",
 			"a swipe starting on the map must be able to scroll the page (#1664) - "
-			+ "touch-action: none (leaflet-touch-drag + leaflet-touch-zoom together) "
-			+ "captures every touch gesture that starts on the element");
+			+ "with neither leaflet-touch-drag nor leaflet-touch-zoom applied, no "
+			+ "leaflet.css rule claims the container's touch-action at all");
 	}
 }

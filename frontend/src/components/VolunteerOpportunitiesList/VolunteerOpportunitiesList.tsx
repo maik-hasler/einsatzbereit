@@ -1,10 +1,9 @@
-import { Suspense, lazy, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import LocationSearchInput from "../LocationSearchInput";
-import Skeleton from "../Skeleton";
 import FilterDropdown, {
 	DropdownOption,
 	MultiDropdownOption,
@@ -12,7 +11,6 @@ import FilterDropdown, {
 import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
-import { useVolunteerOpportunitiesMapData } from "./useVolunteerOpportunitiesMapData";
 import {
 	useOpportunityDateAvailability,
 	type VisibleMonth,
@@ -29,19 +27,11 @@ import {
 	CloseIcon,
 	GlobeIcon,
 	HashtagIcon,
-	ListBulletIcon,
 	MagnifyingGlassIcon,
-	MapIcon,
 	MapPinIcon,
 	TagIcon,
 	UsersIcon,
 } from "../icons";
-
-// Lazy-loaded to keep Leaflet out of the initial bundle - mirrors
-// VolunteerOpportunityDetailPage.tsx's SingleMarkerMap import (#971). Most
-// visitors never toggle to map view, so paying for react-leaflet only once
-// they do keeps the far more common list view's bundle unaffected.
-const OpportunityResultsMap = lazy(() => import("./OpportunityResultsMap"));
 
 const CATEGORY_VALUES = [
 	"Social",
@@ -80,9 +70,6 @@ export default function VolunteerOpportunitiesList() {
 	const lat = searchParams.get("lat") ?? "";
 	const lng = searchParams.get("lng") ?? "";
 	const radius = searchParams.get("radius") ?? "";
-	// Kept in the URL (not local state) like every other filter here, so a
-	// shared/bookmarked link reopens on the same view (#1851).
-	const isMapView = searchParams.get("view") === "map";
 
 	const selectedCategories = categoriesParam
 		? categoriesParam.split(",").filter(Boolean)
@@ -163,29 +150,6 @@ export default function VolunteerOpportunitiesList() {
 		lng,
 		radius,
 	});
-
-	const {
-		pins: mapPins,
-		loading: mapLoading,
-		error: mapError,
-		truncated: mapTruncated,
-		retry: retryMap,
-	} = useVolunteerOpportunitiesMapData(
-		{
-			occurrence,
-			participationType,
-			isRemoteParam,
-			dateFrom,
-			dateTo,
-			categoriesParam,
-			tag,
-			keyword,
-			lat,
-			lng,
-			radius,
-		},
-		isMapView,
-	);
 
 	function updateFilter(key: string, value: string) {
 		const next = new URLSearchParams(window.location.search);
@@ -730,72 +694,18 @@ export default function VolunteerOpportunitiesList() {
 				</div>
 			</div>
 
-			{/* List/map toggle (#1851). Plain aria-pressed buttons in a role="group",
-			not role="tablist" - frontend/AGENTS.md's a11y conventions reserve a real
-			tablist for when the full keyboard model (arrow keys, roving tabindex) is
-			implemented, which this isn't; the same idiom already used for the radius
-			pills above and FilterDropdown's own options. */}
-			<div
-				role="group"
-				aria-label={t("opportunities.viewToggleLabel")}
-				className="mb-4 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white p-1"
-			>
-				<button
-					type="button"
-					onClick={() => updateFilter("view", "")}
-					aria-pressed={!isMapView}
-					data-testid="opportunities-view-list"
-					className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-						!isMapView
-							? "bg-brand-50 text-brand-700"
-							: "text-gray-500 hover:text-gray-700"
-					}`}
-				>
-					<ListBulletIcon className="h-3.5 w-3.5" />
-					{t("opportunities.viewList")}
-				</button>
-				<button
-					type="button"
-					onClick={() => updateFilter("view", "map")}
-					aria-pressed={isMapView}
-					data-testid="opportunities-view-map"
-					className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-						isMapView
-							? "bg-brand-50 text-brand-700"
-							: "text-gray-500 hover:text-gray-700"
-					}`}
-				>
-					<MapIcon className="h-3.5 w-3.5" />
-					{t("opportunities.viewMap")}
-				</button>
-			</div>
-
-			{isMapView ? (
-				<Suspense fallback={<Skeleton className="h-96 w-full" />}>
-					<OpportunityResultsMap
-						loading={mapLoading}
-						error={mapError}
-						pins={mapPins}
-						truncated={mapTruncated}
-						hasFilters={hasFilters}
-						onClearFilters={clearFilters}
-						onRetry={retryMap}
-					/>
-				</Suspense>
-			) : (
-				<OpportunityResultsList
-					loading={loading}
-					error={error}
-					items={items}
-					hasFilters={hasFilters}
-					onClearFilters={clearFilters}
-					hasMore={hasMore}
-					loadingMore={loadingMore}
-					onLoadMore={loadMore}
-					loadMoreError={loadMoreError}
-					onRetryLoadMore={retryLoadMore}
-				/>
-			)}
+			<OpportunityResultsList
+				loading={loading}
+				error={error}
+				items={items}
+				hasFilters={hasFilters}
+				onClearFilters={clearFilters}
+				hasMore={hasMore}
+				loadingMore={loadingMore}
+				onLoadMore={loadMore}
+				loadMoreError={loadMoreError}
+				onRetryLoadMore={retryLoadMore}
+			/>
 		</div>
 	);
 }

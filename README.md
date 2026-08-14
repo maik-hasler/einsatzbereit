@@ -45,7 +45,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 
 ## Features
 
-- **Browse and filter opportunities** across a list view, a mini calendar, city/location autocomplete, and a map view built on Leaflet/OpenStreetMap.
+- **Browse and filter opportunities** across a list view, a mini calendar, and city/location autocomplete.
 - **Sign up for a specific time slot ("engagement")** - withdraw if plans change, reactivate later within limits, get reminders, and check in on the day.
 - **Rate your engagement afterwards** with a rating and comment, editable for a short window after submission.
 - **Organizations post opportunities** with scheduled time slots (occurrences) and defined participation types.

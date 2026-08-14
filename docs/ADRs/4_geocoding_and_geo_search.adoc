@@ -7,10 +7,11 @@ Accepted
 2026-05-13
 
 === Context
-The map view and radius/bounding-box search for volunteer opportunities require
-each on-site opportunity to have geographic coordinates and the read query to
-support spatial filtering. We need to decide where geocoding runs and how
-spatial filtering is implemented in PostgreSQL.
+Radius/bounding-box search for volunteer opportunities requires each on-site
+opportunity to have geographic coordinates and the read query to support
+spatial filtering; the opportunity-detail page's single-marker map also
+depends on those persisted coordinates. We need to decide where geocoding
+runs and how spatial filtering is implemented in PostgreSQL.
 
 === Decision
 Geocode addresses synchronously in the `CreateVolunteerOpportunity` /
