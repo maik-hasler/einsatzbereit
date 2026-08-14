@@ -7213,6 +7213,7 @@
           "actionType",
           "subjectType",
           "subjectId",
+          "subjectDisplayName",
           "reason",
           "createdOn"
         ],
@@ -7238,6 +7239,9 @@
           "subjectId": {
             "type": "string",
             "format": "uuid"
+          },
+          "subjectDisplayName": {
+            "type": "string"
           },
           "reason": {
             "type": [

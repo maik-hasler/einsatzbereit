@@ -12120,6 +12120,10 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid SubjectId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("subjectDisplayName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string SubjectDisplayName { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("reason")]
         public string? Reason { get; set; } = default!;
 
