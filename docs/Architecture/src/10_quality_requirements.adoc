@@ -97,7 +97,7 @@ include::../images/quality-tree.puml[]
 
 |QS-3.4
 |A contributor opens a pull request.
-|The backend CI quality gate (`dotnet.yml`) returns a pass/fail verdict within about 6 minutes via three parallel test jobs, keeping the contribution feedback loop short. See TDR-2.
+|The backend CI quality gate (`dotnet.yml`) returns a pass/fail verdict within a bounded, actively-tracked time, keeping the contribution feedback loop short. See TDR-2 for current timing data.
 |===
 
 ==== Usability
