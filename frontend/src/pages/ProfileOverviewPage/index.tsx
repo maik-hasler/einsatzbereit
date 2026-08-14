@@ -474,7 +474,7 @@ export default function ProfileOverviewPage() {
 									{streaks && streaks.loginStreak > 0 && (
 										<p
 											data-testid="profile-stat-login-streak"
-											className="flex items-center gap-1.5 text-xs text-gray-500"
+											className="flex items-center gap-1.5 text-xs text-brand-800"
 										>
 											<FireIcon className="h-3.5 w-3.5" />
 											{t("achievements.loginStreak", {
