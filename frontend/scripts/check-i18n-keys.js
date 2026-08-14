@@ -127,6 +127,10 @@ const PLURAL_EXEMPT_KEYS = new Set(
 	[
 		"opportunities.nCategoriesSelected",
 		"opportunities.radiusKmValue",
+		// count is always MAP_PAGE_SIZE (100, a fixed backend page-size cap) - the
+		// call site never renders this with count === 1, same reasoning as
+		// nCategoriesSelected above.
+		"opportunities.mapResultsTruncated",
 		"timeSlots.bookedCount",
 		"timeSlots.seriesBadge",
 		"signUp.spotsLeft",

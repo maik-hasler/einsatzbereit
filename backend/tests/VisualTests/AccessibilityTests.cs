@@ -1678,6 +1678,116 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// #1851: the browse page's new list/map toggle - the "no on-site matches"
+	// branch of OpportunityResultsMap.tsx (EmptyState), never scanned by the
+	// plain OpportunitiesPage_HasNoSeriousA11yViolations pass above since that
+	// one never leaves list view. isRemote=true is the deterministic way to
+	// reach zero on-site pins regardless of whatever else the shared test
+	// session has seeded (mirrors OpportunitiesMapViewTests.cs's own empty-state
+	// test).
+	[Test]
+	public async Task OpportunitiesPage_MapViewEmptyState_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities?isRemote=true&view=map");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByText("No on-site opportunities found."))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	// #1851: the populated branch of the same map view - a rendered pin and its
+	// open popup, the markup the empty-state scan just above never reaches.
+	// Coordinates are patched into the list response the same way
+	// OpportunitiesMapViewTests.cs does, since VisualTests always runs against
+	// FakeGeocodingService (transient failure) and no seeded opportunity here
+	// ever gets real coordinates from the normal write path.
+	[Test]
+	public async Task OpportunitiesPage_MapViewWithOpenPopup_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var title = $"MapViewA11y Pin {suffix}";
+		var tag = $"mapviewa11y1851-{suffix}";
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"MapViewA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Created by OpportunitiesPage_MapViewWithOpenPopup_HasNoSeriousA11yViolations",
+			organizationId,
+			isRemote = false,
+			street = "Teststrasse",
+			houseNumber = "1",
+			zipCode = "12345",
+			city = "Musterstadt",
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+			tags = new[] { tag },
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.RouteAsync("**/v1/volunteer-opportunities?*", async route =>
+		{
+			if (route.Request.Method != "GET")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			var response = await route.FetchAsync();
+			var body = JsonNode.Parse(await response.TextAsync())!.AsObject();
+			foreach (var item in body["items"]!.AsArray())
+			{
+				if (item!["id"]!.GetValue<string>() == opportunityId)
+				{
+					item["latitude"] = JsonValue.Create(52.52);
+					item["longitude"] = JsonValue.Create(13.405);
+				}
+			}
+
+			await route.FulfillAsync(new()
+			{
+				Response = response,
+				ContentType = "application/json",
+				Body = body.ToJsonString(),
+			});
+		});
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities?tag={tag}&view=map");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var marker = Page.GetByRole(AriaRole.Button, new() { Name = title });
+		await Expect(marker).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await marker.ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "View details" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	// The row overflow menu is an overlay with hand-rolled markup, so it gets
 	// scanned in its open state the way NotificationDropdown_Open and the
 	// sign-up modal's slot dropdown do - closed, it contributes nothing.
