@@ -112,10 +112,12 @@ export default function Header({
 		// own session cookie is cleared by signoutRedirect below) - it's
 		// browser-stored data tied to this account that has no reason to
 		// outlive the session, per the privacy policy's cookies/storage section.
+		// The UI language choice is a device preference rather than account
+		// data, so it isn't cleared here (#1838) - only the full
+		// account-deletion flow in DangerZoneCard still clears it, where "no
+		// trace of the account left" is the actual intent.
 		clearActiveOrgId();
 		clearSeenAchievements(user?.sub);
-		localStorage.removeItem("i18nextLng");
-		localStorage.removeItem("einsatzbereit:language-explicit");
 		auth.signoutRedirect();
 	}
 
