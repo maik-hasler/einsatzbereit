@@ -62,15 +62,7 @@ For endpoints with many optional query params (e.g. `getVolunteerOpportunities`,
 
 ## Environment Variables
 
-Defined in `.env.development`. Exposed client-side via Vite (must use `VITE_` prefix).
-
-| Variable                      | Dev value                                    |
-| ----------------------------- | -------------------------------------------- |
-| `VITE_KEYCLOAK_AUTHORITY_URL` | `http://localhost:8080/realms/einsatzbereit` |
-| `VITE_KEYCLOAK_CLIENT_ID`     | `frontend`                                   |
-| `VITE_API_URL`                | `http://localhost:5000`                      |
-
-Accessed via `import.meta.env.VITE_*`.
+Dev values are defined in `.env.development` - see that file for the current list. Exposed client-side via Vite (must use `VITE_` prefix) and accessed via `import.meta.env.VITE_*`.
 
 ## Role Checks
 
@@ -89,7 +81,7 @@ Known roles: `user`, `organisator`, `admin`.
 
 Routes declared in `src/App.tsx`. Add new routes there, following the file's existing pattern: lazy-load the page component (`const MyPage = lazy(() => import("./pages/MyPage"))`) and declare the route (`<Route path="/my-page" element={<MyPage />} />`, wrapped in `<ProtectedRoute>` if it requires login) - see the file's own top-of-file comments for why pages are lazy-loaded (per-route build chunks, PWA precache size, Vite's `INEFFECTIVE_DYNAMIC_IMPORT` warning) and which pages are the deliberate exceptions.
 
-**Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
+**Note:** During development, new page code may use `(api as any)` until the backend rebuilds and `api-client.ts` regenerates with the new method (see API Client above).
 
 ## Scripts
 
@@ -131,7 +123,7 @@ Conventions used across the existing suite:
 
 ## Linting
 
-Always run `pnpm format:write` before committing. The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit.
+The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit.
 
 ```bash
 pnpm lint

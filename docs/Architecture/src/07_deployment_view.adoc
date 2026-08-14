@@ -18,7 +18,7 @@ include::../images/deployment-local.puml[]
 ....
 
 Motivation::
-The entire stack runs locally via the .NET Aspire AppHost: a single `dotnet run --project backend/src/Aspire/AppHost` command provisions PostgreSQL, pgAdmin, Keycloak, MinIO, and Mailpit as containers, and runs the backend API and Vite frontend as host processes from source. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
+The entire stack runs locally via the .NET Aspire AppHost - see <<section-concepts>> under Development and Build for the one-command orchestration this relies on. Running everything from one command ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
 
 Quality and Performance Characteristics::
 Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak runs the upstream image with a dev-file database and a relaxed, auto-imported realm; the backend and frontend run from source with hot reload.
@@ -222,7 +222,7 @@ The mapping is 1:1 today - every Level-1 building block runs as exactly one cont
 |Reverse proxy, TLS termination via ACME / Let's Encrypt
 |===
 
-Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). The two-job split exists so that pointing at a genuinely separate production host later is a matter of changing the `production` GitHub Environment's secrets, not restructuring the workflow; until then, a stable release replaces whatever RC was running with the `latest`-tagged images (RCs use the mutable `staging` tag instead).
+Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
 
 === Infrastructure Level 2: Deployed Host
 

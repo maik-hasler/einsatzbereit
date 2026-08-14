@@ -31,14 +31,7 @@ All services start automatically. See [README.md](README.md) for service URLs an
 
 ### Project Structure
 
-```
-einsatzbereit/
-├── backend/        .NET 10 Clean Architecture API
-├── frontend/       Vite SPA + React 19 + Tailwind CSS 4
-├── keycloak/       Custom Keycloak image + realm config
-├── docs/           arc42 architecture docs + ADRs
-└── .github/        CI/CD workflows
-```
+See [README.md](README.md#project-structure) for the top-level directory layout.
 
 There is no separate `postgres/` directory - the database init SQL is a
 `docker-compose.yml` `configs: postgres-init` entry, inline in that file.

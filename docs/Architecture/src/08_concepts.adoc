@@ -17,7 +17,7 @@ include::../images/domain-model.puml[]
 
 An *Organization* publishes *Volunteer Opportunities*. An opportunity is the central aggregate: it says what help is needed, where, and when. It is either a `ScheduledSlots` opportunity, which carries one or more *Time Slots* that volunteers book, or an `IndividualContact` opportunity, which carries an application deadline instead and is arranged directly with the organizer. A recurring opportunity generates several time slots sharing a `SeriesId` so they can later be edited or cancelled together.
 
-A volunteer signing up creates an *Engagement*, which links a *User*, an opportunity and (for scheduled opportunities) one time slot. The engagement carries the whole lifecycle a sign-up goes through: `Pending` until the organizer confirms it, then check-in on the day, then optional feedback afterwards. Withdrawn or cancelled engagements are kept rather than deleted and can be reactivated a bounded number of times.
+A volunteer signing up creates an *Engagement*, linking a *User*, an opportunity and (for scheduled opportunities) one time slot - see <<section-glossary>> for its full lifecycle.
 
 Two modelling decisions are worth stating because they are not obvious from the diagram:
 
@@ -108,12 +108,7 @@ Domain and application logic signal failure with a `Result` / `Result<T>` type (
 
 === Rate Limiting
 
-All endpoints are rate-limited using ASP.NET Core's built-in rate limiter (see TDR-1). Two fixed-window policies apply:
-
-* `rate-limit-read` - 200 requests/minute for authenticated users (partitioned by the `sub` claim), 60 requests/minute for anonymous callers (partitioned by client IP).
-* `rate-limit-write` - 100 requests/minute, partitioned by user (falling back to client IP).
-
-Rejected requests receive `429 Too Many Requests`. The limiter runs after authentication so per-user partitioning has the user identity available. Limits are configurable per environment via `appsettings.json` and environment variables.
+All endpoints are rate-limited using ASP.NET Core's built-in rate limiter, with separate fixed-window policies for reads and writes partitioned by authenticated user or client IP - see TDR-1 for the exact limits and implementation.
 
 === Database Migrations
 

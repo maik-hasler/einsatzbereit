@@ -1,6 +1,6 @@
 # Einsatzbereit
 
-Volunteer coordination platform matching helpers with regional needs. English-source UI strings and code; the served locale is negotiated from the visitor's browser, defaulting to German only when that can't be detected. See `CONTRIBUTING.md`'s Language Convention for the full breakdown.
+English-source UI strings and code. See `CONTRIBUTING.md`'s Language Convention for the full breakdown.
 
 ## Monorepo Structure
 
@@ -15,15 +15,7 @@ einsatzbereit/
 
 ## Tech Stack (quick ref)
 
-| | |
-|---|---|
-| Backend | .NET 10 (SDK 10.0.400, see `backend/global.json`), EF Core 10, PostgreSQL 18 |
-| Auth | Keycloak 26.7.1 (OIDC, JWT) |
-| Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4 |
-| API client | NSwag-generated - **never hand-edit** `api-client.ts` |
-| Tests (BE) | TUnit, Aspire.Hosting.Testing, Respawn, NetArchTest |
-| Tests (FE) | E2E lives in backend `tests/VisualTests/` (TUnit.Playwright + Aspire) |
-| CI/CD | GitHub Actions → GHCR |
+See README.md's Tech Stack table for the full breakdown.
 
 ## Development Setup
 
@@ -33,18 +25,7 @@ Required: .NET SDK **10.0.400** (enforced via `backend/global.json`).
 dotnet run --project backend/src/Aspire/AppHost
 ```
 
-Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend. URLs surface in the Aspire dashboard.
-
-| Service | URL | Credentials |
-|---|---|---|
-| Frontend | http://localhost:4321 | - |
-| Backend API | *dynamic port - see the Aspire dashboard* | - |
-| Keycloak admin | http://localhost:8080 | admin / admin |
-| pgAdmin | http://localhost:5050 | admin@admin.com / admin |
-| PostgreSQL | localhost:5432 | postgres / postgres |
-| Mailpit (email) | http://localhost:1080 | - (no auth required) |
-
-Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
+Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend. URLs surface in the Aspire dashboard. See README.md's Services and Test users tables for the full list.
 
 These same test-user credentials are intentionally also live on the public staging deployment (`https://einsatzbereit.maik-hasler.de`) - staging bakes in the same Keycloak realm as local dev, on purpose, since staging is disposable demo/QA infrastructure rather than production (see the `README.md` Test Users note and `keycloak/AGENTS.md` for the full rationale). Full admin access via these credentials on staging is a known, accepted trade-off, not a vulnerability to report.
 
@@ -52,9 +33,7 @@ These same test-user credentials are intentionally also live on the public stagi
 
 - Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in the backend (`Api/`, `Application/` and `Domain/` all repeat the same module folders). The frontend is cut by artifact kind instead (`pages/`, `components/`, `hooks/`, `lib/`), with organizer routes grouped under `pages/app/` - see chapter 5 of the arc42 docs
 - Routes: `/v{version:apiVersion}/...`, namespaces: `.v1`
-- Commands/queries/DTOs: C# records
-- Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
-- No `.Result`/`.Wait()` - async all the way
+- Commits, commands/queries/DTOs, and async conventions: see `CONTRIBUTING.md`'s Code Style and Commit Messages sections
 - **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
 - **Tab indentation is the default** (`.editorconfig`'s `[*]` rule) - shell scripts, AsciiDoc (`.adoc`), and PlantUML (`.puml`) all use tabs. Only `.md`, `.json`, `.yml`/`.yaml`, and `.py` (PEP 8) are overridden to spaces. CI's `editorconfig` job enforces this; when writing `.adoc` prose keep paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuation lines
 
@@ -72,9 +51,8 @@ edit on your own initiative):
   to only what ESLint's `jsx-a11y` ruleset can't already catch, see the
   agent file for why), `i18n-check` (`en.json`/`de.json` translation key
   parity - nothing else in CI checks this).
-- **Skills** - `.claude/skills/self-review/` (`/self-review`) runs a
-  prioritised diff review and fans out to the agents above for the areas the
-  diff touches, required before opening a PR (see below).
+- **Skills** - `.claude/skills/self-review/` (`/self-review`, its frontmatter
+  description covers what it does; required before opening a PR - see below).
   `.claude/skills/lens/` is this repo's autonomous routine and on-demand
   review tool: one lens per run - static repo audits (bugs, dead code, dead
   features, repo hygiene, docs quality, test gaps, CI, security, contributor

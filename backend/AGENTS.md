@@ -78,8 +78,7 @@ tests/
        ├── {UseCase}Request.cs    - request body record (omit if no body)
        └── {UseCase}Endpoint.cs  - implements IEndpoint, maps route, calls ISender
 
-4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj)
-5. Frontend api-client.ts regenerates with it - do not hand-edit
+4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj), which regenerates `api-client.ts` in turn
 ```
 
 Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`.
@@ -142,11 +141,10 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 
 ## Database
 
-- PostgreSQL 18, EF Core 10, `UseSnakeCaseNamingConvention()`
+- `UseSnakeCaseNamingConvention()`
 - Migrations in `Infrastructure/Persistence/Migrations/`
 - Add migration: `dotnet ef migrations add <Name> -p src/Infrastructure -s src/Api`
 - Apply migrations: runs automatically on startup in Development; `dotnet ef database update` otherwise
-- `AuditableEntityInterceptor` auto-populates `created_on` / `modified_on`
 
 ## Testing
 

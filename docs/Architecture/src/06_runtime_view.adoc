@@ -15,9 +15,8 @@ A volunteer or organizer opens the application and authenticates via Keycloak us
 include::../images/runtime-login.puml[]
 ....
 
-Key aspects of this flow:
+Key aspects of this flow (see <<section-concepts>> under Authentication and Authorization for why this is fully delegated to Keycloak):
 
-* The frontend never handles passwords - authentication is fully delegated to Keycloak.
 * PKCE prevents authorization code interception attacks in the public client (SPA).
 * Tokens are persisted in `localStorage` via the OIDC client's `WebStorageStateStore`, so a page reload keeps the session (and end-to-end tests can capture it).
 * The access token is a short-lived JWT; the refresh token is used to obtain new access tokens silently.
