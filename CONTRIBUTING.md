@@ -9,7 +9,7 @@ Every contribution counts - bug reports, ideas, documentation, or code.
 |---|---|
 | UI source strings (i18n keys in `frontend/src/locales/en.json`) | English - add or edit new keys here first |
 | UI German translation (`frontend/src/locales/de.json`) | German - keep in parity with `en.json` via `pnpm i18n:check` |
-| End-user-facing app and documentation | German (`<html lang="de">` is the default served locale; Einsatzbereit's primary audience is German-speaking) |
+| End-user-facing app and documentation | German (Einsatzbereit's primary audience is German-speaking; the UI negotiates the visitor's browser language at runtime and falls back to German - `<html lang="de">` - only when that can't be detected, see `frontend/src/i18n.ts`) |
 | Installed-app metadata (the web app manifest in `frontend/vite.config.ts`) | German only, deliberately - `lang: "de"`, with German `name`/`description`/`shortcuts`. It is built once at build time and served as a single static file, so localising it would mean serving a different manifest per locale; that is not worth building for a German-first audience |
 | Code, commits, issues, pull requests | English |
 

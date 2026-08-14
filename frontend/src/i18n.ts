@@ -34,11 +34,7 @@ void i18next
 		fallbackLng: "de",
 		supportedLngs: ["de", "en"],
 		detection: {
-			// "navigator" deliberately excluded: German is the documented default served
-			// locale (root AGENTS.md / CONTRIBUTING.md's Language Convention), so an
-			// unset/undetectable language falls through to fallbackLng "de" instead
-			// of the browser's own language preference.
-			order: ["localStorage"],
+			order: ["localStorage", "navigator"],
 			caches: ["localStorage"],
 			lookupLocalStorage: "i18nextLng",
 		},
