@@ -60,7 +60,25 @@ const oidcConfig = {
 			keycloakLocale &&
 			keycloakLocale !== i18n.language
 		) {
+			// Announce the switch before it happens (#1842) - otherwise it's an
+			// invisible side effect of a token refresh, indistinguishable from
+			// the UI randomly changing language mid-session. Computed while
+			// i18n.language is still the pre-switch language, so the sentence
+			// itself stays readable through the change it's describing.
+			dispatchToast(
+				"info",
+				i18n.t("language.switchedFromAccount", {
+					language: i18n.t(`language.${keycloakLocale}`),
+				}),
+			);
 			await i18n.changeLanguage(keycloakLocale);
+			// Give the toast a moment to actually paint before the redirect below
+			// tears the page down - the window.location.replace navigation is a
+			// real document unload, not a client-side route change, so without
+			// this the toast would at best flash for a frame or never render at
+			// all. Same race and same fix useSessionExpiryHandler.ts already
+			// applies to its own toast-then-navigate sequence.
+			await new Promise((resolve) => setTimeout(resolve, 2000));
 		}
 		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
 		window.location.replace(returnTo);

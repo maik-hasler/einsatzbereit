@@ -903,7 +903,8 @@
     "language": {
       "de": "Deutsch",
       "en": "English",
-      "switchLanguage": "Switch language"
+      "switchLanguage": "Switch language",
+      "switchedFromAccount": "Switched to {{language}} based on your account"
     },
     "auth": {
       "authError": "Authentication error: {{message}}",
