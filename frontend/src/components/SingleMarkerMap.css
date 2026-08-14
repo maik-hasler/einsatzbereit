@@ -1,9 +1,6 @@
 /* Leaflet's own base stylesheet and our brand overrides below it are kept
-in one file, colocated with SingleMarkerMap (this file's original consumer -
-OpportunityResultsMap.tsx imports it too now, since Leaflet's CSS classes are
-shared across every map on the page regardless of which component's bundle
-happens to load first) instead of living in styles/global.css - see #1383.
-Note this does NOT
+in one file, colocated with SingleMarkerMap (this component's sole consumer)
+instead of living in styles/global.css - see #1383. Note this does NOT
 currently split Leaflet's CSS out of the app's single stylesheet into a
 separate on-demand chunk: vite.config.ts sets build.cssCodeSplit: false
 (see the comment there) precisely so CSS always bundles into one file
