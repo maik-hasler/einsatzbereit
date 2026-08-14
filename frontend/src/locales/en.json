@@ -640,7 +640,7 @@
       "deletedOpportunityTitle": "This opportunity has been removed",
       "cancellationReason": "Reason: {{reason}}",
       "withdraw": "Withdraw",
-      "withdrawError": "Error withdrawing",
+      "withdrawError": "Could not withdraw your sign-up. Please try again.",
       "addToCalendar": "Add to calendar",
       "addToCalendarGoogle": "Google Calendar",
       "addToCalendarOutlook": "Outlook.com",

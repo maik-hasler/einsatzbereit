@@ -6,7 +6,6 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements.WithdrawEngagement.v1;
 using Domain.Engagements;
-using Domain.Primitives;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
@@ -22,7 +21,9 @@ internal sealed class WithdrawEngagementEndpoint
 			.Produces<EngagementStatusResponse>()
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
@@ -41,23 +42,12 @@ internal sealed class WithdrawEngagementEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		try
-		{
-			var command = new WithdrawEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
-			var engagement = await sender.Send(command, cancellationToken);
+		var command = new WithdrawEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
+		var engagement = await sender.Send(command, cancellationToken);
 
-			// A withdrawn engagement changes CurrentParticipantCount on the public listing.
-			await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
+		// A withdrawn engagement changes CurrentParticipantCount on the public listing.
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
-			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
-		}
-		catch (ResultFailureException ex) when (ex.Error.Type == ErrorType.NotFound)
-		{
-			return Results.NotFound();
-		}
-		catch (ResultFailureException ex)
-		{
-			return Results.Problem(ex.Error.Description, statusCode: StatusCodes.Status400BadRequest);
-		}
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 	}
 }
