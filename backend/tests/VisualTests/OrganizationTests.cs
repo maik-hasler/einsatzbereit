@@ -314,6 +314,70 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task MembersPage_ActionButtons_MeetMinimumTouchTargetSize()
+	{
+		// Regression for #1847: "Promote to organizer"/"Demote to member",
+		// "Remove" and "Leave" rendered as bare text-xs buttons with no padding
+		// beyond line-height, measuring ~16px tall at a 375px viewport - under
+		// half the WCAG 2.2 SC 2.5.8 24x24 CSS px minimum - with "Promote" and
+		// the destructive "Remove" only ~11px apart, a real mis-tap risk on a
+		// touch screen.
+		const float MinTargetSize = 24;
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1847 TouchTarget", pinnedOrgId!.Value);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change - force
+		// a refetch, same as the other member-row tests above.
+		await Page.ReloadAsync();
+
+		await Page.GetByTestId("org-tab-members").ClickAsync();
+
+		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Resize down to the viewport the review measured the violation at,
+		// after navigating - the org app's section rail is reached through the
+		// default desktop viewport here, same as every other test in this file.
+		await Page.SetViewportSizeAsync(375, 812);
+
+		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
+		var removeButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Remove" });
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var promoteBox = await promoteButton.BoundingBoxAsync();
+		var removeBox = await removeButton.BoundingBoxAsync();
+		var leaveBox = await leaveButton.BoundingBoxAsync();
+		promoteBox.Should().NotBeNull("Could not get bounding box for the Promote button");
+		removeBox.Should().NotBeNull("Could not get bounding box for the Remove button");
+		leaveBox.Should().NotBeNull("Could not get bounding box for the Leave button");
+
+		(promoteBox!.Width >= MinTargetSize && promoteBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Promote hit target should meet the WCAG 2.2 24x24 minimum (measured {promoteBox.Width:F1}x{promoteBox.Height:F1}px)");
+		(removeBox!.Width >= MinTargetSize && removeBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Remove hit target should meet the WCAG 2.2 24x24 minimum (measured {removeBox.Width:F1}x{removeBox.Height:F1}px)");
+		(leaveBox!.Width >= MinTargetSize && leaveBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Leave hit target should meet the WCAG 2.2 24x24 minimum (measured {leaveBox.Width:F1}x{leaveBox.Height:F1}px)");
+
+		// Promote sits directly left of the destructive Remove in the same row -
+		// their hit targets must stay clearly separated, not just non-overlapping.
+		double gap = removeBox.X - (promoteBox.X + promoteBox.Width);
+		(gap >= 8).Should().BeTrue(
+			$"Promote and Remove hit targets should stay clearly separated to avoid a mis-tap between a role change and a destructive action (measured {gap:F1}px)");
+	}
+
+	[Test]
 	public async Task Organizer_CanInviteMemberWithOrganizerRole_ViaRoleSelector()
 	{
 		// #1050: CreateInvitation now carries an intended role, defaulting to

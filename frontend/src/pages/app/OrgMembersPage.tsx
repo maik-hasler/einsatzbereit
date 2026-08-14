@@ -548,12 +548,12 @@ export default function OrgMembersPage() {
 													? t("orgSettings.leaveOrganizationLastOrganizerHint")
 													: undefined
 											}
-											className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+											className="-m-2 p-2 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 										>
 											{t("orgSettings.leaveOrganization")}
 										</button>
 									) : isOrganizer ? (
-										<div className="flex shrink-0 items-center gap-3">
+										<div className="flex shrink-0 items-center gap-6">
 											{(() => {
 												const memberName =
 													member.firstName && member.lastName
@@ -587,7 +587,7 @@ export default function OrgMembersPage() {
 																			name: memberName,
 																		})
 															}
-															className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+															className="-m-2 p-2 text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 														>
 															{member.isOrganisator
 																? t("orgSettings.demoteToMember")
@@ -604,7 +604,7 @@ export default function OrgMembersPage() {
 															aria-label={t("orgSettings.removeMemberNamed", {
 																name: memberName,
 															})}
-															className="text-xs text-red-700 hover:text-red-800"
+															className="-m-2 p-2 text-xs text-red-700 hover:text-red-800"
 														>
 															{t("orgSettings.removeMember")}
 														</button>
