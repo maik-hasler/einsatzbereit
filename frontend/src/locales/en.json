@@ -576,7 +576,6 @@
       "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
       "itemRatingLabel": "{{rating}} out of 5 stars",
       "organizerTab": "Feedback",
-      "noFeedback": "No feedback yet.",
       "loadMore": "Load more",
       "starLabel_one": "{{count}} star",
       "starLabel_other": "{{count}} stars",
