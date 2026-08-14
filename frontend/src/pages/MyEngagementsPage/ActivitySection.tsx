@@ -316,9 +316,10 @@ export default function ActivitySection() {
 			)}
 
 			{/* No visible heading for the sign-ups list itself (#1796): this list
-			*is* the page, and PageHeaderBand's <h1> already names it in 72px
-			display type ~200px further up - so a SectionHeading repeating that
-			same string read as a category eyebrow that carried no category, and
+			*is* the page, and PageHeaderBand's <h1> already names it further up
+			(compactTitle since #1841 - still display type, just not 72px) - so a
+			SectionHeading repeating that same string read as a category eyebrow
+			that carried no category, and
 			pushed the scope tabs down a page that is short of content to begin
 			with. The invitations block above keeps its visible heading, because
 			that one names a section the <h1> does not.

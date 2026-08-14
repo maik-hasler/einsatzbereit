@@ -24,6 +24,15 @@ interface Props {
 	 * want the default.
 	 */
 	fullWidth?: boolean;
+	/**
+	 * Use a content-page type scale (text-3xl/sm:text-4xl) for the <h1>
+	 * instead of the marketing-hero scale (text-5xl/sm:text-6xl/lg:text-7xl).
+	 * For pages in the band's account-page family whose content is a short
+	 * form or a thin list, not an introduction - see #1841. The band's brand
+	 * surface (colour, glow blobs, wave cap) is unchanged; only the title
+	 * shrinks.
+	 */
+	compactTitle?: boolean;
 }
 
 // Shared title band for the standalone public pages (help, contact, imprint,
@@ -50,6 +59,14 @@ interface Props {
 //     transparent while that's true. --header-height is added back as top
 //     padding so the eyebrow doesn't start underneath the header bar.
 //
+// The account pages (ProfileOverviewPage, ProfileSettingsPage,
+// MyEngagementsPage) opt into `compactTitle` (#1841): they keep this band's
+// brand surface for the same continuity reason, but their content is a form
+// or a thin list, not an introduction, so the 72px marketing-hero title read
+// as disproportionate. The legal/help/contact pages this band was built for
+// keep the full hero scale - #1841 narrows the type scale for that one page
+// family, it does not revisit the brand-surface decision below.
+//
 // These pages carry no BreadcrumbBar (the pages using this band stopped
 // calling usePageToolbar in #1755): a separate grey bar restating the page
 // title directly above a band that states it in 72px display type was pure
@@ -69,6 +86,7 @@ export default function PageHeaderBand({
 	lead,
 	children,
 	fullWidth = false,
+	compactTitle = false,
 }: Props) {
 	useOverlaysHeader();
 	// Same QuickActionsContext the BreadcrumbBar reads. A page using this band
@@ -132,7 +150,13 @@ export default function PageHeaderBand({
 						<p className="animate-fade-up text-xs font-semibold tracking-widest text-brand-200 uppercase">
 							{eyebrow}
 						</p>
-						<h1 className="animate-fade-up-d1 mt-3 max-w-4xl font-display text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+						<h1
+							className={`animate-fade-up-d1 mt-3 max-w-4xl font-display font-bold tracking-tight text-white ${
+								compactTitle
+									? "text-3xl sm:text-4xl"
+									: "text-5xl sm:text-6xl lg:text-7xl"
+							}`}
+						>
 							{title}
 						</h1>
 						{lead && (
