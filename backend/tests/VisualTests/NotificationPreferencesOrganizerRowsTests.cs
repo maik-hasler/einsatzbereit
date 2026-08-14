@@ -18,6 +18,10 @@ namespace VisualTests;
 /// fixture.ResetAsync() plus the keyed [NotInParallel], which excludes only the
 /// other classes sharing the "visualtests-db" key rather than the whole
 /// assembly.
+///
+/// #1844 added the grouping tests below: once both audiences' rows are
+/// visible (Olaf), they render under two "As an organizer" / "As a
+/// volunteer" headings instead of one flat list.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]
@@ -79,6 +83,67 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 		await Expect(Page.GetByText(NewSignUpLabel)).ToBeVisibleAsync();
 		await Expect(Page.GetByText(WithdrawalLabel)).ToBeVisibleAsync();
 		await Expect(Page.Locator("main input[type='checkbox']")).ToHaveCountAsync(5);
+	}
+
+	[Test]
+	public async Task ProfileSettings_OrganizationMember_GroupsPreferencesByAudience()
+	{
+		// #1844: for an account with both audiences (Olaf), the five checkboxes
+		// must read as two labelled groups - "As an organizer" / "As a
+		// volunteer" - instead of one undifferentiated list mixing both.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.Locator("#notifyOnNewSignUp")).ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "As an organizer", Level = 3 }))
+			.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "As a volunteer", Level = 3 }))
+			.ToBeVisibleAsync();
+
+		// Each group heading sits directly above its own rows, not interleaved
+		// with the other group's - verified by document order via InnerText
+		// rather than bounding boxes, since a wrapping layout would still be
+		// correct DOM order but different y-coordinates.
+		var mainText = await Page.Locator("main").InnerTextAsync();
+		var organizerHeadingIndex = mainText.IndexOf("As an organizer", StringComparison.Ordinal);
+		var volunteerHeadingIndex = mainText.IndexOf("As a volunteer", StringComparison.Ordinal);
+		var newSignUpIndex = mainText.IndexOf(NewSignUpLabel, StringComparison.Ordinal);
+		var confirmedIndex = mainText.IndexOf("Your sign-up is confirmed", StringComparison.Ordinal);
+
+		organizerHeadingIndex.Should().BeGreaterThanOrEqualTo(0);
+		volunteerHeadingIndex.Should().BeGreaterThan(organizerHeadingIndex,
+			"the organizer group heading must come before the volunteer group heading");
+		newSignUpIndex.Should().BeInRange(organizerHeadingIndex, volunteerHeadingIndex,
+			"the organizer-only row must render under the organizer heading, not the volunteer one");
+		confirmedIndex.Should().BeGreaterThan(volunteerHeadingIndex,
+			"the always-visible row must render under the volunteer heading");
+	}
+
+	[Test]
+	public async Task ProfileSettings_VolunteerWithoutOrganization_HasNoGroupHeadings()
+	{
+		// #1844: a plain volunteer only ever sees one audience of rows, so the
+		// grouping fix must not surface an empty or redundant group heading
+		// for her - just the flat list she already had.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/profile/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.Locator("#notifyOnEngagementConfirmed"))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "As an organizer" }))
+			.ToHaveCountAsync(0);
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "As a volunteer" }))
+			.ToHaveCountAsync(0);
 	}
 
 	[Test]

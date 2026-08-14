@@ -66,6 +66,108 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		cleanupResponse.EnsureSuccessStatusCode();
 	}
 
+	/// <summary>
+	/// Regression for #1855: Engagement.CheckIn() has no time-based guard, so an
+	/// organizer can check a volunteer in as soon as an engagement is Confirmed -
+	/// e.g. at arrival for a still-ongoing multi-hour shift, or (as filed) for a
+	/// slot dated weeks out. EngagementReadRepository.GetByVolunteerAsync used to
+	/// bucket any checked-in Confirmed engagement into "Past" unconditionally,
+	/// with no comparison against the slot's own end time (#1163 already fixed
+	/// the opposite-direction gap - an un-checked-in Confirmed engagement never
+	/// leaving "Current &amp; upcoming" once its slot had ended). The volunteer's
+	/// own "Past" tab then showed a "Checked in" chip and a "Leave feedback" CTA
+	/// for a shift with a displayed date that had not happened yet.
+	/// </summary>
+	[Test]
+	public async Task EngagementsTab_KeepsCheckedInEngagement_InUpcomingScope_WhileItsTimeSlotIsStillInTheFuture()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckedInFuture Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"CheckedInFuture Opportunity {suffix}";
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by MyEngagementsScopeTabsTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "Manual",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		// A multi-hour shift two weeks out - the same shape as the review finding
+		// that filed #1855 (a slot dated well in the future).
+		var start = DateTimeOffset.UtcNow.AddDays(14);
+		var slotResponse = await olafHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = start.AddHours(8), maxParticipants = 5, recurrenceCount = 1 });
+		slotResponse.EnsureSuccessStatusCode();
+		var slots = await slotResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var timeSlotId = slots[0].GetProperty("id").GetString();
+
+		(await olafHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+
+		var engagementResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { type = "ScheduledSlots", timeSlotId, message = (string?)null });
+		engagementResponse.EnsureSuccessStatusCode();
+		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString();
+
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+			.EnsureSuccessStatusCode();
+
+		// The organizer checks vera in well ahead of the slot's end - there is no
+		// time-based guard on CheckIn() (see Domain/Engagements/Engagement.cs).
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+
+		// Default "Current & upcoming" scope - the checked-in engagement belongs
+		// here, not "Past", since its own displayed date has not happened yet.
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(card).ToContainTextAsync(oppTitle);
+		await Expect(card.GetByText("Checked in")).ToBeVisibleAsync();
+
+		// "Past" must not present it as a completed, feedback-ready item (#1855).
+		// Waits for the Past scope's own fetch to actually land (a card or its
+		// empty state) before asserting absence - otherwise a still-loading list
+		// would trivially satisfy Not.ToBeVisibleAsync without proving anything.
+		var pastCardOrEmptyState = Page.Locator("#activity [data-testid='engagement-card']")
+			.Or(Page.GetByText("No past sign-ups yet."));
+		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
+		await Expect(pastCardOrEmptyState.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(card).Not.ToBeVisibleAsync();
+	}
+
 	private static async Task<string> ApplyAsync(HttpClient http, string opportunityId, string message)
 	{
 		var response = await http.PostAsJsonAsync(

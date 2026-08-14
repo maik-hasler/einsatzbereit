@@ -27,6 +27,22 @@ jobs:
             exit 1
           fi
 
+  ban-unescaped-keycloak-apostrophes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Ban unescaped apostrophes in Keycloak English messages
+        # Keycloak resolves these values through java.text.MessageFormat, which
+        # treats a bare ' as the start of a quoted-literal escape and silently
+        # drops it - a literal apostrophe has to be written as '' (#1854).
+        run: |
+          FILE=keycloak/themes/einsatzbereit/login/messages/messages_en.properties
+          if grep -nE '^[^#[:space:]].*=' "$FILE" | grep -P "(?<!')'(?!')"; then
+            echo "::error::Unescaped apostrophe in $FILE - MessageFormat silently drops it. Escape literal apostrophes as '' (see #1854)."
+            exit 1
+          fi
+
   editorconfig:
     runs-on: ubuntu-latest
     steps:

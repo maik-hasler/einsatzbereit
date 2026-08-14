@@ -414,9 +414,15 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	///
 	/// <paramref name="password"/> must satisfy the realm's password policy
 	/// (<c>upperCase(1)</c>, <c>length(8)</c>) or Keycloak rejects the create.
+	///
+	/// <paramref name="attributes"/> seeds Keycloak user attributes (e.g.
+	/// <c>{"locale": ["de"]}</c>, mapped to the OIDC <c>locale</c> claim by the
+	/// realm's default "profile" client scope) - null omits the field entirely,
+	/// leaving Keycloak's own defaults in place.
 	/// </summary>
 	public async Task<Guid> CreateThrowawayUserAsync(
 		string username, string password, bool emailVerified, string[] requiredActions,
+		IReadOnlyDictionary<string, string[]>? attributes = null,
 		CancellationToken cancellationToken = default)
 	{
 		var adminToken = await GetAdminTokenAsync(cancellationToken);
@@ -430,6 +436,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 				emailVerified,
 				enabled = true,
 				requiredActions,
+				attributes,
 				credentials = new[] { new { type = "password", value = password, temporary = false } },
 			}),
 		};

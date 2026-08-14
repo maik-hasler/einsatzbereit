@@ -131,6 +131,33 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 	}
 
 	[Test]
+	public async Task OrganizationsDirectory_IsGridWithSideBySideCards()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.SetViewportSizeAsync(WideViewportWidth, WideViewportHeight);
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await GetAccessTokenAsync(Page);
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		// At least 2 organizations must exist for the side-by-side check
+		// below - seed our own rather than depending on pre-existing seed data.
+		await CreateOrganizationAsync(http, "Visual977 OrgGrid A");
+		await CreateOrganizationAsync(http, "Visual977 OrgGrid B");
+
+		await Page.GotoAsync($"{origin}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var list = Page.Locator("main ul").First;
+		await AssertGridWithSideBySideItemsAsync(list, "Organizations directory");
+	}
+
+	[Test]
 	public async Task OrganizerOpportunitiesList_TwoDrafts_AreGridWithSideBySideCards()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

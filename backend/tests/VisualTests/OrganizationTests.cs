@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -314,6 +316,70 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task MembersPage_ActionButtons_MeetMinimumTouchTargetSize()
+	{
+		// Regression for #1847: "Promote to organizer"/"Demote to member",
+		// "Remove" and "Leave" rendered as bare text-xs buttons with no padding
+		// beyond line-height, measuring ~16px tall at a 375px viewport - under
+		// half the WCAG 2.2 SC 2.5.8 24x24 CSS px minimum - with "Promote" and
+		// the destructive "Remove" only ~11px apart, a real mis-tap risk on a
+		// touch screen.
+		const float MinTargetSize = 24;
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1847 TouchTarget", pinnedOrgId!.Value);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change - force
+		// a refetch, same as the other member-row tests above.
+		await Page.ReloadAsync();
+
+		await Page.GetByTestId("org-tab-members").ClickAsync();
+
+		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Resize down to the viewport the review measured the violation at,
+		// after navigating - the org app's section rail is reached through the
+		// default desktop viewport here, same as every other test in this file.
+		await Page.SetViewportSizeAsync(375, 812);
+
+		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
+		var removeButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Remove" });
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var promoteBox = await promoteButton.BoundingBoxAsync();
+		var removeBox = await removeButton.BoundingBoxAsync();
+		var leaveBox = await leaveButton.BoundingBoxAsync();
+		promoteBox.Should().NotBeNull("Could not get bounding box for the Promote button");
+		removeBox.Should().NotBeNull("Could not get bounding box for the Remove button");
+		leaveBox.Should().NotBeNull("Could not get bounding box for the Leave button");
+
+		(promoteBox!.Width >= MinTargetSize && promoteBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Promote hit target should meet the WCAG 2.2 24x24 minimum (measured {promoteBox.Width:F1}x{promoteBox.Height:F1}px)");
+		(removeBox!.Width >= MinTargetSize && removeBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Remove hit target should meet the WCAG 2.2 24x24 minimum (measured {removeBox.Width:F1}x{removeBox.Height:F1}px)");
+		(leaveBox!.Width >= MinTargetSize && leaveBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Leave hit target should meet the WCAG 2.2 24x24 minimum (measured {leaveBox.Width:F1}x{leaveBox.Height:F1}px)");
+
+		// Promote sits directly left of the destructive Remove in the same row -
+		// their hit targets must stay clearly separated, not just non-overlapping.
+		double gap = removeBox.X - (promoteBox.X + promoteBox.Width);
+		(gap >= 8).Should().BeTrue(
+			$"Promote and Remove hit targets should stay clearly separated to avoid a mis-tap between a role change and a destructive action (measured {gap:F1}px)");
+	}
+
+	[Test]
 	public async Task Organizer_CanInviteMemberWithOrganizerRole_ViaRoleSelector()
 	{
 		// #1050: CreateInvitation now carries an intended role, defaulting to
@@ -431,12 +497,20 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Regression for #1331: the redirect alone proves nothing about whether
 		// DELETE actually deleted anything - a swallowed exception or a rolled-
 		// back transaction would redirect home just the same. Assert the org is
-		// actually gone via the backend directly: its public profile 404s.
+		// actually gone via the backend directly: its public profile 404s, and
+		// it no longer appears in the public directory a volunteer would browse.
 		var backend = Fixture.GetEndpoint("backend");
 		using var http = new HttpClient { BaseAddress = backend };
 
 		var profileResponse = await http.GetAsync($"/v1/organizations/{orgId}/profile");
 		profileResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+
+		var directoryResponse = await http.GetAsync(
+			$"/v1/organizations/directory?pageNumber=1&pageSize=10&search={Uri.EscapeDataString(orgName)}");
+		directoryResponse.EnsureSuccessStatusCode();
+		var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
+		directory.GetProperty("totalItems").GetInt32().Should().Be(0,
+			"a deleted organization must not still be browsable in the public directory");
 	}
 
 	[Test]
@@ -627,6 +701,62 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(discardBtn).ToBeVisibleAsync();
 		await discardBtn.ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
+	{
+		// #772 review follow-up (issue #763): "the site looks a bit dead" -
+		// the public organization directory now shows each org's count of
+		// open (Published) volunteer opportunities instead of just a bare
+		// name/description, so a card with real opportunities reads as such.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var orgName = await CreateOrganizationAsync("Visual772 OpenCount", pinnedOrgId!.Value);
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+
+		// Step 1: title/description.
+		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");
+		await Page.Locator("#opportunity-description").FillAsync(
+			"Coverage for the organization directory's open-opportunity count.");
+
+		// Step 2: remote, so no address fields are required.
+		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
+		await Page.Locator("#opportunity-remote").CheckAsync();
+
+		// Step 3: IndividualContact (Express interest) - unlike ScheduledSlots, this
+		// type can publish with no time slots, keeping this test focused on
+		// the directory count rather than the slot-creation flow.
+		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])")
+			.ClickAsync();
+
+		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		// Individual-contact opportunities need an application deadline before
+		// they can be published (einsatzbereit#1086).
+		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		// The public directory, filtered to this org, must show "1 open opportunity".
+		await Page.GotoAsync($"{origin}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Locator("#organizations-search").FillAsync(orgName);
+
+		var orgCard = Page.Locator("li").Filter(new() { HasTextString = orgName });
+		await Expect(orgCard).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(orgCard.GetByText("1 open opportunity", new() { Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	[Test]

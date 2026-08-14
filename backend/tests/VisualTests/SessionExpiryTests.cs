@@ -201,6 +201,68 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		Page.Url.Should().StartWith(origin);
 	}
 
+	// Regression for #1850: a 401 on the notifications-list fetch specifically
+	// (e.g. the bell opened right as the session died) used to fall into
+	// NotificationDropdown's own local notifError/ErrorBanner/retry state,
+	// entirely independent of sessionExpiryBus - a user got a small,
+	// easy-to-miss banner instead of the same toast + redirect every other
+	// authenticated call produces. useAccountMenu's loadNotifications now
+	// routes a 401 specifically through notifySessionExpired() instead of
+	// setNotifError().
+	[Test]
+	public async Task NotificationsFetch401_ShowsSessionExpiredToast_NotLocalErrorBanner()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
+		// Hold the sign-in redirect at the network layer instead of letting it
+		// navigate away, same technique as
+		// AuthenticatedRequest_Returns401_ShowsSessionExpiredToast above - keeps
+		// the SPA (and its toast/panel) on screen long enough to assert.
+		await Page.RouteAsync(
+			"**/realms/einsatzbereit/protocol/openid-connect/auth**",
+			route => route.AbortAsync());
+
+		// Only the notifications-list GET 401s - unread-count polling and every
+		// other authenticated call keep succeeding, isolating this assertion to
+		// the loadNotifications code path this fix touches. Matched on the exact
+		// path (not a glob wildcard for the query string) since a first call with
+		// no beforeUnixMs/beforeId has no "?" at all - api-client.ts strips a
+		// trailing "?" left by unset query params.
+		await Page.RouteAsync("**/v1/notifications**", async route =>
+		{
+			if (route.Request.Method != "GET"
+				|| new Uri(route.Request.Url).AbsolutePath != "/v1/notifications")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			await route.FulfillAsync(new()
+			{
+				Status = 401,
+				ContentType = "application/json",
+				Headers = new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
+				Body = "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.5.2\",\"status\":401}",
+			});
+		});
+
+		var bell = Page.GetByTestId("notification-bell");
+		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await bell.ClickAsync();
+
+		var panel = Page.GetByTestId("notification-panel");
+		await Expect(panel).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var sessionExpiredToast = Page.GetByRole(AriaRole.Alert)
+			.Filter(new() { HasTextString = "session has expired" });
+		await Expect(sessionExpiredToast).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		await Expect(Page.GetByTestId("notification-retry")).Not.ToBeVisibleAsync();
+	}
+
 	private async Task MockAllV1GetRequestsAsUnauthorizedAsync()
 	{
 		await Page.RouteAsync("**/v1/**", async route =>

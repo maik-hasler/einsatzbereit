@@ -40,6 +40,7 @@
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
       "forOrganizations": "For organizations",
+      "browseOrganizations": "Browse organizations",
       "support": "Support",
       "legal": "Legal",
       "imprint": "Imprint",
@@ -94,6 +95,30 @@
       "eyebrow": "Volunteering",
       "title": "Find opportunities",
       "lead": "Find an opportunity near you and lend a hand - most take just a few hours."
+    },
+    "organizationsPage": {
+      "eyebrow": "Organizations",
+      "title": "Organizations",
+      "lead": "Browse organizations on Einsatzbereit to find one you already know.",
+      "searchLabel": "Search organizations",
+      "searchPlaceholder": "Search organizations by name…",
+      "loading": "Loading organizations…",
+      "error": "Error: {{message}}",
+      "offline": "You are offline. We will load the organizations as soon as your connection is back.",
+      "offlineLoadMore": "You are offline. These are the organizations that loaded before the connection dropped - we will fetch the rest as soon as you are back online.",
+      "noResults": "No organizations found.",
+      "noResultsWithSearch": "No organizations match \"{{search}}\".",
+      "clearSearch": "Clear search",
+      "resultCount": "{{count}} organizations found.",
+      "resultCount_one": "{{count}} organization found.",
+      "resultCount_other": "{{count}} organizations found.",
+      "resultCountPartial": "{{count}} organizations loaded, more available.",
+      "resultCountPartial_one": "{{count}} organization loaded, more available.",
+      "resultCountPartial_other": "{{count}} organizations loaded, more available.",
+      "loadMore": "Load more",
+      "openOpportunities": "{{count}} open opportunities",
+      "openOpportunities_one": "{{count}} open opportunity",
+      "openOpportunities_other": "{{count}} open opportunities"
     },
     "opportunities": {
       "oneTime": "One-time",
@@ -582,7 +607,6 @@
       "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
       "itemRatingLabel": "{{rating}} out of 5 stars",
       "organizerTab": "Feedback",
-      "noFeedback": "No feedback yet.",
       "loadMore": "Load more",
       "starLabel_one": "{{count}} star",
       "starLabel_other": "{{count}} stars",
@@ -647,7 +671,7 @@
       "deletedOpportunityTitle": "This opportunity has been removed",
       "cancellationReason": "Reason: {{reason}}",
       "withdraw": "Withdraw",
-      "withdrawError": "Error withdrawing",
+      "withdrawError": "Could not withdraw your sign-up. Please try again.",
       "addToCalendar": "Add to calendar",
       "addToCalendarGoogle": "Google Calendar",
       "addToCalendarOutlook": "Outlook.com",
@@ -885,7 +909,8 @@
     "language": {
       "de": "Deutsch",
       "en": "English",
-      "switchLanguage": "Switch language"
+      "switchLanguage": "Switch language",
+      "switchedFromAccount": "Switched to {{language}} based on your account"
     },
     "auth": {
       "authError": "Authentication error: {{message}}",
@@ -1118,6 +1143,8 @@
     "notificationPreferences": {
       "title": "Email notifications",
       "description": "Choose which transactional emails you want to receive. Every email also includes an unsubscribe link for the type it belongs to.",
+      "organizerGroupLabel": "As an organizer",
+      "volunteerGroupLabel": "As a volunteer",
       "newSignUp": "New sign-ups for opportunities you organize",
       "withdrawal": "Volunteer withdrawals from opportunities you organize",
       "engagementConfirmed": "Your sign-up is confirmed",

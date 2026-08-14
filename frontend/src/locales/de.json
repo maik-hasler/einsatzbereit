@@ -40,6 +40,7 @@
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
       "forOrganizations": "Für Organisationen",
+      "browseOrganizations": "Organisationen finden",
       "support": "Support",
       "legal": "Rechtliches",
       "imprint": "Impressum",
@@ -94,6 +95,30 @@
       "eyebrow": "Ehrenamt",
       "title": "Einsätze finden",
       "lead": "Finde einen Einsatz in deiner Nähe und pack mit an - die meisten dauern nur wenige Stunden."
+    },
+    "organizationsPage": {
+      "eyebrow": "Organisationen",
+      "title": "Organisationen",
+      "lead": "Finde Organisationen auf Einsatzbereit, die du schon kennst.",
+      "searchLabel": "Organisationen durchsuchen",
+      "searchPlaceholder": "Organisationen nach Namen suchen…",
+      "loading": "Organisationen werden geladen…",
+      "error": "Fehler: {{message}}",
+      "offline": "Du bist offline. Sobald deine Verbindung zurück ist, laden wir die Organisationen.",
+      "offlineLoadMore": "Du bist offline. Das sind die Organisationen, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist.",
+      "noResults": "Keine Organisationen gefunden.",
+      "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
+      "clearSearch": "Suche zurücksetzen",
+      "resultCount": "{{count}} Organisationen gefunden.",
+      "resultCount_one": "{{count}} Organisation gefunden.",
+      "resultCount_other": "{{count}} Organisationen gefunden.",
+      "resultCountPartial": "{{count}} Organisationen geladen, weitere verfügbar.",
+      "resultCountPartial_one": "{{count}} Organisation geladen, weitere verfügbar.",
+      "resultCountPartial_other": "{{count}} Organisationen geladen, weitere verfügbar.",
+      "loadMore": "Mehr laden",
+      "openOpportunities": "{{count}} offene Einsätze",
+      "openOpportunities_one": "{{count}} offener Einsatz",
+      "openOpportunities_other": "{{count}} offene Einsätze"
     },
     "opportunities": {
       "oneTime": "Einmalig",
@@ -582,7 +607,6 @@
       "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
       "itemRatingLabel": "{{rating}} von 5 Sternen",
       "organizerTab": "Feedback",
-      "noFeedback": "Noch kein Feedback.",
       "loadMore": "Mehr laden",
       "starLabel_one": "{{count}} Stern",
       "starLabel_other": "{{count}} Sterne",
@@ -647,7 +671,7 @@
       "deletedOpportunityTitle": "Dieser Einsatz wurde entfernt",
       "cancellationReason": "Grund: {{reason}}",
       "withdraw": "Zurückziehen",
-      "withdrawError": "Fehler beim Zurückziehen",
+      "withdrawError": "Anmeldung konnte nicht zurückgezogen werden. Bitte versuche es erneut.",
       "addToCalendar": "Zum Kalender hinzufügen",
       "addToCalendarGoogle": "Google Kalender",
       "addToCalendarOutlook": "Outlook.com",
@@ -885,7 +909,8 @@
     "language": {
       "de": "Deutsch",
       "en": "English",
-      "switchLanguage": "Sprache wechseln"
+      "switchLanguage": "Sprache wechseln",
+      "switchedFromAccount": "Zu {{language}} gewechselt, basierend auf deinem Konto"
     },
     "auth": {
       "authError": "Authentifizierungsfehler: {{message}}",
@@ -1118,6 +1143,8 @@
     "notificationPreferences": {
       "title": "E-Mail-Benachrichtigungen",
       "description": "Wähle aus, welche transaktionalen E-Mails du erhalten möchtest. Jede E-Mail enthält außerdem einen Abmeldelink für den jeweiligen Typ.",
+      "organizerGroupLabel": "Als Organisator:in",
+      "volunteerGroupLabel": "Als Freiwillige:r",
       "newSignUp": "Neue Anmeldungen für Einsätze, die du organisierst",
       "withdrawal": "Rückzüge von Freiwilligen bei Einsätzen, die du organisierst",
       "engagementConfirmed": "Deine Anmeldung wird bestätigt",

@@ -4,8 +4,9 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "./useApiClient";
 import { useDismissableOverlay } from "./useDismissableOverlay";
-import { getApiErrorMessage } from "../lib/apiError";
+import { getApiErrorMessage, getApiErrorStatus } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { notifySessionExpired } from "../lib/sessionExpiryBus";
 import { subscribeAvatarChanged } from "../lib/avatarBus";
 import type { NotificationSummary } from "../client/api-client";
 
@@ -166,6 +167,18 @@ export function useAccountMenu(
 			setNotifError(null);
 		} catch (err) {
 			if (requestId !== notifRequestRef.current) return;
+			// loadNotifications only ever runs while isLoggedIn (see the effect
+			// below), so a 401 here always means the session the UI still
+			// believes is live has died - never the "anonymous browsing" case
+			// createApiClient's own handleErrorResponse guards against. Route it
+			// through the same bus useSessionExpiryHandler listens on instead of
+			// the generic ErrorBanner, so it gets one consistent toast + redirect
+			// instead of a small in-panel banner a user only sees if they happen
+			// to have the dropdown open (einsatzbereit#1850).
+			if (getApiErrorStatus(err) === 401) {
+				notifySessionExpired();
+				return;
+			}
 			setNotifError(getApiErrorMessage(err, t("notifications.loadError")));
 		} finally {
 			if (requestId === notifRequestRef.current) setNotifLoading(false);

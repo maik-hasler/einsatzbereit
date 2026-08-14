@@ -155,6 +155,18 @@ export const DEFAULT_LAYOUT: PlacedWidget[] = [
 	{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },
 ];
 
+// Stable top-to-bottom, then left-to-right ordering by saved grid position -
+// what mobile rendering falls back to below the `lg` breakpoint, where the
+// grid collapses to a single stacked column with no explicit gridColumn/
+// gridRow per tile (see OrgDashboardPage/index.tsx's gridStyle) and DOM
+// order becomes the visual order. A layout array's own order can't be
+// trusted for that: settlePlacement above always prepends whichever widget
+// just moved, regardless of where it actually landed, so array order
+// reflects edit history rather than position (#1845).
+export function sortByPosition(widgets: PlacedWidget[]): PlacedWidget[] {
+	return [...widgets].sort((a, b) => a.y - b.y || a.x - b.x);
+}
+
 export function classifyWidth(width: number): WidgetSizeClass {
 	if (width <= 3) return "compact";
 	if (width <= 5) return "medium";

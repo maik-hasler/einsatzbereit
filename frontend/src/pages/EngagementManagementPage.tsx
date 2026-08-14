@@ -17,7 +17,6 @@ import Chip from "../components/Chip";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
-import PageSectionHeading from "../components/PageSectionHeading";
 import NotFoundPage from "./NotFoundPage";
 import { formatDate, formatDateTime, resolveDateLocale } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -997,71 +996,74 @@ export default function EngagementManagementPage() {
 				</ConfirmDialog>
 			)}
 
-			{feedbackStats !== null ? (
+			{feedbackStats !== null && feedbackStats.feedbackCount > 0 ? (
 				<section className="mt-8">
-					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
-					{feedbackStats.feedbackCount === 0 ? (
-						<EmptyState title={t("feedback.noFeedback")} />
-					) : (
-						<>
-							<p className="mb-4 text-sm text-gray-700">
-								{t("feedback.averageRating", {
-									rating:
-										feedbackStats.averageRating?.toLocaleString(locale, {
-											minimumFractionDigits: 1,
-											maximumFractionDigits: 1,
-										}) ?? "-",
-									count: feedbackStats.feedbackCount,
-								})}
-							</p>
-							<ul className="space-y-3">
-								{feedbackItems.map((item, idx) => (
-									<li key={idx} className={cardClass}>
-										<div
-											className="flex items-center gap-1"
-											role="img"
-											aria-label={t("feedback.itemRatingLabel", {
-												rating: item.rating,
-											})}
-										>
-											{[1, 2, 3, 4, 5].map((s) => (
-												<StarIcon
-													key={s}
-													className={`h-4 w-4 ${s <= item.rating ? "text-yellow-700" : "text-gray-500"}`}
-												/>
-											))}
-											<span className="ml-1 text-xs text-gray-500">
-												{formatDate(
-													item.submittedAt as unknown as string,
-													i18n.language,
-												)}
-											</span>
-										</div>
-										{item.comment && (
-											<p className="mt-1 text-sm text-gray-700">
-												{item.comment}
-											</p>
+					{/* Deliberately not PageSectionHeading (#1835): that's the
+					font-display text-2xl family shared with OrgPageHeader's own H1,
+					so a "Feedback" section read as a second page title rather than a
+					subordinate part of sign-up management. Also omitted entirely
+					(see the outer condition) once there is nothing to show, instead
+					of a permanent "No feedback yet." placeholder competing with the
+					sign-ups list above it. */}
+					<h2 className="mb-4 text-lg font-semibold text-gray-900">
+						{t("feedback.organizerTab")}
+					</h2>
+					<p className="mb-4 text-sm text-gray-700">
+						{t("feedback.averageRating", {
+							rating:
+								feedbackStats.averageRating?.toLocaleString(locale, {
+									minimumFractionDigits: 1,
+									maximumFractionDigits: 1,
+								}) ?? "-",
+							count: feedbackStats.feedbackCount,
+						})}
+					</p>
+					<ul className="space-y-3">
+						{feedbackItems.map((item, idx) => (
+							<li key={idx} className={cardClass}>
+								<div
+									className="flex items-center gap-1"
+									role="img"
+									aria-label={t("feedback.itemRatingLabel", {
+										rating: item.rating,
+									})}
+								>
+									{[1, 2, 3, 4, 5].map((s) => (
+										<StarIcon
+											key={s}
+											className={`h-4 w-4 ${s <= item.rating ? "text-yellow-700" : "text-gray-500"}`}
+										/>
+									))}
+									<span className="ml-1 text-xs text-gray-500">
+										{formatDate(
+											item.submittedAt as unknown as string,
+											i18n.language,
 										)}
-									</li>
-								))}
-							</ul>
-							{!feedbackLoading &&
-								!feedbackError &&
-								feedbackItems.length > 0 &&
-								hasMoreFeedback && (
-									<LoadMoreButton
-										loading={feedbackLoadingMore}
-										label={t("feedback.loadMore")}
-										loadingLabel={t("engagementManagement.loading")}
-										onClick={loadMoreFeedback}
-									/>
+									</span>
+								</div>
+								{item.comment && (
+									<p className="mt-1 text-sm text-gray-700">{item.comment}</p>
 								)}
-						</>
-					)}
+							</li>
+						))}
+					</ul>
+					{!feedbackLoading &&
+						!feedbackError &&
+						feedbackItems.length > 0 &&
+						hasMoreFeedback && (
+							<LoadMoreButton
+								loading={feedbackLoadingMore}
+								label={t("feedback.loadMore")}
+								loadingLabel={t("engagementManagement.loading")}
+								onClick={loadMoreFeedback}
+							/>
+						)}
 				</section>
 			) : feedbackError ? (
 				<section className="mt-8">
-					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
+					<h2 className="mb-4 text-lg font-semibold text-gray-900">
+						{t("feedback.organizerTab")}
+					</h2>
 					<LoadMoreError
 						message={t("feedback.error", { message: feedbackError })}
 						retrying={feedbackLoading}

@@ -145,6 +145,14 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 											{t("footer.forOrganizations")}
 										</a>
 									</li>
+									<li>
+										<Link
+											to="/organizations"
+											className="inline-block py-0.5 text-gray-600 transition-colors hover:text-brand-700"
+										>
+											{t("footer.browseOrganizations")}
+										</Link>
+									</li>
 								</ul>
 							</div>
 

@@ -286,16 +286,34 @@ internal sealed class EngagementReadRepository(
 		// but check-in is optional (CheckInMethod.None has no check-in action at all),
 		// so a shift nobody checked in for stayed "upcoming" permanently. An
 		// engagement with no time slot (IndividualContact) is unaffected either way.
+		//
+		// #1855: the "checked-in Confirmed engagement is always past" assumption above
+		// only holds once the slot has actually ended. CheckIn() (see Domain/Engagements/
+		// Engagement.cs) has no time-based guard at all - an organizer can check a
+		// volunteer in as soon as Confirmed, e.g. at arrival for a still-ongoing
+		// multi-hour shift, or (as filed) for a slot dated weeks out - so IsCheckedIn
+		// alone is not proof the shift is over. A checked-in engagement whose slot end
+		// is still in the future is therefore kept in "Current & upcoming" instead,
+		// the same way an un-checked-in one already is; only once TimeSlotEnd is null
+		// (no time slot at all, e.g. IndividualContact - nothing to compare "now"
+		// against) or has actually passed does check-in alone move it to Past.
 		scopedQuery = upcoming
 			? scopedQuery.Where(x =>
-				(x.Engagement.Status == EngagementStatus.Pending
-					|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn))
-				&& opportunityExists.Contains(x.Engagement.OpportunityId)
-				&& (x.TimeSlotEnd == null || x.TimeSlotEnd >= now))
+				opportunityExists.Contains(x.Engagement.OpportunityId)
+				&& (x.TimeSlotEnd == null || x.TimeSlotEnd >= now)
+				&& (x.Engagement.Status == EngagementStatus.Pending
+					|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn)
+					|| (x.Engagement.Status == EngagementStatus.Confirmed
+						&& x.Engagement.IsCheckedIn
+						&& x.TimeSlotEnd != null)))
 			: scopedQuery.Where(x =>
 				x.Engagement.Status == EngagementStatus.Cancelled
 				|| x.Engagement.Status == EngagementStatus.Withdrawn
-				|| (x.Engagement.Status == EngagementStatus.Confirmed && x.Engagement.IsCheckedIn)
+				|| (x.Engagement.Status == EngagementStatus.Confirmed
+					&& x.Engagement.IsCheckedIn
+					&& (!opportunityExists.Contains(x.Engagement.OpportunityId)
+						|| x.TimeSlotEnd == null
+						|| x.TimeSlotEnd < now))
 				|| ((x.Engagement.Status == EngagementStatus.Pending
 						|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn))
 					&& (!opportunityExists.Contains(x.Engagement.OpportunityId)

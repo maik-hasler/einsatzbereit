@@ -50,6 +50,40 @@ const PREFERENCE_ROWS: {
 	},
 ];
 
+// Extracted so the grouped (organizer + volunteer) and flat (volunteer-only)
+// layouts below render the exact same row markup instead of two copies of it.
+function PreferenceRowList({
+	rows,
+	preferences,
+	onToggle,
+}: {
+	rows: typeof PREFERENCE_ROWS;
+	preferences: NotificationPreferencesResponse;
+	onToggle: (key: PreferenceKey) => void;
+}) {
+	const { t } = useTranslation();
+	return (
+		<div className="space-y-3">
+			{rows.map((row) => (
+				<label
+					key={row.key}
+					htmlFor={row.key}
+					className="flex cursor-pointer items-start gap-3 py-1"
+				>
+					<input
+						type="checkbox"
+						id={row.key}
+						checked={preferences[row.key]}
+						onChange={() => onToggle(row.key)}
+						className="mt-0.5 h-4 w-4 accent-brand-600"
+					/>
+					<span className="text-sm text-gray-800">{t(row.labelKey)}</span>
+				</label>
+			))}
+		</div>
+	);
+}
+
 // Self-contained email-notification-preferences card (#1055), split out of
 // ProfileOverviewPage in the same style as DangerZoneCard, relocated to
 // ProfileSettingsPage - see #1684. Owns its own fetch/save/error state and
@@ -105,6 +139,12 @@ export default function NotificationPreferencesSection() {
 	const visibleRows = PREFERENCE_ROWS.filter(
 		(row) => !row.organizerOnly || organizerRowsVisible,
 	);
+	// #1844: once the organizer rows are visible, the flat list mixes two
+	// audiences of the same account with no separation - split it into the two
+	// groups below rather than growing a third layout for the always-volunteer
+	// case, where a single group heading would just repeat the card title.
+	const organizerRows = visibleRows.filter((row) => row.organizerOnly);
+	const volunteerRows = visibleRows.filter((row) => !row.organizerOnly);
 	// Held until the organization list resolves too, so the two organizer rows
 	// appear with the rest of the list instead of popping in a beat later.
 	const loading = preferencesLoading || orgsLoading;
@@ -177,24 +217,36 @@ export default function NotificationPreferencesSection() {
 						/>
 					)}
 
-					<div className="space-y-3">
-						{visibleRows.map((row) => (
-							<label
-								key={row.key}
-								htmlFor={row.key}
-								className="flex cursor-pointer items-start gap-3 py-1"
-							>
-								<input
-									type="checkbox"
-									id={row.key}
-									checked={preferences[row.key]}
-									onChange={() => toggle(row.key)}
-									className="mt-0.5 h-4 w-4 accent-brand-600"
+					{organizerRowsVisible ? (
+						<div className="space-y-4">
+							<div>
+								<h3 className="mb-3 text-sm font-semibold text-gray-900">
+									{t("notificationPreferences.organizerGroupLabel")}
+								</h3>
+								<PreferenceRowList
+									rows={organizerRows}
+									preferences={preferences}
+									onToggle={toggle}
 								/>
-								<span className="text-sm text-gray-800">{t(row.labelKey)}</span>
-							</label>
-						))}
-					</div>
+							</div>
+							<div>
+								<h3 className="mb-3 text-sm font-semibold text-gray-900">
+									{t("notificationPreferences.volunteerGroupLabel")}
+								</h3>
+								<PreferenceRowList
+									rows={volunteerRows}
+									preferences={preferences}
+									onToggle={toggle}
+								/>
+							</div>
+						</div>
+					) : (
+						<PreferenceRowList
+							rows={visibleRows}
+							preferences={preferences}
+							onToggle={toggle}
+						/>
+					)}
 
 					<Button type="submit" size="sm" disabled={saving}>
 						{saving

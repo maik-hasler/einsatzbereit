@@ -26,7 +26,7 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		// Arrange
 		var entry = new AuditLogEntry(
-			Guid.NewGuid(), Guid.NewGuid(), "Admina Admin", "UserShadowDeleted", "User", Guid.NewGuid(), null, DateTimeOffset.UtcNow);
+			Guid.NewGuid(), Guid.NewGuid(), "Admina Admin", "UserShadowDeleted", "User", Guid.NewGuid(), "Volunteera Vera", null, DateTimeOffset.UtcNow);
 
 		_readRepo
 			.GetAuditLogsPagedAsync(1, 10, cancellationToken)

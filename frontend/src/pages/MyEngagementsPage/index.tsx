@@ -17,6 +17,7 @@ export default function MyEngagementsPage() {
 			<PageHeaderBand
 				eyebrow={t("profile.eyebrow")}
 				title={t("myEngagementsPage.title")}
+				compactTitle
 			/>
 
 			<div

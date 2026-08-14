@@ -1218,6 +1218,7 @@ interface AuditLogRow {
 	actionType: string;
 	subjectType: string;
 	subjectId: string;
+	subjectDisplayName: string;
 	reason: string | null;
 	createdOn: string;
 }
@@ -1261,6 +1262,7 @@ function AuditLogSection() {
 					actionType: entry.actionType,
 					subjectType: entry.subjectType,
 					subjectId: entry.subjectId,
+					subjectDisplayName: entry.subjectDisplayName,
 					reason: entry.reason ?? null,
 					createdOn: entry.createdOn as unknown as string,
 				})),
@@ -1303,6 +1305,7 @@ function AuditLogSection() {
 			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
 				{rows.map((row) => {
 					const href = auditSubjectHref(row.subjectType, row.subjectId);
+					const subjectLabel = row.subjectDisplayName || row.subjectId;
 					return (
 						<li key={row.id} className="px-4 py-3">
 							<div className="flex flex-wrap items-center gap-2">
@@ -1317,10 +1320,10 @@ function AuditLogSection() {
 										to={href}
 										className="text-sm text-brand-700 hover:underline"
 									>
-										{row.subjectId}
+										{subjectLabel}
 									</Link>
 								) : (
-									<span className="text-sm text-gray-500">{row.subjectId}</span>
+									<span className="text-sm text-gray-500">{subjectLabel}</span>
 								)}
 							</div>
 							<p className="mt-1 text-xs text-gray-500">
