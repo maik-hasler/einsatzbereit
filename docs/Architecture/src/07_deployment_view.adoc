@@ -80,13 +80,13 @@ The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gat
 
 ===== Quality Gate (on every push / PR to `main`)
 
-The backend workflow (`dotnet.yml`) runs four independent jobs in parallel (no `needs` between them), each doing its own `dotnet build` via `dotnet run`:
+The backend workflow (`dotnet.yml`) runs a `build` job (`dotnet restore` + `dotnet build` for the whole solution) that `format-check`, `fast-tests`, `integration-tests`, and `visual-tests` all depend on via `needs: build`, each downloading that build artifact instead of building its own copy:
 
 * `format-check` - verifies `dotnet format`.
 * `fast-tests` - `Application.UnitTests` and `ArchitectureTests`, no containers.
 * `integration-tests` and `visual-tests` - both boot the Aspire AppHost stack (the same stack as local development) under Docker; `visual-tests` adds Playwright end-to-end checks.
 
-The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. Typical `dotnet.yml` critical-path runtime is about 6 minutes, down from ~10 minutes before the jobs were split into parallel jobs in issue #773 - `visual-tests` remains the longest-running job - see TDR-2.
+The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. `dotnet.yml`'s critical path is kept bounded and is actively tracked as the test suite grows - see TDR-2 for current timing data.
 
 The architecture docs build (`docs.yml`) also builds on every pull request touching `docs/**`, as a build-only check - GitHub Pages deployment stays gated to pushes on `main`, so a docs PR can never publish a preview.
 
