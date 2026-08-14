@@ -49,12 +49,7 @@ and written into the image labels.
 
 ## Prerelease Tags
 
-Release candidates are marked with an `-rc.<n>` suffix:
-
-- `v1.0.0-rc.1`
-- `v1.0.0-rc.2`
-
-Prerelease tags produce Docker images that are **not** tagged as `latest`.
+See the Tag Format table and Examples above for the `-rc.<n>` suffix. Unlike stable tags, prerelease tags produce Docker images that are **not** tagged as `latest`.
 
 ## Workflow
 
