@@ -363,17 +363,17 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		removeBox.Should().NotBeNull("Could not get bounding box for the Remove button");
 		leaveBox.Should().NotBeNull("Could not get bounding box for the Leave button");
 
-		promoteBox!.Width.Should().BeGreaterOrEqualTo(MinTargetSize, "Promote hit target should meet the WCAG 2.2 24x24 minimum");
-		promoteBox.Height.Should().BeGreaterOrEqualTo(MinTargetSize, "Promote hit target should meet the WCAG 2.2 24x24 minimum");
-		removeBox!.Width.Should().BeGreaterOrEqualTo(MinTargetSize, "Remove hit target should meet the WCAG 2.2 24x24 minimum");
-		removeBox.Height.Should().BeGreaterOrEqualTo(MinTargetSize, "Remove hit target should meet the WCAG 2.2 24x24 minimum");
-		leaveBox!.Width.Should().BeGreaterOrEqualTo(MinTargetSize, "Leave hit target should meet the WCAG 2.2 24x24 minimum");
-		leaveBox.Height.Should().BeGreaterOrEqualTo(MinTargetSize, "Leave hit target should meet the WCAG 2.2 24x24 minimum");
+		(promoteBox!.Width >= MinTargetSize && promoteBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Promote hit target should meet the WCAG 2.2 24x24 minimum (measured {promoteBox.Width:F1}x{promoteBox.Height:F1}px)");
+		(removeBox!.Width >= MinTargetSize && removeBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Remove hit target should meet the WCAG 2.2 24x24 minimum (measured {removeBox.Width:F1}x{removeBox.Height:F1}px)");
+		(leaveBox!.Width >= MinTargetSize && leaveBox.Height >= MinTargetSize).Should().BeTrue(
+			$"Leave hit target should meet the WCAG 2.2 24x24 minimum (measured {leaveBox.Width:F1}x{leaveBox.Height:F1}px)");
 
 		// Promote sits directly left of the destructive Remove in the same row -
 		// their hit targets must stay clearly separated, not just non-overlapping.
 		double gap = removeBox.X - (promoteBox.X + promoteBox.Width);
-		gap.Should().BeGreaterOrEqualTo(8,
+		(gap >= 8).Should().BeTrue(
 			$"Promote and Remove hit targets should stay clearly separated to avoid a mis-tap between a role change and a destructive action (measured {gap:F1}px)");
 	}
 
