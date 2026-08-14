@@ -1112,6 +1112,8 @@
     "notificationPreferences": {
       "title": "E-Mail-Benachrichtigungen",
       "description": "Wähle aus, welche transaktionalen E-Mails du erhalten möchtest. Jede E-Mail enthält außerdem einen Abmeldelink für den jeweiligen Typ.",
+      "organizerGroupLabel": "Als Organisator:in",
+      "volunteerGroupLabel": "Als Freiwillige:r",
       "newSignUp": "Neue Anmeldungen für Einsätze, die du organisierst",
       "withdrawal": "Rückzüge von Freiwilligen bei Einsätzen, die du organisierst",
       "engagementConfirmed": "Deine Anmeldung wird bestätigt",
