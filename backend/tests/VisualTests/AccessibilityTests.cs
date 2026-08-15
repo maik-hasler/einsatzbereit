@@ -369,6 +369,62 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_MapUnavailable_HasNoSeriousA11yViolations()
+	{
+		// #1963: a non-remote opportunity whose address hasn't resolved to
+		// coordinates now renders a "no map available" note in place of the
+		// map section instead of omitting it silently. VisualTests always runs
+		// against FakeGeocodingService (see VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName
+		// above), which reports TransientFailure - a freshly seeded non-remote
+		// opportunity here always lands in that state, so no route patching is
+		// needed to reach it deterministically. Assert the placeholder is
+		// actually visible before scanning, same as the sibling tests in this
+		// file, so a future regression that made it stop rendering wouldn't
+		// silently reduce this to a no-op pass.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"No Map A11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var title = $"No Map A11y Test {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
+			organizationId,
+			isRemote = false,
+			street = "Teststrasse",
+			houseNumber = "1",
+			zipCode = "12345",
+			city = "Musterstadt",
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(title, new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("map-unavailable")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher

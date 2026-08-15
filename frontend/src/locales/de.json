@@ -200,6 +200,7 @@
       "reportOpportunity": "Einsatz melden",
       "deleteError": "Fehler beim Löschen",
       "availableTimeSlots": "Verfügbare Zeitslots",
+      "mapUnavailable": "Keine Karte für diese Adresse verfügbar.",
       "joinWaitlist": "Zeitslot auswählen",
       "expressInterest": "Interesse bekunden",
       "notFound": "Nicht gefunden.",

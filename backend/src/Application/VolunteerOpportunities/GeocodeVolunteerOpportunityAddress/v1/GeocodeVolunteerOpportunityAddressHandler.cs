@@ -2,7 +2,6 @@ using Application.Common.Exceptions;
 using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
-using Domain.Common;
 using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -48,7 +47,7 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 			return;
 
 		var address = opportunity.Address;
-		var cacheKey = BuildCacheKey(address);
+		var cacheKey = GeocodeCacheKey.For(address.Street, address.HouseNumber, address.ZipCode, address.City);
 
 		if (!cache.TryGetValue(cacheKey, out GeocodingResult? result) || result is null)
 		{
@@ -98,7 +97,4 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 				break;
 		}
 	}
-
-	private static string BuildCacheKey(Address address) =>
-		$"geocode:{address.ZipCode}|{address.Street}|{address.HouseNumber}|{address.City}".ToLowerInvariant();
 }

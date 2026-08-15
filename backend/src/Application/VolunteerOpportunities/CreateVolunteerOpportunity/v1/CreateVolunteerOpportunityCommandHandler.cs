@@ -21,11 +21,15 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Geocoding (and the up-to-1.1s Nominatim throttle it can wait on, see
-		// NominatimGeocodingService) happens out of band after this command's
-		// transaction commits - VolunteerOpportunity.Create raises
-		// VolunteerOpportunityGeocodingRequestedDomainEvent for a non-remote
-		// address, picked up by GeocodeVolunteerOpportunityAddressHandler (#1388).
+		// request.Address (built by CreateVolunteerOpportunityEndpoint) already
+		// carries resolved coordinates on the happy path - it geocodes
+		// synchronously, before this command ever dispatches, precisely so that
+		// call can hold the up-to-1.1s Nominatim throttle (see
+		// NominatimGeocodingService) without holding this command's transaction
+		// open too (#1388, #1963). Only a TransientFailure there leaves address
+		// uncoordinated; VolunteerOpportunity.Create then raises
+		// VolunteerOpportunityGeocodingRequestedDomainEvent so
+		// GeocodeVolunteerOpportunityAddressHandler retries it out of band.
 		var opportunity = VolunteerOpportunity.Create(
 			request.OrganizationId,
 			request.Title,

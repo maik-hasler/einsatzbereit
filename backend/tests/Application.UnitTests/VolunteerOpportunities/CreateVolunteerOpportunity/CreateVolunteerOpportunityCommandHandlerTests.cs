@@ -298,12 +298,15 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSaveWithNullCoordinates_AndRaiseGeocodingRequestedEvent_ForNonRemoteAddress(
+	public async Task Handle_ShouldSaveWithNullCoordinates_AndRaiseGeocodingRequestedEvent_ForUncoordinatedNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: geocoding itself now happens out of band (see
-		// GeocodeVolunteerOpportunityAddressHandler) - Create only needs to
-		// persist with null coordinates and raise the event that triggers it.
+		// Arrange: TestAddress carries no coordinates, as if
+		// CreateVolunteerOpportunityEndpoint's synchronous geocoding attempt
+		// came back as a TransientFailure (Nominatim unreachable, not a bad
+		// address) - Create persists with null coordinates and raises the
+		// event that triggers GeocodeVolunteerOpportunityAddressHandler's
+		// out-of-band retry.
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
@@ -316,6 +319,26 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		result.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>()
 			.Should().ContainSingle()
 			.Which.OpportunityId.Should().Be(result.Id);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_ForAlreadyCoordinatedNonRemoteAddress(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the happy path - CreateVolunteerOpportunityEndpoint already
+		// resolved the address synchronously (GeocodeAddressQuery) before
+		// dispatching this command, so no out-of-band retry is needed (#1963).
+		var coordinatedAddress = TestAddress.WithCoordinates(52.52, 13.405).Value;
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title", "Description", TestOrganizationId, false, coordinatedAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Address!.Latitude.Should().Be(52.52);
+		result.Address!.Longitude.Should().Be(13.405);
+		result.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
 	}
 
 	[Test]
