@@ -1094,6 +1094,72 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_RowBandedLayout_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1932: a saved layout with some rows narrower than the full grid
+		// now renders each row as its own independent, width-capped grid
+		// container (groupIntoRowBands in widgetCatalog.ts) instead of one
+		// shared full-width grid - a DOM shape the plain page-load scan above
+		// never reaches, since a fresh org's DEFAULT_LAYOUT always fills
+		// every row edge to edge. Settings (full width) plus VolunteerStats
+		// (a separate, narrower row right below it) reproduces the mixed
+		// shape - one uncapped band next to a capped one - that #1932's own
+		// fix is about.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var organizationId = await CreateOrganizationAsOlafAsync("A11yRowBanding");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllDashboardWidgetsAsync();
+
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
+		await dialog.GetByTestId("add-widget-option-VolunteerStats").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Expect(Page.GetByTestId("widget-tile-Settings")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("widget-tile-VolunteerStats")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	/// <summary>
+	/// Same per-widget removal loop OrgDashboardCustomizeTests.cs and
+	/// OrgDashboardRowBandingTests.cs each already have their own copy of -
+	/// kept local here too rather than shared, matching how every VisualTests
+	/// class in this suite already owns its own copy of this kind of setup
+	/// helper.
+	/// </summary>
+	private async Task RemoveAllDashboardWidgetsAsync()
+	{
+		foreach (var (testId, widgetTitle) in new[]
+		{
+			("CreateOpportunity", "Create opportunity"),
+			("ToDo", "Needs your attention"),
+			("VolunteerStats", "Volunteers"),
+			("UpcomingOpportunities", "Upcoming opportunities"),
+			("Calendar", "Calendar"),
+			("Settings", "Organization"),
+		})
+		{
+			var tile = Page.GetByTestId($"widget-tile-{testId}");
+			if (await tile.CountAsync() == 0)
+				continue;
+			await tile
+				.GetByRole(AriaRole.Button, new() { Name = $"Remove {widgetTitle} widget" })
+				.ClickAsync();
+		}
+	}
+
+	[Test]
 	public async Task OrgDashboardPage_EmptyOpportunitiesCreateOpportunityCta_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1122: UpcomingOpportunitiesWidget and QuickCheckInWidget's empty

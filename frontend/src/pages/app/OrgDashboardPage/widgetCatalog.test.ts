@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
 	DEFAULT_LAYOUT,
+	GRID_COLUMNS,
 	WIDGET_CATALOG,
+	groupIntoRowBands,
 	isValidPlacement,
 	sortByPosition,
 	type PlacedWidget,
@@ -134,5 +136,64 @@ describe("sortByPosition", () => {
 
 	it("already matches DEFAULT_LAYOUT's own order, since it was authored top-to-bottom", () => {
 		expect(sortByPosition(DEFAULT_LAYOUT)).toEqual(DEFAULT_LAYOUT);
+	});
+});
+
+// #1932: OrgDashboardPage/index.tsx only caps a band's own rendered width
+// below the full GRID_COLUMNS once one of these bands actually falls short
+// of it - these guard the split itself, independent of that rendering.
+describe("groupIntoRowBands", () => {
+	it("keeps every DEFAULT_LAYOUT band at the full GRID_COLUMNS width", () => {
+		// DEFAULT_LAYOUT (widgetCatalog.ts) is deliberately packed edge to edge
+		// on every row - a brand-new organization must render identically to
+		// today, with no band ever narrower than the full grid.
+		for (const band of groupIntoRowBands(DEFAULT_LAYOUT)) {
+			expect(band.columns).toBe(GRID_COLUMNS);
+		}
+	});
+
+	it("merges widgets whose Y ranges overlap into a single band, even indirectly through a taller widget", () => {
+		// Calendar (y=1..4) overlaps both A (y=1 only) and B (y=3 only) - A and
+		// B don't overlap each other directly, but share a band transitively
+		// through Calendar.
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "Calendar", x: 1, y: 1, width: 4, height: 4 },
+			{ widgetKey: "CreateOpportunity", x: 5, y: 1, width: 2, height: 1 },
+			{ widgetKey: "QuickCheckIn", x: 5, y: 3, width: 2, height: 2 },
+		];
+
+		const bands = groupIntoRowBands(widgets);
+
+		expect(bands).toHaveLength(1);
+		expect(bands[0].startRow).toBe(1);
+		expect(bands[0].columns).toBe(6);
+		expect(bands[0].widgets).toHaveLength(3);
+	});
+
+	it("splits widgets in adjacent but non-overlapping rows into separate bands", () => {
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "UpcomingOpportunities", x: 1, y: 1, width: 4, height: 2 },
+			{ widgetKey: "VolunteerStats", x: 1, y: 3, width: 4, height: 1 },
+		];
+
+		const bands = groupIntoRowBands(widgets);
+
+		expect(bands).toHaveLength(2);
+		expect(bands[0]).toMatchObject({ startRow: 1, columns: 4 });
+		expect(bands[1]).toMatchObject({ startRow: 3, columns: 4 });
+	});
+
+	it("caps a standalone widget's own band at its own reach, not the full grid", () => {
+		const widgets: PlacedWidget[] = [
+			{ widgetKey: "UpcomingOpportunities", x: 1, y: 5, width: 4, height: 2 },
+		];
+
+		const bands = groupIntoRowBands(widgets);
+
+		expect(bands).toEqual([{ startRow: 5, columns: 4, widgets: [widgets[0]] }]);
+	});
+
+	it("returns no bands for an empty layout", () => {
+		expect(groupIntoRowBands([])).toEqual([]);
 	});
 });
