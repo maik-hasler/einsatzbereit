@@ -27,22 +27,24 @@
 	</PropertyGroup>
 
 	<Target Name="RenameOpenApiDocuments" AfterTargets="GenerateOpenApiDocuments">
-		<!-- GenerateOpenApiDocuments is itself incremental: a second consecutive
-		     build with no source changes skips regenerating wwwroot/Api.json
-		     entirely (it was already moved away by the Move below, on the
-		     previous run), but this AfterTargets target still runs regardless -
-		     naively erroring whenever wwwroot/Api.json is absent would false-
-		     positive on every such rebuild. Instead of trusting Api.json's mere
-		     absence, look at what's actually sitting in wwwroot/ once this run
-		     is done: openapi-v1.json is a committed file always present, so it's
-		     excluded here and only ever written by the Move below - anything
-		     else found is necessarily fresh output from this run. Nothing found
-		     means generation was skipped (no-op rebuild, nothing to move) - the
-		     already-committed openapi-v1.json is still correct, don't touch it.
-		     Something found under a name other than $(MSBuildProjectName).json is
-		     the real regression this guards against: the document name changed
-		     and would otherwise leave a stale openapi-v1.json committed forever
-		     with no error and no diff for CI's drift check to catch either. -->
+		<!--
+		GenerateOpenApiDocuments is itself incremental: a second consecutive
+		build with no source changes skips regenerating wwwroot/Api.json
+		entirely (it was already moved away by the Move below, on the
+		previous run), but this AfterTargets target still runs regardless -
+		naively erroring whenever wwwroot/Api.json is absent would false-
+		positive on every such rebuild. Instead of trusting Api.json's mere
+		absence, look at what's actually sitting in wwwroot/ once this run
+		is done: openapi-v1.json is a committed file always present, so it's
+		excluded here and only ever written by the Move below - anything
+		else found is necessarily fresh output from this run. Nothing found
+		means generation was skipped (no-op rebuild, nothing to move) - the
+		already-committed openapi-v1.json is still correct, don't touch it.
+		Something found under a name other than $(MSBuildProjectName).json is
+		the real regression this guards against: the document name changed
+		and would otherwise leave a stale openapi-v1.json committed forever
+		with no error and no diff for CI's drift check to catch either.
+		-->
 		<ItemGroup>
 			<_FreshOpenApiDocument Include="$(MSBuildProjectDirectory)/wwwroot/*.json" Exclude="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json" />
 		</ItemGroup>
