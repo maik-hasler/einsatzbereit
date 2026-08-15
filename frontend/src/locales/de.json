@@ -448,6 +448,7 @@
       "layoutLoadError": "Dein gespeichertes Dashboard-Layout konnte nicht bestätigt werden. Die Ansicht unten stimmt damit möglicherweise nicht überein - Bearbeiten ist deaktiviert, bis dies erfolgreich geladen wurde.",
       "widgetError": "Dieses Widget konnte nicht angezeigt werden. Bitte die Seite neu laden.",
       "layoutEditDisabledNotOrganizerHint": "Nur Organisatoren können das Dashboard-Layout anpassen.",
+      "customizeHint": "Dashboard anpassen",
       "pendingEngagements": "Ausstehende Anmeldungen",
       "pendingEngagements_one": "Ausstehende Anmeldung",
       "pendingEngagements_other": "Ausstehende Anmeldungen",

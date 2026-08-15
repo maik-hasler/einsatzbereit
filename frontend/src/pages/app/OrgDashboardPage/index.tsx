@@ -575,6 +575,32 @@ export default function OrgDashboardPage() {
 					</EditableWidgetTile>
 				);
 			})}
+			{/* #1939: a first-time organizer has no reason to suspect the blank
+			space below their widgets is customizable - this dashed "+" tile
+			sits in the row right after the current layout's last occupied row
+			(the same "next free row" placeNewWidget appends to) and is visible
+			any time the dashboard has real content, not just once editing has
+			already been discovered. Gated the same way as the guide-cell
+			backdrop above (isLargeViewport - mobile's single stacked column has
+			no unused grid space to point at) plus isOrganizer/layoutLoadFailed,
+			since clicking it jumps straight into edit mode via startEditing,
+			which is itself blocked for a non-organizer or an unconfirmed saved
+			layout. */}
+			{!editing && isLargeViewport && isOrganizer && !layoutLoadFailed && (
+				<button
+					type="button"
+					data-testid="dashboard-customize-hint"
+					onClick={startEditing}
+					style={{
+						gridColumn: `1 / span ${GRID_COLUMNS}`,
+						gridRow: contentRows + 1,
+					}}
+					className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-200 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
+				>
+					<PlusIcon />
+					{t("orgDashboard.customizeHint")}
+				</button>
+			)}
 		</div>
 	);
 

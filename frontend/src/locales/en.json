@@ -448,6 +448,7 @@
       "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
       "widgetError": "This widget couldn't be displayed. Try reloading the page.",
       "layoutEditDisabledNotOrganizerHint": "Only organizers can customize the dashboard layout.",
+      "customizeHint": "Customize dashboard",
       "pendingEngagements": "Pending sign-ups",
       "pendingEngagements_one": "Pending sign-up",
       "pendingEngagements_other": "Pending sign-ups",
