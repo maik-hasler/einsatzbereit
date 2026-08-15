@@ -17,10 +17,18 @@ const EDGE_MARGIN = 8;
 // so getBoundingClientRect/offsetWidth would read 0 anyway).
 const TOOLTIP_WIDTH = 192;
 
+// Milestone (first-step/dedicated-5/centurion-100) and Streak (on-a-roll-7/
+// weekly-hero-4) each group two-to-three badges under one AchievementType,
+// so keying the icon on `type` alone gave every badge in a group the same
+// glyph (#1964). These per-key overrides give each real badge its own
+// shape; `type` remains the fallback for any badge key this switch doesn't
+// know about yet (e.g. a future catalog entry added only in appsettings.json).
 function AchievementTypeIcon({
+	badgeKey,
 	type,
 	className = "h-7 w-7",
 }: {
+	badgeKey: string;
 	type: string;
 	className?: string;
 }) {
@@ -32,6 +40,41 @@ function AchievementTypeIcon({
 		stroke: "currentColor",
 		"aria-hidden": true,
 	};
+
+	switch (badgeKey) {
+		case "first-step":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"
+					/>
+				</svg>
+			);
+		case "centurion-100":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
+					/>
+				</svg>
+			);
+		case "weekly-hero-4":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M3.75 13.5 10.5 3v7.5h9L9.75 21v-7.5h-6Z"
+					/>
+				</svg>
+			);
+		default:
+			break;
+	}
 
 	switch (type) {
 		case "Milestone":
@@ -147,6 +190,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 					</span>
 				) : (
 					<AchievementTypeIcon
+						badgeKey={catalog.key}
 						type={typeName}
 						className={`h-7 w-7 ${isEarned ? "text-brand-600" : "text-gray-400"}`}
 					/>
