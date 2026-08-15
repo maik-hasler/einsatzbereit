@@ -340,6 +340,150 @@ export default function VolunteerOpportunityDetailPage() {
 			.filter((opp) => opp.id !== opportunity.id)
 			.slice(0, 3) ?? [];
 
+	// The four mutually-exclusive-ish blocks the sticky rail can show. Named
+	// here (rather than inlined twice) because #1965 renders the same rail
+	// content a second time on narrow viewports - see renderActionRail below.
+	const showDeadlineCard =
+		opportunity.participationType === "IndividualContact" &&
+		!!opportunity.validUntil &&
+		!(isAuthenticated && !isOwner && !cue && !isDraft);
+	const showApplicationStatus =
+		isAuthenticated && !isOwner && !!cue && !isDraft;
+	const showSignUpCta = isAuthenticated && !isOwner && !cue && !isDraft;
+	const showLoginPrompt = !isAuthenticated && !isDraft;
+	const hasActionRail =
+		showDeadlineCard ||
+		showApplicationStatus ||
+		showSignUpCta ||
+		showLoginPrompt;
+
+	// The sticky rail's content, rendered once for the lg+ sidebar and once
+	// more (testIdSuffix "-mobile") right above the map for narrow viewports -
+	// on desktop the CTA sits at the top of the page next to the reading
+	// column, but below lg the rail drops to the DOM's end, after the at-a-
+	// glance summary, the map and the organisation contact card add up to
+	// ~700px of scrolling before the page's one conversion point is reachable
+	// (#1965). Only one instance is ever visible at a given viewport (the
+	// aside hides below lg, this copy hides at lg+), so duplicated ids don't
+	// collide and duplicated buttons are never both reachable at once.
+	// Takes the already-null-checked opportunity as a parameter rather than
+	// closing over the outer `opportunity` state directly - TS control-flow
+	// narrowing doesn't carry a `const`'s narrowed type into a nested function
+	// declared after the null check, so referencing `opportunity` in here
+	// would still type as possibly-null.
+	function renderActionRail(
+		testIdSuffix: string,
+		opp: VolunteerOpportunityDetails,
+	) {
+		return (
+			<>
+				{showDeadlineCard && (
+					<div
+						className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}
+					>
+						<span>
+							{t("opportunities.applyBy", {
+								date: formatDate(
+									opp.validUntil as unknown as string,
+									i18n.language,
+								),
+							})}
+						</span>
+					</div>
+				)}
+
+				{showApplicationStatus && cue && (
+					<div
+						data-testid={`application-status${testIdSuffix}`}
+						className={`${cardClass} sm:p-5`}
+					>
+						<div className="flex items-center justify-between gap-4">
+							<div>
+								<p className="mb-1 text-xs text-gray-500">
+									{t("opportunities.yourApplication")}
+								</p>
+								<Chip
+									tone={cue.status === "Confirmed" ? "success" : "warning"}
+									size="sm"
+								>
+									{t(`myEngagements.status.${cue.status}`)}
+								</Chip>
+							</div>
+							<Button
+								type="button"
+								variant="dangerOutline"
+								size="sm"
+								className="shrink-0"
+								onClick={() => setShowWithdrawConfirm(true)}
+								disabled={withdrawing}
+							>
+								{t("myEngagements.withdraw")}
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{/* Sign-up CTA */}
+				{showSignUpCta && (
+					<div
+						data-testid={`signup-cta${testIdSuffix}`}
+						className={`space-y-3 ${cardClass} sm:p-5`}
+					>
+						{/* Only the full state speaks here now: it explains why the
+						button below is disabled. The remaining places themselves are
+						stated in the meta row above, where every visitor sees them
+						rather than only signed-in non-owners (#1777). */}
+						{isFull && (
+							<p className="text-sm font-medium text-red-600">
+								{t("opportunities.noSpotsLeft")}
+							</p>
+						)}
+						<Button
+							onClick={() => setShowSignUp(true)}
+							disabled={isFull}
+							fullWidth
+							size="lg"
+						>
+							{opp.participationType === "ScheduledSlots"
+								? t("opportunities.joinWaitlist")
+								: t("opportunities.expressInterest")}
+						</Button>
+						{opp.participationType === "IndividualContact" &&
+							opp.validUntil && (
+								<p className="text-sm text-gray-600">
+									{t("opportunities.applyBy", {
+										date: formatDate(
+											opp.validUntil as unknown as string,
+											i18n.language,
+										),
+									})}
+								</p>
+							)}
+					</div>
+				)}
+
+				{showLoginPrompt && (
+					<div
+						data-testid={`login-prompt${testIdSuffix}`}
+						className={`space-y-3 ${cardClass} sm:p-5`}
+					>
+						<p className="text-sm text-gray-600">
+							{t("opportunities.loginPrompt")}
+						</p>
+						<Button
+							onClick={() => auth.signinRedirect(signinLocaleArgs())}
+							data-testid={`opportunity-signin${testIdSuffix}`}
+							fullWidth
+							size="lg"
+						>
+							{t("nav.signIn")}
+						</Button>
+					</div>
+				)}
+			</>
+		);
+	}
+
 	return (
 		<>
 			<PageHeaderBand
@@ -540,6 +684,18 @@ export default function VolunteerOpportunityDetailPage() {
 								</span>
 							</div>
 
+							{/* Mobile-only duplicate of the sticky rail (#1965) - see
+						renderActionRail's comment above. lg:hidden because the aside
+						below already carries the same content at lg+. */}
+							{hasActionRail && (
+								<div
+									className="mb-6 space-y-6 lg:hidden"
+									data-testid="opportunity-action-rail-mobile"
+								>
+									{renderActionRail("-mobile", opportunity)}
+								</div>
+							)}
+
 							{!opportunity.isRemote &&
 								opportunity.latitude != null &&
 								opportunity.longitude != null && (
@@ -688,125 +844,13 @@ export default function VolunteerOpportunityDetailPage() {
 						</div>
 					</div>
 
-					{/* sticky needs a scroll container that is not the grid item itself;
-				lg:items-start on the grid keeps this from stretching to full row
-				height, which would make top-24 have nothing left to stick against. */}
-					<aside className="lg:sticky lg:top-24">
-						<div className="space-y-6">
-							{/* Application deadline - only as a card of its own when there
-							is no sign-up card below to carry it (owner, draft, already
-							signed up, signed out). When the CTA is showing, the deadline
-							renders inside it instead: two stacked cards pushed the rail's
-							actual purpose - the button - a full card-height further down
-							a page that already opens with a banner image. */}
-							{opportunity.participationType === "IndividualContact" &&
-								opportunity.validUntil &&
-								!(isAuthenticated && !isOwner && !cue && !isDraft) && (
-									<div
-										className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}
-									>
-										<span>
-											{t("opportunities.applyBy", {
-												date: formatDate(
-													opportunity.validUntil as unknown as string,
-													i18n.language,
-												),
-											})}
-										</span>
-									</div>
-								)}
-
-							{isAuthenticated && !isOwner && cue && !isDraft && (
-								<div
-									data-testid="application-status"
-									className={`${cardClass} sm:p-5`}
-								>
-									<div className="flex items-center justify-between gap-4">
-										<div>
-											<p className="mb-1 text-xs text-gray-500">
-												{t("opportunities.yourApplication")}
-											</p>
-											<Chip
-												tone={
-													cue.status === "Confirmed" ? "success" : "warning"
-												}
-												size="sm"
-											>
-												{t(`myEngagements.status.${cue.status}`)}
-											</Chip>
-										</div>
-										<Button
-											type="button"
-											variant="dangerOutline"
-											size="sm"
-											className="shrink-0"
-											onClick={() => setShowWithdrawConfirm(true)}
-											disabled={withdrawing}
-										>
-											{t("myEngagements.withdraw")}
-										</Button>
-									</div>
-								</div>
-							)}
-
-							{/* Sign-up CTA */}
-							{isAuthenticated && !isOwner && !cue && !isDraft && (
-								<div
-									data-testid="signup-cta"
-									className={`space-y-3 ${cardClass} sm:p-5`}
-								>
-									{/* Only the full state speaks here now: it explains why the
-									button below is disabled. The remaining places themselves are
-									stated in the meta row above, where every visitor sees them
-									rather than only signed-in non-owners (#1777). */}
-									{isFull && (
-										<p className="text-sm font-medium text-red-600">
-											{t("opportunities.noSpotsLeft")}
-										</p>
-									)}
-									<Button
-										onClick={() => setShowSignUp(true)}
-										disabled={isFull}
-										fullWidth
-										size="lg"
-									>
-										{opportunity.participationType === "ScheduledSlots"
-											? t("opportunities.joinWaitlist")
-											: t("opportunities.expressInterest")}
-									</Button>
-									{opportunity.participationType === "IndividualContact" &&
-										opportunity.validUntil && (
-											<p className="text-sm text-gray-600">
-												{t("opportunities.applyBy", {
-													date: formatDate(
-														opportunity.validUntil as unknown as string,
-														i18n.language,
-													),
-												})}
-											</p>
-										)}
-								</div>
-							)}
-
-							{!isAuthenticated && !isDraft && (
-								<div
-									data-testid="login-prompt"
-									className={`space-y-3 ${cardClass} sm:p-5`}
-								>
-									<p className="text-sm text-gray-600">
-										{t("opportunities.loginPrompt")}
-									</p>
-									<Button
-										onClick={() => auth.signinRedirect(signinLocaleArgs())}
-										data-testid="opportunity-signin"
-										fullWidth
-										size="lg"
-									>
-										{t("nav.signIn")}
-									</Button>
-								</div>
-							)}
-						</div>
+					{/* Hidden below lg: the mobile-only copy right above the map (#1965)
+				carries the same content there instead. sticky needs a scroll
+				container that is not the grid item itself; lg:items-start on the
+				grid keeps this from stretching to full row height, which would
+				make top-24 have nothing left to stick against. */}
+					<aside className="hidden lg:sticky lg:top-24 lg:block">
+						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
 					</aside>
 				</div>
 

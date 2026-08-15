@@ -235,6 +235,58 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_MobileActionRail_AsVera_HasNoSeriousA11yViolations()
+	{
+		// #1965: the sign-up CTA (and its deadline/status/login-prompt
+		// siblings) now renders a second time - testid-suffixed "-mobile" -
+		// right above the map on narrow viewports, with the desktop `<aside>`
+		// hidden below `lg` instead. Every detail-page scan above runs at
+		// Playwright's default 1280x720 viewport (above `lg`), so none of
+		// them ever render - or scan - this new mobile-only markup.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Mobile Rail Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"A11y Mobile Rail Test {suffix}",
+			description = "Seeded for #1965 mobile action-rail a11y coverage.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.SetViewportSizeAsync(375, 812);
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw the new mobile-only markup,
+		// rather than passing against a page where it never rendered.
+		await Expect(Page.GetByTestId("signup-cta-mobile")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
 	{
 		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an
