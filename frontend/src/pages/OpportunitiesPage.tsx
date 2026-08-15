@@ -58,7 +58,7 @@ export default function OpportunitiesPage() {
 								value={keyword}
 								onChange={(e) => setKeyword(e.target.value)}
 								data-testid="opportunities-keyword-input"
-								className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+								className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
 							/>
 						</div>
 						<Button type="submit" size="lg" pill className="shrink-0 shadow-md">

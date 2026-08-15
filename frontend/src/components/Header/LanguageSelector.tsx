@@ -60,7 +60,7 @@ export default function LanguageSelector({
 				<ul
 					aria-label={t("language.switchLanguage")}
 					data-testid="language-selector-menu"
-					className={`absolute top-full left-0 z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
+					className={`absolute top-full right-0 z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
 				>
 					{LANGUAGES.map((lang) => (
 						<li key={lang.code}>

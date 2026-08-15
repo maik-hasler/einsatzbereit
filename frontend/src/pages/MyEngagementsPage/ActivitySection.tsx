@@ -514,9 +514,11 @@ export default function ActivitySection() {
 									)}
 									{/* Labelled, and out of the date region above - a quoted sentence
 									in the slot where a sibling card states a date reads as that
-									card's date, not as something the reader wrote. */}
+									card's date, not as something the reader wrote. line-clamp-2
+									(not truncate) so the ellipsis lands on a word boundary rather
+									than mid-word (#1933). */}
 									{e.message && (
-										<p className="mt-1.5 truncate text-xs text-gray-500">
+										<p className="mt-1.5 line-clamp-2 text-xs text-gray-500">
 											<span className="font-medium">
 												{t("myEngagements.yourMessage")}
 											</span>{" "}

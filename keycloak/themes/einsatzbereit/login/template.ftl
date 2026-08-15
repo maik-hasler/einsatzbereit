@@ -8,7 +8,7 @@
 	omits them, and so the strings stay in the message bundles with everything
 	else that gets translated.
 -->
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle" eyebrow="" lead="">
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle" eyebrow="" lead="" showBackLink=true>
 <!DOCTYPE html>
 <html lang="${locale.currentLanguageTag!'de'}">
 <head>
@@ -95,7 +95,12 @@
 
 		<#-- Way back to the product. Without it, a visitor who reaches these
 		pages and changes their mind is stuck on an origin (login.*) that has
-		no other link on it - browser Back is the only exit. -->
+		no other link on it - browser Back is the only exit. showBackLink=false
+		opts a page out when it already renders its own explicit cancel/exit
+		control (#1931: logout-confirm.ftl's "Cancel" link has the exact same
+		href and effect, so both rendered as two differently-worded controls
+		for one action). -->
+		<#if showBackLink>
 		<p class="auth-back">
 			<a href="${properties.siteUrl}" class="back-link">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -105,6 +110,7 @@
 				${msg("backToSite")}
 			</a>
 		</p>
+		</#if>
 	</main>
 
 </div>

@@ -67,7 +67,7 @@ function capacityChip(
  * They used to share one icon and one tone, differing only in their label
  * text, on the reasoning that a shared tone made two cards comparable - and
  * it did fix the older bug where a bare unlabelled datetime in brand green sat
- * in the same slot as a grey "Apply by" line. But identical styling traded one
+ * in the same slot as a grey "Express interest by" line. But identical styling traded one
  * failure for another: a start date and an application deadline are not the
  * same kind of fact, and reading which one a card states required reading the
  * label on every card in the grid. Keeping both labels *and* giving each kind

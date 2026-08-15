@@ -31,6 +31,13 @@ namespace VisualTests;
 ///    engagementStatLabel it had no _one/_other forms, so it could not even
 ///    inflect. UserStreak.ActivityStreak counts consecutive ISO *weeks* with a
 ///    confirmed engagement, so the label now carries that unit.
+/// 5. (#1935) With both stats correctly labelled per (4), the week-streak
+///    tile ("X Wochen in Serie") and the day-streak caption ("Y Tage in
+///    Folge angemeldet") still sat next to each other reading as
+///    near-synonyms ("in Serie" vs. "in Folge") with different units and no
+///    other cue to tell them apart. Each label now also names its own badge
+///    ("Wochenheld" / "Anmeldeserie") so the two read as distinct at a
+///    glance even when both are nonzero at once.
 ///
 /// These are locale-file values, so nothing in the backend test suite would
 /// otherwise notice them regressing.
@@ -141,6 +148,41 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 	/// FastSignInAsync itself waits on the English "User menu" aria-label (see
 	/// LocalizedCheckInPinErrorTests, which hit this first).
 	/// </summary>
+	[Test]
+	public async Task ProfileStreakStats_ReferenceMatchingBadgeName_ToReadAsDistinct()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		// #1935's bug was specifically the co-occurrence of both stats: seed
+		// both nonzero at once, the exact scenario the issue describes.
+		await SeedLoginStreakForVeraAsync(backend);
+		await SeedConfirmedEngagementForVeraAsync(backend);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await SwitchToGermanAsync();
+
+		var streakTile = Page.GetByTestId("profile-stat-streak");
+		var loginStreakIndicator = Page.GetByTestId("profile-stat-login-streak");
+		await Expect(streakTile).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(loginStreakIndicator).ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		// Each stat now names its own badge - the week-streak tile backs
+		// "Wochenheld" (4 consecutive activity weeks), the day-streak caption
+		// backs "Anmeldeserie" (consecutive login days). Cross-check each does
+		// NOT carry the other's badge name, not just that it carries its own -
+		// that mismatch is exactly the confusion #1935 reported.
+		await Expect(streakTile).ToContainTextAsync("Wochenheld");
+		await Expect(streakTile).Not.ToContainTextAsync("Anmeldeserie");
+		await Expect(loginStreakIndicator).ToContainTextAsync("Anmeldeserie");
+		await Expect(loginStreakIndicator).Not.ToContainTextAsync("Wochenheld");
+	}
+
 	private async Task SwitchToGermanAsync()
 	{
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
@@ -172,8 +214,13 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		olafHttp.DefaultRequestHeaders.Add(
 			"Authorization", $"Bearer {(await Fixture.SignInAsync("olaf", "olaf123")).AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
-			"/v1/organizations", new { name = $"AchievementCopy Org {suffix}" });
+		// Retry-wrapped, not a plain PostAsJsonAsync like the opportunity/
+		// engagement/confirm calls below - this is the one call in this method
+		// that hits Keycloak's admin API (see PostJsonWithRetryAsync's own doc
+		// comment, #1709), and this method now has two callers in this class
+		// instead of one.
+		var orgResponse = await PostJsonWithRetryAsync(
+			olafHttp, "/v1/organizations", new { name = $"AchievementCopy Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
