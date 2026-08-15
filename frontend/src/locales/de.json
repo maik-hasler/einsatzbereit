@@ -293,6 +293,7 @@
       "charCount": "{{current}} / {{max}}",
       "creating": "Wird erstellt…",
       "cancel": "Abbrechen",
+      "close": "Schließen",
       "unknownError": "Unbekannter Fehler",
       "fieldRequired": "Bitte ausfüllen.",
       "useOrgAddress": "Adresse der Organisation übernehmen",
