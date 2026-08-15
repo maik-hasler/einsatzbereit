@@ -214,8 +214,13 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		olafHttp.DefaultRequestHeaders.Add(
 			"Authorization", $"Bearer {(await Fixture.SignInAsync("olaf", "olaf123")).AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
-			"/v1/organizations", new { name = $"AchievementCopy Org {suffix}" });
+		// Retry-wrapped, not a plain PostAsJsonAsync like the opportunity/
+		// engagement/confirm calls below - this is the one call in this method
+		// that hits Keycloak's admin API (see PostJsonWithRetryAsync's own doc
+		// comment, #1709), and this method now has two callers in this class
+		// instead of one.
+		var orgResponse = await PostJsonWithRetryAsync(
+			olafHttp, "/v1/organizations", new { name = $"AchievementCopy Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
