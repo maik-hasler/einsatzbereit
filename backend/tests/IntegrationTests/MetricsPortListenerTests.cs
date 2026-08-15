@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -20,14 +19,18 @@ public class MetricsPortListenerTests
 	[Test]
 	public async Task AddServiceDefaults_WithMetricsPortConfigured_StillListensOnMainHttpPort()
 	{
-		var mainPort = GetFreeTcpPort();
-		var metricsPort = GetFreeTcpPort();
-
 		var builder = WebApplication.CreateBuilder();
 		builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 		{
-			["ASPNETCORE_HTTP_PORTS"] = mainPort.ToString(),
-			["Metrics:Port"] = metricsPort.ToString(),
+			// Port 0 asks the OS to assign a free ephemeral port at bind time,
+			// read back below via app.Urls once Kestrel has actually bound it -
+			// unlike pre-selecting a "free" port with a close-then-reopen probe,
+			// there is no window between choosing the port and binding it for
+			// something else (a parallel test, the metrics listener itself) to
+			// grab first, which used to fail this test under CI's parallel test
+			// load with "address already in use".
+			["ASPNETCORE_HTTP_PORTS"] = "0",
+			["Metrics:Port"] = "0",
 		});
 
 		builder.AddServiceDefaults();
@@ -38,6 +41,14 @@ public class MetricsPortListenerTests
 		await app.StartAsync();
 		try
 		{
+			// AddMetricsPortListener always registers the main listener before the
+			// metrics one (see its own comment), and Kestrel binds - and reports
+			// back via app.Urls - each configured listener in that same order.
+			app.Urls.Should().HaveCount(2,
+				"AddMetricsPortListener should bind exactly one main and one metrics listener");
+			var mainPort = new Uri(app.Urls.ElementAt(0)).Port;
+			var metricsPort = new Uri(app.Urls.ElementAt(1)).Port;
+
 			using var client = new HttpClient();
 
 			var mainResponse = await client.GetAsync($"http://localhost:{mainPort}/alive");
@@ -50,14 +61,5 @@ public class MetricsPortListenerTests
 		{
 			await app.StopAsync();
 		}
-	}
-
-	private static int GetFreeTcpPort()
-	{
-		var listener = new TcpListener(IPAddress.Loopback, 0);
-		listener.Start();
-		var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-		listener.Stop();
-		return port;
 	}
 }

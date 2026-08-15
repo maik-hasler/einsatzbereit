@@ -45,7 +45,11 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"VisualEngTab {suffix}" });
+		// #1890: POST /v1/organizations calls out to Keycloak's admin API in
+		// turn, which can trip the same resilience-pipeline rejection/timeout
+		// under this suite's sustained concurrent load - surfacing as a 500
+		// here that isn't attributable to this test.
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"VisualEngTab {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
