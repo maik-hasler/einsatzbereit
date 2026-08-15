@@ -369,7 +369,13 @@ export default function MiniCalendar({
 											isPast
 												? "cursor-not-allowed text-gray-500"
 												: isEdge
-													? "bg-brand-600 font-semibold text-white"
+													? // brand-700, not brand-600: the white text here fails
+														// the 4.5:1 WCAG AA contrast floor on brand-600
+														// (~4.28:1) but clears it on brand-700
+														// (einsatzbereit#1961), and brand-700 is already used
+														// for buttons and the "today" ring elsewhere in this
+														// component.
+														"bg-brand-700 font-semibold text-white"
 													: isToday
 														? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
 														: "text-gray-700 hover:bg-gray-100",
