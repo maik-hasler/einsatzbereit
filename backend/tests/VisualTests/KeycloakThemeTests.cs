@@ -366,8 +366,19 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{keycloak}/realms/{Realm}/protocol/openid-connect/logout?client_id={FrontendClientId}");
 
 		await Expect(Page.Locator("#kc-logout")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await AssertThemeShellAsync("logout-confirm");
+
+		// Not AssertThemeShellAsync: its vertical-gap check requires .auth-back
+		// to be visible, which #1931 below deliberately makes untrue here.
+		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync();
+		await Expect(Page.Locator(".auth-logo")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-logout-cancel")).ToBeVisibleAsync();
+
+		// #1931: this page's own Cancel link above is its only way out - the
+		// generic "Back to Einsatzbereit" safety net from template.ftl must not
+		// also render here, or the two identical-destination controls sit side
+		// by side with no visible distinction.
+		await Expect(Page.Locator(".auth-back")).ToHaveCountAsync(0);
 	}
 
 	[Test]
