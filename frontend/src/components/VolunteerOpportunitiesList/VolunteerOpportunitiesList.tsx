@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import { useApiClient } from "../../hooks/useApiClient";
 import LocationSearchInput from "../LocationSearchInput";
 import FilterDropdown, {
 	DropdownOption,
@@ -18,6 +19,7 @@ import {
 import type { CitySuggestion } from "./useCitySuggestions";
 import { useSearchAlert } from "./useSearchAlert";
 import { resolveDateLocale } from "../../lib/format";
+import { sortByLabelPrefixMatch } from "../../lib/citySuggestionSort";
 import { SpinnerIcon } from "../Spinner";
 import {
 	BellIcon,
@@ -47,6 +49,7 @@ const CATEGORY_VALUES = [
 ] as const;
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+const DEFAULT_RADIUS_KM = "10";
 
 // No heading of its own: the only route that renders this list is
 // /opportunities, whose PageHeaderBand already states the eyebrow, title and
@@ -56,6 +59,7 @@ const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
 	const locale = resolveDateLocale(i18n.language);
+	const api = useApiClient();
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const occurrence = searchParams.get("occurrence") ?? "";
@@ -75,6 +79,10 @@ export default function VolunteerOpportunitiesList() {
 		? categoriesParam.split(",").filter(Boolean)
 		: [];
 	const hasLocation = !!(lat && lng && radius);
+	// A `city`-only deep link has no coordinates yet (resolved below) but is
+	// still a location filter the visitor asked for - counts toward
+	// hasFilters/the "Standort" chip's active state even before it resolves.
+	const hasLocationFilter = hasLocation || !!city;
 
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [locationCityInput, setLocationCityInput] = useState(city);
@@ -84,6 +92,44 @@ export default function VolunteerOpportunitiesList() {
 		openFilter !== null,
 		() => setOpenFilter(null),
 	);
+
+	// A `city`-only deep link (bookmarked, shared, or hand-edited) carries no
+	// coordinates to filter by - geocode it once on load so the same URL
+	// resolves to a working location filter instead of silently showing every
+	// opportunity unfiltered (#1962). Guarded on `city && !lat && !lng`, which
+	// never matches the UI's own paths: selectLocationSuggestion and
+	// handleNearMe always set city+lat+lng together in the same update.
+	useEffect(() => {
+		if (!city || lat || lng) return;
+		const controller = new AbortController();
+		(async () => {
+			try {
+				const places = await api.searchCities(city, controller.signal);
+				const [best] = sortByLabelPrefixMatch(
+					places.map((place) => ({
+						label: place.label,
+						lat: place.latitude,
+						lng: place.longitude,
+					})),
+					city,
+				);
+				if (!best) return;
+				const params = new URLSearchParams(window.location.search);
+				params.set("city", best.label);
+				params.set("lat", String(best.lat));
+				params.set("lng", String(best.lng));
+				params.set("radius", radius || DEFAULT_RADIUS_KM);
+				setSearchParams(params, { replace: true });
+			} catch {
+				// A city that can't be resolved (typo, unmapped place, transient
+				// geocoder failure) leaves the "Standort" chip showing the typed
+				// city as an active-but-unresolved filter instead of reverting to
+				// the unfiltered list.
+			}
+		})();
+		return () => controller.abort();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [city, lat, lng]);
 
 	const {
 		hasActiveAlert,
@@ -231,7 +277,7 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	function selectLocationSuggestion(suggestion: CitySuggestion) {
-		const currentRadius = searchParams.get("radius") || "10";
+		const currentRadius = searchParams.get("radius") || DEFAULT_RADIUS_KM;
 		const params = new URLSearchParams(window.location.search);
 		params.set("city", suggestion.label);
 		params.set("lat", suggestion.lat.toString());
@@ -251,7 +297,7 @@ export default function VolunteerOpportunitiesList() {
 		navigator.geolocation.getCurrentPosition(
 			(pos) => {
 				const { latitude, longitude } = pos.coords;
-				const currentRadius = radius || "10";
+				const currentRadius = radius || DEFAULT_RADIUS_KM;
 				const label = t("opportunities.nearMe");
 				const params = new URLSearchParams(window.location.search);
 				params.set("city", label);
@@ -271,7 +317,7 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	const hasFilters = !!(
-		hasLocation ||
+		hasLocationFilter ||
 		occurrence ||
 		participationType ||
 		isRemoteParam ||
@@ -315,7 +361,7 @@ export default function VolunteerOpportunitiesList() {
 		}
 	}
 
-	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : "";
+	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : city;
 
 	const categoryDisplayValue =
 		selectedCategories.length === 0
@@ -359,6 +405,7 @@ export default function VolunteerOpportunitiesList() {
 				>
 					{/* Location + Radius */}
 					<FilterDropdown
+						testId="filter-location"
 						icon={<MapPinIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelLocation")}
 						displayValue={locationDisplayValue}
