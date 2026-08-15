@@ -466,6 +466,9 @@ export default function ProfileOverviewPage() {
 													<p className="text-xs text-gray-500">
 														{t("achievements.activityStreak", {
 															count: streaks.activityStreak,
+															badge: t(
+																"achievements.badges.weekly-hero-4.name",
+															),
 														})}
 													</p>
 												</div>
@@ -480,6 +483,7 @@ export default function ProfileOverviewPage() {
 											<FireIcon className="h-3.5 w-3.5" />
 											{t("achievements.loginStreak", {
 												count: streaks.loginStreak,
+												badge: t("achievements.badges.on-a-roll-7.name"),
 											})}
 										</p>
 									)}
