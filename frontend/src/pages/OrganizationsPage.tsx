@@ -130,7 +130,7 @@ export default function OrganizationsPage() {
 							value={searchInput}
 							onChange={(e) => handleSearchInputChange(e.target.value)}
 							placeholder={t("organizationsPage.searchPlaceholder")}
-							className="w-full rounded-full border border-white/20 bg-white/10 py-3 pr-4 pl-10 text-sm text-white backdrop-blur-sm placeholder:text-white/60 focus:border-white/40 focus:outline-none"
+							className="w-full rounded-full border border-white/20 bg-white/10 py-3 pr-4 pl-10 text-sm text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none"
 						/>
 					</div>
 				</div>
