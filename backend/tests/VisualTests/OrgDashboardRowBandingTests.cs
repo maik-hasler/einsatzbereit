@@ -177,7 +177,11 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 	{
 		var backend = Fixture.GetEndpoint("backend");
 		using var http = await CreateAuthenticatedHttpClientAsync(backend);
-		var response = await http.PostAsJsonAsync("/v1/organizations", new { name });
+		// #1890: POST /v1/organizations calls out to Keycloak's admin API in
+		// turn, which can trip the resilience-pipeline rejection/timeout
+		// under this suite's sustained concurrent load - retry rather than
+		// fail outright on a transient 500.
+		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name });
 		response.EnsureSuccessStatusCode();
 		var org = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return org.GetProperty("id").GetProperty("value").GetString()!;
