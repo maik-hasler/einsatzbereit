@@ -3,7 +3,9 @@ using Api.Common.Endpoints;
 using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
+using Application.Common.Geocoding;
 using Application.Common.Messaging;
+using Application.Maps.GeocodeAddress.v1;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using Domain.Common;
 using Domain.Organizations;
@@ -99,6 +101,32 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 				request.HouseNumber ?? string.Empty,
 				request.ZipCode ?? string.Empty,
 				request.City ?? string.Empty).GetValueOrThrow();
+
+		// Resolved synchronously, before the create command ever dispatches -
+		// a bad address is rejected here with a 400 instead of the opportunity
+		// being created anyway and silently sitting with null coordinates until
+		// an organizer notices it missing from "near me" searches (#1963). A
+		// TransientFailure (Nominatim itself unreachable, not the address's
+		// fault) still lets creation through - VolunteerOpportunity.Create
+		// raises the geocoding-requested event for that case, so the existing
+		// outbox/retry job resolves it out of band, same as before.
+		if (address is not null)
+		{
+			var geocodingResult = await sender.Send(new GeocodeAddressQuery(address), cancellationToken);
+
+			if (geocodingResult.Outcome == GeocodingOutcome.NotFound)
+			{
+				return Results.Problem(
+					"Address could not be located. Please check the street, house number, zip code, and city.",
+					statusCode: StatusCodes.Status400BadRequest);
+			}
+
+			if (geocodingResult.Outcome == GeocodingOutcome.Found)
+			{
+				address = address.WithCoordinates(
+					geocodingResult.Coordinates!.Latitude, geocodingResult.Coordinates.Longitude).GetValueOrThrow();
+			}
+		}
 
 		var command = new CreateVolunteerOpportunityCommand(
 			request.Title ?? string.Empty,

@@ -21,7 +21,11 @@ import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
-import { formatDateTime, resolveDateLocale } from "../../../lib/format";
+import {
+	formatDate,
+	formatDateTime,
+	resolveDateLocale,
+} from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
 import {
 	readableTextColor,
@@ -330,6 +334,25 @@ function CalendarWidget({
 		[t],
 	);
 
+	// react-big-calendar's own dayRangeHeaderFormat/agendaHeaderFormat defaults
+	// (see localizers/date-fns.js) render the week/agenda toolbar's date-range
+	// label via date-fns' locale-default 'P' token - raw, ambiguous DD/MM/YYYY
+	// for en-GB, never routed through the site's shared formatDate/formatDateTime
+	// helpers that every other date on the site (including this same widget's
+	// own event chips, CalEventChip above) goes through (#1959). Both format
+	// keys receive a {start, end} range and are keyed off i18n.language (not
+	// the `culture` arg RBC would otherwise pass in), so this has to be a
+	// per-render formatter rather than a module-scope constant like
+	// `localizer` above.
+	const calendarFormats = useMemo(() => {
+		const formatHeaderRange = ({ start, end }: { start: Date; end: Date }) =>
+			`${formatDate(start.toISOString(), i18n.language)} - ${formatDate(end.toISOString(), i18n.language)}`;
+		return {
+			dayRangeHeaderFormat: formatHeaderRange,
+			agendaHeaderFormat: formatHeaderRange,
+		};
+	}, [i18n.language]);
+
 	const handleSelectEvent = useCallback((event: object) => {
 		const e = event as CalEvent;
 		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
@@ -439,6 +462,7 @@ function CalendarWidget({
 							eventPropGetter={calendarEventPropGetter}
 							onSelectEvent={handleSelectEvent}
 							messages={calendarMessages}
+							formats={calendarFormats}
 						/>
 					</div>
 				)}

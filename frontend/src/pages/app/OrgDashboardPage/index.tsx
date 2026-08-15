@@ -385,6 +385,13 @@ export default function OrgDashboardPage() {
 	const previewBottom = previewRect
 		? previewRect.y + previewRect.height - 1
 		: 0;
+	// #1902: the backdrop only needs real headroom while a placement is
+	// actually in progress (corner-to-corner flow or a real pointer drag,
+	// both captured by activeKey) - a widget being dragged/resized needs
+	// room below the existing content to drop into. Idle, a single spare
+	// row is enough to read as "this grid is still editable" without
+	// papering the whole viewport in placeholder tiles past the last widget.
+	const guidePadding = activeKey !== null ? 4 : 1;
 	// Clamped, not just summed - `Array.from({ length })` below throws a
 	// RangeError (taking down the whole page, not just this component) for
 	// a non-finite or absurdly large length, and Math.min/max propagate NaN
@@ -394,7 +401,7 @@ export default function OrgDashboardPage() {
 	// upstream would otherwise become unrecoverable rather than just a
 	// visually-wrong backdrop.
 	const rawGuideRows =
-		Math.max(contentRows, cursor?.row ?? 0, previewBottom) + 4;
+		Math.max(contentRows, cursor?.row ?? 0, previewBottom) + guidePadding;
 	const guideRows = Number.isFinite(rawGuideRows)
 		? Math.min(GRID_MAX_ROWS + 4, rawGuideRows)
 		: GRID_MAX_ROWS + 4;

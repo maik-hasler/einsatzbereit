@@ -79,6 +79,7 @@ export default function AccountControls({
 						<div className="py-1">
 							<Link
 								to="/profile"
+								onClick={() => setDropdownOpen(false)}
 								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<UserCircleIcon className="h-4 w-4" />
@@ -86,6 +87,7 @@ export default function AccountControls({
 							</Link>
 							<Link
 								to="/my-signups"
+								onClick={() => setDropdownOpen(false)}
 								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<HandRaisedIcon className="h-4 w-4" />
@@ -93,6 +95,7 @@ export default function AccountControls({
 							</Link>
 							<Link
 								to="/profile/settings"
+								onClick={() => setDropdownOpen(false)}
 								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<Cog6ToothIcon className="h-4 w-4" />
@@ -101,6 +104,7 @@ export default function AccountControls({
 							{isAdmin && (
 								<Link
 									to="/administration"
+									onClick={() => setDropdownOpen(false)}
 									className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 								>
 									<Cog6ToothIcon className="h-4 w-4" />

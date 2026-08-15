@@ -27,10 +27,32 @@
 	</PropertyGroup>
 
 	<Target Name="RenameOpenApiDocuments" AfterTargets="GenerateOpenApiDocuments">
-		<Error Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/$(MSBuildProjectName).json')"
-					Text="GenerateOpenApiDocuments did not produce wwwroot/$(MSBuildProjectName).json. The OpenAPI document name has most likely changed - check what landed in wwwroot/ and update this target to match instead of letting openapi-v1.json go stale." />
-		<Move SourceFiles="$(MSBuildProjectDirectory)/wwwroot/$(MSBuildProjectName).json"
-					DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json" />
+		<!--
+		GenerateOpenApiDocuments is itself incremental: a second consecutive
+		build with no source changes skips regenerating wwwroot/Api.json
+		entirely (it was already moved away by the Move below, on the
+		previous run), but this AfterTargets target still runs regardless -
+		naively erroring whenever wwwroot/Api.json is absent would false-
+		positive on every such rebuild. Instead of trusting Api.json's mere
+		absence, look at what's actually sitting in wwwroot/ once this run
+		is done: openapi-v1.json is a committed file always present, so it's
+		excluded here and only ever written by the Move below - anything
+		else found is necessarily fresh output from this run. Nothing found
+		means generation was skipped (no-op rebuild, nothing to move) - the
+		already-committed openapi-v1.json is still correct, don't touch it.
+		Something found under a name other than $(MSBuildProjectName).json is
+		the real regression this guards against: the document name changed
+		and would otherwise leave a stale openapi-v1.json committed forever
+		with no error and no diff for CI's drift check to catch either.
+		-->
+		<ItemGroup>
+			<_FreshOpenApiDocument Include="$(MSBuildProjectDirectory)/wwwroot/*.json" Exclude="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json" />
+		</ItemGroup>
+		<Error Condition="'@(_FreshOpenApiDocument)' != '' AND '%(_FreshOpenApiDocument.Filename)%(_FreshOpenApiDocument.Extension)' != '$(MSBuildProjectName).json'"
+					Text="GenerateOpenApiDocuments produced wwwroot/%(_FreshOpenApiDocument.Filename)%(_FreshOpenApiDocument.Extension) instead of wwwroot/$(MSBuildProjectName).json. The OpenAPI document name has most likely changed - check what landed in wwwroot/ and update this target to match instead of letting openapi-v1.json go stale." />
+		<Move SourceFiles="@(_FreshOpenApiDocument)"
+					DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/openapi-v1.json"
+					Condition="'@(_FreshOpenApiDocument)' != ''" />
 	</Target>
 
 	<PropertyGroup>

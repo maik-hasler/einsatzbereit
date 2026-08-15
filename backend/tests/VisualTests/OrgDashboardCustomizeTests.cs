@@ -226,6 +226,43 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task GridBackdrop_CapsIdleRowsPastLastWidget_AndExpandsWhileActivelyPlacing()
+	{
+		// #1902: the backdrop used to always render 4 spare rows past the
+		// last widget (or the live placement cursor/preview, whichever was
+		// lower), even while nothing was being placed - on a dashboard with
+		// only a handful of widgets that read as a wall of undifferentiated
+		// green placeholder tiles reaching well past the fold. It's now
+		// capped to a single spare row while idle, only opening back up to
+		// the old 4-row buffer once a placement (corner-to-corner flow or a
+		// real pointer drag) is actually in progress, giving the organizer
+		// room to drop a widget below the existing content. DEFAULT_LAYOUT's
+		// last widget (Settings) ends at row 8 (see widgetCatalog.ts), so
+		// idle is 8 content rows + 1 spare = 9 rows of 8 columns = 72 cells;
+		// mid-placement it's 8 + 4 = 12 rows = 96 cells.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashBackdropCap", pinnedOrgId!.Value);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await Expect(Page.GetByTestId("dashboard-grid-guide-cell")).ToHaveCountAsync(72);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("dashboard-grid-guide-cell")).ToHaveCountAsync(96);
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("dashboard-grid-guide-cell")).ToHaveCountAsync(72);
+	}
+
+	[Test]
 	public async Task DefaultLayout_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt()
 	{
 		// Regression guard for the same CSS technique the old auto-fit packer

@@ -268,7 +268,12 @@ public sealed class VolunteerOpportunity
 			validUntil,
 			now ?? DateTimeOffset.UtcNow);
 
-		if (!isRemote && address is not null)
+		// Create's caller (CreateVolunteerOpportunityEndpoint) resolves a fresh
+		// address synchronously before dispatching the create command (#1963),
+		// so address.Latitude is already set on the happy path - only an address
+		// that came back from a TransientFailure (network hiccup, not a bad
+		// address) still needs the async outbox retry to pick it up later.
+		if (!isRemote && address is not null && address.Latitude is null)
 			opportunity.AddEvent(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id));
 
 		return opportunity;
