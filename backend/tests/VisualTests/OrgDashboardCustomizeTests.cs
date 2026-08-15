@@ -191,6 +191,41 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task CustomizeHint_OnlyRendersInViewMode_AndEntersEditModeOnClick()
+	{
+		// #1939: a first-time organizer landing on their (fully-packed) default
+		// layout in view mode had no visual cue that the dashboard was
+		// customizable at all, short of stumbling into the "Edit" quick action
+		// themselves. This dashed "+" placeholder is the persistent-cue
+		// direction chosen for that gap: visible in the grid row right below
+		// the current layout any time the dashboard isn't already being
+		// edited, and a second entry point into edit mode besides the quick
+		// action.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashCustomizeHint", pinnedOrgId!.Value);
+
+		await Expect(Page.GetByTestId("dashboard-customize-hint")).ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("dashboard-customize-hint")).ToHaveCountAsync(0);
+
+		await Page.GetByTestId("quick-action-cancel").ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-customize-hint")).ToBeVisibleAsync();
+
+		// Clicking the hint itself is a second entry point into edit mode,
+		// alongside the "Edit" quick action.
+		await Page.GetByTestId("dashboard-customize-hint").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("quick-action-cancel")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("dashboard-grid-guide-cell").First).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task GridBackdrop_CapsIdleRowsPastLastWidget_AndExpandsWhileActivelyPlacing()
 	{
 		// #1902: the backdrop used to always render 4 spare rows past the
