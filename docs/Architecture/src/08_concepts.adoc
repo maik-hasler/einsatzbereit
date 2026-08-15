@@ -26,7 +26,7 @@ Two modelling decisions are worth stating because they are not obvious from the 
 
 Membership in an organization is its own aggregate, not a field on either side: *Organization Membership* holds the pair plus the member's role, and *Organization Invitation* holds a pending offer to create one. The local membership table, not the JWT, is the request-time source of truth for organizer access - see Authentication and Authorization below.
 
-The remaining aggregates hang off *User* and exist to support engagement rather than to record it: *Achievements* (badges), *User Streak* (login and activity counters), *Search Alert* (saved criteria, one per user, matched by a scheduled digest), and *Notification* (the in-app inbox).
+The remaining aggregates hang off *User* and exist to support engagement rather than to record it: *Achievements* (badges), *User Streak* (login and activity counters), and *Notification* (the in-app inbox).
 
 === Module Structure
 

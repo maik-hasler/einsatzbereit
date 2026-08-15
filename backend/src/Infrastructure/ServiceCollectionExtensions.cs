@@ -113,8 +113,6 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IUnsubscribeLinkBuilder, UnsubscribeLinkBuilder>();
 		services.ConfigureOptions<EngagementReminderOptionsSetup>();
 		services.AddHostedService<EngagementReminderJob>();
-		services.ConfigureOptions<SearchAlertDigestOptionsSetup>();
-		services.AddHostedService<SearchAlertDigestJob>();
 		services.ConfigureOptions<AutomaticCheckInOptionsSetup>();
 		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();

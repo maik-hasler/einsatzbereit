@@ -100,8 +100,6 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
-		builder.Property(vo => vo.PublishedOn);
-
 		// Unconstrained at the DB level, matching Engagement.CancellationReason -
 		// the 500-char cap is enforced at the API layer (CancelVolunteerOpportunityRequest).
 		builder.Property(vo => vo.CancellationReason);
@@ -155,10 +153,6 @@ internal sealed class VolunteerOpportunityConfiguration
 		// Covers GetPagedSummariesAsync's landing-page query: filters on Status,
 		// sorts by CreatedOn (#1385).
 		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
-
-		// Covers SearchAlertDigestJob's candidate scan: filters on Status, then on
-		// PublishedOn > cursor (#1090).
-		builder.HasIndex(vo => new { vo.Status, vo.PublishedOn });
 
 		// Supports the Tags.Contains(filter.Tag) array-containment filter (#1385).
 		builder.HasIndex(vo => vo.Tags)

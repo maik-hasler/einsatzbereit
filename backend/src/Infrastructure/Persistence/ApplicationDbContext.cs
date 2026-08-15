@@ -7,7 +7,6 @@ using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Reports;
-using Domain.SearchAlerts;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Repositories;
@@ -108,27 +107,6 @@ internal sealed class ApplicationDbContext(
 			a => a.Id);
 
 	internal IQueryable<AuditLog> AuditLogsQuery => Set<AuditLog>().AsNoTracking();
-
-	public IAggregateRepository<SearchAlert, SearchAlertId> SearchAlerts
-		=> new AggregateRepository<SearchAlert, SearchAlertId>(
-			Set<SearchAlert>(),
-			Set<SearchAlert>(),
-			s => s.Id);
-
-	internal IQueryable<SearchAlert> SearchAlertsQuery => Set<SearchAlert>().AsNoTracking();
-
-	public async Task<SearchAlert?> GetSearchAlertForUserAsync(
-		UserId userId,
-		CancellationToken cancellationToken = default) =>
-		await Set<SearchAlert>()
-			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
-
-	public async Task DeleteSearchAlertForUserAsync(
-		UserId userId,
-		CancellationToken cancellationToken = default) =>
-		await Set<SearchAlert>()
-			.Where(s => s.UserId == userId)
-			.ExecuteDeleteAsync(cancellationToken);
 
 	public async Task DeleteReportsForReporterAsync(
 		UserId reporterId,

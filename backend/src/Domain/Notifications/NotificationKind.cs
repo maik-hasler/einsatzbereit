@@ -11,7 +11,6 @@ public enum NotificationKind
 	OpportunityUnpublished,
 	OpportunityCancelled,
 	InvitationReceived,
-	NewMatchingOpportunity,
 	InvitationAccepted,
 	InvitationDeclined,
 	FeedbackSubmitted

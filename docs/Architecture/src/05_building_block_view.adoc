@@ -108,8 +108,8 @@ Contained Building Blocks::
 |`{Api,Application}/Invitations/`
 
 |Users
-|Profiles, notification preferences, streaks, search alerts, account deletion, and the admin-facing user administration.
-|`{Api,Application,Domain}/Users/`, `Domain/SearchAlerts/`
+|Profiles, notification preferences, streaks, account deletion, and the admin-facing user administration.
+|`{Api,Application,Domain}/Users/`
 
 |Achievements
 |Badge catalog and awarding of milestone, streak and hidden achievements.
@@ -144,7 +144,7 @@ Contained Building Blocks::
 |`Application/Common/`, `Domain/{Primitives,Common}/`, `Infrastructure/{Common,Persistence,Email,Keycloak,Storage,Geocoding,RateLimiting,BackgroundJobs}/`, `Aspire/ServiceDefaults/`
 |===
 
-Modules communicate in one of two ways. Direct calls go inward through the shared kernel only for reads a use case cannot complete without (Engagements reads opportunity status and slot capacity). Everything reactive - notifications, achievements, search-alert digests - runs off domain events raised by the aggregate and dispatched after commit, so the module that causes an event never references the modules that react to it.
+Modules communicate in one of two ways. Direct calls go inward through the shared kernel only for reads a use case cannot complete without (Engagements reads opportunity status and slot capacity). Everything reactive - notifications, achievements - runs off domain events raised by the aggregate and dispatched after commit, so the module that causes an event never references the modules that react to it.
 
 === Level 3: Inside a Module (Whitebox, example)
 

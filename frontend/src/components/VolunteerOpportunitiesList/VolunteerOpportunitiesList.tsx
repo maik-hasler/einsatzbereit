@@ -16,11 +16,9 @@ import {
 	type VisibleMonth,
 } from "./useOpportunityDateAvailability";
 import type { CitySuggestion } from "./useCitySuggestions";
-import { useSearchAlert } from "./useSearchAlert";
 import { resolveDateLocale } from "../../lib/format";
 import { SpinnerIcon } from "../Spinner";
 import {
-	BellIcon,
 	BroomIcon,
 	CalendarIcon,
 	ClockIcon,
@@ -84,14 +82,6 @@ export default function VolunteerOpportunitiesList() {
 		openFilter !== null,
 		() => setOpenFilter(null),
 	);
-
-	const {
-		hasActiveAlert,
-		isAuthenticated,
-		saving: savingSearchAlert,
-		save: saveSearchAlert,
-		remove: removeSearchAlert,
-	} = useSearchAlert();
 
 	// Null until the date popover is opened and its calendar reports the month it
 	// mounted on - that report is also what keeps this in step with the grid's own
@@ -281,39 +271,6 @@ export default function VolunteerOpportunitiesList() {
 		tag ||
 		keyword
 	);
-
-	async function handleActivateSearchAlert() {
-		try {
-			await saveSearchAlert({
-				occurrence: occurrence || undefined,
-				participationType: participationType || undefined,
-				isRemote:
-					isRemoteParam === "true"
-						? true
-						: isRemoteParam === "false"
-							? false
-							: undefined,
-				centerLatitude: hasLocation ? Number(lat) : undefined,
-				centerLongitude: hasLocation ? Number(lng) : undefined,
-				radiusKm: hasLocation ? Number(radius) : undefined,
-				categories:
-					selectedCategories.length > 0 ? selectedCategories : undefined,
-				tag: tag || undefined,
-			});
-			dispatchToast("success", t("opportunities.searchAlertActivated"));
-		} catch {
-			dispatchToast("error", t("opportunities.searchAlertError"));
-		}
-	}
-
-	async function handleDeactivateSearchAlert() {
-		try {
-			await removeSearchAlert();
-			dispatchToast("success", t("opportunities.searchAlertDeactivated"));
-		} catch {
-			dispatchToast("error", t("opportunities.searchAlertError"));
-		}
-	}
 
 	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : "";
 
@@ -664,31 +621,6 @@ export default function VolunteerOpportunitiesList() {
 						>
 							<BroomIcon />
 							{t("opportunities.clearFilters")}
-						</button>
-					)}
-
-					{isAuthenticated && hasActiveAlert && (
-						<button
-							type="button"
-							onClick={handleDeactivateSearchAlert}
-							disabled={savingSearchAlert}
-							aria-label={t("opportunities.searchAlertDeactivate")}
-							className="flex items-center gap-1.5 rounded-full border border-brand-500 bg-white px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							<BellIcon className="h-3.5 w-3.5" />
-							{t("opportunities.searchAlertActive")}
-						</button>
-					)}
-
-					{isAuthenticated && !hasActiveAlert && hasFilters && (
-						<button
-							type="button"
-							onClick={handleActivateSearchAlert}
-							disabled={savingSearchAlert}
-							className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							<BellIcon className="h-3.5 w-3.5" />
-							{t("opportunities.searchAlertActivate")}
 						</button>
 					)}
 				</div>

@@ -33,7 +33,7 @@ These are the terms the domain model in <<section-concepts>> is built from. They
 |The link between a user and an organization, carrying the member's role (`Member` or `Organizer`). This local record - not the JWT role - decides at request time whether a user may modify a given organization.
 
 |Notification
-|An in-app message in a user's inbox, generated from a domain event (a sign-up arrived, an invitation was accepted, a matching opportunity was published). Distinct from the emails sent for the same events.
+|An in-app message in a user's inbox, generated from a domain event (a sign-up arrived, an invitation was accepted, an opportunity you signed up for changed). Distinct from the emails sent for the same events.
 
 |Occurrence
 |Whether an opportunity happens once (`OneTime`) or repeatedly (`Recurring`). Recurring opportunities generate a series of time slots that can be edited or cancelled together.
@@ -52,9 +52,6 @@ These are the terms the domain model in <<section-concepts>> is built from. They
 
 |Report
 |An abuse report filed by a user against an opportunity, an organization or another user. Moves from `Open` to either `Dismissed` or `Actioned` in the moderation queue.
-
-|Search Alert
-|A volunteer's saved search criteria. One per user; a scheduled digest job notifies them when newly published opportunities match.
 
 |Shadow Delete
 |An admin action that makes an account, organization or listing invisible to everyone else without destroying its data, so it can be restored. Distinct from a volunteer deleting their own account, which anonymizes their engagements permanently.

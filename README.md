@@ -55,7 +55,6 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 - **Notifications and a language selector** (German by default, English as a secondary language).
 - **Keycloak-backed authentication** via OIDC/PKCE, with Keycloak Organizations powering org membership.
 - **Achievements and badges** awarded for volunteering milestones, shown on the profile.
-- **Saved search alerts** - save a filtered opportunity search and get a digest email when new matches appear.
 - **Organization invitations** to join and manage an organization's membership.
 - **Reporting and moderation** for opportunities, organizations, and users, backed by a full admin audit log.
 - **Image uploads** for avatars, organization logos, and opportunity banners, stored in MinIO object storage.

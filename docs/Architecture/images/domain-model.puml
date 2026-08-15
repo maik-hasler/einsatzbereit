@@ -78,13 +78,6 @@ package Users <<Rectangle>> {
 		TotalConfirmedEngagements
 	}
 
-	class SearchAlert <<aggregate root>> {
-		Categories
-		Tag
-		RadiusKm
-		LastNotifiedAt
-	}
-
 	class Achievement <<aggregate root>> {
 		Type
 		Key
@@ -135,7 +128,6 @@ User "1" o-- "0..*" Engagement : signs up via
 User "1" o-- "0..*" OrganizationMembership : is member through
 User "1" o-- "0..*" OrganizationInvitation : invited as
 User "1" o-- "0..1" UserStreak
-User "1" o-- "0..1" SearchAlert : saves
 User "1" o-- "0..*" Achievement : earns
 User "1" o-- "0..*" Notification : receives
 User "1" o-- "0..*" Report : files

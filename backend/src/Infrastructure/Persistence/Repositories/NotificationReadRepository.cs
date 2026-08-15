@@ -207,7 +207,7 @@ internal sealed class NotificationReadRepository(
 			{
 				opportunityTitles.TryGetValue(n.RelatedEntityId, out relatedTitle);
 
-				actionUrl = n.Kind is NotificationKind.OpportunityUpdated or NotificationKind.NewMatchingOpportunity
+				actionUrl = n.Kind == NotificationKind.OpportunityUpdated
 					? $"/volunteer-opportunities/{n.RelatedEntityId}"
 					: "/my-signups";
 			}
