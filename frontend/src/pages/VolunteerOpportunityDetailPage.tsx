@@ -541,8 +541,8 @@ export default function VolunteerOpportunityDetailPage() {
 							</div>
 
 							{!opportunity.isRemote &&
-								opportunity.latitude != null &&
-								opportunity.longitude != null && (
+								(opportunity.latitude != null &&
+								opportunity.longitude != null ? (
 									<div className="mb-6 overflow-hidden rounded-card border border-gray-100 shadow-resting">
 										<Suspense fallback={<Skeleton className="h-64 w-full" />}>
 											<SingleMarkerMap
@@ -552,7 +552,21 @@ export default function VolunteerOpportunityDetailPage() {
 											/>
 										</Suspense>
 									</div>
-								)}
+								) : (
+									// Coordinates can be missing (geocoding failure/pending
+									// retry, see backend/AGENTS.md's "Domain events") - showing
+									// this note instead of omitting the section keeps the layout
+									// consistent with opportunities that do have a map (#1963).
+									<div
+										data-testid="map-unavailable"
+										className="mb-6 flex h-64 flex-col items-center justify-center gap-2 rounded-card border border-gray-100 bg-gray-50 shadow-resting"
+									>
+										<MapPinIcon className="h-6 w-6 text-gray-400" />
+										<p className="text-sm text-gray-500">
+											{t("opportunities.mapUnavailable")}
+										</p>
+									</div>
+								))}
 						</div>
 
 						{/* Time slots - held to the same max-w-2xl measure as the blocks

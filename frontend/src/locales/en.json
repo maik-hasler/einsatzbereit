@@ -200,6 +200,7 @@
       "reportOpportunity": "Report opportunity",
       "deleteError": "Error deleting",
       "availableTimeSlots": "Available time slots",
+      "mapUnavailable": "No map available for this address.",
       "joinWaitlist": "Select a slot",
       "expressInterest": "Express interest",
       "notFound": "Not found.",
