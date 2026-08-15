@@ -3,6 +3,7 @@ import {
 	useEffect,
 	useMemo,
 	useState,
+	type CSSProperties,
 	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -36,6 +37,7 @@ import {
 	WIDGET_KEYS,
 	classifyWidth,
 	compactLayout,
+	groupIntoRowBands,
 	placeNewWidget,
 	sanitizeWidgetKey,
 	sortByPosition,
@@ -43,6 +45,12 @@ import {
 	type WidgetKey,
 	type WidgetSizeClass,
 } from "./widgetCatalog";
+
+// Lets a band's own container (see the `needsRowBanding` render branch
+// below) override --dashboard-grid-columns (global.css's
+// .dashboard-widget-grid rule) - csstype's CSSProperties has no index
+// signature for custom properties, so the plain type needs this widening.
+type BandGridStyle = CSSProperties & { "--dashboard-grid-columns": number };
 
 // Matches Tailwind's default `lg` breakpoint, which is also where the
 // widget grid switches from a single stacked column to the real 8-column
@@ -169,6 +177,22 @@ export default function OrgDashboardPage() {
 	// gridRow) but on mobile let a widget dragged to the bottom on desktop
 	// render first (#1845).
 	const mobileLayout = isLargeViewport ? layout : sortByPosition(layout);
+
+	// #1932: a layout that never reaches the full GRID_COLUMNS width on every
+	// row (most commonly a lightly-customized layout that trimmed some
+	// widgets down without ever widening them back out) used to render
+	// inside a container that always spanned the full page width regardless,
+	// leaving a permanent blank block next to whichever rows fell short.
+	// Bands split the layout into independent runs of rows (see
+	// groupIntoRowBands in widgetCatalog.ts) so each run's own container can
+	// be capped to the width its own widgets actually reach instead. Only
+	// computed outside edit mode (which needs the full canvas for
+	// placement) and at `lg`+ (mobile already collapses to one stacked
+	// column with nothing to cap) - and only actually used for rendering
+	// (see needsRowBanding below) once some band falls short, so the
+	// default, fully-packed DEFAULT_LAYOUT renders exactly as before.
+	const rowBands = !editing && isLargeViewport ? groupIntoRowBands(layout) : [];
+	const needsRowBanding = rowBands.some((band) => band.columns < GRID_COLUMNS);
 
 	// Memoized so CreateOpportunityWidget's React.memo (see that component)
 	// actually skips re-rendering while a placement is in progress - a fresh
@@ -472,6 +496,60 @@ export default function OrgDashboardPage() {
 		if (cell) placement.handleCellHover(cell);
 	}
 
+	// Shared per-widget tile renderer for both the plain grid (below) and each
+	// row band's own grid (see needsRowBanding below) - `rowOffset` remaps a
+	// widget's stored (grid-absolute) y into a position relative to whichever
+	// container is actually rendering it: 0 for the plain grid (where a
+	// widget's own y already is the grid row), or a band's own
+	// `startRow - 1` otherwise, since CSS grid rows are always relative to
+	// their own container.
+	function renderTile(widget: PlacedWidget, rowOffset = 0) {
+		const isPlacingThis = activeKey === widget.widgetKey;
+		const rect = isPlacingThis && previewRect ? previewRect : widget;
+		const sizeClass = isLargeViewport ? classifyWidth(rect.width) : "compact";
+		return (
+			<EditableWidgetTile
+				key={widget.widgetKey}
+				widgetKey={widget.widgetKey}
+				gridStyle={
+					isLargeViewport
+						? {
+								// Explicit start line (not just `span N`) is required
+								// here: the green backdrop cells above claim every
+								// single cell of the grid explicitly, which fully
+								// saturates CSS Grid's auto-placement algorithm for this
+								// row range. A widget tile placed with only a span (no
+								// start) would have nowhere left to auto-place into and
+								// would overflow into new auto-generated rows below the
+								// entire backdrop.
+								gridColumn: `${rect.x} / span ${rect.width}`,
+								gridRow: `${rect.y - rowOffset} / span ${rect.height}`,
+							}
+						: undefined
+				}
+				editing={editing}
+				showPlacementControls={isLargeViewport}
+				isPlacing={isPlacingThis}
+				hasAnchor={isPlacingThis && anchor !== null}
+				isCornerFlowActive={placingKey === widget.widgetKey}
+				placingDisabled={activeKey !== null && !isPlacingThis}
+				onAdvance={() => placement.handleAdvance(widget.widgetKey)}
+				onArrowKeyDown={(e) =>
+					placement.handleArrowKeyDown(e, widget.widgetKey)
+				}
+				onRemove={() => handleRemoveWidget(widget.widgetKey)}
+				onGripPointerDown={(e) =>
+					placement.startDrag(e, widget.widgetKey, "move")
+				}
+				onResizePointerDown={(e) =>
+					placement.startDrag(e, widget.widgetKey, "resize")
+				}
+			>
+				{renderWidget(widget.widgetKey, sizeClass)}
+			</EditableWidgetTile>
+		);
+	}
+
 	const grid = isEmpty ? (
 		<div data-testid="dashboard-empty-state">
 			<EmptyState
@@ -486,6 +564,56 @@ export default function OrgDashboardPage() {
 						: undefined
 				}
 			/>
+		</div>
+	) : needsRowBanding ? (
+		<div data-testid="dashboard-widget-grid" className="flex flex-col gap-4">
+			{/* #1932: only reachable outside edit mode (rowBands is empty
+			otherwise - see its definition above), so there's no backdrop/
+			placement surface to worry about here. Each band gets its own
+			independent grid, capped to the width its own widgets actually
+			reach (see groupIntoRowBands in widgetCatalog.ts) instead of always
+			spanning the full GRID_COLUMNS - so a lightly-customized layout
+			that trimmed some widgets down without ever widening them back out
+			doesn't leave the rest of that width sitting permanently blank
+			next to them. */}
+			{rowBands.map((band) => {
+				const bandStyle: BandGridStyle = {
+					gridTemplateColumns: `repeat(${band.columns}, minmax(0, 1fr))`,
+					maxWidth: `${(band.columns / GRID_COLUMNS) * 100}%`,
+					"--dashboard-grid-columns": band.columns,
+				};
+				return (
+					<div
+						key={band.startRow}
+						className="dashboard-widget-grid grid gap-4"
+						style={bandStyle}
+					>
+						{band.widgets.map((widget) =>
+							renderTile(widget, band.startRow - 1),
+						)}
+					</div>
+				);
+			})}
+			{isOrganizer && !layoutLoadFailed && (
+				// Same affordance as the unbanded branch's customize hint below,
+				// just outside any CSS grid entirely (a plain block, not
+				// gridRow-positioned within one) since there's no single shared
+				// grid left to position it inside of. Reuses the plain
+				// .dashboard-widget-grid row-height calc (default
+				// --dashboard-grid-columns, full width) so it renders exactly as
+				// tall as an ordinary content row.
+				<div className="dashboard-widget-grid grid">
+					<button
+						type="button"
+						data-testid="dashboard-customize-hint"
+						onClick={startEditing}
+						className="flex h-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-200 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
+					>
+						<PlusIcon />
+						{t("orgDashboard.customizeHint")}
+					</button>
+				</div>
+			)}
 		</div>
 	) : (
 		<div
@@ -534,54 +662,7 @@ export default function OrgDashboardPage() {
 			collapses to a single stacked column below `lg`, where this wouldn't
 			mean anything. */}
 			{guideCells}
-			{mobileLayout.map((widget) => {
-				const isPlacingThis = activeKey === widget.widgetKey;
-				const rect = isPlacingThis && previewRect ? previewRect : widget;
-				const sizeClass = isLargeViewport
-					? classifyWidth(rect.width)
-					: "compact";
-				return (
-					<EditableWidgetTile
-						key={widget.widgetKey}
-						widgetKey={widget.widgetKey}
-						gridStyle={
-							isLargeViewport
-								? {
-										// Explicit start line (not just `span N`) is required
-										// here: the green backdrop cells above claim every
-										// single cell of the grid explicitly, which fully
-										// saturates CSS Grid's auto-placement algorithm for this
-										// row range. A widget tile placed with only a span (no
-										// start) would have nowhere left to auto-place into and
-										// would overflow into new auto-generated rows below the
-										// entire backdrop.
-										gridColumn: `${rect.x} / span ${rect.width}`,
-										gridRow: `${rect.y} / span ${rect.height}`,
-									}
-								: undefined
-						}
-						editing={editing}
-						showPlacementControls={isLargeViewport}
-						isPlacing={isPlacingThis}
-						hasAnchor={isPlacingThis && anchor !== null}
-						isCornerFlowActive={placingKey === widget.widgetKey}
-						placingDisabled={activeKey !== null && !isPlacingThis}
-						onAdvance={() => placement.handleAdvance(widget.widgetKey)}
-						onArrowKeyDown={(e) =>
-							placement.handleArrowKeyDown(e, widget.widgetKey)
-						}
-						onRemove={() => handleRemoveWidget(widget.widgetKey)}
-						onGripPointerDown={(e) =>
-							placement.startDrag(e, widget.widgetKey, "move")
-						}
-						onResizePointerDown={(e) =>
-							placement.startDrag(e, widget.widgetKey, "resize")
-						}
-					>
-						{renderWidget(widget.widgetKey, sizeClass)}
-					</EditableWidgetTile>
-				);
-			})}
+			{mobileLayout.map((widget) => renderTile(widget))}
 			{/* #1939: a first-time organizer has no reason to suspect the blank
 			space below their widgets is customizable - this dashed "+" tile
 			sits in the row right after the current layout's last occupied row

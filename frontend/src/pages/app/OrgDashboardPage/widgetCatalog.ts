@@ -327,6 +327,64 @@ export function settlePlacement(
 	return [rect, ...compactAgainstObstacles(pushed, [rect])];
 }
 
+// A single horizontal run of the layout: a maximal group of widgets whose Y
+// ranges are connected, transitively (#1932). OrgDashboardPage/index.tsx
+// renders each band returned by groupIntoRowBands below as its own
+// independent grid container, capped to `columns` wide instead of always
+// spanning the full GRID_COLUMNS - so a band that never reaches the full
+// width (most commonly a lightly-customized layout that trimmed some
+// widgets down without ever widening them back out) doesn't leave the rest
+// of that width sitting permanently blank next to it. `startRow` is the
+// band's own topmost absolute row; a caller remaps each widget's stored
+// (grid-absolute) y into a position relative to the band's own container
+// via `y - startRow + 1`.
+export interface LayoutRowBand {
+	startRow: number;
+	columns: number;
+	widgets: PlacedWidget[];
+}
+
+// Splits `widgets` into row bands (see LayoutRowBand above). Two widgets
+// belong to the same band whenever their Y ranges overlap, transitively - a
+// row-by-row scan wouldn't work here: a single tall widget (e.g. a 4-row
+// Calendar) shares its band with anything beside it in ANY of those 4 rows,
+// not just the first one. Sorting by y and starting a new band only when a
+// widget's own y falls strictly past the current band's running bottom edge
+// is the standard interval-merging algorithm applied to just the Y axis,
+// ignoring x/width entirely - correct regardless of input order, including
+// ties (a widget sharing its y with the band's first widget always finds
+// bottom already >= its own y, from that first widget's own height alone).
+export function groupIntoRowBands(widgets: PlacedWidget[]): LayoutRowBand[] {
+	const sorted = [...widgets].sort((a, b) => a.y - b.y);
+	const bands: PlacedWidget[][] = [];
+	let bottom = -Infinity;
+	for (const widget of sorted) {
+		if (bands.length === 0 || widget.y > bottom) {
+			bands.push([]);
+			bottom = -Infinity;
+		}
+		bands[bands.length - 1].push(widget);
+		bottom = Math.max(bottom, widget.y + widget.height - 1);
+	}
+
+	return bands.map((bandWidgets) => ({
+		startRow: Math.min(...bandWidgets.map((w) => w.y)),
+		columns: Math.max(...bandWidgets.map((w) => w.x + w.width - 1)),
+		// sortByPosition (not just the y-only sort above, and not the input's
+		// own array order) so DOM/tab order within a band reads top-to-bottom,
+		// then left-to-right, the same way mobile's stacked single-column
+		// rendering already does - OrgDashboardPage/index.tsx renders each
+		// band as its own real CSS grid, so every widget still gets its own
+		// explicit gridColumn/gridRow and doesn't visually depend on this
+		// order, but a screen-reader/keyboard user tabbing through a band
+		// should still land on its widgets in reading order rather than
+		// whatever order edit history happened to leave them in the layout
+		// array (see sortByPosition's own doc comment for why that array
+		// order can't be trusted directly).
+		widgets: sortByPosition(bandWidgets),
+	}));
+}
+
 // Appends a newly added widget directly below every widget currently on the
 // grid, at its catalog default size - always non-overlapping since nothing
 // occupies the grid below the current bottom edge. The organizer then drags

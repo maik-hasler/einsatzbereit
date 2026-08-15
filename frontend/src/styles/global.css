@@ -342,16 +342,30 @@ overflow-y-auto already handles vertical scrolling. */
  * proportions warp between a wide monitor and a narrower one even though
  * its cell counts never changed. Container query units key off this
  * element's own measured width rather than the viewport, matching exactly
- * what a column's 1fr track resolves to (100cqw minus the 7 inter-column
- * gaps, split across 8 columns). Floored at 64px so rows stay usable on
- * the narrowest qualifying (`lg`, 1024px) viewport. */
+ * what a column's 1fr track resolves to (100cqw minus the N-1 inter-column
+ * gaps, split across N columns). Floored at 64px so rows stay usable on
+ * the narrowest qualifying (`lg`, 1024px) viewport.
+ *
+ * --dashboard-grid-columns defaults to the full GRID_COLUMNS (8) - a row
+ * band capped to fewer than that (#1932, see groupIntoRowBands in
+ * widgetCatalog.ts and OrgDashboardPage/index.tsx) overrides it inline so
+ * its own row height still tracks its own (narrower) rendered width the
+ * same way the full-width grid already does, instead of assuming 8
+ * columns' worth of gaps that aren't actually there. */
 .dashboard-widget-grid {
 	container-type: inline-size;
+	--dashboard-grid-columns: 8;
 }
 
 @media (min-width: 1024px) {
 	.dashboard-widget-grid {
-		grid-auto-rows: max(64px, calc((100cqw - 7rem) / 8));
+		grid-auto-rows: max(
+			64px,
+			calc(
+				(100cqw - (var(--dashboard-grid-columns) - 1) * 1rem) /
+					var(--dashboard-grid-columns)
+			)
+		);
 	}
 }
 
