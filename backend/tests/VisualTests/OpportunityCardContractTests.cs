@@ -106,7 +106,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		await Expect(startLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(deadlineLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(startLine).ToContainTextAsync("Starts");
-		await Expect(deadlineLine).ToContainTextAsync("Apply by");
+		await Expect(deadlineLine).ToContainTextAsync("Express interest by");
 
 		var startColor = await startLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
 		var deadlineColor = await deadlineLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
@@ -290,7 +290,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 
 		var dateRegion = card.Locator("[data-testid='engagement-date'][data-date-kind='interest']");
 		await Expect(dateRegion).ToHaveTextAsync("No fixed date - expression of interest");
-		await Expect(card.GetByText("Apply by")).ToBeVisibleAsync();
+		await Expect(card.GetByText("Express interest by")).ToBeVisibleAsync();
 
 		// The message is still on the card - labelled, and outside the date
 		// region rather than standing in for it.
