@@ -2406,6 +2406,29 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OpportunitiesPage_FilterApplied_HasNoSeriousA11yViolations()
+	{
+		// Previously only covered as a side effect of the search-alert toggle's
+		// own a11y test (removed along with that feature) - preserves the only
+		// scan of /opportunities in its "active filter" DOM state: a
+		// FilterDropdown's active/selected trigger variant plus its clear ("x")
+		// button, and the "Reset" pill that only renders once a filter is applied.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("filter-frequency").ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reset" }))
+			.ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task CallbackPage_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297: /callback (the OIDC redirect landing page) never
