@@ -49,13 +49,6 @@ public sealed class VolunteerOpportunity
 
 	public OpportunityStatus Status { get; private set; }
 
-	// Set once, the first time Status transitions to Published (#1090) - unlike
-	// ModifiedOn, an unrelated later edit (e.g. a title tweak) never changes this, so
-	// SearchAlertDigestJob can use it as a stable "became visible at" cursor instead of
-	// mistaking a routine edit for a fresh publish and re-notifying alerts that already
-	// matched it.
-	public DateTimeOffset? PublishedOn { get; private set; }
-
 	public string? CancellationReason { get; private set; }
 
 	public string? BannerImageUrl { get; private set; }
@@ -116,7 +109,6 @@ public sealed class VolunteerOpportunity
 		Category = category;
 		_tags = new List<string>(tags);
 		Status = status;
-		PublishedOn = status == OpportunityStatus.Published ? now : null;
 		ValidUntil = validUntil;
 		if (checkInMethod == CheckInMethod.PINCode)
 			CheckInPin = checkInPin ?? pinGenerator.GeneratePin();
@@ -323,7 +315,6 @@ public sealed class VolunteerOpportunity
 			return hasValidUntil;
 
 		Status = OpportunityStatus.Published;
-		PublishedOn = now ?? DateTimeOffset.UtcNow;
 		AddEvent(new VolunteerOpportunityPublishedDomainEvent(Id, OrganizationId));
 		return Result.Success();
 	}

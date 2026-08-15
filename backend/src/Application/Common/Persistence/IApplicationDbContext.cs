@@ -5,7 +5,6 @@ using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Reports;
-using Domain.SearchAlerts;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -35,16 +34,6 @@ public interface IApplicationDbContext
 	IAggregateRepository<Report, ReportId> Reports { get; }
 
 	IAggregateRepository<AuditLog, AuditLogId> AuditLogs { get; }
-
-	IAggregateRepository<SearchAlert, SearchAlertId> SearchAlerts { get; }
-
-	Task<SearchAlert?> GetSearchAlertForUserAsync(
-		UserId userId,
-		CancellationToken cancellationToken = default);
-
-	Task DeleteSearchAlertForUserAsync(
-		UserId userId,
-		CancellationToken cancellationToken = default);
 
 	Task DeleteReportsForReporterAsync(
 		UserId reporterId,

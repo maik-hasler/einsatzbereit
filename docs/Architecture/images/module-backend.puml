@@ -9,7 +9,7 @@ Container_Boundary(backend, "Backend API") {
 	Component(engagements, "Engagements", "Api/ + Application/ + Domain/ Engagements", "Sign-up, withdrawal, confirmation and cancellation, check-in, feedback, reminders and calendar.")
 	Component(organizations, "Organizations", "Api/ + Application/ + Domain/ Organizations", "Organization profiles, memberships and roles, invitations sent by an organizer, dashboard layout.")
 	Component(invitations, "Invitations", "Api/ + Application/ Invitations", "The invitee's side of an invitation: list, accept, decline. Shares the Organizations aggregate.")
-	Component(users, "Users", "Api/ + Application/ + Domain/ Users", "Profiles, notification preferences, streaks, search alerts, account deletion, admin user administration.")
+	Component(users, "Users", "Api/ + Application/ + Domain/ Users", "Profiles, notification preferences, streaks, account deletion, admin user administration.")
 	Component(achievements, "Achievements", "Api/ + Application/ + Domain/ + Infrastructure/ Achievements", "Badge catalog and awarding of milestone, streak and hidden achievements.")
 	Component(notifications, "Notifications", "Api/ + Application/ + Domain/ Notifications", "In-app notification inbox: create, read, mark read, retention.")
 	Component(reports, "Reports", "Api/ + Application/ + Domain/ Reports", "Abuse reports against opportunities, organizations and users; moderation queue.")

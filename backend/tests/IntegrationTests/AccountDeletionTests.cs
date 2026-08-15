@@ -99,18 +99,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			new CreateInvitationRequest { InviteeId = thirdPartyUserId, Role = "Member" },
 			cancellationToken);
 
-		// #1676: a saved search alert (with location) - proves it's cleaned up
-		// on deletion instead of surviving to let the digest job resurrect the user.
-		await ephemeralClient.SaveSearchAlertAsync(
-			new SaveSearchAlertRequest
-			{
-				CenterLatitude = 52.52,
-				CenterLongitude = 13.405,
-				RadiusKm = 10,
-				Categories = ["Environment"],
-			},
-			cancellationToken);
-
 		// #1676: a report the ephemeral user filed (as reporter) against the
 		// third-party user - proves reports the deleted user filed are cleaned up.
 		await ephemeralClient.ReportUserAsync(
@@ -168,10 +156,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		(await fixture.CountRowsWhereAsync("organization_invitation", "invitee_id", ephemeralUserId))
 			.Should().Be(0);
 		(await fixture.CountRowsWhereAsync("organization_invitation", "invited_by_id", ephemeralUserId))
-			.Should().Be(0);
-
-		// #1676: the search alert (with its stored location) is hard-deleted.
-		(await fixture.CountRowsWhereAsync("search_alert", "user_id", ephemeralUserId))
 			.Should().Be(0);
 
 		// #1676: the report the ephemeral user filed as reporter is hard-deleted.

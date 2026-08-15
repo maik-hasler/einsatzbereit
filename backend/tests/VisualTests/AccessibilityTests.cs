@@ -2406,14 +2406,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OpportunitiesPage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
+	public async Task OpportunitiesPage_FilterApplied_HasNoSeriousA11yViolations()
 	{
-		// #1090: the "notify me about new matches" toggle only renders once a
-		// signed-in volunteer has a filter active - neither existing HomePage
-		// scan above signs in or applies a filter, so this button's state was
-		// never covered by an axe scan.
+		// Previously only covered as a side effect of the search-alert toggle's
+		// own a11y test (removed along with that feature) - preserves the only
+		// scan of /opportunities in its "active filter" DOM state: a
+		// FilterDropdown's active/selected trigger variant plus its clear ("x")
+		// button, and the "Reset" pill that only renders once a filter is applied.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -2421,7 +2421,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("filter-frequency").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Notify me about new matches" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reset" }))
 			.ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();

@@ -176,12 +176,6 @@
       "citySearching": "Searching…",
       "cityNoMatch": "No matching city found.",
       "cityError": "Couldn't search for that city. Please try again.",
-      "searchAlertActivate": "Notify me about new matches",
-      "searchAlertActive": "Alert active",
-      "searchAlertDeactivate": "Turn off alert",
-      "searchAlertActivated": "You'll be notified about new opportunities matching this search.",
-      "searchAlertDeactivated": "Alert turned off.",
-      "searchAlertError": "Something went wrong. Please try again.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
@@ -791,7 +785,7 @@
       "section4Title": "Uploaded images",
       "section4Body": "When you upload a profile picture, or your organization adds a logo or an opportunity banner image, the file is stored on our self-hosted, S3-compatible object storage (MinIO). From the moment it is uploaded, the file is accessible via a public URL with no access restriction and no login required. A backup copy is additionally stored off-host, see the \"Hosting and backups\" section.",
       "section5Title": "Transactional emails",
-      "section5Body": "We send emails that are necessary to operate your account and use the platform: to confirm your email address and to reset your password (via our authentication service, Keycloak), and notifications about sign-ups, confirmations, cancellations, reminders, invitations, and matches for saved searches. These are sent through an SMTP delivery provider with whom a data processing agreement under Art. 28 GDPR is in place. The legal basis is performance of the usage agreement with you (Art. 6(1)(b) GDPR). Notifications that are not required to operate your account can be unsubscribed from in your profile settings or via the unsubscribe link in the respective email.",
+      "section5Body": "We send emails that are necessary to operate your account and use the platform: to confirm your email address and to reset your password (via our authentication service, Keycloak), and notifications about sign-ups, confirmations, cancellations, reminders, and invitations. These are sent through an SMTP delivery provider with whom a data processing agreement under Art. 28 GDPR is in place. The legal basis is performance of the usage agreement with you (Art. 6(1)(b) GDPR). Notifications that are not required to operate your account can be unsubscribed from in your profile settings or via the unsubscribe link in the respective email.",
       "section6Title": "Hosting and backups",
       "section6Body": "This platform - including its database and object storage - runs on a server operated by Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany. The database and object storage are additionally backed up locally every day; these backups are further mirrored to a separate Hetzner Online GmbH object storage bucket so the platform can be restored if the server fails or is lost. Hetzner processes this data as our processor under Art. 28 GDPR; a corresponding data processing agreement (DPA) is in place with Hetzner. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR) in operating the platform reliably and being able to recover from data loss.",
       "section7Title": "Logging of security-relevant actions",
@@ -899,8 +893,7 @@
         "InvitationReceived": "You've been invited to join {{title}}",
         "InvitationAccepted": "Your invitation to join {{title}} was accepted",
         "InvitationDeclined": "Your invitation to join {{title}} was declined",
-        "FeedbackSubmitted": "New feedback received for {{title}}",
-        "NewMatchingOpportunity": "A new opportunity matches your saved search: {{title}}"
+        "FeedbackSubmitted": "New feedback received for {{title}}"
       }
     },
     "language": {
@@ -1432,9 +1425,6 @@
       "AuditLogId": {
         "Empty": "AuditLogId must not be empty."
       },
-      "SearchAlertId": {
-        "Empty": "SearchAlertId must not be empty."
-      },
       "User": {
         "InvalidId": "Invalid user.",
         "NotFound": "User not found.",
@@ -1532,16 +1522,6 @@
         "AlreadyReported": "You have already reported this.",
         "DetailsTooLong": "Details must not exceed 1000 characters.",
         "CannotReportSelf": "You cannot report yourself."
-      },
-      "SearchAlert": {
-        "NotFound": "No active search alert exists for this user.",
-        "IncompleteLocation": "Center latitude and longitude must both be supplied together.",
-        "InvalidLatitude": "Center latitude must be between -90 and 90.",
-        "InvalidLongitude": "Center longitude must be between -180 and 180.",
-        "InvalidRadius": "Radius must be between 1 and 500 km.",
-        "InvalidOccurrence": "Unknown occurrence type.",
-        "InvalidParticipationType": "Unknown participation type.",
-        "InvalidCategory": "Unknown category."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",

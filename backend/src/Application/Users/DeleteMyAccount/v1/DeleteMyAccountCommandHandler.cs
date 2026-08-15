@@ -40,7 +40,6 @@ internal sealed class DeleteMyAccountCommandHandler(
 		await dbContext.RemoveMembershipsForUserAsync(request.UserId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteInvitationsForUserAsync(request.UserId, cancellationToken);
-		await dbContext.DeleteSearchAlertForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteReportsForReporterAsync(request.UserId, cancellationToken);
 
 		// Reports where this user is the *target* (not the reporter) are
