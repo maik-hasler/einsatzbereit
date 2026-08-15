@@ -33,6 +33,17 @@ void i18next
 	.init({
 		fallbackLng: "de",
 		supportedLngs: ["de", "en"],
+		// i18next defers changeLanguage() (and therefore setting
+		// i18next.language) into a setTimeout by default (#1934) - this
+		// module's custom backend is async regardless (dynamic import), but
+		// language *detection* itself (localStorage/navigator, below) is
+		// synchronous, so there's no need to pay that extra tick. Without
+		// this, `document.documentElement.lang = i18next.language` below
+		// runs before the language is resolved at all, briefly setting
+		// lang="undefined" on every page load until the languageChanged
+		// listener corrects it - a real, deterministic race, not staging
+		// noise.
+		initAsync: false,
 		detection: {
 			order: ["localStorage", "navigator"],
 			caches: ["localStorage"],
