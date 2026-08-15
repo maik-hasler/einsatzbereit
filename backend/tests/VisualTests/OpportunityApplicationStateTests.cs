@@ -47,7 +47,11 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("Your sign-up")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// Scoped to the desktop testid (#1965 added a second, lg:hidden copy of
+		// this same "Your sign-up" text right above the map for narrow
+		// viewports - an unscoped Page.GetByText would match both).
+		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
 	}
@@ -89,7 +93,11 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("Your sign-up")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// Scoped to the desktop testid (#1965 added a second, lg:hidden copy of
+		// this same "Your sign-up" text right above the map for narrow
+		// viewports - an unscoped Page.GetByText would match both).
+		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
 	}
