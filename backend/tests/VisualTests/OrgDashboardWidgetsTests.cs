@@ -465,6 +465,118 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
+	public async Task CalendarWidget_ToolbarDateRangeHeader_UsesSharedDateFormat_NotAmbiguousDdMmYyyy()
+	{
+		// #1959: the Agenda/Week toolbar's date-range label (e.g. "14/08/2026 -
+		// 13/09/2026") came straight from react-big-calendar's own
+		// agendaHeaderFormat/dayRangeHeaderFormat defaults (date-fns' locale
+		// default 'P' token, or a year-less "MMMM dd" range for Week), never
+		// routed through the site's shared formatDate/formatDateTime helpers
+		// that every other date on the site - including this same widget's own
+		// event chips - goes through. A raw DD/MM/YYYY pair is genuinely
+		// ambiguous for a mixed EN/DE audience, and the Week range dropped the
+		// year entirely. Both are now built from formatDate, so this asserts
+		// the header always carries a spelled-out month and an explicit year
+		// on both sides, joined with the site's plain ASCII " - " rather than
+		// react-big-calendar's own Unicode en dash separator.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1959 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		// Gives the widget a real event row alongside the toolbar header, same
+		// as the reported repro (comparing the header against an event row a
+		// few lines below it).
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"Visual1959 Opportunity {suffix}",
+			description = "Created by CalendarWidget toolbar date-format test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(3);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var toolbarLabel = calendarWidget.Locator(".rbc-toolbar-label");
+		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
+
+		// "d MMM yyyy - d MMM yyyy" - the same shape formatDate (dateStyle:
+		// medium) produces everywhere else on the site, on both sides of the
+		// range regardless of whether the range crosses a month boundary.
+		const string sharedDateFormatPattern = @"^\d{1,2} [A-Za-z]+ \d{4} - \d{1,2} [A-Za-z]+ \d{4}$";
+
+		// The widget defaults to Month view (its own default for a "full"
+		// placement, see defaultViewForSize) - captured before switching so
+		// the waits below can confirm each click's re-render actually landed
+		// rather than reading InnerTextAsync() in a race with React's update.
+		var monthLabel = await toolbarLabel.InnerTextAsync();
+
+		await viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true }).ClickAsync();
+		await Expect(toolbarLabel).Not.ToHaveTextAsync(monthLabel);
+		var agendaLabel = await toolbarLabel.InnerTextAsync();
+		Regex.IsMatch(agendaLabel, @"^\d{1,2}/\d{1,2}/\d{4}").Should().BeFalse(
+			$"the Agenda toolbar header must not fall back to a raw, locale-ambiguous DD/MM/YYYY pair (got \"{agendaLabel}\")");
+		agendaLabel.Should().NotContain("\u2013",
+			"the shared date formatter joins with a plain ASCII hyphen, not react-big-calendar's own en dash default");
+		agendaLabel.Should().MatchRegex(sharedDateFormatPattern,
+			$"the Agenda toolbar header must use the site's shared date format (got \"{agendaLabel}\")");
+
+		await viewGroup.GetByRole(AriaRole.Button, new() { Name = "Week", Exact = true }).ClickAsync();
+		await Expect(toolbarLabel).Not.ToHaveTextAsync(agendaLabel);
+		var weekLabel = await toolbarLabel.InnerTextAsync();
+		weekLabel.Should().NotContain("\u2013",
+			"the shared date formatter joins with a plain ASCII hyphen, not react-big-calendar's own en dash default");
+		weekLabel.Should().MatchRegex(sharedDateFormatPattern,
+			$"the Week toolbar header must carry an explicit year on both sides via the site's shared date format, "
+				+ $"not react-big-calendar's own year-less \"MMMM dd\" range default (got \"{weekLabel}\")");
+	}
+
+	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
 		// #812: WidgetCard only set overflow-y-auto on its content wrapper, and
