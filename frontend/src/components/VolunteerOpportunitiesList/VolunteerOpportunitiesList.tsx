@@ -431,7 +431,7 @@ export default function VolunteerOpportunitiesList() {
 									onSelect={selectLocationSuggestion}
 									placeholder={t("opportunities.locationPlaceholder")}
 									ariaLabel={t("opportunities.filterLabelCity")}
-									inputClassName="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-400 focus:bg-white"
+									inputClassName="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-600 focus:border-brand-400 focus:bg-white"
 								/>
 							</div>
 
