@@ -833,10 +833,17 @@ textarea.form-input {
 /* The frontend's own fade-up keyframe and 0.12s stagger, gated on the same
  * media query it uses. Two steps only - the card, then the way out from under
  * it - because the whole page is one card; a longer orchestration on four
- * form fields would be motion for its own sake. */
+ * form fields would be motion for its own sake.
+ *
+ * Unlike the frontend's decorative fade-up (which does animate opacity 0 -> 1,
+ * fine for marketing content nobody needs to read within the first second),
+ * this stays at opacity: 1 throughout and only animates the slide-up offset
+ * (#1960) - the sign-in card's heading, labels and "Sign In" button must be
+ * fully legible from the very first frame, since a password manager or screen
+ * reader can interact with the form before any entrance animation settles. */
 @media (prefers-reduced-motion: no-preference) {
 	@keyframes auth-fade-up {
-		from { opacity: 0; transform: translateY(12px); }
+		from { opacity: 1; transform: translateY(12px); }
 		to   { opacity: 1; transform: translateY(0); }
 	}
 

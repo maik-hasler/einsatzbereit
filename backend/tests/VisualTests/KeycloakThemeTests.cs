@@ -131,6 +131,53 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Login_AuthFadeUpKeyframe_NeverDipsBelowFullOpacity()
+	{
+		// Regression for #1960: the auth-fade-up keyframe used to fade opacity
+		// 0 -> 1 over 0.45s, so the card's heading, labels and the primary
+		// "Sign In" button rendered as low-contrast gray-green for the first
+		// second or so after load - the single most function-critical page in
+		// the product briefly looking broken, and interactable (by a password
+		// manager or screen reader) before the fade even settled. Asserts
+		// against the parsed @keyframes rule itself rather than sampling
+		// getComputedStyle during the real animation, which would depend on
+		// exactly when this test happens to sample relative to a CI runner's
+		// load timing - the CSSOM still exposes the rule's frames regardless
+		// of whether prefers-reduced-motion currently matches it.
+		await Page.GotoAsync(AuthUrl(locale: "en"));
+		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var fromOpacity = await Page.EvaluateAsync<string?>(@"
+			() => {
+				for (const sheet of document.styleSheets) {
+					let rules;
+					try { rules = sheet.cssRules; } catch { continue; }
+					for (const rule of rules) {
+						const keyframesRules = rule instanceof CSSKeyframesRule
+							? [rule]
+							: rule instanceof CSSMediaRule
+								? [...rule.cssRules].filter(r => r instanceof CSSKeyframesRule)
+								: [];
+						for (const kf of keyframesRules) {
+							if (kf.name !== 'auth-fade-up') continue;
+							for (const frame of kf.cssRules) {
+								if (frame.keyText === 'from' || frame.keyText === '0%') {
+									return frame.style.opacity || null;
+								}
+							}
+						}
+					}
+				}
+				return null;
+			}");
+
+		fromOpacity.Should().Be("1",
+			"the auth-fade-up keyframe's starting frame must stay at full opacity - "
+			+ "the sign-in card must never render at reduced contrast, not even "
+			+ "transiently during its entrance animation");
+	}
+
+	[Test]
 	public async Task Register_OmitsPasswordFields_AndSaysWhy()
 	{
 		// The realm has verifyEmail on, so Keycloak deliberately leaves the
