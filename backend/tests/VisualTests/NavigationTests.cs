@@ -401,6 +401,33 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_LanguageSelector_DropdownStaysInsideViewportAt1440px()
+	{
+		// #1936: the open <ul> was anchored "top-full left-0" with a fixed
+		// w-36 (144px) width, so it grew rightward from the trigger's left
+		// edge instead of the trigger's own right edge - at 1440px that pushed
+		// the panel's right edge past the viewport, clipping its border/
+		// background and truncating "Deutsch" with no visible box edge.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.SetViewportSizeAsync(1440, 900);
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var banner = Page.GetByRole(AriaRole.Banner);
+		var langBtn = banner.GetByTestId("language-selector-trigger");
+		await langBtn.ClickAsync();
+
+		var dropdown = banner.GetByTestId("language-selector-menu");
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var box = await dropdown.BoundingBoxAsync();
+		box.Should().NotBeNull("Could not measure the language selector dropdown");
+		(box!.X + box.Width).Should().BeLessThanOrEqualTo(
+			1440, "the dropdown must not overflow past the right edge of the viewport");
+	}
+
+	[Test]
 	public async Task MobileMenu_ClosesOnEscape()
 	{
 		// #884: MobileMenu offered neither outside-click nor Escape dismissal
