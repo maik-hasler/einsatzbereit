@@ -385,21 +385,32 @@ export function groupIntoRowBands(widgets: PlacedWidget[]): LayoutRowBand[] {
 	}));
 }
 
-// Appends a newly added widget directly below every widget currently on the
-// grid, at its catalog default size - always non-overlapping since nothing
-// occupies the grid below the current bottom edge. The organizer then drags
-// it into its intended spot via corner-to-corner placement.
+// Places a newly added widget into the first available empty cell(s) on the
+// grid, at its catalog default size (#1917), instead of always appending
+// below every existing widget in column 1 - that ignored gaps elsewhere on
+// the grid, so a partially-filled layout with open columns beside its
+// existing widgets still had every new addition stack underneath column 1,
+// one on top of the next. Scans row-major (top-to-bottom, then left-to-right
+// within a row) for the first position the widget's footprint fits without
+// overlapping anything already placed.
 export function placeNewWidget(
 	widgetKey: WidgetKey,
 	existing: PlacedWidget[],
 ): PlacedWidget {
-	const entry = WIDGET_CATALOG[widgetKey];
+	const { defaultWidth: width, defaultHeight: height } =
+		WIDGET_CATALOG[widgetKey];
 	const bottom = existing.reduce((max, w) => Math.max(max, w.y + w.height), 1);
-	return {
-		widgetKey,
-		x: 1,
-		y: bottom,
-		width: entry.defaultWidth,
-		height: entry.defaultHeight,
-	};
+	for (let y = 1; y <= bottom; y++) {
+		for (let x = 1; x + width - 1 <= GRID_COLUMNS; x++) {
+			const candidate: PlacedWidget = { widgetKey, x, y, width, height };
+			if (!existing.some((w) => rectsOverlap(candidate, w))) {
+				return candidate;
+			}
+		}
+	}
+	// Unreachable: row `bottom` (by definition) has nothing occupying it or
+	// any row below, so the y === bottom, x === 1 candidate above always
+	// matches before the loop runs out - this return only exists to give
+	// every code path a value for the type checker.
+	return { widgetKey, x: 1, y: bottom, width, height };
 }
