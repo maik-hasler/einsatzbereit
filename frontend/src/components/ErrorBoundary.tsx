@@ -2,6 +2,9 @@ import { Component, type ReactNode } from "react";
 import i18next from "i18next";
 import { statusTitleClass } from "../lib/headingClasses";
 import Button from "./Button";
+import RouteState from "./RouteState";
+import { isDynamicImportError } from "../lib/dynamicImportError";
+import { getOnlineStatus, subscribeOnlineStatus } from "../lib/onlineStatus";
 
 interface Props {
 	children: ReactNode;
@@ -14,16 +17,54 @@ interface Props {
 interface State {
 	hasError: boolean;
 	error: Error | null;
+	online: boolean;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
+	private unsubscribeOnlineStatus: (() => void) | null = null;
+
 	constructor(props: Props) {
 		super(props);
-		this.state = { hasError: false, error: null };
+		this.state = { hasError: false, error: null, online: getOnlineStatus() };
 	}
 
-	static getDerivedStateFromError(error: Error): State {
+	static getDerivedStateFromError(
+		error: Error,
+	): Pick<State, "hasError" | "error"> {
 		return { hasError: true, error };
+	}
+
+	componentDidMount() {
+		// #1955: every route is lazy-loaded (App.tsx), so navigating to one
+		// whose chunk was never fetched throws a plain TypeError straight out of
+		// the dynamic import() - not routed through useOnlineStatus/RouteState at
+		// all, unlike every other offline-aware surface in the app.
+		this.unsubscribeOnlineStatus = subscribeOnlineStatus(() => {
+			const online = getOnlineStatus();
+			const cameBackOnline = online && !this.state.online;
+			// React.lazy() caches its import() promise - and a rejection - for
+			// the lifetime of the page (App.tsx's lazy() calls are module-level
+			// constants shared by every render), so clearing `hasError` here
+			// would just re-render straight into the exact same cached rejection
+			// and re-throw it instantly. Only a real reload re-fetches the chunk
+			// from scratch, mirroring what a visitor who reloads by hand already
+			// gets once back online - and matching what routeState.offline's
+			// reused copy ("we load the page again - you do not have to do
+			// anything") promises.
+			if (
+				cameBackOnline &&
+				this.state.hasError &&
+				isDynamicImportError(this.state.error)
+			) {
+				window.location.reload();
+				return;
+			}
+			this.setState({ online });
+		});
+	}
+
+	componentWillUnmount() {
+		this.unsubscribeOnlineStatus?.();
 	}
 
 	componentDidCatch(error: Error, info: React.ErrorInfo) {
@@ -43,6 +84,17 @@ export default class ErrorBoundary extends Component<Props, State> {
 		if (this.state.hasError) {
 			if (this.props.fallback) return this.props.fallback;
 			const t = i18next.t.bind(i18next);
+
+			if (!this.state.online && isDynamicImportError(this.state.error)) {
+				return (
+					<RouteState
+						variant="offline"
+						title={t("routeState.offline.title")}
+						message={t("routeState.offline.message")}
+					/>
+				);
+			}
+
 			return (
 				<div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
 					<h1 className={`text-brand-700 ${statusTitleClass}`}>
