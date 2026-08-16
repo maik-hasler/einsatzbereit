@@ -542,6 +542,7 @@
       "leaveOrganizationLastOrganizerHint": "You're the only organizer of this organization - delete the organization instead if you want to close it.",
       "searching": "Searching…",
       "noSearchResults": "No users found.",
+      "memberSearchError": "Could not search for users.",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",
       "inviteRoleLabel": "Invite as",
