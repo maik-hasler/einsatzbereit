@@ -92,7 +92,16 @@ internal sealed class ApplicationDbContextInitializer(
 			pinGenerator,
 			category: Category.Health,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
-		opp1.AddTimeSlot(DayAt(now, 14, 9), DayAt(now, 14, 17), 20, now).GetValueOrThrow();
+		// Dated in the past (unlike the DayAt(now, +N, ...) pattern used for every other
+		// seeded slot) rather than in the future, so Vera's sign-up below lands as a
+		// genuinely reachable "past, checked-in, awaiting feedback" engagement instead of
+		// leaving that state only reachable as staging test debris (#1909). TimeSlot.Create
+		// validates startDateTime against the "now" it is given, not DateTimeOffset.UtcNow,
+		// so an artificial anchor before the slot's own start satisfies that check while the
+		// persisted dates stay genuinely in the past.
+		var opp1SlotStart = DayAt(now, -3, 9);
+		var opp1SlotEnd = DayAt(now, -3, 17);
+		opp1.AddTimeSlot(opp1SlotStart, opp1SlotEnd, 20, opp1SlotStart.AddDays(-1)).GetValueOrThrow();
 		opp1.Publish().ThrowIfFailure();
 
 		var opp2 = VolunteerOpportunity.Create(
@@ -221,8 +230,14 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
+		var opp1Engagement = Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id);
+		opp1Engagement.Confirm().ThrowIfFailure();
+		// Checked in but feedback not yet submitted - the reachable "past, completed,
+		// awaiting feedback" example the rating flow needs to be testable at all (#1909).
+		opp1Engagement.CheckIn().ThrowIfFailure();
+
 		dbContext.Set<Engagement>().AddRange(
-			Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
+			opp1Engagement,
 			Engagement.CreateIndividualContact(
 				opp2.Id,
 				veraUserId,
