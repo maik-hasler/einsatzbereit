@@ -86,7 +86,9 @@ public class ErrorBoundaryOfflineTests(AspireFixture fixture) : VisualTestBase(f
 		// Same edge-triggered pattern useLoadMore already relies on for a failed
 		// data fetch (see OfflineStateTests), just with a reload as the specific
 		// recovery action instead of a refetch.
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Help" }))
+		// Exact: HelpPage's own "Still need help?" contact heading also matches
+		// a plain (substring) "Help" filter.
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Help", Exact = true }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 	}
 }
