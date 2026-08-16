@@ -62,6 +62,17 @@ server {
 		add_header Content-Security-Policy $csp_header always;
 	}
 
+	# nginx's default mime.types has no .webmanifest entry, so it falls back to
+	# default_type (application/octet-stream) instead of the
+	# application/manifest+json the W3C Web App Manifest spec requires
+	# (einsatzbereit#1966) - most browsers are lenient about it, but a strict
+	# installability check (some Lighthouse configs, some non-Chromium engines)
+	# can refuse to treat a non-application/manifest+json response as a valid
+	# manifest.
+	location = /manifest.webmanifest {
+		default_type application/manifest+json;
+	}
+
 	location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
 		expires 1y;
 		add_header Cache-Control "public, immutable" always;
