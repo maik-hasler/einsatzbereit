@@ -2487,7 +2487,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("filter-frequency").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reset" }))
+		await Expect(
+			Page.GetByTestId("opportunities-filter-bar")
+				.GetByRole(AriaRole.Button, new() { Name = "Reset" }))
 			.ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
