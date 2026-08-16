@@ -374,6 +374,24 @@ export default function CreateVolunteerOpportunityModal({
 		else onClose();
 	}
 
+	// react-hook-form only re-validates an already-errored field on every
+	// keystroke once the form has been through a handleSubmit() call
+	// (isSubmitted flips reValidateMode's default of "onChange" into effect) -
+	// this wizard never calls handleSubmit, each step and the final submit
+	// call trigger() directly instead, so a field marked invalid by "Next"
+	// kept showing its error, aria-invalid included, until "Next" was clicked
+	// again even after the user had already fixed it (#1928). Re-running that
+	// one field's own validation on change once it has an error closes the
+	// gap without waiting for another step advance.
+	const registerWithRevalidate: typeof register = (name, options) =>
+		register(name, {
+			...options,
+			onChange: async (event) => {
+				await options?.onChange?.(event);
+				if (errors[name as keyof OpportunityFormValues]) await trigger(name);
+			},
+		});
+
 	function applyOrgAddress() {
 		if (!orgAddress) return;
 		setValue("street", orgAddress.street);
@@ -1059,7 +1077,7 @@ export default function CreateVolunteerOpportunityModal({
 
 					{step === 1 && (
 						<BasicsStep
-							register={register}
+							register={registerWithRevalidate}
 							watch={watch}
 							titleError={errors.title?.message}
 							descriptionError={errors.description?.message}
@@ -1072,7 +1090,7 @@ export default function CreateVolunteerOpportunityModal({
 
 					{step === 2 && (
 						<LocationStep
-							register={register}
+							register={registerWithRevalidate}
 							watch={watch}
 							onRemoteToggle={handleRemoteToggle}
 							errors={{
@@ -1090,7 +1108,7 @@ export default function CreateVolunteerOpportunityModal({
 
 					{step === 3 && (
 						<FormatStep
-							register={register}
+							register={registerWithRevalidate}
 							watch={watch}
 							setCheckInPin={setCheckInPin}
 							checkInPinError={errors.checkInPin?.message}
