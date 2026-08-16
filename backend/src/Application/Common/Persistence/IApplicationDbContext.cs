@@ -196,6 +196,17 @@ public interface IApplicationDbContext
 		UserId recipientId,
 		CancellationToken cancellationToken = default);
 
+	// Deletes any InvitationReceived notification(s) still pointing at this
+	// invitation (einsatzbereit#1919) - called wherever an invitation stops
+	// being actionable (accepted/declined/expired/dismissed) so a stale
+	// notification never survives to be clicked into a /my-signups page with
+	// no trace of what it was about. Scoped to a set rather than a single row
+	// as a defensive match for RelatedEntityId, not because callers expect
+	// more than one.
+	Task DeleteInvitationReceivedNotificationsAsync(
+		Guid invitationId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);

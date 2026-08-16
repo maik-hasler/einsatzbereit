@@ -242,6 +242,84 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_InvitationReceived_IsRemoved_WhenInvitationIsAccepted(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1919: an accepted invitation is resolved, so its
+		// InvitationReceived notification must not survive to be clicked into a
+		// /my-signups page with nothing left to show for it.
+		const string organizationName = "Invitation Accept Cleanup Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		var beforeAccept = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		beforeAccept.Items.Should().Contain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var afterAccept = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		afterAccept.Items.Should().NotContain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+	}
+
+	[Test]
+	public async Task GetMyNotifications_InvitationReceived_IsRemoved_WhenInvitationIsDeclined(
+		CancellationToken cancellationToken)
+	{
+		const string organizationName = "Invitation Decline Cleanup Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		var beforeDecline = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		beforeDecline.Items.Should().Contain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+
+		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var afterDecline = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		afterDecline.Items.Should().NotContain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+	}
+
+	[Test]
+	public async Task GetMyNotifications_InvitationReceived_IsRemoved_WhenOrganizerDismissesInvitation(
+		CancellationToken cancellationToken)
+	{
+		// An organizer revoking a still-Pending invitation (#1040) deletes the
+		// invitation row outright - the invitee's InvitationReceived notification
+		// would otherwise point at an invitation that no longer exists at all.
+		const string organizationName = "Invitation Dismiss Cleanup Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		var beforeDismiss = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		beforeDismiss.Items.Should().Contain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+
+		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var afterDismiss = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		afterDismiss.Items.Should().NotContain(n => n.Kind == "InvitationReceived" && n.RelatedTitle == organizationName);
+	}
+
+	[Test]
 	public async Task GetMyNotifications_FeedbackSubmitted_HasRelatedTitleAndOrganizerDashboardUrl(
 		CancellationToken cancellationToken)
 	{

@@ -45,6 +45,7 @@ public class DeclineInvitationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		invitation.Status.Should().Be(InvitationStatus.Declined);
+		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -64,6 +65,7 @@ public class DeclineInvitationCommandHandlerTests
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -84,6 +86,7 @@ public class DeclineInvitationCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		invitation.Status.Should().Be(InvitationStatus.Pending);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -103,6 +106,7 @@ public class DeclineInvitationCommandHandlerTests
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -122,5 +126,6 @@ public class DeclineInvitationCommandHandlerTests
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }

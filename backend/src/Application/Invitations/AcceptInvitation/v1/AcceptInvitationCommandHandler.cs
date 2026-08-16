@@ -40,6 +40,13 @@ internal sealed class AcceptInvitationCommandHandler(
 
 		invitation.Accept().ThrowIfFailure();
 
+		// #1919: the InvitationReceived notification's job is done the moment
+		// this invitation stops being actionable - leaving it in place meant
+		// clicking it later (from the bell's recent-notifications list, still
+		// unread or not) landed on /my-signups with no trace of what it was
+		// about.
+		await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
+
 		await keycloakOrganizationService.AddMemberAsync(
 			invitation.OrganizationId.Value,
 			invitation.InviteeId.Value,
