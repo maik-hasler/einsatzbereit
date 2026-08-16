@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
 import Button from "./Button";
@@ -32,6 +32,18 @@ export default function ConfirmDialog({
 	// textarea) rendered above it doesn't steal default focus from "Keep" -
 	// the safe, non-destructive action a confirm dialog should default to.
 	const actionsRef = useRef<HTMLDivElement>(null);
+	const errorRef = useRef<HTMLParagraphElement>(null);
+
+	// The confirm button that triggered this error is disabled while `loading`
+	// (browsers blur a focused element the instant it's disabled) and then
+	// unmounts entirely once `error` lands, replaced by the single
+	// acknowledgement button below - so without this, focus is stranded on
+	// <body> while the dialog is still open. Same "disabled blurs to body"
+	// fix OrgSettingsPage.tsx and DetailsStep.tsx apply for the same reason.
+	useEffect(() => {
+		if (!error) return;
+		errorRef.current?.focus();
+	}, [error]);
 
 	return (
 		<Modal
@@ -56,26 +68,44 @@ export default function ConfirmDialog({
 
 			{children && <div className="mt-3">{children}</div>}
 
-			{error && <ErrorBanner message={error} className="mt-3" />}
+			{error && (
+				<ErrorBanner
+					ref={errorRef}
+					message={error}
+					tabIndex={-1}
+					className="mt-3 focus:outline-none"
+				/>
+			)}
 
 			<div ref={actionsRef} className="mt-5 flex justify-end gap-3">
-				<Button
-					type="button"
-					variant="secondary"
-					onClick={onClose}
-					disabled={loading}
-				>
-					{t("confirmDialog.keep")}
-				</Button>
-				<Button
-					type="button"
-					variant="danger"
-					onClick={onConfirm}
-					disabled={loading}
-					aria-busy={loading}
-				>
-					{loading ? t("common.saving") : confirmLabel}
-				</Button>
+				{error ? (
+					// A terminal, non-retryable error means retrying is guaranteed to
+					// fail the same way (#1950) - swap the retry/cancel pair for a
+					// single acknowledgement instead of inviting a second attempt.
+					<Button type="button" variant="secondary" onClick={onClose}>
+						{t("confirmDialog.understood")}
+					</Button>
+				) : (
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={onClose}
+							disabled={loading}
+						>
+							{t("confirmDialog.keep")}
+						</Button>
+						<Button
+							type="button"
+							variant="danger"
+							onClick={onConfirm}
+							disabled={loading}
+							aria-busy={loading}
+						>
+							{loading ? t("common.saving") : confirmLabel}
+						</Button>
+					</>
+				)}
 			</div>
 		</Modal>
 	);
