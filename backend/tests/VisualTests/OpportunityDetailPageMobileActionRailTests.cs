@@ -20,6 +20,15 @@ namespace VisualTests;
 /// after the at-a-glance meta row and before the map, visible only below
 /// `lg`; the original sticky `<aside>` now hides below `lg` in turn so the
 /// two copies are never both visible at the same viewport.
+///
+/// #1948 filed the same underlying gap independently, from the specific
+/// perspective of a volunteer who already signed up: their "Deine Anmeldung /
+/// Bestätigt / Zurückziehen" status card sat below the map, time-slot list
+/// and organisation contact block on narrow viewports. The #1965 fix above
+/// already covers that block too - it is one of the four the shared rail
+/// renders - but no test exercised the already-applied state specifically,
+/// only the anonymous and not-yet-applied ones. See
+/// <see cref="ActionRail_ForVolunteerWithExistingEngagement_RendersAboveMapOnNarrowViewport"/>.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -148,5 +157,39 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 
 		await AssertRailAboveMapAndNoDesktopDuplicateAsync(
 			Page.GetByTestId("signup-cta-mobile"), "signup-cta");
+	}
+
+	/// <summary>
+	/// Regression for #1948: a volunteer who already signed up sees their
+	/// status card (the <c>showApplicationStatus</c> block - status chip and
+	/// "Zurückziehen"/withdraw button) rather than the sign-up CTA covered by
+	/// <see cref="ActionRail_ForAuthenticatedNonOwner_RendersAboveMapOnNarrowViewport"/>
+	/// above; that block needs its own narrow-viewport coverage since the two
+	/// are mutually exclusive.
+	/// </summary>
+	[Test]
+	public async Task ActionRail_ForVolunteerWithExistingEngagement_RendersAboveMapOnNarrowViewport()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var opportunityId = await SeedOpportunityWithMapAsync("VeraApplied");
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "Seeded for #1948 mobile action-rail regression coverage." });
+		applyResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.SetViewportSizeAsync(NarrowViewportWidth, NarrowViewportHeight);
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await AssertRailAboveMapAndNoDesktopDuplicateAsync(
+			Page.GetByTestId("application-status-mobile"), "application-status");
 	}
 }
