@@ -134,35 +134,54 @@ export default function LocationSearchInput({
 					aria-label={ariaLabel}
 					className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-modal"
 				>
-					{suggestions.map((s, i) => (
-						<li
-							key={i}
-							id={`${listboxId}-option-${i}`}
-							role="option"
-							aria-selected={i === activeSuggestionIndex}
-							onMouseDown={(e) => e.preventDefault()}
-							onMouseEnter={() => setActiveSuggestionIndex(i)}
-							onClick={() => select(s)}
-							// Keyboard selection normally goes through the input's own
-							// onKeyDown (aria-activedescendant combobox pattern - this
-							// option is never itself focused), but
-							// jsx-a11y/click-events-have-key-events still requires a
-							// click element to carry its own key handler too.
-							onKeyDown={(e) => {
-								if (e.key === "Enter") select(s);
-							}}
-							className={`cursor-pointer px-3 py-2 text-sm text-gray-700 ${
-								i === activeSuggestionIndex
-									? "bg-brand-50 text-brand-700"
-									: "hover:bg-brand-50 hover:text-brand-700"
-							}`}
-						>
-							<span className="flex items-center gap-2">
-								<MapPinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-								{s.label}
-							</span>
-						</li>
-					))}
+					{suggestions.map((s, i) => {
+						// A result whose label is character-for-character what was just
+						// typed (e.g. a real but obscure village literally named "Leip")
+						// renders identically to an unambiguous result like "Lindenwalde"
+						// otherwise - nothing marks it as different from every other
+						// option, so it reads as the raw query having been echoed back
+						// as a fake, selectable "place" (#1930). Selecting it still
+						// geocodes to that place's real coordinates same as any other
+						// option; this only adds a caption clarifying what it is.
+						const isExactTypedMatch =
+							s.label.trim().toLowerCase() === value.trim().toLowerCase();
+						return (
+							<li
+								key={i}
+								id={`${listboxId}-option-${i}`}
+								role="option"
+								aria-selected={i === activeSuggestionIndex}
+								onMouseDown={(e) => e.preventDefault()}
+								onMouseEnter={() => setActiveSuggestionIndex(i)}
+								onClick={() => select(s)}
+								// Keyboard selection normally goes through the input's own
+								// onKeyDown (aria-activedescendant combobox pattern - this
+								// option is never itself focused), but
+								// jsx-a11y/click-events-have-key-events still requires a
+								// click element to carry its own key handler too.
+								onKeyDown={(e) => {
+									if (e.key === "Enter") select(s);
+								}}
+								className={`cursor-pointer px-3 py-2 text-sm text-gray-700 ${
+									i === activeSuggestionIndex
+										? "bg-brand-50 text-brand-700"
+										: "hover:bg-brand-50 hover:text-brand-700"
+								}`}
+							>
+								<span className="flex items-center gap-2">
+									<MapPinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+									<span className="flex flex-col">
+										<span>{s.label}</span>
+										{isExactTypedMatch && (
+											<span className="text-xs text-gray-500">
+												{t("opportunities.cityExactNameMatch")}
+											</span>
+										)}
+									</span>
+								</span>
+							</li>
+						);
+					})}
 				</ul>
 			)}
 			<p

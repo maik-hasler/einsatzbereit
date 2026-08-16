@@ -13,8 +13,9 @@ namespace VisualTests;
 ///
 /// The Aspire stack under test wires FakeGeocodingService in place of the real
 /// Nominatim-backed geocoder (see FakeGeocodingService.cs, AppHost.cs's
-/// `Geocoding__UseFakeService`), which always returns no results for
-/// SearchCitiesAsync - so this exercises the fix's "city can't be resolved"
+/// `Geocoding__UseFakeService`), which returns no results for SearchCitiesAsync
+/// for every query except its own #1930 regression fixture (not "Leipzig") -
+/// so this exercises the fix's "city can't be resolved"
 /// fallback deterministically: the chip must still surface the typed city as
 /// an active filter rather than reverting to blank/unfiltered, per the
 /// issue's own "at minimum" acceptance bar, and clearing it must be able to
