@@ -38,7 +38,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Helpers needed",
+			null,
 			"For moving",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -54,8 +56,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Title.Should().Be("Helpers needed");
-		result.Description.Should().Be("For moving");
+		result.TitleDe.Should().Be("Helpers needed");
+		result.DescriptionDe.Should().Be("For moving");
 		result.OrganizationId.Should().Be(TestOrganizationId);
 		result.IsRemote.Should().BeFalse();
 		result.Address.Should().NotBeNull();
@@ -65,12 +67,14 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldPersistEmptyTitle_WhenDraftAndTitleOmitted(
+	public async Task Handle_ShouldPersistEnglishTitleAndDescription_WhenProvided(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
-			string.Empty,
+			"Helfer gesucht",
+			"Helpers needed",
+			"Zum Umzug",
 			"For moving",
 			TestOrganizationId,
 			false,
@@ -87,7 +91,38 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Title.Should().Be(string.Empty);
+		result.TitleDe.Should().Be("Helfer gesucht");
+		result.TitleEn.Should().Be("Helpers needed");
+		result.DescriptionDe.Should().Be("Zum Umzug");
+		result.DescriptionEn.Should().Be("For moving");
+	}
+
+	[Test]
+	public async Task Handle_ShouldPersistEmptyTitle_WhenDraftAndTitleOmitted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateVolunteerOpportunityCommand(
+			string.Empty,
+			null,
+			"For moving",
+			null,
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.TitleDe.Should().Be(string.Empty);
 	}
 
 	[Test]
@@ -97,7 +132,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Helpers needed",
+			null,
 			"For moving",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -124,7 +161,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -154,7 +193,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -186,7 +227,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		var validUntil = DateTimeOffset.UtcNow.AddDays(14);
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -213,7 +256,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -245,7 +290,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		var tooManyTags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -276,7 +323,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,
@@ -308,7 +357,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// event that triggers GeocodeVolunteerOpportunityAddressHandler's
 		// out-of-band retry.
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", null, "Description", null, TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -330,7 +379,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// dispatching this command, so no out-of-band retry is needed (#1963).
 		var coordinatedAddress = TestAddress.WithCoordinates(52.52, 13.405).Value;
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, coordinatedAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", null, "Description", null, TestOrganizationId, false, coordinatedAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -347,7 +396,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", null, "Description", null, TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -367,7 +416,9 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
+			null,
 			"Description",
+			null,
 			TestOrganizationId,
 			false,
 			TestAddress,

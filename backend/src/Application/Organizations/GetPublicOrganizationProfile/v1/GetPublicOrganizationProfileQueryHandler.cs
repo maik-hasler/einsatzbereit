@@ -39,8 +39,10 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 		var openOpportunities = opportunities
 			.Select(o => new PublicOpportunitySummaryDto(
 				o.Id,
-				o.Title,
-				o.Description,
+				o.TitleDe,
+				o.TitleEn,
+				o.DescriptionDe,
+				o.DescriptionEn,
 				o.Street,
 				o.HouseNumber,
 				o.ZipCode,

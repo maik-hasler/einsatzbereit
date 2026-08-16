@@ -12475,11 +12475,17 @@ namespace IntegrationTests
     public partial class CreateVolunteerOpportunityRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string? Title { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
+        public string? TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
+        public string? DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -12546,13 +12552,19 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -13266,9 +13278,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid OpportunityId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string TitleDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("color")]
         public string? Color { get; set; } = default!;
@@ -13818,12 +13833,18 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
+        public string? DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         public string? Street { get; set; } = default!;
@@ -14489,11 +14510,17 @@ namespace IntegrationTests
     public partial class UpdateVolunteerOpportunityRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string? Title { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
+        public string? TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
+        public string? DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
         public bool IsRemote { get; set; } = default!;
@@ -14577,12 +14604,18 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
+        public string? DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -14679,12 +14712,18 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.Text.Json.Serialization.JsonPropertyName("titleDe")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string TitleDe { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("titleEn")]
+        public string? TitleEn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionDe")]
+        public string? DescriptionDe { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("descriptionEn")]
+        public string? DescriptionEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

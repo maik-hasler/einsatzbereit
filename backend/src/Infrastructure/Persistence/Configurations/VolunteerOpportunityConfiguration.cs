@@ -48,13 +48,26 @@ internal sealed class VolunteerOpportunityConfiguration
 				guid => OrganizationId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
-		builder.Property(vo => vo.Title)
+		builder.Property(vo => vo.TitleDe)
 			.HasMaxLength(VolunteerOpportunity.MaxTitleLength)
 			.IsRequired();
 
-		builder.Property(vo => vo.Description)
+		// Organizer-supplied English translation (einsatzbereit#1946) - unlike
+		// TitleDe, left unrequired at every layer (domain's EnsurePublishable,
+		// here, and the API request DTO) so an opportunity can still be published
+		// without one; viewers fall back to TitleDe (see frontend's
+		// pickLocalizedText) instead of getting stuck mid-translation.
+		builder.Property(vo => vo.TitleEn)
+			.HasMaxLength(VolunteerOpportunity.MaxTitleLength)
+			.IsRequired(false);
+
+		builder.Property(vo => vo.DescriptionDe)
 			.HasMaxLength(VolunteerOpportunity.MaxDescriptionLength)
 			.IsRequired();
+
+		builder.Property(vo => vo.DescriptionEn)
+			.HasMaxLength(VolunteerOpportunity.MaxDescriptionLength)
+			.IsRequired(false);
 
 		builder.Property(vo => vo.IsRemote)
 			.IsRequired();

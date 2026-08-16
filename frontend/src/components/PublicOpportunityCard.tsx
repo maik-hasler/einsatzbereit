@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { PublicOpportunitySummaryDto } from "../client/api-client";
-import { formatOccurrence } from "../lib/format";
+import { formatOccurrence, pickLocalizedText } from "../lib/format";
 import { getOpportunityCapacity } from "../lib/opportunityCapacity";
 import Chip from "./Chip";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "./icons";
@@ -36,15 +36,25 @@ export default function PublicOpportunityCard({
 }: {
 	opportunity: PublicOpportunitySummaryDto;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const capacity = capacityChip(getOpportunityCapacity(opportunity), t);
+	const title = pickLocalizedText(
+		opportunity.titleDe,
+		opportunity.titleEn,
+		i18n.language,
+	);
+	const description = pickLocalizedText(
+		opportunity.descriptionDe,
+		opportunity.descriptionEn,
+		i18n.language,
+	);
 
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting transition-shadow hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${opportunity.id}`}
 				className="absolute inset-0 rounded-card"
-				aria-label={opportunity.title}
+				aria-label={title}
 			/>
 
 			{/* Category left, capacity top-right - the same chip row
@@ -79,12 +89,12 @@ export default function PublicOpportunityCard({
 			</p>
 
 			<h3 className="mt-2 font-display text-xl font-bold text-gray-900 group-hover:text-brand-800">
-				{opportunity.title}
+				{title}
 			</h3>
 
-			{opportunity.description && (
+			{description && (
 				<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-600">
-					{opportunity.description}
+					{description}
 				</p>
 			)}
 

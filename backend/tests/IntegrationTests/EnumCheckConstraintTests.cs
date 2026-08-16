@@ -391,7 +391,9 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id,
 			"Title",
+			null,
 			"Description",
+			null,
 			isRemote: true,
 			address: null,
 			Occurrence.OneTime,
@@ -497,7 +499,9 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		VolunteerOpportunity.Create(
 			organizationId,
 			"Title",
+			null,
 			"Description",
+			null,
 			isRemote: true,
 			address: null,
 			Occurrence.OneTime,

@@ -37,8 +37,8 @@ public class MapUnavailablePlaceholderTests(AspireFixture fixture) : VisualTestB
 		// as it would be while geocoding is still pending in production.
 		var oppResponse = await PostJsonWithRetryAsync(http, "/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by OpportunityDetailPage_ShowsMapUnavailableNote_WhenCoordinatesAreMissing",
+			titleDe = title,
+			descriptionDe = "Created by OpportunityDetailPage_ShowsMapUnavailableNote_WhenCoordinatesAreMissing",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",

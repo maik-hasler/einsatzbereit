@@ -72,8 +72,8 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 			opportunity.Id,
 			new UpdateVolunteerOpportunityRequest
 			{
-				Title = "Test Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Test Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				IsRemote = false,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -114,8 +114,8 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Test Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Test Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",

@@ -303,8 +303,8 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"QRScanner {label} Opportunity {suffix}",
-			description = "Created by QRScannerModalTests.",
+			titleDe = $"QRScanner {label} Opportunity {suffix}",
+			descriptionDe = "Created by QRScannerModalTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

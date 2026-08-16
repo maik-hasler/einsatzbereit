@@ -24,6 +24,7 @@ import { visibleCalendarRange } from "../../../lib/calendarRange";
 import {
 	formatDate,
 	formatDateTime,
+	pickLocalizedText,
 	resolveDateLocale,
 } from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
@@ -284,7 +285,7 @@ function CalendarWidget({
 			(displayedCalData ?? []).flatMap((opp) =>
 				opp.timeSlots.map((slot) => ({
 					id: slot.timeSlotId,
-					title: opp.title,
+					title: pickLocalizedText(opp.titleDe, opp.titleEn, i18n.language),
 					start: new Date(slot.startDateTime),
 					end: new Date(slot.endDateTime),
 					opportunityId: opp.opportunityId,
@@ -293,7 +294,7 @@ function CalendarWidget({
 					maxParticipants: slot.maxParticipants ?? null,
 				})),
 			),
-		[displayedCalData],
+		[displayedCalData, i18n.language],
 	);
 
 	// #983: opening on the current month whenever the organizer happens to

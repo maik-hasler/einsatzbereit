@@ -128,8 +128,8 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		var title = $"{label} {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = $"Created by {nameof(OpportunityUnpublishCancelTests)}",
+			titleDe = title,
+			descriptionDe = $"Created by {nameof(OpportunityUnpublishCancelTests)}",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

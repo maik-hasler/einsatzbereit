@@ -82,7 +82,7 @@ internal sealed class DeleteTimeSlotCommandHandler(
 				dbContext,
 				engagement,
 				"The recurring time slot series was cancelled.",
-				opportunity.Title,
+				opportunity.TitleDe,
 				// Deleting slots out of a series raises no opportunity-level
 				// notification, so this is the volunteer's only in-app signal.
 				notifyVolunteer: true,

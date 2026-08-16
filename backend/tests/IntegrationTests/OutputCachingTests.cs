@@ -85,8 +85,8 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		// No IsDraft flag - published immediately, so it must appear on the very next read.
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Freshly published opportunity",
-			Description = "Proves a create evicts the output cache (#1543)",
+			TitleDe = "Freshly published opportunity",
+			DescriptionDe = "Proves a create evicts the output cache (#1543)",
 			OrganizationId = orgId,
 			IsRemote = true,
 			Occurrence = "OneTime",

@@ -156,8 +156,8 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		// like "nachbarschaftshilfe-lindenau.example" is not prose and has no locale.
 		var prose = organizations.Select(o => o.Name)
 			.Concat(organizations.Select(o => o.Description ?? string.Empty))
-			.Concat(opportunities.Select(o => o.Title))
-			.Concat(opportunities.Select(o => o.Description))
+			.Concat(opportunities.Select(o => o.TitleDe))
+			.Concat(opportunities.Select(o => o.DescriptionDe))
 			.Where(text => !string.IsNullOrWhiteSpace(text))
 			.ToList();
 
@@ -201,7 +201,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var slots = (await dbContext.Set<VolunteerOpportunity>()
 				.Include(o => o.TimeSlots)
 				.ToListAsync(cancellationToken))
-			.SelectMany(o => o.TimeSlots.Select(slot => (o.Title, slot.StartDateTime, slot.EndDateTime)))
+			.SelectMany(o => o.TimeSlots.Select(slot => (o.TitleDe, slot.StartDateTime, slot.EndDateTime)))
 			.ToList();
 
 		slots.Should().NotBeEmpty("the seed set publishes slot-based opportunities");
@@ -242,7 +242,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 		var opportunity = await dbContext.Set<VolunteerOpportunity>()
 			.Include(o => o.TimeSlots)
-			.SingleAsync(o => o.Title == "Erste-Hilfe-Kurs", cancellationToken);
+			.SingleAsync(o => o.TitleDe == "Erste-Hilfe-Kurs", cancellationToken);
 
 		var engagements = await dbContext.Set<Engagement>()
 			.Where(e => e.VolunteerId == veraUserId && e.OpportunityId == opportunity.Id)

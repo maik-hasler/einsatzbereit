@@ -71,7 +71,7 @@ internal sealed class EngagementReminderDueHandler(
 			new Dictionary<string, string>
 			{
 				["DisplayName"] = displayName,
-				["OpportunityTitle"] = opportunity.Title,
+				["OpportunityTitle"] = opportunity.TitleDe,
 				["StartFormatted"] = startFormatted,
 			});
 

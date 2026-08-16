@@ -32,8 +32,10 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 		// GeocodeVolunteerOpportunityAddressHandler retries it out of band.
 		var opportunity = VolunteerOpportunity.Create(
 			request.OrganizationId,
-			request.Title,
-			request.Description,
+			request.TitleDe,
+			request.TitleEn,
+			request.DescriptionDe,
+			request.DescriptionEn,
 			request.IsRemote,
 			request.Address,
 			request.Occurrence,

@@ -52,7 +52,7 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 	private static VolunteerOpportunity CreateOpportunity(OrganizationId organizationId) =>
 		VolunteerOpportunity.Create(
-			organizationId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			organizationId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Published,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 

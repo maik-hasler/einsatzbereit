@@ -33,8 +33,8 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CheckInStatusCode Opportunity {suffix}",
-			description = "Created by EngagementCheckInStatusCodeTests.",
+			titleDe = $"CheckInStatusCode Opportunity {suffix}",
+			descriptionDe = "Created by EngagementCheckInStatusCodeTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -81,8 +81,8 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		const string pin = "482170";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CheckInPinOwner Opportunity {suffix}",
-			description = "Created by EngagementCheckInStatusCodeTests.",
+			titleDe = $"CheckInPinOwner Opportunity {suffix}",
+			descriptionDe = "Created by EngagementCheckInStatusCodeTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -139,8 +139,8 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		const string pin = "482170";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CheckInPinOracle Opportunity {suffix}",
-			description = "Created by EngagementCheckInStatusCodeTests.",
+			titleDe = $"CheckInPinOracle Opportunity {suffix}",
+			descriptionDe = "Created by EngagementCheckInStatusCodeTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -201,8 +201,8 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		const string pin = "482170";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CheckInPinLockout Opportunity {suffix}",
-			description = "Created by EngagementCheckInStatusCodeTests.",
+			titleDe = $"CheckInPinLockout Opportunity {suffix}",
+			descriptionDe = "Created by EngagementCheckInStatusCodeTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

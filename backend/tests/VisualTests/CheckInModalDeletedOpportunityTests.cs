@@ -34,8 +34,8 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		var oppTitle = $"CheckInModalDeleted Opportunity {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInModalDeletedOpportunityTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInModalDeletedOpportunityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

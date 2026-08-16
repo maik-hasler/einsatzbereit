@@ -113,8 +113,8 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		var oppTitle = $"VisualLogo Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by AvatarAndLogoDisplayTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by AvatarAndLogoDisplayTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

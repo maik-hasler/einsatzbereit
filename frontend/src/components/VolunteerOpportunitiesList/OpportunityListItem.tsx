@@ -2,7 +2,12 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
-import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
+import {
+	formatDate,
+	formatDateTime,
+	formatOccurrence,
+	pickLocalizedText,
+} from "../../lib/format";
 import Chip, { type ChipTone } from "../Chip";
 import { getInitials } from "../../lib/initials";
 import {
@@ -137,6 +142,12 @@ export default function OpportunityListItem({
 	const capacity = capacityChip(getOpportunityCapacity(item), t);
 	const date = dateLine(item, t, i18n.language);
 	const DateIcon = date.Icon;
+	const title = pickLocalizedText(item.titleDe, item.titleEn, i18n.language);
+	const description = pickLocalizedText(
+		item.descriptionDe,
+		item.descriptionEn,
+		i18n.language,
+	);
 
 	// No overflow-hidden on the card any more. The stretched link below is what
 	// a keyboard user actually lands on (the title is inside it, not focusable
@@ -151,7 +162,7 @@ export default function OpportunityListItem({
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10 rounded-card"
-				aria-label={item.title}
+				aria-label={title}
 			/>
 			<div className="flex h-full flex-col">
 				{/* Banner, only when the organization actually uploaded a photo.
@@ -212,7 +223,7 @@ export default function OpportunityListItem({
 					landing page has a section heading over these cards again, hence
 					a prop rather than a second fixed level. */}
 					<Heading className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg">
-						{item.title}
+						{title}
 					</Heading>
 					{/* See dateLine() above for the three kinds this slot can state and
 					why each one carries its own glyph and tone. */}
@@ -224,9 +235,9 @@ export default function OpportunityListItem({
 						<DateIcon className="h-4 w-4 shrink-0" />
 						<span>{date.label}</span>
 					</p>
-					{item.description && (
+					{description && (
 						<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
-							{item.description}
+							{description}
 						</p>
 					)}
 					{item.tags.length > 0 && (

@@ -205,8 +205,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Draft Test {suffix}",
-			description = "Seeded draft for the owner-affordances a11y scan.",
+			titleDe = $"A11y Draft Test {suffix}",
+			descriptionDe = "Seeded draft for the owner-affordances a11y scan.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -259,8 +259,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Mobile Rail Test {suffix}",
-			description = "Seeded for #1965 mobile action-rail a11y coverage.",
+			titleDe = $"A11y Mobile Rail Test {suffix}",
+			descriptionDe = "Seeded for #1965 mobile action-rail a11y coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -397,8 +397,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var title = $"Marker A11y Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for the map marker accessible-name regression (#1681).",
+			titleDe = title,
+			descriptionDe = "Seeded for the map marker accessible-name regression (#1681).",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -478,8 +478,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var title = $"No Map A11y Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
+			titleDe = title,
+			descriptionDe = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -1355,8 +1355,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"EngagementManagementA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"EngagementManagementA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1422,8 +1422,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"OrgEngagementsA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"OrgEngagementsA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1751,8 +1751,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"NotifA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"NotifA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2070,8 +2070,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CancelDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"CancelDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2130,8 +2130,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"OrgEngagementsCancelDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"OrgEngagementsCancelDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2194,8 +2194,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CancelOpportunityDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"CancelOpportunityDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2244,8 +2244,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"{label} Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2421,8 +2421,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"ToastA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"ToastA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2501,8 +2501,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"MarkedDayA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"MarkedDayA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -177,8 +177,8 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"EngHistDeletedOpp {label} {suffix}",
-			description = "Created by EngagementHistoryForDeletedOpportunityTests",
+			titleDe = $"EngHistDeletedOpp {label} {suffix}",
+			descriptionDe = "Created by EngagementHistoryForDeletedOpportunityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

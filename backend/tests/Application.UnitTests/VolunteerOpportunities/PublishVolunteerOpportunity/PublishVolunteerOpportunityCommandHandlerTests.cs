@@ -37,7 +37,7 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		string description = "Beschreibung",
 		ParticipationType participationType = ParticipationType.IndividualContact) =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, participationType, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, title, null, description, null, false, DefaultAddress, Occurrence.OneTime, participationType, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft,
 			validUntil: participationType == ParticipationType.IndividualContact ? DateTimeOffset.UtcNow.AddDays(30) : null).Value;
 
@@ -237,7 +237,7 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, address: null, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, address: null, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		SetupOpportunity(opportunityId, opportunity);
 
@@ -273,7 +273,7 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		SetupOpportunity(opportunityId, opportunity);
 

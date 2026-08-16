@@ -41,8 +41,8 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 		var oppTitle = $"LocalizedPinError Opportunity {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by LocalizedCheckInPinErrorTests.",
+			titleDe = oppTitle,
+			descriptionDe = "Created by LocalizedCheckInPinErrorTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

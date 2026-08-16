@@ -36,7 +36,7 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 		// Arrange
 		var events = new List<OrganizationCalendarEventDto>
 		{
-			new(Guid.NewGuid(), "Title", "#ff0000", []),
+			new(Guid.NewGuid(), "Title", null, "#ff0000", []),
 		};
 		_readRepository.GetCalendarEventsAsync(DefaultOrgId, DefaultFrom, DefaultTo, cancellationToken).Returns(events);
 

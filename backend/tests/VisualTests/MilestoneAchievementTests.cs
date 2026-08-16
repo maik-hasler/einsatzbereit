@@ -102,8 +102,8 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"Milestone668 {label} {suffix}",
-			description = "Created by MilestoneAchievementTests",
+			titleDe = $"Milestone668 {label} {suffix}",
+			descriptionDe = "Created by MilestoneAchievementTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

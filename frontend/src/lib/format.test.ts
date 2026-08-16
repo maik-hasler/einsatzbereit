@@ -11,6 +11,7 @@ import {
 	isRecentlyCreatedOrganization,
 	isSlotFull,
 	NEW_ORGANIZATION_THRESHOLD_DAYS,
+	pickLocalizedText,
 	resolveDateLocale,
 } from "./format";
 
@@ -85,6 +86,35 @@ describe("isSlotFull", () => {
 
 	it("is full when bookings exceed capacity", () => {
 		expect(isSlotFull(5, 6)).toBe(true);
+	});
+});
+
+describe("pickLocalizedText", () => {
+	it("returns the German text when the viewer's language is German", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "de")).toBe(
+			"Deutscher Titel",
+		);
+	});
+
+	it("returns the English text when the viewer's language is English", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "en")).toBe(
+			"English Title",
+		);
+	});
+
+	it("falls back to German when no English variant was provided", () => {
+		expect(pickLocalizedText("Deutscher Titel", undefined, "en")).toBe(
+			"Deutscher Titel",
+		);
+		expect(pickLocalizedText("Deutscher Titel", null, "en")).toBe(
+			"Deutscher Titel",
+		);
+	});
+
+	it("falls back to German when the English variant is blank", () => {
+		expect(pickLocalizedText("Deutscher Titel", "   ", "en")).toBe(
+			"Deutscher Titel",
+		);
 	});
 });
 

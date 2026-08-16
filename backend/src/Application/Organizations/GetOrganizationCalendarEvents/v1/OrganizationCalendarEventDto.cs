@@ -2,7 +2,8 @@ namespace Application.Organizations.GetOrganizationCalendarEvents.v1;
 
 public sealed record OrganizationCalendarEventDto(
 	Guid OpportunityId,
-	string Title,
+	string TitleDe,
+	string? TitleEn,
 	string? Color,
 	IReadOnlyList<CalendarTimeSlotDto> TimeSlots);
 

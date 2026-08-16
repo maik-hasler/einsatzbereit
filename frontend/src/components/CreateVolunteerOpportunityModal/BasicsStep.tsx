@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { UseFormRegister, UseFormWatch } from "react-hook-form";
@@ -9,51 +10,146 @@ import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 interface Props {
 	register: UseFormRegister<OpportunityFormValues>;
 	watch: UseFormWatch<OpportunityFormValues>;
-	titleError?: string;
-	descriptionError?: string;
+	titleDeError?: string;
+	titleEnError?: string;
+	descriptionDeError?: string;
+	descriptionEnError?: string;
 	bannerPreview: string | null;
 	bannerError: string | null;
 	onBannerChange: (e: ChangeEvent<HTMLInputElement>) => void;
 	onBannerRemove: () => void;
 }
 
+const CONTENT_LANGUAGES = ["de", "en"] as const;
+type ContentLanguage = (typeof CONTENT_LANGUAGES)[number];
+
 export default function BasicsStep({
 	register,
 	watch,
-	titleError,
-	descriptionError,
+	titleDeError,
+	titleEnError,
+	descriptionDeError,
+	descriptionEnError,
 	bannerPreview,
 	bannerError,
 	onBannerChange,
 	onBannerRemove,
 }: Props) {
 	const { t, i18n } = useTranslation();
-	const title = watch("title");
-	const description = watch("description");
+	const [activeLanguage, setActiveLanguage] = useState<ContentLanguage>("de");
+	const titleDe = watch("titleDe");
+	const titleEn = watch("titleEn");
+	const descriptionDe = watch("descriptionDe");
+	const descriptionEn = watch("descriptionEn");
+	const hasError = {
+		de: Boolean(titleDeError || descriptionDeError),
+		en: Boolean(titleEnError || descriptionEnError),
+	};
+
+	// German is required, so an error there always blocks moving on. Without
+	// this, an error raised while the English tab is active (e.g. clicking
+	// Next with the German title still blank) left the German fields - and
+	// their inline role="alert" text - hidden behind display:none, with
+	// nothing else surfacing the failure: the button just appeared to do
+	// nothing, for sighted and screen-reader users alike. Switching the tab
+	// back un-hides the existing FloatingField error text, the same way it
+	// already surfaces for every other step in this wizard - no separate
+	// live-region banner needed on top of that.
+	useEffect(() => {
+		if (titleDeError || descriptionDeError) setActiveLanguage("de");
+	}, [titleDeError, descriptionDeError]);
 
 	return (
 		<div className="space-y-4" data-testid="wizard-step-1">
-			<FloatingField
-				id="opportunity-title"
-				label={t("createOpportunity.fieldTitle")}
-				registration={register("title")}
-				required
-				error={titleError}
-				maxLength={150}
-				showCount
-				displayValue={title}
-			/>
-			<FloatingField
-				id="opportunity-description"
-				label={t("createOpportunity.fieldDescription")}
-				registration={register("description")}
-				required
-				error={descriptionError}
-				maxLength={2000}
-				multiline
-				showCount
-				displayValue={description}
-			/>
+			{/* Plain toggle buttons, not an ARIA tablist - this repo's convention
+			(see LanguageSelector.tsx, Stepper in ./shared.tsx) is to only claim a
+			widget role when the matching keyboard model (arrow keys) is actually
+			implemented; a labelled pair of buttons with aria-current for the
+			active one needs none of that. Both languages' values stay in the form
+			regardless of which is showing - switching tabs never loses data,
+			since only German is required to publish (einsatzbereit#1946). */}
+			<div
+				role="group"
+				aria-label={t("createOpportunity.contentLanguageGroup")}
+				className="inline-flex rounded-lg border border-gray-200 p-0.5"
+			>
+				{CONTENT_LANGUAGES.map((lang) => (
+					<button
+						key={lang}
+						type="button"
+						aria-current={activeLanguage === lang ? "true" : undefined}
+						data-testid={`opportunity-content-language-${lang}`}
+						onClick={() => setActiveLanguage(lang)}
+						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+							activeLanguage === lang
+								? "bg-brand-600 text-white"
+								: "text-gray-600 hover:bg-gray-50"
+						}`}
+					>
+						{t(`language.${lang}`)}
+						{hasError[lang] && (
+							<span
+								aria-hidden="true"
+								className={`h-1.5 w-1.5 rounded-full ${
+									activeLanguage === lang ? "bg-white" : "bg-red-500"
+								}`}
+							/>
+						)}
+					</button>
+				))}
+			</div>
+
+			<div className={activeLanguage === "de" ? "space-y-4" : "hidden"}>
+				{/* Keeps the original "opportunity-title"/"opportunity-description"
+				ids (no "-de" suffix) - this is the direct successor of the single
+				title/description field that existed before #1946, and a wide range
+				of VisualTests locators already target these exact ids. */}
+				<FloatingField
+					id="opportunity-title"
+					label={t("createOpportunity.fieldTitle")}
+					registration={register("titleDe")}
+					required
+					error={titleDeError}
+					maxLength={150}
+					showCount
+					displayValue={titleDe}
+				/>
+				<FloatingField
+					id="opportunity-description"
+					label={t("createOpportunity.fieldDescription")}
+					registration={register("descriptionDe")}
+					required
+					error={descriptionDeError}
+					maxLength={2000}
+					multiline
+					showCount
+					displayValue={descriptionDe}
+				/>
+			</div>
+			<div className={activeLanguage === "en" ? "space-y-4" : "hidden"}>
+				<p className="text-xs text-gray-500">
+					{t("createOpportunity.contentLanguageEnglishHint")}
+				</p>
+				<FloatingField
+					id="opportunity-title-en"
+					label={t("createOpportunity.fieldTitle")}
+					registration={register("titleEn")}
+					error={titleEnError}
+					maxLength={150}
+					showCount
+					displayValue={titleEn}
+				/>
+				<FloatingField
+					id="opportunity-description-en"
+					label={t("createOpportunity.fieldDescription")}
+					registration={register("descriptionEn")}
+					error={descriptionEnError}
+					maxLength={2000}
+					multiline
+					showCount
+					displayValue={descriptionEn}
+				/>
+			</div>
 
 			<div>
 				<p className="mb-1.5 text-sm font-semibold text-gray-800">

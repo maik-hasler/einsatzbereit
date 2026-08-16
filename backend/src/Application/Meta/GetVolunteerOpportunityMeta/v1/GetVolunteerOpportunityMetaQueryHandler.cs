@@ -21,8 +21,8 @@ internal sealed class GetVolunteerOpportunityMetaQueryHandler(
 		var baseUrl = request.BaseUrl.TrimEnd('/');
 
 		return MetaHtmlBuilder.Build(
-			$"{opportunity.Title} - Einsatzbereit",
-			opportunity.Description,
+			$"{opportunity.TitleDe} - Einsatzbereit",
+			opportunity.DescriptionDe,
 			$"{baseUrl}/volunteer-opportunities/{opportunity.Id}",
 			opportunity.BannerImageUrl ?? $"{baseUrl}/og-image.png");
 	}

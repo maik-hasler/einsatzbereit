@@ -145,8 +145,8 @@ public class EngagementCancellationReasonTests(AspireFixture fixture) : VisualTe
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by EngagementCancellationReasonTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by EngagementCancellationReasonTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

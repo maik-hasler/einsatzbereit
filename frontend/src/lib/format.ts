@@ -59,6 +59,34 @@ export function formatSignUpCount(
 	}
 }
 
+/**
+ * Organizer-authored opportunity title/description carry a required German
+ * variant and an optional English one (einsatzbereit#1946) - this picks
+ * whichever matches the viewer's active UI language, falling back to German
+ * when English wasn't provided (or is blank) rather than showing nothing.
+ * Single source of truth so every card/list/detail surface that renders an
+ * opportunity's title or description resolves the same way instead of each
+ * re-deriving its own fallback.
+ */
+export function pickLocalizedText(
+	textDe: string,
+	textEn: string | null | undefined,
+	lng: string,
+): string;
+export function pickLocalizedText(
+	textDe: string | null | undefined,
+	textEn: string | null | undefined,
+	lng: string,
+): string | undefined;
+export function pickLocalizedText(
+	textDe: string | null | undefined,
+	textEn: string | null | undefined,
+	lng: string,
+): string | undefined {
+	if (lng === "en" && textEn && textEn.trim().length > 0) return textEn;
+	return textDe ?? undefined;
+}
+
 /** i18n's UI language ("de"/"en") -> the Intl/date-fns locale used for date
  * formatting. The app only ever runs with i18n.language "de" or "en" (see
  * i18n.ts's supportedLngs), so this always maps to a fixed regional variant

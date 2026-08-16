@@ -84,7 +84,7 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			keycloakUserService,
 			emailService,
 			emailTemplateRenderer,
-			opportunity.Title);
+			opportunity.TitleDe);
 
 		return new UpdateTimeSlotResult(1, []);
 	}

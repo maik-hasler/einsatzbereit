@@ -1007,8 +1007,8 @@ public class OrganizationSettingsTests(
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Blocking Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Blocking Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -1058,8 +1058,8 @@ public class OrganizationSettingsTests(
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Expired Slot Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Expired Slot Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -1092,8 +1092,8 @@ public class OrganizationSettingsTests(
 		var blockingOpportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Future Slot Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Future Slot Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -1120,8 +1120,8 @@ public class OrganizationSettingsTests(
 		var nonBlockingOpportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Expired Slot Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Expired Slot Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",

@@ -60,8 +60,8 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var oppTitle = $"NotifDeepLink Opportunity {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by NotificationTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by NotificationTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -206,8 +206,8 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var oppTitle = $"NotifMarkReadFail Opportunity {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by NotificationTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by NotificationTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

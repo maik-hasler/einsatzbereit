@@ -18,8 +18,10 @@ export function buildOpportunityFormSchema(t: TFunction) {
 
 	return z
 		.object({
-			title: z.string().max(150, tooLong(150)),
-			description: z.string().max(2000, tooLong(2000)),
+			titleDe: z.string().max(150, tooLong(150)),
+			titleEn: z.string().max(150, tooLong(150)),
+			descriptionDe: z.string().max(2000, tooLong(2000)),
+			descriptionEn: z.string().max(2000, tooLong(2000)),
 			isRemote: z.boolean(),
 			street: z.string().max(100, tooLong(100)),
 			houseNumber: z.string().max(10, tooLong(10)),
@@ -34,12 +36,15 @@ export function buildOpportunityFormSchema(t: TFunction) {
 			validUntil: z.string(),
 		})
 		.superRefine((data, ctx) => {
-			if (!data.title.trim())
-				ctx.addIssue({ code: "custom", path: ["title"], message: required });
-			if (!data.description.trim())
+			// Only the German variant is required to publish (matches the
+			// backend's EnsurePublishable) - the English one is an optional
+			// translation an organizer can add later (einsatzbereit#1946).
+			if (!data.titleDe.trim())
+				ctx.addIssue({ code: "custom", path: ["titleDe"], message: required });
+			if (!data.descriptionDe.trim())
 				ctx.addIssue({
 					code: "custom",
-					path: ["description"],
+					path: ["descriptionDe"],
 					message: required,
 				});
 			if (!data.isRemote) {
@@ -83,7 +88,7 @@ export type OpportunityFormValues = z.infer<
 
 /** Which fields belong to each wizard step, for per-step "Next" validation. */
 export const STEP_FIELDS: Record<number, (keyof OpportunityFormValues)[]> = {
-	1: ["title", "description"],
+	1: ["titleDe", "titleEn", "descriptionDe", "descriptionEn"],
 	2: ["street", "houseNumber", "zipCode", "city"],
 	3: ["checkInPin"],
 	4: [],

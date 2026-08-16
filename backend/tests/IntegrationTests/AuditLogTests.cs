@@ -76,8 +76,8 @@ public class AuditLogTests(
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = opportunityTitle,
-				Description = "Integration test opportunity",
+				TitleDe = opportunityTitle,
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = organization.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",

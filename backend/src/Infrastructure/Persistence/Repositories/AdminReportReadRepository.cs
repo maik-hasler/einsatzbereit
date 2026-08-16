@@ -56,7 +56,7 @@ internal sealed class AdminReportReadRepository(
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.IgnoreQueryFilters()
 			.Where(vo => opportunityIdVOs.Contains(vo.Id))
-			.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.Title, vo.IsDeleted }, cancellationToken);
+			.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.TitleDe, vo.IsDeleted }, cancellationToken);
 
 		var organizations = await dbContext.OrganizationsQuery
 			.IgnoreQueryFilters()
@@ -79,7 +79,7 @@ internal sealed class AdminReportReadRepository(
 				g.TargetId,
 				g.TargetType switch
 				{
-					ReportTargetType.VolunteerOpportunity => opportunities.GetValueOrDefault(g.TargetId)?.Title ?? string.Empty,
+					ReportTargetType.VolunteerOpportunity => opportunities.GetValueOrDefault(g.TargetId)?.TitleDe ?? string.Empty,
 					ReportTargetType.Organization => organizations.GetValueOrDefault(g.TargetId)?.Name ?? string.Empty,
 					ReportTargetType.User => userDisplayNames.GetValueOrDefault(g.TargetId, string.Empty),
 					_ => string.Empty,

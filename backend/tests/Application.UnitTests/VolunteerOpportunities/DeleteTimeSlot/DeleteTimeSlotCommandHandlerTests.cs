@@ -46,7 +46,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunityWithTimeSlot(out TimeSlot timeSlot)
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		timeSlot = opportunity.AddTimeSlot(
@@ -104,7 +104,7 @@ public class DeleteTimeSlotCommandHandlerTests
 		out TimeSlot slot1, out TimeSlot slot2, out TimeSlot slot3)
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
@@ -205,7 +205,7 @@ public class DeleteTimeSlotCommandHandlerTests
 		// Arrange: slot1 is a past occurrence (created as valid-at-the-time via an
 		// artificially-past `now`), slot2 is still upcoming.
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		var seriesId = Guid.CreateVersion7();

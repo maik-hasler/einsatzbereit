@@ -6464,8 +6464,10 @@ export interface CreateTimeSlotResponse {
 }
 
 export interface CreateVolunteerOpportunityRequest {
-    title: string | undefined;
-    description: string | undefined;
+    titleDe: string | undefined;
+    titleEn: string | undefined;
+    descriptionDe: string | undefined;
+    descriptionEn: string | undefined;
     organizationId: string;
     isRemote: boolean;
     street: string | undefined;
@@ -6486,8 +6488,10 @@ export interface CreateVolunteerOpportunityRequest {
 
 export interface CreateVolunteerOpportunityResponse {
     id: string;
-    title: string;
-    description: string;
+    titleDe: string;
+    titleEn: string | undefined;
+    descriptionDe: string;
+    descriptionEn: string | undefined;
     organizationId: string;
     street: string | undefined;
     houseNumber: string | undefined;
@@ -6702,7 +6706,8 @@ export interface Organization {
 
 export interface OrganizationCalendarEventDto {
     opportunityId: string;
-    title: string;
+    titleDe: string;
+    titleEn: string | undefined;
     color: string | undefined;
     timeSlots: CalendarTimeSlotDto[];
 
@@ -6863,8 +6868,10 @@ export interface PublicAddressDto {
 
 export interface PublicOpportunitySummaryDto {
     id: string;
-    title: string;
-    description: string | undefined;
+    titleDe: string;
+    titleEn: string | undefined;
+    descriptionDe: string | undefined;
+    descriptionEn: string | undefined;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
@@ -7069,8 +7076,10 @@ export interface UpdateUserProfileRequest {
 }
 
 export interface UpdateVolunteerOpportunityRequest {
-    title: string | undefined;
-    description: string | undefined;
+    titleDe: string | undefined;
+    titleEn: string | undefined;
+    descriptionDe: string | undefined;
+    descriptionEn: string | undefined;
     isRemote: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
@@ -7096,8 +7105,10 @@ export interface VolunteerOpportunityAvailableDate {
 
 export interface VolunteerOpportunityDetails {
     id: string;
-    title: string;
-    description: string | undefined;
+    titleDe: string;
+    titleEn: string | undefined;
+    descriptionDe: string | undefined;
+    descriptionEn: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;
@@ -7125,8 +7136,10 @@ export interface VolunteerOpportunityDetails {
 
 export interface VolunteerOpportunitySummary {
     id: string;
-    title: string;
-    description: string | undefined;
+    titleDe: string;
+    titleEn: string | undefined;
+    descriptionDe: string | undefined;
+    descriptionEn: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;

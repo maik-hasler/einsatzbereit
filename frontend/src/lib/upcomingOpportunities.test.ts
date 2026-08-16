@@ -15,8 +15,10 @@ function makeOpportunity(
 ): VolunteerOpportunitySummary {
 	return {
 		id: "opp-1",
-		title: "Opportunity",
-		description: undefined,
+		titleDe: "Opportunity",
+		titleEn: undefined,
+		descriptionDe: undefined,
+		descriptionEn: undefined,
 		organizationId: "org-1",
 		organizationName: "Org",
 		street: undefined,
@@ -55,6 +57,7 @@ describe("selectUpcomingOpportunities", () => {
 		const items = selectUpcomingOpportunities(
 			[upcoming("a", "2026-08-15T09:00:00Z")],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items).toHaveLength(1);
@@ -71,6 +74,7 @@ describe("selectUpcomingOpportunities", () => {
 				makeOpportunity({ id: "interest-based" }),
 			],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items.map((i) => i.id)).toEqual(["has-slot"]);
@@ -80,6 +84,7 @@ describe("selectUpcomingOpportunities", () => {
 		const items = selectUpcomingOpportunities(
 			[upcoming("broken", "not-a-date")],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items).toEqual([]);
@@ -93,6 +98,7 @@ describe("selectUpcomingOpportunities", () => {
 				upcoming("middle", "2026-08-15T09:00:00Z"),
 			],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items.map((i) => i.id)).toEqual(["soonest", "middle", "later"]);
@@ -109,7 +115,7 @@ describe("selectUpcomingOpportunities", () => {
 		);
 
 		expect(
-			selectUpcomingOpportunities(opportunities, "Untitled draft"),
+			selectUpcomingOpportunities(opportunities, "Untitled draft", "de"),
 		).toHaveLength(MAX_UPCOMING_ITEMS);
 	});
 
@@ -117,11 +123,12 @@ describe("selectUpcomingOpportunities", () => {
 		const items = selectUpcomingOpportunities(
 			[
 				makeOpportunity({
-					title: "",
+					titleDe: "",
 					nextTimeSlotStart: "2026-08-15T09:00:00Z" as unknown as Date,
 				}),
 			],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items[0].title).toBe("Untitled draft");
@@ -144,6 +151,7 @@ describe("selectUpcomingOpportunities", () => {
 				}),
 			],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items.map((i) => [i.id, i.bookedCount, i.maxParticipants])).toEqual([
@@ -165,12 +173,45 @@ describe("selectUpcomingOpportunities", () => {
 				}),
 			],
 			"Untitled draft",
+			"de",
 		);
 
 		expect(items[0].participationType).toBe("ScheduledSlots");
 	});
 
 	it("returns an empty array for an empty input", () => {
-		expect(selectUpcomingOpportunities([], "Untitled draft")).toEqual([]);
+		expect(selectUpcomingOpportunities([], "Untitled draft", "de")).toEqual([]);
+	});
+
+	it("prefers the English title when the viewer's language is English", () => {
+		const items = selectUpcomingOpportunities(
+			[
+				makeOpportunity({
+					titleDe: "Deutscher Titel",
+					titleEn: "English Title",
+					nextTimeSlotStart: "2026-08-15T09:00:00Z" as unknown as Date,
+				}),
+			],
+			"Untitled draft",
+			"en",
+		);
+
+		expect(items[0].title).toBe("English Title");
+	});
+
+	it("falls back to the German title when English wasn't provided", () => {
+		const items = selectUpcomingOpportunities(
+			[
+				makeOpportunity({
+					titleDe: "Deutscher Titel",
+					titleEn: undefined,
+					nextTimeSlotStart: "2026-08-15T09:00:00Z" as unknown as Date,
+				}),
+			],
+			"Untitled draft",
+			"en",
+		);
+
+		expect(items[0].title).toBe("Deutscher Titel");
 	});
 });

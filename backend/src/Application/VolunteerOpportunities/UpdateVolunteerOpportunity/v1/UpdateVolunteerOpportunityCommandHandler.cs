@@ -59,8 +59,8 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		var prevAddress = opportunity.Address;
 		var prevOccurrence = opportunity.Occurrence;
 
-		opportunity.Rename(request.Title).ThrowIfFailure();
-		opportunity.ChangeDescription(request.Description).ThrowIfFailure();
+		opportunity.Rename(request.TitleDe, request.TitleEn).ThrowIfFailure();
+		opportunity.ChangeDescription(request.DescriptionDe, request.DescriptionEn).ThrowIfFailure();
 
 		// Relocate raises VolunteerOpportunityGeocodingRequestedDomainEvent itself
 		// when the address text actually changed (or is newly added after
@@ -91,7 +91,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 				keycloakUserService: keycloakUserService,
 				emailService: emailService,
 				emailTemplateRenderer: emailTemplateRenderer,
-				opportunityTitle: opportunity.Title);
+				opportunityTitle: opportunity.TitleDe);
 
 		return true;
 	}

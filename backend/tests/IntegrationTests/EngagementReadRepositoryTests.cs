@@ -81,7 +81,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.Recurring,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slotA = opportunity.AddTimeSlot(
@@ -118,7 +118,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -147,7 +147,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -178,7 +178,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		dbContext.Set<VolunteerOpportunity>().Add(opportunity);
@@ -228,7 +228,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.Recurring,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -373,7 +373,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
@@ -406,7 +406,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.QRCode, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
@@ -460,7 +460,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.PINCode, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
@@ -494,7 +494,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
@@ -528,7 +528,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var futureSlot = opportunity.AddTimeSlot(
@@ -567,7 +567,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.Manual, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var futureSlot = opportunity.AddTimeSlot(
@@ -605,7 +605,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.Manual, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
@@ -644,7 +644,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.Manual, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
@@ -678,7 +678,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Strandreinigung", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			organization.Id, "Strandreinigung", null, "Beschreibung", null, false, DefaultAddress, Occurrence.Recurring,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -743,7 +743,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		// Added out of chronological order - CreatedOn (sign-up order) must not

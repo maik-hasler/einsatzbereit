@@ -75,7 +75,7 @@ internal static class EngagementVolunteerConfirmationHelper
 			new Dictionary<string, string>
 			{
 				["VolunteerName"] = volunteerName,
-				["OpportunityTitle"] = opportunity.Title,
+				["OpportunityTitle"] = opportunity.TitleDe,
 			});
 
 		await emailService.SendAsync(

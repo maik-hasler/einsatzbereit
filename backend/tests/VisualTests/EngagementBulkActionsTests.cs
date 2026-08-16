@@ -120,8 +120,8 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 		// Create rejects a non-null ValidUntil for any other participation type).
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by EngagementBulkActionsTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by EngagementBulkActionsTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

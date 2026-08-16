@@ -52,8 +52,8 @@ public class OpportunityResultCountTests(AspireFixture fixture) : VisualTestBase
 		{
 			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = "Seeded by OpportunityResultCountTests.",
+				titleDe = title,
+				descriptionDe = "Seeded by OpportunityResultCountTests.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

@@ -60,8 +60,8 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"MobileRail1965 {label} {suffix}",
-			description = "Seeded for #1965 mobile action-rail regression coverage.",
+			titleDe = $"MobileRail1965 {label} {suffix}",
+			descriptionDe = "Seeded for #1965 mobile action-rail regression coverage.",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",

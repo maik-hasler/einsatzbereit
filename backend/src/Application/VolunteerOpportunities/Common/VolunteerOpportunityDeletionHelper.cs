@@ -70,7 +70,7 @@ internal static class VolunteerOpportunityDeletionHelper
 			dbContext,
 			engagementReadRepository,
 			opportunityId,
-			opportunity.Title,
+			opportunity.TitleDe,
 			NotificationKind.OpportunityDeleted,
 			"Opportunity was deleted.",
 			// Kept on: the OpportunityDeleted text says the opportunity was removed

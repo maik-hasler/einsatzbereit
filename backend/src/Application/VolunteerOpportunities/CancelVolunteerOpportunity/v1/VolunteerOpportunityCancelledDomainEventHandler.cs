@@ -57,7 +57,7 @@ internal sealed class VolunteerOpportunityCancelledDomainEventHandler(
 			dbContext,
 			engagementReadRepository,
 			notification.OpportunityId,
-			opportunity.Title,
+			opportunity.TitleDe,
 			NotificationKind.OpportunityCancelled,
 			engagementCancellationReason,
 			// The OpportunityCancelled notification above already tells the volunteer

@@ -150,8 +150,8 @@ public class QuickCheckInWidgetTests(AspireFixture fixture) : VisualTestBase(fix
 	{
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by QuickCheckInWidgetTests.",
+			titleDe = title,
+			descriptionDe = "Created by QuickCheckInWidgetTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

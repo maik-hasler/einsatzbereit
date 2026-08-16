@@ -33,8 +33,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Draft - never published",
-			Description = "Exists only to force a fresh output-cache read; see comment above.",
+			TitleDe = "Draft - never published",
+			DescriptionDe = "Exists only to force a fresh output-cache read; see comment above.",
 			OrganizationId = orgId,
 			Occurrence = "OneTime",
 			ParticipationType = "IndividualContact",
@@ -182,8 +182,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Opportunity with a slot",
-			Description = "Description",
+			TitleDe = "Opportunity with a slot",
+			DescriptionDe = "Description",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -227,8 +227,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Opportunity with recurring slots",
-			Description = "Description",
+			TitleDe = "Opportunity with recurring slots",
+			DescriptionDe = "Description",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -271,8 +271,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Opportunity without slots",
-			Description = "Description",
+			TitleDe = "Opportunity without slots",
+			DescriptionDe = "Description",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -303,8 +303,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var future = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Future opportunity",
-			Description = "Has an upcoming slot",
+			TitleDe = "Future opportunity",
+			DescriptionDe = "Has an upcoming slot",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -329,8 +329,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var slotless = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Slotless opportunity",
-			Description = "Never has time slots",
+			TitleDe = "Slotless opportunity",
+			DescriptionDe = "Never has time slots",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -361,8 +361,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Mixed expiry opportunity",
-			Description = "One slot already ended, one is still upcoming",
+			TitleDe = "Mixed expiry opportunity",
+			DescriptionDe = "One slot already ended, one is still upcoming",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -486,8 +486,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var act = () => client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Not allowed",
-			Description = "Vera cannot create opportunities",
+			TitleDe = "Not allowed",
+			DescriptionDe = "Vera cannot create opportunities",
 			OrganizationId = Guid.NewGuid(),
 			Street = "Test Street",
 			HouseNumber = "1",
@@ -511,8 +511,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var result = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Opportunity with address",
-			Description = "Test",
+			TitleDe = "Opportunity with address",
+			DescriptionDe = "Test",
 			OrganizationId = orgId,
 			Street = "Main Street",
 			HouseNumber = "42a",
@@ -611,8 +611,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Matching opportunity",
-			Description = "Description",
+			TitleDe = "Matching opportunity",
+			DescriptionDe = "Description",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -666,7 +666,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, tag: "environment", cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Beach Cleanup");
+		result.Items.Single().TitleDe.Should().Be("Beach Cleanup");
 	}
 
 	[Test]
@@ -687,9 +687,9 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var byDescription = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "shoreline", cancellationToken: cancellationToken);
 
 		byTitle.TotalItems.Should().Be(1);
-		byTitle.Items.Single().Title.Should().Be("Beach Cleanup");
+		byTitle.Items.Single().TitleDe.Should().Be("Beach Cleanup");
 		byDescription.TotalItems.Should().Be(1);
-		byDescription.Items.Single().Title.Should().Be("Beach Cleanup");
+		byDescription.Items.Single().TitleDe.Should().Be("Beach Cleanup");
 	}
 
 	[Test]
@@ -714,7 +714,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "wildlife rescue", cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Weekend Shift");
+		result.Items.Single().TitleDe.Should().Be("Weekend Shift");
 	}
 
 	[Test]
@@ -745,7 +745,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			1, 10, centerLatitude: centerLat, centerLongitude: centerLon, radiusKm: 20, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(2, "only the near and mid opportunities fall within the 20km radius");
-		result.Items.Select(i => i.Title).Should().Equal(
+		result.Items.Select(i => i.TitleDe).Should().Equal(
 			["Near Opportunity", "Mid Opportunity"],
 			"radius search results must be ordered by distance ascending");
 	}
@@ -780,8 +780,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		// slot, so create it as a draft, add a slot, then publish it.
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = description,
+			TitleDe = title,
+			DescriptionDe = description,
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -813,8 +813,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, CancellationToken cancellationToken) =>
 		await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "No time slots - IndividualContact",
+			TitleDe = title,
+			DescriptionDe = "No time slots - IndividualContact",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -831,8 +831,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	{
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "Scheduled slots opportunity with a single time slot",
+			TitleDe = title,
+			DescriptionDe = "Scheduled slots opportunity with a single time slot",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -872,8 +872,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	{
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Expired opportunity",
-			Description = "Only has a time slot that already ended",
+			TitleDe = "Expired opportunity",
+			DescriptionDe = "Only has a time slot that already ended",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -908,8 +908,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, string[] tags, CancellationToken cancellationToken) =>
 		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "Description",
+			TitleDe = title,
+			DescriptionDe = "Description",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -935,7 +935,9 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var opportunity = VolunteerOpportunity.Create(
 			DomainOrganizationId.Create(orgId).GetValueOrThrow(),
 			title,
+			null,
 			"Description",
+			null,
 			isRemote: false,
 			address,
 			Occurrence.OneTime,

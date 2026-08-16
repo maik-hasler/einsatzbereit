@@ -516,8 +516,8 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	{
 		var response = await organizer.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by OpportunityCardContractTests",
+			titleDe = title,
+			descriptionDe = "Created by OpportunityCardContractTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -562,8 +562,8 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	{
 		var response = await organizer.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by OpportunityCardContractTests",
+			titleDe = title,
+			descriptionDe = "Created by OpportunityCardContractTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "Recurring",

@@ -35,7 +35,7 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	private static VolunteerOpportunity CreatePublishedOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Draft,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 		opportunity.Publish();
@@ -89,7 +89,7 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 		SetupOpportunity(opportunityId, opportunity);
 

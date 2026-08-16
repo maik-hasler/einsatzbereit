@@ -57,8 +57,8 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		var oppTitle = $"VisualEngTab Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by OrganizationEngagementsTabTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by OrganizationEngagementsTabTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

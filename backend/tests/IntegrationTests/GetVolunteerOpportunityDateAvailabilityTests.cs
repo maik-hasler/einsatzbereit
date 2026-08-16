@@ -122,8 +122,8 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Express interest opportunity",
-			Description = "No time slots - IndividualContact",
+			TitleDe = "Express interest opportunity",
+			DescriptionDe = "No time slots - IndividualContact",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -156,8 +156,8 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var slotStart = UtcDayAt(daysFromToday: 4, hour: 10);
 		var draft = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Still a draft",
-			Description = "Never published",
+			TitleDe = "Still a draft",
+			DescriptionDe = "Never published",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -318,8 +318,8 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		// created as a draft, given its slot, and only then published.
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "Scheduled slots opportunity seeded for the date-availability calendar",
+			TitleDe = title,
+			DescriptionDe = "Scheduled slots opportunity seeded for the date-availability calendar",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",

@@ -21,14 +21,14 @@ internal sealed class EngagementReadRepository(
 		var raw = await dbContext.EngagementsQuery
 			.Where(e => e.OpportunityId == opportunityId)
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId, o.CheckInMethod }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.TitleDe, o.OrganizationId, o.CheckInMethod }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
 				{
 					e.Id,
 					e.OpportunityId,
-					OpportunityTitle = o.Title,
+					OpportunityTitle = o.TitleDe,
 					o.OrganizationId,
 					o.CheckInMethod,
 					e.VolunteerId,
@@ -160,14 +160,14 @@ internal sealed class EngagementReadRepository(
 
 		var raw = await scopedQuery
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId, o.CheckInMethod }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.TitleDe, o.OrganizationId, o.CheckInMethod }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
 				{
 					e.Id,
 					e.OpportunityId,
-					OpportunityTitle = o.Title,
+					OpportunityTitle = o.TitleDe,
 					o.OrganizationId,
 					o.CheckInMethod,
 					e.VolunteerId,
@@ -377,7 +377,7 @@ internal sealed class EngagementReadRepository(
 		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => opportunityIds.Contains(o.Id))
-			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId, o.CheckInMethod, o.ValidUntil })
+			.Select(o => new { o.Id, o.TitleDe, o.IsRemote, o.Address, o.OrganizationId, o.CheckInMethod, o.ValidUntil })
 			.ToDictionaryAsync(o => o.Id, cancellationToken);
 
 		var organizationIds = opportunities.Values.Select(o => o.OrganizationId).Distinct().ToList();
@@ -420,7 +420,7 @@ internal sealed class EngagementReadRepository(
 			return new EngagementSummary(
 				e.Id.Value,
 				e.OpportunityId.Value,
-				opportunity?.Title,
+				opportunity?.TitleDe,
 				organization?.Id.Value,
 				organization?.Name,
 				e.VolunteerId?.Value,
@@ -481,7 +481,7 @@ internal sealed class EngagementReadRepository(
 		// refuses to show a non-organizer.
 		var opportunity = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => o.Id == engagement.OpportunityId && o.Status == OpportunityStatus.Published)
-			.Select(o => new { o.Id, o.Title, o.Description, o.IsRemote, o.Address })
+			.Select(o => new { o.Id, o.TitleDe, o.DescriptionDe, o.IsRemote, o.Address })
 			.FirstOrDefaultAsync(cancellationToken);
 
 		if (opportunity is null)
@@ -500,8 +500,8 @@ internal sealed class EngagementReadRepository(
 		return new EngagementCalendarInfo(
 			engagementId.Value,
 			opportunity.Id.Value,
-			opportunity.Title,
-			opportunity.Description,
+			opportunity.TitleDe,
+			opportunity.DescriptionDe,
 			location,
 			timeSlot.StartDateTime,
 			timeSlot.EndDateTime);

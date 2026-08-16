@@ -98,8 +98,8 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		var oppTitle = $"CheckedInFuture Opportunity {suffix}";
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by MyEngagementsScopeTabsTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by MyEngagementsScopeTabsTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -215,8 +215,8 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by MyEngagementsScopeTabsTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by MyEngagementsScopeTabsTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -94,8 +94,8 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var oppTitle = $"CheckInPinEdit Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInPinOrganizerSetTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInPinOrganizerSetTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

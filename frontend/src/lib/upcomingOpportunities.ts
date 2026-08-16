@@ -1,4 +1,5 @@
 import type { VolunteerOpportunitySummary } from "../client/api-client";
+import { pickLocalizedText } from "./format";
 
 export const MAX_UPCOMING_ITEMS = 5;
 
@@ -40,10 +41,13 @@ export interface UpcomingItem {
  *
  * `unnamedTitle` is the caller's translated fallback for an untitled draft -
  * passed in rather than translated here so this stays a pure function.
+ * `lang` is i18n.language ("de"/"en"), used to pick the matching title
+ * variant (einsatzbereit#1946) - same reasoning as `unnamedTitle`.
  */
 export function selectUpcomingOpportunities(
 	opportunities: VolunteerOpportunitySummary[],
 	unnamedTitle: string,
+	lang: string,
 ): UpcomingItem[] {
 	return opportunities
 		.flatMap((o): UpcomingItem[] => {
@@ -57,7 +61,7 @@ export function selectUpcomingOpportunities(
 			return [
 				{
 					id: o.id,
-					title: o.title || unnamedTitle,
+					title: pickLocalizedText(o.titleDe, o.titleEn, lang) || unnamedTitle,
 					nextStart,
 					nextStartMs,
 					bookedCount: o.currentParticipantCount,

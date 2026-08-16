@@ -35,7 +35,7 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 
 	private VolunteerOpportunity CreateNonRemoteOpportunity(Address? address = null) =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, address ?? DefaultAddress, Occurrence.OneTime,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, address ?? DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 

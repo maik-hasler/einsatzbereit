@@ -90,8 +90,8 @@ public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, bool isDraft, CancellationToken cancellationToken) =>
 		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Strandreinigung Musterstadt",
-			Description = "Gemeinsam sammeln wir Müll am Strand ein.",
+			TitleDe = "Strandreinigung Musterstadt",
+			DescriptionDe = "Gemeinsam sammeln wir Müll am Strand ein.",
 			OrganizationId = orgId,
 			IsRemote = true,
 			Occurrence = "OneTime",

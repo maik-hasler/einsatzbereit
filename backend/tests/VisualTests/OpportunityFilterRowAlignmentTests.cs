@@ -64,8 +64,8 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		{
 			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = "Seeded for #1798 filter-row alignment visual test.",
+				titleDe = title,
+				descriptionDe = "Seeded for #1798 filter-row alignment visual test.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

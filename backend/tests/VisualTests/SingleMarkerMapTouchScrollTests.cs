@@ -61,8 +61,8 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 		var title = $"Touch Scroll Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by SingleMarkerMap_OnMobile_DisablesTouchDragSoPageStillScrolls",
+			titleDe = title,
+			descriptionDe = "Created by SingleMarkerMap_OnMobile_DisablesTouchDragSoPageStillScrolls",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
