@@ -41,9 +41,15 @@ public static class AuthHelper
 		// HasNoSeriousA11yViolations across otherwise-unrelated PRs). Waiting
 		// on the "User menu" button - the same authenticated-render signal
 		// FastSignInAsync already waits on - is independent of which frame
-		// navigation Playwright happens to observe.
+		// navigation Playwright happens to observe. 45s, not 30s, to match
+		// GoToOrgAppDashboardViaCtaAsync below: this is the only caller that
+		// drives the real Keycloak round trip (redirect, form submit, code
+		// exchange) rather than seeding a token, so it is the most exposed to
+		// AssemblyParallelLimit.cs's documented CPU contention among
+		// concurrent Playwright sessions - 30s was observed too tight even
+		// after fixing the wait target above.
 		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
-			.WaitForAsync(new() { Timeout = 30_000 });
+			.WaitForAsync(new() { Timeout = 45_000 });
 	}
 
 	/// <summary>
