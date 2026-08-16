@@ -70,7 +70,7 @@ const CreateVolunteerOpportunityModal = lazy(
 function describeCapacity(
 	capacity: OpportunityCapacity,
 	t: TFunction,
-): { label: string; tone: string } {
+): { label: string; tone: string; secondaryLabel?: string } {
 	switch (capacity.kind) {
 		case "unlimited":
 			return {
@@ -78,14 +78,18 @@ function describeCapacity(
 				tone: "text-teal-700",
 			};
 		case "notApplicable":
-			// No cap to report, so the sign-up count is the only real number -
-			// and before anyone has signed up, not even that.
+			// The type badge stays put regardless of the current viewer's own
+			// application status; the joined count - once there is one - is an
+			// addition next to it, not a replacement, so which piece of
+			// information appears here doesn't depend on whether this
+			// particular viewer has already applied (#1941).
 			return {
-				label:
+				label: t("opportunities.byInterest"),
+				tone: "text-gray-700",
+				secondaryLabel:
 					capacity.booked > 0
 						? t("opportunities.participantsJoined", { count: capacity.booked })
-						: t("opportunities.byInterest"),
-				tone: "text-gray-700",
+						: undefined,
 			};
 		case "capped":
 			if (capacity.isFull) {
@@ -330,10 +334,11 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.participationType,
 	);
 	const isFull = capacity.kind === "capped" && capacity.isFull;
-	const { label: capacityLabel, tone: capacityTone } = describeCapacity(
-		capacity,
-		t,
-	);
+	const {
+		label: capacityLabel,
+		tone: capacityTone,
+		secondaryLabel: capacitySecondaryLabel,
+	} = describeCapacity(capacity, t);
 
 	const otherOrgOpportunities =
 		orgProfile?.openOpportunities
@@ -667,15 +672,25 @@ export default function VolunteerOpportunityDetailPage() {
 							!cue && !isDraft`, so an anonymous visitor - most of this page's
 							traffic - never saw the remaining places at all and read the
 							per-slot maximum instead. That is what made a card saying "19
-							spots left" open a page saying "(max. 20 people)" (#1777).
-							Where there are no places to count, the sign-up count is the
-							only honest number, so that state says how many have joined. */}
+							spots left" open a page saying "(max. 20 people)" (#1777). */}
 								<span
 									data-testid="opportunity-capacity"
 									className={`text-sm font-medium ${capacityTone}`}
 								>
 									{capacityLabel}
 								</span>
+								{/* Addition, not a replacement, for the type badge above -
+								an "Interessenbekundung" offer keeps stating its type once it
+								has applicants, instead of the slot swapping to the applicant
+								count only for the viewer who happens to have applied (#1941). */}
+								{capacitySecondaryLabel && (
+									<span
+										data-testid="opportunity-capacity-secondary"
+										className="text-sm text-gray-600"
+									>
+										{capacitySecondaryLabel}
+									</span>
+								)}
 								<span className="text-xs text-gray-500">
 									{formatPostedAgo(
 										opportunity.createdOn as unknown as string,
