@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
+using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -57,6 +58,14 @@ public class MemberSearchErrorTests(AspireFixture fixture) : VisualTestBase(fixt
 		// The whole point of #1942: a failed request must never be mistaken for
 		// a search that genuinely found nobody.
 		await Expect(Page.GetByText("No users found.")).Not.ToBeVisibleAsync();
+
+		// AccessibilityTests covers this page's baseline state, but not this
+		// failed-search one - and this test has already built it, so scan it
+		// here rather than standing up the same route intercept a second time
+		// over there (same rationale as OrgSettingsFormActionsTests's own
+		// failed-save test).
+		var axe = await Page.RunAxe();
+		axe.Violations.Where(v => v.Impact is "serious" or "critical").Should().BeEmpty();
 
 		await Page.UnrouteAsync($"**/v1/organizations/{organizationId}/members/search**");
 		await DeleteOrganizationAsync(backend, organizationId);
