@@ -2567,6 +2567,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("filter-frequency").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
 
+		// Scoped to the filter bar: an unscoped "Reset" also matches the
+		// results list's own empty-state reset CTA (opportunities.clearFilters
+		// - the same label) whenever the "One-time" filter happens to catch
+		// zero opportunities in the shared VisualTests database at the moment
+		// this runs, which depends on what other concurrently-running test
+		// classes have created - a strict-mode violation unrelated to this
+		// test's own subject.
 		await Expect(
 			Page.GetByTestId("opportunities-filter-bar")
 				.GetByRole(AriaRole.Button, new() { Name = "Reset" }))
