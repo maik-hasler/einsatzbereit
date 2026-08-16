@@ -132,6 +132,37 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task SoleOrganizer_MembersPage_LeaveButtonHintIsProgrammaticallyAssociated()
+	{
+		// #1926: the disabled "Leave" button explained itself only via a
+		// native `title` tooltip, reachable only by mouse hover - unreachable
+		// once native `disabled` removes the button from the tab order.
+		// Verifies the visible hint text is wired to the button via
+		// aria-describedby (not just placed nearby), so a keyboard/screen-
+		// reader user's virtual cursor gets it too.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1926 LeaveHint", pinnedOrgId!.Value);
+
+		await Page.GetByTestId("org-tab-members").ClickAsync();
+
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(leaveButton).ToBeDisabledAsync();
+
+		var describedBy = await leaveButton.GetAttributeAsync("aria-describedby");
+		describedBy.Should().NotBeNullOrEmpty();
+
+		var hint = Page.Locator($"#{describedBy}");
+		await Expect(hint).ToBeVisibleAsync();
+		await Expect(hint).ToContainTextAsync(
+			"You're the only organizer of this organization - delete the organization instead if you want to close it.");
+	}
+
+	[Test]
 	public async Task SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave()
 	{
 		// Regression for #825 (UI level): OrgMembersPage.tsx's "last organizer"
