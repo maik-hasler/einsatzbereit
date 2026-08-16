@@ -42,10 +42,10 @@ describe("formatParticipationType", () => {
 		);
 	});
 
-	it("translates anything else as individual contact", () => {
+	it("translates anything else as by-interest, matching the capacity chip's wording (#1943)", () => {
 		const t = fakeT();
 		expect(formatParticipationType("DirectContact", t)).toBe(
-			"opportunities.individualContact",
+			"opportunities.byInterest",
 		);
 	});
 });

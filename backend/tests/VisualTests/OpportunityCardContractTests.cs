@@ -198,6 +198,40 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	/// <summary>
+	/// #1943: the same participation type (no fixed capacity, interest-based)
+	/// read two different ways depending on which component rendered the
+	/// badge - OpportunityListItem's capacity chip said "By expression of
+	/// interest" while PublicOpportunityCard's chip, reached through this
+	/// section, went through a different i18n key and said "Express interest"
+	/// instead. Both now go through the same "opportunities.byInterest" copy.
+	/// </summary>
+	[Test]
+	public async Task OpportunityDetail_MoreFromOrganizationCard_MatchesTheGridsInterestWording()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardWording{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		var opportunityId =
+			await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} primary");
+		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} sibling");
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var siblingCard = Page.GetByTestId("more-from-organization")
+			.Locator("li", new() { HasText = $"{keyword} sibling" });
+		await Expect(siblingCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Expect(siblingCard.GetByText("By expression of interest", new() { Exact = true }))
+			.ToBeVisibleAsync();
+	}
+
+	/// <summary>
 	/// AC: hovering or tabbing to a card title has to show it is a link. The
 	/// grid's title is not focusable itself - the stretched link covering the
 	/// card is - so hover is asserted on the title and the keyboard half is
