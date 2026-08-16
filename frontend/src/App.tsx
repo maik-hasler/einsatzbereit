@@ -9,6 +9,7 @@ import {
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
+import { useSilentSsoProbe } from "./hooks/useSilentSsoProbe";
 import { signinLocaleArgs } from "./lib/authLocale";
 import ErrorBanner from "./components/ErrorBanner";
 import Button from "./components/Button";
@@ -129,6 +130,7 @@ function CallbackPage() {
 
 export default function App() {
 	useSessionExpiryHandler();
+	useSilentSsoProbe();
 	return (
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
