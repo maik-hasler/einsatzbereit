@@ -722,6 +722,9 @@
       "bulkCancelSuccess_other": "{{count}} cancelled.",
       "bulkCancelPartial": "{{succeeded}} cancelled, {{failed}} failed.",
       "bulkCancelError": "Error cancelling selected applications",
+      "exportButton": "Export",
+      "exportButtonLoading": "Exporting…",
+      "exportError": "Error exporting sign-ups",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",

@@ -58,6 +58,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 - **Organization invitations** to join and manage an organization's membership.
 - **Reporting and moderation** for opportunities, organizations, and users, backed by a full admin audit log.
 - **Image uploads** for avatars, organization logos, and opportunity banners, stored in MinIO object storage.
+- **CSV export** of an organization's engagement data.
 - **Installable as a PWA** with offline support for previously visited pages.
 
 ---

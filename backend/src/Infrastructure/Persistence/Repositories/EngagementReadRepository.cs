@@ -462,6 +462,59 @@ internal sealed class EngagementReadRepository(
 		return string.Join(", ", parts);
 	}
 
+	public async ValueTask<List<EngagementSummary>> GetForExportAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default)
+	{
+		var raw = await (
+			from e in dbContext.EngagementsQuery
+			where e.OpportunityId == opportunityId
+			join o in dbContext.VolunteerOpportunitiesQuery on e.OpportunityId equals o.Id
+			join org in dbContext.OrganizationsQuery on o.OrganizationId equals org.Id
+			join ts in dbContext.TimeSlotsQuery on e.TimeSlotId equals ts.Id into tsGroup
+			from ts in tsGroup.DefaultIfEmpty()
+			select new
+			{
+				e.Id,
+				e.OpportunityId,
+				o.Title,
+				OrganizationId = org.Id,
+				OrganizationName = org.Name,
+				e.VolunteerId,
+				e.TimeSlotId,
+				e.Message,
+				e.Status,
+				e.IsCheckedIn,
+				e.FeedbackRating,
+				e.FeedbackSubmittedAt,
+				e.CreatedOn,
+				e.CancellationReason,
+				TimeSlotStart = (DateTimeOffset?)ts.StartDateTime ?? e.TimeSlotStartDateTime,
+				TimeSlotEnd = (DateTimeOffset?)ts.EndDateTime ?? e.TimeSlotEndDateTime,
+			})
+			.OrderBy(x => x.TimeSlotStart ?? DateTimeOffset.MaxValue)
+			.ThenBy(x => x.CreatedOn)
+			.ToListAsync(cancellationToken);
+
+		return raw.Select(x => new EngagementSummary(
+			x.Id.Value,
+			x.OpportunityId.Value,
+			x.Title,
+			x.OrganizationId.Value,
+			x.OrganizationName,
+			x.VolunteerId?.Value,
+			x.TimeSlotId?.Value,
+			x.Message,
+			x.Status.ToString(),
+			x.IsCheckedIn,
+			x.FeedbackSubmittedAt.HasValue,
+			x.CreatedOn,
+			TimeSlotStartDateTime: x.TimeSlotStart,
+			TimeSlotEndDateTime: x.TimeSlotEnd,
+			CancellationReason: x.CancellationReason,
+			FeedbackRating: x.FeedbackRating)).ToList();
+	}
+
 	public async ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
 		EngagementId engagementId,
 		CancellationToken cancellationToken = default)

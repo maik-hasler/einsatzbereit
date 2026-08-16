@@ -77,6 +77,16 @@ public interface IEngagementReadRepository
 		int pageSize,
 		CancellationToken cancellationToken = default);
 
+	/// <summary>
+	/// Every engagement for the opportunity, unpaginated, with the live TimeSlot join
+	/// (falling back to the engagement's own snapshot, same rule as <see cref="GetByVolunteerAsync"/>)
+	/// and <see cref="EngagementSummary.FeedbackRating"/> populated - fields the paginated
+	/// organizer list doesn't need but the CSV roster export does.
+	/// </summary>
+	ValueTask<List<EngagementSummary>> GetForExportAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
 	ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
 		EngagementId engagementId,
 		CancellationToken cancellationToken = default);

@@ -6,7 +6,7 @@ title Level 2 - Backend API, functional modules
 
 Container_Boundary(backend, "Backend API") {
 	Component(opportunities, "Volunteer Opportunities", "Api/ + Application/ + Domain/ + Infrastructure/ VolunteerOpportunities", "Opportunity lifecycle (draft, publish, unpublish, cancel), time slots and series, categories/tags, banner images, check-in PINs, address geocoding.")
-	Component(engagements, "Engagements", "Api/ + Application/ + Domain/ Engagements", "Sign-up, withdrawal, confirmation and cancellation, check-in, feedback, reminders and calendar.")
+	Component(engagements, "Engagements", "Api/ + Application/ + Domain/ Engagements", "Sign-up, withdrawal, confirmation and cancellation, check-in, feedback, reminders, calendar and CSV export.")
 	Component(organizations, "Organizations", "Api/ + Application/ + Domain/ Organizations", "Organization profiles, memberships and roles, invitations sent by an organizer, dashboard layout.")
 	Component(invitations, "Invitations", "Api/ + Application/ Invitations", "The invitee's side of an invitation: list, accept, decline. Shares the Organizations aggregate.")
 	Component(users, "Users", "Api/ + Application/ + Domain/ Users", "Profiles, notification preferences, streaks, account deletion, admin user administration.")

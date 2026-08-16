@@ -769,4 +769,85 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		upcoming.Items.Select(e => e.Id).Should().ContainInOrder(soonerEngagement.Id.Value, laterEngagement.Id.Value);
 	}
+
+	// --- GetForExportAsync (#1045) ---
+
+	[Test]
+	public async Task GetForExportAsync_ShouldIncludeTimeSlotTimesAndFeedbackRating(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"ExportOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		engagement.CheckIn().ThrowIfFailure();
+		engagement.SubmitFeedback(4, "Great shift", DateTimeOffset.UtcNow).ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var items = await repository.GetForExportAsync(opportunity.Id, cancellationToken);
+
+		var item = items.Should().ContainSingle().Which;
+		item.Should().BeEquivalentTo(new
+		{
+			OpportunityTitle = "Titel",
+			OrganizationName = organization.Name,
+			IsCheckedIn = true,
+			FeedbackRating = 4,
+		}, options => options.ExcludingMissingMembers());
+		// Postgres timestamptz has microsecond precision vs. DateTimeOffset's
+		// 100ns ticks, so a round-tripped value can differ by a sub-microsecond
+		// rounding error - the same reason other tests in this file compare
+		// timestamps loosely rather than for exact equality.
+		item.TimeSlotStartDateTime.Should().BeCloseTo(slot.StartDateTime, TimeSpan.FromMilliseconds(1));
+		item.TimeSlotEndDateTime.Should().BeCloseTo(slot.EndDateTime, TimeSpan.FromMilliseconds(1));
+	}
+
+	[Test]
+	public async Task GetForExportAsync_ShouldLeaveTimeSlotAndFeedbackNull_ForIndividualContactEngagement(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"ExportOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateIndividualContact(opportunity.Id, UserId.New(), "Please let me help").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var items = await repository.GetForExportAsync(opportunity.Id, cancellationToken);
+
+		items.Should().ContainSingle()
+			.Which.Should().BeEquivalentTo(new
+			{
+				TimeSlotStartDateTime = (DateTimeOffset?)null,
+				TimeSlotEndDateTime = (DateTimeOffset?)null,
+				FeedbackRating = (int?)null,
+				IsCheckedIn = false,
+			}, options => options.ExcludingMissingMembers());
+	}
 }

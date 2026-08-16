@@ -96,7 +96,7 @@ Contained Building Blocks::
 |`{Api,Application,Domain,Infrastructure}/VolunteerOpportunities/`
 
 |Engagements
-|Sign-up and withdrawal, confirmation and cancellation by the organizer, check-in, feedback, reminders and calendar.
+|Sign-up and withdrawal, confirmation and cancellation by the organizer, check-in, feedback, reminders, calendar and CSV export.
 |`{Api,Application,Domain}/Engagements/`
 
 |Organizations

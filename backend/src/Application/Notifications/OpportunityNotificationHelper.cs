@@ -60,9 +60,9 @@ internal static class OpportunityNotificationHelper
 		// Batched instead of one GetUserAsync call per volunteer (#1678) - this runs
 		// inside TransactionPipelineBehavior's DB transaction (see callers), so an N+1
 		// here held row locks open for N sequential outbound Keycloak calls. Mirrors
-		// the GetUserProfilesAsync usage in GetEngagementsQueryHandler; a volunteer
-		// whose lookup fails (e.g. deleted in Keycloak) is silently skipped rather
-		// than aborting the whole batch.
+		// the GetUserProfilesAsync usage in GetEngagementsQueryHandler/
+		// ExportEngagementsQueryHandler; a volunteer whose lookup fails (e.g. deleted
+		// in Keycloak) is silently skipped rather than aborting the whole batch.
 		var profileMap = await keycloakUserService.GetUserProfilesAsync(volunteerIds, cancellationToken);
 
 		var messages = new List<EmailMessage>(volunteerIds.Count);
