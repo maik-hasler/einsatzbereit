@@ -943,6 +943,7 @@
     },
     "confirmDialog": {
       "keep": "Keep",
+      "understood": "Understood",
       "delete": {
         "title": "Delete opportunity?",
         "message": "Are you sure you want to permanently delete this opportunity? This cannot be undone.",

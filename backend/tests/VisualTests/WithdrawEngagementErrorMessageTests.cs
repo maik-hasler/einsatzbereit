@@ -24,6 +24,11 @@ namespace VisualTests;
 /// withdrawn out-of-band while the confirm dialog is open, so the UI's own
 /// withdraw call - unaware of that change - hits Engagement.AlreadyTerminated
 /// (409 Conflict) once confirmed.
+///
+/// Also covers #1950: once that terminal error is showing, ConfirmDialog used
+/// to leave its original "Keep"/"Yes, withdraw" pair active, inviting a
+/// second attempt guaranteed to fail the same way. The dialog should instead
+/// swap to a single "Understood" acknowledgement that just dismisses it.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class WithdrawEngagementErrorMessageTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -96,5 +101,15 @@ public class WithdrawEngagementErrorMessageTests(AspireFixture fixture) : Visual
 		var errorBanner = dialog.GetByRole(AriaRole.Alert);
 		await Expect(errorBanner).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(errorBanner).ToHaveTextAsync("Sign-up is already terminated.");
+
+		await Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, withdraw" }))
+			.Not.ToBeVisibleAsync();
+		await Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }))
+			.Not.ToBeVisibleAsync();
+
+		var understoodButton = dialog.GetByRole(AriaRole.Button, new() { Name = "Understood" });
+		await Expect(understoodButton).ToBeVisibleAsync();
+		await understoodButton.ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
 	}
 }
