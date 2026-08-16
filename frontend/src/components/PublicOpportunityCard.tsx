@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { PublicOpportunitySummaryDto } from "../client/api-client";
-import { formatOccurrence, formatParticipationType } from "../lib/format";
+import { formatOccurrence } from "../lib/format";
 import { getOpportunityCapacity } from "../lib/opportunityCapacity";
 import Chip from "./Chip";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "./icons";
@@ -25,9 +25,12 @@ import { CategoryGlyph } from "./VolunteerOpportunitiesList/CategoryGlyph";
 // exactly that reason.
 //
 // The rest reuses the label/value language of the detail page's at-a-glance
-// panel: the date leads in brand-700 with its icon, location follows muted, and
-// the participation type is the single chip - so a card and the page it links
-// to describe an opportunity the same way.
+// panel: the date leads in brand-700 with its icon, location follows muted.
+// No separate participation-type chip below - for an interest-based
+// opportunity that repeated the capacity badge's own "By expression of
+// interest" wording verbatim (#1943's grid-wording contract caught the
+// duplicate), and for a slot-based one the capacity badge already carries
+// the more specific spots-left/full state.
 export default function PublicOpportunityCard({
 	opportunity,
 }: {
@@ -102,14 +105,6 @@ export default function PublicOpportunityCard({
 						</>
 					)
 				)}
-			</div>
-
-			{/* mt-auto pins the chip to the bottom so cards in a row line their
-			chips up regardless of how long the description above ran. */}
-			<div className="mt-auto pt-4">
-				<Chip tone="brand" size="sm">
-					{formatParticipationType(opportunity.participationType, t)}
-				</Chip>
 			</div>
 		</li>
 	);
