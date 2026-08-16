@@ -561,6 +561,9 @@ export default function OrgMembersPage() {
 													? t("orgSettings.leaveOrganizationLastOrganizerHint")
 													: undefined
 											}
+											aria-describedby={
+												isLastOrganizer ? "leave-organization-hint" : undefined
+											}
 											className="-m-2 p-2 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 										>
 											{t("orgSettings.leaveOrganization")}
@@ -631,9 +634,18 @@ export default function OrgMembersPage() {
 						</ul>
 						{/* Footer inside the card, not loose text under it: the hint
 						explains why the row above has a disabled "Leave" action, so it
-						belongs to the list rather than to the page (#1755). */}
+						belongs to the list rather than to the page (#1755).
+						aria-describedby on that button ties it to this id - native
+						`disabled` removes the button from the tab order, so its `title`
+						tooltip is otherwise mouse-hover-only and unreachable by keyboard
+						or touch (#1926); this text is already visible on the page, but
+						the description ties it explicitly to the control for a
+						screen-reader user's virtual cursor too. */}
 						{isLastOrganizer && (
-							<p className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
+							<p
+								id="leave-organization-hint"
+								className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500"
+							>
 								{t("orgSettings.leaveOrganizationLastOrganizerHint")}
 							</p>
 						)}
