@@ -62,7 +62,10 @@ export default function AccountControls({
 							className="h-9 w-9 rounded-full object-cover"
 						/>
 					) : (
-						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
+						// tracking-widest: at this size/weight, two identical adjacent
+						// letters (e.g. "VV") can visually fuse into an unrelated glyph
+						// without the extra spacing - #1915.
+						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold tracking-widest text-white">
 							{initials}
 						</span>
 					)}
