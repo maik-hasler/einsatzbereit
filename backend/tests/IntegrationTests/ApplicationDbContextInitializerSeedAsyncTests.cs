@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using AwesomeAssertions;
+using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -217,6 +218,48 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 				$"\"{title}\" advertises a shift within one day, so it must not cross midnight "
 				+ $"({startUtc:yyyy-MM-dd HH:mm} - {endUtc:yyyy-MM-dd HH:mm} UTC)");
 		}
+	}
+
+	// #1909: staging's "Erste-Hilfe-Kurs" sign-up was found already showing "checked in"
+	// and "feedback given" while its time slot was still 13 days out - internally
+	// inconsistent, and leaving no way to reach a genuine "past, completed, awaiting
+	// feedback" example to test the rating flow against (Engagement.CheckIn() has no
+	// time-based guard, so that combination was most likely staging test debris rather
+	// than the seed set itself, but the seed set never offered a clean example either).
+	// The seed set now provides that example directly instead of relying on it existing
+	// by accident.
+	[Test]
+	public async Task SeedAsync_SeedsAPastCheckedInEngagementAwaitingFeedback_ForTheRatingFlowToBeTestable(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var initializer = new ApplicationDbContextInitializer(
+			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+
+		await initializer.SeedAsync(cancellationToken);
+
+		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
+		var opportunity = await dbContext.Set<VolunteerOpportunity>()
+			.Include(o => o.TimeSlots)
+			.SingleAsync(o => o.Title == "Erste-Hilfe-Kurs", cancellationToken);
+
+		var engagements = await dbContext.Set<Engagement>()
+			.Where(e => e.VolunteerId == veraUserId && e.OpportunityId == opportunity.Id)
+			.ToListAsync(cancellationToken);
+		var pastEngagement = engagements.Should().ContainSingle(e => e.IsCheckedIn).Subject;
+		var pastTimeSlot = opportunity.TimeSlots.Single(ts => ts.Id == pastEngagement.TimeSlotId);
+
+		pastTimeSlot.EndDateTime.Should().BeBefore(DateTimeOffset.UtcNow,
+			"a future-dated slot paired with a checked-in/feedback-given engagement is exactly the "
+			+ "inconsistency #1909 was filed against");
+		pastEngagement.Status.Should().Be(EngagementStatus.Confirmed);
+		pastEngagement.FeedbackSubmittedAt.Should().BeNull(
+			"feedback must still be outstanding, or there is nothing left to test the rating flow against (#1909)");
+
+		opportunity.TimeSlots.Should().Contain(ts => ts.EndDateTime >= DateTimeOffset.UtcNow,
+			"the opportunity must keep a non-elapsed slot too, or it silently drops out of the public "
+			+ "listing entirely (ApplyPubliclyListedFilters) once its only slot is in the past");
 	}
 
 	// #1846: Vera is a genuine, Keycloak-confirmed member of org1 - EnsureMemberAsync
