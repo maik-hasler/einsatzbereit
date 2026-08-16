@@ -18,6 +18,16 @@ public class PageHealthTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		// #1929: the home page now probes for a live Keycloak SSO session on
+		// mount even when anonymous (useSilentSsoProbe) - it genuinely crosses
+		// into Keycloak now, same as the anonymous-redirect tests in
+		// AuthGuardTests/HomePageOrgCtaTests, so it needs the same
+		// X-Forwarded-For strip (see AllowKeycloakCrossOriginRequestsAsync's
+		// own doc comment) or the probe's discovery fetch trips Keycloak's
+		// CORS preflight and this test's own console-error assertion below
+		// fails on that, not on a real regression.
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
 		var consoleErrors = new List<string>();
 		var failedResponses = new List<string>();
 
