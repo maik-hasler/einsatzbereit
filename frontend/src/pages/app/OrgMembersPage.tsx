@@ -54,6 +54,9 @@ export default function OrgMembersPage() {
 		MemberCandidateDto[]
 	>([]);
 	const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+	const [memberSearchError, setMemberSearchError] = useState<string | null>(
+		null,
+	);
 	const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
 	const [inviteRole, setInviteRole] = useState<"Member" | "Organizer">(
 		"Member",
@@ -76,6 +79,7 @@ export default function OrgMembersPage() {
 		if (memberSearch.length < 4) {
 			setMemberCandidates([]);
 			setMemberSearchLoading(false);
+			setMemberSearchError(null);
 			return;
 		}
 		memberSearchAbortRef.current?.abort();
@@ -83,15 +87,20 @@ export default function OrgMembersPage() {
 		memberSearchAbortRef.current = controller;
 		const timer = setTimeout(() => {
 			setMemberSearchLoading(true);
+			setMemberSearchError(null);
 			api
 				.searchMemberCandidates(org.id, memberSearch, controller.signal)
 				.then((results) => {
 					if (controller.signal.aborted) return;
 					setMemberCandidates(results);
+					setMemberSearchError(null);
 				})
-				.catch(() => {
+				.catch((err) => {
 					if (controller.signal.aborted) return;
 					setMemberCandidates([]);
+					setMemberSearchError(
+						getApiErrorMessage(err, t("orgSettings.memberSearchError")),
+					);
 				})
 				.finally(() => {
 					if (controller.signal.aborted) return;
@@ -315,6 +324,9 @@ export default function OrgMembersPage() {
 								{t("orgSettings.searching")}
 							</p>
 						)}
+						{memberSearchError && (
+							<ErrorBanner message={memberSearchError} className="mt-1" />
+						)}
 						{memberCandidates.length > 0 && (
 							<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 								{memberCandidates.map((candidate) => (
@@ -349,6 +361,7 @@ export default function OrgMembersPage() {
 						)}
 						{memberSearch.length >= 4 &&
 							!memberSearchLoading &&
+							!memberSearchError &&
 							memberCandidates.length === 0 && (
 								<p role="status" className="mt-1 text-xs text-gray-500">
 									{t("orgSettings.noSearchResults")}
