@@ -33,10 +33,17 @@ public static class AuthHelper
 		await page.Locator("#password").FillAsync(password);
 		await page.Locator("#kc-login").ClickAsync();
 
-		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new()
-		{
-			Timeout = 30_000,
-		});
+		// Same reasoning as the comment above, applied to the return leg of the
+		// same round trip: WaitForURLAsync races the callback redirect's own
+		// chain (Keycloak -> /callback -> code exchange -> history.replace to
+		// "/") and intermittently times out under CPU contention even though
+		// sign-in actually succeeded (seen repeatedly on AdministrationPage_-
+		// HasNoSeriousA11yViolations across otherwise-unrelated PRs). Waiting
+		// on the "User menu" button - the same authenticated-render signal
+		// FastSignInAsync already waits on - is independent of which frame
+		// navigation Playwright happens to observe.
+		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
+			.WaitForAsync(new() { Timeout = 30_000 });
 	}
 
 	/// <summary>
