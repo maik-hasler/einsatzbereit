@@ -287,6 +287,86 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_ApplicationStatusWithTimeSlot_AsVera_HasNoSeriousA11yViolations()
+	{
+		// #1938: the sidebar "application-status" card (label + status Chip +
+		// Withdraw button) now also renders the registered slot's date/time -
+		// new content in a render state ("signed-in volunteer with an existing
+		// engagement") none of this file's other detail-page scans ever reach,
+		// since they all land on the sign-up-CTA/login-prompt/owner-draft
+		// states instead. Vera is a plain user, never an organizer, so
+		// isOwner is false and the status card (not the sign-up CTA) renders.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var organizerHttp = new HttpClient { BaseAddress = backend };
+		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Status Slot Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"A11y Status Slot Test {suffix}",
+			description = "Seeded for #1938 application-status time-slot a11y coverage.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(5);
+		var slotResponse = await organizerHttp.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start,
+			endDateTime = start.AddHours(2),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		});
+		slotResponse.EnsureSuccessStatusCode();
+		var slots = await slotResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var timeSlotId = slots[0].GetProperty("id").GetString();
+
+		(await organizerHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		var veraToken = (await Fixture.SignInAsync("vera", "vera123")).AccessToken;
+		using var volunteerHttp = new HttpClient { BaseAddress = backend };
+		volunteerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraToken}");
+
+		var engagementResponse = await volunteerHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { type = "ScheduledSlots", timeSlotId, message = (string?)null });
+		engagementResponse.EnsureSuccessStatusCode();
+		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString();
+
+		(await organizerHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw the new date/time row, rather than
+		// passing against a page where it never rendered.
+		await Expect(Page.GetByTestId("application-status").GetByText("Scheduled:")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
 	{
 		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an
