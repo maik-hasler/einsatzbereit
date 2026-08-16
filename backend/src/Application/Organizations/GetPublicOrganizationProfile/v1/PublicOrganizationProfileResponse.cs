@@ -28,4 +28,7 @@ public sealed record PublicOpportunitySummaryDto(
 	bool IsRemote,
 	string Occurrence,
 	string ParticipationType,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	string? Category,
+	int? TotalMaxParticipants,
+	int CurrentParticipantCount);

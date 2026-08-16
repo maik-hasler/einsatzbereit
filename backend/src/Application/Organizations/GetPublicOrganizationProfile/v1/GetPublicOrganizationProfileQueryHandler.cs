@@ -48,7 +48,10 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 				o.IsRemote,
 				o.Occurrence,
 				o.ParticipationType,
-				o.CreatedOn))
+				o.CreatedOn,
+				o.Category,
+				o.TotalMaxParticipants,
+				o.CurrentParticipantCount))
 			.ToList();
 
 		return new PublicOrganizationProfileResponse(

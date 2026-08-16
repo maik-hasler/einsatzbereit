@@ -9292,7 +9292,10 @@
           "isRemote",
           "occurrence",
           "participationType",
-          "createdOn"
+          "createdOn",
+          "category",
+          "totalMaxParticipants",
+          "currentParticipantCount"
         ],
         "type": "object",
         "properties": {
@@ -9345,6 +9348,29 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "category": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "totalMaxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "currentParticipantCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

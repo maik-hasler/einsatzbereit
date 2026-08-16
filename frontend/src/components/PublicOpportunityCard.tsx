@@ -2,8 +2,11 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { PublicOpportunitySummaryDto } from "../client/api-client";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
+import { getOpportunityCapacity } from "../lib/opportunityCapacity";
 import Chip from "./Chip";
 import { CalendarIcon, GlobeIcon, MapPinIcon } from "./icons";
+import { capacityChip } from "./VolunteerOpportunitiesList/OpportunityListItem";
+import { CategoryGlyph } from "./VolunteerOpportunitiesList/CategoryGlyph";
 
 // The one card for a PublicOpportunitySummaryDto, shared by the organization
 // profile's "current needs" list and the opportunity detail page's "more from
@@ -12,13 +15,16 @@ import { CalendarIcon, GlobeIcon, MapPinIcon } from "./icons";
 // the two most important facts - when it runs and where - were the same weight
 // as everything else and the card had no anchor for the eye.
 //
-// Deliberately NOT VolunteerOpportunitiesList/OpportunityListItem, which is the
-// richer card the landing page grid uses: that one needs category, participant
-// counts and a banner image to render its glyph tile and spots-left line, and
-// none of those exist on this DTO. Matching its markup here would mean faking
-// data the public endpoint does not return.
+// Still NOT VolunteerOpportunitiesList/OpportunityListItem, which is the
+// richer card the landing page grid uses: that one needs a banner image and
+// organization identity to render its full layout, and neither exists on
+// this DTO. The category chip and capacity badge below reuse OpportunityListItem's
+// own `capacityChip` and the shared `getOpportunityCapacity` resolver rather
+// than re-deriving the mapping, so the two cards state a given opportunity's
+// standing identically (#1912) - this DTO gained the backing fields for
+// exactly that reason.
 //
-// Instead this reuses the label/value language of the detail page's at-a-glance
+// The rest reuses the label/value language of the detail page's at-a-glance
 // panel: the date leads in brand-700 with its icon, location follows muted, and
 // the participation type is the single chip - so a card and the page it links
 // to describe an opportunity the same way.
@@ -28,6 +34,7 @@ export default function PublicOpportunityCard({
 	opportunity: PublicOpportunitySummaryDto;
 }) {
 	const { t } = useTranslation();
+	const capacity = capacityChip(getOpportunityCapacity(opportunity), t);
 
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting transition-shadow hover:shadow-raised">
@@ -36,6 +43,26 @@ export default function PublicOpportunityCard({
 				className="absolute inset-0 rounded-card"
 				aria-label={opportunity.title}
 			/>
+
+			{/* Category left, capacity top-right - the same chip row
+			OpportunityListItem renders, so this opportunity reads the same way
+			here as it does on the public grid and its own detail page (#1912). */}
+			<div className="mb-2 flex flex-wrap items-center gap-1.5">
+				<Chip tone="brand" size="sm" className="shrink-0">
+					<CategoryGlyph category={opportunity.category} className="h-3 w-3" />
+					{opportunity.category
+						? t(`opportunities.category.${opportunity.category}`)
+						: t("opportunities.category.Other")}
+				</Chip>
+				<Chip
+					data-testid="opportunity-capacity"
+					tone={capacity.tone}
+					size="sm"
+					className="ml-auto shrink-0"
+				>
+					{capacity.label}
+				</Chip>
+			</div>
 
 			{/* Muted, matching OpportunityListItem's date line. This led in
 				brand-700 while the list card's equivalent slot was grey, so the
