@@ -21,6 +21,12 @@ internal sealed class DeclineInvitationCommandHandler(
 			throw new ResultFailureException(Error.Forbidden("OrganizationInvitation.NotRecipient", "You are not the recipient of this invitation."));
 
 		invitation.Decline().ThrowIfFailure();
+
+		// #1919: see AcceptInvitationCommandHandler - a declined invitation is
+		// just as resolved as an accepted one, and its InvitationReceived
+		// notification would otherwise dead-end the same way.
+		await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
+
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		return true;

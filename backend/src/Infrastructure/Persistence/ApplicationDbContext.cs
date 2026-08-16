@@ -383,6 +383,13 @@ internal sealed class ApplicationDbContext(
 			.Where(n => n.RecipientId == recipientId && n.IsRead)
 			.ExecuteDeleteAsync(cancellationToken);
 
+	public async Task DeleteInvitationReceivedNotificationsAsync(
+		Guid invitationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Notification>()
+			.Where(n => n.Kind == NotificationKind.InvitationReceived && n.RelatedEntityId == invitationId)
+			.ExecuteDeleteAsync(cancellationToken);
+
 	public async Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default) =>

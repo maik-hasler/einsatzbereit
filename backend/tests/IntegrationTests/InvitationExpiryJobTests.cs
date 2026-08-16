@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using AwesomeAssertions;
+using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Users;
 using Infrastructure.BackgroundJobs;
@@ -65,6 +66,34 @@ public class InvitationExpiryJobTests(IntegrationTestFixture fixture)
 			.Select(i => i.Status)
 			.SingleAsync(cancellationToken);
 		status.Should().Be(InvitationStatus.Pending);
+	}
+
+	[Test]
+	public async Task ExpireDueInvitationsAsync_PendingInvitationPastItsWindow_DeletesItsInvitationReceivedNotification(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1919: an expired invitation's InvitationReceived
+		// notification is never marked read automatically, so without this it
+		// stuck around forever, pointing the invitee at a /my-signups page with
+		// nothing left to show for it.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var createdAt = DateTimeOffset.UtcNow.AddDays(-(OrganizationInvitation.ExpiryWindowDays + 1));
+		var invitationId = await SeedInvitationAsync(dbContext, createdAt, cancellationToken);
+
+		var notification = Notification.Create(UserId.New(), NotificationKind.InvitationReceived, invitationId.Value);
+		dbContext.Set<Notification>().Add(notification);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var expired = await InvitationExpiryJob.ExpireDueInvitationsAsync(
+			dbContext, DateTimeOffset.UtcNow, cancellationToken);
+
+		expired.Should().Be(1);
+
+		var remainingNotification = await dbContext.Set<Notification>()
+			.AsNoTracking()
+			.Where(n => n.Id == notification.Id)
+			.SingleOrDefaultAsync(cancellationToken);
+		remainingNotification.Should().BeNull();
 	}
 
 	[Test]

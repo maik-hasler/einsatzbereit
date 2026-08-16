@@ -85,6 +85,7 @@ public class DismissInvitationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_invitationRepo.Received(1).Delete(invitation);
+		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -103,6 +104,7 @@ public class DismissInvitationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_invitationRepo.Received(1).Delete(invitation);
+		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -124,6 +126,7 @@ public class DismissInvitationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_invitationRepo.Received(1).Delete(invitation);
+		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -144,6 +147,7 @@ public class DismissInvitationCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Accepted invitations*");
 		_invitationRepo.DidNotReceive().Delete(Arg.Any<OrganizationInvitation>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 }

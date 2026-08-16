@@ -36,6 +36,11 @@ internal sealed class DismissInvitationCommandHandler(
 		if (invitation.Status == InvitationStatus.Accepted)
 			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyAccepted", "Accepted invitations cannot be dismissed."));
 
+		// #1919: an organizer dismissing (revoking) an invitation deletes the
+		// row outright, so the invitee's InvitationReceived notification would
+		// otherwise point at an invitation that no longer exists at all.
+		await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
+
 		dbContext.OrganizationInvitations.Delete(invitation);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 

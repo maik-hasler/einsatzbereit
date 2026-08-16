@@ -41,9 +41,10 @@ internal sealed class ResendInvitationCommandHandler(
 
 		invitation.Resend(DateTimeOffset.UtcNow).ThrowIfFailure();
 
-		// A fresh, unread notification - the original one (if still unread) stays
-		// as-is, but the invitee should see this bump in their bell dropdown the
-		// same way they would for a brand new invitation.
+		// A fresh, unread notification. Resend only reaches an Expired invitation
+		// (guard above), and InvitationExpiryJob now deletes the InvitationReceived
+		// notification from that same expiry (#1919), so there is never a stale
+		// original left behind here for the invitee to see twice.
 		var notification = Notification.Create(
 			invitation.InviteeId,
 			NotificationKind.InvitationReceived,

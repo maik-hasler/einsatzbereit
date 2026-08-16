@@ -122,6 +122,7 @@ public class AcceptInvitationCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -141,6 +142,26 @@ public class AcceptInvitationCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteInvitationReceivedNotification_OnAccept(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1919: an accepted invitation is resolved, so its
+		// InvitationReceived notification must not survive to be clicked into a
+		// /my-signups page with nothing left to show for it.
+		// Arrange
+		var invitation = CreatePendingInvitation();
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 	}
 
 	[Test]
@@ -166,5 +187,6 @@ public class AcceptInvitationCommandHandlerTests
 		result.Should().BeTrue();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }

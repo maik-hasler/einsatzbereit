@@ -102,7 +102,16 @@ internal sealed class InvitationExpiryJob(
 			return 0;
 
 		foreach (var invitation in dueInvitations)
+		{
 			invitation.Expire(now).ThrowIfFailure();
+
+			// #1919: an expired invitation is just as resolved as an
+			// accepted/declined one - without this, its InvitationReceived
+			// notification stuck around indefinitely (it's never marked read
+			// automatically), pointing the invitee at a /my-signups page with
+			// nothing left to show for it.
+			await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
+		}
 
 		await dbContext.SaveChangesAsync(cancellationToken);
 
