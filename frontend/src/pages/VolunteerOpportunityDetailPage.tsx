@@ -325,6 +325,13 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const cue = opportunity.currentUserEngagement;
 
+	// The slot the signed-in volunteer registered for, so the status card
+	// below can show its date/time next to the status Chip - matching what
+	// /my-signups already shows for the same engagement (#1938).
+	const registeredTimeSlot = cue
+		? opportunity.timeSlots.find((ts) => ts.id === cue.timeSlotId)
+		: undefined;
+
 	// Folded down by the shared contract, with the same rule the list
 	// projection uses - so this page can no longer state a different capacity
 	// than the card the reader clicked to get here (#1777).
@@ -413,6 +420,16 @@ export default function VolunteerOpportunityDetailPage() {
 								>
 									{t(`myEngagements.status.${cue.status}`)}
 								</Chip>
+								{registeredTimeSlot && (
+									<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+										<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+										<span>
+											{t("myEngagements.scheduledFor", {
+												range: `${formatDateTime(registeredTimeSlot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(registeredTimeSlot.endDateTime as unknown as string, i18n.language)}`,
+											})}
+										</span>
+									</p>
+								)}
 							</div>
 							<Button
 								type="button"
