@@ -116,7 +116,7 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 			response.EnsureSuccessStatusCode();
 			var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 			return body.GetProperty("items").EnumerateArray()
-				.Where(o => o.GetProperty("title").GetString() == uniqueTitle)
+				.Where(o => o.GetProperty("titleDe").GetString() == uniqueTitle)
 				.ToList();
 		}
 

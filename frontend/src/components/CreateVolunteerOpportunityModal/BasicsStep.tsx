@@ -79,10 +79,15 @@ export default function BasicsStep({
 						type="button"
 						aria-current={activeLanguage === lang ? "true" : undefined}
 						data-testid={`opportunity-content-language-${lang}`}
+						// Sits before the title field in the DOM but must not steal the
+						// modal's initial focus from it (see Modal.tsx) - a keyboard user
+						// opening this dialog wants to start typing the title, not land
+						// on a language toggle first.
+						data-skip-initial-focus
 						onClick={() => setActiveLanguage(lang)}
 						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
 							activeLanguage === lang
-								? "bg-brand-600 text-white"
+								? "bg-brand-50 text-brand-700"
 								: "text-gray-600 hover:bg-gray-50"
 						}`}
 					>
@@ -90,9 +95,7 @@ export default function BasicsStep({
 						{hasError[lang] && (
 							<span
 								aria-hidden="true"
-								className={`h-1.5 w-1.5 rounded-full ${
-									activeLanguage === lang ? "bg-white" : "bg-red-500"
-								}`}
+								className="h-1.5 w-1.5 rounded-full bg-red-500"
 							/>
 						)}
 					</button>

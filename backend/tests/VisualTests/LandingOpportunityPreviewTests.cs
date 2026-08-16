@@ -108,8 +108,8 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = "Seeded for #1914 landing tablet grid visual test.",
+				titleDe = title,
+				descriptionDe = "Seeded for #1914 landing tablet grid visual test.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
