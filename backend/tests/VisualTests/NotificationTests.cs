@@ -109,6 +109,76 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	/// <summary>
+	/// Regression for #1927: a real, unread InvitationReceived notification
+	/// navigated to /my-signups when clicked, but nothing there read as
+	/// related to the invitation - no dedicated acceptance surface was found
+	/// after checking notifications, profile, settings, and the
+	/// organizations directory. The routing itself
+	/// (NotificationReadRepository -> "/my-signups", einsatzbereit#1684) was
+	/// only ever asserted at the API level
+	/// (IntegrationTests.NotificationTests), never that the destination page
+	/// actually renders anything invitation-related - exactly the gap the
+	/// report fell into. Drives the whole journey: notification click ->
+	/// /my-signups -> the "Open invitations" card -> Accept, proving the
+	/// in-app acceptance surface the notification implies really exists and
+	/// really works.
+	/// </summary>
+	[Test]
+	public async Task InvitationReceivedNotification_NavigatesToMySignups_WhereTheInviteeCanAcceptIt()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgName = $"NotifInvite Org {suffix}";
+		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+
+		var inviteResponse = await olafHttp.PostAsJsonAsync(
+			$"/v1/organizations/{organizationId}/invitations",
+			new { inviteeId = veraSession.UserId, role = "Member" });
+		inviteResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		var bell = Page.GetByTestId("notification-bell");
+		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await bell.ClickAsync();
+
+		var panel = Page.GetByTestId("notification-panel");
+		await Expect(panel).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var notificationItem = panel.Locator("li", new() { HasText = orgName }).First;
+		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// .First: the row's own select button is always the first interactive
+		// element (before the conditional mark-unread/delete action buttons
+		// added by #1061), but it has no aria-label of its own to filter by.
+		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
+
+		await Page.WaitForURLAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups",
+			new() { Timeout = 15_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Open invitations" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var invitationCard = Page.Locator("li", new() { HasText = orgName });
+		await Expect(invitationCard).ToBeVisibleAsync();
+
+		await invitationCard.GetByRole(AriaRole.Button, new() { Name = "Accept" }).ClickAsync();
+
+		await Expect(invitationCard).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	/// <summary>
 	/// Regression for #1222: clicking a notification awaited markOneRead()
 	/// with no error handling, so a failed mark-as-read call left an
 	/// unhandled rejection that silently swallowed the subsequent
