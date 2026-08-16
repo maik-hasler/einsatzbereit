@@ -12,6 +12,14 @@ namespace VisualTests;
 /// to that avatar's span to keep it legible; this asserts the fix is
 /// actually applied on both, since no CI browser here can judge the result
 /// by eye.
+///
+/// Signed in as Olaf ("OO"), not Vera: AvatarAndLogoDisplayTests.cs uploads
+/// and removes Vera's own avatar_url elsewhere in this suite (shared
+/// PerTestSession fixture), which would intermittently swap her header
+/// avatar for an &lt;img&gt; and make the initials span disappear out from
+/// under this test. Nothing in the suite ever uploads Olaf's personal
+/// avatar (only organization logos), so "OO" is a deterministic two-letter
+/// case - the fix itself is unconditional on which two letters are shown.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -24,11 +32,11 @@ public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTes
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var avatar = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" }).Locator("span").First;
-		await Expect(avatar).ToHaveTextAsync("VV");
+		await Expect(avatar).ToHaveTextAsync("OO");
 
 		var letterSpacing = await avatar.EvaluateAsync<string>("el => getComputedStyle(el).letterSpacing");
 		letterSpacing.Should().NotBe("normal",
@@ -40,14 +48,19 @@ public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTes
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		// FastSignInAsync's own "User menu" wait needs the desktop-width nav
+		// visible (DesktopHeader.tsx's "hidden md:flex") - sign in at the
+		// default (desktop-sized) viewport, then shrink down to mobile only
+		// afterward, mirroring AccountConsoleLinkTests's own viewport handling.
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).ClickAsync();
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
 
 		var menu = Page.GetByRole(AriaRole.Dialog, new() { Name = "Menu" });
-		var avatar = menu.GetByText("VV", new() { Exact = true });
+		var avatar = menu.GetByText("OO", new() { Exact = true });
 		await Expect(avatar).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var letterSpacing = await avatar.EvaluateAsync<string>("el => getComputedStyle(el).letterSpacing");
