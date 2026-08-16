@@ -92,16 +92,19 @@ internal sealed class ApplicationDbContextInitializer(
 			pinGenerator,
 			category: Category.Health,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
-		// Dated in the past (unlike the DayAt(now, +N, ...) pattern used for every other
-		// seeded slot) rather than in the future, so Vera's sign-up below lands as a
-		// genuinely reachable "past, checked-in, awaiting feedback" engagement instead of
-		// leaving that state only reachable as staging test debris (#1909). TimeSlot.Create
+		opp1.AddTimeSlot(DayAt(now, 14, 9), DayAt(now, 14, 17), 20, now).GetValueOrThrow();
+		// A second, already-elapsed slot (#1909) - a ScheduledSlots opportunity is only
+		// publicly listed while at least one of its slots hasn't ended yet (see
+		// ApplyPubliclyListedFilters), so this is added alongside the future slot above
+		// rather than instead of it. Lets Vera's second sign-up below land as a genuinely
+		// reachable "past, checked-in, awaiting feedback" engagement instead of leaving
+		// that state only reachable as staging test debris. AddTimeSlot/TimeSlot.Create
 		// validates startDateTime against the "now" it is given, not DateTimeOffset.UtcNow,
 		// so an artificial anchor before the slot's own start satisfies that check while the
 		// persisted dates stay genuinely in the past.
-		var opp1SlotStart = DayAt(now, -3, 9);
-		var opp1SlotEnd = DayAt(now, -3, 17);
-		opp1.AddTimeSlot(opp1SlotStart, opp1SlotEnd, 20, opp1SlotStart.AddDays(-1)).GetValueOrThrow();
+		var opp1PastSlotStart = DayAt(now, -3, 9);
+		var opp1PastSlotEnd = DayAt(now, -3, 17);
+		var opp1PastSlot = opp1.AddTimeSlot(opp1PastSlotStart, opp1PastSlotEnd, 20, opp1PastSlotStart.AddDays(-1)).GetValueOrThrow();
 		opp1.Publish().ThrowIfFailure();
 
 		var opp2 = VolunteerOpportunity.Create(
@@ -230,14 +233,19 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
-		var opp1Engagement = Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id);
-		opp1Engagement.Confirm().ThrowIfFailure();
-		// Checked in but feedback not yet submitted - the reachable "past, completed,
-		// awaiting feedback" example the rating flow needs to be testable at all (#1909).
-		opp1Engagement.CheckIn().ThrowIfFailure();
+		// A second engagement against opp1's past slot (allowed alongside the pending
+		// sign-up below - see the (VolunteerId, TimeSlotId) unique index, which already
+		// permits several engagements per opportunity as long as they're against
+		// different slots, e.g. #1067's recurring-series signups). Checked in but
+		// feedback not yet submitted - the reachable "past, completed, awaiting
+		// feedback" example the rating flow needs to be testable at all (#1909).
+		var opp1PastEngagement = Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1PastSlot.Id);
+		opp1PastEngagement.Confirm().ThrowIfFailure();
+		opp1PastEngagement.CheckIn().ThrowIfFailure();
 
 		dbContext.Set<Engagement>().AddRange(
-			opp1Engagement,
+			Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
+			opp1PastEngagement,
 			Engagement.CreateIndividualContact(
 				opp2.Id,
 				veraUserId,

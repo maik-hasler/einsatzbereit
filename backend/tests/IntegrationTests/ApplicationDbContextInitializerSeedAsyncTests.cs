@@ -243,18 +243,23 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var opportunity = await dbContext.Set<VolunteerOpportunity>()
 			.Include(o => o.TimeSlots)
 			.SingleAsync(o => o.Title == "Erste-Hilfe-Kurs", cancellationToken);
-		var timeSlot = opportunity.TimeSlots.Should().ContainSingle().Subject;
 
-		var engagement = await dbContext.Set<Engagement>()
-			.SingleAsync(e => e.VolunteerId == veraUserId && e.OpportunityId == opportunity.Id, cancellationToken);
+		var engagements = await dbContext.Set<Engagement>()
+			.Where(e => e.VolunteerId == veraUserId && e.OpportunityId == opportunity.Id)
+			.ToListAsync(cancellationToken);
+		var pastEngagement = engagements.Should().ContainSingle(e => e.IsCheckedIn).Subject;
+		var pastTimeSlot = opportunity.TimeSlots.Single(ts => ts.Id == pastEngagement.TimeSlotId);
 
-		timeSlot.EndDateTime.Should().BeBefore(DateTimeOffset.UtcNow,
+		pastTimeSlot.EndDateTime.Should().BeBefore(DateTimeOffset.UtcNow,
 			"a future-dated slot paired with a checked-in/feedback-given engagement is exactly the "
 			+ "inconsistency #1909 was filed against");
-		engagement.Status.Should().Be(EngagementStatus.Confirmed);
-		engagement.IsCheckedIn.Should().BeTrue("the volunteer must have attended for a feedback prompt to make sense");
-		engagement.FeedbackSubmittedAt.Should().BeNull(
+		pastEngagement.Status.Should().Be(EngagementStatus.Confirmed);
+		pastEngagement.FeedbackSubmittedAt.Should().BeNull(
 			"feedback must still be outstanding, or there is nothing left to test the rating flow against (#1909)");
+
+		opportunity.TimeSlots.Should().Contain(ts => ts.EndDateTime >= DateTimeOffset.UtcNow,
+			"the opportunity must keep a non-elapsed slot too, or it silently drops out of the public "
+			+ "listing entirely (ApplyPubliclyListedFilters) once its only slot is in the past");
 	}
 
 	// #1846: Vera is a genuine, Keycloak-confirmed member of org1 - EnsureMemberAsync
