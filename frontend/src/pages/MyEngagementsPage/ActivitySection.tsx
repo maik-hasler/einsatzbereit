@@ -139,7 +139,7 @@ export default function ActivitySection() {
 			setConfirmWithdrawId(null);
 		} catch (err) {
 			setWithdrawError(
-				err instanceof Error ? err.message : t("myEngagements.withdrawError"),
+				getApiErrorMessage(err, t("myEngagements.withdrawError")),
 			);
 		} finally {
 			setWithdrawing(false);
