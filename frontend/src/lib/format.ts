@@ -11,7 +11,7 @@ export function formatOccurrence(occurrence: string, t: TFunction): string {
 export function formatParticipationType(type: string, t: TFunction): string {
 	return type === "ScheduledSlots"
 		? t("opportunities.waitlist")
-		: t("opportunities.individualContact");
+		: t("opportunities.byInterest");
 }
 
 /** Remaining spots for a time slot/opportunity - null means unlimited capacity. */
