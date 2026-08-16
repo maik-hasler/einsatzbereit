@@ -9,6 +9,7 @@ import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { avatarColorClasses } from "../lib/avatarColor";
+import { getInitials } from "../lib/initials";
 import { cardClass } from "../lib/surfaceClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
@@ -241,7 +242,7 @@ export default function OrganizationsPage() {
 												<span
 													className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${avatarColor.bg} ${avatarColor.text}`}
 												>
-													{org.name.charAt(0).toUpperCase()}
+													{getInitials(org.name)}
 												</span>
 											)}
 											<div className="flex min-w-0 flex-1 items-center gap-2">
