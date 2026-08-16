@@ -143,3 +143,12 @@ export function formatPostedAgo(dt: string, t: TFunction): string {
 		? t("opportunities.postedToday")
 		: t("opportunities.postedDaysAgo", { count: days });
 }
+
+/** Window (in days) within which an organization is flagged as recently
+ * created for admins, since it has no track record yet (#1947). */
+export const NEW_ORGANIZATION_THRESHOLD_DAYS = 14;
+
+export function isRecentlyCreatedOrganization(createdOn: string): boolean {
+	const days = differenceInCalendarDays(new Date(), new Date(createdOn));
+	return days <= NEW_ORGANIZATION_THRESHOLD_DAYS;
+}

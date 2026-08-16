@@ -13,7 +13,11 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import { formatDateLong, formatDateTime } from "../lib/format";
+import {
+	formatDateLong,
+	formatDateTime,
+	isRecentlyCreatedOrganization,
+} from "../lib/format";
 import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Chip from "../components/Chip";
@@ -383,6 +387,12 @@ function OrganizationsSection() {
 														{t("administration.organizations.flaggedBadge")}
 													</Chip>
 												)}
+												{!row.isDeleted &&
+													isRecentlyCreatedOrganization(row.createdOn) && (
+														<Chip tone="brand" size="sm">
+															{t("administration.organizations.newBadge")}
+														</Chip>
+													)}
 											</div>
 											<p className="mt-1 truncate text-xs text-gray-500">
 												{t("administration.organizations.memberCount", {

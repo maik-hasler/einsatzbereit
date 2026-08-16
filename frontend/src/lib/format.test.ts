@@ -8,7 +8,9 @@ import {
 	formatDateLong,
 	formatDateTime,
 	formatPostedAgo,
+	isRecentlyCreatedOrganization,
 	isSlotFull,
+	NEW_ORGANIZATION_THRESHOLD_DAYS,
 	resolveDateLocale,
 } from "./format";
 
@@ -215,6 +217,41 @@ describe("formatPostedAgo", () => {
 		const t = fakeT();
 		expect(formatPostedAgo(future.toISOString(), t)).toBe(
 			"opportunities.postedToday",
+		);
+	});
+});
+
+describe("isRecentlyCreatedOrganization", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("is true for an organization created just now", () => {
+		const now = new Date("2024-03-15T12:00:00Z");
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		expect(isRecentlyCreatedOrganization(now.toISOString())).toBe(true);
+	});
+
+	it("is true right at the threshold boundary", () => {
+		const now = new Date("2024-03-15T12:00:00Z");
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		const atThreshold = new Date(
+			now.getTime() - NEW_ORGANIZATION_THRESHOLD_DAYS * DAY_MS,
+		);
+		expect(isRecentlyCreatedOrganization(atThreshold.toISOString())).toBe(true);
+	});
+
+	it("is false once an organization is older than the threshold", () => {
+		const now = new Date("2024-03-15T12:00:00Z");
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		const pastThreshold = new Date(
+			now.getTime() - (NEW_ORGANIZATION_THRESHOLD_DAYS + 1) * DAY_MS,
+		);
+		expect(isRecentlyCreatedOrganization(pastThreshold.toISOString())).toBe(
+			false,
 		);
 	});
 });

@@ -1246,7 +1246,8 @@
         "memberCount_one": "{{count}} Mitglied",
         "memberCount_other": "{{count}} Mitglieder",
         "createdOn": "Erstellt am {{date}}",
-        "flaggedBadge": "Gemeldet"
+        "flaggedBadge": "Gemeldet",
+        "newBadge": "Neu"
       },
       "users": {
         "loading": "Nutzer:innen werden geladen…",
