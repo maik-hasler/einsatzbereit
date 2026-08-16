@@ -23,12 +23,15 @@ import { ArrowRightIcon } from "./icons";
 // representations.
 const PREVIEW_COUNT = 3;
 
-// One column until lg, capped at a readable measure, three across above it.
-// Shared verbatim by the skeletons so the layout doesn't shift when the fetch
-// settles. sm:grid-cols-2 (what /opportunities uses) is wrong at this count:
-// three cards in a two-column grid leaves an orphan on every tablet.
+// One column until sm, capped at a readable measure; two from sm to match
+// /opportunities' grid at the same breakpoint (both render the same
+// OpportunityListItem, so the two surfaces should look alike at 768px);
+// three across from lg. Shared verbatim by the skeletons so the layout
+// doesn't shift when the fetch settles. Three items in a two-column grid
+// leaves the third sitting alone in the first column on tablet - preferred
+// over stretching a single card to the full section width.
 const GRID_CLASS =
-	"mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-4 lg:max-w-none lg:grid-cols-3";
+	"mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3";
 
 export default function LatestOpportunitiesSection() {
 	const { t } = useTranslation();
