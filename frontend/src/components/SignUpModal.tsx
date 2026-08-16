@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -37,17 +37,34 @@ export default function SignUpModal({
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [messageError, setMessageError] = useState<string | null>(null);
+	const messageFieldRef = useRef<HTMLTextAreaElement>(null);
 
 	const isScheduledSlots = participationType === "ScheduledSlots";
 
+	// Native `required` used to move focus to the invalid field for free as
+	// part of the browser's own constraint validation - #1908 replaced that
+	// validation with a translated inline message, so focus has to be sent
+	// there by hand (mirrors DetailsStep.tsx's error-focus effect, whose
+	// equivalent is react-hook-form's default `shouldFocusError` elsewhere).
+	useEffect(() => {
+		if (!messageError) return;
+		messageFieldRef.current?.focus();
+	}, [messageError]);
+
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
+		setError(null);
 		if (isScheduledSlots && timeSlots.length > 0 && !selectedTimeSlotId) {
 			setError(t("signUp.selectTimeSlotRequired"));
 			return;
 		}
+		if (!isScheduledSlots && !message.trim()) {
+			setMessageError(t("signUp.messageRequired"));
+			return;
+		}
+		setMessageError(null);
 		setSubmitting(true);
-		setError(null);
 
 		try {
 			await api.createEngagement(opportunityId, {
@@ -142,13 +159,30 @@ export default function SignUpModal({
 						</label>
 						<textarea
 							id="sign-up-message"
+							ref={messageFieldRef}
 							value={message}
-							onChange={(e) => setMessage(e.target.value)}
-							required
+							onChange={(e) => {
+								setMessage(e.target.value);
+								if (messageError) setMessageError(null);
+							}}
+							aria-required="true"
+							aria-invalid={messageError ? true : undefined}
+							aria-describedby={
+								messageError ? "sign-up-message-error" : undefined
+							}
 							rows={4}
 							placeholder={t("signUp.messagePlaceholder")}
 							className={textareaClass}
 						/>
+						{messageError && (
+							<p
+								id="sign-up-message-error"
+								className="mt-1 text-xs text-red-600"
+								role="alert"
+							>
+								{messageError}
+							</p>
+						)}
 					</div>
 				)}
 

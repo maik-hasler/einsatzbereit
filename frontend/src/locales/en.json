@@ -380,7 +380,8 @@
       "submitInterest": "Express interest",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
-      "selectTimeSlotRequired": "Please select a time slot."
+      "selectTimeSlotRequired": "Please select a time slot.",
+      "messageRequired": "Please enter a message."
     },
     "organization": {
       "create": "Create organization",
