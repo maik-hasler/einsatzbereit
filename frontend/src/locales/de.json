@@ -902,6 +902,7 @@
       "de": "Deutsch",
       "en": "English",
       "switchLanguage": "Sprache wechseln",
+      "switchLanguageCurrent": "Sprache wechseln, aktuell {{language}}",
       "switchedFromAccount": "Zu {{language}} gewechselt, basierend auf deinem Konto"
     },
     "auth": {

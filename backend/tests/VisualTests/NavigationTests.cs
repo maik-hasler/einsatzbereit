@@ -347,6 +347,16 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(langBtn).Not.ToHaveAttributeAsync("aria-haspopup", new Regex(".*"));
 		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "false");
 
+		// #1940: the closed trigger's accessible name used to be just "Switch
+		// language"/"Sprache wechseln", overriding the visible "EN"/"DE" text
+		// with no indication of which language is currently active. It must
+		// now name the current language too, e.g. "..., currently English".
+		var expectedLanguageName = activeCode == "DE" ? "Deutsch" : "English";
+		await Expect(langBtn).ToHaveAttributeAsync(
+			"aria-label",
+			new Regex($".*{Regex.Escape(expectedLanguageName)}.*")
+		);
+
 		await langBtn.ClickAsync();
 
 		var dropdown = banner.GetByTestId("language-selector-menu");
