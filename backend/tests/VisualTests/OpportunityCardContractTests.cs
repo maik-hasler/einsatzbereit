@@ -232,6 +232,47 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	/// <summary>
+	/// #1941: the notApplicable-capacity slot swapped from stating the offer's
+	/// type ("By expression of interest") to the applicant count as soon as
+	/// *this* viewer had applied, while every other not-yet-applied offer on
+	/// the list kept showing its type - so which fact appeared in that slot
+	/// depended on the current viewer's own application state, not the offer
+	/// itself. The type now stays put, and the applicant count is an addition
+	/// next to it rather than a replacement.
+	/// </summary>
+	[Test]
+	public async Task OpportunityDetail_AnInterestBasedOffer_KeepsItsTypeBadgeAlongsideTheApplicantCount()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardInterestJoined{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		var opportunityId = await PublishInterestBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		using var volunteer = await CreateVolunteerClientAsync(keycloak, backend);
+		(await volunteer.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { type = "IndividualContact", message = "I would love to help out with this one" }))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// The type badge stays put - it does not flip to the applicant count
+		// just because someone has applied.
+		await Expect(Page.GetByTestId("opportunity-capacity"))
+			.ToHaveTextAsync("By expression of interest", new() { Timeout = 15_000 });
+
+		// The applicant count is an addition next to it, not a replacement.
+		await Expect(Page.GetByTestId("opportunity-capacity-secondary"))
+			.ToHaveTextAsync("1 person has already joined");
+	}
+
+	/// <summary>
 	/// AC: hovering or tabbing to a card title has to show it is a link. The
 	/// grid's title is not focusable itself - the stretched link covering the
 	/// card is - so hover is asserted on the title and the keyboard half is
