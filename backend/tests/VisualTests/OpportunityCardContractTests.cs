@@ -256,7 +256,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		using var volunteer = await CreateVolunteerClientAsync(keycloak, backend);
 		(await volunteer.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
-			new { type = "IndividualContact", message = (string?)null }))
+			new { type = "IndividualContact", message = "I would love to help out with this one" }))
 			.EnsureSuccessStatusCode();
 
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
