@@ -380,7 +380,8 @@
       "submitInterest": "Interesse bekunden",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
-      "selectTimeSlotRequired": "Bitte wähle einen Zeitslot aus."
+      "selectTimeSlotRequired": "Bitte wähle einen Zeitslot aus.",
+      "messageRequired": "Bitte gib eine Nachricht ein."
     },
     "organization": {
       "create": "Organisation erstellen",
