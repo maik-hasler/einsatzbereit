@@ -36,8 +36,8 @@ public class OpportunityDetailStatusCardTimeSlotTests(AspireFixture fixture) : V
 		var oppTitle = $"StatusCardSlot Opportunity {suffix}";
 		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by OpportunityDetailStatusCardTimeSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by OpportunityDetailStatusCardTimeSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

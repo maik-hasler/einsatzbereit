@@ -312,8 +312,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Status Slot Test {suffix}",
-			description = "Seeded for #1938 application-status time-slot a11y coverage.",
+			titleDe = $"A11y Status Slot Test {suffix}",
+			descriptionDe = "Seeded for #1938 application-status time-slot a11y coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
