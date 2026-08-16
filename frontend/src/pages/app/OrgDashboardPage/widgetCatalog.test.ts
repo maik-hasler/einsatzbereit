@@ -3,11 +3,23 @@ import {
 	DEFAULT_LAYOUT,
 	GRID_COLUMNS,
 	WIDGET_CATALOG,
+	compactLayout,
 	groupIntoRowBands,
 	isValidPlacement,
+	placeNewWidget,
 	sortByPosition,
 	type PlacedWidget,
+	type WidgetKey,
 } from "./widgetCatalog";
+
+function rectsOverlap(a: PlacedWidget, b: PlacedWidget): boolean {
+	return (
+		a.x < b.x + b.width &&
+		b.x < a.x + a.width &&
+		a.y < b.y + b.height &&
+		b.y < a.y + a.height
+	);
+}
 
 // #1795: the Calendar shipped at 6 rows tall, which at 1440px is ~900px of
 // the first screen an organizer opens handed to a month grid that usually
@@ -195,5 +207,107 @@ describe("groupIntoRowBands", () => {
 
 	it("returns no bands for an empty layout", () => {
 		expect(groupIntoRowBands([])).toEqual([]);
+	});
+});
+
+// #1917: newly-added widgets used to always append below every existing
+// widget at x=1, ignoring empty cells elsewhere in the grid - these guard the
+// first-available-empty-cell scan that replaced it.
+describe("placeNewWidget", () => {
+	it("places into an empty grid at the top-left corner", () => {
+		expect(placeNewWidget("SettingsIcon", [])).toEqual({
+			widgetKey: "SettingsIcon",
+			x: 1,
+			y: 1,
+			width: WIDGET_CATALOG.SettingsIcon.defaultWidth,
+			height: WIDGET_CATALOG.SettingsIcon.defaultHeight,
+		});
+	});
+
+	it("fills open space beside existing widgets instead of stacking below them", () => {
+		// The exact shape from the bug report: only "Einsatz erstellen"
+		// (CreateOpportunity) and "Einstellungen" (Settings) remain, both
+		// narrow and confined to the left columns - a wide swath of the grid
+		// to their right sits empty.
+		const existing: PlacedWidget[] = [
+			{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 2, height: 1 },
+			{ widgetKey: "Settings", x: 1, y: 2, width: 3, height: 1 },
+		];
+
+		const placed = placeNewWidget("ToDo", existing);
+
+		// ToDo's default footprint (4x1) fits beside CreateOpportunity in row 1
+		// (columns 3-6) - that's the first free cell the scan reaches, well
+		// above the old append target of row 3.
+		expect(placed).toEqual({
+			widgetKey: "ToDo",
+			x: 3,
+			y: 1,
+			width: 4,
+			height: 1,
+		});
+	});
+
+	it("places three widgets added in sequence into separate open cells rather than one shared column", () => {
+		// Mirrors the issue's repro: add three widgets one after another,
+		// compacting after each exactly like OrgDashboardPage's
+		// handleAddWidget does.
+		let layout: PlacedWidget[] = [
+			{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 2, height: 1 },
+			{ widgetKey: "Settings", x: 1, y: 2, width: 8, height: 1 },
+		];
+		const added: WidgetKey[] = [];
+		for (const key of [
+			"UpcomingOpportunities",
+			"VolunteerStats",
+			"ToDo",
+		] as const) {
+			layout = compactLayout([...layout, placeNewWidget(key, layout)]);
+			added.push(key);
+		}
+
+		const newWidgets = layout.filter((w) => added.includes(w.widgetKey));
+		// None of the newly-placed widgets overlap each other or the pre-
+		// existing widgets.
+		for (let i = 0; i < layout.length; i++) {
+			for (let j = i + 1; j < layout.length; j++) {
+				expect(rectsOverlap(layout[i], layout[j])).toBe(false);
+			}
+		}
+		// They don't all collapse into the same single column the way the
+		// append-only bug produced.
+		const distinctColumns = new Set(newWidgets.map((w) => w.x));
+		expect(distinctColumns.size).toBeGreaterThan(1);
+	});
+
+	it("falls back to appending below everything once no gap fits", () => {
+		// DEFAULT_LAYOUT is packed edge-to-edge on every row - no gap exists
+		// anywhere for a new widget to slot into.
+		const placed = placeNewWidget("QuickCheckIn", DEFAULT_LAYOUT);
+		const bottom = DEFAULT_LAYOUT.reduce(
+			(max, w) => Math.max(max, w.y + w.height),
+			1,
+		);
+
+		expect(placed).toEqual({
+			widgetKey: "QuickCheckIn",
+			x: 1,
+			y: bottom,
+			width: WIDGET_CATALOG.QuickCheckIn.defaultWidth,
+			height: WIDGET_CATALOG.QuickCheckIn.defaultHeight,
+		});
+	});
+
+	it("never places a widget overlapping an existing one", () => {
+		const existing: PlacedWidget[] = [
+			{ widgetKey: "Calendar", x: 1, y: 1, width: 8, height: 4 },
+			{ widgetKey: "VolunteerStats", x: 1, y: 5, width: 2, height: 1 },
+		];
+
+		const placed = placeNewWidget("ToDo", existing);
+
+		for (const widget of existing) {
+			expect(rectsOverlap(placed, widget)).toBe(false);
+		}
 	});
 });
