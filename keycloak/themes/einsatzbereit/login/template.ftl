@@ -28,13 +28,20 @@
 
 	<div class="top-controls">
 		<#if realm.internationalizationEnabled && locale.supported?has_content>
+		<#-- #1944: the SPA's Header/LanguageSelector.tsx labels both its
+		trigger and its menu via aria-label, so the control announces what it
+		does even though its visible content is just the current language
+		code. This disclosure already mirrors that trigger-plus-menu pattern
+		(<details>/<summary> is the browser-native equivalent of the SPA's
+		button + aria-expanded) but had no aria-label of its own - a screen
+		reader only heard the two-letter code. -->
 		<details class="lang-switcher">
-			<summary class="lang-trigger">
+			<summary class="lang-trigger" aria-label="${msg("switchLanguage")}">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
 				<span>${(locale.currentLanguageTag!'de')?upper_case}</span>
 				<svg class="lang-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
 			</summary>
-			<ul class="lang-menu">
+			<ul class="lang-menu" aria-label="${msg("switchLanguage")}">
 				<#list locale.supported as l>
 					<li><a href="${l.url}" class="lang-item"<#if (l.locale!'') == (locale.currentLanguageTag!'')> aria-current="true"</#if>>${l.label}</a></li>
 				</#list>

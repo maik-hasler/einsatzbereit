@@ -114,6 +114,29 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Login_LanguageSwitcher_HasAccessibleName()
+	{
+		// #1944: the trigger's only visible content is the two-letter language
+		// code ("EN"/"DE"), so without an explicit label a screen reader
+		// announced just that code, not what the control does. The SPA's
+		// counterpart (Header/LanguageSelector.tsx) labels both its trigger
+		// button and its open menu via aria-label - this pins the same
+		// accessible names down here, and that both supported locales still
+		// show up once the menu opens.
+		await Page.GotoAsync(AuthUrl(locale: "en"));
+		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		var trigger = Page.Locator(".lang-trigger");
+		await Expect(trigger).ToHaveAttributeAsync("aria-label", "Switch language");
+
+		await trigger.ClickAsync();
+		var menu = Page.Locator(".lang-menu");
+		await Expect(menu).ToBeVisibleAsync();
+		await Expect(menu).ToHaveAttributeAsync("aria-label", "Switch language");
+		await Expect(menu.Locator(".lang-item")).ToHaveCountAsync(2);
+	}
+
+	[Test]
 	public async Task Login_PrimaryButton_UsesTheProductsOwnGreen()
 	{
 		// Button.tsx documents that white text on brand-600 (#2d8a5e) measures
