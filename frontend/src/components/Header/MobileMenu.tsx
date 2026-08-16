@@ -249,7 +249,10 @@ export default function MobileMenu({
 										className="h-9 w-9 rounded-full object-cover"
 									/>
 								) : (
-									<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
+									// Same tracking-widest fix as AccountControls's desktop
+									// avatar, and for the same reason (#1915) - both render the
+									// same initials at the same 36px size.
+									<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold tracking-widest text-white">
 										{initials}
 									</div>
 								)}
