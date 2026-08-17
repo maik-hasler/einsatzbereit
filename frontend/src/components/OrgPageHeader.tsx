@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
@@ -45,6 +46,48 @@ export default function OrgPageHeader({
 	// the opportunity tab's Create action land here unchanged, just in
 	// on-light variants now that they no longer sit on brand-800.
 	const actions = useQuickActionsList();
+
+	// #1898: the tab row scrolls (overflow-x-auto below) but nothing on screen
+	// said so - on a 375px viewport "Mitglieder" fell off the edge with no
+	// fade/arrow/peek to suggest more tabs existed. Track scroll position so
+	// each edge's fade mask only shows while there is actually more to reveal
+	// in that direction, rather than a static mask that would still show once
+	// fully scrolled to an end.
+	const navRef = useRef<HTMLElement>(null);
+	const [canScrollLeft, setCanScrollLeft] = useState(false);
+	const [canScrollRight, setCanScrollRight] = useState(false);
+
+	useEffect(() => {
+		const el = navRef.current;
+		if (!el) return;
+
+		function updateFades() {
+			if (!el) return;
+			setCanScrollLeft(el.scrollLeft > 0);
+			setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+		}
+
+		updateFades();
+		el.addEventListener("scroll", updateFades, { passive: true });
+		window.addEventListener("resize", updateFades);
+		// Catches tab-label width changes that don't resize the nav element
+		// itself, e.g. a language switch re-rendering longer/shorter text.
+		const mutationObserver = new MutationObserver(updateFades);
+		mutationObserver.observe(el, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+		});
+		const resizeObserver = new ResizeObserver(updateFades);
+		resizeObserver.observe(el);
+
+		return () => {
+			el.removeEventListener("scroll", updateFades);
+			window.removeEventListener("resize", updateFades);
+			mutationObserver.disconnect();
+			resizeObserver.disconnect();
+		};
+	}, []);
 
 	return (
 		<div data-testid="org-app-header" className="mb-6 sm:mb-8">
@@ -99,30 +142,48 @@ export default function OrgPageHeader({
 			mobile burger - so an organizer looking at their dashboard had no
 			visible route to sign-ups, opportunities, members or settings at all.
 			Horizontally scrollable rather than wrapped on narrow viewports, same
-			pattern as the account area's SubNavRail below `lg`. */}
-			<nav
-				aria-label={t("orgApp.sectionsNavLabel")}
-				className="mt-4 flex gap-1 overflow-x-auto border-b border-gray-200"
-			>
-				{ORG_TABS.map((tab) => {
-					const isActive = tab.key === activeTabKey;
-					return (
-						<Link
-							key={tab.key}
-							to={orgTabPath(organizationId, tab.key)}
-							aria-current={isActive ? "page" : undefined}
-							data-testid={`org-tab-${tab.key}`}
-							className={`shrink-0 border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
-								isActive
-									? "border-brand-600 font-semibold text-brand-700"
-									: "border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-900"
-							}`}
-						>
-							{t(tab.labelKey)}
-						</Link>
-					);
-				})}
-			</nav>
+			pattern as the account area's SubNavRail below `lg`. The edge fades
+			below are the affordance that tells a touch user there's more to
+			scroll to (#1898) - a static mask would keep showing after the row is
+			fully scrolled to that end, so they track real scroll position. */}
+			<div className="relative mt-4">
+				<nav
+					ref={navRef}
+					aria-label={t("orgApp.sectionsNavLabel")}
+					className="flex gap-1 overflow-x-auto border-b border-gray-200"
+				>
+					{ORG_TABS.map((tab) => {
+						const isActive = tab.key === activeTabKey;
+						return (
+							<Link
+								key={tab.key}
+								to={orgTabPath(organizationId, tab.key)}
+								aria-current={isActive ? "page" : undefined}
+								data-testid={`org-tab-${tab.key}`}
+								className={`shrink-0 border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+									isActive
+										? "border-brand-600 font-semibold text-brand-700"
+										: "border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-900"
+								}`}
+							>
+								{t(tab.labelKey)}
+							</Link>
+						);
+					})}
+				</nav>
+				<div
+					aria-hidden="true"
+					className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-gray-50 to-transparent transition-opacity duration-200 ${
+						canScrollLeft ? "opacity-100" : "opacity-0"
+					}`}
+				/>
+				<div
+					aria-hidden="true"
+					className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-gray-50 to-transparent transition-opacity duration-200 ${
+						canScrollRight ? "opacity-100" : "opacity-0"
+					}`}
+				/>
+			</div>
 		</div>
 	);
 }
