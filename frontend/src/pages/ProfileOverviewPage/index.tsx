@@ -451,42 +451,56 @@ export default function ProfileOverviewPage() {
 												</div>
 											</div>
 										)}
-										{streaks && streaks.activityStreak > 0 && (
-											<div
-												data-testid="profile-stat-streak"
-												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
-											>
-												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-													<FireIcon />
-												</span>
-												<div>
-													<p className="text-xl font-bold text-gray-900">
-														{streaks.activityStreak}
-													</p>
-													<p className="text-xs text-gray-500">
-														{t("achievements.activityStreak", {
-															count: streaks.activityStreak,
-															badge: t(
-																"achievements.badges.weekly-hero-4.name",
-															),
-														})}
-													</p>
+										{streaks &&
+											(streaks.activityStreak > 0 ||
+												streaks.loginStreak > 0) && (
+												// Grouped in one flex-col unit instead of two siblings of
+												// the engagement chip, so the login-streak caption stacks
+												// directly under the stat pill it explains instead of
+												// landing on its own at the far right of the row at
+												// sm:justify-between widths, disconnected from the streak
+												// it describes (#1892).
+												<div className="flex flex-col gap-1.5">
+													{streaks.activityStreak > 0 && (
+														<div
+															data-testid="profile-stat-streak"
+															className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+														>
+															<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+																<FireIcon />
+															</span>
+															<div>
+																<p className="text-xl font-bold text-gray-900">
+																	{streaks.activityStreak}
+																</p>
+																<p className="text-xs text-gray-500">
+																	{t("achievements.activityStreak", {
+																		count: streaks.activityStreak,
+																		badge: t(
+																			"achievements.badges.weekly-hero-4.name",
+																		),
+																	})}
+																</p>
+															</div>
+														</div>
+													)}
+													{streaks.loginStreak > 0 && (
+														<p
+															data-testid="profile-stat-login-streak"
+															className="flex items-center gap-1.5 text-xs text-brand-800"
+														>
+															<FireIcon className="h-3.5 w-3.5" />
+															{t("achievements.loginStreak", {
+																count: streaks.loginStreak,
+																badge: t(
+																	"achievements.badges.on-a-roll-7.name",
+																),
+															})}
+														</p>
+													)}
 												</div>
-											</div>
-										)}
+											)}
 									</div>
-									{streaks && streaks.loginStreak > 0 && (
-										<p
-											data-testid="profile-stat-login-streak"
-											className="flex items-center gap-1.5 text-xs text-brand-800"
-										>
-											<FireIcon className="h-3.5 w-3.5" />
-											{t("achievements.loginStreak", {
-												count: streaks.loginStreak,
-												badge: t("achievements.badges.on-a-roll-7.name"),
-											})}
-										</p>
-									)}
 								</div>
 							)}
 
