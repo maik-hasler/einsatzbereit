@@ -130,6 +130,18 @@ internal sealed class NominatimGeocodingService(
 		}
 	}
 
+	// Nominatim's own `addresstype` for the *matched* result - not to be confused
+	// with which fields are present in its address breakdown (every result, even
+	// a street or lake, carries the containing city/town in `address`). Gating on
+	// this instead is what actually restricts suggestions to places, since
+	// `featuretype=city` turned out to be a no-op for free-text `q=` searches
+	// (verified against the live API while investigating #1900) - it let a
+	// street or POI that merely happens to be named after the query (e.g.
+	// "Hans-Leip-Straße") through, which then got mislabeled with its
+	// containing city ("Hamburg") as if that were the actual match.
+	private static readonly HashSet<string> PlaceAddressTypes =
+		new(StringComparer.OrdinalIgnoreCase) { "city", "town", "village", "municipality", "postcode" };
+
 	private static IReadOnlyList<CitySuggestion> ToSuggestions(IReadOnlyList<NominatimCityResult>? results)
 	{
 		var suggestions = new List<CitySuggestion>();
@@ -138,6 +150,9 @@ internal sealed class NominatimGeocodingService(
 
 		foreach (var result in results)
 		{
+			if (result.AddressType is null || !PlaceAddressTypes.Contains(result.AddressType))
+				continue;
+
 			var label = result.Address?.City ?? result.Address?.Town ?? result.Address?.Village ?? result.Address?.Municipality;
 			if (string.IsNullOrEmpty(label))
 				continue;
@@ -160,13 +175,13 @@ internal sealed class NominatimGeocodingService(
 		return suggestions;
 	}
 
-	private static string BuildCitySearchRequestUri(string query)
+	private string BuildCitySearchRequestUri(string query)
 	{
 		var queryString = string.Join(
 			'&',
 			"format=json",
 			"addressdetails=1",
-			"featuretype=city",
+			$"countrycodes={Uri.EscapeDataString(_options.CitySearchCountryCode)}",
 			$"q={Uri.EscapeDataString(query.Trim())}",
 			$"limit={MaxCitySuggestions}");
 
@@ -199,6 +214,7 @@ internal sealed class NominatimGeocodingService(
 	private sealed record NominatimCityResult(
 		[property: JsonPropertyName("lat")] string? Lat,
 		[property: JsonPropertyName("lon")] string? Lon,
+		[property: JsonPropertyName("addresstype")] string? AddressType,
 		[property: JsonPropertyName("address")] NominatimAddress? Address);
 
 	private sealed record NominatimAddress(
