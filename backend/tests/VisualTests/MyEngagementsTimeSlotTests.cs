@@ -48,8 +48,8 @@ public class MyEngagementsTimeSlotTests(AspireFixture fixture) : VisualTestBase(
 		var oppTitle = $"VisualSlot Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by MyEngagementsTimeSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by MyEngagementsTimeSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

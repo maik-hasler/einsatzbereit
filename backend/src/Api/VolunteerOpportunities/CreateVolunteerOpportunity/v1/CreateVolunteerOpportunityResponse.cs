@@ -2,8 +2,10 @@ namespace Api.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
 public sealed record CreateVolunteerOpportunityResponse(
 	Guid Id,
-	string Title,
-	string Description,
+	string TitleDe,
+	string? TitleEn,
+	string DescriptionDe,
+	string? DescriptionEn,
 	Guid OrganizationId,
 	string? Street,
 	string? HouseNumber,

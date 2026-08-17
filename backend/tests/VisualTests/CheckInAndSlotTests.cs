@@ -42,8 +42,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var oppTitle = $"CheckInNone Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInAndSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInAndSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -104,8 +104,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var oppTitle = $"CheckInManual Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInAndSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInAndSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -187,8 +187,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var oppTitle = $"CheckInPinSwitch Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInAndSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInAndSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -266,8 +266,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var oppTitle = $"SlotCounts Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInAndSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInAndSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -368,8 +368,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var oppTitle = $"Unlimited Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CheckInAndSlotTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CheckInAndSlotTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -25,7 +25,9 @@ public class GetVolunteerOpportunityMetaQueryHandlerTests
 		new(
 			id ?? Guid.NewGuid(),
 			title,
+			null,
 			description,
+			null,
 			Guid.NewGuid(),
 			"Küstenschutz e.V.",
 			"Strandweg",

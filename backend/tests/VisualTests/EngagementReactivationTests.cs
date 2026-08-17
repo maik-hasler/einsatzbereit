@@ -142,8 +142,8 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"EngagementReactivation {label} {suffix}",
-			description = "Created by EngagementReactivationTests",
+			titleDe = $"EngagementReactivation {label} {suffix}",
+			descriptionDe = "Created by EngagementReactivationTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

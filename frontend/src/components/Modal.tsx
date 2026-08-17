@@ -71,7 +71,14 @@ export default function Modal({
 		if (hasFocusedRef.current) return;
 		hasFocusedRef.current = true;
 		const scope = initialFocusRef?.current ?? dialogRef.current;
-		scope?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
+		// Skips anything opted out via data-skip-initial-focus (e.g. a toggle
+		// that happens to sit before the dialog's actual first field) rather
+		// than the true first focusable child - still fully Tab-reachable via
+		// FOCUSABLE_SELECTOR below, just not where focus lands on open.
+		const candidate = Array.from(
+			scope?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [],
+		).find((el) => !el.hasAttribute("data-skip-initial-focus"));
+		candidate?.focus();
 	}, [initialFocusRef]);
 
 	useEffect(() => {

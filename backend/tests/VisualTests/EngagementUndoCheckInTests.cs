@@ -198,8 +198,8 @@ public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by EngagementUndoCheckInTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by EngagementUndoCheckInTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

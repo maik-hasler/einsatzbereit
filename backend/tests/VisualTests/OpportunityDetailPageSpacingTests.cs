@@ -96,8 +96,8 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"Spacing1111 {label} {suffix}",
-			description = "Seeded for #1111 detail-page spacing regression coverage.",
+			titleDe = $"Spacing1111 {label} {suffix}",
+			descriptionDe = "Seeded for #1111 detail-page spacing regression coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

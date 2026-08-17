@@ -60,8 +60,8 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title = $"LoadMoreError Opportunity {suffix}-{i}",
-				description = "Seeded by LoadMoreErrorPreservesItemsTests.",
+				titleDe = $"LoadMoreError Opportunity {suffix}-{i}",
+				descriptionDe = "Seeded by LoadMoreErrorPreservesItemsTests.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

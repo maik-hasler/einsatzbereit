@@ -43,8 +43,8 @@ public class AdminReportsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var title = $"Flagged Opportunity {suffix}";
 		var opportunityResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Regression coverage for the admin reports 500.",
+			titleDe = title,
+			descriptionDe = "Regression coverage for the admin reports 500.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

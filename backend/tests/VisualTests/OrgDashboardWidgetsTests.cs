@@ -165,8 +165,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// up for, left unconfirmed so it stays Pending.
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"Pending Queue Opportunity {suffix}",
-			description = "Created by ToDoWidget_ReadsAsResolvedAndOffersNoCta_UntilASignUpIsActuallyWaiting",
+			titleDe = $"Pending Queue Opportunity {suffix}",
+			descriptionDe = "Created by ToDoWidget_ReadsAsResolvedAndOffersNoCta_UntilASignUpIsActuallyWaiting",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -412,8 +412,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var oppTitle = $"Visual1254 Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CalendarWidget agenda-header i18n test",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CalendarWidget agenda-header i18n test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -512,8 +512,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// few lines below it).
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"Visual1959 Opportunity {suffix}",
-			description = "Created by CalendarWidget toolbar date-format test",
+			titleDe = $"Visual1959 Opportunity {suffix}",
+			descriptionDe = "Created by CalendarWidget toolbar date-format test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -628,8 +628,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var oppTitle = $"Visual812 Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CalendarWidget mobile overflow test",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CalendarWidget mobile overflow test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -752,8 +752,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var oppTitle = $"Visual1397 Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by CalendarWidget color-save test",
+			titleDe = oppTitle,
+			descriptionDe = "Created by CalendarWidget color-save test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -860,8 +860,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var oppTitle = $"Visual Upcoming Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by the Upcoming Opportunities widget test",
+			titleDe = oppTitle,
+			descriptionDe = "Created by the Upcoming Opportunities widget test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

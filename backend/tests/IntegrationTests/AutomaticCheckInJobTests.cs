@@ -164,7 +164,7 @@ public class AutomaticCheckInJobTests(IntegrationTestFixture fixture)
 		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
 		// here since nothing in this test path depends on the opportunity being published.
 		var opportunity = VolunteerOpportunity.Create(
-			organization.Id, "Beach Cleanup", "Help clean the beach", true, null,
+			organization.Id, "Beach Cleanup", null, "Help clean the beach", null, true, null,
 			Occurrence.OneTime, ParticipationType.ScheduledSlots, checkInMethod, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).Value;
 

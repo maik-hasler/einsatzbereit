@@ -53,7 +53,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldReturnTrue_WhenOpportunityExists(

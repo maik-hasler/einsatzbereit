@@ -932,8 +932,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title = $"Row Height Opportunity {i} {suffix}",
-				description = "Created by WidgetContentOverflow_DoesNotStretchTheSharedGridRow",
+				titleDe = $"Row Height Opportunity {i} {suffix}",
+				descriptionDe = "Created by WidgetContentOverflow_DoesNotStretchTheSharedGridRow",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

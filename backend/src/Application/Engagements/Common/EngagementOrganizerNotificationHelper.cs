@@ -112,7 +112,7 @@ internal static class EngagementOrganizerNotificationHelper
 				{
 					["OrganizerName"] = organizerName,
 					["VolunteerName"] = volunteerName,
-					["OpportunityTitle"] = opportunity.Title,
+					["OpportunityTitle"] = opportunity.TitleDe,
 				});
 
 			var unsubscribeUrl = unsubscribeLinkBuilder.Build(

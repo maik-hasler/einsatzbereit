@@ -83,7 +83,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp1 = VolunteerOpportunity.Create(
 			org1Id,
 			"Erste-Hilfe-Kurs",
+			"First Aid Course",
 			"Lerne lebensrettende Sofortmaßnahmen in unserem eintägigen Praxiskurs.",
+			"Learn life-saving emergency techniques in our one-day hands-on course.",
 			isRemote: false,
 			Address.Create("Karl-Heine-Straße", "12", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.OneTime,
@@ -110,7 +112,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp2 = VolunteerOpportunity.Create(
 			org1Id,
 			"Blutspendetermin begleiten",
+			"Support a Blood Donation Drive",
 			"Unterstütze unseren regelmäßigen Blutspendetermin und hilf mit, Leben zu retten.",
+			"Help out at our regular blood donation drive and help save lives.",
 			isRemote: false,
 			Address.Create("Rathausplatz", "1", "04416", "Markkleeberg").GetValueOrThrow(),
 			Occurrence.Recurring,
@@ -123,7 +127,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp2b = VolunteerOpportunity.Create(
 			org1Id,
 			"Sanitätsdienst beim Stadtteilfest",
+			"First Aid Team at the Neighborhood Festival",
 			"Verstärke unser Sanitätsteam beim Stadtteilfest und leiste Erste Hilfe vor Ort.",
+			"Join our first aid team at the neighborhood festival and provide on-site first aid.",
 			isRemote: false,
 			Address.Create("Lindenauer Markt", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.OneTime,
@@ -136,7 +142,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp2c = VolunteerOpportunity.Create(
 			org1Id,
 			"Kleiderausgabe für Bedürftige",
+			"Clothing Distribution for Those in Need",
 			"Hilf mit, gespendete Kleidung zu sortieren und an Menschen in der Region auszugeben.",
+			"Help sort donated clothing and hand it out to people in the region.",
 			isRemote: false,
 			Address.Create("Lagerstraße", "10", "06108", "Halle (Saale)").GetValueOrThrow(),
 			Occurrence.Recurring,
@@ -149,7 +157,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp2d = VolunteerOpportunity.Create(
 			org1Id,
 			"Erste-Hilfe-Schulung für Vereine",
+			"First Aid Training for Clubs",
 			"Vermittle Vereinen und Gruppen online die Grundlagen der Ersten Hilfe.",
+			"Teach clubs and groups the basics of first aid online.",
 			isRemote: true,
 			address: null,
 			Occurrence.Recurring,
@@ -162,7 +172,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp3 = VolunteerOpportunity.Create(
 			org2Id,
 			"Helfer:innen für das Tierheim",
+			"Volunteers for the Animal Shelter",
 			"Hilf uns dabei, die Tiere in unserem Tierheim zu versorgen und zu betreuen.",
+			"Help us care for and look after the animals in our shelter.",
 			isRemote: false,
 			Address.Create("Tierparkweg", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.Recurring,
@@ -179,7 +191,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp4 = VolunteerOpportunity.Create(
 			org2Id,
 			"Online-Fundraising unterstützen",
+			"Support Online Fundraising",
 			"Unterstütze unser Fundraising-Team bequem von zu Hause aus.",
+			"Support our fundraising team comfortably from home.",
 			isRemote: true,
 			address: null,
 			Occurrence.OneTime,
@@ -192,7 +206,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp4b = VolunteerOpportunity.Create(
 			org2Id,
 			"Gassi-Dienst für Tierheimhunde",
+			"Dog Walking for Shelter Dogs",
 			"Geh regelmäßig mit unseren Tierheimhunden spazieren und gib ihnen Auslauf.",
+			"Take our shelter dogs for regular walks and give them some exercise.",
 			isRemote: false,
 			Address.Create("Tierparkweg", "5", "04177", "Leipzig").GetValueOrThrow(),
 			Occurrence.Recurring,
@@ -205,7 +221,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp4c = VolunteerOpportunity.Create(
 			org2Id,
 			"Futterspenden-Sammlung",
+			"Pet Food Donation Drive",
 			"Sammle Futter- und Sachspenden für unsere Tiere bei einer Aktion vor Ort.",
+			"Collect food and supply donations for our animals at an on-site event.",
 			isRemote: false,
 			Address.Create("Rathausplatz", "3", "04416", "Markkleeberg").GetValueOrThrow(),
 			Occurrence.OneTime,
@@ -218,7 +236,9 @@ internal sealed class ApplicationDbContextInitializer(
 		var opp4d = VolunteerOpportunity.Create(
 			org2Id,
 			"Patenschaft für Pflegetiere",
+			"Foster Animal Sponsorship",
 			"Übernimm eine Patenschaft für ein Pflegetier und begleite es bis zur Vermittlung.",
+			"Sponsor a foster animal and support it until it finds a new home.",
 			isRemote: true,
 			address: null,
 			Occurrence.Recurring,

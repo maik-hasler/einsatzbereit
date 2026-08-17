@@ -145,8 +145,8 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var oppTitle = $"Stale Session Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Seeded for the stale-session regression coverage.",
+			titleDe = oppTitle,
+			descriptionDe = "Seeded for the stale-session regression coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

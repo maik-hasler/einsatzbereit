@@ -106,8 +106,8 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"SignUpModalPreselect {label} {suffix}",
-			description = "Created by SignUpModalPreselectTests",
+			titleDe = $"SignUpModalPreselect {label} {suffix}",
+			descriptionDe = "Created by SignUpModalPreselectTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

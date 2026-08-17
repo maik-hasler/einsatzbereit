@@ -39,7 +39,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await client.GetOrganizationOpportunitiesAsync(orgId, "Draft", 1, 10, cancellationToken);
 
 		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Draft 1");
+		result.Items.Single().TitleDe.Should().Be("Draft 1");
 	}
 
 	[Test]
@@ -55,7 +55,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await client.GetOrganizationOpportunitiesAsync(orgId, "Published", 1, 10, cancellationToken);
 
 		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Published 1");
+		result.Items.Single().TitleDe.Should().Be("Published 1");
 	}
 
 	[Test]
@@ -187,7 +187,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await veraClient.GetOrganizationOpportunitiesAsync(orgId, "Published", 1, 10, cancellationToken);
 
 		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Published 1");
+		result.Items.Single().TitleDe.Should().Be("Published 1");
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
@@ -212,8 +212,8 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, CancellationToken cancellationToken) =>
 		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "Integration test opportunity",
+			TitleDe = title,
+			DescriptionDe = "Integration test opportunity",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -230,8 +230,8 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	{
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = title,
-			Description = "Integration test opportunity",
+			TitleDe = title,
+			DescriptionDe = "Integration test opportunity",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",

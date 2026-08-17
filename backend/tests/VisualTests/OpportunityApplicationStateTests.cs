@@ -179,8 +179,8 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"OpportunityApplicationState {label} {suffix}",
-			description = "Created by OpportunityApplicationStateTests",
+			titleDe = $"OpportunityApplicationState {label} {suffix}",
+			descriptionDe = "Created by OpportunityApplicationStateTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

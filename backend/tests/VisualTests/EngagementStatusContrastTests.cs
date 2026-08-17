@@ -103,8 +103,8 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"EngagementStatusContrast {suffix}",
-			description = "Created by EngagementStatusContrastTests",
+			titleDe = $"EngagementStatusContrast {suffix}",
+			descriptionDe = "Created by EngagementStatusContrastTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

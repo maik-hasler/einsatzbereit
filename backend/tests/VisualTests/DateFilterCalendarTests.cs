@@ -156,8 +156,8 @@ public class DateFilterCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 		// so it goes draft -> slot -> publish.
 		var createResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for #1779 date-filter availability marks.",
+			titleDe = title,
+			descriptionDe = "Seeded for #1779 date-filter availability marks.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

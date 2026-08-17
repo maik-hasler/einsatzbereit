@@ -50,7 +50,7 @@ internal sealed class EngagementConfirmedNotificationHandler(
 			new Dictionary<string, string>
 			{
 				["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
-				["OpportunityTitle"] = opportunity.Title,
+				["OpportunityTitle"] = opportunity.TitleDe,
 			});
 
 		var unsubscribeUrl = unsubscribeLinkBuilder.Build(

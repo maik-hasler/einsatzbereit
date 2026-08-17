@@ -38,8 +38,8 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 		var title = $"Static Map Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by SingleMarkerMap_OnDesktop_DoesNotPanWhenDragged",
+			titleDe = title,
+			descriptionDe = "Created by SingleMarkerMap_OnDesktop_DoesNotPanWhenDragged",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",

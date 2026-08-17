@@ -34,8 +34,8 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Account Deletion Test Opportunity",
-				Description = "Integration test opportunity for account deletion",
+				TitleDe = "Account Deletion Test Opportunity",
+				DescriptionDe = "Integration test opportunity for account deletion",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -279,8 +279,8 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Anonymized Checked-In Engagement Test Opportunity",
-				Description = "Integration test opportunity for #1724",
+				TitleDe = "Anonymized Checked-In Engagement Test Opportunity",
+				DescriptionDe = "Integration test opportunity for #1724",
 				OrganizationId = org.Id.Value,
 				Street = "Test Street",
 				HouseNumber = "1",

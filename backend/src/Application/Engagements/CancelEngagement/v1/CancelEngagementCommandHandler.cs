@@ -35,7 +35,7 @@ internal sealed class CancelEngagementCommandHandler(
 			dbContext,
 			engagement,
 			request.Reason,
-			opportunity.Title,
+			opportunity.TitleDe,
 			// The volunteer hears about this only here - no opportunity-level
 			// notification accompanies a single engagement cancellation.
 			notifyVolunteer: true,

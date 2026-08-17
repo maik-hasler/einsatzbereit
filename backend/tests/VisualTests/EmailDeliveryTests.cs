@@ -175,8 +175,8 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by EmailDeliveryTests",
+			titleDe = title,
+			descriptionDe = "Created by EmailDeliveryTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

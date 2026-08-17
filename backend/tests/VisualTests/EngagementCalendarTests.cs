@@ -49,8 +49,8 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 		var oppTitle = $"VisualCal Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = oppTitle,
-			description = "Created by EngagementCalendarTests",
+			titleDe = oppTitle,
+			descriptionDe = "Created by EngagementCalendarTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

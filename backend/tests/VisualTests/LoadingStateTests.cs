@@ -150,8 +150,8 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"LoadingState {label} {suffix}",
-			description = "Created by LoadingStateTests",
+			titleDe = $"LoadingState {label} {suffix}",
+			descriptionDe = "Created by LoadingStateTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -71,9 +71,10 @@ function UpcomingOpportunitiesWidget({
 				? selectUpcomingOpportunities(
 						opportunities,
 						t("orgDashboard.unnamedDraft"),
+						i18n.language,
 					)
 				: null,
-		[opportunities, t],
+		[opportunities, t, i18n.language],
 	);
 
 	return (

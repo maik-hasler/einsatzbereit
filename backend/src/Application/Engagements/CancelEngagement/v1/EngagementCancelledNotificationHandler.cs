@@ -36,7 +36,7 @@ internal sealed class EngagementCancelledNotificationHandler(
 		// Falling back to a live lookup only covers callers that didn't have a title
 		// handy to pass into Cancel().
 		var opportunityTitle = notification.OpportunityTitle
-			?? (await dbContext.VolunteerOpportunities.FindAsync(notification.OpportunityId, cancellationToken))?.Title;
+			?? (await dbContext.VolunteerOpportunities.FindAsync(notification.OpportunityId, cancellationToken))?.TitleDe;
 
 		if (opportunityTitle is null)
 		{

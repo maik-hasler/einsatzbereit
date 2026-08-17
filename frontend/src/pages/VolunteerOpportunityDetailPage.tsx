@@ -16,6 +16,7 @@ import {
 	formatParticipationType,
 	formatPostedAgo,
 	isSlotFull,
+	pickLocalizedText,
 } from "../lib/format";
 import {
 	FEW_SPOTS_THRESHOLD,
@@ -129,7 +130,14 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
-	usePageTitle(opportunity?.title);
+	usePageTitle(
+		opportunity &&
+			pickLocalizedText(
+				opportunity.titleDe,
+				opportunity.titleEn,
+				i18n.language,
+			),
+	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
@@ -517,8 +525,16 @@ export default function VolunteerOpportunityDetailPage() {
 						{opportunity.organizationName}
 					</Link>
 				}
-				title={opportunity.title}
-				lead={opportunity.description ?? undefined}
+				title={pickLocalizedText(
+					opportunity.titleDe,
+					opportunity.titleEn,
+					i18n.language,
+				)}
+				lead={pickLocalizedText(
+					opportunity.descriptionDe,
+					opportunity.descriptionEn,
+					i18n.language,
+				)}
 			/>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
@@ -945,7 +961,11 @@ export default function VolunteerOpportunityDetailPage() {
 
 				{showReport && (
 					<ReportContentModal
-						targetLabel={opportunity.title}
+						targetLabel={pickLocalizedText(
+							opportunity.titleDe,
+							opportunity.titleEn,
+							i18n.language,
+						)}
 						onSubmit={handleReportSubmit}
 						onClose={() => setShowReport(false)}
 					/>

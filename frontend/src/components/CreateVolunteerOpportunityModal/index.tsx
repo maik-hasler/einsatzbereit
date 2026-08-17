@@ -137,8 +137,10 @@ function endOfDayFromDateInput(value: string): Date {
 }
 
 const DEFAULT_VALUES: OpportunityFormValues = {
-	title: "",
-	description: "",
+	titleDe: "",
+	titleEn: "",
+	descriptionDe: "",
+	descriptionEn: "",
 	isRemote: false,
 	street: "",
 	houseNumber: "",
@@ -157,8 +159,10 @@ function formFromOpportunity(
 	opp: VolunteerOpportunityDetails,
 ): OpportunityFormValues {
 	return {
-		title: opp.title ?? "",
-		description: opp.description ?? "",
+		titleDe: opp.titleDe ?? "",
+		titleEn: opp.titleEn ?? "",
+		descriptionDe: opp.descriptionDe ?? "",
+		descriptionEn: opp.descriptionEn ?? "",
 		isRemote: opp.isRemote,
 		street: opp.street ?? "",
 		houseNumber: opp.houseNumber ?? "",
@@ -728,8 +732,10 @@ export default function CreateVolunteerOpportunityModal({
 		try {
 			if (isEditMode && initialOpportunity) {
 				await api.updateVolunteerOpportunity(initialOpportunity.id, {
-					title: values.title,
-					description: values.description,
+					titleDe: values.titleDe,
+					titleEn: values.titleEn || undefined,
+					descriptionDe: values.descriptionDe,
+					descriptionEn: values.descriptionEn || undefined,
 					isRemote: values.isRemote,
 					street: values.isRemote ? undefined : values.street,
 					houseNumber: values.isRemote ? undefined : values.houseNumber,
@@ -773,8 +779,10 @@ export default function CreateVolunteerOpportunityModal({
 				let opportunityId = createdOpportunityIdRef.current;
 				if (opportunityId) {
 					await api.updateVolunteerOpportunity(opportunityId, {
-						title: values.title,
-						description: values.description,
+						titleDe: values.titleDe,
+						titleEn: values.titleEn || undefined,
+						descriptionDe: values.descriptionDe,
+						descriptionEn: values.descriptionEn || undefined,
 						isRemote: values.isRemote,
 						street: values.isRemote ? undefined : values.street,
 						houseNumber: values.isRemote ? undefined : values.houseNumber,
@@ -792,8 +800,10 @@ export default function CreateVolunteerOpportunityModal({
 					});
 				} else {
 					const opportunity = await api.createVolunteerOpportunity({
-						title: values.title,
-						description: values.description,
+						titleDe: values.titleDe,
+						titleEn: values.titleEn || undefined,
+						descriptionDe: values.descriptionDe,
+						descriptionEn: values.descriptionEn || undefined,
 						organizationId,
 						isRemote: values.isRemote,
 						street: values.isRemote ? undefined : values.street,
@@ -1079,8 +1089,10 @@ export default function CreateVolunteerOpportunityModal({
 						<BasicsStep
 							register={registerWithRevalidate}
 							watch={watch}
-							titleError={errors.title?.message}
-							descriptionError={errors.description?.message}
+							titleDeError={errors.titleDe?.message}
+							titleEnError={errors.titleEn?.message}
+							descriptionDeError={errors.descriptionDe?.message}
+							descriptionEnError={errors.descriptionEn?.message}
 							bannerPreview={bannerPreview}
 							bannerError={bannerError}
 							onBannerChange={handleBannerChange}

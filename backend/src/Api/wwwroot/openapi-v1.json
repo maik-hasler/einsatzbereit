@@ -7697,8 +7697,10 @@
       },
       "CreateVolunteerOpportunityRequest": {
         "required": [
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "organizationId",
           "isRemote",
           "street",
@@ -7716,13 +7718,25 @@
         ],
         "type": "object",
         "properties": {
-          "title": {
+          "titleDe": {
             "type": [
               "null",
               "string"
             ]
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionEn": {
             "type": [
               "null",
               "string"
@@ -7807,8 +7821,10 @@
       "CreateVolunteerOpportunityResponse": {
         "required": [
           "id",
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "organizationId",
           "street",
           "houseNumber",
@@ -7832,11 +7848,23 @@
             "type": "string",
             "format": "uuid"
           },
-          "title": {
+          "titleDe": {
             "type": "string"
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
             "type": "string"
+          },
+          "descriptionEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
             "type": "string",
@@ -8665,7 +8693,8 @@
       "OrganizationCalendarEventDto": {
         "required": [
           "opportunityId",
-          "title",
+          "titleDe",
+          "titleEn",
           "color",
           "timeSlots"
         ],
@@ -8675,8 +8704,14 @@
             "type": "string",
             "format": "uuid"
           },
-          "title": {
+          "titleDe": {
             "type": "string"
+          },
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "color": {
             "type": [
@@ -9283,8 +9318,10 @@
       "PublicOpportunitySummaryDto": {
         "required": [
           "id",
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "street",
           "houseNumber",
           "zipCode",
@@ -9303,10 +9340,22 @@
             "type": "string",
             "format": "uuid"
           },
-          "title": {
+          "titleDe": {
             "type": "string"
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionEn": {
             "type": [
               "null",
               "string"
@@ -10063,8 +10112,10 @@
       },
       "UpdateVolunteerOpportunityRequest": {
         "required": [
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "isRemote",
           "street",
           "houseNumber",
@@ -10080,13 +10131,25 @@
         ],
         "type": "object",
         "properties": {
-          "title": {
+          "titleDe": {
             "type": [
               "null",
               "string"
             ]
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionEn": {
             "type": [
               "null",
               "string"
@@ -10181,8 +10244,10 @@
       "VolunteerOpportunityDetails": {
         "required": [
           "id",
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "organizationId",
           "organizationName",
           "street",
@@ -10210,10 +10275,22 @@
             "type": "string",
             "format": "uuid"
           },
-          "title": {
+          "titleDe": {
             "type": "string"
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionEn": {
             "type": [
               "null",
               "string"
@@ -10341,8 +10418,10 @@
       "VolunteerOpportunitySummary": {
         "required": [
           "id",
-          "title",
-          "description",
+          "titleDe",
+          "titleEn",
+          "descriptionDe",
+          "descriptionEn",
           "organizationId",
           "organizationName",
           "street",
@@ -10372,10 +10451,22 @@
             "type": "string",
             "format": "uuid"
           },
-          "title": {
+          "titleDe": {
             "type": "string"
           },
-          "description": {
+          "titleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionDe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descriptionEn": {
             "type": [
               "null",
               "string"

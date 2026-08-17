@@ -81,8 +81,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(vo => new
 			{
 				vo.Id,
-				vo.Title,
-				vo.Description,
+				vo.TitleDe,
+				vo.TitleEn,
+				vo.DescriptionDe,
+				vo.DescriptionEn,
 				OrganizationId = vo.OrganizationId.Value,
 				Street = vo.Address != null ? vo.Address.Street : null,
 				HouseNumber = vo.Address != null ? vo.Address.HouseNumber : null,
@@ -128,8 +130,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.Select(s => new
 				{
 					s.Id,
-					s.Title,
-					s.Description,
+					s.TitleDe,
+					s.TitleEn,
+					s.DescriptionDe,
+					s.DescriptionEn,
 					s.OrganizationId,
 					s.Street,
 					s.HouseNumber,
@@ -181,7 +185,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.Select(x =>
 				{
 					var (orgName, orgLogoUrl) = orgMap[x.OrganizationId];
-					return ToSummary(x.Id.Value, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+					return ToSummary(x.Id.Value, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, orgName, orgLogoUrl,
 						x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 						x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 						x.Status, x.BannerImageUrl,
@@ -211,7 +215,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(x =>
 			{
 				var (orgName, orgLogoUrl) = organizationSummaries[x.OrganizationId];
-				return ToSummary(x.Id.Value, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+				return ToSummary(x.Id.Value, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, orgName, orgLogoUrl,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 					x.Status, x.BannerImageUrl,
@@ -364,12 +368,18 @@ internal sealed class VolunteerOpportunityReadRepository(
 		// bare VolunteerOpportunity) - a real Join would ripple into every
 		// vo.* reference in the caller's projection (see #869's comment) and
 		// the HasRadius branch's CountAsync(query)/baseQuery reuse.
+		//
+		// Matches across both locale variants of Title/Description (#1946) -
+		// TitleEn/DescriptionEn are optional, so a null check guards each before
+		// the ILike-style .Contains(...) call.
 		if (!string.IsNullOrWhiteSpace(keyword))
 		{
 			var loweredKeyword = keyword.ToLower();
 			query = query.Where(vo =>
-				vo.Title.ToLower().Contains(loweredKeyword) ||
-				vo.Description.ToLower().Contains(loweredKeyword) ||
+				vo.TitleDe.ToLower().Contains(loweredKeyword) ||
+				(vo.TitleEn != null && vo.TitleEn.ToLower().Contains(loweredKeyword)) ||
+				vo.DescriptionDe.ToLower().Contains(loweredKeyword) ||
+				(vo.DescriptionEn != null && vo.DescriptionEn.ToLower().Contains(loweredKeyword)) ||
 				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(loweredKeyword)));
 		}
 
@@ -429,8 +439,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 	// entities and fully materializing them client-side) - see #869 follow-up.
 	private static VolunteerOpportunitySummary ToSummary(
 		Guid id,
-		string title,
-		string description,
+		string titleDe,
+		string? titleEn,
+		string? descriptionDe,
+		string? descriptionEn,
 		Guid organizationId,
 		string orgName,
 		string? orgLogoUrl,
@@ -456,8 +468,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 		int currentParticipantCount) =>
 		new(
 			id,
-			title,
-			description,
+			titleDe,
+			titleEn,
+			descriptionDe,
+			descriptionEn,
 			organizationId,
 			orgName,
 			street,
@@ -499,8 +513,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(x => new
 			{
 				x.vo.Id,
-				x.vo.Title,
-				x.vo.Description,
+				x.vo.TitleDe,
+				x.vo.TitleEn,
+				x.vo.DescriptionDe,
+				x.vo.DescriptionEn,
 				x.vo.OrganizationId,
 				x.org.Name,
 				x.vo.Address,
@@ -577,8 +593,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		return new VolunteerOpportunityDetails(
 			result.Id.Value,
-			result.Title,
-			result.Description,
+			result.TitleDe,
+			result.TitleEn,
+			result.DescriptionDe,
+			result.DescriptionEn,
 			result.OrganizationId.Value,
 			result.Name,
 			result.Address?.Street,
@@ -626,8 +644,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(x => new
 			{
 				Id = x.vo.Id.Value,
-				x.vo.Title,
-				x.vo.Description,
+				x.vo.TitleDe,
+				x.vo.TitleEn,
+				x.vo.DescriptionDe,
+				x.vo.DescriptionEn,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
 				OrgLogoUrl = x.org.LogoUrl,
@@ -667,7 +687,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
@@ -703,8 +723,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(x => new
 			{
 				Id = x.vo.Id.Value,
-				x.vo.Title,
-				x.vo.Description,
+				x.vo.TitleDe,
+				x.vo.TitleEn,
+				x.vo.DescriptionDe,
+				x.vo.DescriptionEn,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
 				OrgLogoUrl = x.org.LogoUrl,
@@ -744,7 +766,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var items = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
@@ -771,7 +793,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(vo => new
 			{
 				Id = vo.Id.Value,
-				vo.Title,
+				vo.TitleDe,
+				vo.TitleEn,
 				vo.Color,
 				TimeSlots = vo.TimeSlots
 					.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
@@ -810,7 +833,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 		return rows
 			.Select(r => new OrganizationCalendarEventDto(
 				r.Id,
-				r.Title,
+				r.TitleDe,
+				r.TitleEn,
 				r.Color,
 				r.TimeSlots
 					.Select(ts => new CalendarTimeSlotDto(

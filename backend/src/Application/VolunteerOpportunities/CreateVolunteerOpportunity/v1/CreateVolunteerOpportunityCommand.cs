@@ -7,8 +7,10 @@ using Domain.VolunteerOpportunities;
 namespace Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
 public sealed record CreateVolunteerOpportunityCommand(
-	string Title,
-	string Description,
+	string TitleDe,
+	string? TitleEn,
+	string DescriptionDe,
+	string? DescriptionEn,
 	OrganizationId OrganizationId,
 	bool IsRemote,
 	Address? Address,

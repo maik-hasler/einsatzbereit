@@ -130,8 +130,8 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"NotifDeletedOpp {label} {suffix}",
-			description = "Created by NotificationForDeletedOpportunityTests",
+			titleDe = $"NotifDeletedOpp {label} {suffix}",
+			descriptionDe = "Created by NotificationForDeletedOpportunityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

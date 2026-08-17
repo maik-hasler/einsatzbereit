@@ -231,8 +231,8 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Calendar Events Test Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Calendar Events Test Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",

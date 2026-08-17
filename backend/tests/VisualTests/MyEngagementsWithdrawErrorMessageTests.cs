@@ -44,8 +44,8 @@ public class MyEngagementsWithdrawErrorMessageTests(AspireFixture fixture) : Vis
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"MyEngagementsWithdrawErrorMessage Opportunity {suffix}",
-			description = "Created by MyEngagementsWithdrawErrorMessageTests.",
+			titleDe = $"MyEngagementsWithdrawErrorMessage Opportunity {suffix}",
+			descriptionDe = "Created by MyEngagementsWithdrawErrorMessageTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -13,7 +13,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import { labelClass, textareaClass } from "../../lib/formClasses";
 import { cardClass } from "../../lib/surfaceClasses";
 import { getOpportunityCapacity } from "../../lib/opportunityCapacity";
-import { formatSignUpCount } from "../../lib/format";
+import { formatSignUpCount, pickLocalizedText } from "../../lib/format";
 import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -40,7 +40,7 @@ const STATUS_BADGE_TONE: Record<string, ChipTone> = {
 
 export default function OrgOpportunitiesPage() {
 	const { org, isOrganizer } = useOutletContext<OrgAppContext>();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;
 	usePageTitle(`${t("orgOverview.tabOpportunities")} - ${org.name}`);
@@ -327,6 +327,12 @@ export default function OrgOpportunitiesPage() {
 	) {
 		const status = item.status;
 		const isHighlighted = item.id === highlightedId;
+		const title = pickLocalizedText(item.titleDe, item.titleEn, i18n.language);
+		const description = pickLocalizedText(
+			item.descriptionDe,
+			item.descriptionEn,
+			i18n.language,
+		);
 		const badgeLabel =
 			status === "Draft"
 				? t("opportunities.draftBadge")
@@ -355,7 +361,7 @@ export default function OrgOpportunitiesPage() {
 							to={`/volunteer-opportunities/${item.id}`}
 							className="truncate text-sm font-semibold text-gray-900 hover:text-brand-700 hover:underline"
 						>
-							{item.title || t("orgDashboard.unnamedDraft")}
+							{title || t("orgDashboard.unnamedDraft")}
 						</Link>
 						{showStatusBadge && (
 							<Chip
@@ -368,9 +374,9 @@ export default function OrgOpportunitiesPage() {
 							</Chip>
 						)}
 					</div>
-					{item.description && (
+					{description && (
 						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-							{item.description}
+							{description}
 						</p>
 					)}
 					{/* Unconditional: this is the number an organizer opens the page
@@ -419,7 +425,7 @@ export default function OrgOpportunitiesPage() {
 						<div className="ml-auto">
 							<RowActionsMenu
 								label={t("orgOpportunities.moreActionsFor", {
-									title: item.title || t("orgDashboard.unnamedDraft"),
+									title: title || t("orgDashboard.unnamedDraft"),
 								})}
 								actions={[
 									...(status !== "Cancelled"

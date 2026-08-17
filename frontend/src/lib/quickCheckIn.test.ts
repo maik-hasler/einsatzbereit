@@ -7,8 +7,10 @@ function makeOpportunity(
 ): VolunteerOpportunitySummary {
 	return {
 		id: "opp-1",
-		title: "Opportunity",
-		description: undefined,
+		titleDe: "Opportunity",
+		titleEn: undefined,
+		descriptionDe: undefined,
+		descriptionEn: undefined,
 		organizationId: "org-1",
 		organizationName: "Org",
 		street: undefined,

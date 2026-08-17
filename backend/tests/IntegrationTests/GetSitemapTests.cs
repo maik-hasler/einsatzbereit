@@ -119,8 +119,8 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken) =>
 		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Published opportunity",
-			Description = "IndividualContact - no time slots required to publish",
+			TitleDe = "Published opportunity",
+			DescriptionDe = "IndividualContact - no time slots required to publish",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -136,8 +136,8 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken) =>
 		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Draft opportunity",
-			Description = "Never published",
+			TitleDe = "Draft opportunity",
+			DescriptionDe = "Never published",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
@@ -155,8 +155,8 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	{
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
-			Title = "Expired opportunity",
-			Description = "Only has a time slot that already ended",
+			TitleDe = "Expired opportunity",
+			DescriptionDe = "Only has a time slot that already ended",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",

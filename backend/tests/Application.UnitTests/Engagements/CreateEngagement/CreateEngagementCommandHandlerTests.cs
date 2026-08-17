@@ -40,7 +40,9 @@ public class CreateEngagementCommandHandlerTests
 		var opportunity = VolunteerOpportunity.Create(
 			OrganizationId.New(),
 			"Test Opportunity",
+			null,
 			"Description",
+			null,
 			false,
 			TestAddress,
 			Occurrence.OneTime,
@@ -95,7 +97,9 @@ public class CreateEngagementCommandHandlerTests
 		var opportunity = VolunteerOpportunity.Create(
 			OrganizationId.New(),
 			"Test Opportunity",
+			null,
 			"Description",
+			null,
 			false,
 			TestAddress,
 			Occurrence.OneTime,

@@ -109,8 +109,8 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CheckInPin {label} {suffix}",
-			description = "Created by EngagementManagementCheckInPinTests",
+			titleDe = $"CheckInPin {label} {suffix}",
+			descriptionDe = "Created by EngagementManagementCheckInPinTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

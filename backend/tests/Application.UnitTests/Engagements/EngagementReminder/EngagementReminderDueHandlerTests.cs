@@ -44,7 +44,7 @@ public class EngagementReminderDueHandlerTests
 		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
 		// here since the handler doesn't look at Status at all.
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Beach Cleanup", "Help clean the beach", true, null,
+			DefaultOrgId, "Beach Cleanup", null, "Help clean the beach", null, true, null,
 			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
@@ -183,7 +183,7 @@ public class EngagementReminderDueHandlerTests
 		// winter instant is used so Europe/Berlin is deterministically UTC+1
 		// (CET, no DST) regardless of when this test runs.
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Beach Cleanup", "Help clean the beach", true, null,
+			DefaultOrgId, "Beach Cleanup", null, "Help clean the beach", null, true, null,
 			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		var artificialNow = new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero);

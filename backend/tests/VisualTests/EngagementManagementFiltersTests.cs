@@ -78,8 +78,8 @@ public class EngagementManagementFiltersTests(AspireFixture fixture) : VisualTes
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by EngagementManagementFiltersTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by EngagementManagementFiltersTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

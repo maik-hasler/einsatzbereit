@@ -91,8 +91,10 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId,
-			request.Title ?? string.Empty,
-			request.Description ?? string.Empty,
+			request.TitleDe ?? string.Empty,
+			string.IsNullOrWhiteSpace(request.TitleEn) ? null : request.TitleEn,
+			request.DescriptionDe ?? string.Empty,
+			string.IsNullOrWhiteSpace(request.DescriptionEn) ? null : request.DescriptionEn,
 			request.IsRemote,
 			address,
 			occurrence,

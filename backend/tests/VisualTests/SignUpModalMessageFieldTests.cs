@@ -145,8 +145,8 @@ public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBas
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"SignUpModalMessageField {label} {suffix}",
-			description = "Created by SignUpModalMessageFieldTests",
+			titleDe = $"SignUpModalMessageField {label} {suffix}",
+			descriptionDe = "Created by SignUpModalMessageFieldTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

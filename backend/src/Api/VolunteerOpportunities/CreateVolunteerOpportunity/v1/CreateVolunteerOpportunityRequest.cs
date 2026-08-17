@@ -3,8 +3,10 @@ using System.ComponentModel.DataAnnotations;
 namespace Api.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
 public sealed record CreateVolunteerOpportunityRequest(
-	[MaxLength(200)] string? Title,
-	[MaxLength(5000)] string? Description,
+	[MaxLength(200)] string? TitleDe,
+	[MaxLength(200)] string? TitleEn,
+	[MaxLength(5000)] string? DescriptionDe,
+	[MaxLength(5000)] string? DescriptionEn,
 	Guid OrganizationId,
 	bool IsRemote,
 	[MaxLength(200)] string? Street,

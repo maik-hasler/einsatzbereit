@@ -7,8 +7,10 @@ namespace Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
 public sealed record UpdateVolunteerOpportunityCommand(
 	Guid OpportunityId,
-	string Title,
-	string Description,
+	string TitleDe,
+	string? TitleEn,
+	string DescriptionDe,
+	string? DescriptionEn,
 	bool IsRemote,
 	Address? Address,
 	Occurrence Occurrence,

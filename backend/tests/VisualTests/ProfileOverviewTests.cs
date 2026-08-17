@@ -394,8 +394,8 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"FeedbackEdit Opportunity {suffix}",
-			description = "Created by ProfileOverviewTests",
+			titleDe = $"FeedbackEdit Opportunity {suffix}",
+			descriptionDe = "Created by ProfileOverviewTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

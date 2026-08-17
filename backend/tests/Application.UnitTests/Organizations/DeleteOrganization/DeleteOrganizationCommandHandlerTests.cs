@@ -79,7 +79,7 @@ public class DeleteOrganizationCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunityWithFutureTimeSlot(OrganizationId orgId)
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			orgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+			orgId, "Titel", null, "Beschreibung", null, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 5, DateTimeOffset.UtcNow);
 		return opportunity;
 	}
@@ -212,7 +212,7 @@ public class DeleteOrganizationCommandHandlerTests
 		SetMembers(orgId, DefaultRequestingUserId.Value);
 		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
 		var finishedOpportunity = VolunteerOpportunity.Create(
-			organizationId, "Finished Opportunity", "Beschreibung", true, null, Occurrence.OneTime,
+			organizationId, "Finished Opportunity", null, "Beschreibung", null, true, null, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Published, validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 		_dbContext

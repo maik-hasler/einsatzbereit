@@ -50,8 +50,8 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			var oppResponse = await seedHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title = $"AchievementsSelfSeed Opportunity {suffix}",
-				description = "Created by AchievementsTests to guarantee olaf has an achievement.",
+				titleDe = $"AchievementsSelfSeed Opportunity {suffix}",
+				descriptionDe = "Created by AchievementsTests to guarantee olaf has an achievement.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
@@ -101,8 +101,8 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			var oppResponse = await setupHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title = $"AchievementSeed Opportunity {setupSuffix}",
-				description = "Created by AchievementsTests to guarantee a confirmed engagement",
+				titleDe = $"AchievementSeed Opportunity {setupSuffix}",
+				descriptionDe = "Created by AchievementsTests to guarantee a confirmed engagement",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

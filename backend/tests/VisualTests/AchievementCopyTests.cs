@@ -227,8 +227,8 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"AchievementCopy Opportunity {suffix}",
-			description = "Created by AchievementCopyTests to give vera an activity streak.",
+			titleDe = $"AchievementCopy Opportunity {suffix}",
+			descriptionDe = "Created by AchievementCopyTests to give vera an activity streak.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -104,8 +104,8 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		// deadline on anything but IndividualContact, so sending one here 400s.
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"Measure1794 {suffix}",
-			description = "Seeded for #1794 detail-page measure regression coverage.",
+			titleDe = $"Measure1794 {suffix}",
+			descriptionDe = "Seeded for #1794 detail-page measure regression coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

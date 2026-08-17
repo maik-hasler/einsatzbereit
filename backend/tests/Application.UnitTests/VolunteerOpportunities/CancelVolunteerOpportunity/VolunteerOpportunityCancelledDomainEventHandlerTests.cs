@@ -45,7 +45,7 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 
 	private static VolunteerOpportunity CreatePublishedOpportunity() =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Published,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 

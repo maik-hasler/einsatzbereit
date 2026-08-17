@@ -195,8 +195,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Test Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Test Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",
@@ -218,8 +218,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "ScheduledSlots Opportunity",
-				Description = "Integration test ScheduledSlots opportunity",
+				TitleDe = "ScheduledSlots Opportunity",
+				DescriptionDe = "Integration test ScheduledSlots opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",

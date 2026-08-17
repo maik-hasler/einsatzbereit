@@ -36,7 +36,7 @@ public class CreateTimeSlotCommandHandlerTests
 
 	private VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress,
+			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 

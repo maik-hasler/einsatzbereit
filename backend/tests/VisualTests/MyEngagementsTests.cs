@@ -44,8 +44,8 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"MyEngagements Opportunity {suffix}",
-			description = "Created by MyEngagementsTests.",
+			titleDe = $"MyEngagements Opportunity {suffix}",
+			descriptionDe = "Created by MyEngagementsTests.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

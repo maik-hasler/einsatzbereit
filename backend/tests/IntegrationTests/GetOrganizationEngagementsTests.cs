@@ -225,8 +225,8 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Test Opportunity",
-				Description = "Integration test opportunity",
+				TitleDe = "Test Opportunity",
+				DescriptionDe = "Integration test opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",

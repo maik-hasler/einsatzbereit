@@ -55,8 +55,8 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 	{
 		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for #977 list-layout-grid visual test.",
+			titleDe = title,
+			descriptionDe = "Seeded for #977 list-layout-grid visual test.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -250,8 +250,8 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = "Seeded for #977 list-layout-grid visual test.",
+				titleDe = title,
+				descriptionDe = "Seeded for #977 list-layout-grid visual test.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",

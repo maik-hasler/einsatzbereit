@@ -5,6 +5,7 @@ import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
 import { inputSurfaceClass } from "../../../lib/formClasses";
 import { filterQrCheckInOpportunities } from "../../../lib/quickCheckIn";
+import { pickLocalizedText } from "../../../lib/format";
 import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import Dropdown from "../../../components/Dropdown";
@@ -38,7 +39,7 @@ function QuickCheckInWidget({
 	size,
 	onOpportunityCreated,
 }: Props) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
 	// Shared with UpcomingOpportunitiesWidget, which fetches the same
@@ -134,7 +135,9 @@ function QuickCheckInWidget({
 							className={inputSurfaceClass}
 							options={qrOpportunities.map((o) => ({
 								value: o.id,
-								label: o.title || t("orgDashboard.unnamedDraft"),
+								label:
+									pickLocalizedText(o.titleDe, o.titleEn, i18n.language) ||
+									t("orgDashboard.unnamedDraft"),
 							}))}
 						/>
 					</div>

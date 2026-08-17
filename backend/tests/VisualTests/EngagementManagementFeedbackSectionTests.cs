@@ -99,8 +99,8 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"FeedbackSection {label} Opportunity {suffix}",
-			description = "Created by EngagementManagementFeedbackSectionTests",
+			titleDe = $"FeedbackSection {label} Opportunity {suffix}",
+			descriptionDe = "Created by EngagementManagementFeedbackSectionTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

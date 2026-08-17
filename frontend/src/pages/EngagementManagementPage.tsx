@@ -18,7 +18,12 @@ import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
-import { formatDate, formatDateTime, resolveDateLocale } from "../lib/format";
+import {
+	formatDate,
+	formatDateTime,
+	pickLocalizedText,
+	resolveDateLocale,
+} from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -50,12 +55,15 @@ export default function EngagementManagementPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	const [opportunityError, setOpportunityError] = useState<string | null>(null);
 	const [retryingOpportunity, setRetryingOpportunity] = useState(false);
+	const opportunityTitle =
+		opportunity &&
+		pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language);
 	usePageTitle(
-		opportunity?.title
-			? `${t("engagementManagement.title")} - ${opportunity.title}`
+		opportunityTitle
+			? `${t("engagementManagement.title")} - ${opportunityTitle}`
 			: t("engagementManagement.title"),
 	);
-	useSetOrgBreadcrumbExtra(opportunity?.title);
+	useSetOrgBreadcrumbExtra(opportunityTitle);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("engagementManagement.status.Pending"),

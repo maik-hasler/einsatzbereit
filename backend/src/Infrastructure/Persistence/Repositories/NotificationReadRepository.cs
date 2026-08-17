@@ -170,9 +170,9 @@ internal sealed class NotificationReadRepository(
 			var opportunityIdVOs = allOpportunityIds.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow()).ToList();
 			var opportunityRows = await dbContext.VolunteerOpportunitiesQuery
 				.Where(o => opportunityIdVOs.Contains(o.Id))
-				.Select(o => new { o.Id, o.Title, o.OrganizationId })
+				.Select(o => new { o.Id, o.TitleDe, o.OrganizationId })
 				.ToListAsync(cancellationToken);
-			opportunityTitles = opportunityRows.ToDictionary(x => x.Id.Value, x => x.Title);
+			opportunityTitles = opportunityRows.ToDictionary(x => x.Id.Value, x => x.TitleDe);
 			opportunityOrganizations = opportunityRows.ToDictionary(x => x.Id.Value, x => x.OrganizationId.Value);
 		}
 

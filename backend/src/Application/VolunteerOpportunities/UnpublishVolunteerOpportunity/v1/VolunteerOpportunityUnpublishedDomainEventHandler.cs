@@ -53,7 +53,7 @@ internal sealed class VolunteerOpportunityUnpublishedDomainEventHandler(
 			dbContext,
 			engagementReadRepository,
 			notification.OpportunityId,
-			opportunity.Title,
+			opportunity.TitleDe,
 			NotificationKind.OpportunityUnpublished,
 			"Opportunity was unpublished.",
 			notifyPerEngagement: true,

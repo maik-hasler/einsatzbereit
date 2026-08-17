@@ -239,7 +239,9 @@ public class CheckInWithPinCommandHandlerTests
 		VolunteerOpportunity.Create(
 			DefaultOrgId,
 			"Test",
+			null,
 			"Test",
+			null,
 			false,
 			DefaultAddress,
 			Occurrence.OneTime,
@@ -252,7 +254,9 @@ public class CheckInWithPinCommandHandlerTests
 		VolunteerOpportunity.Create(
 			DefaultOrgId,
 			"Test",
+			null,
 			"Test",
+			null,
 			false,
 			DefaultAddress,
 			Occurrence.OneTime,

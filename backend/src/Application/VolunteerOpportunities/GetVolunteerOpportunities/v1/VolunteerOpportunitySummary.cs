@@ -2,8 +2,10 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 
 public sealed record VolunteerOpportunitySummary(
 	Guid Id,
-	string Title,
-	string? Description,
+	string TitleDe,
+	string? TitleEn,
+	string? DescriptionDe,
+	string? DescriptionEn,
 	Guid OrganizationId,
 	string OrganizationName,
 	string? Street,

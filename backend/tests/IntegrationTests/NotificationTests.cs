@@ -646,8 +646,8 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = title,
-				Description = "Integration test opportunity for notifications",
+				TitleDe = title,
+				DescriptionDe = "Integration test opportunity for notifications",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",

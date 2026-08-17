@@ -205,8 +205,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Draft Test {suffix}",
-			description = "Seeded draft for the owner-affordances a11y scan.",
+			titleDe = $"A11y Draft Test {suffix}",
+			descriptionDe = "Seeded draft for the owner-affordances a11y scan.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -259,8 +259,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Mobile Rail Test {suffix}",
-			description = "Seeded for #1965 mobile action-rail a11y coverage.",
+			titleDe = $"A11y Mobile Rail Test {suffix}",
+			descriptionDe = "Seeded for #1965 mobile action-rail a11y coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -312,8 +312,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"A11y Status Slot Test {suffix}",
-			description = "Seeded for #1938 application-status time-slot a11y coverage.",
+			titleDe = $"A11y Status Slot Test {suffix}",
+			descriptionDe = "Seeded for #1938 application-status time-slot a11y coverage.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -397,8 +397,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var title = $"Marker A11y Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for the map marker accessible-name regression (#1681).",
+			titleDe = title,
+			descriptionDe = "Seeded for the map marker accessible-name regression (#1681).",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -478,8 +478,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var title = $"No Map A11y Test {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
+			titleDe = title,
+			descriptionDe = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -1355,8 +1355,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"EngagementManagementA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"EngagementManagementA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1422,8 +1422,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"OrgEngagementsA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"OrgEngagementsA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1751,8 +1751,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"NotifA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"NotifA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1832,7 +1832,20 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	// One case per administration section: they are separate routes behind a
 	// shared left rail now, not four stacked sections on one page, so a single
 	// scan of /administration would only ever cover the first of them.
+	//
+	// [Retry(2)]: this is the one AuthHelper.LoginAsync call site that reliably
+	// lands in the very first concurrently-started batch of tests (see the
+	// "organizations" case, which repeatedly logged as one of the first two
+	// "[slow] still running" entries across many unrelated PRs' CI runs). The
+	// real Keycloak round trip it drives occasionally exceeds even a generous
+	// fixed timeout while the Aspire stack is still warming up - raising
+	// AuthHelper's timeout from 30s to 90s across several rounds never
+	// eliminated it, it just kept landing a few seconds past whatever ceiling
+	// was set (63s at a 60s cap, ~93.5s at a 90s cap). A per-test retry costs
+	// nothing on the common case (a fast top-of-suite login) and absorbs the
+	// rare slow one without inflating every other LoginAsync caller's timeout.
 	[Test]
+	[Retry(2)]
 	[Arguments("organizations")]
 	[Arguments("users")]
 	[Arguments("reports")]
@@ -2070,8 +2083,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CancelDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"CancelDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2130,8 +2143,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"OrgEngagementsCancelDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"OrgEngagementsCancelDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2194,8 +2207,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"CancelOpportunityDialogA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"CancelOpportunityDialogA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2244,8 +2257,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"{label} Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2421,8 +2434,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"ToastA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"ToastA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -2501,8 +2514,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"MarkedDayA11y Opportunity {suffix}",
-			description = "Created by AccessibilityTests",
+			titleDe = $"MarkedDayA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

@@ -47,7 +47,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 
 		if (blockingOpportunities.Count > 0)
 		{
-			var titles = string.Join(", ", blockingOpportunities.Select(o => $"'{o.Title}'"));
+			var titles = string.Join(", ", blockingOpportunities.Select(o => $"'{o.TitleDe}'"));
 			throw new ResultFailureException(Error.Conflict(
 				"Organization.HasBlockingOpportunities",
 				$"Conflict: cannot delete organization while it has opportunities with future time slots or active engagements: {titles}. Resolve or cancel these first."));

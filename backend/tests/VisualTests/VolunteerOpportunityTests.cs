@@ -366,8 +366,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			var title = $"{label} {suffix}";
 			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = $"{label} opportunity for detail enrichment coverage.",
+				titleDe = title,
+				descriptionDe = $"{label} opportunity for detail enrichment coverage.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
@@ -668,8 +668,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = draftTitle,
-			description = "Seeded draft for OpportunitiesHub test",
+			titleDe = draftTitle,
+			descriptionDe = "Seeded draft for OpportunitiesHub test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -682,8 +682,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		var publishedResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = publishedTitle,
-			description = "Seeded published for OpportunitiesHub test",
+			titleDe = publishedTitle,
+			descriptionDe = "Seeded published for OpportunitiesHub test",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -828,8 +828,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			var title = $"{label} {suffix}";
 			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title,
-				description = $"{label} opportunity for issue 1223 stale-error coverage.",
+				titleDe = title,
+				descriptionDe = $"{label} opportunity for issue 1223 stale-error coverage.",
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
@@ -928,8 +928,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var draftTitle = $"Detail Draft Test {suffix}";
 		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = draftTitle,
-			description = "Seeded draft for the detail-page owner-affordances regression test.",
+			titleDe = draftTitle,
+			descriptionDe = "Seeded draft for the detail-page owner-affordances regression test.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -993,8 +993,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var publishedTitle = $"Detail Published Test {suffix}";
 		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = publishedTitle,
-			description = "Seeded published opportunity for the detail-page owner-affordances edge case.",
+			titleDe = publishedTitle,
+			descriptionDe = "Seeded published opportunity for the detail-page owner-affordances edge case.",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1042,8 +1042,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var title = $"Tag Chip Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by DetailPage_TagChip_IsClickableLink_FiltersBrowseList",
+			titleDe = title,
+			descriptionDe = "Created by DetailPage_TagChip_IsClickableLink_FiltersBrowseList",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1107,8 +1107,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var title = $"List Tag Chip Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters",
+			titleDe = title,
+			descriptionDe = "Created by ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
@@ -1147,5 +1147,116 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			new Regex($"^{Regex.Escape($"{origin}/opportunities?tag={Uri.EscapeDataString(tagB)}")}$"),
 			new() { Timeout = 15_000 });
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task OpportunityDetailPage_TitleAndDescription_FollowTheLanguageSwitch()
+	{
+		// Regression for #1946: organizer-authored title/description used to
+		// stay in whichever language they were entered in regardless of the
+		// site's language switcher - only UI chrome (badges, dates) actually
+		// translated. Opportunities now carry a required German variant and an
+		// optional English one; the detail page must pick the variant matching
+		// the active UI language.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Bilingual Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var titleDe = $"Deutscher Titel {suffix}";
+		var titleEn = $"English Title {suffix}";
+		var descriptionDe = $"Deutsche Beschreibung fuer Ausgabe 1946 Abdeckung {suffix}.";
+		var descriptionEn = $"English description for issue 1946 coverage {suffix}.";
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe,
+			titleEn,
+			descriptionDe,
+			descriptionEn,
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var body = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = body.GetProperty("id").GetString();
+
+		// This suite's default browser context resolves to English with no
+		// stored language choice (see InitialLocaleResolutionTests).
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("h1")).ToContainTextAsync(titleEn, new() { Timeout = 15_000 });
+		await Expect(Page.GetByText(descriptionEn)).ToBeVisibleAsync();
+		await Expect(Page.Locator("h1")).Not.ToContainTextAsync(titleDe);
+
+		// Switching to German follows through to the German variant on the
+		// same page, without a reload.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
+		await Page.GetByTestId("language-selector-menu")
+			.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
+		await Expect(Page.Locator("h1")).ToContainTextAsync(titleDe, new() { Timeout = 15_000 });
+		await Expect(Page.GetByText(descriptionDe)).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task OpportunityDetailPage_FallsBackToGermanTitle_WhenNoEnglishTranslationProvided()
+	{
+		// Companion to OpportunityDetailPage_TitleAndDescription_FollowTheLanguageSwitch:
+		// English is optional (#1946) - an opportunity without a translation must
+		// still show its German content when viewed in English, rather than a
+		// blank title/description.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"German Only Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var titleDe = $"Nur Deutscher Titel {suffix}";
+		var descriptionDe = $"Nur eine deutsche Beschreibung {suffix}.";
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe,
+			descriptionDe,
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var body = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = body.GetProperty("id").GetString();
+
+		// Default English context (see InitialLocaleResolutionTests) - still
+		// falls back to the German content rather than rendering blank.
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("h1")).ToContainTextAsync(titleDe, new() { Timeout = 15_000 });
+		await Expect(Page.GetByText(descriptionDe)).ToBeVisibleAsync();
 	}
 }

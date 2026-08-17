@@ -73,16 +73,16 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, title, null, description, null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 
 	private VolunteerOpportunity CreateDraftOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
-		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(DefaultOrgId, title, null, description, null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	private VolunteerOpportunity CreatePublishedScheduledSlotsOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Altes Thema", null, "Alte Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow);
 		opportunity.Publish();
@@ -102,7 +102,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
 			CheckInPin: "13579");
 
 		// Act
@@ -110,6 +110,31 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		opportunity.CheckInPin.Should().Be("13579");
+	}
+
+	[Test]
+	public async Task Handle_ShouldUpdateTitleEnAndDescriptionEn(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).Value, cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "New topic", "Neue Beschreibung", "New description", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.TitleDe.Should().Be("Neues Thema");
+		opportunity.TitleEn.Should().Be("New topic");
+		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
+		opportunity.DescriptionEn.Should().Be("New description");
 	}
 
 	[Test]
@@ -126,15 +151,15 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
-		opportunity.Title.Should().Be("Neues Thema");
-		opportunity.Description.Should().Be("Neue Beschreibung");
+		opportunity.TitleDe.Should().Be("Neues Thema");
+		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
 		opportunity.Address.Should().Be(newAddress);
 	}
 
@@ -151,7 +176,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -175,7 +200,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
 			ValidUntil: validUntil);
 
 		// Act
@@ -199,7 +224,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -221,7 +246,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
 			ValidUntil: DateTimeOffset.UtcNow.AddDays(-1));
 
 		// Act
@@ -252,7 +277,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -285,7 +310,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -309,7 +334,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Remote", "Desc", true, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Remote", null, "Desc", null, true, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -331,7 +356,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -354,7 +379,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "   ", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "   ", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -377,14 +402,14 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
-		opportunity.Title.Should().Be(string.Empty);
+		opportunity.TitleDe.Should().Be(string.Empty);
 	}
 
 	[Test]
@@ -407,7 +432,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Material change: new address (city changed).
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -446,7 +471,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -477,7 +502,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -505,7 +530,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, tooManyTags, DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, tooManyTags, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -541,7 +566,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -568,7 +593,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", null, "Beschreibung", null, false, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -594,7 +619,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(false);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -602,8 +627,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
-		opportunity.Title.Should().Be("Altes Thema");
-		opportunity.Description.Should().Be("Alte Beschreibung");
+		opportunity.TitleDe.Should().Be("Altes Thema");
+		opportunity.DescriptionDe.Should().Be("Alte Beschreibung");
 	}
 
 	[Test]
@@ -617,7 +642,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
+			DefaultOrgId, "Altes Thema", null, "Alte Beschreibung", null, false, geocodedAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 		opportunity.ClearEvents();
@@ -628,7 +653,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		var newAddress = Address.Create("Nirgendwostraße", "999", "99999", "Nirgendwo").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -649,7 +674,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
+			DefaultOrgId, "Altes Thema", null, "Alte Beschreibung", null, false, geocodedAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 		opportunity.ClearEvents();
@@ -660,7 +685,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Same street/house number/zip/city as geocodedAddress - only cosmetic fields change.
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -678,7 +703,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", true, null, Occurrence.OneTime,
+			DefaultOrgId, "Altes Thema", null, "Alte Beschreibung", null, true, null, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 
@@ -687,7 +712,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);

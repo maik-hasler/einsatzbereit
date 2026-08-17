@@ -58,7 +58,7 @@ internal sealed class AdminAuditLogReadRepository(
 			? await dbContext.VolunteerOpportunitiesQuery
 				.IgnoreQueryFilters()
 				.Where(vo => opportunityIds.Contains(vo.Id))
-				.ToDictionaryAsync(vo => vo.Id.Value, vo => vo.Title, cancellationToken)
+				.ToDictionaryAsync(vo => vo.Id.Value, vo => vo.TitleDe, cancellationToken)
 			: new Dictionary<Guid, string>();
 
 		var organizationIds = page

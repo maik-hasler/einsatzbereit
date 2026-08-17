@@ -129,8 +129,10 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		}
 
 		var command = new CreateVolunteerOpportunityCommand(
-			request.Title ?? string.Empty,
-			request.Description ?? string.Empty,
+			request.TitleDe ?? string.Empty,
+			string.IsNullOrWhiteSpace(request.TitleEn) ? null : request.TitleEn,
+			request.DescriptionDe ?? string.Empty,
+			string.IsNullOrWhiteSpace(request.DescriptionEn) ? null : request.DescriptionEn,
 			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(),
 			request.IsRemote,
 			address,
@@ -152,8 +154,10 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 
 		var response = new CreateVolunteerOpportunityResponse(
 			opportunity.Id.Value,
-			opportunity.Title,
-			opportunity.Description,
+			opportunity.TitleDe,
+			opportunity.TitleEn,
+			opportunity.DescriptionDe,
+			opportunity.DescriptionEn,
 			opportunity.OrganizationId.Value,
 			opportunity.Address?.Street,
 			opportunity.Address?.HouseNumber,

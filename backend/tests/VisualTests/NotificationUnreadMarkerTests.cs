@@ -102,8 +102,8 @@ public class NotificationUnreadMarkerTests(AspireFixture fixture) : VisualTestBa
 	{
 		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title,
-			description = "Created by NotificationUnreadMarkerTests",
+			titleDe = title,
+			descriptionDe = "Created by NotificationUnreadMarkerTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

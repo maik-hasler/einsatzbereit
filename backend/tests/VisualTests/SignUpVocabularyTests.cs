@@ -182,8 +182,8 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			title = $"{label} {suffix}",
-			description = "Created by SignUpVocabularyTests",
+			titleDe = $"{label} {suffix}",
+			descriptionDe = "Created by SignUpVocabularyTests",
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",

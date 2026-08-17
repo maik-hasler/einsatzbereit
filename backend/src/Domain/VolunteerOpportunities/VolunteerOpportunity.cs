@@ -23,9 +23,21 @@ public sealed class VolunteerOpportunity
 
 	public OrganizationId OrganizationId { get; private set; }
 
-	public string Title { get; private set; }
+	public string TitleDe { get; private set; }
 
-	public string Description { get; private set; }
+	/// <summary>
+	/// Optional English translation of <see cref="TitleDe"/> (einsatzbereit#1946) -
+	/// German is the one locale every opportunity is guaranteed to carry (see
+	/// EnsurePublishable), English is an organizer-supplied addition. Callers that
+	/// need to display a title for a given viewer locale fall back to
+	/// <see cref="TitleDe"/> when this is null or blank rather than requiring it.
+	/// </summary>
+	public string? TitleEn { get; private set; }
+
+	public string DescriptionDe { get; private set; }
+
+	/// <summary>Optional English translation of <see cref="DescriptionDe"/> - see <see cref="TitleEn"/>.</summary>
+	public string? DescriptionEn { get; private set; }
 
 	public bool IsRemote { get; private set; }
 
@@ -82,8 +94,10 @@ public sealed class VolunteerOpportunity
 	private VolunteerOpportunity(
 		VolunteerOpportunityId id,
 		OrganizationId organizationId,
-		string title,
-		string description,
+		string titleDe,
+		string? titleEn,
+		string descriptionDe,
+		string? descriptionEn,
 		bool isRemote,
 		Address? address,
 		Occurrence occurrence,
@@ -99,8 +113,10 @@ public sealed class VolunteerOpportunity
 		: base(id)
 	{
 		OrganizationId = organizationId;
-		Title = title;
-		Description = description;
+		TitleDe = titleDe;
+		TitleEn = titleEn;
+		DescriptionDe = descriptionDe;
+		DescriptionEn = descriptionEn;
 		IsRemote = isRemote;
 		Address = address;
 		Occurrence = occurrence;
@@ -184,8 +200,10 @@ public sealed class VolunteerOpportunity
 
 	public static Result<VolunteerOpportunity> Create(
 		OrganizationId organizationId,
-		string title,
-		string description,
+		string titleDe,
+		string? titleEn,
+		string descriptionDe,
+		string? descriptionEn,
 		bool isRemote,
 		Address? address,
 		Occurrence occurrence,
@@ -199,13 +217,21 @@ public sealed class VolunteerOpportunity
 		DateTimeOffset? validUntil = null,
 		DateTimeOffset? now = null)
 	{
-		var validTitleLength = EnsureValidTitleLength(title);
-		if (validTitleLength.IsFailure)
-			return Result.Failure<VolunteerOpportunity>(validTitleLength.Error);
+		var validTitleDeLength = EnsureValidTitleLength(titleDe);
+		if (validTitleDeLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validTitleDeLength.Error);
 
-		var validDescriptionLength = EnsureValidDescriptionLength(description);
-		if (validDescriptionLength.IsFailure)
-			return Result.Failure<VolunteerOpportunity>(validDescriptionLength.Error);
+		var validTitleEnLength = EnsureValidTitleLength(titleEn);
+		if (validTitleEnLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validTitleEnLength.Error);
+
+		var validDescriptionDeLength = EnsureValidDescriptionLength(descriptionDe);
+		if (validDescriptionDeLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validDescriptionDeLength.Error);
+
+		var validDescriptionEnLength = EnsureValidDescriptionLength(descriptionEn);
+		if (validDescriptionEnLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validDescriptionEnLength.Error);
 
 		var validTags = EnsureValidTags(tags ?? []);
 		if (validTags.IsFailure)
@@ -224,7 +250,7 @@ public sealed class VolunteerOpportunity
 
 		if (status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(title, description, isRemote, address);
+			var publishable = EnsurePublishable(titleDe, descriptionDe, isRemote, address);
 			if (publishable.IsFailure)
 				return Result.Failure<VolunteerOpportunity>(publishable.Error);
 
@@ -245,8 +271,10 @@ public sealed class VolunteerOpportunity
 		var opportunity = new VolunteerOpportunity(
 			VolunteerOpportunityId.New(),
 			organizationId,
-			title,
-			description,
+			titleDe,
+			titleEn,
+			descriptionDe,
+			descriptionEn,
 			isRemote,
 			address,
 			occurrence,
@@ -272,15 +300,15 @@ public sealed class VolunteerOpportunity
 	}
 
 	private static Result EnsurePublishable(
-		string title,
-		string description,
+		string titleDe,
+		string descriptionDe,
 		bool isRemote,
 		Address? address)
 	{
-		if (string.IsNullOrWhiteSpace(title))
+		if (string.IsNullOrWhiteSpace(titleDe))
 			return Result.Failure(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
 
-		if (string.IsNullOrWhiteSpace(description))
+		if (string.IsNullOrWhiteSpace(descriptionDe))
 			return Result.Failure(Error.Validation("VolunteerOpportunity.DescriptionRequired", "Description must not be empty."));
 
 		if (!isRemote && address is null)
@@ -301,7 +329,7 @@ public sealed class VolunteerOpportunity
 		if (Status == OpportunityStatus.Cancelled)
 			return Result.Failure(Error.Conflict("VolunteerOpportunity.CannotPublishCancelled", "A cancelled opportunity cannot be published again."));
 
-		var publishable = EnsurePublishable(Title, Description, IsRemote, Address);
+		var publishable = EnsurePublishable(TitleDe, DescriptionDe, IsRemote, Address);
 		if (publishable.IsFailure)
 			return publishable;
 
@@ -385,37 +413,47 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
-	public Result Rename(string title)
+	public Result Rename(string titleDe, string? titleEn)
 	{
-		var validTitleLength = EnsureValidTitleLength(title);
-		if (validTitleLength.IsFailure)
-			return validTitleLength;
+		var validTitleDeLength = EnsureValidTitleLength(titleDe);
+		if (validTitleDeLength.IsFailure)
+			return validTitleDeLength;
+
+		var validTitleEnLength = EnsureValidTitleLength(titleEn);
+		if (validTitleEnLength.IsFailure)
+			return validTitleEnLength;
 
 		if (Status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(title, Description, IsRemote, Address);
+			var publishable = EnsurePublishable(titleDe, DescriptionDe, IsRemote, Address);
 			if (publishable.IsFailure)
 				return publishable;
 		}
 
-		Title = title;
+		TitleDe = titleDe;
+		TitleEn = titleEn;
 		return Result.Success();
 	}
 
-	public Result ChangeDescription(string description)
+	public Result ChangeDescription(string descriptionDe, string? descriptionEn)
 	{
-		var validDescriptionLength = EnsureValidDescriptionLength(description);
-		if (validDescriptionLength.IsFailure)
-			return validDescriptionLength;
+		var validDescriptionDeLength = EnsureValidDescriptionLength(descriptionDe);
+		if (validDescriptionDeLength.IsFailure)
+			return validDescriptionDeLength;
+
+		var validDescriptionEnLength = EnsureValidDescriptionLength(descriptionEn);
+		if (validDescriptionEnLength.IsFailure)
+			return validDescriptionEnLength;
 
 		if (Status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(Title, description, IsRemote, Address);
+			var publishable = EnsurePublishable(TitleDe, descriptionDe, IsRemote, Address);
 			if (publishable.IsFailure)
 				return publishable;
 		}
 
-		Description = description;
+		DescriptionDe = descriptionDe;
+		DescriptionEn = descriptionEn;
 		return Result.Success();
 	}
 
@@ -423,7 +461,7 @@ public sealed class VolunteerOpportunity
 	{
 		if (Status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(Title, Description, isRemote, address);
+			var publishable = EnsurePublishable(TitleDe, DescriptionDe, isRemote, address);
 			if (publishable.IsFailure)
 				return publishable;
 		}
