@@ -125,7 +125,10 @@ export default function OrganizationSwitcher({
 										}`}
 									>
 										<OrgAvatar name={org.name} logoUrl={org.logoUrl} lazy />
-										<span className="truncate">{org.name}</span>
+										{/* No truncate here (unlike the collapsed trigger above) -
+										the panel already has the width to spare, so a long name
+										wraps onto a second line instead of being cut off (#1907). */}
+										<span className="min-w-0 flex-1">{org.name}</span>
 									</button>
 								</li>
 							))}
