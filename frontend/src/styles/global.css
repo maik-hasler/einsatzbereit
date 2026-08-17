@@ -291,6 +291,22 @@ overflow-y-auto already handles vertical scrolling. */
 	border-bottom: 1px solid rgb(243 244 246);
 }
 
+/* Without this, the browser's auto table-layout algorithm sizes the EVENT
+column to its content's max-content width (the full, un-wrapped title),
+growing the whole table past its 30rem floor for every long title instead of
+truncating it - CalEventChip's own `truncate` span never gets a chance to
+show an ellipsis because it's never actually assigned a width narrower than
+its content. `width: 100%; max-width: 0` is the standard trick to make an
+auto-layout column take only the space left over by its neighbors instead of
+however much its content wants (confirmed empirically: DATE/TIME columns keep
+their natural width, EVENT is capped to what remains, and only then does the
+child truncate/ellipsis correctly) - verified this doesn't regress wider
+widgets, where EVENT still gets ample room and titles show in full (#1906). */
+.rbc-agenda-event-cell {
+	width: 100%;
+	max-width: 0;
+}
+
 /* Show more link */
 .rbc-show-more {
 	font-size: 0.75rem;
