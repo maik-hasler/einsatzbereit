@@ -52,6 +52,20 @@ export function isApiNotFoundError(err: unknown): boolean {
 }
 
 /**
+ * Detects a rejected API call that never got an HTTP response at all - the
+ * fetch itself failed (dropped connection, DNS failure, CORS) as opposed to
+ * an error response the server actually sent, which always carries a numeric
+ * status (see getApiErrorStatus). This is a stronger, cold-reload-safe
+ * offline signal than `navigator.onLine`, which can misreport `true` right
+ * after a hard reload or cold PWA launch while genuinely offline - a
+ * well-documented cross-browser limitation (#1901) - since it reflects what
+ * the request that just ran actually did, rather than a cached browser flag.
+ */
+export function isNetworkError(err: unknown): boolean {
+	return getApiErrorStatus(err) === null;
+}
+
+/**
  * Detects a specific Result-pattern `errorCode` on a rejected API call (see
  * `getApiErrorMessage` for the shape). Used to treat one particular failure
  * as a benign no-op rather than surfacing it - e.g. a retried publish call

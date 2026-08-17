@@ -169,9 +169,11 @@ export default function VolunteerOpportunitiesList() {
 		loading,
 		loadingMore,
 		error,
+		errorIsOffline,
 		hasMore,
 		loadMore,
 		loadMoreError,
+		loadMoreErrorIsOffline,
 		retryLoadMore,
 	} = useVolunteerOpportunitiesData({
 		occurrence,
@@ -676,6 +678,7 @@ export default function VolunteerOpportunitiesList() {
 			<OpportunityResultsList
 				loading={loading}
 				error={error}
+				errorIsOffline={errorIsOffline}
 				items={items}
 				hasFilters={hasFilters}
 				onClearFilters={clearFilters}
@@ -683,6 +686,7 @@ export default function VolunteerOpportunitiesList() {
 				loadingMore={loadingMore}
 				onLoadMore={loadMore}
 				loadMoreError={loadMoreError}
+				loadMoreErrorIsOffline={loadMoreErrorIsOffline}
 				onRetryLoadMore={retryLoadMore}
 			/>
 		</div>

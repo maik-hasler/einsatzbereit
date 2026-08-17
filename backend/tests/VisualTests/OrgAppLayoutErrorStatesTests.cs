@@ -139,6 +139,40 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 			.Not.ToBeVisibleAsync();
 	}
 
+	/// <summary>
+	/// Regression for #1901, org-shell half: the branch above proves the
+	/// offline state still works when <c>navigator.onLine</c> correctly reads
+	/// false. This proves the fix for the actual bug report - the flag can
+	/// misreport true across a hard reload/cold PWA launch while genuinely
+	/// offline (well-documented cross-browser quirk, since true only ever
+	/// means "the browser has a network interface up"), and the org request
+	/// failing with no HTTP response at all is now trusted over that stale
+	/// flag.
+	/// </summary>
+	[Test]
+	public async Task OrgShellWhileOffline_NavigatorOnLineMisreportsTrue_StillShowsOfflineState()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var organizationId = await CreateOrganizationAsync("OrgOfflineStaleFlag");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		await Page.AddInitScriptAsync(
+			"Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true });");
+		await Page.RouteAsync($"**/v1/organizations/{organizationId}", route =>
+			route.AbortAsync("internetdisconnected"));
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByText("An unexpected error occurred", new() { Exact = false }))
+			.Not.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
+			.Not.ToBeVisibleAsync();
+	}
+
 	[Test]
 	public async Task ServerError_ShowsRecoverableStateWithRetry_AndRetrySucceeds()
 	{

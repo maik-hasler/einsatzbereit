@@ -8,7 +8,11 @@ import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
-import { getApiErrorMessage, getApiErrorStatus } from "../lib/apiError";
+import {
+	getApiErrorMessage,
+	getApiErrorStatus,
+	isNetworkError,
+} from "../lib/apiError";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -175,6 +179,11 @@ export default function OrgAppLayout() {
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
 	const [status, setStatus] = useState<LoadStatus>("loading");
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	// #1901: whether the failure behind status "error" never got an HTTP
+	// response at all - a stronger, cold-reload-safe offline signal than
+	// `online` alone, which can misreport `true` right after a hard reload
+	// while genuinely offline (see useOnlineStatus.ts).
+	const [errorIsNetworkFailure, setErrorIsNetworkFailure] = useState(false);
 	// Guards against a fast org switch (or a manual retry) racing its own
 	// previous request: only the response for the most recently issued
 	// request is allowed to update state, same pattern as
@@ -219,6 +228,7 @@ export default function OrgAppLayout() {
 					// decided at render time from the live connection status: while
 					// the browser reports itself offline, retrying cannot work.
 					setErrorMessage(getApiErrorMessage(err, t("error.serverError")));
+					setErrorIsNetworkFailure(isNetworkError(err));
 					setStatus("error");
 				}
 			});
@@ -295,8 +305,12 @@ export default function OrgAppLayout() {
 		// Offline is a distinct, self-clearing situation, not a server fault -
 		// and while it lasts, the retry button the error state offers is a lie
 		// (#1774). The effect above reloads as soon as the connection is back.
+		// #1901: `online` alone misses a hard reload/cold PWA launch while
+		// genuinely offline (navigator.onLine can misreport `true` there) - a
+		// failure that never got an HTTP response at all is trusted just as
+		// much, since that could only happen with no working connection.
 		return stateScreen(
-			online ? (
+			online && !errorIsNetworkFailure ? (
 				<RouteState
 					variant="error"
 					title={t("error.boundaryTitle")}

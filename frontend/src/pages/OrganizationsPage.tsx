@@ -5,7 +5,6 @@ import { useAuth } from "react-oidc-context";
 import type { PublicOrganizationSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
-import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { avatarColorClasses } from "../lib/avatarColor";
@@ -33,7 +32,6 @@ export default function OrganizationsPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const auth = useAuth();
-	const online = useOnlineStatus();
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const search = searchParams.get("search") ?? "";
@@ -55,9 +53,11 @@ export default function OrganizationsPage() {
 		loading,
 		loadingMore,
 		error,
+		errorIsOffline,
 		hasMore,
 		loadMore,
 		loadMoreError,
+		loadMoreErrorIsOffline,
 		retryLoadMore,
 	} = useLoadMore<PublicOrganizationSummary>(
 		(pageNumber) =>
@@ -105,11 +105,11 @@ export default function OrganizationsPage() {
 				: t("organizationsPage.resultCount", { count: items.length })
 			: "";
 
-	// Same online-vs-offline split as OpportunityResultsList (#1774): while
-	// offline, this one live region carries the offline announcement instead
-	// of a result count.
+	// Same online-vs-offline split as OpportunityResultsList (#1774/#1901):
+	// while offline, this one live region carries the offline announcement
+	// instead of a result count.
 	const liveMessage =
-		error && !online ? t("organizationsPage.offline") : countMessage;
+		error && errorIsOffline ? t("organizationsPage.offline") : countMessage;
 
 	return (
 		<>
@@ -179,20 +179,20 @@ export default function OrganizationsPage() {
 			)}
 
 			{error &&
-				(online ? (
-					<LoadMoreError
-						message={t("organizationsPage.error", { message: error })}
-						retrying={loading}
-						onRetry={retryLoadMore}
-						data-testid="organizations-error"
-					/>
-				) : (
+				(errorIsOffline ? (
 					<RouteState
 						inline
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("organizationsPage.offline")}
 						data-testid="organizations-offline"
+					/>
+				) : (
+					<LoadMoreError
+						message={t("organizationsPage.error", { message: error })}
+						retrying={loading}
+						onRetry={retryLoadMore}
+						data-testid="organizations-error"
 					/>
 				))}
 
@@ -289,21 +289,21 @@ export default function OrganizationsPage() {
 					{items.length > 0 &&
 						hasMore &&
 						(loadMoreError ? (
-							online ? (
-								<LoadMoreError
-									message={t("organizationsPage.error", {
-										message: loadMoreError,
-									})}
-									retrying={loadingMore}
-									onRetry={retryLoadMore}
-								/>
-							) : (
+							loadMoreErrorIsOffline ? (
 								<RouteState
 									inline
 									variant="offline"
 									title={t("routeState.offline.title")}
 									message={t("organizationsPage.offlineLoadMore")}
 									data-testid="organizations-offline-load-more"
+								/>
+							) : (
+								<LoadMoreError
+									message={t("organizationsPage.error", {
+										message: loadMoreError,
+									})}
+									retrying={loadingMore}
+									onRetry={retryLoadMore}
 								/>
 							)
 						) : (
