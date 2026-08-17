@@ -1832,7 +1832,20 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	// One case per administration section: they are separate routes behind a
 	// shared left rail now, not four stacked sections on one page, so a single
 	// scan of /administration would only ever cover the first of them.
+	//
+	// [Retry(2)]: this is the one AuthHelper.LoginAsync call site that reliably
+	// lands in the very first concurrently-started batch of tests (see the
+	// "organizations" case, which repeatedly logged as one of the first two
+	// "[slow] still running" entries across many unrelated PRs' CI runs). The
+	// real Keycloak round trip it drives occasionally exceeds even a generous
+	// fixed timeout while the Aspire stack is still warming up - raising
+	// AuthHelper's timeout from 30s to 90s across several rounds never
+	// eliminated it, it just kept landing a few seconds past whatever ceiling
+	// was set (63s at a 60s cap, ~93.5s at a 90s cap). A per-test retry costs
+	// nothing on the common case (a fast top-of-suite login) and absorbs the
+	// rare slow one without inflating every other LoginAsync caller's timeout.
 	[Test]
+	[Retry(2)]
 	[Arguments("organizations")]
 	[Arguments("users")]
 	[Arguments("reports")]

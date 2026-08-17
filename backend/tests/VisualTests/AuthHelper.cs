@@ -41,21 +41,21 @@ public static class AuthHelper
 		// HasNoSeriousA11yViolations across otherwise-unrelated PRs). Waiting
 		// on the "User menu" button - the same authenticated-render signal
 		// FastSignInAsync already waits on - is independent of which frame
-		// navigation Playwright happens to observe. 90s, not 30s: this is the
-		// only caller that drives the real Keycloak round trip (redirect,
-		// form submit, code exchange) rather than seeding a token, and the
-		// AdministrationPage_HasNoSeriousA11yViolations(organizations) case
-		// that exercises it consistently lands in the very first batch of
-		// concurrently-started tests, while the Aspire stack (Postgres,
-		// Keycloak, backend API) is still warming up on top of the CPU
-		// contention AssemblyParallelLimit.cs already documents among
-		// concurrent Playwright sessions. 30s, 45s and 60s were each observed
-		// too tight for that cold-start window even after fixing the wait
-		// target above - the 60s failure clocked in at ~63s, right at the
-		// boundary rather than wildly over, so 90s gives real margin instead
-		// of chasing the timeout up in small increments again.
+		// navigation Playwright happens to observe. 45s, not 30s, to match
+		// GoToOrgAppDashboardViaCtaAsync below: this is the only caller that
+		// drives the real Keycloak round trip (redirect, form submit, code
+		// exchange) rather than seeding a token, so it is the most exposed to
+		// AssemblyParallelLimit.cs's documented CPU contention among
+		// concurrent Playwright sessions. Pushing this fixed timeout past 90s
+		// chasing AdministrationPage_HasNoSeriousA11yViolations(organizations) -
+		// the one caller that consistently lands in the earliest concurrent
+		// batch, while the Aspire stack is still warming up - never actually
+		// caught up: 30s, 45s, 60s and 90s were each observed too tight in
+		// turn, always failing a few seconds past whatever ceiling was set.
+		// That test now carries its own [Retry(2)] instead, so this timeout
+		// only needs to cover the common case, not the occasional outlier.
 		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
-			.WaitForAsync(new() { Timeout = 90_000 });
+			.WaitForAsync(new() { Timeout = 45_000 });
 	}
 
 	/// <summary>
