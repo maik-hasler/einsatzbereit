@@ -13,9 +13,11 @@ namespace Infrastructure.BackgroundJobs;
 
 // One-shot compensator for pre-existing organizations that predate the
 // organization_membership table (migration AddOrganizationMembership). Without it,
-// every organizer of an org created before that migration has zero membership rows
-// and gets 403'd out of their own org, since OwnershipGuard.EnsureIsOrganizerAsync
-// has no Keycloak fallback at request time.
+// every member of an org created before that migration has zero membership rows:
+// organizers get 403'd out of their own org, since OwnershipGuard.EnsureIsOrganizerAsync
+// (and EnsureIsMemberAsync for plain members) has no Keycloak fallback at request time,
+// and the admin org list's member count - which reads this table directly - undercounts
+// against the org's own Keycloak-sourced members page (#1895).
 // Organizations created after that migration always get their founding organizer's
 // membership row written synchronously by CreateOrganizationCommandHandler, so once
 // this has run once against every organization that existed before the table did,
@@ -106,13 +108,19 @@ internal sealed class OrganizationMembershipBackfillJob(
 					var members = await keycloakOrganizationService.GetMembersAsync(
 						organizationId.Value, cancellationToken);
 
-					foreach (var member in members
-						.Where(m => realmOrganizerIds.Contains(m.UserId))
-						.DistinctBy(m => m.UserId))
+					// Every Keycloak member gets a row here, not just organizers - a plain
+					// member left out would have no way to ever get one afterwards (nothing else
+					// backfills), which under-counted this organization's membership everywhere
+					// that reads organization_membership instead of calling Keycloak directly (#1895).
+					foreach (var member in members.DistinctBy(m => m.UserId))
 					{
+						var role = realmOrganizerIds.Contains(member.UserId)
+							? OrganizationMemberRole.Organizer
+							: OrganizationMemberRole.Member;
+
 						dbContext.Set<OrganizationMembership>().Add(
 							OrganizationMembership.Create(
-								organizationId, UserId.Create(member.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
+								organizationId, UserId.Create(member.UserId).GetValueOrThrow(), role));
 					}
 				}
 			}

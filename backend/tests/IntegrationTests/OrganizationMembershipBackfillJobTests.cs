@@ -33,13 +33,14 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 	public Task ResetAsync() => fixture.ResetAsync();
 
 	[Test]
-	public async Task BackfillAsync_PreExistingOrganizationWithoutMembershipRows_InsertsRowPerDistinctOrganizer(
+	public async Task BackfillAsync_PreExistingOrganizationWithoutMembershipRows_InsertsRowPerDistinctMember(
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var organizationId = await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
 
 		var organizerId = Guid.NewGuid();
+		var memberId = Guid.NewGuid();
 		var keycloak = new FakeKeycloakOrganizationService
 		{
 			MembersToReturn =
@@ -48,8 +49,10 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 				// Same organizer reported twice (e.g. multiple Keycloak group mappings) - must
 				// not produce two rows and violate the unique (organization_id, user_id) index.
 				new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "O.", "olaf@example.com", IsOrganisator: true),
-				// Plain member, not an organizer - must not get a membership row at all.
-				new KeycloakOrganizationMember(Guid.NewGuid(), "vera", "Vera", "V.", "vera@example.com", IsOrganisator: false),
+				// Plain member, not an organizer - must still get a membership row (#1895: a
+				// skipped plain member undercounts this organization everywhere that reads
+				// organization_membership instead of Keycloak directly).
+				new KeycloakOrganizationMember(memberId, "vera", "Vera", "V.", "vera@example.com", IsOrganisator: false),
 			],
 		};
 
@@ -60,9 +63,15 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 			.Where(m => m.OrganizationId == organizationId)
 			.ToListAsync(cancellationToken);
 
-		memberships.Should().ContainSingle();
-		memberships[0].UserId.Should().Be(UserId.Create(organizerId).GetValueOrThrow());
-		memberships[0].Role.Should().Be(OrganizationMemberRole.Organizer);
+		memberships.Should().HaveCount(2);
+
+		var organizerMembership = memberships.Should().ContainSingle(m => m.UserId == UserId.Create(organizerId).GetValueOrThrow())
+			.Subject;
+		organizerMembership.Role.Should().Be(OrganizationMemberRole.Organizer);
+
+		var memberMembership = memberships.Should().ContainSingle(m => m.UserId == UserId.Create(memberId).GetValueOrThrow())
+			.Subject;
+		memberMembership.Role.Should().Be(OrganizationMemberRole.Member);
 
 		var marker = await dbContext.Set<OrganizationMembershipBackfillState>().SingleOrDefaultAsync(cancellationToken);
 		marker.Should().NotBeNull("a completed run must leave the one-shot marker behind");
