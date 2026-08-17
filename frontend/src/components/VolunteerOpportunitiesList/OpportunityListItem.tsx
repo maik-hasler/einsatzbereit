@@ -35,7 +35,7 @@ import { CategoryGlyph } from "./CategoryGlyph";
  * and made the chip's presence look like a property of the opportunity rather
  * than of the data (#1777).
  */
-function capacityChip(
+export function capacityChip(
 	capacity: OpportunityCapacity,
 	t: TFunction,
 ): { tone: ChipTone; label: string } {

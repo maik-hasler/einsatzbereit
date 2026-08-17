@@ -273,6 +273,44 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	/// <summary>
+	/// #1912: the organization profile page's "current needs" list renders
+	/// through PublicOpportunityCard, the same card the opportunity detail
+	/// page's "more from this organization" rail uses - and both used to omit
+	/// the category chip and capacity badge entirely, showing only a generic
+	/// sign-up-mode pill. The org-profile surface never made #1777's list
+	/// because that fix only touched the cards backed by
+	/// VolunteerOpportunitySummary; this DTO gained the same capacity fields
+	/// so PublicOpportunityCard could resolve them through the identical
+	/// `getOpportunityCapacity`/`capacityChip` pair OpportunityListItem uses.
+	/// </summary>
+	[Test]
+	public async Task OrganizationProfile_RelatedOpportunityCard_StatesItsCategoryAndCapacity()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardOrgProfile{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		await PublishSlotBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("li", new() { HasText = keyword }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// No category was set when the opportunity was created, so this is the
+		// fallback label - present at all is the point, where before neither the
+		// chip nor its container rendered.
+		await Expect(card.GetByText("Other").First).ToBeVisibleAsync();
+		await Expect(card.GetByTestId("opportunity-capacity"))
+			.ToHaveTextAsync($"{SlotCapacity} spots left");
+	}
+
+	/// <summary>
 	/// AC: hovering or tabbing to a card title has to show it is a link. The
 	/// grid's title is not focusable itself - the stretched link covering the
 	/// card is - so hover is asserted on the title and the keyboard half is

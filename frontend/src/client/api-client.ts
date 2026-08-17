@@ -6873,6 +6873,9 @@ export interface PublicOpportunitySummaryDto {
     occurrence: string;
     participationType: string;
     createdOn: Date;
+    category: string | undefined;
+    totalMaxParticipants: number | undefined;
+    currentParticipantCount: number;
 
     [key: string]: any;
 }
