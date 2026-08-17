@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import type { View } from "react-big-calendar";
+import type { DateHeaderProps, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enGB, de } from "date-fns/locale";
 // react-big-calendar's own stylesheet is imported eagerly from main.tsx
@@ -122,6 +122,44 @@ function CalEventChip({
 			{capacityLabel && (
 				<span className="shrink-0 text-xs">{capacityLabel}</span>
 			)}
+		</button>
+	);
+}
+
+// react-big-calendar's default DateHeader (lib/DateHeader.js) renders each
+// month-view day cell as a bare `<button>{label}</button>` with only the
+// numeric day ("27") and no aria-label - identical text repeats up to five
+// times a month, leaving a screen-reader user with no way to tell which "27"
+// they're on (einsatzbereit#1925). Mirrors MiniCalendar.tsx's own aria-label
+// recipe (full weekday/day/month/year, plus "in the past" for a past date)
+// rather than inventing a second phrasing for the same concept - reusing its
+// "opportunities.dayInPast" string rather than adding a duplicate key.
+function CalDateHeader({ label, date, onDrillDown }: DateHeaderProps) {
+	const { t, i18n } = useTranslation();
+	const locale = resolveDateLocale(i18n.language);
+	const todayMidnight = new Date();
+	todayMidnight.setHours(0, 0, 0, 0);
+	const isPast = date.getTime() < todayMidnight.getTime();
+	const isToday = date.getTime() === todayMidnight.getTime();
+	const fullDate = new Intl.DateTimeFormat(locale, {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	}).format(date);
+	const ariaLabel = isPast
+		? `${fullDate}, ${t("opportunities.dayInPast")}`
+		: fullDate;
+
+	return (
+		<button
+			type="button"
+			className="rbc-button-link"
+			aria-label={ariaLabel}
+			aria-current={isToday ? "date" : undefined}
+			onClick={onDrillDown}
+		>
+			{label}
 		</button>
 	);
 }
@@ -372,6 +410,7 @@ function CalendarWidget({
 			event: (props: { event: object }) => (
 				<CalEventChip {...props} onActivate={handleSelectEvent} />
 			),
+			month: { dateHeader: CalDateHeader },
 		}),
 		[handleSelectEvent],
 	);
