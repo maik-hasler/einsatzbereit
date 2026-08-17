@@ -24,6 +24,7 @@ import { visibleCalendarRange } from "../../../lib/calendarRange";
 import {
 	formatDate,
 	formatDateTime,
+	formatFullDate,
 	pickLocalizedText,
 	resolveDateLocale,
 } from "../../../lib/format";
@@ -130,27 +131,32 @@ function CalEventChip({
 // month-view day cell as a bare `<button>{label}</button>` with only the
 // numeric day ("27") and no aria-label - identical text repeats up to five
 // times a month, leaving a screen-reader user with no way to tell which "27"
-// they're on (einsatzbereit#1925). Mirrors MiniCalendar.tsx's own aria-label
-// recipe (full weekday/day/month/year, plus "in the past" for a past date)
-// rather than inventing a second phrasing for the same concept - reusing its
-// "opportunities.dayInPast" string rather than adding a duplicate key.
-function CalDateHeader({ label, date, onDrillDown }: DateHeaderProps) {
+// they're on (einsatzbereit#1924/#1925 - filed twice for the same gap).
+// Mirrors MiniCalendar.tsx's own aria-label recipe (full weekday/day/month/
+// year via the shared formatFullDate helper, plus "in the past" for a past
+// date) rather than inventing a second phrasing for the same concept, and
+// mirrors the library default's span-vs-button split (span when RBC reports
+// no drilldown view to navigate to, otherwise the same rbc-button-link
+// button) so a day cell never exposes a control with no real action.
+function CalDateHeader({
+	label,
+	date,
+	drilldownView,
+	onDrillDown,
+}: DateHeaderProps) {
 	const { t, i18n } = useTranslation();
-	const locale = resolveDateLocale(i18n.language);
 	const todayMidnight = new Date();
 	todayMidnight.setHours(0, 0, 0, 0);
 	const isPast = date.getTime() < todayMidnight.getTime();
 	const isToday = date.getTime() === todayMidnight.getTime();
-	const fullDate = new Intl.DateTimeFormat(locale, {
-		weekday: "long",
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	}).format(date);
+	const fullDate = formatFullDate(date, i18n.language);
 	const ariaLabel = isPast
 		? `${fullDate}, ${t("opportunities.dayInPast")}`
 		: fullDate;
 
+	if (!drilldownView) {
+		return <span aria-label={ariaLabel}>{label}</span>;
+	}
 	return (
 		<button
 			type="button"

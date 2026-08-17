@@ -165,6 +165,32 @@ export function formatDateLong(dt: string, lng: string): string {
 	return getLongDateFormatter(lng).format(new Date(dt));
 }
 
+const fullDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getFullDateFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
+	let formatter = fullDateFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			weekday: "long",
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+		});
+		fullDateFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
+/** Full spelled-out date with weekday (e.g. "Samstag, 1. August 2026") - for
+ * screen-reader accessible names on calendar day cells (MiniCalendar's date
+ * grid, CalendarWidget's month view) whose visible label is just a bare
+ * number and needs a complete accessible name instead. `lng` is
+ * i18n.language ("de"/"en"), not an Intl locale (see formatDateTime). */
+export function formatFullDate(date: Date, lng: string): string {
+	return getFullDateFormatter(lng).format(date);
+}
+
 export function formatPostedAgo(dt: string, t: TFunction): string {
 	const days = differenceInCalendarDays(new Date(), new Date(dt));
 	return days <= 0
