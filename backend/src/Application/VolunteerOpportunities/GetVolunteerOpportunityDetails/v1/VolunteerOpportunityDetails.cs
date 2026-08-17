@@ -41,4 +41,5 @@ public sealed record TimeSlotDetail(
 public sealed record CurrentUserEngagementInfo(
 	Guid Id,
 	string Status,
-	Guid? TimeSlotId);
+	Guid? TimeSlotId,
+	bool IsCheckedIn);

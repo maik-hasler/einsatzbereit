@@ -6516,6 +6516,7 @@ export interface CurrentUserEngagementInfo {
     id: string;
     status: string;
     timeSlotId: string | undefined;
+    isCheckedIn: boolean;
 
     [key: string]: any;
 }

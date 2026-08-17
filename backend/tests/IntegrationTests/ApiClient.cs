@@ -12649,6 +12649,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("timeSlotId")]
         public System.Guid? TimeSlotId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("isCheckedIn")]
+        public bool IsCheckedIn { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
