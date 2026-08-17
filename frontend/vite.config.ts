@@ -1,9 +1,250 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression } from "vite-plugin-compression2";
+
+// Shared across every locale manifest below - the installed icon is the same
+// image regardless of the visitor's language.
+const manifestIcons = [
+	{
+		src: "/icons/icon-192.png",
+		sizes: "192x192",
+		type: "image/png",
+	},
+	{
+		src: "/icons/icon-512.png",
+		sizes: "512x512",
+		type: "image/png",
+	},
+	{
+		src: "/icons/icon-512.png",
+		sizes: "512x512",
+		type: "image/png",
+		purpose: "maskable",
+	},
+];
+
+// Two fully self-contained manifest objects rather than one base object with
+// locale overrides spread in - scripts/check-pwa-manifest.js validates each
+// locale by slicing its literal object text out of this file, which only
+// works if every field (screenshots/shortcuts included) is written out
+// in-place instead of inherited through a spread.
+const deManifest = {
+	// The installed app's identity, pinned independently of start_url
+	// (#1799). Without an explicit id, the browser derives one from
+	// start_url, so moving the entry point later would look like a
+	// brand new app to an already-installed client - it would install
+	// a second copy alongside the first rather than update it.
+	id: "/",
+	name: "Einsatzbereit",
+	short_name: "Einsatzbereit",
+	description:
+		"Einsatzbereit verbindet engagierte Freiwillige mit regionalen Hilfsangeboten. Finde lokale Einsätze, hilf spontan und mach einen Unterschied in deiner Gemeinde.",
+	lang: "de",
+	start_url: "/",
+	display: "standalone",
+	background_color: "#ffffff",
+	theme_color: "#2d8a5e",
+	icons: manifestIcons,
+	// Captured from the real app so the Android install prompt shows
+	// an actual listing (Chrome's "richer install UI") instead of the
+	// bare name + icon it falls back to without screenshots. Chrome
+	// only qualifies for that UI when at least one narrow (mobile)
+	// screenshot is present, and only shows the wide ones on desktop,
+	// hence both form factors. Its other constraints, all enforced by
+	// scripts/check-pwa-manifest.js: every dimension between 320 and
+	// 3840 px, the longer side at most 2.3x the shorter, and one
+	// shared aspect ratio per form factor (16:9 wide, 9:16 narrow).
+	//
+	// These live in public/screenshots/ rather than public/icons/ so
+	// workbox.globPatterns above ("icons/*.png") does not sweep half a
+	// megabyte of install-prompt artwork into the service worker's
+	// precache - the browser fetches them at install time, and a
+	// visitor who never installs never needs them at all.
+	screenshots: [
+		{
+			src: "/screenshots/wide-home.png",
+			sizes: "1920x1080",
+			type: "image/png",
+			form_factor: "wide",
+			label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
+		},
+		{
+			src: "/screenshots/wide-opportunities.png",
+			sizes: "1920x1080",
+			type: "image/png",
+			form_factor: "wide",
+			label: "Übersicht der gefundenen Einsätze mit Filtern",
+		},
+		{
+			src: "/screenshots/narrow-home.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
+		},
+		{
+			src: "/screenshots/narrow-opportunities.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "Liste der gefundenen Einsätze",
+		},
+		{
+			src: "/screenshots/narrow-detail.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "Detailansicht eines Einsatzes mit Ort und Zeitraum",
+		},
+	],
+	// Long-press / jump-list entries on the installed app. Both point
+	// at static paths, which is all a build-time manifest can express:
+	// the organizer dashboard was considered too (#1799) and left out
+	// for exactly that reason - its URL is organization-scoped
+	// (/app/:organizationId/dashboard, resolved at runtime from the
+	// user's memberships and the active-org cookie, see
+	// lib/activeOrg.ts), so there is no single URL to bake in here.
+	// /my-signups is the member-facing shortcut instead; signed-out
+	// users hitting it land in Keycloak via ProtectedRoute and come
+	// back to it, which is the right behaviour for a shortcut only a
+	// signed-in member would tap.
+	shortcuts: [
+		{
+			name: "Einsätze finden",
+			short_name: "Einsätze",
+			description: "Freiwilligeneinsätze in deiner Nähe durchsuchen",
+			url: "/opportunities",
+			icons: [
+				{
+					src: "/icons/shortcut-search.png",
+					sizes: "96x96",
+					type: "image/png",
+				},
+			],
+		},
+		{
+			name: "Meine Anmeldungen",
+			short_name: "Anmeldungen",
+			description: "Deine Anmeldungen zu Einsätzen ansehen",
+			url: "/my-signups",
+			icons: [
+				{
+					src: "/icons/shortcut-signups.png",
+					sizes: "96x96",
+					type: "image/png",
+				},
+			],
+		},
+	],
+};
+
+// English counterpart of deManifest (#1923) - frontend/src/i18n.ts swaps the
+// <link rel="manifest"> href between the two manifestFilenames below as the
+// visitor's active i18next language changes, so an English-speaking visitor
+// installs an app whose OS-level name/description/shortcuts are in English
+// too instead of always getting the German one.
+const enManifest = {
+	id: "/",
+	name: "Einsatzbereit",
+	short_name: "Einsatzbereit",
+	description:
+		"Einsatzbereit connects committed volunteers with regional volunteer opportunities. Find local opportunities, help spontaneously, and make a difference in your community.",
+	lang: "en",
+	start_url: "/",
+	display: "standalone",
+	background_color: "#ffffff",
+	theme_color: "#2d8a5e",
+	icons: manifestIcons,
+	screenshots: [
+		{
+			src: "/screenshots/wide-home.png",
+			sizes: "1920x1080",
+			type: "image/png",
+			form_factor: "wide",
+			label: "Home page with search for opportunities near you",
+		},
+		{
+			src: "/screenshots/wide-opportunities.png",
+			sizes: "1920x1080",
+			type: "image/png",
+			form_factor: "wide",
+			label: "Overview of matching opportunities with filters",
+		},
+		{
+			src: "/screenshots/narrow-home.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "Home page with search for opportunities near you",
+		},
+		{
+			src: "/screenshots/narrow-opportunities.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "List of matching opportunities",
+		},
+		{
+			src: "/screenshots/narrow-detail.png",
+			sizes: "1080x1920",
+			type: "image/png",
+			form_factor: "narrow",
+			label: "Detail view of an opportunity with location and time period",
+		},
+	],
+	shortcuts: [
+		{
+			name: "Find opportunities",
+			short_name: "Opportunities",
+			description: "Search volunteer opportunities near you",
+			url: "/opportunities",
+			icons: [
+				{
+					src: "/icons/shortcut-search.png",
+					sizes: "96x96",
+					type: "image/png",
+				},
+			],
+		},
+		{
+			name: "My sign-ups",
+			short_name: "Sign-ups",
+			description: "View your volunteer opportunity sign-ups",
+			url: "/my-signups",
+			icons: [
+				{
+					src: "/icons/shortcut-signups.png",
+					sizes: "96x96",
+					type: "image/png",
+				},
+			],
+		},
+	],
+};
+
+// Emits an extra static *.webmanifest asset alongside the one VitePWA itself
+// generates from `manifest:`/`manifestFilename` below (#1923) - VitePWA only
+// manages a single manifest per plugin instance, so the second locale is
+// written directly into the bundle here instead. Runs in `generateBundle`
+// (before Rollup writes dist/ to disk), same phase VitePWA emits its own
+// manifest asset in, so by the time VitePWA's `closeBundle` hook globs
+// workbox.globPatterns against the files on disk (see below), this file is
+// already there too.
+function emitLocaleManifest(
+	fileName: string,
+	manifest: Record<string, unknown>,
+): Plugin {
+	const source = JSON.stringify(manifest, null, 2);
+	return {
+		name: `emit-${fileName}`,
+		generateBundle() {
+			this.emitFile({ type: "asset", fileName, source });
+		},
+	};
+}
 
 export default defineConfig({
 	plugins: [
@@ -39,7 +280,7 @@ export default defineConfig({
 				globPatterns: [
 					"index.html",
 					"favicon.svg",
-					"manifest.webmanifest",
+					"manifest.*.webmanifest",
 					"icons/*.png",
 					"assets/{index,vendor}-*.js",
 					"assets/*.css",
@@ -73,144 +314,17 @@ export default defineConfig({
 				navigateFallback: "/index.html",
 				navigateFallbackDenylist: [/^\/v1\//],
 			},
-			manifest: {
-				// The installed app's identity, pinned independently of start_url
-				// (#1799). Without an explicit id, the browser derives one from
-				// start_url, so moving the entry point later would look like a
-				// brand new app to an already-installed client - it would install
-				// a second copy alongside the first rather than update it.
-				id: "/",
-				name: "Einsatzbereit",
-				short_name: "Einsatzbereit",
-				description:
-					"Einsatzbereit verbindet engagierte Freiwillige mit regionalen Hilfsangeboten. Finde lokale Einsätze, hilf spontan und mach einen Unterschied in deiner Gemeinde.",
-				// Deliberately German-only, not localised per visitor (#1799).
-				// German is the default served locale for everything end-user-
-				// facing (index.html's <html lang="de">, the meta description and
-				// og: tags right next to it) - see CONTRIBUTING.md's Language
-				// Convention. A localised manifest would have to be served
-				// per-locale (a content-negotiated route, or a runtime
-				// <link rel="manifest"> swap), which this static nginx deployment
-				// has no mechanism for and which is not worth building for a
-				// German-first audience. English-locale visitors therefore install
-				// an app whose name and description are German, the same language
-				// the site itself serves them.
-				lang: "de",
-				start_url: "/",
-				display: "standalone",
-				background_color: "#ffffff",
-				theme_color: "#2d8a5e",
-				icons: [
-					{
-						src: "/icons/icon-192.png",
-						sizes: "192x192",
-						type: "image/png",
-					},
-					{
-						src: "/icons/icon-512.png",
-						sizes: "512x512",
-						type: "image/png",
-					},
-					{
-						src: "/icons/icon-512.png",
-						sizes: "512x512",
-						type: "image/png",
-						purpose: "maskable",
-					},
-				],
-				// Captured from the real app so the Android install prompt shows
-				// an actual listing (Chrome's "richer install UI") instead of the
-				// bare name + icon it falls back to without screenshots. Chrome
-				// only qualifies for that UI when at least one narrow (mobile)
-				// screenshot is present, and only shows the wide ones on desktop,
-				// hence both form factors. Its other constraints, all enforced by
-				// scripts/check-pwa-manifest.js: every dimension between 320 and
-				// 3840 px, the longer side at most 2.3x the shorter, and one
-				// shared aspect ratio per form factor (16:9 wide, 9:16 narrow).
-				//
-				// These live in public/screenshots/ rather than public/icons/ so
-				// workbox.globPatterns above ("icons/*.png") does not sweep half a
-				// megabyte of install-prompt artwork into the service worker's
-				// precache - the browser fetches them at install time, and a
-				// visitor who never installs never needs them at all.
-				screenshots: [
-					{
-						src: "/screenshots/wide-home.png",
-						sizes: "1920x1080",
-						type: "image/png",
-						form_factor: "wide",
-						label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
-					},
-					{
-						src: "/screenshots/wide-opportunities.png",
-						sizes: "1920x1080",
-						type: "image/png",
-						form_factor: "wide",
-						label: "Übersicht der gefundenen Einsätze mit Filtern",
-					},
-					{
-						src: "/screenshots/narrow-home.png",
-						sizes: "1080x1920",
-						type: "image/png",
-						form_factor: "narrow",
-						label: "Startseite mit Suche nach Einsätzen in deiner Nähe",
-					},
-					{
-						src: "/screenshots/narrow-opportunities.png",
-						sizes: "1080x1920",
-						type: "image/png",
-						form_factor: "narrow",
-						label: "Liste der gefundenen Einsätze",
-					},
-					{
-						src: "/screenshots/narrow-detail.png",
-						sizes: "1080x1920",
-						type: "image/png",
-						form_factor: "narrow",
-						label: "Detailansicht eines Einsatzes mit Ort und Zeitraum",
-					},
-				],
-				// Long-press / jump-list entries on the installed app. Both point
-				// at static paths, which is all a build-time manifest can express:
-				// the organizer dashboard was considered too (#1799) and left out
-				// for exactly that reason - its URL is organization-scoped
-				// (/app/:organizationId/dashboard, resolved at runtime from the
-				// user's memberships and the active-org cookie, see
-				// lib/activeOrg.ts), so there is no single URL to bake in here.
-				// /my-signups is the member-facing shortcut instead; signed-out
-				// users hitting it land in Keycloak via ProtectedRoute and come
-				// back to it, which is the right behaviour for a shortcut only a
-				// signed-in member would tap.
-				shortcuts: [
-					{
-						name: "Einsätze finden",
-						short_name: "Einsätze",
-						description: "Freiwilligeneinsätze in deiner Nähe durchsuchen",
-						url: "/opportunities",
-						icons: [
-							{
-								src: "/icons/shortcut-search.png",
-								sizes: "96x96",
-								type: "image/png",
-							},
-						],
-					},
-					{
-						name: "Meine Anmeldungen",
-						short_name: "Anmeldungen",
-						description: "Deine Anmeldungen zu Einsätzen ansehen",
-						url: "/my-signups",
-						icons: [
-							{
-								src: "/icons/shortcut-signups.png",
-								sizes: "96x96",
-								type: "image/png",
-							},
-						],
-					},
-				],
-			},
+			// Default/fallback manifest (#1923) - served at manifest.de.webmanifest
+			// and injected into index.html's <link rel="manifest"> by VitePWA,
+			// matching the German default everything else end-user-facing serves
+			// (index.html's <html lang="de">, see CONTRIBUTING.md's Language
+			// Convention). frontend/src/i18n.ts swaps that link's href to
+			// manifest.en.webmanifest (emitted by emitLocaleManifest below) once
+			// the visitor's active i18next language resolves to English.
+			manifest: deManifest,
+			manifestFilename: "manifest.de.webmanifest",
 		}),
+		emitLocaleManifest("manifest.en.webmanifest", enManifest),
 	],
 	// react/react-dom and react-router are shared by (almost) every lazy
 	// route chunk - splitting them into their own stably-named vendor

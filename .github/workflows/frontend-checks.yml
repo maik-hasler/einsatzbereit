@@ -222,32 +222,42 @@ jobs:
       # instead of the application/manifest+json the W3C Web App Manifest spec
       # requires - a strict installability check (some Lighthouse
       # configurations, some non-Chromium engines) can refuse to treat a
-      # non-application/manifest+json response as a valid manifest.
-      - name: manifest.webmanifest is served with the correct Content-Type
+      # non-application/manifest+json response as a valid manifest. Checked
+      # for both locale manifests (#1923) since either can be the one
+      # index.html's <link rel="manifest"> currently points at.
+      - name: manifest.<locale>.webmanifest is served with the correct Content-Type
         run: |
-          content_type=$(curl -fsSI http://localhost:8081/manifest.webmanifest | tr -d '\r' | grep -i '^content-type:')
-          echo "$content_type"
-          echo "$content_type" | grep -qi "application/manifest+json" \
-            || { echo "::error::manifest.webmanifest was not served as application/manifest+json"; exit 1; }
+          for locale in de en; do
+            content_type=$(curl -fsSI "http://localhost:8081/manifest.${locale}.webmanifest" | tr -d '\r' | grep -i '^content-type:')
+            echo "$content_type"
+            echo "$content_type" | grep -qi "application/manifest+json" \
+              || { echo "::error::manifest.${locale}.webmanifest was not served as application/manifest+json"; exit 1; }
+          done
 
       # The lint job's check:pwa-manifest validates what vite.config.ts
       # declares against the PNGs in public/; this validates what the built
       # image actually serves. Between the two sits the build - an asset that
       # never made it into dist/, or a manifest field vite-plugin-pwa dropped,
-      # only shows up here (#1799).
+      # only shows up here (#1799). Both locale manifests are checked (#1923)
+      # so an English-speaking visitor gets the same richer install UI as the
+      # German default.
       - name: Web app manifest is served with a complete install listing
         run: |
-          manifest=$(curl -fsS http://localhost:8081/manifest.webmanifest)
-          echo "$manifest"
-          echo "$manifest" | jq -e '.id' > /dev/null || { echo "::error::manifest.webmanifest has no id"; exit 1; }
-          echo "$manifest" | jq -e '[.screenshots[] | select(.form_factor == "narrow")] | length > 0' > /dev/null \
-            || { echo "::error::manifest.webmanifest has no narrow screenshot - Chrome on Android needs one for the richer install UI"; exit 1; }
-          echo "$manifest" | jq -e '[.screenshots[] | select(.form_factor == "wide")] | length > 0' > /dev/null \
-            || { echo "::error::manifest.webmanifest has no wide screenshot"; exit 1; }
-          echo "$manifest" | jq -e '.shortcuts | length > 0' > /dev/null || { echo "::error::manifest.webmanifest has no shortcuts"; exit 1; }
-          for src in $(echo "$manifest" | jq -r '[.screenshots[].src] + [.shortcuts[].icons[].src] + [.icons[].src] | .[]' | sort -u); do
-            code=$(curl -fsS -o /dev/null -w "%{http_code}" "http://localhost:8081${src}" || echo 000)
-            [ "$code" = "200" ] || { echo "::error::manifest asset ${src} returned $code - the install prompt drops the whole listing over one missing file"; exit 1; }
+          for locale in de en; do
+            manifest=$(curl -fsS "http://localhost:8081/manifest.${locale}.webmanifest")
+            echo "$manifest"
+            echo "$manifest" | jq -e '.id' > /dev/null || { echo "::error::manifest.${locale}.webmanifest has no id"; exit 1; }
+            echo "$manifest" | jq -e ".lang == \"${locale}\"" > /dev/null \
+              || { echo "::error::manifest.${locale}.webmanifest has lang != \"${locale}\""; exit 1; }
+            echo "$manifest" | jq -e '[.screenshots[] | select(.form_factor == "narrow")] | length > 0' > /dev/null \
+              || { echo "::error::manifest.${locale}.webmanifest has no narrow screenshot - Chrome on Android needs one for the richer install UI"; exit 1; }
+            echo "$manifest" | jq -e '[.screenshots[] | select(.form_factor == "wide")] | length > 0' > /dev/null \
+              || { echo "::error::manifest.${locale}.webmanifest has no wide screenshot"; exit 1; }
+            echo "$manifest" | jq -e '.shortcuts | length > 0' > /dev/null || { echo "::error::manifest.${locale}.webmanifest has no shortcuts"; exit 1; }
+            for src in $(echo "$manifest" | jq -r '[.screenshots[].src] + [.shortcuts[].icons[].src] + [.icons[].src] | .[]' | sort -u); do
+              code=$(curl -fsS -o /dev/null -w "%{http_code}" "http://localhost:8081${src}" || echo 000)
+              [ "$code" = "200" ] || { echo "::error::manifest asset ${src} returned $code - the install prompt drops the whole listing over one missing file"; exit 1; }
+            done
           done
 
       - name: Stop container
