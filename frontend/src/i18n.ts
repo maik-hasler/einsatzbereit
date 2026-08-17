@@ -55,10 +55,25 @@ void i18next
 		returnNull: false,
 	});
 
+// The web app manifest is built per-locale (vite.config.ts's deManifest/
+// enManifest, #1923) since it's a static file with no per-request negotiation
+// - swapping this link's href is the only lever an SPA has over which one the
+// browser reads for the install prompt/OS app listing. Only "de"/"en" exist;
+// anything else (a future supportedLngs addition without a matching
+// manifest.<lng>.webmanifest) falls back to the German default rather than
+// pointing at a file that doesn't exist.
+function updateManifestLink(lang: string) {
+	const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+	if (!link) return;
+	link.href = `/manifest.${lang === "en" ? "en" : "de"}.webmanifest`;
+}
+
 i18next.on("languageChanged", (lang: string) => {
 	document.documentElement.lang = lang;
 	localStorage.setItem("i18nextLng", lang);
+	updateManifestLink(lang);
 });
 document.documentElement.lang = i18next.language;
+updateManifestLink(i18next.language);
 
 export default i18next;

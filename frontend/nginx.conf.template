@@ -68,8 +68,11 @@ server {
 	# (einsatzbereit#1966) - most browsers are lenient about it, but a strict
 	# installability check (some Lighthouse configs, some non-Chromium engines)
 	# can refuse to treat a non-application/manifest+json response as a valid
-	# manifest.
-	location = /manifest.webmanifest {
+	# manifest. Matches both locale manifests (manifest.de.webmanifest,
+	# manifest.en.webmanifest, einsatzbereit#1923) rather than one exact
+	# filename, since index.html's <link rel="manifest"> is swapped between
+	# them at runtime (frontend/src/i18n.ts) as the visitor's language changes.
+	location ~ ^/manifest\.(de|en)\.webmanifest$ {
 		default_type application/manifest+json;
 	}
 
