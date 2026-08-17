@@ -9,6 +9,7 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { looksLikeEmail } from "../../lib/emailLike";
 import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -364,7 +365,9 @@ export default function OrgMembersPage() {
 							!memberSearchError &&
 							memberCandidates.length === 0 && (
 								<p role="status" className="mt-1 text-xs text-gray-500">
-									{t("orgSettings.noSearchResults")}
+									{looksLikeEmail(memberSearch)
+										? t("orgSettings.noSearchResultsEmail")
+										: t("orgSettings.noSearchResults")}
 								</p>
 							)}
 					</div>
