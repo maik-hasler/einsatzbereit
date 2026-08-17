@@ -41,7 +41,7 @@ public static class AuthHelper
 		// HasNoSeriousA11yViolations across otherwise-unrelated PRs). Waiting
 		// on the "User menu" button - the same authenticated-render signal
 		// FastSignInAsync already waits on - is independent of which frame
-		// navigation Playwright happens to observe. 60s, not 30s: this is the
+		// navigation Playwright happens to observe. 90s, not 30s: this is the
 		// only caller that drives the real Keycloak round trip (redirect,
 		// form submit, code exchange) rather than seeding a token, and the
 		// AdministrationPage_HasNoSeriousA11yViolations(organizations) case
@@ -49,11 +49,13 @@ public static class AuthHelper
 		// concurrently-started tests, while the Aspire stack (Postgres,
 		// Keycloak, backend API) is still warming up on top of the CPU
 		// contention AssemblyParallelLimit.cs already documents among
-		// concurrent Playwright sessions - both 30s and 45s were observed
-		// too tight for that specific cold-start window even after fixing
-		// the wait target above.
+		// concurrent Playwright sessions. 30s, 45s and 60s were each observed
+		// too tight for that cold-start window even after fixing the wait
+		// target above - the 60s failure clocked in at ~63s, right at the
+		// boundary rather than wildly over, so 90s gives real margin instead
+		// of chasing the timeout up in small increments again.
 		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
-			.WaitForAsync(new() { Timeout = 60_000 });
+			.WaitForAsync(new() { Timeout = 90_000 });
 	}
 
 	/// <summary>
