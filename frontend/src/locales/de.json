@@ -176,6 +176,7 @@
       "citySearching": "Wird gesucht…",
       "cityNoMatch": "Keine passende Stadt gefunden.",
       "cityError": "Suche nach dieser Stadt fehlgeschlagen. Bitte erneut versuchen.",
+      "cityExactNameMatch": "Exakte Namensübereinstimmung",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",

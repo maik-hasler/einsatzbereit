@@ -176,6 +176,7 @@
       "citySearching": "Searching…",
       "cityNoMatch": "No matching city found.",
       "cityError": "Couldn't search for that city. Please try again.",
+      "cityExactNameMatch": "Exact name match",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
