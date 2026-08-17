@@ -8,6 +8,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
+import { getInitials } from "../../lib/initials";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
@@ -343,6 +344,15 @@ export default function ProfileOverviewPage() {
 		!form.state.preferredContact &&
 		!form.state.phone;
 
+	// Same name shown in the header account button, so its initials must be
+	// derived the same way - this used to fall back to a bare `charAt(0)`,
+	// which showed a one-letter avatar here against the header's two-letter
+	// "VV" for the same user (#1896).
+	const displayName =
+		form.state.firstName || form.state.lastName
+			? `${form.state.firstName} ${form.state.lastName}`.trim()
+			: (profile?.username ?? "");
+
 	return (
 		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
 		// stretched the identity band to ~1376x130 around two lines of text and
@@ -412,14 +422,12 @@ export default function ProfileOverviewPage() {
 											/>
 										) : (
 											<span className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-white text-2xl font-semibold text-brand-700 ring-3 ring-white">
-												{profile?.username?.charAt(0).toUpperCase() ?? "?"}
+												{getInitials(displayName)}
 											</span>
 										)}
 										<div className="min-w-0">
 											<p className="font-display text-3xl font-bold text-gray-900">
-												{form.state.firstName || form.state.lastName
-													? `${form.state.firstName} ${form.state.lastName}`.trim()
-													: profile?.username}
+												{displayName}
 											</p>
 											<p className="text-sm text-brand-800">
 												@{profile?.username}
@@ -608,8 +616,7 @@ export default function ProfileOverviewPage() {
 															/>
 														) : (
 															<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-																{profile?.username?.charAt(0).toUpperCase() ??
-																	"?"}
+																{getInitials(displayName)}
 															</span>
 														)}
 														<div>
