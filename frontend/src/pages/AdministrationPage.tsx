@@ -115,15 +115,21 @@ export default function AdministrationPage() {
 
 function AdminSection({
 	headingKey,
+	descriptionKey,
 	children,
 }: {
 	headingKey: string;
+	descriptionKey?: string;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
 	return (
 		<section>
-			<PageSectionHeading>{t(headingKey)}</PageSectionHeading>
+			<PageSectionHeading
+				description={descriptionKey ? t(descriptionKey) : undefined}
+			>
+				{t(headingKey)}
+			</PageSectionHeading>
 			{children}
 		</section>
 	);
@@ -155,7 +161,10 @@ export function AdminReportsPage() {
 
 export function AdminAuditLogPage() {
 	return (
-		<AdminSection headingKey="administration.auditLogHeading">
+		<AdminSection
+			headingKey="administration.auditLogHeading"
+			descriptionKey="administration.auditLog.scopeDescription"
+		>
 			<AuditLogSection />
 		</AdminSection>
 	);

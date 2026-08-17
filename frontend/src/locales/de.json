@@ -1332,6 +1332,7 @@
         }
       },
       "auditLog": {
+        "scopeDescription": "Erfasst nur privilegierte Administrationsaktionen: Rollenänderungen, Sperren, Schattenlöschungen und Wiederherstellungen sowie von Admins abgesagte Anmeldungen. Übliche Selbstbedienungsaktionen wie Anmelden, Abmelden oder das Versenden von Einladungen werden hier nicht erfasst.",
         "loading": "Audit-Log wird geladen…",
         "error": "Audit-Log konnte nicht geladen werden.",
         "noEntries": "Noch keine privilegierten Aktionen erfasst.",
