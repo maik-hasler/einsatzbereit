@@ -1332,6 +1332,7 @@
         }
       },
       "auditLog": {
+        "scopeDescription": "Records privileged administrative actions only: role changes, blocks, shadow-deletes and restores, and admin-cancelled sign-ups. Routine self-service actions like signing up, withdrawing, or sending invitations aren't recorded here.",
         "loading": "Loading audit log…",
         "error": "Failed to load the audit log.",
         "noEntries": "No privileged actions recorded yet.",
