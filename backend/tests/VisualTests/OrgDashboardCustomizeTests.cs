@@ -163,6 +163,100 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task CancellingEdit_DiscardsAddedWidget()
+	{
+		// #1899: CancellingEdit_DiscardsRemovedWidget above covers a removal -
+		// this is the same guarantee for the opposite edit, an addition made
+		// through the picker. Adding a widget writes straight into the draft
+		// layout the moment it's picked (see AddWidgetModal_AddingAWidget_...
+		// above), so Cancel must discard it exactly like any other pending
+		// change, not just leave it invisible until a stray future Save picks
+		// it back up.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashCancelAdd", pinnedOrgId!.Value);
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-cancel").ClickAsync();
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0);
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0);
+	}
+
+	[Test]
+	public async Task NavigatingAwayWhileEditing_DiscardsAddedWidget()
+	{
+		// #1899 regression guard: reported as the widget editor persisting an
+		// addition to the shared, saved layout despite the organizer never
+		// clicking "Speichern" - leaving edit mode via in-app navigation
+		// (rather than the Cancel quick action) instead. Picks a widget from
+		// the picker, then leaves via the tab bar's Opportunities link -
+		// unmounting OrgDashboardPage without ever calling handleSave/
+		// handleCancel - and confirms the addition never reached the backend.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashNavAwayAdd", pinnedOrgId!.Value);
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+
+		// Escape backs out of the picker only (not edit mode itself) - matches
+		// the reported repro exactly, including the second Escape press, which
+		// the picker's own listener is already gone for by the time it fires.
+		await Page.Keyboard.PressAsync("Escape");
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToBeVisibleAsync();
+
+		// Leaves edit mode via in-app navigation - neither Save nor Cancel is
+		// ever clicked.
+		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/dashboard/opportunities"));
+
+		await Page.GetByTestId("org-tab-dashboard").ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/dashboard$"));
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0,
+			new() { Timeout = 10_000 });
+
+		// The addition must never have reached the backend either - not just
+		// discarded from this one render.
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToHaveCountAsync(0);
+	}
+
+	[Test]
 	public async Task GridBackdrop_OnlyRendersWhileEditing_AndHasNoLegacySizeControls()
 	{
 		// #782 removed the automatic packing algorithm entirely, along with

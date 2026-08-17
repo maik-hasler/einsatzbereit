@@ -243,6 +243,12 @@ export default function OrgDashboardPage() {
 		placement.cancelPlacing();
 		setEditing(false);
 		setDraftLayout(null);
+		// Defensive: the Add Widget picker has no legitimate way to still be
+		// open when Cancel fires (its own backdrop blocks the quick action bar
+		// while it's up), but leaving it open here would keep it wired to
+		// handleAddWidget, which writes straight into draftLayout regardless of
+		// `editing` - closing it keeps edit-mode exit unambiguous.
+		setShowAddWidgetModal(false);
 	}
 
 	function startEditing() {
@@ -276,10 +282,17 @@ export default function OrgDashboardPage() {
 							label: t("orgDashboard.addWidgetHeading"),
 							icon: <PlusIcon />,
 							onClick: () => setShowAddWidgetModal(true),
+							// Matches Cancel/Save's own disabled-while-saving guard
+							// (useEditModeQuickActions) - without this, a widget picked
+							// while the PUT from an earlier Save is still in flight gets
+							// silently wiped the moment that save resolves (handleSave
+							// unconditionally nulls draftLayout), with no indication to
+							// the organizer that the addition never actually persisted.
+							disabled: saving,
 						},
 					]
 				: [],
-		[hasWidgetsToAdd, t],
+		[hasWidgetsToAdd, saving, t],
 	);
 
 	useEditModeQuickActions({
