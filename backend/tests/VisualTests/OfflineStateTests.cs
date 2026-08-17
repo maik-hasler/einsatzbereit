@@ -70,6 +70,47 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 	}
 
+	/// <summary>
+	/// Regression for #1901: OpportunityResultsList used to decide offline-vs-
+	/// generic-error purely from <c>useOnlineStatus()</c> (<c>navigator.onLine</c>).
+	/// That flag is only reliable when it reads false - true only means the
+	/// browser has a network interface up, and a well-documented cross-browser
+	/// quirk lets it keep reading true across a hard reload or cold PWA launch
+	/// even while genuinely offline. A visitor in that state used to see the
+	/// generic "An unexpected error occurred" screen with a "Retry" button that
+	/// could not possibly succeed, instead of the dedicated offline state.
+	///
+	/// Reproduced with a real document navigation (<c>GotoAsync</c>, not the
+	/// header-nav click <see cref="WarmOpportunitiesRouteThenLeaveAsync"/> uses)
+	/// since only the one list request is aborted here, not the whole context
+	/// (<c>Context.SetOfflineAsync</c>) - the app shell's own JS/CSS still load
+	/// over the network same as a real hard reload, with no service worker
+	/// needed to bring back a precached shell.
+	/// </summary>
+	[Test]
+	public async Task OpportunityList_HardReloadWhileNavigatorOnLineMisreportsTrue_StillShowsOfflineState()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.AddInitScriptAsync(
+			"Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true });");
+		// Single asterisk deliberately: it does not cross a `/`, so this only
+		// matches the list endpoint's own query string, not
+		// /volunteer-opportunities/{id} or /volunteer-opportunities/date-availability.
+		await Page.RouteAsync("**/v1/volunteer-opportunities*", route =>
+			route.AbortAsync("internetdisconnected"));
+
+		await Page.GotoAsync($"{origin}/opportunities");
+
+		var offline = Page.GetByTestId("opportunities-offline");
+		await Expect(offline).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(offline).ToContainTextAsync("You are offline");
+
+		await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
+		await Expect(offline.GetByRole(AriaRole.Button)).ToHaveCountAsync(0);
+	}
+
 	[Test]
 	public async Task OpportunityList_WhenTheConnectionReturns_RefetchesWithoutBeingAsked()
 	{

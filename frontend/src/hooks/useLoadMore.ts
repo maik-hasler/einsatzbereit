@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useOnlineStatus } from "./useOnlineStatus";
+import { isNetworkError } from "../lib/apiError";
 
 export interface LoadMorePage<T> {
 	items: T[];
@@ -30,11 +31,23 @@ export interface UseLoadMoreResult<T> {
 	/** Set only when the page-1 (initial) fetch fails - items is empty whenever this is set. */
 	error: string | null;
 	/**
+	 * Whether `error` should be presented as an offline state instead of a
+	 * generic retryable error - true when the browser reports itself offline,
+	 * or when the fetch that produced `error` never got an HTTP response at
+	 * all (see isNetworkError). The latter is what makes a hard reload/cold
+	 * PWA launch while genuinely offline show the offline state too, since
+	 * `navigator.onLine` alone can misreport `true` in exactly that situation
+	 * (#1901) - the failed request itself is the more reliable signal.
+	 */
+	errorIsOffline: boolean;
+	/**
 	 * Set only when a page>1 (load-more) fetch fails - items keeps whatever was
 	 * already loaded (einsatzbereit#1226: a failed load-more used to wipe the
 	 * already-loaded rows because both cases shared a single `error`).
 	 */
 	loadMoreError: string | null;
+	/** Same offline/generic split as errorIsOffline, for loadMoreError. */
+	loadMoreErrorIsOffline: boolean;
 	hasMore: boolean;
 	loadMore: () => void;
 	/** Re-attempts the page that produced `loadMoreError`, without advancing further. */
@@ -87,7 +100,10 @@ export function useLoadMore<T>(
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [errorIsNetworkFailure, setErrorIsNetworkFailure] = useState(false);
 	const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+	const [loadMoreErrorIsNetworkFailure, setLoadMoreErrorIsNetworkFailure] =
+		useState(false);
 	const [resetToken, setResetToken] = useState(0);
 	const [retryToken, setRetryToken] = useState(0);
 
@@ -112,10 +128,12 @@ export function useLoadMore<T>(
 		if (isInitialLoad) {
 			setLoading(true);
 			setError(null);
+			setErrorIsNetworkFailure(false);
 		} else {
 			setLoadingMore(true);
 		}
 		setLoadMoreError(null);
+		setLoadMoreErrorIsNetworkFailure(false);
 
 		fetchPageRef
 			.current(page)
@@ -135,8 +153,13 @@ export function useLoadMore<T>(
 			})
 			.catch((err) => {
 				if (cancelled) return;
-				if (isInitialLoad) setError(getErrorMessage(err));
-				else setLoadMoreError(getErrorMessage(err));
+				if (isInitialLoad) {
+					setError(getErrorMessage(err));
+					setErrorIsNetworkFailure(isNetworkError(err));
+				} else {
+					setLoadMoreError(getErrorMessage(err));
+					setLoadMoreErrorIsNetworkFailure(isNetworkError(err));
+				}
 			})
 			.finally(() => {
 				if (cancelled) return;
@@ -166,6 +189,17 @@ export function useLoadMore<T>(
 		if (cameBackOnline && hasFailure) setRetryToken((n) => n + 1);
 	}, [online, hasFailure]);
 
+	// #1901: `online` alone flags a hard reload/cold PWA launch while
+	// genuinely offline as a generic error rather than the offline state,
+	// since navigator.onLine can misreport `true` in exactly that situation
+	// (see useOnlineStatus.ts). Whichever fetch actually failed is the more
+	// reliable witness - a failure with no HTTP response at all could only
+	// have happened with no working connection to the API, regardless of
+	// what the browser flag claims.
+	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
+	const loadMoreErrorIsOffline =
+		loadMoreError !== null && (!online || loadMoreErrorIsNetworkFailure);
+
 	const loadMore = useCallback(() => {
 		setPage((p) => p + 1);
 	}, []);
@@ -177,7 +211,9 @@ export function useLoadMore<T>(
 	const reset = useCallback(() => {
 		setItems([]);
 		setError(null);
+		setErrorIsNetworkFailure(false);
 		setLoadMoreError(null);
+		setLoadMoreErrorIsNetworkFailure(false);
 		setPage(1);
 		setHasMore(false);
 		setResetToken((n) => n + 1);
@@ -191,7 +227,9 @@ export function useLoadMore<T>(
 		loading,
 		loadingMore,
 		error,
+		errorIsOffline,
 		loadMoreError,
+		loadMoreErrorIsOffline,
 		hasMore,
 		loadMore,
 		retryLoadMore,

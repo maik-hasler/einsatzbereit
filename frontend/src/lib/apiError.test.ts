@@ -18,6 +18,7 @@ import {
 	isApiErrorCode,
 	isApiForbiddenError,
 	isApiNotFoundError,
+	isNetworkError,
 } from "./apiError";
 
 describe("getApiErrorMessage", () => {
@@ -119,6 +120,31 @@ describe("getApiErrorStatus", () => {
 
 	it("returns null for a non-object value", () => {
 		expect(getApiErrorStatus("500")).toBeNull();
+	});
+});
+
+describe("isNetworkError", () => {
+	// #1901: a fetch that never reached the server (dropped connection, DNS
+	// failure) is the one case getApiErrorStatus itself cannot distinguish
+	// from "an error response happened to omit its status" - this makes that
+	// distinction available under its own name for callers that specifically
+	// want to treat "no HTTP response at all" as an offline signal.
+	it("returns true for a rejection with no status (e.g. a network failure)", () => {
+		expect(isNetworkError(new TypeError("Failed to fetch"))).toBe(true);
+	});
+
+	it("returns true for null", () => {
+		expect(isNetworkError(null)).toBe(true);
+	});
+
+	it("returns false for a ProblemDetails-shaped rejection carrying a status", () => {
+		expect(isNetworkError({ status: 500, errorCode: "Server.Error" })).toBe(
+			false,
+		);
+	});
+
+	it("returns false for an ApiException-shaped rejection carrying a status", () => {
+		expect(isNetworkError({ status: 403, response: "{}" })).toBe(false);
 	});
 });
 
