@@ -975,15 +975,20 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				</div>
 
-				{/* More from this organization - a wider grid than the reading
-			column above so a third card doesn't orphan onto its own row on
-			desktop (#1727). */}
+				{/* More from this organization - held to the same max-w-2xl measure
+			as the reading column above (#2044). #1727 had let this section span
+			the full outer wrapper so a third card wouldn't orphan onto its own
+			row, but that put a 1152px-wide block directly below a 672px-wide
+			column on the same scroll, reading as two different pages stacked.
+			One measure for the whole page wins over the marginally roomier grid -
+			dropping the xl:grid-cols-3 step rather than keeping a column count
+			this measure can no longer fit without squeezing each card. */}
 				{otherOrgOpportunities.length > 0 && (
-					<div className="mb-6" data-testid="more-from-organization">
+					<div className="mb-6 max-w-2xl" data-testid="more-from-organization">
 						<SectionHeading>
 							{t("opportunities.moreFromOrganization")}
 						</SectionHeading>
-						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							{otherOrgOpportunities.map((opp) => (
 								<PublicOpportunityCard key={opp.id} opportunity={opp} />
 							))}
