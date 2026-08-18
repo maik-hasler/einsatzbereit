@@ -12652,6 +12652,11 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("isCheckedIn")]
         public bool IsCheckedIn { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("remainingReactivations")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int RemainingReactivations { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -12903,6 +12908,10 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("opportunityValidUntil")]
         public System.DateTimeOffset? OpportunityValidUntil { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("remainingReactivations")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int? RemainingReactivations { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

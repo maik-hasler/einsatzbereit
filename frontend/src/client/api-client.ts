@@ -6517,6 +6517,7 @@ export interface CurrentUserEngagementInfo {
     status: string;
     timeSlotId: string | undefined;
     isCheckedIn: boolean;
+    remainingReactivations: number;
 
     [key: string]: any;
 }
@@ -6592,6 +6593,7 @@ export interface EngagementSummary {
     feedbackSubmittedAt?: Date | undefined;
     checkInMethod?: string;
     opportunityValidUntil?: Date | undefined;
+    remainingReactivations?: number | undefined;
 
     [key: string]: any;
 }

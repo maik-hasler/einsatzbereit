@@ -15,7 +15,8 @@
       "pageLoading": "Loading page…",
       "skipToContent": "Skip to content",
       "onThisPage": "On this page",
-      "requiredField": "Required field"
+      "requiredField": "Required field",
+      "contactOrganization": "Contact the organization"
     },
     "nav": {
       "primaryLabel": "Main navigation",
@@ -391,7 +392,8 @@
       "cancel": "Cancel",
       "unknownError": "Unknown error",
       "selectTimeSlotRequired": "Please select a time slot.",
-      "messageRequired": "Please enter a message."
+      "messageRequired": "Please enter a message.",
+      "success": "Sign-up submitted."
     },
     "organization": {
       "create": "Create organization",
@@ -677,6 +679,7 @@
       "cancellationReason": "Reason: {{reason}}",
       "withdraw": "Withdraw",
       "withdrawError": "Could not withdraw your sign-up. Please try again.",
+      "withdrawSuccess": "Sign-up withdrawn.",
       "addToCalendar": "Add to calendar",
       "addToCalendarGoogle": "Google Calendar",
       "addToCalendarOutlook": "Outlook.com",
@@ -966,7 +969,9 @@
       },
       "withdraw": {
         "title": "Withdraw sign-up?",
-        "message": "Are you sure you want to withdraw your sign-up? This cannot be undone.",
+        "message": "Your spot for \"{{title}}\" will be released, and you'll be able to sign up again later.",
+        "messageLimitReached": "Your spot for \"{{title}}\" will be released. You've reached the limit on withdrawing and re-signing up for this opportunity, so this cannot be undone - please contact the organization directly if you'd like to rejoin.",
+        "limitWarning": "Heads up: you've already withdrawn and re-applied for this several times. If you withdraw now, you'll have only one more chance to sign up again before you'd need to contact the organization directly.",
         "confirm": "Yes, withdraw"
       },
       "cancel": {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -15,6 +15,7 @@ import {
 import { isFeedbackEditable } from "../../lib/feedback";
 import { formatDate, formatDateTimeRange } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
+import { dispatchToast } from "../../lib/toastBus";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import Chip from "../../components/Chip";
 import CheckInModal from "../../components/CheckInModal";
@@ -27,6 +28,7 @@ import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
+import WarningBanner from "../../components/WarningBanner";
 import {
 	ArrowsRightLeftIcon,
 	CalendarIcon,
@@ -139,6 +141,7 @@ export default function ActivitySection() {
 							e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
 						),
 			);
+			dispatchToast("success", t("myEngagements.withdrawSuccess"));
 			setConfirmWithdrawId(null);
 		} catch (err) {
 			setWithdrawError(
@@ -257,6 +260,31 @@ export default function ActivitySection() {
 			setDecliningId(null);
 		}
 	}
+
+	// The engagement the withdraw dialog is about to act on, so its message
+	// can name it (matching the admin area's confirmation dialogs, which
+	// already interpolate their target's name - #2043) and warn about the
+	// churn limit (Engagement.MaxReactivationCount) before the volunteer hits
+	// it rather than only on the next failed sign-up attempt.
+	const withdrawTarget = confirmWithdrawId
+		? (engagements.find((e) => e.id === confirmWithdrawId) ?? null)
+		: null;
+	const withdrawTargetTitle =
+		withdrawTarget?.opportunityTitle ??
+		t("myEngagements.deletedOpportunityTitle");
+	const withdrawLimitReached = withdrawTarget?.remainingReactivations === 0;
+	const withdrawLimitWarning =
+		!withdrawLimitReached && withdrawTarget?.remainingReactivations === 1;
+
+	// role="status"/aria-live content that's already populated the instant its
+	// dialog mounts (as opposed to appearing later inside an already-open one,
+	// like ConfirmDialog's own error banner below) isn't reliably announced by
+	// assistive tech - so, same as ConfirmDialog does for its errorRef, move
+	// focus there once instead of trusting the live region alone (#2043).
+	const limitWarningRef = useRef<HTMLParagraphElement>(null);
+	useEffect(() => {
+		if (withdrawLimitWarning) limitWarningRef.current?.focus();
+	}, [confirmWithdrawId, withdrawLimitWarning]);
 
 	return (
 		// @container (#2044): this section's own width is capped by the
@@ -684,13 +712,35 @@ export default function ActivitySection() {
 			{confirmWithdrawId && (
 				<ConfirmDialog
 					title={t("confirmDialog.withdraw.title")}
-					message={t("confirmDialog.withdraw.message")}
+					message={t(
+						withdrawLimitReached
+							? "confirmDialog.withdraw.messageLimitReached"
+							: "confirmDialog.withdraw.message",
+						{ title: withdrawTargetTitle },
+					)}
 					confirmLabel={t("confirmDialog.withdraw.confirm")}
 					onConfirm={handleWithdrawConfirm}
 					onClose={handleWithdrawClose}
 					loading={withdrawing}
 					error={withdrawError}
-				/>
+				>
+					{withdrawLimitReached && withdrawTarget?.organizationId && (
+						<Link
+							to={`/organizations/${withdrawTarget.organizationId}`}
+							className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+						>
+							{t("common.contactOrganization")}
+						</Link>
+					)}
+					{withdrawLimitWarning && (
+						<WarningBanner
+							ref={limitWarningRef}
+							tabIndex={-1}
+							className="focus:outline-none"
+							message={t("confirmDialog.withdraw.limitWarning")}
+						/>
+					)}
+				</ConfirmDialog>
 			)}
 
 			{checkInEngagement && (

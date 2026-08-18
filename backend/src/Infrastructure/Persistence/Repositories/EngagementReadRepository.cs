@@ -443,7 +443,8 @@ internal sealed class EngagementReadRepository(
 				FeedbackComment: e.FeedbackComment,
 				FeedbackSubmittedAt: e.FeedbackSubmittedAt,
 				CheckInMethod: (opportunity?.CheckInMethod ?? CheckInMethod.None).ToString(),
-				OpportunityValidUntil: opportunity?.ValidUntil);
+				OpportunityValidUntil: opportunity?.ValidUntil,
+				RemainingReactivations: Engagement.MaxReactivationCount - e.ReactivationCount);
 		}).ToList();
 	}
 

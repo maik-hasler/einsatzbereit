@@ -15,7 +15,8 @@
       "pageLoading": "Seite wird geladen…",
       "skipToContent": "Zum Inhalt springen",
       "onThisPage": "Auf dieser Seite",
-      "requiredField": "Pflichtfeld"
+      "requiredField": "Pflichtfeld",
+      "contactOrganization": "Organisation kontaktieren"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
@@ -391,7 +392,8 @@
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
       "selectTimeSlotRequired": "Bitte wähle einen Zeitslot aus.",
-      "messageRequired": "Bitte gib eine Nachricht ein."
+      "messageRequired": "Bitte gib eine Nachricht ein.",
+      "success": "Anmeldung übermittelt."
     },
     "organization": {
       "create": "Organisation erstellen",
@@ -677,6 +679,7 @@
       "cancellationReason": "Grund: {{reason}}",
       "withdraw": "Zurückziehen",
       "withdrawError": "Anmeldung konnte nicht zurückgezogen werden. Bitte versuche es erneut.",
+      "withdrawSuccess": "Anmeldung zurückgezogen.",
       "addToCalendar": "Zum Kalender hinzufügen",
       "addToCalendarGoogle": "Google Kalender",
       "addToCalendarOutlook": "Outlook.com",
@@ -966,7 +969,9 @@
       },
       "withdraw": {
         "title": "Anmeldung zurückziehen?",
-        "message": "Möchtest du deine Anmeldung wirklich zurückziehen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "message": "Dein Platz für \"{{title}}\" wird wieder freigegeben, und du kannst dich später erneut anmelden.",
+        "messageLimitReached": "Dein Platz für \"{{title}}\" wird wieder freigegeben. Du hast das Limit fürs Zurückziehen und erneute Anmelden für diesen Einsatz erreicht, daher kann dies nicht rückgängig gemacht werden - bitte wende dich direkt an die Organisation, wenn du wieder teilnehmen möchtest.",
+        "limitWarning": "Hinweis: Du hast dich hierfür bereits mehrfach zurückgezogen und erneut angemeldet. Wenn du jetzt zurückziehst, hast du nur noch eine weitere Möglichkeit, dich erneut anzumelden, bevor du dich direkt an die Organisation wenden müsstest.",
         "confirm": "Ja, zurückziehen"
       },
       "cancel": {
