@@ -1397,49 +1397,49 @@
     },
     "apiError": {
       "AchievementId": {
-        "Empty": "AchievementId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "NotificationId": {
-        "Empty": "NotificationId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "EngagementId": {
-        "Empty": "EngagementId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "VolunteerOpportunityId": {
-        "Empty": "VolunteerOpportunityId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "OrganizationId": {
-        "Empty": "OrganizationId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "OrganizationInvitationId": {
-        "Empty": "OrganizationInvitationId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "OrganizationMembershipId": {
-        "Empty": "OrganizationMembershipId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "OrganizationDashboardLayoutId": {
-        "Empty": "OrganizationDashboardLayoutId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "TimeSlotId": {
-        "Empty": "TimeSlotId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "UserId": {
-        "Empty": "UserId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "UserStreakId": {
-        "Empty": "UserStreakId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "ReportId": {
-        "Empty": "ReportId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "AuditLogId": {
-        "Empty": "AuditLogId darf nicht leer sein."
+        "Empty": "Diese Anfrage war unvollständig. Lade die Seite neu und versuche es erneut."
       },
       "User": {
         "InvalidId": "Ungültige:r Nutzer:in.",
         "NotFound": "Nutzer:in nicht gefunden.",
-        "AlreadyDeleted": "Nutzer:in ist bereits schattengelöscht.",
-        "NotDeleted": "Nutzer:in ist nicht schattengelöscht.",
+        "AlreadyDeleted": "Nutzer:in ist bereits ausgeblendet.",
+        "NotDeleted": "Nutzer:in ist nicht ausgeblendet.",
         "InvalidUnsubscribeToken": "Der Abmelde-Link ist ungültig oder wurde bereits mit einem anderen Token verwendet.",
         "SoleOrganizerOfOrganizations": "Du bist die:der einzige Organisator:in mindestens einer Organisation. Übertrage die Leitung an eine andere Person oder lösche diese Organisationen, bevor du dein Konto löschst."
       },
@@ -1471,8 +1471,8 @@
         "NotMember": "Du hast keine Berechtigung, diese Ressource einzusehen.",
         "WebsiteInvalid": "Die Website muss eine gültige http- oder https-URL sein.",
         "WebsiteTooLong": "Die Website darf 500 Zeichen nicht überschreiten.",
-        "AlreadyDeleted": "Organisation ist bereits schattengelöscht.",
-        "NotDeleted": "Organisation ist nicht schattengelöscht."
+        "AlreadyDeleted": "Organisation ist bereits ausgeblendet.",
+        "NotDeleted": "Organisation ist nicht ausgeblendet."
       },
       "OrganizationInvitation": {
         "NotPending": "Die Einladung ist nicht mehr ausstehend.",
@@ -1518,8 +1518,8 @@
         "CannotCancelDraft": "Ein Entwurf kann nicht abgesagt werden - lösche ihn stattdessen.",
         "CannotPublishCancelled": "Ein abgesagter Einsatz kann nicht erneut veröffentlicht werden.",
         "NotPublished": "Nur ein veröffentlichter Einsatz kann depubliziert werden.",
-        "AlreadyDeleted": "Der Einsatz ist bereits schattengelöscht.",
-        "NotDeleted": "Der Einsatz ist nicht schattengelöscht.",
+        "AlreadyDeleted": "Der Einsatz ist bereits ausgeblendet.",
+        "NotDeleted": "Der Einsatz ist nicht ausgeblendet.",
         "ValidUntilMustBeFuture": "Die Frist muss in der Zukunft liegen.",
         "ValidUntilNotAllowed": "Eine Frist kann nur bei Einsätzen mit Teilnahmeart „Einzelkontakt“ gesetzt werden.",
         "IndividualContactRequiresValidUntil": "Ein Einsatz mit Teilnahmeart „Einzelkontakt“ benötigt eine Frist, bevor er veröffentlicht werden kann.",
