@@ -963,7 +963,7 @@
       },
       "cancel": {
         "title": "Anmeldung absagen?",
-        "message": "Möchtest du diese Anmeldung wirklich absagen? Die freiwillige Person wird informiert.",
+        "message": "Möchtest du die Anmeldung von {{name}} für {{opportunity}} wirklich absagen? Die freiwillige Person wird informiert.",
         "confirm": "Ja, absagen",
         "reasonLabel": "Grund (optional)",
         "reasonPlaceholder": "Teile der freiwilligen Person den Grund mit…"

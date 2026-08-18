@@ -17,6 +17,7 @@ import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
+import { TrashIcon } from "../../components/icons";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
@@ -134,6 +135,8 @@ export default function OrgEngagementsPage() {
 		setCancelReason("");
 		setCancelError(null);
 	}
+
+	const cancelTarget = engagements.find((e) => e.id === confirmCancelId);
 
 	async function handleCancelConfirm() {
 		if (!confirmCancelId) return;
@@ -352,6 +355,7 @@ export default function OrgEngagementsPage() {
 													name: volunteerDisplayName(e),
 												})}
 											>
+												<TrashIcon className="h-3.5 w-3.5" />
 												{t("orgEngagements.cancel")}
 											</Button>
 										</div>
@@ -367,6 +371,7 @@ export default function OrgEngagementsPage() {
 												name: volunteerDisplayName(e),
 											})}
 										>
+											<TrashIcon className="h-3.5 w-3.5" />
 											{t("orgEngagements.cancel")}
 										</Button>
 									)}
@@ -399,7 +404,13 @@ export default function OrgEngagementsPage() {
 			{confirmCancelId && (
 				<ConfirmDialog
 					title={t("confirmDialog.cancel.title")}
-					message={t("confirmDialog.cancel.message")}
+					message={t("confirmDialog.cancel.message", {
+						name: cancelTarget
+							? volunteerDisplayName(cancelTarget)
+							: t("orgEngagements.anonymizedVolunteer"),
+						opportunity:
+							cancelTarget?.opportunityTitle ?? t("orgDashboard.unnamedDraft"),
+					})}
 					confirmLabel={t("confirmDialog.cancel.confirm")}
 					onConfirm={handleCancelConfirm}
 					onClose={handleCancelClose}

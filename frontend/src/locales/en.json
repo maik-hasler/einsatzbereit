@@ -963,7 +963,7 @@
       },
       "cancel": {
         "title": "Cancel sign-up?",
-        "message": "Are you sure you want to cancel this sign-up? The volunteer will be informed.",
+        "message": "Are you sure you want to cancel {{name}}'s sign-up for {{opportunity}}? They will be informed.",
         "confirm": "Yes, cancel",
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let the volunteer know why…"
