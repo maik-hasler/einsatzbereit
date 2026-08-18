@@ -61,8 +61,17 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
 			await ConfirmDialogAsync("Yes, promote");
-			await Expect(row.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
+			var adminBadge = row.GetByText("Admin", new() { Exact = true });
+			await Expect(adminBadge).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Remove admin from {username}" })).ToBeVisibleAsync();
+
+			// #2088: the badge used to share the amber warning tone with actual
+			// status indicators (e.g. a flagged organization), which read as a
+			// warning rather than a role designation. It now uses the same
+			// brand-tinted tone as other role badges (e.g. the Organizer chip).
+			var badgeBackground = await adminBadge.EvaluateAsync<string>(
+				"el => getComputedStyle(el).backgroundColor");
+			badgeBackground.Should().Be("rgb(240, 250, 245)", "the admin badge should use the brand tone, not amber");
 		}
 		finally
 		{

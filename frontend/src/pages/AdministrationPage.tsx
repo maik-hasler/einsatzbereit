@@ -699,7 +699,7 @@ function UsersSection() {
 										<p className="truncate font-medium text-gray-900">
 											{displayName}
 											{isAdmin && (
-												<Chip tone="warning" size="sm" className="ml-2">
+												<Chip tone="brand" size="sm" className="ml-2">
 													{t("administration.users.adminBadge")}
 												</Chip>
 											)}

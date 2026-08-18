@@ -206,3 +206,14 @@ export function isRecentlyCreatedOrganization(createdOn: string): boolean {
 	const days = differenceInCalendarDays(new Date(), new Date(createdOn));
 	return days <= NEW_ORGANIZATION_THRESHOLD_DAYS;
 }
+
+/** Window (in days) within which an application deadline is flagged with the
+ * amber warning tone. Applying that tone to every deadline regardless of
+ * distance - including ones months out - diluted the warning for one that is
+ * actually close (#2088). */
+export const DEADLINE_IMMINENT_THRESHOLD_DAYS = 7;
+
+export function isDeadlineImminent(validUntil: string): boolean {
+	const days = differenceInCalendarDays(new Date(validUntil), new Date());
+	return days <= DEADLINE_IMMINENT_THRESHOLD_DAYS;
+}
