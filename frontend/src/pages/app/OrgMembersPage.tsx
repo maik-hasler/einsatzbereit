@@ -19,7 +19,7 @@ import SectionHeading from "../../components/SectionHeading";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
-import { formatDateLong } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
 
 export default function OrgMembersPage() {
@@ -397,7 +397,7 @@ export default function OrgMembersPage() {
 											</p>
 											<p className="truncate text-xs text-gray-500">
 												{t("orgSettings.invitationSentOn", {
-													date: formatDateLong(
+													date: formatDate(
 														invitation.createdOn as unknown as string,
 														i18n.language,
 													),

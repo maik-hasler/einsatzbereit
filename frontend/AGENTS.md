@@ -156,6 +156,25 @@ Shared UI primitives live in `src/components/` and `src/lib/` (no separate desig
 
 **Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs); cards, panels and modals use the separate `rounded-card` (16px) token instead - see `surfaceClasses.ts` and `Modal.tsx`. `rounded-md` is reserved for `Skeleton` loading blocks.
 
+## Date Formatting
+
+One numeric convention (`27.08.2026, 09:00`), plus one documented relative
+exception - no other date register (#2047). All helpers live in
+`lib/format.ts` and take `lng` as `i18n.language` ("de"/"en"), not an Intl
+locale (see `resolveDateLocale`):
+
+| Helper                | Use for                                                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `formatDateTime`      | Any single point-in-time timestamp ("27.08.2026, 09:00") - the default                                             |
+| `formatDateTimeRange` | Any start/end range (time slots, calendar events) - collapses a same-day range to one date with a hyphen-joined time range ("27.08.2026, 09:00-17:00") instead of repeating the date on both ends; falls back to two full `formatDateTime`s joined by " - " once the range crosses a calendar day. Always use this for ranges instead of hand-joining two `formatDateTime` calls - that's the exact duplication #2047 was filed about |
+| `formatDate`          | Date-only, no time-of-day (deadlines like `ValidUntil`, "created on"/"sent on" timestamps)                          |
+| `formatPostedAgo`     | The one relative-date exception ("Vor 5 Tagen veroeffentlicht") - pair it with an `aria-label` (not just `title`, which browse-mode screen reader users and touch/mobile never see) on the wrapping element combining the relative text with the absolute `formatDateTime`, so the exact timestamp is still available to everyone; `title` alongside it is a harmless bonus for mouse users (see `VolunteerOpportunityDetailPage.tsx`'s posted-on span) |
+| `formatFullDate`      | Screen-reader-only accessible names for calendar day cells whose visible label is a bare number (`MiniCalendar`, `CalendarWidget`) - not a visible register, so it doesn't compete with the above |
+
+There is no long-form date helper (spelled-out month, e.g. "13. August
+2026") - it was retired as a third competing register; use `formatDate`
+even for lower-frequency "created on" timestamps.
+
 ## Copy Conventions
 
 - **"Zeitslot" vs "Termin"** (opportunity-detail page, `/my-signups`): both
