@@ -109,6 +109,7 @@
       "noResults": "Keine Organisationen gefunden.",
       "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
       "clearSearch": "Suche zurücksetzen",
+      "resultsHeading": "Suchergebnisse",
       "resultCount": "{{count}} Organisationen gefunden.",
       "resultCount_one": "{{count}} Organisation gefunden.",
       "resultCount_other": "{{count}} Organisationen gefunden.",
@@ -129,6 +130,7 @@
       "error": "Fehler: {{message}}",
       "noResults": "Keine Einsätze gefunden.",
       "noResultsWithFilters": "Passe deine Filter an oder setze sie zurück.",
+      "resultsHeading": "Suchergebnisse",
       "resultCount": "{{count}} Einsätze gefunden.",
       "resultCount_one": "{{count}} Einsatz gefunden.",
       "resultCount_other": "{{count}} Einsätze gefunden.",
@@ -654,7 +656,7 @@
       "loadError": "Dieser Einsatz ist nicht mehr verfügbar."
     },
     "myEngagements": {
-      "title": "Meine Anmeldungen",
+      "listHeading": "Anmeldungsliste",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noEngagements": "Noch keine Anmeldungen.",

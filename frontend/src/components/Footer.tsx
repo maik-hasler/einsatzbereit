@@ -3,9 +3,24 @@ import { Trans, useTranslation } from "react-i18next";
 import Button from "./Button";
 import { WAVE_PATH } from "../lib/wavePath";
 
-export default function Footer({ compact = false }: { compact?: boolean }) {
+export default function Footer({
+	compact = false,
+	headingLevel = 2,
+}: {
+	compact?: boolean;
+	/**
+	 * Level for the CTA title and the three link-column headings. Defaults to
+	 * 2. /opportunities passes 3 (see AppLayout): that page's result grid
+	 * renders many identically-styled cards, and having this footer's own
+	 * headings land on the same level right after them read as more of one
+	 * undifferentiated run of level-2 headings rather than a separate,
+	 * clearly subordinate region (#2071).
+	 */
+	headingLevel?: 2 | 3;
+}) {
 	const { t } = useTranslation();
 	const currentYear = new Date().getFullYear();
+	const Heading = headingLevel === 3 ? "h3" : "h2";
 
 	// Logged-in app shells (e.g. OrgAppLayout) use this utility variant instead
 	// of the full marketing footer - same legal links, one implementation, so
@@ -90,9 +105,9 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand-600/20"
 						/>
 						<div className="relative">
-							<h2 className="font-display text-4xl font-bold text-brand-900 sm:text-5xl">
+							<Heading className="font-display text-4xl font-bold text-brand-900 sm:text-5xl">
 								{t("footer.ctaTitle")}
-							</h2>
+							</Heading>
 							<p className="mt-4 text-base leading-relaxed text-brand-800">
 								{t("brand.description")}
 							</p>
@@ -125,9 +140,9 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							actually legal ones - lived down in the bottom bar. Support
 							is its own column now and Legal holds only legal documents. */}
 							<div>
-								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
+								<Heading className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
 									{t("footer.platform")}
-								</h2>
+								</Heading>
 								<ul className="space-y-2 text-sm">
 									<li>
 										<Link
@@ -157,9 +172,9 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							</div>
 
 							<div>
-								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
+								<Heading className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
 									{t("footer.support")}
-								</h2>
+								</Heading>
 								<ul className="space-y-2 text-sm">
 									<li>
 										<Link
@@ -181,9 +196,9 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 							</div>
 
 							<div>
-								<h2 className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
+								<Heading className="mb-4 text-xs font-semibold tracking-wider text-gray-900 uppercase">
 									{t("footer.legal")}
-								</h2>
+								</Heading>
 								<ul className="space-y-2 text-sm">
 									<li>
 										<Link

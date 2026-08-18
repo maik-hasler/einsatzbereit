@@ -155,11 +155,26 @@ export default function OpportunityResultsList({
 							}
 						/>
 					) : (
-						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-							{items.map((item: VolunteerOpportunitySummary) => (
-								<OpportunityListItem key={item.id} item={item} />
-							))}
-						</ul>
+						<>
+							{/* Visually hidden: PageHeaderBand's <h1> already names the
+							page. Its job is structural - giving the card headings below
+							a parent, so they read as one results region distinct from
+							the footer's own headings further down the page rather than a
+							flat run of identically-styled level-2 headings (#2071). The
+							cards drop to headingLevel 3 accordingly, the same demotion
+							OpportunityListItem already does for LatestOpportunitiesSection's
+							cards under its own "Current opportunities" <h2>. */}
+							<h2 className="sr-only">{t("opportunities.resultsHeading")}</h2>
+							<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{items.map((item: VolunteerOpportunitySummary) => (
+									<OpportunityListItem
+										key={item.id}
+										item={item}
+										headingLevel={3}
+									/>
+								))}
+							</ul>
+						</>
 					)}
 
 					{items.length > 0 &&

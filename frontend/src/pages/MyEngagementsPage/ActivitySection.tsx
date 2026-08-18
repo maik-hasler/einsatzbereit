@@ -327,8 +327,11 @@ export default function ActivitySection() {
 			The heading survives as an sr-only <h2> so the outline still marks
 			where the invitations block ends and the sign-ups list begins - the
 			one job the visible heading was doing that the <h1> can't do from
-			outside this section. */}
-			<h2 className="sr-only">{t("myEngagements.title")}</h2>
+			outside this section. Its own dedicated string ("Sign-ups list"),
+			not a repeat of the <h1>'s "My sign-ups" - identical adjacent h1/h2
+			text announced the same words twice to a screen reader with no
+			visible sighted-user cue that anything had even changed (#2071). */}
+			<h2 className="sr-only">{t("myEngagements.listHeading")}</h2>
 
 			<div
 				role="group"
