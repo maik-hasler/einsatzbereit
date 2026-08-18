@@ -14,6 +14,11 @@ interface Props {
 	titleEnError?: string;
 	descriptionDeError?: string;
 	descriptionEnError?: string;
+	/** Bumped on every "Next"/stepper-jump/submit validation attempt for this
+	 * step, even when it produces the same error message as last time - see
+	 * the tab-switch effect below for why the message strings alone aren't
+	 * enough (einsatzbereit#2077). */
+	revalidationAttempt: number;
 	bannerPreview: string | null;
 	bannerError: string | null;
 	onBannerChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -30,6 +35,7 @@ export default function BasicsStep({
 	titleEnError,
 	descriptionDeError,
 	descriptionEnError,
+	revalidationAttempt,
 	bannerPreview,
 	bannerError,
 	onBannerChange,
@@ -55,9 +61,17 @@ export default function BasicsStep({
 	// back un-hides the existing FloatingField error text, the same way it
 	// already surfaces for every other step in this wizard - no separate
 	// live-region banner needed on top of that.
+	//
+	// `revalidationAttempt` is in the dependency list alongside the error
+	// messages themselves, not instead of them: a user can switch to the
+	// English tab *while* a German error is still outstanding (nothing stops
+	// that), and a second failed attempt then produces the exact same message
+	// string as the first - message-only deps would see no change and skip
+	// the switch, leaving the newly-focused German field hidden behind
+	// display:none (einsatzbereit#2077).
 	useEffect(() => {
 		if (titleDeError || descriptionDeError) setActiveLanguage("de");
-	}, [titleDeError, descriptionDeError]);
+	}, [titleDeError, descriptionDeError, revalidationAttempt]);
 
 	return (
 		<div className="space-y-4" data-testid="wizard-step-1">
