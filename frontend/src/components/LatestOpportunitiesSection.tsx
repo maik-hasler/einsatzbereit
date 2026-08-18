@@ -58,8 +58,12 @@ export default function LatestOpportunitiesSection() {
 	// on a reload with no connection threw away the one piece of evidence this
 	// page gives that there is anything to find, with no explanation - unlike
 	// /opportunities, which has said so since #1774. An empty result (no error,
-	// zero items) still removes the section either way.
-	if ((error && !errorIsOffline) || (!loading && items.length === 0))
+	// zero items) still removes the section either way - the `!error` here is
+	// deliberate: useLoadMore's own contract is "items is empty whenever error
+	// is set" (see UseLoadMoreResult.error), so without it this branch would
+	// fire for the offline case too (items is empty then as well) and hide the
+	// offline notice this whole guard exists to keep visible.
+	if ((error && !errorIsOffline) || (!loading && !error && items.length === 0))
 		return null;
 
 	return (
@@ -99,7 +103,9 @@ export default function LatestOpportunitiesSection() {
 			to the caller, and unlike the list this section previously had
 			nothing else nearby that could double as one. */}
 			<p role="status" className="sr-only">
-				{error && errorIsOffline ? t("landing.offline") : ""}
+				{error && errorIsOffline
+					? `${t("routeState.offline.title")}. ${t("landing.offline")}`
+					: ""}
 			</p>
 
 			{error && errorIsOffline ? (
