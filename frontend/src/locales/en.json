@@ -548,6 +548,7 @@
       "leaveOrganizationError": "Could not leave organization.",
       "leaveOrganizationLastOrganizerHint": "You're the only organizer of this organization - delete the organization instead if you want to close it.",
       "searching": "Searching…",
+      "searchMinChars": "Enter at least 4 characters",
       "noSearchResults": "No users found.",
       "noSearchResultsEmail": "No account exists for this email yet - ask the person to sign up first, then you can invite them here.",
       "memberSearchError": "Could not search for users.",

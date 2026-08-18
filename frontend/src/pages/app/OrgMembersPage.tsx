@@ -320,6 +320,11 @@ export default function OrgMembersPage() {
 								</select>
 							</div>
 						</div>
+						{memberSearch.length > 0 && memberSearch.length < 4 && (
+							<p role="status" className="mt-1 text-xs text-gray-500">
+								{t("orgSettings.searchMinChars")}
+							</p>
+						)}
 						{memberSearchLoading && (
 							<p role="status" className="mt-1 text-xs text-gray-500">
 								{t("orgSettings.searching")}

@@ -548,6 +548,7 @@
       "leaveOrganizationError": "Organisation konnte nicht verlassen werden.",
       "leaveOrganizationLastOrganizerHint": "Du bist der:die einzige Organisator:in dieser Organisation - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
       "searching": "Suche läuft…",
+      "searchMinChars": "Mindestens 4 Zeichen eingeben",
       "noSearchResults": "Keine Nutzer:innen gefunden.",
       "noSearchResultsEmail": "Für diese E-Mail-Adresse existiert noch kein Konto - bitte die Person, sich zuerst zu registrieren, dann kannst du sie hier einladen.",
       "memberSearchError": "Nutzer:innen konnten nicht gesucht werden.",
