@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { useNavigate, Link } from "react-router";
+import { useLocation, useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
 import { useMyOrganizations } from "../../hooks/useMyOrganizations";
@@ -31,6 +31,7 @@ export default function Header({
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -100,11 +101,17 @@ export default function Header({
 	}
 
 	function handleSignIn() {
-		auth.signinRedirect(signinLocaleArgs());
+		auth.signinRedirect({
+			...signinLocaleArgs(),
+			state: { returnTo: location.pathname + location.search },
+		});
 	}
 
 	function handleRegister() {
-		void signinRedirectForRegistration(signinLocaleArgs());
+		void signinRedirectForRegistration({
+			...signinLocaleArgs(),
+			state: { returnTo: location.pathname + location.search },
+		});
 	}
 
 	function handleSignOut() {

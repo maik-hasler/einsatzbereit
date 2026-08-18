@@ -52,6 +52,35 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.Not.ToBeVisibleAsync();
 	}
 
+	// Regression for #2049: Header's own "Sign in" button used to call
+	// signinRedirect() with no `state`, unlike ProtectedRoute and
+	// useSessionExpiryHandler - so a visitor who signed in from anywhere other
+	// than "/" was always bounced back to the home page instead of where they
+	// started (main.tsx's onSigninCallback falls back to "/" when
+	// user.state.returnTo is absent).
+	[Test]
+	public async Task Header_SignIn_FromNonHomePage_ReturnsToOriginatingPage()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
+		await Page.GotoAsync($"{frontend}opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First.ClickAsync();
+
+		await Page.Locator("#username").WaitForAsync(new() { Timeout = 30_000 });
+		await Page.Locator("#username").FillAsync("vera");
+		await Page.Locator("#password").FillAsync("vera123");
+		await Page.Locator("#kc-login").ClickAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
+			.WaitForAsync(new() { Timeout = 45_000 });
+
+		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities$"));
+	}
+
 	[Test]
 	public async Task Header_Anonymous_ShowsSignInButton()
 	{
