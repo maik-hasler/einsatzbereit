@@ -222,6 +222,8 @@
       "cancel": "Cancel",
       "cancelSuccess": "Opportunity cancelled.",
       "loginPrompt": "Sign in to sign up for this opportunity.",
+      "ownOpportunityNoticeTitle": "Your organization's opportunity",
+      "ownOpportunityNoticeMessage": "This is your organization's opportunity - you can't sign up for it yourself.",
       "yourApplication": "Your sign-up",
       "aboutOrganization": "About this organization",
       "aboutOrganizationLoadError": "Couldn't load this organization's contact details.",

@@ -1017,6 +1017,68 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task DetailPage_OwnerViewingOwnPublishedOpportunity_ShowsNoticeInsteadOfEmptyRail()
+	{
+		// Regression for #2081: an organizer viewing their own org's already-
+		// published opportunity gets none of the sign-up CTA/status/login
+		// blocks (each requires !isOwner), so the entire right-hand rail used
+		// to render as nothing at all - indistinguishable from a rendering
+		// failure, with no way back to the management view. A notice card
+		// must replace it, explaining why and linking to the engagement-
+		// management page for this exact opportunity.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Owner Notice Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var publishedTitle = $"Detail Owner Notice Test {suffix}";
+		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = publishedTitle,
+			descriptionDe = "Seeded published opportunity for the owner-notice regression test.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		response.EnsureSuccessStatusCode();
+		var opportunity = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(publishedTitle, new() { Timeout = 15_000 });
+
+		await Expect(Page.GetByTestId("signup-cta")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("login-prompt")).Not.ToBeVisibleAsync();
+
+		var notice = Page.GetByTestId("opportunity-owner-notice");
+		await Expect(notice).ToBeVisibleAsync();
+		await Expect(notice).ToContainTextAsync("your organization's opportunity", new() { IgnoreCase = true });
+
+		var manageLink = notice.GetByRole(AriaRole.Link);
+		await Expect(manageLink).ToHaveAttributeAsync(
+			"href",
+			$"/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
+
+		await manageLink.ClickAsync();
+		await Expect(Page).ToHaveURLAsync(
+			new Regex($@"/app/{Regex.Escape(organizationId ?? "")}/dashboard/opportunities/{Regex.Escape(opportunityId ?? "")}/engagements$"));
+	}
+
+	[Test]
 	public async Task DetailPage_TagChip_IsClickableLink_FiltersBrowseList()
 	{
 		// Regression for #1021: tag chips used to render as plain,
