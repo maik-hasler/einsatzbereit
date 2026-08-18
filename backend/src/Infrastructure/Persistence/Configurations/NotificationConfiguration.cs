@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Domain.Notifications;
 using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -38,6 +39,9 @@ internal sealed class NotificationConfiguration
 
 		builder.Property(n => n.RelatedEntityId)
 			.IsRequired();
+
+		builder.Property(n => n.TitleSnapshot)
+			.HasMaxLength(VolunteerOpportunity.MaxTitleLength);
 
 		builder.Property(n => n.IsRead)
 			.IsRequired();

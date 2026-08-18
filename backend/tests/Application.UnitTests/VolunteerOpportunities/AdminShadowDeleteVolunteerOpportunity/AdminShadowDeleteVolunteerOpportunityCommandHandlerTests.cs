@@ -134,11 +134,15 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
+		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073): a
+		// shadow-deleted opportunity is filtered out of every query by
+		// VolunteerOpportunityConfiguration's IsDeleted filter, so a later live
+		// lookup by relatedEntityId would find nothing to interpolate {{title}} with.
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
-				&& n.RelatedEntityId == engagement.Id.Value),
+				&& n.RelatedEntityId == engagement.Id.Value
+				&& n.TitleSnapshot == "Titel"),
 			cancellationToken);
 		engagement.Status.Should().Be(EngagementStatus.Cancelled);
 		engagement.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)

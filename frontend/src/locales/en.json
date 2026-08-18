@@ -893,7 +893,7 @@
         "EngagementCancelled": "Your sign-up for {{title}} was cancelled",
         "EngagementWithdrawn": "A sign-up for {{title}} was withdrawn",
         "OpportunityUpdated": "{{title}} was updated",
-        "OpportunityDeleted": "An opportunity you signed up for was removed",
+        "OpportunityDeleted": "{{title}} was removed",
         "OpportunityUnpublished": "{{title}} was taken down and your sign-up was cancelled",
         "OpportunityCancelled": "The opportunity {{title}} was cancelled - your sign-up no longer stands",
         "InvitationReceived": "You've been invited to join {{title}}",
