@@ -30,7 +30,11 @@ export default function LoadMoreButton({
 				data-testid="load-more"
 				onClick={onClick}
 				disabled={loading}
-				className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+				// border-brand-600, not the lighter -200 this used before (issue
+				// #2048): -200 on this button's own bg-brand-50 measures ~1.4:1,
+				// under WCAG 1.4.11's 3:1 floor for a non-text UI-component
+				// boundary. -600 clears it at ~4:1.
+				className="rounded-xl border border-brand-600 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
 			>
 				{loading ? loadingLabel : label}
 			</button>
