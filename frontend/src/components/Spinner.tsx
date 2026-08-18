@@ -16,7 +16,9 @@ const SIZE_CONFIG: Record<
 export function SpinnerIcon({ className = "" }: { className?: string }) {
 	return (
 		<svg
-			className={`shrink-0 animate-spin text-brand-500 motion-reduce:animate-none ${className}`}
+			// text-brand-600, not -500 (issue #2048): -500 measures ~2.8:1 against
+			// white, under WCAG 1.4.11's 3:1 floor for this non-text status icon.
+			className={`shrink-0 animate-spin text-brand-600 motion-reduce:animate-none ${className}`}
 			viewBox="0 0 24 24"
 			fill="none"
 			aria-hidden="true"

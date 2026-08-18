@@ -326,7 +326,7 @@ function OrganizationsSection() {
 			{loading ? (
 				<div
 					role="status"
-					className="overflow-hidden rounded-card border border-gray-200"
+					className="overflow-hidden rounded-card border border-gray-500"
 				>
 					<span className="sr-only">
 						{t("administration.organizations.loading")}
@@ -349,7 +349,7 @@ function OrganizationsSection() {
 				<EmptyState title={t("administration.organizations.noOrganizations")} />
 			) : (
 				<>
-					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 						{rows.map((row) => {
 							const avatarColor = avatarColorClasses(row.id);
 							return (
@@ -439,7 +439,7 @@ function OrganizationsSection() {
 													"administration.reports.shadowDeleteNamed",
 													{ name: row.name },
 												)}
-												className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+												className="rounded-lg border border-red-500 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
 											>
 												{t("administration.reports.shadowDelete")}
 											</button>
@@ -658,7 +658,7 @@ function UsersSection() {
 			{loading ? (
 				<div
 					role="status"
-					className="overflow-hidden rounded-card border border-gray-200"
+					className="overflow-hidden rounded-card border border-gray-500"
 				>
 					<span className="sr-only">{t("administration.users.loading")}</span>
 					<div className="divide-y divide-gray-100">
@@ -684,7 +684,7 @@ function UsersSection() {
 				<EmptyState title={t("administration.users.noUsers")} />
 			) : (
 				<>
-					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 						{rows.map((row) => {
 							const isSelf = row.id === currentUserId;
 							const isAdmin = row.realmRoles.includes("admin");
@@ -957,7 +957,7 @@ function ReportsSection() {
 		return (
 			<div
 				role="status"
-				className="overflow-hidden rounded-card border border-gray-200"
+				className="overflow-hidden rounded-card border border-gray-500"
 			>
 				<span className="sr-only">{t("administration.reports.loading")}</span>
 				<div className="divide-y divide-gray-100">
@@ -984,7 +984,7 @@ function ReportsSection() {
 
 	return (
 		<>
-			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 				{rows.map((row) => {
 					const targetName =
 						row.targetTitle || t("administration.reports.unknownTarget");
@@ -1055,7 +1055,7 @@ function ReportsSection() {
 										aria-label={t("administration.reports.shadowDeleteNamed", {
 											name: targetName,
 										})}
-										className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+										className="rounded-lg border border-red-500 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
 									>
 										{t("administration.reports.shadowDelete")}
 									</button>
@@ -1294,7 +1294,7 @@ function AuditLogSection() {
 		return (
 			<div
 				role="status"
-				className="overflow-hidden rounded-card border border-gray-200"
+				className="overflow-hidden rounded-card border border-gray-500"
 			>
 				<span className="sr-only">{t("administration.auditLog.loading")}</span>
 				<div className="divide-y divide-gray-100">
@@ -1321,7 +1321,7 @@ function AuditLogSection() {
 
 	return (
 		<>
-			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 				{rows.map((row) => {
 					const href = auditSubjectHref(row.subjectType, row.subjectId);
 					const subjectLabel = row.subjectDisplayName || row.subjectId;

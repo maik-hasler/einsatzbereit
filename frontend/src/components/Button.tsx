@@ -66,8 +66,13 @@ const VARIANT_CLASSES = {
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
 	success: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
-	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
-	outline: "border border-gray-200 font-medium text-gray-700 hover:bg-gray-50",
+	// border-*-500, not the lighter -200 these used before (issue #2048):
+	// -200 measures ~1.2-1.5:1 against a white/light background, well under
+	// WCAG 1.4.11's 3:1 floor for a non-text UI-component boundary. -500
+	// clears it comfortably (border-gray-500 ~4.8:1, border-red-500 ~3.8:1)
+	// without touching the variant's text/hover colors.
+	dangerOutline: "border border-red-500 text-red-700 hover:bg-red-50",
+	outline: "border border-gray-500 font-medium text-gray-700 hover:bg-gray-50",
 	onDark: "bg-white font-semibold text-brand-800 hover:bg-brand-50",
 	outlineOnDark:
 		"border border-white/50 font-medium text-white hover:border-white hover:bg-white/10",

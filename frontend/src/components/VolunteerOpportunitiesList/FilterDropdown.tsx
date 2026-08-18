@@ -55,8 +55,8 @@ export function MultiDropdownOption({
 			<span
 				className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
 					selected
-						? "border-brand-500 bg-brand-500"
-						: "border-gray-300 bg-white"
+						? "border-brand-600 bg-brand-600"
+						: "border-gray-500 bg-white"
 				}`}
 			>
 				{selected && <CheckIcon className="h-2.5 w-2.5 text-white" />}
@@ -123,8 +123,8 @@ export default function FilterDropdown({
 				aria-label={label}
 				className={`inline-flex items-stretch overflow-hidden rounded-full border bg-white transition-all ${
 					active
-						? "border-brand-500 shadow-resting"
-						: "border-gray-200 hover:border-brand-300 hover:shadow-resting"
+						? "border-brand-600 shadow-resting"
+						: "border-gray-500 hover:border-brand-600 hover:shadow-resting"
 				}`}
 			>
 				<button
@@ -140,14 +140,14 @@ export default function FilterDropdown({
 					}`}
 				>
 					<span
-						className={`shrink-0 ${active ? "text-brand-500" : "text-brand-400"}`}
+						className={`shrink-0 ${active ? "text-brand-700" : "text-brand-600"}`}
 						aria-hidden="true"
 					>
 						{icon}
 					</span>
 					<span>{active ? displayValue : label}</span>
 					{!active && (
-						<ChevronDownIcon open={isOpen} className="h-3 w-3 text-gray-400" />
+						<ChevronDownIcon open={isOpen} className="h-3 w-3 text-gray-500" />
 					)}
 				</button>
 				{active && (
@@ -172,7 +172,7 @@ export default function FilterDropdown({
 					// filter bar, <main>) are all unpositioned, so its z-index
 					// competes with the header directly at the document root instead
 					// of nesting inside it (#1119).
-					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
+					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-500 bg-white shadow-modal"
 				>
 					{children}
 				</div>

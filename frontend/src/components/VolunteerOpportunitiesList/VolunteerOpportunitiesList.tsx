@@ -399,7 +399,7 @@ export default function VolunteerOpportunitiesList() {
 								onClick={handleNearMe}
 								disabled={locationLoading}
 								aria-label={t("opportunities.nearMe")}
-								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-2 text-sm text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-50 py-2 text-sm text-gray-600 transition-colors hover:border-brand-600 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								{locationLoading ? (
 									<SpinnerIcon className="h-4 w-4" />
@@ -421,8 +421,8 @@ export default function VolunteerOpportunitiesList() {
 										aria-pressed={radius === String(r)}
 										className={`rounded-full border px-3 py-1 text-sm transition-colors ${
 											radius === String(r)
-												? "border-brand-500 bg-brand-50 font-medium text-brand-700"
-												: "border-gray-200 text-gray-600 hover:border-gray-300"
+												? "border-brand-600 bg-brand-50 font-medium text-brand-700"
+												: "border-gray-500 text-gray-600 hover:border-gray-600"
 										}`}
 									>
 										{t("opportunities.radiusKmValue", { count: r })}
@@ -623,10 +623,10 @@ export default function VolunteerOpportunitiesList() {
 						<div
 							role="group"
 							aria-label={`${t("opportunities.filterLabelKeyword")}: ${keyword}`}
-							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-white"
+							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-600 bg-white"
 						>
 							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
-								<MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+								<MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0 text-brand-600" />
 								<span>&quot;{keyword}&quot;</span>
 							</span>
 							<button
@@ -645,10 +645,10 @@ export default function VolunteerOpportunitiesList() {
 						<div
 							role="group"
 							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
-							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-white"
+							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-600 bg-white"
 						>
 							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
-								<HashtagIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+								<HashtagIcon className="h-3.5 w-3.5 shrink-0 text-brand-600" />
 								<span>#{tag}</span>
 							</span>
 							<button
@@ -666,7 +666,7 @@ export default function VolunteerOpportunitiesList() {
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:border-red-300 hover:bg-red-100"
+							className="flex items-center gap-1.5 rounded-full border border-red-500 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:border-red-600 hover:bg-red-100"
 						>
 							<BroomIcon />
 							{t("opportunities.clearFilters")}
