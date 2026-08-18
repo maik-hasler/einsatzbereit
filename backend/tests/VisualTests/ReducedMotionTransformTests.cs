@@ -111,7 +111,11 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		await trigger.ClickAsync();
 		await Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
 
-		var chevron = trigger.Locator("svg");
+		// The trigger renders two <svg>s - FilterDropdown's own leading `icon`
+		// prop (UsersIcon here, no transition classes) followed by this
+		// ChevronDownIcon - so scope to the last one instead of the bare
+		// locator, which strict-mode-violates on both matching.
+		var chevron = trigger.Locator("svg").Last;
 		var transitionProperty = await chevron.EvaluateAsync<string>(
 			"el => getComputedStyle(el).transitionProperty");
 		transitionProperty.Should().Be("none",
