@@ -60,9 +60,16 @@ public class OrganizationSwitcherTruncationTests(AspireFixture fixture) : Visual
 		var tail = Page.GetByTestId("org-switcher-current-name-tail");
 		await Expect(nameSpan).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var fullText = await nameSpan.InnerTextAsync();
-		var headText = await head.InnerTextAsync();
-		var tailText = await tail.InnerTextAsync();
+		// TextContentAsync, not InnerTextAsync: this assertion is about DOM text
+		// integrity (see the comment below), and InnerTextAsync is layout-aware -
+		// on a squeeze narrow enough to actually truncate the head, Chromium can
+		// report a "\n" at the flex-item boundary between the two spans even
+		// though nothing in the DOM or the rendered line itself contains one.
+		// TextContentAsync reads the raw text nodes React put there, unaffected
+		// by that rendering quirk.
+		var fullText = await nameSpan.TextContentAsync() ?? "";
+		var headText = await head.TextContentAsync() ?? "";
+		var tailText = await tail.TextContentAsync() ?? "";
 		(headText + tailText).Should().Be(fullText,
 			"the head/tail split must reconstruct the exact org name - only the rendering "
 			+ "may be clipped, the DOM text must never become a fixed-length approximation");
