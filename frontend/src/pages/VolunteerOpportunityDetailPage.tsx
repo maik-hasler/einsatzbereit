@@ -380,13 +380,13 @@ export default function VolunteerOpportunityDetailPage() {
 
 	// The sticky rail's content, rendered once for the lg+ sidebar and once
 	// more (testIdSuffix "-mobile") right above the map for narrow viewports -
-	// on desktop the CTA sits at the top of the page next to the reading
-	// column, but below lg the rail drops to the DOM's end, after the at-a-
-	// glance summary, the map and the organisation contact card add up to
-	// ~700px of scrolling before the page's one conversion point is reachable
-	// (#1965). Only one instance is ever visible at a given viewport (the
-	// aside hides below lg, this copy hides at lg+), so duplicated ids don't
-	// collide and duplicated buttons are never both reachable at once.
+	// the aside is invisible below lg (`hidden` until `lg:block`) since sticky
+	// positioning and the grid column it's pinned to (#2050) only exist at
+	// that breakpoint, so without this second copy a mobile visitor would
+	// have no way to reach the CTA at all (#1965). Only one instance is ever
+	// visible at a given viewport (the aside hides below lg, this copy hides
+	// at lg+), so duplicated ids don't collide and duplicated buttons are
+	// never both reachable at once.
 	// Takes the already-null-checked opportunity as a parameter rather than
 	// closing over the outer `opportunity` state directly - TS control-flow
 	// narrowing doesn't carry a `const`'s narrowed type into a nested function
@@ -571,9 +571,24 @@ export default function VolunteerOpportunityDetailPage() {
 			time-slot list, which on a long opportunity put the page's only
 			conversion point below the fold while ~500px of page sat empty next to
 			it. One column below lg, where a 20rem rail would just be a narrow box
-			and the CTA is better off in reading order anyway. */}
+			and the CTA is better off in reading order anyway. The rail is the
+			first child below (not the reading column) with explicit grid
+			placement pinning each side back to its visual column/row (#2050) -
+			DOM order used to match visual order by accident, which put the rail
+			last in both and made the CTA the 8th focusable element on the page,
+			after the report button, the map and the organization's contact
+			links. */}
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
-					<div className="min-w-0">
+					{/* Hidden below lg: the mobile-only copy right above the map (#1965)
+				carries the same content there instead. sticky needs a scroll
+				container that is not the grid item itself; lg:items-start on the
+				grid keeps this from stretching to full row height, which would
+				make top-24 have nothing left to stick against. */}
+					<aside className="hidden lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
+						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
+					</aside>
+
+					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
 						{/* Flush left inside the outer wrapper, not centred within it.
 			#1727 deliberately let the banner span the full wrapper while prose
 			stayed at a reading measure - but centring the prose meant the page
@@ -918,15 +933,6 @@ export default function VolunteerOpportunityDetailPage() {
 								)}
 						</div>
 					</div>
-
-					{/* Hidden below lg: the mobile-only copy right above the map (#1965)
-				carries the same content there instead. sticky needs a scroll
-				container that is not the grid item itself; lg:items-start on the
-				grid keeps this from stretching to full row height, which would
-				make top-24 have nothing left to stick against. */}
-					<aside className="hidden lg:sticky lg:top-24 lg:block">
-						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
-					</aside>
 				</div>
 
 				{/* More from this organization - a wider grid than the reading

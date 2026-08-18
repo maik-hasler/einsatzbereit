@@ -168,6 +168,97 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_SignUpCta_IsReachableBeforeReportButton()
+	{
+		// #2050: the desktop sticky rail holding the primary sign-up CTA was the
+		// last child of its two-column grid (put there for #1755's layout), even
+		// though CSS placed it visually in the right-hand column - so a keyboard
+		// user had to tab through the report button, the map, its Leaflet
+		// attribution links and the organization's contact links (7 stops) before
+		// ever reaching the CTA. Fixed by making the <aside> the *first* child of
+		// the grid and pinning both children back to their original visual
+		// column/row with explicit grid placement (lg:col-start-*/lg:row-start-*),
+		// decoupling DOM/focus order from visual order. Axe has no rule for a
+		// DOM-order-vs-visual-order mismatch (WCAG 2.4.3 Focus Order is exactly
+		// the kind of thing axe-core documents as untestable), so this asserts
+		// the fact directly the same way HomePage_SkipLink_MovesFocusToMainContent
+		// above does for the skip link.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new
+		{
+			name = $"A11y Focus Order Org {suffix}",
+			contactEmail = "contact@example.org",
+			contactPhone = "+49 30 1234567",
+			website = "https://example.org",
+		});
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = $"A11y Focus Order Test {suffix}",
+			descriptionDe = "Seeded for #2050 focus-order coverage.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(5);
+		(await http.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start,
+			endDateTime = start.AddHours(2),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the states this regression depends on actually rendered: the
+		// report button (Vera is signed in and not the owner) and the sign-up CTA.
+		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var ctaButton = Page.GetByTestId("signup-cta").GetByRole(AriaRole.Button);
+		await Expect(ctaButton).ToBeVisibleAsync();
+
+		// Same skip-link jump as HomePage_SkipLink_MovesFocusToMainContent, so
+		// the count below starts from <main> rather than depending on how many
+		// links the Header itself happens to have.
+		await Page.Keyboard.PressAsync("Tab");
+		var skipLink = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+		await Expect(skipLink).ToBeFocusedAsync();
+		await Page.Keyboard.PressAsync("Enter");
+		await Expect(Page.Locator("#main-content")).ToBeFocusedAsync();
+
+		// First stop inside <main> is the organization link in the page's
+		// eyebrow; the second must be the sign-up CTA now that the rail is the
+		// grid's first child - not the report button, which sits later in the
+		// reading column.
+		await Page.Keyboard.PressAsync("Tab");
+		await Page.Keyboard.PressAsync("Tab");
+		await Expect(ctaButton).ToBeFocusedAsync();
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1027: the draftBadge chip plus owner-only Edit/Publish actions
