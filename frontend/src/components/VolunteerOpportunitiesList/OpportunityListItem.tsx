@@ -6,6 +6,7 @@ import {
 	formatDate,
 	formatDateTime,
 	formatOccurrence,
+	isDeadlineImminent,
 	pickLocalizedText,
 } from "../../lib/format";
 import Chip, { type ChipTone } from "../Chip";
@@ -80,6 +81,11 @@ export function capacityChip(
  * clock/amber for a deadline running down, arrows/muted for no fixed date)
  * makes the kind legible at a glance without going back to an unlabelled
  * slot. Deliberate reversal of the previous decision, per #1777.
+ *
+ * The deadline's amber only applies within isDeadlineImminent's window - a
+ * deadline months out used the same warning tone as one closing tomorrow,
+ * which drowned out the actually-urgent ones (#2088). Outside that window it
+ * falls back to the same neutral tone as a set start date.
  */
 function dateLine(
 	item: VolunteerOpportunitySummary,
@@ -106,12 +112,13 @@ function dateLine(
 	}
 
 	if (item.validUntil) {
+		const validUntil = item.validUntil as unknown as string;
 		return {
 			kind: "deadline",
 			Icon: ClockIcon,
-			tone: "text-amber-700",
+			tone: isDeadlineImminent(validUntil) ? "text-amber-700" : "text-gray-700",
 			label: t("opportunities.applyBy", {
-				date: formatDate(item.validUntil as unknown as string, language),
+				date: formatDate(validUntil, language),
 			}),
 		};
 	}

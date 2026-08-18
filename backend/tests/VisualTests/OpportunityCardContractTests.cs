@@ -80,7 +80,9 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	/// The acceptance criterion the previous code deliberately failed: a
 	/// deadline card and a start-date card have to be distinguishable without
 	/// reading the label. Asserted on the rendered colour and glyph rather than
-	/// on class names - what matters is that the eye can separate them.
+	/// on class names - what matters is that the eye can separate them. Uses a
+	/// deadline inside the imminent window (#2088's amber only applies there -
+	/// see the next test for a deadline outside it).
 	/// </summary>
 	[Test]
 	public async Task PublicGrid_ADeadlineCard_LooksDifferentFromAStartDateCard()
@@ -95,7 +97,8 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		var organizationId = await CreateOrganizationAsync(organizer, keyword);
 
 		await PublishSlotBasedOpportunityAsync(organizer, organizationId, $"{keyword} with a slot");
-		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} with a deadline");
+		await PublishInterestBasedOpportunityAsync(
+			organizer, organizationId, $"{keyword} with a deadline", TimeSpan.FromDays(3));
 
 		await Page.GotoAsync($"{origin}/opportunities?q={keyword}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -111,13 +114,52 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		var startColor = await startLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
 		var deadlineColor = await deadlineLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
 		deadlineColor.Should().NotBe(startColor,
-			"a start date and an application deadline are different kinds of fact in the same slot");
+			"a start date and an imminent application deadline are different kinds of fact in the same slot");
 
 		// A different glyph too, so the distinction survives for a reader who
 		// cannot separate the two tones.
 		var startGlyph = await startLine.Locator("svg path").First.GetAttributeAsync("d");
 		var deadlineGlyph = await deadlineLine.Locator("svg path").First.GetAttributeAsync("d");
 		deadlineGlyph.Should().NotBe(startGlyph);
+	}
+
+	/// <summary>
+	/// #2088: every deadline used to render in the same amber warning tone
+	/// regardless of how far away it was, including ones months out - which
+	/// diluted the warning for a deadline that was actually close. A deadline
+	/// outside the imminent window now falls back to the same neutral tone a
+	/// start date uses.
+	/// </summary>
+	[Test]
+	public async Task PublicGrid_ADistantDeadlineCard_UsesTheSameNeutralToneAsAStartDateCard()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardDistantDeadline{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+
+		await PublishSlotBasedOpportunityAsync(organizer, organizationId, $"{keyword} with a slot");
+		await PublishInterestBasedOpportunityAsync(
+			organizer, organizationId, $"{keyword} with a distant deadline", TimeSpan.FromDays(90));
+
+		await Page.GotoAsync($"{origin}/opportunities?q={keyword}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var startLine = Page.Locator("[data-testid='opportunity-date-line'][data-date-kind='start']").First;
+		var deadlineLine = Page.Locator("[data-testid='opportunity-date-line'][data-date-kind='deadline']").First;
+
+		await Expect(startLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(deadlineLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(deadlineLine).ToContainTextAsync("Express interest by");
+
+		var startColor = await startLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
+		var deadlineColor = await deadlineLine.EvaluateAsync<string>("el => getComputedStyle(el).color");
+		deadlineColor.Should().Be(startColor,
+			"a deadline months away should not carry the same urgent tone as one about to close");
 	}
 
 	/// <summary>
@@ -558,7 +600,8 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	private static async Task<string> PublishInterestBasedOpportunityAsync(
 		HttpClient organizer,
 		string organizationId,
-		string title)
+		string title,
+		TimeSpan? validUntilOffset = null)
 	{
 		var response = await organizer.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
@@ -569,7 +612,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 			occurrence = "Recurring",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
-			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			validUntil = DateTimeOffset.UtcNow.Add(validUntilOffset ?? TimeSpan.FromDays(30)),
 		});
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
