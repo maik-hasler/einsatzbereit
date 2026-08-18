@@ -333,6 +333,13 @@ export default function ActivitySection() {
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
+				// #2072: looks and behaves like a tab set for a sighted mouse user,
+				// but there's no arrow-key navigation between the two segments - so
+				// the honest-semantics call (same one LanguageSelector.tsx and
+				// RowActionsMenu.tsx make for their own controls) is a labelled
+				// group of toggle buttons (aria-pressed), not the full ARIA tabs
+				// pattern (role="tablist"/"tab"/"tabpanel") that promises roving
+				// tabindex and arrow keys this doesn't implement.
 				// grid-cols-2 (not flex): an intrinsically-sized flex-1 track squeezes
 				// both segments to an equal share of the shrink-to-fit container width
 				// - which is sized to the *sum* of their natural widths - so the
@@ -353,7 +360,7 @@ export default function ActivitySection() {
 					data-testid="engagements-scope-upcoming"
 					onClick={() => switchEngagementsScope("upcoming")}
 					disabled={engagementsLoading}
-					aria-current={engagementsScope === "upcoming" ? "true" : undefined}
+					aria-pressed={engagementsScope === "upcoming"}
 					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "upcoming"
 							? "bg-white text-brand-700 shadow-sm"
@@ -367,7 +374,7 @@ export default function ActivitySection() {
 					data-testid="engagements-scope-past"
 					onClick={() => switchEngagementsScope("past")}
 					disabled={engagementsLoading}
-					aria-current={engagementsScope === "past" ? "true" : undefined}
+					aria-pressed={engagementsScope === "past"}
 					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "past"
 							? "bg-white text-brand-700 shadow-sm"
