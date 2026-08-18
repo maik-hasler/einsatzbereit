@@ -548,31 +548,52 @@ export default function OrgMembersPage() {
 										<p className="truncate text-xs text-gray-500">
 											{member.email}
 										</p>
-										{member.isOrganisator && (
-											<Chip tone="brand" size="sm" className="mt-0.5">
-												{t("orgSettings.organisator")}
-											</Chip>
-										)}
+										{/* Every member gets a role chip, not just organizers - a
+										bare row for regular members made status legible only by
+										the absence of a chip (#2083). */}
+										<Chip
+											tone={member.isOrganisator ? "brand" : "neutral"}
+											size="sm"
+											className="mt-0.5"
+										>
+											{member.isOrganisator
+												? t("orgSettings.organisator")
+												: t("orgSettings.roleMember")}
+										</Chip>
 									</div>
 									{member.userId === currentUserId ? (
-										<button
-											type="button"
-											onClick={() => setShowLeaveConfirm(true)}
-											disabled={isLastOrganizer}
-											title={
-												isLastOrganizer
-													? t("orgSettings.leaveOrganizationLastOrganizerHint")
-													: undefined
-											}
-											aria-describedby={
-												isLastOrganizer ? "leave-organization-hint" : undefined
-											}
-											className="-m-2 p-2 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-										>
-											{t("orgSettings.leaveOrganization")}
-										</button>
+										// Hint sits right under its button instead of in a
+										// footnote at the bottom of the card, so a disabled
+										// control's explanation is where the eye already is
+										// (#2083). The `title` tooltip this used to carry is
+										// gone too - the text is now always visible, not just on
+										// hover, so a duplicate tooltip would be redundant.
+										<div className="flex shrink-0 flex-col items-end gap-1">
+											<Button
+												type="button"
+												variant="dangerOutline"
+												size="sm"
+												onClick={() => setShowLeaveConfirm(true)}
+												disabled={isLastOrganizer}
+												aria-describedby={
+													isLastOrganizer
+														? "leave-organization-hint"
+														: undefined
+												}
+											>
+												{t("orgSettings.leaveOrganization")}
+											</Button>
+											{isLastOrganizer && (
+												<p
+													id="leave-organization-hint"
+													className="max-w-48 text-right text-xs text-gray-500"
+												>
+													{t("orgSettings.leaveOrganizationLastOrganizerHint")}
+												</p>
+											)}
+										</div>
 									) : isOrganizer ? (
-										<div className="flex shrink-0 items-center gap-6">
+										<div className="flex shrink-0 items-center gap-2">
 											{(() => {
 												const memberName =
 													member.firstName && member.lastName
@@ -580,8 +601,10 @@ export default function OrgMembersPage() {
 														: member.username;
 												return (
 													<>
-														<button
+														<Button
 															type="button"
+															variant="outline"
+															size="sm"
 															onClick={() =>
 																void handleChangeMemberRole(
 																	member.userId,
@@ -606,14 +629,15 @@ export default function OrgMembersPage() {
 																			name: memberName,
 																		})
 															}
-															className="-m-2 p-2 text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 														>
 															{member.isOrganisator
 																? t("orgSettings.demoteToMember")
 																: t("orgSettings.promoteToOrganizer")}
-														</button>
-														<button
+														</Button>
+														<Button
 															type="button"
+															variant="dangerOutline"
+															size="sm"
 															onClick={() =>
 																setRemoveTarget({
 																	userId: member.userId,
@@ -623,10 +647,9 @@ export default function OrgMembersPage() {
 															aria-label={t("orgSettings.removeMemberNamed", {
 																name: memberName,
 															})}
-															className="-m-2 p-2 text-xs text-red-700 hover:text-red-800"
 														>
 															{t("orgSettings.removeMember")}
-														</button>
+														</Button>
 													</>
 												);
 											})()}
@@ -635,23 +658,6 @@ export default function OrgMembersPage() {
 								</li>
 							))}
 						</ul>
-						{/* Footer inside the card, not loose text under it: the hint
-						explains why the row above has a disabled "Leave" action, so it
-						belongs to the list rather than to the page (#1755).
-						aria-describedby on that button ties it to this id - native
-						`disabled` removes the button from the tab order, so its `title`
-						tooltip is otherwise mouse-hover-only and unreachable by keyboard
-						or touch (#1926); this text is already visible on the page, but
-						the description ties it explicitly to the control for a
-						screen-reader user's virtual cursor too. */}
-						{isLastOrganizer && (
-							<p
-								id="leave-organization-hint"
-								className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500"
-							>
-								{t("orgSettings.leaveOrganizationLastOrganizerHint")}
-							</p>
-						)}
 					</div>
 				)}
 			</div>
