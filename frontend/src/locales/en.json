@@ -875,8 +875,8 @@
     },
     "notifications": {
       "bellLabel": "Notifications",
-      "bellLabelWithCount_one": "Notifications, {{count}} unread notification",
-      "bellLabelWithCount_other": "Notifications, {{count}} unread notifications",
+      "bellLabelWithCount_one": "Notifications, {{count}} unread",
+      "bellLabelWithCount_other": "Notifications, {{count}} unread",
       "markAllRead": "Mark all as read",
       "clearRead": "Clear read",
       "clearReadError": "Failed to clear read notifications.",
