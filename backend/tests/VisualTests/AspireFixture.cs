@@ -39,27 +39,24 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	// engagement/invitation/layout rows at large, only vera's own.
 	private Guid _veraUserId;
 
-	// Captured once, right after the backend's own startup
-	// (ASPNETCORE_ENVIRONMENT=Development, forced by AppHost.cs even under
-	// "Testing") has already run ApplicationDbContextInitializer.MigrateAsync +
-	// SeedAsync - i.e. before any test has created a throwaway org. Each
-	// organizer's alphabetically-first organized org, matching activeOrg.ts's
-	// resolveActiveOrg tie-break exactly. AuthHelper.FastSignInAsync uses this
-	// to pin the active-org cookie to a real, stable org id instead of letting
-	// the frontend's own alphabetical fallback pick whatever throwaway org some
-	// concurrently-running test happens to have created first under the same
-	// shared account. Capturing it here means no name-based filter is ever
-	// needed to tell a seed org apart from one a test created - there simply
-	// aren't any others yet.
+	// Each organizer's alphabetically-first organized org, matching
+	// activeOrg.ts's resolveActiveOrg tie-break. Captured once after the
+	// backend has run MigrateAsync + SeedAsync but before any test has created
+	// a throwaway org, so no name-based filter is needed to tell a seed org
+	// apart from a test's - there are no others yet.
+	//
+	// AuthHelper.FastSignInAsync pins the active-org cookie to this, rather
+	// than letting the frontend's alphabetical fallback pick whichever
+	// throwaway org a concurrent test created first under the same account.
 	private Dictionary<Guid, Guid> _pinnedOrganizerOrgByUserId = null!;
 
 	public async Task InitializeAsync()
 	{
 		// DistributedApplicationTestingBuilder.CreateAsync<AppHost>() defaults the
-		// AppHost's own hosting environment to "Development", not "Testing" -
-		// passing --environment explicitly is required for AppHost.cs's isTestEnv
-		// gate (skipping the Postgres data volume, pointing Geocoding__BaseUrl at
-		// an unroutable address for #975) to actually activate during test runs.
+		// AppHost's own hosting environment to "Development", not "Testing", so
+		// --environment must be passed explicitly for AppHost.cs's isTestEnv gate
+		// (skipping the Postgres data volume, pointing Geocoding__BaseUrl at an
+		// unroutable address) to activate during test runs.
 		var appHost = await DistributedApplicationTestingBuilder.CreateAsync<AppHost>(["--environment", "Testing"]);
 
 		_app = await appHost.BuildAsync();
@@ -85,28 +82,18 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		await CaptureBaselineSnapshotAsync();
 	}
 
-	// Restores vera's own account state for tests that need it deterministic
-	// (#1316) - opt in via [Before(Test)] fixture.ResetAsync() plus a keyed
+	// Restores vera's own account state for tests that need it deterministic -
+	// opt in via [Before(Test)] fixture.ResetAsync() plus a keyed
 	// [NotInParallel("visualtests-db")] on the class.
 	//
-	// An earlier version of this method also restored the organization/
-	// organization_invitation/organization_dashboard_layout tables to a
-	// baseline snapshot (delete every row outside a captured set of ids).
-	// That is unsafe at any scope wider than "vera's own rows": two of those
-	// three tables have zero seed rows, so "delete everything outside the
-	// baseline" degenerates into an unconditional DELETE FROM table - wiping
-	// whatever any other, concurrently running test (most of the suite is
-	// NOT keyed into "visualtests-db" and keeps running while this executes)
-	// had just created there, e.g. OrgDashboardCustomizeTests' saved
-	// dashboard layouts. None of the 3 classes that call this actually assert
-	// anything about those tables' contents - AuthHelper's pinned-org
-	// navigation already makes which *org* every test lands on deterministic,
-	// independent of this reset. The only state that's genuinely global,
-	// shared, and something these classes depend on is vera's own organization
-	// membership (any role)/Keycloak organisator role (she must never appear
-	// to organize or belong to anything), so that's the only thing restored
-	// here - scoped to her user id specifically, never touching another
-	// user's rows or any shared table at large.
+	// Deliberately scoped to vera's rows and nothing wider. Resetting the
+	// organization/invitation/dashboard_layout tables would be unsafe: two have
+	// zero seed rows, so "delete everything outside the baseline" degenerates
+	// into an unconditional DELETE FROM, wiping what a concurrent test just
+	// created - most of the suite is not keyed into "visualtests-db" and keeps
+	// running through this. The one shared thing callers depend on is vera's
+	// organization membership and Keycloak organisator role: she must never
+	// appear to organize or belong to anything.
 	public async Task ResetAsync()
 	{
 		await ResetVeraOrganizationMembershipAsync();
@@ -117,16 +104,12 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		_pinnedOrganizerOrgByUserId.TryGetValue(userId, out var organizationId) ? organizationId : null;
 
 	// Live re-query of userId's alphabetically-first Organizer org, matching
-	// activeOrg.ts's resolveActiveOrg fallback - unlike GetPinnedOrganizerOrganizationId
-	// above (a one-time snapshot from fixture boot, valid only because no other
-	// test had created any orgs yet), this re-runs the same query against
-	// current state. OrganizationDashboardNavLinkTests's deliberately-unpinned
-	// resolution-order test needs this: AchievementsTests (see its own doc
-	// comment) permanently adds two more Organizer orgs for olaf with no
-	// cleanup, sorting ahead of the seeded one, the instant it runs anywhere
-	// in the same suite run - comparing against the frozen boot-time snapshot
-	// instead of current state made that test racy against test ordering, not
-	// concurrency.
+	// activeOrg.ts's resolveActiveOrg fallback - unlike
+	// GetPinnedOrganizerOrganizationId above, which is a boot-time snapshot.
+	// OrganizationDashboardNavLinkTests's deliberately-unpinned resolution-order
+	// test needs current state: other classes permanently add Organizer orgs
+	// for olaf with no cleanup, sorting ahead of the seeded one, which makes
+	// the frozen snapshot racy against test ordering.
 	public async Task<Guid?> GetCurrentFirstOrganizerOrganizationIdAsync(Guid userId)
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);
@@ -136,10 +119,10 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	}
 
 	// Test-only escape hatch replicating what the now-removed admin-only
-	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
+	// AddMember endpoint did: add a user to a Keycloak organization as a
 	// plain member, without granting the Organizer role. Accepting an
-	// invitation grants Organizer too (#826), so it's the only way left to
-	// reconstruct a plain-member-only state for regression tests (#825).
+	// invitation grants Organizer too, so it's the only way left to
+	// reconstruct a plain-member-only state for regression tests.
 	public async Task AddPlainMemberDirectlyAsync(
 		Guid organizationId, Guid userId, CancellationToken cancellationToken = default)
 	{
@@ -175,12 +158,10 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		await cmd.ExecuteNonQueryAsync(cancellationToken);
 	}
 
-	// Olaf's well-known seed user id (ApplicationDbContextInitializer.OlafId,
-	// an internal constant in a different assembly - duplicated here rather
-	// than exposed cross-assembly since it's just a fixed literal). Exposed
-	// publicly (not just used internally) so callers needing his id directly -
-	// e.g. GetCurrentFirstOrganizerOrganizationIdAsync above - don't need a
-	// throwaway SignInAsync call just to decode it back off a token.
+	// Olaf's seed user id, duplicated from
+	// ApplicationDbContextInitializer.OlafId rather than exposed cross-assembly
+	// since it is a fixed literal. Public so callers can use his id directly
+	// instead of a throwaway SignInAsync just to decode it off a token.
 	public static Guid OlafId { get; } = new("00000000-0000-0000-0000-000000000001");
 
 	private async Task CaptureBaselineSnapshotAsync()
@@ -195,15 +176,12 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		_pinnedOrganizerOrgByUserId = await ReadPinnedOrganizerOrgsAsync(conn);
 
-		// Program.cs's Development branch (this AppHost forces backend into, see
-		// InitializeAsync above) catches and logs a SeedAsync failure rather than
-		// rethrowing (#1212) - a transient Keycloak hiccup during backend startup
-		// can still silently leave olaf's Organizer memberships un-seeded with no
-		// exception surfaced anywhere. If that happened, every downstream test that
-		// dereferences FastSignInAsync's pinned-org id for olaf would fail with a
-		// nullref deep into the run, minutes later, with no obvious connection back
-		// to this. Fail loudly here instead, at fixture boot, with a message that
-		// actually points at the cause.
+		// Program.cs's Development branch (which this AppHost forces the backend
+		// into) logs a SeedAsync failure rather than rethrowing, so a transient
+		// Keycloak hiccup at startup can leave olaf's Organizer memberships
+		// un-seeded with no exception anywhere. Every test dereferencing
+		// FastSignInAsync's pinned-org id would then nullref minutes later with no
+		// obvious connection back here - fail loudly at fixture boot instead.
 		if (!_pinnedOrganizerOrgByUserId.ContainsKey(OlafId))
 			throw new InvalidOperationException(
 				"Seed data has no Organizer-role organization membership for olaf "
@@ -239,16 +217,12 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	}
 
 	// Vera never belongs to anything in seed data (SeedOrg1Async/SeedOrg2Async
-	// only ever assign olaf as Organizer) - remove any membership row a test
-	// granted her, in any organization and at any role. Used to be scoped to
-	// role='Organizer' only, back when a plain Member row was invisible to
-	// GetOrganizationsQueryHandler; it now also returns Member-only orgs
-	// (Members gained read access), so a leftover Member row - e.g. from
-	// AccessibilityTests' AddPlainMemberDirectlyAsync call, which never
-	// cleans up - is just as capable of breaking "vera organizes/belongs to
-	// nothing" as an Organizer row was. Scoped to her user id only via the
-	// WHERE clause, so this can never touch another user's membership row or
-	// race a concurrently running test that isn't touching vera's own account.
+	// only assign olaf as Organizer) - remove any membership row a test granted
+	// her, in any organization and at any role. Not just role='Organizer':
+	// GetOrganizationsQueryHandler returns Member-only orgs too, so a leftover
+	// Member row breaks "vera organizes/belongs to nothing" just as well.
+	// Scoped to her user id via the WHERE clause, so this can never touch
+	// another user's row or race a test not touching vera's account.
 	private async Task ResetVeraOrganizationMembershipAsync()
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);
@@ -314,15 +288,10 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		return token.AccessToken;
 	}
 
-	// Keycloak's own token endpoint occasionally answers with a transient 500
-	// under the sustained concurrent load this suite puts on it - every sign-in
-	// (SignInAsync) plus every admin-token mint used for the resets between
-	// tests (GetAdminTokenAsync) hits this exact endpoint, hundreds of times
-	// over a ~12 minute run. Not attributable to any request this suite sends -
-	// Keycloak owns the response entirely - and a bare re-run of just the
-	// failing test always passes. Retries a handful of times with a short
-	// backoff on a 5xx before surfacing whatever the final attempt returned,
-	// so one blip doesn't fail an otherwise-unrelated test outright. Never
+	// Every sign-in and every admin-token mint hits Keycloak's token endpoint,
+	// hundreds of times per run, and under that load it occasionally answers
+	// with a transient 500 no request here caused. Retries a 5xx a few times
+	// with a short backoff so one blip does not fail an unrelated test. Never
 	// retries a 4xx (wrong credentials, bad client config) - that's a real
 	// failure, not a blip.
 	private static async Task<HttpResponseMessage> PostTokenRequestWithRetryAsync(
@@ -385,10 +354,9 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		// or the concatenation produces a double slash and a key that never matches.
 		var authority = $"{GetEndpoint("keycloak").ToString().TrimEnd('/')}/realms/{Realm}";
 
-		// "sub" is the Keycloak user id - decoded here (rather than requiring
-		// callers to look it up separately) since both #825-style regression
-		// tests and AuthHelper.FastSignInAsync's active-org pin need the
-		// signed-in user's own Guid.
+		// "sub" is the Keycloak user id - decoded here rather than making
+		// callers look it up, since AuthHelper.FastSignInAsync's active-org pin
+		// and the membership-guard tests both need the signed-in user's Guid.
 		var userId = Guid.Parse(
 			AuthHelper.DecodeJwtPayload(token.IdToken).GetProperty("sub").GetString()!);
 
@@ -397,28 +365,20 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Creates a throwaway Keycloak user for tests that need to land on a page
-	/// only a required action can reach - <c>login-update-password.ftl</c>,
-	/// <c>login-update-profile.ftl</c>, <c>login-verify-email.ftl</c>. Those are
-	/// the pages a real signup actually walks through (the realm has
-	/// <c>verifyEmail</c> on, so Keycloak defers the password to UPDATE_PASSWORD
-	/// after confirmation rather than collecting it on the registration form -
-	/// see <c>RegistrationPassword.buildPage</c>), and there is no way to reach
-	/// them from the seeded vera/olaf/admin accounts without leaving a required
-	/// action pinned to a shared account for the rest of the session.
+	/// Creates a throwaway Keycloak user for tests that need a page only a
+	/// required action reaches (<c>login-update-password.ftl</c>,
+	/// <c>login-update-profile.ftl</c>, <c>login-verify-email.ftl</c>) - the realm
+	/// has <c>verifyEmail</c> on, so Keycloak defers the password to
+	/// UPDATE_PASSWORD rather than collecting it at registration. Reaching those
+	/// from a seeded account would pin a required action to it for the session.
 	///
-	/// Always pair with <see cref="DeleteUserAsync"/> in a finally: this suite
-	/// shares one realm across ~50 classes, and an abandoned user carrying
-	/// UPDATE_PASSWORD is exactly the kind of debris that makes a later,
-	/// unrelated login test fail.
+	/// Always pair with <see cref="DeleteUserAsync"/> in a finally: one realm is
+	/// shared suite-wide, and an abandoned user carrying UPDATE_PASSWORD breaks a
+	/// later, unrelated login test.
 	///
-	/// <paramref name="password"/> must satisfy the realm's password policy
-	/// (<c>upperCase(1)</c>, <c>length(8)</c>) or Keycloak rejects the create.
-	///
-	/// <paramref name="attributes"/> seeds Keycloak user attributes (e.g.
-	/// <c>{"locale": ["de"]}</c>, mapped to the OIDC <c>locale</c> claim by the
-	/// realm's default "profile" client scope) - null omits the field entirely,
-	/// leaving Keycloak's own defaults in place.
+	/// <paramref name="password"/> must satisfy the realm policy
+	/// (<c>upperCase(1)</c>, <c>length(8)</c>). <paramref name="attributes"/>
+	/// seeds user attributes (e.g. <c>{"locale": ["de"]}</c>); null omits it.
 	/// </summary>
 	public async Task<Guid> CreateThrowawayUserAsync(
 		string username, string password, bool emailVerified, string[] requiredActions,
@@ -470,7 +430,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	// Test-only escape hatch to simulate an opportunity row removed without
 	// going through the command handler that cancels its engagements first -
-	// e.g. data predating that cancellation safeguard (#703).
+	// e.g. data predating that cancellation safeguard.
 	public async Task DeleteOpportunityRowDirectlyAsync(Guid opportunityId)
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);

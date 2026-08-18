@@ -7,16 +7,14 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Visual tests for #762: the org dashboard tab was rebuilt from a bare
-/// calendar into a widget grid (Calendar, Upcoming Opportunities, Settings,
-/// To-Do) so an organizer sees pending-application and signed-up-volunteer
-/// counts without navigating to another tab. #771 review feedback made the
-/// grid customizable (add/remove/place via the "Edit" quick action) and
-/// added a "Create opportunity" widget to the default layout - see
-/// OrgDashboardCustomizeTests for coverage of the customization itself.
-/// #1780 then split those two counts apart: the pending queue stays in the
-/// "Needs your attention" tile (and reads as resolved when it's empty),
-/// while the signed-up total moved to its own neutral "Volunteers" tile.
+/// Visual tests for the org dashboard's widget grid (Calendar, Upcoming
+/// Opportunities, Settings, To-Do, Create opportunity, Volunteers), which
+/// lets an organizer see pending-application and confirmed-volunteer counts
+/// without navigating to another tab. The pending queue lives in the "Needs
+/// your attention" tile and reads as resolved when empty; the confirmed
+/// total sits in its own neutral "Volunteers" tile. Customization itself
+/// (add/remove/place via the "Edit" quick action) is covered by
+/// OrgDashboardCustomizeTests.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -61,23 +59,21 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(settingsWidget).ToBeVisibleAsync();
 
 		// A brand-new organization has nothing waiting, so the attention
-		// widget reads as resolved (#1780) instead of putting "0 Pending
+		// widget reads as resolved instead of putting "0 Pending
 		// sign-ups" and a live call to action under an urgency headline -
 		// see ToDoWidget_ReadsAsResolvedAndOffersNoCta_... below for the pair.
 		await Expect(todoWidget.GetByTestId("todo-widget-resolved"))
 			.ToHaveTextAsync("Nothing pending - every sign-up is handled.");
 		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveCountAsync(0);
 
-		// #1780 also moved the neutral confirmed-volunteer total out of the
-		// attention widget into its own plain stats tile, so a queue to work
-		// through and a running total stop sharing one urgent framing. The
-		// label reads "Confirmed", not "Signed-up", because that is what the
-		// API counts - see VolunteerStatsWidget.tsx.
+		// The neutral confirmed-volunteer total lives in its own plain stats tile,
+		// so a queue to work through and a running total do not share one urgent
+		// framing. The label reads "Confirmed", not "Signed-up", because that is
+		// what the API counts - see VolunteerStatsWidget.tsx.
 		await Expect(todoWidget).Not.ToContainTextAsync("Confirmed volunteers");
 		await Expect(volunteersWidget).ToContainTextAsync("Confirmed volunteers");
-		// Selects on data-testid rather than the text-3xl Tailwind utility
-		// class - see #1328, a purely cosmetic restyle of that class would
-		// otherwise silently make these locators match nothing.
+		// Selects on data-testid rather than the text-3xl Tailwind class, which a
+		// purely cosmetic restyle would silently make match nothing.
 		await Expect(volunteersWidget.GetByTestId("volunteer-stats-stat-confirmed"))
 			.ToHaveTextAsync("0");
 
@@ -90,7 +86,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// Settings widget surfaces the org identity and a link back to the
 		// full Settings tab instead of duplicating the whole edit form.
-		// #834: singular member count must use "1 member", not "1 members".
+		// Singular member count must use "1 member", not "1 members".
 		// Assert on the member-count link's own text rather than the whole
 		// widget's flattened text - Playwright concatenates sibling DOM text
 		// with no separator, so the org name's random Guid suffix can glue
@@ -101,11 +97,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(settingsWidget.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }))
 			.ToBeVisibleAsync();
 
-		// Regression guard: many existing Playwright flows across this suite
-		// (see AuthHelper.GoToOrgAppDashboardAsync callers) expect this button
-		// on the dashboard - #771 review feedback moved it from a bare button
-		// above the grid into its own "Create opportunity" widget tile (part
-		// of the default layout), but the testid/click target is unchanged.
+		// Many flows across this suite (see AuthHelper.GoToOrgAppDashboardAsync
+		// callers) expect this button on the dashboard. It lives inside the
+		// "Create opportunity" widget tile, but the testid/click target is the
+		// same one they all use.
 		var createOpportunityWidget = Page.Locator("section", new()
 		{
 			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Create opportunity" }),
@@ -118,7 +113,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task ToDoWidget_ReadsAsResolvedAndOffersNoCta_UntilASignUpIsActuallyWaiting()
 	{
-		// #1780: the widget branched only on loading / error / kpis-present,
+		// The widget branched only on loading / error / kpis-present,
 		// so an empty queue rendered "0 Pending sign-ups" under the "Needs
 		// your attention" headline next to a live "View pending sign-ups"
 		// link that led to a list with no rows - an urgency headline over a
@@ -203,12 +198,11 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task ToDoWidget_OffersNoCta_WhenTheDashboardCountsFailToLoad()
 	{
-		// #1780's second defect, found while verifying the first: the "View
-		// pending sign-ups" link sat outside the kpis-present branch
-		// altogether, so a failed fetch still rendered a live call to action
-		// beside the error banner - offering to work a queue whose size the
-		// page had just failed to read. Both count tiles now surface their own
-		// failure and nothing else.
+		// The "View pending sign-ups" link must sit inside the kpis-present
+		// branch: outside it, a failed fetch renders a live call to action beside
+		// the error banner, offering to work a queue whose size the page just
+		// failed to read. Both count tiles surface their own failure and nothing
+		// else.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
@@ -267,18 +261,11 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task Dashboard_HasNoOrgNameHeading_AndWidgetLinksReachEverySubpage()
 	{
-		// #771: the repo owner asked to remove the per-page org-name h1
-		// entirely - the org switcher in the header already shows the org
-		// name. #775/#777 brought the tab bar back (mobile burger submenu
-		// needed it too), so that part of #771's removal no longer holds -
-		// see OrgAppMobileResponsiveTests for tab-bar coverage. #973 then
-		// gave OrgAppShell a real h1 again (axe's page-has-heading-one gate
-		// had a blind spot that let every org app page ship with no h1 at
-		// all) - but it renders the tab/page title ("Dashboard"), not the
-		// org name, so #771's actual intent (no org-name duplication) still
-		// holds. This test now asserts exactly that single, correctly-titled
-		// h1, plus that the dashboard's own widgets are a second, independent
-		// way to reach every subsite (not just the tab bar).
+		// OrgAppShell's h1 renders the tab/page title ("Dashboard"), never the org
+		// name - the header's org switcher already shows that, and duplicating it
+		// per page is what this asserts against. Also asserts the dashboard's own
+		// widgets are a second, independent way to reach every subsite, not just
+		// the tab bar (covered in OrgAppMobileResponsiveTests).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -287,7 +274,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		await CreateOrganizationAsync("Visual771 Reachability", pinnedOrgId!.Value);
 
-		// OrgAppShell renders one page-title h1 (#973), but it must still not
+		// OrgAppShell renders one page-title h1, but it must still not
 		// duplicate the org name the header's org switcher already shows.
 		await Expect(Page.Locator("h1")).ToHaveCountAsync(1);
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
@@ -314,11 +301,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.GoBackAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard$"), new() { Timeout = 10_000 });
 
-		// Members: reachable via the Settings widget's member-count link -
-		// scoped to that widget since the tab bar has its own, separate
-		// "Members" link now too. #834: the link reads "1 member" (singular)
-		// for a fresh single-member org, so match on "member" rather than
-		// "members".
+		// Members: reachable via the Settings widget's member-count link - scoped
+		// to that widget since the tab bar has its own separate "Members" link.
+		// The link reads "1 member" (singular) for a fresh single-member org, so
+		// match on "member" rather than "members".
 		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/members", new() { Timeout = 10_000 });
 
@@ -333,7 +319,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_MonthView_RendersGermanWeekdayLabels_WhenAppLocaleIsGerman()
 	{
-		// #878: CalendarWidget imported the German date-fns locale into its
+		// CalendarWidget imported the German date-fns locale into its
 		// `locales` map but never passed a `culture` prop to the underlying
 		// Calendar component, so react-big-calendar always fell back to its
 		// default (English) formatting regardless of the app's selected
@@ -367,7 +353,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_AgendaView_RendersGermanColumnHeaders_WhenAppLocaleIsGerman()
 	{
-		// #1254: the `messages` object passed to react-big-calendar never
+		// The `messages` object passed to react-big-calendar never
 		// overrode `date`/`time`/`event` (among others), so its own English
 		// defaults rendered these Agenda column headers regardless of the
 		// app's selected language - a German organizer's first look at the
@@ -467,7 +453,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_ToolbarDateRangeHeader_UsesSharedDateFormat_NotAmbiguousDdMmYyyy()
 	{
-		// #1959: the Agenda/Week toolbar's date-range label (e.g. "14/08/2026 -
+		// The Agenda/Week toolbar's date-range label (e.g. "14/08/2026 -
 		// 13/09/2026") came straight from react-big-calendar's own
 		// agendaHeaderFormat/dayRangeHeaderFormat defaults (date-fns' locale
 		// default 'P' token, or a year-less "MMMM dd" range for Week), never
@@ -579,7 +565,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
-		// #812: WidgetCard only set overflow-y-auto on its content wrapper, and
+		// WidgetCard only set overflow-y-auto on its content wrapper, and
 		// html sets overflow-x: clip page-wide (global.css) - together, any
 		// widget content wider than its rendered width (the Calendar widget's
 		// toolbar button rows, and its Agenda table's fixed-width date/time
@@ -664,7 +650,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		});
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Narrow the browser to exactly the mobile viewport #812 was reported on.
+		// Narrow the browser to the mobile viewport this row overflows at.
 		await Page.SetViewportSizeAsync(390, 844);
 
 		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
@@ -713,7 +699,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_SelectEventAndSaveColor_RecoloredEventSurvivesReload()
 	{
-		// #1397: calEvents, and the Calendar's components/eventPropGetter/messages
+		// CalEvents, and the Calendar's components/eventPropGetter/messages
 		// props, were rebuilt from scratch on every render (including on every
 		// pointer movement while dragging the color picker below), fixed by
 		// memoizing calEvents off calData and hoisting the static props out of

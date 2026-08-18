@@ -116,7 +116,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_LanguageSwitcher_HasAccessibleName()
 	{
-		// #1944: the trigger's only visible content is the two-letter language
+		// The trigger's only visible content is the two-letter language
 		// code ("EN"/"DE"), so without an explicit label a screen reader
 		// announced just that code, not what the control does. The SPA's
 		// counterpart (Header/LanguageSelector.tsx) labels both its trigger
@@ -142,7 +142,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Button.tsx documents that white text on brand-600 (#2d8a5e) measures
 		// ~4.3:1, under the WCAG AA 4.5:1 floor this suite's own axe scans
 		// enforce, and that every primary button in the app therefore uses
-		// brand-700 (#226947). The auth pages were the one surface still on
+		// brand-700. The auth pages were the one surface still on
 		// brand-600 - both a contrast failure and a visibly different green
 		// from the button the same person clicked one page earlier.
 		await Page.GotoAsync(AuthUrl(locale: "en"));
@@ -156,7 +156,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_AuthFadeUpKeyframe_NeverDipsBelowFullOpacity()
 	{
-		// Regression for #1960: the auth-fade-up keyframe used to fade opacity
+		// The auth-fade-up keyframe used to fade opacity
 		// 0 -> 1 over 0.45s, so the card's heading, labels and the primary
 		// "Sign In" button rendered as low-contrast gray-green for the first
 		// second or so after load - the single most function-critical page in
@@ -391,13 +391,13 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#kc-logout")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Not AssertThemeShellAsync: its vertical-gap check requires .auth-back
-		// to be visible, which #1931 below deliberately makes untrue here.
+		// to be visible, which this page deliberately omits (see below).
 		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync();
 		await Expect(Page.Locator(".auth-logo")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-logout-cancel")).ToBeVisibleAsync();
 
-		// #1931: this page's own Cancel link above is its only way out - the
+		// This page's own Cancel link above is its only way out - the
 		// generic "Back to Einsatzbereit" safety net from template.ftl must not
 		// also render here, or the two identical-destination controls sit side
 		// by side with no visible distinction.

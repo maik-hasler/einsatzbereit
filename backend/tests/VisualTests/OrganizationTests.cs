@@ -6,11 +6,11 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-// #1316: SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave below
-// needs vera's global Keycloak organisator role deterministically cleared -
-// opts the whole class into fixture.ResetAsync() and a keyed [NotInParallel]
-// so only other classes sharing the "visualtests-db" key (not the whole
-// assembly) are excluded while this one resets that role.
+// SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave below needs
+// vera's global Keycloak organisator role deterministically cleared, so the
+// whole class opts into fixture.ResetAsync() and a keyed [NotInParallel] -
+// keyed so only classes sharing "visualtests-db", not the whole assembly,
+// are excluded while this one resets that role.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]
 public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -33,23 +33,18 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403()
 	{
-		// Regression for #579: the dashboard's Members tab used to call the
-		// admin-only AddMember endpoint, so an organizer got a 403/401 instead
-		// of a pending invitation. Verifies the dashboard now calls
-		// CreateInvitation and the invitee shows up under Pending Invitations,
-		// with no error banner.
+		// The dashboard's Members tab must call CreateInvitation, not the
+		// admin-only AddMember endpoint, which returns 403/401 for an organizer.
+		// The invitee shows up under Pending Invitations with no error banner.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// A throwaway org rather than whichever seeded one olaf happens to be
-		// pinned to, for the same reason the Organizer-role invite test below
-		// uses one: vera is a baseline member of one of the two seeded orgs, so
-		// on that org she never surfaces as an invitable candidate at all
-		// ("No users found."). Which of the two is pinned is decided by
-		// alphabetical order (activeOrg.ts's resolveActiveOrg fallback), which
-		// a rename of the seed data silently flips - and did.
+		// A throwaway org, not whichever seeded one olaf is pinned to: vera is a
+		// baseline member of one of the two, where she never surfaces as an
+		// invitable candidate ("No users found."). Which one is pinned comes from
+		// resolveActiveOrg's alphabetical fallback, which a seed-data rename flips.
 		await CreateOrganizationAsync("Visual579 InviteMember", pinnedOrgId!.Value);
 
 		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
@@ -80,12 +75,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MemberSearch_RequiresFourCharacters_AndNeverExposesCandidateEmail()
 	{
-		// Regression for #1170: any authenticated user could self-create an
-		// organization to become an organizer, then abuse this search - a
-		// 2-char minimum, each result carrying the candidate's email address -
-		// to enumerate the realm-wide user directory. Verifies a 3-char query
-		// returns nothing and a matching search never renders an email
-		// address in the results.
+		// Any authenticated user can self-create an organization to become an
+		// organizer, so this search is reachable by anyone and must not expose the
+		// realm-wide user directory: a 3-char query returns nothing, and a matching
+		// search never renders a candidate's email address.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -109,7 +102,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SoleMember_MembersPage_ShowsDisabledLeaveInsteadOfRemove()
 	{
-		// #580: the org's sole member must see a disabled "Leave" action on
+		// The org's sole member must see a disabled "Leave" action on
 		// their own row, never "Remove" - removing them would orphan the org.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -118,10 +111,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual580 Leave", pinnedOrgId!.Value);
 
-		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
-		// the same rail an organizer uses, and unambiguous unlike a bare
-		// "member" name match, which the Settings widget's own member-count link
-		// also answers to.
+		// Via the page header's section rail, not a bare "member" name match -
+		// the Settings widget's member-count link answers to that too.
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
@@ -134,12 +125,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SoleOrganizer_MembersPage_LeaveButtonHintIsProgrammaticallyAssociated()
 	{
-		// #1926: the disabled "Leave" button explained itself only via a
-		// native `title` tooltip, reachable only by mouse hover - unreachable
-		// once native `disabled` removes the button from the tab order.
-		// Verifies the visible hint text is wired to the button via
-		// aria-describedby (not just placed nearby), so a keyboard/screen-
-		// reader user's virtual cursor gets it too.
+		// Native `disabled` removes the button from the tab order, so a `title`
+		// tooltip would be mouse-only. The visible hint must be wired to the button
+		// via aria-describedby, not just placed nearby, so a screen reader's
+		// virtual cursor reaches it too.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -165,20 +154,12 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave()
 	{
-		// Regression for #825 (UI level): OrgMembersPage.tsx's "last organizer"
-		// guard counts members whose isOrganisator is true, which
-		// KeycloakOrganizationService.GetMembersAsync derives from Keycloak's
-		// *global* "organisator" role, not a per-organization one. Before the
-		// fix, the guard instead looked at total member count, so an org with
-		// one Organizer plus one plain member (2 members, still only 1
-		// Organizer) let the Organizer leave/be removed and permanently orphan
-		// the org - there was no path left to promote the remaining member.
-		// Deterministic only because fixture.ResetAsync() (this class opts in
-		// above) clears vera's global organisator role first - otherwise a
-		// leftover role from an earlier, unrelated test would make her read as
-		// an Organizer here too. The backend guard itself is covered
-		// deterministically by
-		// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains.
+		// The "last organizer" guard must count organizers, not members: one
+		// Organizer plus one plain member would otherwise let the Organizer leave and
+		// orphan the org, with no path left to promote the remaining member.
+		// isOrganisator comes from Keycloak's *global* role, so this is deterministic
+		// only because fixture.ResetAsync() clears vera's copy first. The backend
+		// guard is covered in IntegrationTests.OrganizationSettingsTests.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -190,10 +171,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		match.Success.Should().BeTrue();
 		var organizationId = Guid.Parse(match.Groups[1].Value);
 
-		// Accepting an invitation now also grants Organizer (#826), so that
-		// flow can no longer produce a plain-member-only state - use the
-		// fixture's direct Keycloak escape hatch instead, same as
-		// IntegrationTestFixture.AddPlainMemberDirectlyAsync.
+		// Accepting an invitation also grants Organizer, so that flow cannot
+		// produce a plain-member-only state - use the fixture's direct Keycloak
+		// escape hatch, same as IntegrationTestFixture.AddPlainMemberDirectlyAsync.
 		var vera = await Fixture.SignInAsync("vera", "vera123");
 		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
 
@@ -202,10 +182,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// pre-membership snapshot (olaf as sole member) - force a refetch.
 		await Page.ReloadAsync();
 
-		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
-		// the same rail an organizer uses, and unambiguous unlike a bare
-		// "member" name match, which the Settings widget's own member-count link
-		// also answers to.
+		// Via the page header's section rail, not a bare "member" name match -
+		// the Settings widget's member-count link answers to that too.
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
@@ -220,12 +198,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm()
 	{
-		// Regression for #1231: the Members page's "Remove" button used to call
-		// RemoveMember directly on click - no confirmation, no way to back out,
-		// unlike every other destructive action on this page (Leave, Delete
-		// Organization) which already goes through ConfirmDialog. Verifies
-		// "Remove" now opens a dialog naming the member, "Keep" cancels without
-		// removing them, and only "Yes, remove" actually calls the API.
+		// "Remove" must go through ConfirmDialog like every other destructive
+		// action on this page (Leave, Delete Organization): it opens a dialog naming
+		// the member, "Keep" cancels without removing them, and only "Yes, remove"
+		// calls the API.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -282,11 +258,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Organizer_CanPromoteAndDemoteMember_ViaMembersPage()
 	{
-		// #1050: OrganizationMembership.Role was create-only, so every member
-		// was forcibly an Organizer with no promote/demote path. Verifies the
-		// new "Promote to organizer"/"Demote to member" actions round-trip
-		// through the API and persist (survive a reload), not just update
-		// local state optimistically.
+		// "Promote to organizer"/"Demote to member" must round-trip through the API
+		// and survive a reload, not just update local state optimistically.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -315,9 +288,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Plain member: no Organizer badge, a "Promote" action, no "Demote".
-		// einsatzbereit#1294: these buttons' accessible names now interpolate
-		// the member's own name in the middle ("Promote {name} to organizer"),
-		// so match with a regex rather than the old literal substring.
+		// These buttons' accessible names interpolate the member's own name in the
+		// middle ("Promote {name} to organizer"), so match with a regex.
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync();
 		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
 		await Expect(promoteButton).ToBeVisibleAsync();
@@ -328,13 +300,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") });
 		await Expect(demoteButton).ToBeVisibleAsync();
 
-		// Reload to prove the promotion was actually persisted server-side,
-		// not just an optimistic local-state update. Already on the members
-		// page (navigated here via the dashboard's member-count link earlier)
-		// - the "member" link lives only on the dashboard's SettingsWidget, not
-		// on this page, so reloading this page directly is all that's needed;
-		// re-clicking that link here would look for an element that doesn't
-		// exist on /dashboard/members and hang until timeout.
+		// Reload to prove the promotion persisted server-side rather than being an
+		// optimistic local update. A plain reload, not a re-click: the "member" link
+		// lives on the dashboard's SettingsWidget and does not exist on this page.
 		await Page.ReloadAsync();
 		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
@@ -349,12 +317,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MembersPage_ActionButtons_MeetMinimumTouchTargetSize()
 	{
-		// Regression for #1847: "Promote to organizer"/"Demote to member",
-		// "Remove" and "Leave" rendered as bare text-xs buttons with no padding
-		// beyond line-height, measuring ~16px tall at a 375px viewport - under
-		// half the WCAG 2.2 SC 2.5.8 24x24 CSS px minimum - with "Promote" and
-		// the destructive "Remove" only ~11px apart, a real mis-tap risk on a
-		// touch screen.
+		// The member-row actions must clear WCAG 2.2 SC 2.5.8's 24x24 CSS px
+		// minimum at a 375px viewport, and keep "Promote" clear of the destructive
+		// "Remove" beside it - bare text-xs buttons measure ~16px tall and land
+		// ~11px apart, a real mis-tap risk on a touch screen.
 		const float MinTargetSize = 24;
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -379,9 +345,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
 		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// Resize down to the viewport the review measured the violation at,
-		// after navigating - the org app's section rail is reached through the
-		// default desktop viewport here, same as every other test in this file.
+		// Resize down after navigating - the org app's section rail is reached
+		// through the default desktop viewport, same as every other test here.
 		await Page.SetViewportSizeAsync(375, 812);
 
 		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
@@ -413,18 +378,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Organizer_CanInviteMemberWithOrganizerRole_ViaRoleSelector()
 	{
-		// #1050: CreateInvitation now carries an intended role, defaulting to
-		// Member (the previous behavior always granted Organizer regardless of
-		// intent). Verifies the role selector lets an organizer explicitly
-		// invite someone as an Organizer instead, shown on the pending
-		// invitation.
-		//
-		// Uses a throwaway org (not olaf's pinned/seeded one) so that inviting
-		// vera here can never collide with the invitation
-		// Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403
-		// above sends: organization_invitation rows aren't cleared between
-		// tests, so a second invite into the same org would 409 with
-		// OrganizationInvitation.AlreadyInvited depending on run order.
+		// CreateInvitation carries an intended role, defaulting to Member - the
+		// selector must let an organizer invite someone as Organizer instead, shown
+		// on the pending invitation. Throwaway org: organization_invitation rows are
+		// not cleared between tests, so reusing olaf's would 409 with AlreadyInvited
+		// against whatever Organisator_InviteMemberFromDashboard_... already sent.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -452,14 +410,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Organizer_CanDismissPendingInvitation_RevokingItBeforeAcceptance()
 	{
-		// Regression for #1040: a pending invitation had no dismiss control at
-		// all (only Declined/Expired rows did), and the backend explicitly
-		// rejected dismissing one - so an organizer who invited the wrong
-		// person had no way to revoke it before that person could accept and
-		// gain full Organizer access. Verifies the same "Dismiss" control
-		// already available on Declined/Expired rows now also appears - and
-		// works - for a still-Pending one, and that the removal survives a
-		// reload (persisted, not just optimistic local state).
+		// An organizer who invited the wrong person must be able to revoke it
+		// before that person accepts and gains full Organizer access: the same
+		// "Dismiss" control Declined/Expired rows carry also works on a Pending
+		// one, and the removal survives a reload rather than being optimistic
+		// local state.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -496,8 +451,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
-		// #580: the new "Delete organization" action, enabled only for the
-		// sole remaining member, must actually delete the org and go home.
+		// The "Delete organization" action, enabled only for the sole remaining
+		// member, must actually delete the org and go home.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -507,11 +462,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgName = await CreateOrganizationAsync("Visual580 Delete", pinnedOrgId!.Value);
 		var orgId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
 
-		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
+		// Reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 
-		// #1792 dropped the button's Title Case so it doesn't clash with the
-		// panel heading right above it.
+		// The button is sentence case so it does not clash with the panel heading
+		// right above it.
 		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(deleteButton).ToBeEnabledAsync();
@@ -525,11 +480,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 10_000 });
 
-		// Regression for #1331: the redirect alone proves nothing about whether
-		// DELETE actually deleted anything - a swallowed exception or a rolled-
-		// back transaction would redirect home just the same. Assert the org is
-		// actually gone via the backend directly: its public profile 404s, and
-		// it no longer appears in the public directory a volunteer would browse.
+		// The redirect alone proves nothing - a swallowed exception or a rolled-back
+		// transaction would redirect home just the same. Assert the org is gone via
+		// the backend: its public profile 404s, and it no longer appears in the
+		// public directory a volunteer would browse.
 		var backend = Fixture.GetEndpoint("backend");
 		using var http = new HttpClient { BaseAddress = backend };
 
@@ -547,12 +501,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task DangerZoneHint_BranchesOnMemberCount_TheWayTheDeleteButtonAlreadyDid()
 	{
-		// Regression for #1789: the danger zone's hint was one static string
-		// ("...Remove other members first.") passed unconditionally as
-		// DangerZonePanel's description, while only the button's `disabled`
-		// prop branched on member count. So the sole member - the one person
-		// who *can* delete - was told to remove members who are not there,
-		// next to an enabled Delete button.
+		// DangerZonePanel's description must branch on member count, not just the
+		// button's `disabled` prop - otherwise the sole member, the one person who
+		// *can* delete, is told to remove members who are not there, next to an
+		// enabled Delete button.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -592,10 +544,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CreateOrganizationModal_AcceptsFullDetails_AndAppliesThemAtCreation()
 	{
-		// #712: the create-organization modal used to collect only Name -
-		// description, contact info, address and logo were only reachable
-		// afterwards via the Settings tab. Verifies the richer create form
-		// persists all of them in one step.
+		// The create-organization modal collects description, contact info, address
+		// and logo alongside Name - all of them must persist in one step.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual712 FullDetails {Guid.NewGuid():N}";
 
@@ -621,20 +571,14 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
-		// Wait for the create itself to finish before asserting anything about
-		// where it navigated. CreateOrganizationModal only closes on success
-		// (onSuccess then onClose, after the POST resolves); a failed create
-		// keeps the dialog open with an inline error instead.
+		// Wait for the create itself to finish before asserting where it navigated.
+		// CreateOrganizationModal only closes on success (onSuccess then onClose,
+		// after the POST resolves); a failed create keeps the dialog open with an
+		// inline error.
 		//
-		// This is a diagnostic split, not a fix for a known race: this test
-		// failed once in CI (run 31158818536) with the switcher still showing
-		// the previous org, and the single assertion below could not tell
-		// "create failed", "create was still in flight" and "create succeeded
-		// but navigation didn't happen" apart - all three render identically.
-		// Splitting the wait means the next occurrence says which one it was.
-		// The root cause is still unknown; four separate analyses failed to
-		// find a mechanism that survived scrutiny, so nothing here claims to
-		// remove it.
+		// The split is diagnostic, not a fix: a single assertion cannot tell
+		// "create failed", "create still in flight" and "create succeeded but did
+		// not navigate" apart, since all three render identically.
 		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// Creating an org makes it the active org and navigates into its new
@@ -645,7 +589,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
 
-		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
+		// Reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 
 		await Expect(Page.GetByText("A helpful description for volunteers.")).ToBeVisibleAsync(
@@ -661,12 +605,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CreateOrganizationModal_NameRequired_BlocksSubmitWithInlineError()
 	{
-		// #851: the create-organization form used to only enforce Name via the
-		// browser's native "required" attribute (or fail at the server round-trip
-		// for every other field). It now uses the same react-hook-form + zod
-		// approach as the volunteer-opportunity wizard, so submitting blank
-		// blocks client-side with a styled inline error instead of a native
-		// tooltip or a server error.
+		// The create-organization form uses the same react-hook-form + zod approach
+		// as the volunteer-opportunity wizard, so submitting blank must block
+		// client-side with a styled inline error rather than a native tooltip or a
+		// server round-trip.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -694,12 +636,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CreateOrganizationModal_PartialAddress_ShowsInlineErrorsForMissingFields()
 	{
-		// #851: Address.Create requires street/houseNumber/zipCode/city together
-		// - filling in only some of them used to pass client-side silently and
-		// only fail once the request round-tripped to the server. The shared
-		// zod schema (organizationFormSchema.ts) now mirrors that same
-		// conditional-required rule client-side, same as LocationStep does for
-		// the volunteer-opportunity wizard.
+		// Address.Create requires street/houseNumber/zipCode/city together, and the
+		// shared zod schema (organizationFormSchema.ts) mirrors that
+		// conditional-required rule client-side, so a partial address must not
+		// round-trip to the server to fail.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual851 PartialAddress {Guid.NewGuid():N}";
 
@@ -726,7 +666,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(createDialog).ToBeVisibleAsync();
 
 		// Name/street were filled in above, so Cancel must ask for confirmation
-		// instead of silently discarding them (#1238).
+		// rather than silently discarding them.
 		await createDialog.GetByTestId("modal-cancel").ClickAsync();
 		var discardBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" });
 		await Expect(discardBtn).ToBeVisibleAsync();
@@ -737,10 +677,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
 	{
-		// #772 review follow-up (issue #763): "the site looks a bit dead" -
-		// the public organization directory now shows each org's count of
-		// open (Published) volunteer opportunities instead of just a bare
-		// name/description, so a card with real opportunities reads as such.
+		// The public organization directory shows each org's count of open
+		// (Published) volunteer opportunities, so a card with real opportunities
+		// reads as active rather than as a bare name/description.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -772,8 +711,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.ClickAsync();
 
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
-		// Individual-contact opportunities need an application deadline before
-		// they can be published (einsatzbereit#1086).
+		// Individual-contact opportunities need an application deadline before they
+		// can be published.
 		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
@@ -793,16 +732,13 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Directory_ShowsTwoLetterMonogram_MatchingEveryOtherSurface()
 	{
-		// Regression for #1916: OrganizationsPage rendered org.name.charAt(0) - a
-		// single letter, indistinguishable between organizations that share a
-		// first word - while every other surface (header org switcher,
-		// opportunity cards, org profile page) already renders getInitials' two-
-		// letter monogram. Reuses the exact two organization names the issue
-		// itself cited, already covered by initials.test.ts's assertions that
-		// "Lindenauer Nachbarschaftshilfe e.V." -> "LN" and
-		// "Lindenauer Tierschutzverein e.V." -> "LT" - the random suffix below is
-		// appended to "Lindenauer" itself (no new word) so those two-letter
-		// results still hold.
+		// OrganizationsPage must render getInitials' two-letter monogram like every
+		// other surface (header org switcher, opportunity cards, org profile page),
+		// not org.name.charAt(0), which is indistinguishable between organizations
+		// sharing a first word. Uses two names initials.test.ts already covers
+		// ("Lindenauer Nachbarschaftshilfe e.V." -> "LN",
+		// "Lindenauer Tierschutzverein e.V." -> "LT"); the random suffix below is
+		// appended to "Lindenauer" itself, adding no word, so those results hold.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -835,15 +771,12 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task PublicProfilePage_ContentIsLeftAlignedUnderHeading()
 	{
-		// Regression for #766: OrganizationProfileView's content wrapper had
-		// `mx-auto`, so it centered itself against the whole page instead of
-		// sitting flush under the left-aligned heading above it - a dead
-		// column on wide viewports. This reverses the `mx-auto` #694 added
-		// for the opposite problem (the wrapper hugging the left edge with no
-		// centering at all); left-aligning was the chosen fix direction over
-		// centering the heading to match, for consistency with the rest of
-		// the org app shell (Opportunities tab, dashboard, breadcrumb bar),
-		// none of which centers a content block.
+		// OrganizationProfileView's content wrapper must not carry `mx-auto`: it
+		// would centre against the whole page instead of sitting flush under the
+		// left-aligned heading above it, leaving a dead column on wide viewports.
+		// Left-aligning rather than centring the heading to match, for consistency
+		// with the rest of the org app shell (Opportunities tab, dashboard,
+		// breadcrumb bar), none of which centres a content block.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -859,12 +792,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #766 wanted this column not stranded as a narrow strip in a wide page.
-		// #1755 gave the page a PageHeaderBand, which anchors the layout and
-		// centres its own title at max-w-5xl - so the content is centred to match
-		// it rather than flush left, and the invariant that matters is now that
-		// the two share a left edge. The org app Settings tab, which has no band,
-		// still asserts the flush-left arrangement below.
+		// This page's PageHeaderBand anchors the layout and centres its own title at
+		// max-w-5xl, so the content is centred to match it rather than flush left -
+		// the invariant is that the two share a left edge. The org app Settings tab,
+		// which has no band, asserts the flush-left arrangement below.
 		await AssertMaxWidthContentCenteredAsync("Organization profile page");
 
 		var edgeDelta = await Page.EvaluateAsync<double>(
@@ -883,11 +814,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SettingsPage_ContentIsLeftAlignedWithinMain()
 	{
-		// Regression for #766: OrgSettingsPage wraps its content in its own
-		// separate `mx-auto max-w-2xl` div - independent of
-		// OrganizationProfileView's own wrapper - which produced the same
-		// dead-column effect. This is the page shown in the issue's primary
-		// repro steps.
+		// OrgSettingsPage wraps its content in its own `mx-auto max-w-2xl` div,
+		// independent of OrganizationProfileView's wrapper, so it can strand the
+		// same dead column separately.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -896,9 +825,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		// #1792: the panel heading is per-surface now ("Delete organization"
-		// here, "Delete account" on /profile/settings) instead of a shared
-		// "Danger zone".
+		// The panel heading is per-surface ("Delete organization" here, "Delete
+		// account" on /profile/settings), not a shared "Danger zone".
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
@@ -908,8 +836,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MembersPage_ContentIsLeftAlignedWithinMain()
 	{
-		// Regression for #766: OrgMembersPage's content wrapper had
-		// `mx-auto`, independently centering it against the whole page.
+		// OrgMembersPage's content wrapper centres independently of the two above.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -917,8 +844,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual766 Members", pinnedOrgId!.Value);
 
-		// #834: the widget link's accessible name is "1 member" (singular) for
-		// a fresh single-member org, so match "member" rather than "members".
+		// The widget link's accessible name is "1 member" (singular) for a fresh
+		// single-member org, so match "member" rather than "members".
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 

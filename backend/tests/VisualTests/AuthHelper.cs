@@ -22,59 +22,35 @@ public static class AuthHelper
 
 		// Wait on Keycloak's login form element, not the URL - WaitForURLAsync
 		// races the frame's own navigation/detachment during the redirect and
-		// becomes intermittently flaky under CPU contention (see
-		// AuthGuardTests.MyEngagements_Anonymous_RedirectsToKeycloak, which hit
-		// the same redirect and independently arrived at the same strategy -
-		// wait on the form element itself, not the URL - via
-		// Expect(...).ToBeVisibleAsync() rather than this raw WaitForAsync).
+		// becomes intermittently flaky under CPU contention.
 		await page.Locator("#username").WaitForAsync(new() { Timeout = 30_000 });
 
 		await page.Locator("#username").FillAsync(username);
 		await page.Locator("#password").FillAsync(password);
 		await page.Locator("#kc-login").ClickAsync();
 
-		// Same reasoning as the comment above, applied to the return leg of the
-		// same round trip: WaitForURLAsync races the callback redirect's own
-		// chain (Keycloak -> /callback -> code exchange -> history.replace to
-		// "/") and intermittently times out under CPU contention even though
-		// sign-in actually succeeded (seen repeatedly on AdministrationPage_-
-		// HasNoSeriousA11yViolations across otherwise-unrelated PRs). Waiting
-		// on the "User menu" button - the same authenticated-render signal
-		// FastSignInAsync already waits on - is independent of which frame
-		// navigation Playwright happens to observe. 45s, not 30s, to match
-		// GoToOrgAppDashboardViaCtaAsync below: this is the only caller that
-		// drives the real Keycloak round trip (redirect, form submit, code
-		// exchange) rather than seeding a token, so it is the most exposed to
-		// AssemblyParallelLimit.cs's documented CPU contention among
-		// concurrent Playwright sessions. Pushing this fixed timeout past 90s
-		// chasing AdministrationPage_HasNoSeriousA11yViolations(organizations) -
-		// the one caller that consistently lands in the earliest concurrent
-		// batch, while the Aspire stack is still warming up - never actually
-		// caught up: 30s, 45s, 60s and 90s were each observed too tight in
-		// turn, always failing a few seconds past whatever ceiling was set.
-		// That test now carries its own [Retry(2)] instead, so this timeout
-		// only needs to cover the common case, not the occasional outlier.
+		// Same reasoning for the return leg: WaitForURLAsync races the callback
+		// redirect chain (Keycloak -> /callback -> code exchange -> history.replace
+		// to "/") and intermittently times out even though sign-in succeeded. The
+		// "User menu" button - the same authenticated-render signal FastSignInAsync
+		// waits on - is independent of which frame navigation Playwright observes.
+		// 45s rather than 30s because this is the only caller driving the real
+		// Keycloak round trip rather than seeding a token, so it is the most
+		// exposed to AssemblyParallelLimit.cs's documented CPU contention. Do not
+		// raise it further: callers that still time out carry their own [Retry(2)],
+		// so this only has to cover the common case.
 		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
 			.WaitForAsync(new() { Timeout = 45_000 });
 	}
 
 	/// <summary>
-	/// Strips the <c>X-Forwarded-For</c> header (seeded context-wide by
-	/// <see cref="VisualTestBase.ContextOptions"/> for rate-limit isolation) from
-	/// any request that crosses into Keycloak. Keycloak's CORS preflight does not
-	/// list it in <c>Access-Control-Allow-Headers</c>, so oidc-client-ts's
-	/// discovery/authorization fetch fails silently and <c>signinRedirect()</c>
-	/// never navigates - the "Sign in"/"Register" click (or ProtectedRoute's
-	/// auto-redirect for an anonymous visitor) just sits on the current page
-	/// until the caller's own wait for a Keycloak-only locator times out.
-	///
-	/// Scoped to a page-level route matching only <c>/realms/</c> paths (Keycloak's
-	/// own), not a context-level <c>"**/*"</c> handler - see
-	/// <see cref="VisualTestBase.ContextOptions"/>'s doc comment for why a
-	/// context-wide route is reserved for every one of this suite's 209 tests, not
-	/// just the ones that actually cross into Keycloak from the browser (this one,
-	/// plus the anonymous-redirect tests in AuthGuardTests/HomePageOrgCtaTests that
-	/// call this directly instead of going through LoginAsync).
+	/// Strips <c>X-Forwarded-For</c> (seeded context-wide by
+	/// <see cref="VisualTestBase.ContextOptions"/>) from requests crossing into
+	/// Keycloak, whose CORS preflight does not allow it: oidc-client-ts's
+	/// discovery fetch then fails silently, <c>signinRedirect()</c> never
+	/// navigates, and the click just sits there until the caller's own wait for a
+	/// Keycloak-only locator times out. Page-level rather than a context-level
+	/// <c>"**/*"</c> route - see <see cref="VisualTestBase.ContextOptions"/>.
 	/// </summary>
 	public static Task AllowKeycloakCrossOriginRequestsAsync(IPage page) =>
 		page.RouteAsync("**/realms/**", async route =>
@@ -85,38 +61,20 @@ public static class AuthHelper
 		});
 
 	/// <summary>
-	/// Signs in without touching Keycloak's login UI: mints a real token via
-	/// <see cref="AspireFixture.SignInAsync"/> (direct grant, frontend-test client)
-	/// and seeds it into sessionStorage in oidc-client-ts's own storage shape
-	/// (verified against the installed oidc-client-ts package - see User.toStorageString
-	/// and UserManager._userStoreKey), so the SPA boots already authenticated with
-	/// no redirect round trip.
+	/// Signs in without the Keycloak login UI: mints a token via
+	/// <see cref="AspireFixture.SignInAsync"/> and seeds it into sessionStorage in
+	/// oidc-client-ts's storage shape (see User.toStorageString and
+	/// UserManager._userStoreKey), so the SPA boots authenticated with no redirect.
+	/// Keep at least one real <see cref="LoginAsync"/> test per meaningfully
+	/// different path, so the round trip and the frontend/frontend-test
+	/// protocol-mapper parity it relies on stay covered.
 	///
-	/// This is a faster drop-in for <see cref="LoginAsync"/> for tests that only need
-	/// an authenticated session as a precondition. Keep at least one real
-	/// <see cref="LoginAsync"/>-based test per meaningfully different path (this repo
-	/// keeps one generic one plus JwtAudienceTests, which specifically guards the
-	/// frontend/frontend-test protocol-mapper parity this method's realism depends
-	/// on) so the actual login round trip - and that parity - stay under real,
-	/// non-bypassed test coverage.
-	///
-	/// Always returns <paramref name="username"/>'s seeded organizer org id
-	/// (per AspireFixture.GetPinnedOrganizerOrganizationId, captured once
-	/// before any test had a chance to create a throwaway org), or null for a
-	/// non-organizer account. When <paramref name="pinActiveOrg"/> is true
-	/// (the default), that id is also written into the "active-org" cookie,
-	/// so callers can reach the org app deterministically via the id-based
-	/// overload of <see cref="GoToOrgAppDashboardAsync(IPage, Uri, Guid)"/>
-	/// instead of resolveActiveOrg's alphabetical fallback - which, without
-	/// this pin, a throwaway org created by some concurrently running test
-	/// could win by sorting ahead of the seeded ones. Pass false for the one
-	/// test whose actual subject is that fallback order
-	/// (OrganizationDashboardNavLinkTests) - it re-queries the alphabetically-
-	/// first org fresh (AspireFixture.GetCurrentFirstOrganizerOrganizationIdAsync)
-	/// right before asserting instead of trusting this method's own returned id
-	/// (a snapshot from fixture boot, stale the instant any other test creates
-	/// an org for this user), and nothing is written to the cookie jar to force
-	/// the pin, so the real, unpinned resolution stays under coverage.
+	/// Returns <paramref name="username"/>'s seeded organizer org id (a
+	/// fixture-boot snapshot), or null for a non-organizer. With
+	/// <paramref name="pinActiveOrg"/> (default true) that id also goes into the
+	/// "active-org" cookie, so callers bypass resolveActiveOrg's alphabetical
+	/// fallback - which a concurrent test's throwaway org could win. Pass false
+	/// only for a test whose subject is that fallback order.
 	/// </summary>
 	public static async Task<Guid?> FastSignInAsync(
 		IPage page, AspireFixture fixture, Uri frontendUrl, string username, string password,
@@ -136,12 +94,10 @@ public static class AuthHelper
 			access_token = session.AccessToken,
 			// session.RefreshToken was minted for the frontend-test client, not
 			// the frontend client oidc-client-ts believes it's holding (see
-			// FrontendClientId above) - Keycloak rejects a silent-renew attempt
-			// with it. Omitting it entirely means automaticSilentRenew
-			// (main.tsx) never tries, instead of trying and failing partway
-			// through a long-running test (see AppHost.cs's accessTokenLifespan
-			// bump, which gives fast-signed-in sessions enough runway not to
-			// need a renewal at all).
+			// FrontendClientId above) - Keycloak rejects a silent-renew with it.
+			// Omitting it means automaticSilentRenew (main.tsx) never tries;
+			// AppHost.cs's accessTokenLifespan bump gives these sessions enough
+			// runway that they never need one.
 			refresh_token = (string?)null,
 			token_type = session.TokenType,
 			scope = "openid",
@@ -160,19 +116,14 @@ public static class AuthHelper
 			$"window.sessionStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
 			+ $"{JsonSerializer.Serialize(storageValue)});");
 
-		// Computed regardless of pinActiveOrg so callers that deliberately stay
-		// unpinned (e.g. OrganizationDashboardNavLinkTests's resolution-order
-		// test) still get back the id the frontend's own alphabetical fallback
-		// *should* resolve to, to assert against - only the cookie write below
-		// is conditional.
+		// Computed regardless of pinActiveOrg - unpinned callers still need the
+		// id the alphabetical fallback *should* resolve to, to assert against.
 		var pinnedOrganizationId = fixture.GetPinnedOrganizerOrganizationId(session.UserId);
 
-		// A one-time Context.AddCookiesAsync (not embedded in the init script
-		// above) - an init script re-runs on every subsequent document
-		// navigation in this context, which would otherwise clobber
-		// OrgAppLayout.tsx's own setActiveOrgId call after a real in-app
-		// navigation. Setting it once here still seeds it before the first
-		// GotoAsync below, and the app is free to update it normally afterward.
+		// A one-time Context.AddCookiesAsync rather than the init script above:
+		// an init script re-runs on every document navigation, which would
+		// clobber OrgAppLayout.tsx's own setActiveOrgId after a real in-app
+		// navigation. Setting it once still seeds it before the first GotoAsync.
 		if (pinActiveOrg && pinnedOrganizationId is { } organizationId)
 		{
 			await page.Context.AddCookiesAsync([
@@ -213,21 +164,12 @@ public static class AuthHelper
 	}
 
 	/// <summary>
-	/// Gets a logged-in user into the org app shell at
-	/// /app/{organizationId}/dashboard, as a *precondition* for tests that are
-	/// about the org app rather than about how you get there. Pass the id
-	/// <see cref="FastSignInAsync"/> already pinned for this user - a caller
-	/// with no such id fails immediately here rather than silently falling
-	/// back to a CTA that may never render (see the CTA-based overload below
-	/// for LoginAsync-based callers, which have no pinned id).
-	///
-	/// Navigates straight to the dashboard URL rather than waiting on the home
-	/// page's "Organization overview" hero CTA. That CTA only renders once
-	/// GET /v1/organizations has resolved *and* produced a non-empty list (see
-	/// resolveOrgAppPath in activeOrg.ts) - a single failed or slow org-list
-	/// request leaves the hero showing the fallback button with no retry, so a
-	/// caller waiting on that link can time out even though the link itself is
-	/// simply absent.
+	/// Gets a logged-in user into the org app shell as a *precondition*. Pass the
+	/// id <see cref="FastSignInAsync"/> pinned; LoginAsync-based callers have none
+	/// and use the CTA overload below. Navigates straight to the dashboard URL
+	/// rather than the home page's "Organization overview" CTA, which only renders
+	/// once GET /v1/organizations resolves non-empty (resolveOrgAppPath in
+	/// activeOrg.ts) and has no retry, so waiting on it can time out.
 	/// </summary>
 	public static async Task GoToOrgAppDashboardAsync(IPage page, Uri frontendUrl, Guid organizationId)
 	{
@@ -237,18 +179,16 @@ public static class AuthHelper
 	}
 
 	/// <summary>
-	/// Gets a logged-in user into the org app shell by clicking the home
-	/// page's "Organization overview" hero CTA - for <see cref="LoginAsync"/>-based
-	/// callers, which have no pinned active-org id to navigate to directly.
-	/// The CTA itself stays under real coverage in HomePageOrgCtaTests, which
-	/// is where that behaviour belongs; re-exercising it as an incidental
-	/// precondition elsewhere only ever bought flakiness.
+	/// Gets a logged-in user into the org app shell by clicking the home page's
+	/// "Organization overview" hero CTA - for <see cref="LoginAsync"/>-based
+	/// callers, which have no pinned active-org id. The CTA's own behaviour
+	/// stays covered in HomePageOrgCtaTests; re-exercising it here only bought
+	/// flakiness.
 	/// </summary>
 	public static async Task GoToOrgAppDashboardViaCtaAsync(IPage page, Uri frontendUrl)
 	{
-		// Defensive: resolves instantly if the caller is already there (the
-		// common case, right after LoginAsync), but also makes this helper
-		// safe to call from elsewhere.
+		// Resolves instantly if the caller is already there (the common case
+		// right after LoginAsync), but keeps this helper safe to call elsewhere.
 		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
 		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
 		await cta.First.WaitForAsync(new() { Timeout = 45_000 });
