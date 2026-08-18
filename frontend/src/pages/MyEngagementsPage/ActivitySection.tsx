@@ -256,7 +256,14 @@ export default function ActivitySection() {
 	}
 
 	return (
-		<section id="activity" className="mb-6">
+		// @container (#2044): this section's own width is capped by the
+		// [11rem_minmax(0,1fr)] sidebar layout in MyEngagementsPage/index.tsx to
+		// ~800px regardless of viewport, but the card grids below used to key
+		// their column count off the viewport (`xl:grid-cols-3` at 1280px) - so a
+		// wide-viewport visitor got 3 columns squeezed into that fixed 800px,
+		// wrapping card titles and dates that fit fine at 2 columns. `@container`
+		// variants below key off this element's actual width instead.
+		<section id="activity" className="@container mb-6">
 			{invitationsError && (
 				<ErrorBanner message={invitationsError} className="mb-4" />
 			)}
@@ -268,7 +275,7 @@ export default function ActivitySection() {
 					<SectionHeading>
 						{t("profileOverview.invitationsHeading")}
 					</SectionHeading>
-					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
@@ -388,7 +395,7 @@ export default function ActivitySection() {
 			{engagementsLoading && (
 				<div
 					role="status"
-					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+					className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3"
 				>
 					<span className="sr-only">{t("myEngagements.loading")}</span>
 					{Array.from({ length: 3 }).map((_, i) => (
@@ -428,7 +435,7 @@ export default function ActivitySection() {
 				))}
 
 			{!engagementsLoading && !engagementsError && engagements.length > 0 && (
-				<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
 					{engagements.map((e) => (
 						<li
 							key={e.id}
