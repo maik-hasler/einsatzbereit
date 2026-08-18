@@ -299,6 +299,7 @@
       "publish": "Veröffentlichen",
       "saveDraft": "Als Entwurf speichern",
       "savingDraft": "Wird gespeichert…",
+      "saveDraftRequiresTitle": "Gib im Schritt \"Grunddaten\" einen Titel ein, bevor du als Entwurf speicherst.",
       "draftSavedToast": "Entwurf gespeichert. Du findest ihn im Tab \"Einsätze\".",
       "fieldBanner": "Bannerbild (optional)",
       "bannerUpload": "Bild hochladen",

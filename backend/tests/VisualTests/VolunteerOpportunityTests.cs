@@ -630,6 +630,44 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task SaveDraft_DisabledUntilTitled_EnablesOnceTitleFilled()
+	{
+		// Regression for #2076: submitting a completely empty form via "Save
+		// as draft" used to succeed silently and produce an unnamed,
+		// indistinguishable record. The button must stay disabled until the
+		// (German) title is filled in, mirroring the same field "Publish"
+		// already requires.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+
+		var saveDraftBtn = Page.GetByTestId("modal-save-draft");
+		await Expect(saveDraftBtn).ToBeVisibleAsync();
+		await Expect(saveDraftBtn).ToBeDisabledAsync();
+
+		// Whitespace-only must not count as a title either.
+		await Page.Locator("#opportunity-title").FillAsync("   ");
+		await Expect(saveDraftBtn).ToBeDisabledAsync();
+
+		var uniqueTitle = $"Draft Gate Visual Test {Guid.NewGuid().ToString("N")[..8]}";
+		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
+		await Expect(saveDraftBtn).ToBeEnabledAsync();
+
+		await saveDraftBtn.ClickAsync();
+		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
+
+		var draftsSection = Page.GetByTestId("drafts-section");
+		await Expect(draftsSection).ToBeVisibleAsync();
+		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task OpportunitiesHub_ShowsDraftAndPublished_AndPublishesDraftInline()
 	{
 		// The org "Engagements" tab is now the unified "Opportunities" hub: it
