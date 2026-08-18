@@ -1,9 +1,13 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression } from "vite-plugin-compression2";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Shared across every locale manifest below - the installed icon is the same
 // image regardless of the visitor's language.
@@ -246,6 +250,40 @@ function emitLocaleManifest(
 	};
 }
 
+// silent-renew.html (#2042) is a second HTML entry alongside index.html (see
+// build.rollupOptions.input below), so VitePWA's registerSW/manifest-link
+// injection and the single-CSS-bundle build (cssCodeSplit: false above) both
+// attach to it the same as they do to index.html - a PWA install manifest
+// link, a service-worker registration script, and the entire app's
+// stylesheet, none of which this page (renders nothing, exists purely to
+// relay a URL back to its opener) needs. Left in place, that's dead weight
+// re-fetched on every automaticSilentRenew hidden-iframe cycle (every ~4
+// minutes) - stripped here instead, after VitePWA's own transform has run.
+function stripPwaChromeFromSilentRenew(): Plugin {
+	return {
+		name: "strip-pwa-chrome-from-silent-renew",
+		// VitePWA's own html injection runs as an `enforce: "post"` plugin, not
+		// just a `transformIndexHtml` `order: "post"` hook - Vite buckets hooks
+		// by their enclosing plugin's `enforce` first, so without this too, our
+		// (merely order:"post") hook would run in the earlier "normal" bucket,
+		// before VitePWA has injected anything to strip.
+		enforce: "post",
+		transformIndexHtml: {
+			order: "post",
+			handler(html, ctx) {
+				if (!ctx.filename.endsWith("silent-renew.html")) return html;
+				return html
+					.replace(/\s*<link rel="manifest"[^>]*>/, "")
+					.replace(
+						/\s*<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/,
+						"",
+					)
+					.replace(/\s*<link rel="stylesheet"[^>]*>/, "");
+			},
+		},
+	};
+}
+
 export default defineConfig({
 	plugins: [
 		react(),
@@ -312,7 +350,12 @@ export default defineConfig({
 					},
 				],
 				navigateFallback: "/index.html",
-				navigateFallbackDenylist: [/^\/v1\//],
+				// /silent-renew.html (#2042) is a real static file, not a client
+				// route - without this, the service worker's SPA-shell fallback
+				// would intercept the hidden iframe's navigation to it and serve
+				// index.html instead, booting the full app right back into the
+				// iframe it exists to avoid.
+				navigateFallbackDenylist: [/^\/v1\//, /^\/silent-renew\.html$/],
 			},
 			// Default/fallback manifest (#1923) - served at manifest.de.webmanifest
 			// and injected into index.html's <link rel="manifest"> by VitePWA,
@@ -325,6 +368,7 @@ export default defineConfig({
 			manifestFilename: "manifest.de.webmanifest",
 		}),
 		emitLocaleManifest("manifest.en.webmanifest", enManifest),
+		stripPwaChromeFromSilentRenew(),
 	],
 	// react/react-dom and react-router are shared by (almost) every lazy
 	// route chunk - splitting them into their own stably-named vendor
@@ -348,6 +392,17 @@ export default defineConfig({
 		// were code-split.
 		cssCodeSplit: false,
 		rollupOptions: {
+			// silent-renew.html (#2042) is a second, standalone entry point -
+			// deliberately outside globPatterns/navigateFallback above, so it's
+			// fetched from the network like any other static file rather than
+			// precached or served the SPA shell. "index" is named explicitly to
+			// keep the main entry's chunk name unchanged (globPatterns'
+			// "assets/{index,vendor}-*.js" and the frontend-checks.yml smoke test
+			// both still expect "assets/index-*.js").
+			input: {
+				index: resolve(__dirname, "index.html"),
+				silentRenew: resolve(__dirname, "silent-renew.html"),
+			},
 			output: {
 				manualChunks(id) {
 					if (

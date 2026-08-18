@@ -12,7 +12,19 @@ gzip_vary on;
 # location still has to re-emit this header, but from one definition
 # instead of four copies that can drift out of sync.
 map $host $csp_header {
-	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: ${CSP_API_ORIGIN} ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: ${CSP_API_ORIGIN} ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}; frame-src 'self' ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+}
+
+# silent-renew.html's own policy (#2042) - frame-src 'self' above only governs
+# what the *parent* page is allowed to embed; whether the browser actually
+# renders silent-renew.html inside that hidden iframe is a separate check
+# against frame-ancestors on silent-renew.html's *own* response, enforced
+# independently of the parent's CSP. Every other page keeps frame-ancestors
+# 'none' (no exceptions to the site-wide anti-clickjacking policy above) -
+# this is scoped to the one route that legitimately needs to be framed, via
+# its own location block below rather than a blanket relaxation.
+map $host $csp_header_silent_renew {
+	default "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'self'";
 }
 
 # Recognizes social-preview and search-engine crawlers by User-Agent so a shared or
@@ -97,6 +109,25 @@ server {
 		add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
+	}
+
+	# main.tsx's silent_redirect_uri (#2042) - automaticSilentRenew/signinSilent()
+	# load this same-origin page inside a hidden iframe, which needs
+	# X-Frame-Options: SAMEORIGIN and frame-ancestors 'self' (via
+	# $csp_header_silent_renew above) instead of every other page's DENY/'none' -
+	# without both, the browser refuses to render it in that iframe regardless
+	# of frame-src on the parent. Cache-Control matches /index.html above for
+	# the same reason: this HTML references a content-hashed JS filename that
+	# changes on every deploy, so it must never be served stale from cache.
+	location = /silent-renew.html {
+		add_header Cache-Control "no-store" always;
+		add_header X-Content-Type-Options "nosniff" always;
+		add_header X-Frame-Options "SAMEORIGIN" always;
+		add_header X-XSS-Protection "1; mode=block" always;
+		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+		add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(self), payment=()" always;
+		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+		add_header Content-Security-Policy $csp_header_silent_renew always;
 	}
 
 	# Shared/crawled deep links to a specific opportunity or organization

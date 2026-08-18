@@ -22,11 +22,14 @@ export function useSilentSsoProbe() {
 	const attemptedRef = useRef(false);
 
 	useEffect(() => {
-		// signinSilent() itself loads this same app in a hidden iframe to
-		// complete the round trip (oidc-client-ts's silent_redirect_uri
-		// defaults to redirect_uri, i.e. /callback - see main.tsx). Without this
-		// guard, that inner mount would see itself as logged out too and fire
-		// its own nested probe, recursing iframes-in-iframes indefinitely.
+		// signinSilent() loads main.tsx's silent_redirect_uri - a dedicated,
+		// minimal page (src/silentRenew.ts), not this app - in a hidden iframe
+		// to complete the round trip, so this hook can no longer actually mount
+		// inside that iframe (#2042). Guard kept anyway as a defense-in-depth
+		// backstop: frame-ancestors 'none' (nginx.conf.template) already blocks
+		// this app from being framed by anything, itself included, but a future
+		// CSP/config mistake shouldn't be able to bring back the
+		// iframes-in-iframes recursion this used to guard against directly.
 		if (window.self !== window.top) return;
 		// /callback is mid-flow (a real signin or an automatic silent renewal)
 		// handling its own auth resolution - a probe here would be redundant at
