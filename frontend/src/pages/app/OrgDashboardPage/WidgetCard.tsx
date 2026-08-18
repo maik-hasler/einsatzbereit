@@ -27,11 +27,13 @@ export default function WidgetCard({
 				</h2>
 				{action}
 			</div>
-			{/* The grid row height dashboard-wide is now fixed (see
-			OrgDashboardPage's grid className), so a widget whose content is
-			taller than its allotted rows scrolls within itself here instead of
-			growing the shared row band and throwing off every other tile's
-			height. overflow-x-auto is the same idea sideways: html sets
+			{/* The grid row height is fixed only while editing (see
+			OrgDashboardPage's grid className and EditableWidgetTile's h-full -
+			#2045 stopped forcing that outside edit mode so a card sizes to its
+			own content instead of stretching into empty whitespace), so a widget
+			whose content is taller than its allotted rows scrolls within itself
+			here instead of growing the shared row band and throwing off every
+			other tile's height. overflow-x-auto is the same idea sideways: html sets
 			overflow-x: clip page-wide (see global.css), so a widget whose
 			content is wider than its rendered width - e.g. the Calendar
 			widget's toolbar/agenda table on a narrow viewport - would

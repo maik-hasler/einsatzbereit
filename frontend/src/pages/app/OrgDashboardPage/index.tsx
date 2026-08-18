@@ -631,22 +631,29 @@ export default function OrgDashboardPage() {
 	) : (
 		<div
 			data-testid="dashboard-widget-grid"
-			// Uniform (not minmax(64px, auto)) row height: CSS Grid auto-rows
-			// apply to the whole row band across every column, not just the cell
-			// whose content demanded the extra height - a minmax row would let a
-			// single tall widget stretch its entire row, including the backdrop
-			// guide cells and any other widget sharing that row. A widget whose
-			// content exceeds its allotted rows scrolls internally instead (see
-			// WidgetCard).
+			// Uniform (not minmax(64px, auto)) row height while editing: CSS Grid
+			// auto-rows apply to the whole row band across every column, not just
+			// the cell whose content demanded the extra height - a minmax row
+			// would let a single tall widget stretch its entire row, including the
+			// backdrop guide cells and any other widget sharing that row. A widget
+			// whose content exceeds its allotted rows scrolls internally instead
+			// (see WidgetCard).
 			//
-			// The row height itself (see .dashboard-widget-grid in global.css)
-			// tracks the actual rendered column width via a container query,
-			// rather than a flat pixel constant - width already scales with the
-			// viewport (grid-cols-8's 1fr tracks), and matching row height to it
-			// keeps a widget's on-screen proportions (short-and-wide vs.
-			// tall-and-narrow) consistent across screen sizes instead of warping
-			// while its stored cell width/height stays the same.
-			className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
+			// The row height itself (see .dashboard-widget-grid[--editing] in
+			// global.css) tracks the actual rendered column width via a container
+			// query, rather than a flat pixel constant - width already scales
+			// with the viewport (grid-cols-8's 1fr tracks), and matching row
+			// height to it keeps a widget's on-screen proportions (short-and-wide
+			// vs. tall-and-narrow) consistent across screen sizes instead of
+			// warping while its stored cell width/height stays the same.
+			//
+			// #2045: outside edit mode there's no backdrop/resize affordance to
+			// keep uniform for, so the modifier class is dropped and rows size to
+			// their own content instead (align-items: start in global.css keeps a
+			// short card from being stretched to match a taller sibling in the
+			// same row) - a card holding one line of real content no longer
+			// claims a full square cell's worth of empty white space.
+			className={`dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8 ${editing ? "dashboard-widget-grid--editing" : ""}`}
 			// role="presentation": this delegated onClick/onPointerOver only ever
 			// acts on a bubbled event that actually originated on one of the
 			// aria-hidden guide cells above (see guideCellFromEvent) - the

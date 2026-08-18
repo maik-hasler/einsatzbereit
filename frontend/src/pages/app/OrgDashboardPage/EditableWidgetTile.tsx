@@ -96,7 +96,7 @@ export default function EditableWidgetTile({
 					? onGripPointerDown
 					: undefined
 			}
-			className={`relative h-full ${
+			className={`relative ${editing ? "h-full" : "h-full lg:h-auto"} ${
 				editing && showPlacementControls && !isPlacing && !placingDisabled
 					? "cursor-grab touch-none active:cursor-grabbing"
 					: editing
@@ -104,7 +104,16 @@ export default function EditableWidgetTile({
 						: ""
 			} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
 		>
-			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
+			<div
+				inert={editing}
+				className={`h-full ${editing ? "opacity-60" : ""} ${
+					// Reserves room for the grip button below (absolutely positioned,
+					// centered at the tile's top edge) instead of letting it sit on
+					// top of WidgetCard's own title - on a narrow tile the two used to
+					// overlap directly (#2045, PR #2038 F12).
+					editing && showPlacementControls ? "pt-10" : ""
+				}`}
+			>
 				{/* A crash inside a single widget shouldn't blank the whole dashboard
 				(#1243) - the default full-page ErrorBoundary fallback would break
 				this tile's grid layout, so a small inline one is used instead. It

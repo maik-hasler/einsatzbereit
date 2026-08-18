@@ -345,21 +345,40 @@ function CalendarWidget({
 		[displayedCalData, i18n.language],
 	);
 
-	// #983: opening on the current month whenever the organizer happens to
-	// have no events scheduled in it wastes ~800px on an empty grid and,
-	// since `calDate` also starts on today, defaults to showing exactly
-	// nothing. The one-shot flag is consumed on the *first* load to
-	// complete, regardless of which view that happens to be (medium/compact
-	// widgets default to week/agenda, not month) - gating it behind
-	// `calView === "month"` instead would leave the flag unconsumed for
-	// those sizes and keep re-firing on every later view change, silently
-	// overriding a month view the organizer switched to deliberately.
+	// #983/#2045: opening on the current month (or week) whenever the
+	// organizer happens to have no events scheduled in it wastes hundreds of
+	// px on an empty grid and, since `calDate` also starts on today, defaults
+	// to showing exactly nothing - including week view, which #2045 reported
+	// scrolled to a completely empty night-hours grid because the org's only
+	// opportunity fell outside that week. Agenda has no such "which
+	// week/month" problem - it just lists whatever's actually upcoming - so
+	// any grid view that opens empty falls back to it. The one-shot flag is
+	// consumed on the *first* load to complete, regardless of which view
+	// that happens to be (medium/compact widgets default to week/agenda, not
+	// month) - gating it behind a specific view instead would leave the flag
+	// unconsumed for those sizes and keep re-firing on every later view
+	// change, silently overriding a view the organizer switched to
+	// deliberately.
 	const [hasCheckedInitialView, setHasCheckedInitialView] = useState(false);
 	useEffect(() => {
 		if (hasCheckedInitialView || calLoading) return;
 		setHasCheckedInitialView(true);
-		if (calView === "month" && calEvents.length === 0) setCalView("agenda");
+		if (calView !== "agenda" && calEvents.length === 0) setCalView("agenda");
 	}, [calLoading, calView, calEvents, hasCheckedInitialView]);
+
+	// react-big-calendar defaults an unset scrollToTime to midnight for week/
+	// day views (confirmed in node_modules/react-big-calendar/lib/{Week,Day}.js)
+	// - opening scrolled to a wall of empty night hours instead of the day's
+	// actual business hours is exactly #2045's reported bug. Falls back to
+	// the earliest event actually on screen when there is one, so a shift
+	// starting before 8am is still visible without an extra scroll.
+	const scrollToTime = useMemo(() => {
+		const eventHours = calEvents.map((e) => e.start.getHours());
+		const startHour = eventHours.length > 0 ? Math.min(8, ...eventHours) : 8;
+		const scrollDate = new Date(calDate);
+		scrollDate.setHours(startHour, 0, 0, 0);
+		return scrollDate;
+	}, [calEvents, calDate]);
 
 	const calendarMessages = useMemo(
 		() => ({
@@ -480,9 +499,30 @@ function CalendarWidget({
 							<Skeleton className="h-6 w-32" />
 							<Skeleton className="h-6 w-24" />
 						</div>
-						{Array.from({ length: 3 }).map((_, i) => (
-							<Skeleton key={i} className="h-10 w-full" />
-						))}
+						{/* #2045: matches the shape of whatever view is actually about
+						to render instead of always the same short list - agenda really
+						is a handful of rows, but week/month resolve to a real day/week
+						grid, and a short-list skeleton for those swapped for a much
+						taller grid the instant data arrived, jumping the page under the
+						organizer. */}
+						{calView === "agenda" ? (
+							<div aria-hidden="true" className="space-y-2">
+								{Array.from({ length: 3 }).map((_, i) => (
+									<Skeleton key={i} className="h-10 w-full" />
+								))}
+							</div>
+						) : (
+							<div
+								aria-hidden="true"
+								className={`grid gap-1 ${calView === "month" ? "grid-cols-7" : "grid-cols-1"}`}
+							>
+								{Array.from({
+									length: calView === "month" ? 35 : calView === "week" ? 7 : 1,
+								}).map((_, i) => (
+									<Skeleton key={i} className="h-16 w-full" />
+								))}
+							</div>
+						)}
 					</div>
 				)}
 				{calError && (
@@ -507,6 +547,7 @@ function CalendarWidget({
 							date={calDate}
 							onNavigate={(d: Date) => setCalDate(d)}
 							views={["month", "week", "day", "agenda"]}
+							scrollToTime={scrollToTime}
 							style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
 							components={calendarComponents}
 							eventPropGetter={calendarEventPropGetter}
