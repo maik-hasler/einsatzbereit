@@ -367,14 +367,28 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
  * widgetCatalog.ts and OrgDashboardPage/index.tsx) overrides it inline so
  * its own row height still tracks its own (narrower) rendered width the
  * same way the full-width grid already does, instead of assuming 8
- * columns' worth of gaps that aren't actually there. */
+ * columns' worth of gaps that aren't actually there.
+ *
+ * The uniform square row height only actually matters while editing (see
+ * the --editing modifier below) - that's what keeps the placement backdrop's
+ * guide cells and the drag/resize affordance predictable. Outside edit mode
+ * there's no backdrop to keep in sync, so rows are left at their initial
+ * (content-sized) height and align-items: start stops a short widget from
+ * being stretched to match a taller sibling in the same row - a card with
+ * one line of real content no longer claims a full square cell of empty
+ * white space (#2045). EditableWidgetTile/WidgetCard still opt into h-full
+ * while editing so the uniform cell continues to render as one full tile.
+ * align-items is scoped to :not(--editing) specifically because the
+ * placement backdrop's own guide cells (OrgDashboardPage's guideCells) have
+ * no explicit height of their own and depend on the default stretch to fill
+ * their cell while editing - align-items: start would collapse them. */
 .dashboard-widget-grid {
 	container-type: inline-size;
 	--dashboard-grid-columns: 8;
 }
 
 @media (min-width: 1024px) {
-	.dashboard-widget-grid {
+	.dashboard-widget-grid.dashboard-widget-grid--editing {
 		grid-auto-rows: max(
 			64px,
 			calc(
@@ -382,6 +396,10 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 					var(--dashboard-grid-columns)
 			)
 		);
+	}
+
+	.dashboard-widget-grid:not(.dashboard-widget-grid--editing) {
+		align-items: start;
 	}
 }
 

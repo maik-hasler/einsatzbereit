@@ -21,6 +21,11 @@ namespace VisualTests;
 /// page falls back to DEFAULT_LAYOUT solely when the API reports
 /// hasCustomLayout=false, and nothing migrates a stored layout - the second
 /// test here is the guard on that.
+///
+/// #2045 stopped forcing every widget in a shared row to one uniform,
+/// square-derived height outside edit mode - see the third test here for the
+/// week-view/empty-grid half of that fix, and .dashboard-widget-grid--editing
+/// in global.css for the CSS itself.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -54,16 +59,22 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 			.Should().Be("8 / span 1",
 				"shrinking the Calendar must pull Settings up with it, not leave three empty rows");
 
-		// UpcomingOpportunities is 2 rows tall, so a 4-row Calendar renders
-		// roughly twice its height (rows plus one extra gap). Expressed as a
-		// ratio rather than a pixel count because the row height is a container
-		// query on the grid's own rendered width - at 6 rows this was ~3.1.
-		var upcomingBox = await Page.GetByTestId("widget-tile-UpcomingOpportunities").BoundingBoxAsync();
+		// #2045 stopped forcing every row in a shared band to one uniform,
+		// container-query-derived square height outside edit mode (see
+		// .dashboard-widget-grid--editing in global.css) - a fresh org's empty
+		// UpcomingOpportunities and empty-Agenda Calendar now each size to
+		// their own short content instead of both being stretched to the same
+		// multi-row square, so comparing the two against each other no longer
+		// says anything about whether the Calendar itself is bloated. What
+		// still catches a real regression (back toward the ~900px, 6-row
+		// footprint #1795 fixed) is the Calendar's own absolute height,
+		// bounded well above its 400px internal floor (CALENDAR_MIN_HEIGHT_PX)
+		// but nowhere near that old size.
 		var calendarBox = await calendar.BoundingBoxAsync();
-		upcomingBox.Should().NotBeNull();
 		calendarBox.Should().NotBeNull();
-		((double)calendarBox!.Height / upcomingBox!.Height).Should().BeLessThan(2.5,
-			"the Calendar's height must stay proportionate to the widgets around it");
+		calendarBox!.Height.Should().BeLessThan(700,
+			"the Calendar must stay close to its own content/floor height, not balloon back toward the "
+				+ "~900px footprint #1795 fixed");
 
 		// Acceptance criterion: the widgets carrying actionable information are
 		// on the first screen of a 900px-tall viewport.
@@ -132,6 +143,63 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 			return gridRow == "4 / span 5";
 		}, () => "a saved layout must keep its own Calendar height rather than being reset to the "
 			+ $"default 4 rows (last observed: \"{gridRow}\")", timeoutMs: 10_000);
+
+		await DeleteOrganizationAsync(backend, organizationId);
+	}
+
+	[Test]
+	public async Task CustomizedMediumWidthCalendar_WithNoEventsInTheDefaultWeek_FallsBackToAgenda()
+	{
+		// #2045: a medium-width placement (classifyWidth in widgetCatalog.ts)
+		// defaults CalendarWidget to week view (defaultViewForSize), which -
+		// before this fix - stayed on whatever week `new Date()` fell in even
+		// when that week held nothing at all, rendering a completely empty
+		// grid scrolled to midnight. This was the exact bug reported: "the
+		// org's only upcoming opportunity falls outside the displayed week".
+		// The fix generalizes the existing month-only empty-view fallback
+		// (#983) to any grid view, so an empty week now lands on Agenda
+		// instead - which has no "which week" problem since it just lists
+		// whatever is actually upcoming, however far out that is.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.SetViewportSizeAsync(1440, 900);
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var organizationId = await CreateOrganizationAsync($"Visual CalEmptyWeek {Guid.NewGuid():N}");
+
+		// Saves a layout with just a medium-width (5 columns, classifyWidth's
+		// own <=5 threshold) Calendar directly through the API, rather than
+		// driving the corner-to-corner resize UI in the browser just to reach
+		// the same placement - this org has no events at all, so which exact
+		// week `new Date()` lands in doesn't matter.
+		using (var http = await CreateAuthenticatedHttpClientAsync(backend))
+		{
+			var response = await http.PutAsJsonAsync(
+				$"/v1/organizations/{organizationId}/dashboard/layout",
+				new
+				{
+					widgets = new[]
+					{
+						new { widgetKey = "Calendar", x = 1, y = 1, width = 5, height = 4 },
+					},
+				});
+			response.EnsureSuccessStatusCode();
+		}
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		var calendarWidget = Page.GetByTestId("widget-tile-Calendar");
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Never sits on the empty time-grid view it defaulted to. Agenda's own
+		// empty state (Agenda.js) renders a bare "no events" span with no
+		// .rbc-agenda-table at all - .rbc-agenda-view is the wrapper present
+		// either way, so that's what confirms the view itself switched.
+		await Expect(calendarWidget.Locator(".rbc-time-view")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(calendarWidget.Locator(".rbc-agenda-view")).ToBeVisibleAsync();
+		await Expect(calendarWidget.GetByText("No events in this range.")).ToBeVisibleAsync();
 
 		await DeleteOrganizationAsync(backend, organizationId);
 	}

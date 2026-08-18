@@ -12,9 +12,11 @@ interface Props {
 
 // A minimal shortcut tile to the settings page - distinct from
 // SettingsWidget's full organization summary card, for organizers who just
-// want a quick link rather than a preview. Icon-only at its default compact
-// footprint; a wider placement (#15) has room to also spell out the label
-// instead of just growing empty whitespace around the icon.
+// want a quick link rather than a preview. #2045: the label is always
+// visible, even at this widget's own tiny default compact footprint - a
+// bare gear icon with no on-screen text gave a sighted organizer no clue
+// what it was or that it was clickable, even though the link already had an
+// accessible name (aria-label below) for assistive tech.
 function SettingsIconWidget({ organizationId, size }: Props) {
 	const { t } = useTranslation();
 	const title = t("orgDashboard.settingsIconWidgetTitle");
@@ -32,12 +34,10 @@ function SettingsIconWidget({ organizationId, size }: Props) {
 			/>
 			<div
 				aria-hidden="true"
-				className={`flex items-center justify-center py-2 text-brand-700 ${size === "compact" ? "flex-col" : "flex-row gap-3"}`}
+				className={`flex items-center justify-center py-2 text-brand-700 ${size === "compact" ? "flex-col gap-1" : "flex-row gap-3"}`}
 			>
 				<Cog6ToothIcon className="h-8 w-8" />
-				{size !== "compact" && (
-					<span className="text-sm font-medium">{title}</span>
-				)}
+				<span className="text-sm font-medium">{title}</span>
 			</div>
 		</WidgetCard>
 	);
