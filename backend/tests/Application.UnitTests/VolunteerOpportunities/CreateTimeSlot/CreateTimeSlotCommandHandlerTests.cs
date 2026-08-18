@@ -99,6 +99,16 @@ public class CreateTimeSlotCommandHandlerTests
 		result.Should().OnlyContain(ts => ts.RecurrenceFrequency == "Weekly" && ts.RecurrenceCount == 8);
 	}
 
+	// BaseStart/BaseEnd are pinned to "now" and drift day by day, so a recurrence
+	// window that happens to straddle the Europe/Berlin DST transition (last
+	// Sunday of March/October) makes Advance()'s DST-safe local-time
+	// re-resolution (see CreateTimeSlotCommandHandler.Advance, #1160) disagree
+	// with a naive AddDays/AddMonths on the origin's fixed UTC offset by an hour.
+	// These two tests aren't exercising DST behaviour (Handle_ShouldKeepLocalWallClockTime_AcrossADstTransition
+	// already does), so they use a fixed start deep in a DST-transition-free
+	// window instead of the shared, "now"-derived BaseStart/BaseEnd.
+	private static readonly DateTimeOffset FixedRecurrenceStart = new(2027, 1, 5, 9, 0, 0, TimeSpan.Zero);
+
 	[Test]
 	public async Task Handle_ShouldCreate8WeeklySlots_WithWeeklyFrequency(
 		CancellationToken cancellationToken)
@@ -109,15 +119,17 @@ public class CreateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		var start = FixedRecurrenceStart;
+		var end = start.AddHours(2);
 		var command = new CreateTimeSlotCommand(
-			opportunityId, BaseStart, BaseEnd, 5, DefaultRequestingUserId,
+			opportunityId, start, end, 5, DefaultRequestingUserId,
 			RecurrenceFrequency: "Weekly", RecurrenceCount: 8);
 
 		var result = await _sut.Handle(command, cancellationToken);
 
 		result.Should().HaveCount(8);
 		for (var i = 0; i < 8; i++)
-			result[i].StartDateTime.Should().Be(BaseStart.AddDays(7 * i));
+			result[i].StartDateTime.Should().Be(start.AddDays(7 * i));
 	}
 
 	[Test]
@@ -130,16 +142,18 @@ public class CreateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		var start = FixedRecurrenceStart;
+		var end = start.AddHours(2);
 		var command = new CreateTimeSlotCommand(
-			opportunityId, BaseStart, BaseEnd, 20, DefaultRequestingUserId,
+			opportunityId, start, end, 20, DefaultRequestingUserId,
 			RecurrenceFrequency: "Monthly", RecurrenceCount: 3);
 
 		var result = await _sut.Handle(command, cancellationToken);
 
 		result.Should().HaveCount(3);
-		result[0].StartDateTime.Should().Be(BaseStart);
-		result[1].StartDateTime.Should().Be(BaseStart.AddMonths(1));
-		result[2].StartDateTime.Should().Be(BaseStart.AddMonths(2));
+		result[0].StartDateTime.Should().Be(start);
+		result[1].StartDateTime.Should().Be(start.AddMonths(1));
+		result[2].StartDateTime.Should().Be(start.AddMonths(2));
 	}
 
 	[Test]
