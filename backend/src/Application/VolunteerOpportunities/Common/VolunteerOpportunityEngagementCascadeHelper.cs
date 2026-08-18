@@ -43,7 +43,8 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 			engagementReadRepository,
 			opportunityId,
 			opportunityNotificationKind,
-			cancellationToken);
+			cancellationToken,
+			opportunityTitle: opportunityTitle);
 
 		// GetActiveEngagementsForOpportunityAsync already excludes anonymized
 		// engagements (einsatzbereit#1724), so CancelAsync's own guard below

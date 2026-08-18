@@ -17,6 +17,9 @@ internal static class OpportunityNotificationHelper
 	/// has an active (pending or confirmed) engagement on the opportunity, or -
 	/// when <paramref name="timeSlotId"/> is given - only those engaged on that
 	/// specific time slot. The opportunity id is used as the related entity id.
+	/// <paramref name="opportunityTitle"/>, when given, is snapshotted onto each
+	/// created notification so its title can still be shown once the opportunity
+	/// itself is deleted and a live lookup would find nothing (einsatzbereit#2073).
 	/// When <paramref name="keycloakUserService"/>, <paramref name="emailService"/>,
 	/// <paramref name="emailTemplateRenderer"/> and <paramref name="opportunityTitle"/>
 	/// are all supplied, also emails every notified volunteer in a single batch
@@ -45,7 +48,8 @@ internal static class OpportunityNotificationHelper
 			var notification = Notification.Create(
 				UserId.Create(volunteerId).GetValueOrThrow(),
 				kind,
-				opportunityId.Value);
+				opportunityId.Value,
+				opportunityTitle);
 
 			await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		}

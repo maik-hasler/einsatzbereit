@@ -66,9 +66,12 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
+		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073), so an
+		// opportunity later hard/shadow-deleted still shows a title on this notification.
 		await _notifRepo.Received(1).AddAsync(
-			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityCancelled && n.RelatedEntityId == opportunity.Id.Value),
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityCancelled
+				&& n.RelatedEntityId == opportunity.Id.Value
+				&& n.TitleSnapshot == "Titel"),
 			cancellationToken);
 	}
 

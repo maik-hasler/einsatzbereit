@@ -12,6 +12,11 @@ namespace VisualTests;
 /// relatedTitle stays null forever, and its actionUrl 404s. Covers both the
 /// frontend fallback title text and EngagementManagementPage rendering the
 /// existing NotFoundPage instead of a raw error string on that 404.
+///
+/// Also covers #2073: the volunteer-facing OpportunityDeleted notification
+/// must keep its title after the same deletion, unlike the organizer-facing
+/// EngagementCreated notification above - see
+/// Notification_KeepsRelatedTitle_ForOpportunityDeletedKind_AfterOpportunityDeleted.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -22,7 +27,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
 
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedTitle");
+		var (opportunityId, _, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedTitle");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
@@ -44,6 +49,37 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 	}
 
 	[Test]
+	public async Task Notification_KeepsRelatedTitle_ForOpportunityDeletedKind_AfterOpportunityDeleted()
+	{
+		// Regression for #2073: unlike EngagementCreated above, the volunteer's
+		// own OpportunityDeleted notification is the only way they learn which
+		// sign-up was affected, so it must not go the same route and lose its
+		// title once the opportunity row is gone. Notification.TitleSnapshot is
+		// captured when this notification is created - before the delete
+		// removes the opportunity row - and NotificationReadRepository falls
+		// back to it once the live title join finds nothing.
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+
+		var (opportunityId, _, title) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedKeepsTitle");
+
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
+
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
+		deleteResponse.EnsureSuccessStatusCode();
+
+		var notification = await GetNotificationByKindAsync(veraHttp, "OpportunityDeleted");
+
+		notification.GetProperty("relatedTitle").GetString().Should().Be(title,
+			"the title was snapshotted onto the notification when it was created, before the opportunity row disappeared");
+	}
+
+	[Test]
 	public async Task EngagementManagementPage_RendersNotFoundPage_ForDeletedOpportunity()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -51,7 +87,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var (opportunityId, organizationId) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedUi");
+		var (opportunityId, organizationId, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedUi");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
@@ -77,7 +113,10 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		return body.GetProperty("id").GetString()!;
 	}
 
-	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http)
+	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http) =>
+		await GetNotificationByKindAsync(http, "EngagementCreated");
+
+	private static async Task<JsonElement> GetNotificationByKindAsync(HttpClient http, string kind)
 	{
 		var response = await http.GetAsync("/v1/notifications");
 		response.EnsureSuccessStatusCode();
@@ -85,7 +124,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		// GetMyNotifications returns a NotificationsPage ({ items, hasMore }),
 		// not a bare array, since einsatzbereit#1384 added cursor pagination.
 		return page.GetProperty("items").EnumerateArray()
-			.First(n => n.GetProperty("kind").GetString() == "EngagementCreated");
+			.First(n => n.GetProperty("kind").GetString() == kind);
 	}
 
 	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
@@ -106,9 +145,10 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		return body.GetProperty("access_token").GetString()!;
 	}
 
-	private static async Task<(string OpportunityId, string OrganizationId)> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
+	private static async Task<(string OpportunityId, string OrganizationId, string Title)> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
+		var title = $"NotifDeletedOpp {label} {suffix}";
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
@@ -130,7 +170,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			titleDe = $"NotifDeletedOpp {label} {suffix}",
+			titleDe = title,
 			descriptionDe = "Created by NotificationForDeletedOpportunityTests",
 			organizationId,
 			isRemote = true,
@@ -142,6 +182,6 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
-		return (opportunity.GetProperty("id").GetString()!, organizationId);
+		return (opportunity.GetProperty("id").GetString()!, organizationId, title);
 	}
 }

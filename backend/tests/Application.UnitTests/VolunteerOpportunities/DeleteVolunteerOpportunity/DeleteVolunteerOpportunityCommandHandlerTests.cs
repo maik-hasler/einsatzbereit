@@ -115,8 +115,13 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
+		// TitleSnapshot must be captured here since the opportunity row is hard-deleted
+		// right after, so a later live lookup by relatedEntityId would find nothing to
+		// interpolate {{title}} with (einsatzbereit#2073).
 		await _notifRepo.Received(2).AddAsync(
-			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityDeleted && n.RelatedEntityId == opportunityId),
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityDeleted
+				&& n.RelatedEntityId == opportunityId
+				&& n.TitleSnapshot == "Titel"),
 			cancellationToken);
 	}
 
@@ -185,12 +190,14 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == pendingEngagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
-				&& n.RelatedEntityId == pendingEngagement.Id.Value),
+				&& n.RelatedEntityId == pendingEngagement.Id.Value
+				&& n.TitleSnapshot == "Titel"),
 			cancellationToken);
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == confirmedEngagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
-				&& n.RelatedEntityId == confirmedEngagement.Id.Value),
+				&& n.RelatedEntityId == confirmedEngagement.Id.Value
+				&& n.TitleSnapshot == "Titel"),
 			cancellationToken);
 		pendingEngagement.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)
 			.Which.Should().BeOfType<EngagementCancelledDomainEvent>()

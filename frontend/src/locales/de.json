@@ -896,7 +896,7 @@
         "EngagementCancelled": "Deine Anmeldung für {{title}} wurde abgesagt",
         "EngagementWithdrawn": "Eine Anmeldung für {{title}} wurde zurückgezogen",
         "OpportunityUpdated": "{{title}} wurde aktualisiert",
-        "OpportunityDeleted": "Ein Einsatz, für den du dich angemeldet hast, wurde entfernt",
+        "OpportunityDeleted": "{{title}} wurde entfernt",
         "OpportunityUnpublished": "{{title}} wurde zurückgezogen und deine Anmeldung wurde abgesagt",
         "OpportunityCancelled": "Der Einsatz {{title}} wurde abgesagt - deine Anmeldung ist damit hinfällig",
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",

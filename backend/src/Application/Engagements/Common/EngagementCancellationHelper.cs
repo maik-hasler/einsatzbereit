@@ -63,7 +63,8 @@ internal static class EngagementCancellationHelper
 		var notification = Notification.Create(
 			engagement.VolunteerId!.Value,
 			NotificationKind.EngagementCancelled,
-			engagement.Id.Value);
+			engagement.Id.Value,
+			opportunityTitle);
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		return true;

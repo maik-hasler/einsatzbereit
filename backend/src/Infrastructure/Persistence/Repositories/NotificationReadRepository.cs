@@ -185,6 +185,7 @@ internal sealed class NotificationReadRepository(
 				engagementToOpportunity.TryGetValue(n.RelatedEntityId, out var opportunityId))
 			{
 				opportunityTitles.TryGetValue(opportunityId, out relatedTitle);
+				relatedTitle ??= n.TitleSnapshot;
 
 				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn or NotificationKind.FeedbackSubmitted
 					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
@@ -206,6 +207,7 @@ internal sealed class NotificationReadRepository(
 			else if (!EngagementKinds.Contains(n.Kind))
 			{
 				opportunityTitles.TryGetValue(n.RelatedEntityId, out relatedTitle);
+				relatedTitle ??= n.TitleSnapshot;
 
 				actionUrl = n.Kind == NotificationKind.OpportunityUpdated
 					? $"/volunteer-opportunities/{n.RelatedEntityId}"

@@ -13,6 +13,16 @@ public sealed class Notification
 
 	public Guid RelatedEntityId { get; private set; }
 
+	// Captured at creation time so the notification text can still interpolate
+	// a title once the related opportunity is gone (hard-deleted, or
+	// shadow-deleted and filtered out by VolunteerOpportunityConfiguration's
+	// query filter) by the time this notification is read - a live join
+	// against the opportunity table alone finds nothing for either case
+	// (einsatzbereit#2073). Null for notification kinds that never pass a
+	// title through (e.g. invitation/feedback notifications resolve their
+	// display text from a live join elsewhere and never go stale the same way).
+	public string? TitleSnapshot { get; private set; }
+
 	public bool IsRead { get; private set; }
 
 	// Retention (NotificationRetentionJob) prunes read notifications relative to
@@ -33,24 +43,28 @@ public sealed class Notification
 		NotificationId id,
 		UserId recipientId,
 		NotificationKind kind,
-		Guid relatedEntityId)
+		Guid relatedEntityId,
+		string? titleSnapshot)
 		: base(id)
 	{
 		RecipientId = recipientId;
 		Kind = kind;
 		RelatedEntityId = relatedEntityId;
+		TitleSnapshot = titleSnapshot;
 		IsRead = false;
 	}
 
 	public static Notification Create(
 		UserId recipientId,
 		NotificationKind kind,
-		Guid relatedEntityId) =>
+		Guid relatedEntityId,
+		string? titleSnapshot = null) =>
 		new(
 			NotificationId.New(),
 			recipientId,
 			kind,
-			relatedEntityId);
+			relatedEntityId,
+			titleSnapshot);
 
 	public void MarkRead(DateTimeOffset readOn)
 	{
