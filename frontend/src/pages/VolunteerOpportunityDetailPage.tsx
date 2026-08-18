@@ -36,6 +36,7 @@ import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
 import PublicOpportunityCard from "../components/PublicOpportunityCard";
+import RouteState from "../components/RouteState";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -372,11 +373,20 @@ export default function VolunteerOpportunityDetailPage() {
 		isAuthenticated && !isOwner && !!cue && !isDraft;
 	const showSignUpCta = isAuthenticated && !isOwner && !cue && !isDraft;
 	const showLoginPrompt = !isAuthenticated && !isDraft;
+	// An owner viewing their own published opportunity gets none of the three
+	// blocks above (each requires !isOwner) - without this, the rail is just
+	// silently empty, indistinguishable from a rendering failure, and offers
+	// no way back to the management view (#2081). Excluded for isDraft: the
+	// action row already shows the draft badge plus Edit/Publish there, and an
+	// unpublished draft has no engagements yet for the linked management page
+	// to show.
+	const showOwnerNotice = isOwner && !isDraft;
 	const hasActionRail =
 		showDeadlineCard ||
 		showApplicationStatus ||
 		showSignUpCta ||
-		showLoginPrompt;
+		showLoginPrompt ||
+		showOwnerNotice;
 
 	// The sticky rail's content, rendered once for the lg+ sidebar and once
 	// more (testIdSuffix "-mobile") right above the map for narrow viewports -
@@ -398,6 +408,20 @@ export default function VolunteerOpportunityDetailPage() {
 	) {
 		return (
 			<>
+				{showOwnerNotice && (
+					<RouteState
+						inline
+						variant="forbidden"
+						title={t("opportunities.ownOpportunityNoticeTitle")}
+						message={t("opportunities.ownOpportunityNoticeMessage")}
+						action={{
+							label: t("engagementManagement.title"),
+							to: `/app/${opp.organizationId}/dashboard/opportunities/${opp.id}/engagements`,
+						}}
+						data-testid={`opportunity-owner-notice${testIdSuffix}`}
+					/>
+				)}
+
 				{showDeadlineCard && (
 					<div
 						className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}

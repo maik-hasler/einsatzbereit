@@ -222,6 +222,8 @@
       "cancel": "Absagen",
       "cancelSuccess": "Einsatz abgesagt.",
       "loginPrompt": "Melde dich an, um mitzumachen.",
+      "ownOpportunityNoticeTitle": "Einsatz deiner Organisation",
+      "ownOpportunityNoticeMessage": "Das ist ein Einsatz deiner Organisation. Du kannst dich nicht selbst anmelden.",
       "yourApplication": "Deine Anmeldung",
       "aboutOrganization": "Über diese Organisation",
       "aboutOrganizationLoadError": "Die Kontaktdaten dieser Organisation konnten nicht geladen werden.",

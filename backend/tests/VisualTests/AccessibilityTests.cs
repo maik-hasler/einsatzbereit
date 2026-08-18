@@ -235,6 +235,53 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_OwnerNotice_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #2081: an owner viewing their own already-published (non-draft)
+		// opportunity now renders a new "owner notice" card with a link to
+		// the engagement-management view, in place of the sign-up CTA/login
+		// blocks. VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf above only
+		// ever seeds isDraft: true, so it never reaches this !isDraft branch -
+		// same rationale as that test's own comment.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Owner Notice Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = $"A11y Owner Notice Test {suffix}",
+			descriptionDe = "Seeded published opportunity for the owner-notice a11y scan.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		response.EnsureSuccessStatusCode();
+		var opportunity = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.GetByTestId("opportunity-owner-notice")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_MobileActionRail_AsVera_HasNoSeriousA11yViolations()
 	{
 		// #1965: the sign-up CTA (and its deadline/status/login-prompt
