@@ -3,7 +3,7 @@ import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { addDays, addMonths, endOfWeek, startOfWeek } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "../icons";
-import { resolveDateLocale } from "../../lib/format";
+import { formatFullDate, resolveDateLocale } from "../../lib/format";
 
 function fmtIso(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -193,12 +193,6 @@ export default function MiniCalendar({
 	const monthName = new Intl.DateTimeFormat(locale, {
 		month: "long",
 	}).format(firstOfMonth);
-	const fullDateFormatter = new Intl.DateTimeFormat(locale, {
-		weekday: "long",
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	});
 	const dayLabels = Array.from({ length: 7 }, (_, i) => {
 		const ref = new Date(2024, 0, 1 + i); // 2024-01-01 was Monday
 		return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(ref);
@@ -338,10 +332,10 @@ export default function MiniCalendar({
 										tabIndex={isFocusTarget ? 0 : -1}
 										aria-label={
 											isPast
-												? `${fullDateFormatter.format(day)}, ${t("opportunities.dayInPast")}`
+												? `${formatFullDate(day, i18n.language)}, ${t("opportunities.dayInPast")}`
 												: isMarked
-													? `${fullDateFormatter.format(day)}, ${t("opportunities.dayOpportunityCount", { count: opportunityCount })}`
-													: fullDateFormatter.format(day)
+													? `${formatFullDate(day, i18n.language)}, ${t("opportunities.dayOpportunityCount", { count: opportunityCount })}`
+													: formatFullDate(day, i18n.language)
 										}
 										// aria-disabled, not the disabled attribute: a natively
 										// disabled button drops out of the tab order entirely, which

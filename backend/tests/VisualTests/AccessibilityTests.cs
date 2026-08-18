@@ -758,6 +758,46 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_CalendarWidgetMonthView_AsOlaf_DateCellsHaveAccessibleDateLabel()
+	{
+		// einsatzbereit#1924: Month view's date-number button - rendered by
+		// react-big-calendar's own default DateHeader (node_modules/
+		// react-big-calendar/lib/DateHeader.js) - had no accessible name beyond
+		// the bare day-of-month digit visible on screen ("27"). CalendarWidget.tsx's
+		// components.month.dateHeader (CalDateHeader) now sets aria-label to a
+		// full date instead. Forces Month view via the toolbar rather than
+		// relying on olaf's seeded events landing in whichever month happens to
+		// be visible on the day this test runs (the color-dialog tests above
+		// Skip.Test for exactly that reason) - the day grid itself renders the
+		// same whether or not any event exists that month, so no seed data is
+		// needed here. Asserts the accessible name directly (mirroring
+		// VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName above)
+		// rather than only an axe scan: the original bug already had visible
+		// button text, which satisfies axe's own accessible-name rules and
+		// would never have caught this regression.
+		var frontend = Fixture.GetEndpoint("frontend");
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Month" }).ClickAsync();
+
+		// `.rbc-current` marks the cell matching the calendar's own `date`
+		// state, which CalendarWidget.tsx initializes to `new Date()` and this
+		// test never navigates away from - i.e. today's cell.
+		var todayCell = Page.Locator(".rbc-current .rbc-button-link");
+		await Expect(todayCell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var visibleLabel = await todayCell.InnerTextAsync();
+		var ariaLabel = await todayCell.GetAttributeAsync("aria-label");
+
+		ariaLabel.Should().NotBeNullOrWhiteSpace();
+		ariaLabel.Should().NotBe(visibleLabel,
+			"the accessible name must be more than the bare day-of-month digit visible on screen (einsatzbereit#1924)");
+		ariaLabel!.Length.Should().BeGreaterThan(visibleLabel.Length,
+			"a full date label (weekday, month, year) is always longer than the bare digit it replaces");
+	}
+
+	[Test]
 	public async Task OrgDashboardPage_LayoutLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1234: a failed dashboard-layout fetch now renders its own inline
