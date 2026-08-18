@@ -20,7 +20,7 @@ import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
 import {
 	formatDate,
-	formatDateTime,
+	formatDateTimeRange,
 	pickLocalizedText,
 	resolveDateLocale,
 } from "../lib/format";
@@ -606,12 +606,8 @@ export default function EngagementManagementPage() {
 								</option>
 								{opportunity.timeSlots.map((slot) => (
 									<option key={slot.id} value={slot.id}>
-										{formatDateTime(
+										{formatDateTimeRange(
 											slot.startDateTime as unknown as string,
-											i18n.language,
-										)}{" "}
-										-{" "}
-										{formatDateTime(
 											slot.endDateTime as unknown as string,
 											i18n.language,
 										)}
@@ -807,7 +803,11 @@ export default function EngagementManagementPage() {
 												return (
 													<p className="mt-1 text-xs text-gray-500">
 														{slot
-															? `${formatDateTime(slot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(slot.endDateTime as unknown as string, i18n.language)}`
+															? formatDateTimeRange(
+																	slot.startDateTime as unknown as string,
+																	slot.endDateTime as unknown as string,
+																	i18n.language,
+																)
 															: e.timeSlotId.slice(0, 8) + "..."}
 													</p>
 												);

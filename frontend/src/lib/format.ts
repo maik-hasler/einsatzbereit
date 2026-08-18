@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays, isSameDay } from "date-fns";
 import type { OpportunityCapacity } from "./opportunityCapacity";
 
 export function formatOccurrence(occurrence: string, t: TFunction): string {
@@ -118,6 +118,45 @@ export function formatDateTime(dt: string, lng: string): string {
 	return getDateTimeFormatter(lng).format(new Date(dt));
 }
 
+const timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getTimeFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
+	let formatter = timeFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, { timeStyle: "short" });
+		timeFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
+/**
+ * The product-wide time-range string ("27.08.2026, 09:00-17:00") - collapses
+ * the date to one side when `start`/`end` fall on the same calendar day
+ * (in the viewer's local time zone) instead of repeating it on both ends,
+ * since nearly every time slot is same-day and the doubled form was the
+ * string most likely to wrap onto three lines in narrow cards (#2047). Falls
+ * back to two full `formatDateTime` calls joined with " - " once the range
+ * crosses a day boundary, so the date is never dropped where it's actually
+ * needed. `lng` is i18n.language ("de"/"en"), not an Intl locale (see
+ * formatDateTime).
+ */
+export function formatDateTimeRange(
+	startDt: string,
+	endDt: string,
+	lng: string,
+): string {
+	const start = new Date(startDt);
+	const end = new Date(endDt);
+	if (!isSameDay(start, end)) {
+		return `${formatDateTime(startDt, lng)} - ${formatDateTime(endDt, lng)}`;
+	}
+	const datePart = getDateFormatter(lng).format(start);
+	const startTime = getTimeFormatter(lng).format(start);
+	const endTime = getTimeFormatter(lng).format(end);
+	return `${datePart}, ${startTime}-${endTime}`;
+}
+
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getDateFormatter(lng: string): Intl.DateTimeFormat {
@@ -137,32 +176,6 @@ function getDateFormatter(lng: string): Intl.DateTimeFormat {
  * i18n.language ("de"/"en"), not an Intl locale (see formatDateTime). */
 export function formatDate(dt: string, lng: string): string {
 	return getDateFormatter(lng).format(new Date(dt));
-}
-
-const longDateFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function getLongDateFormatter(lng: string): Intl.DateTimeFormat {
-	const resolvedLocale = resolveDateLocale(lng);
-	let formatter = longDateFormatters.get(resolvedLocale);
-	if (!formatter) {
-		formatter = new Intl.DateTimeFormat(resolvedLocale, {
-			day: "2-digit",
-			month: "long",
-			year: "numeric",
-		});
-		longDateFormatters.set(resolvedLocale, formatter);
-	}
-	return formatter;
-}
-
-/** Long-form date-only formatting (e.g. "25. Juli 2026") - for lower-frequency
- * "created on"/"sent on" timestamps where a spelled-out month reads better
- * than the compact numeric style `formatDate` uses. `lng` is i18n.language
- * ("de"/"en"), not an Intl locale (see formatDateTime). Centralized here so
- * call sites don't each re-derive their own `toLocaleDateString` options and
- * drift into a third date format alongside formatDate/formatDateTime (#986). */
-export function formatDateLong(dt: string, lng: string): string {
-	return getLongDateFormatter(lng).format(new Date(dt));
 }
 
 const fullDateFormatters = new Map<string, Intl.DateTimeFormat>();

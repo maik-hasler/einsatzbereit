@@ -6,7 +6,7 @@ import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
-import { formatDateTime } from "../../lib/format";
+import { formatDateTimeRange } from "../../lib/format";
 import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
 import type { OpportunityFormValues } from "./schema";
 
@@ -356,8 +356,12 @@ export default function DetailsStep({
 										className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
 									>
 										<span className="text-gray-700">
-											{formatDateTime(slot.startDateTime, i18n.language)} -{" "}
-											{formatDateTime(slot.endDateTime, i18n.language)} (
+											{formatDateTimeRange(
+												slot.startDateTime,
+												slot.endDateTime,
+												i18n.language,
+											)}{" "}
+											(
 											{slot.maxParticipants === null
 												? t("timeSlots.unlimited")
 												: slot.maxParticipants}

@@ -23,7 +23,7 @@ import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import {
 	formatDate,
-	formatDateTime,
+	formatDateTimeRange,
 	formatFullDate,
 	pickLocalizedText,
 	resolveDateLocale,
@@ -93,7 +93,11 @@ function CalEventChip({
 }) {
 	const { t, i18n } = useTranslation();
 	const e = event as CalEvent;
-	const timeRange = `${formatDateTime(e.start.toISOString(), i18n.language)} - ${formatDateTime(e.end.toISOString(), i18n.language)}`;
+	const timeRange = formatDateTimeRange(
+		e.start.toISOString(),
+		e.end.toISOString(),
+		i18n.language,
+	);
 	const capacityLabel =
 		e.maxParticipants === null
 			? t("orgOverview.eventChipUnlimited", { booked: e.bookedCount })

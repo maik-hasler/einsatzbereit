@@ -10,7 +10,7 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { isFeedbackEditable } from "../../lib/feedback";
-import { formatDate, formatDateTime } from "../../lib/format";
+import { formatDate, formatDateTimeRange } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import Chip from "../../components/Chip";
@@ -483,7 +483,11 @@ export default function ActivitySection() {
 											<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
 											<span>
 												{t("myEngagements.scheduledFor", {
-													range: `${formatDateTime(e.timeSlotStartDateTime as unknown as string, i18n.language)} - ${formatDateTime(e.timeSlotEndDateTime as unknown as string, i18n.language)}`,
+													range: formatDateTimeRange(
+														e.timeSlotStartDateTime as unknown as string,
+														e.timeSlotEndDateTime as unknown as string,
+														i18n.language,
+													),
 												})}
 											</span>
 										</p>

@@ -26,7 +26,7 @@ import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
 import { RequiredFieldsLegend } from "../../components/RequiredMark";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
-import { formatDateLong } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 
 export default function OrgSettingsPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
@@ -276,7 +276,7 @@ export default function OrgSettingsPage() {
 						subtitle={
 							<p className="text-xs text-gray-500">
 								{t("orgSettings.createdOn", {
-									date: formatDateLong(
+									date: formatDate(
 										org.createdOn as unknown as string,
 										i18n.language,
 									),

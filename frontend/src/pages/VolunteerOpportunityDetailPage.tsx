@@ -12,6 +12,7 @@ import {
 	computeSpotsLeft,
 	formatDate,
 	formatDateTime,
+	formatDateTimeRange,
 	formatOccurrence,
 	formatParticipationType,
 	formatPostedAgo,
@@ -357,6 +358,20 @@ export default function VolunteerOpportunityDetailPage() {
 		secondaryLabel: capacitySecondaryLabel,
 	} = describeCapacity(capacity, t);
 
+	// formatPostedAgo's relative text ("Vor 5 Tagen veroeffentlicht") is the
+	// one documented exception to the site's numeric date convention - it
+	// still needs the absolute date available to screen readers (`aria-label`,
+	// not just `title`, which browse-mode AT users and touch/mobile never see
+	// - #2047) and to sighted mouse users (`title`).
+	const postedOnRelative = formatPostedAgo(
+		opportunity.createdOn as unknown as string,
+		t,
+	);
+	const postedOnAbsolute = formatDateTime(
+		opportunity.createdOn as unknown as string,
+		i18n.language,
+	);
+
 	const otherOrgOpportunities =
 		orgProfile?.openOpportunities
 			.filter((opp) => opp.id !== opportunity.id)
@@ -458,7 +473,11 @@ export default function VolunteerOpportunityDetailPage() {
 										<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
 										<span>
 											{t("myEngagements.scheduledFor", {
-												range: `${formatDateTime(registeredTimeSlot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(registeredTimeSlot.endDateTime as unknown as string, i18n.language)}`,
+												range: formatDateTimeRange(
+													registeredTimeSlot.startDateTime as unknown as string,
+													registeredTimeSlot.endDateTime as unknown as string,
+													i18n.language,
+												),
 											})}
 										</span>
 									</p>
@@ -776,11 +795,12 @@ export default function VolunteerOpportunityDetailPage() {
 										{capacitySecondaryLabel}
 									</span>
 								)}
-								<span className="text-xs text-gray-500">
-									{formatPostedAgo(
-										opportunity.createdOn as unknown as string,
-										t,
-									)}
+								<span
+									className="text-xs text-gray-500"
+									title={postedOnAbsolute}
+									aria-label={`${postedOnRelative} (${postedOnAbsolute})`}
+								>
+									{postedOnRelative}
 								</span>
 							</div>
 
@@ -848,12 +868,8 @@ export default function VolunteerOpportunityDetailPage() {
 												className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
 											>
 												<span>
-													{formatDateTime(
+													{formatDateTimeRange(
 														ts.startDateTime as unknown as string,
-														i18n.language,
-													)}
-													{" - "}
-													{formatDateTime(
 														ts.endDateTime as unknown as string,
 														i18n.language,
 													)}

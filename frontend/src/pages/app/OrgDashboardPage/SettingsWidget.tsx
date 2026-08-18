@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../../../client/api-client";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSizeClass } from "./widgetCatalog";
-import { formatDateLong } from "../../../lib/format";
+import { formatDate } from "../../../lib/format";
 
 interface Props {
 	org: OrganizationDetailsResponse;
@@ -71,7 +71,7 @@ function SettingsWidget({ org, size }: Props) {
 							<>
 								<span className="mx-1.5">&middot;</span>
 								{t("orgSettings.createdOn", {
-									date: formatDateLong(
+									date: formatDate(
 										org.createdOn as unknown as string,
 										i18n.language,
 									),

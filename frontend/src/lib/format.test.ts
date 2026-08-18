@@ -5,8 +5,8 @@ import {
 	formatOccurrence,
 	formatParticipationType,
 	formatDate,
-	formatDateLong,
 	formatDateTime,
+	formatDateTimeRange,
 	formatPostedAgo,
 	isRecentlyCreatedOrganization,
 	isSlotFull,
@@ -184,32 +184,45 @@ describe("formatDate", () => {
 	});
 });
 
-describe("formatDateLong", () => {
-	// Compares against the identical Intl call rather than a hardcoded string
-	// so the assertion doesn't depend on the host's local timezone offset.
-	it("formats using en-GB style for en, spelling out the month", () => {
-		const iso = "2026-08-15T23:59:59.999Z";
-		const expected = new Date(iso).toLocaleDateString("en-GB", {
-			day: "2-digit",
-			month: "long",
-			year: "numeric",
-		});
-		expect(formatDateLong(iso, "en")).toBe(expected);
+describe("formatDateTimeRange", () => {
+	// Local Date constructors (not ISO "Z" strings) so same-day/cross-day
+	// boundaries are exact regardless of the test runner's local timezone -
+	// same reasoning as calendarRange.test.ts.
+	it("collapses a same-day range to one date with a hyphen-joined time range", () => {
+		const start = new Date(2026, 7, 27, 9, 0);
+		const end = new Date(2026, 7, 27, 17, 0);
+		const datePart = new Intl.DateTimeFormat("de-DE", {
+			dateStyle: "medium",
+		}).format(start);
+		const startTime = new Intl.DateTimeFormat("de-DE", {
+			timeStyle: "short",
+		}).format(start);
+		const endTime = new Intl.DateTimeFormat("de-DE", {
+			timeStyle: "short",
+		}).format(end);
+		expect(
+			formatDateTimeRange(start.toISOString(), end.toISOString(), "de"),
+		).toBe(`${datePart}, ${startTime}-${endTime}`);
 	});
 
-	it("formats using de-DE style when locale is de", () => {
-		const iso = "2026-08-15T23:59:59.999Z";
-		const expected = new Date(iso).toLocaleDateString("de-DE", {
-			day: "2-digit",
-			month: "long",
-			year: "numeric",
-		});
-		expect(formatDateLong(iso, "de")).toBe(expected);
+	it("falls back to two full formatDateTime calls once the range crosses a calendar day", () => {
+		const start = new Date(2026, 7, 27, 23, 0);
+		const end = new Date(2026, 7, 28, 1, 0);
+		const startIso = start.toISOString();
+		const endIso = end.toISOString();
+		expect(formatDateTimeRange(startIso, endIso, "de")).toBe(
+			`${formatDateTime(startIso, "de")} - ${formatDateTime(endIso, "de")}`,
+		);
 	});
 
-	it("differs from the compact formatDate style", () => {
-		const iso = "2026-08-15T23:59:59.999Z";
-		expect(formatDateLong(iso, "de")).not.toBe(formatDate(iso, "de"));
+	it("uses en-GB style time-of-day for en", () => {
+		const start = new Date(2026, 7, 27, 9, 0);
+		const end = new Date(2026, 7, 27, 17, 0);
+		expect(
+			formatDateTimeRange(start.toISOString(), end.toISOString(), "en"),
+		).not.toBe(
+			formatDateTimeRange(start.toISOString(), end.toISOString(), "de"),
+		);
 	});
 });
 

@@ -14,7 +14,7 @@ import { dispatchToast } from "../lib/toastBus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import {
-	formatDateLong,
+	formatDate,
 	formatDateTime,
 	isRecentlyCreatedOrganization,
 } from "../lib/format";
@@ -409,7 +409,7 @@ function OrganizationsSection() {
 												})}
 												{" · "}
 												{t("administration.organizations.createdOn", {
-													date: formatDateLong(row.createdOn, i18n.language),
+													date: formatDate(row.createdOn, i18n.language),
 												})}
 											</p>
 										</div>

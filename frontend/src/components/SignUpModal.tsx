@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { computeSpotsLeft, formatDateTime, isSlotFull } from "../lib/format";
+import {
+	computeSpotsLeft,
+	formatDateTimeRange,
+	isSlotFull,
+} from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { labelClass, textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
@@ -128,10 +132,8 @@ export default function SignUpModal({
 									return {
 										value: ts.id,
 										disabled: slotFull,
-										label: `${formatDateTime(
+										label: `${formatDateTimeRange(
 											ts.startDateTime as unknown as string,
-											i18n.language,
-										)} - ${formatDateTime(
 											ts.endDateTime as unknown as string,
 											i18n.language,
 										)} ${
