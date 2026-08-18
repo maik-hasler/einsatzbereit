@@ -219,10 +219,10 @@ export default function OrganizationsPage() {
 							{/* Visually hidden: PageHeaderBand's <h1> already names the
 							page, and a visible line here would just repeat the result
 							count above. Its job is structural - giving the per-card
-							<h2>s below a parent, so the outline reads as one results
-							region instead of a flat run of identically-styled level-2
-							headings with nothing distinguishing them from each other or
-							from the page title (#2071). */}
+							<h3>s below a parent, so the outline reads as one results
+							region instead of a flat run of identically-styled headings
+							with nothing distinguishing them from each other or from the
+							page title (#2071). */}
 							<h2 className="sr-only">
 								{t("organizationsPage.resultsHeading")}
 							</h2>
@@ -257,9 +257,9 @@ export default function OrganizationsPage() {
 													</span>
 												)}
 												<div className="flex min-w-0 flex-1 items-center gap-2">
-													<h2 className="block truncate text-sm font-semibold text-gray-900">
+													<h3 className="block truncate text-sm font-semibold text-gray-900">
 														{org.name}
-													</h2>
+													</h3>
 												</div>
 												{auth.isAuthenticated && (
 													<ReportFlagButton

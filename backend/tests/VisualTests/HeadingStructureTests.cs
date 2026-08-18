@@ -13,11 +13,12 @@ namespace VisualTests;
 /// run of indistinguishable level-2 headings once the footer's own CTA and
 /// three link-column headings (also fixed &lt;h2&gt;s) followed right after.
 ///
-/// The fix: both directories get a visually-hidden results-region &lt;h2&gt;, the
-/// /opportunities cards drop to &lt;h3&gt; underneath it, and the footer demotes its
-/// own headings to &lt;h3&gt; specifically on that route (see Footer's headingLevel
-/// prop and AppLayout) so they read as subordinate to the grid instead of more
-/// of the same level-2 run.
+/// The fix: both directories get a visually-hidden results-region &lt;h2&gt;, with
+/// every card heading underneath it dropped to &lt;h3&gt; so it nests correctly
+/// instead of sitting as another same-level sibling. The footer additionally
+/// demotes its own headings to &lt;h3&gt; specifically on /opportunities (see
+/// Footer's headingLevel prop and AppLayout) so they read as subordinate to
+/// the grid instead of more of the same level-2 run.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -41,7 +42,7 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.Locator("#organizations-search").FillAsync(orgName);
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = orgName, Level = 2 }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = orgName, Level = 3 }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// The card heading's parent: sr-only, so it costs sighted users nothing
