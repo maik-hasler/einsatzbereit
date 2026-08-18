@@ -107,16 +107,21 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 
 	/// <summary>
 	/// #1774 F33, org-shell half: with no connection the org request fails like
-	/// any other transport error, but calling that "an unexpected error" and
-	/// offering a retry is a lie - the retry cannot succeed until the connection
-	/// is back. Simulated by pinning <c>navigator.onLine</c> false and aborting
-	/// the org request rather than by <c>Context.SetOfflineAsync</c>, because
-	/// this suite blocks service workers (see VisualTestBase.ContextOptions), so
-	/// a genuinely offline document navigation could not load the app shell at
-	/// all - the very thing the precache makes work in production.
+	/// any other transport error, but calling that "an unexpected error" is a
+	/// lie regardless. Simulated by pinning <c>navigator.onLine</c> false and
+	/// aborting the org request rather than by <c>Context.SetOfflineAsync</c>,
+	/// because this suite blocks service workers (see
+	/// VisualTestBase.ContextOptions), so a genuinely offline document
+	/// navigation could not load the app shell at all - the very thing the
+	/// precache makes work in production.
+	///
+	/// #2065 added a "Try again" button to this screen on top of the existing
+	/// automatic <c>online</c>-event recovery (see the misreport variant below,
+	/// which stays event-driven) - a fallback for a connection that comes back
+	/// without the browser ever firing that event.
 	/// </summary>
 	[Test]
-	public async Task OrgShellWhileOffline_ShowsOfflineState_WithoutARetryThatCannotWork()
+	public async Task OrgShellWhileOffline_ShowsOfflineState_WithAManualRetryFallback()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -136,7 +141,7 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 		await Expect(Page.GetByText("An unexpected error occurred", new() { Exact = false }))
 			.Not.ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
-			.Not.ToBeVisibleAsync();
+			.ToBeVisibleAsync();
 	}
 
 	/// <summary>
@@ -169,7 +174,55 @@ public class OrgAppLayoutErrorStatesTests(AspireFixture fixture) : VisualTestBas
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByText("An unexpected error occurred", new() { Exact = false }))
 			.Not.ToBeVisibleAsync();
+		// #2065: the offline screen's manual retry fallback renders regardless
+		// of which signal decided the state was offline.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
+			.ToBeVisibleAsync();
+	}
+
+	/// <summary>
+	/// #2065's core scenario: a connection that came back without the browser
+	/// ever firing an <c>online</c> event. <c>navigator.onLine</c> stays pinned
+	/// false for the whole test (unlike the other offline tests above, nothing
+	/// here ever flips it or fires the event) - clicking "Try again" is the
+	/// only thing that can recover, proving the manual fallback works
+	/// independently of the event-driven path.
+	/// </summary>
+	[Test]
+	public async Task OrgShellWhileOffline_ManualRetry_SucceedsWithoutAnOnlineEvent()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var organizationId = await CreateOrganizationAsync("OrgOfflineManualRetry");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		await Page.AddInitScriptAsync(
+			"Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });");
+
+		var shouldFail = true;
+		await Page.RouteAsync($"**/v1/organizations/{organizationId}", async route =>
+		{
+			if (route.Request.Method != "GET" || !shouldFail)
+			{
+				await route.ContinueAsync();
+				return;
+			}
+			await route.AbortAsync("internetdisconnected");
+		});
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+
+		var retryButton = Page.GetByRole(AriaRole.Button, new() { Name = "Try again" });
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(retryButton).ToBeVisibleAsync();
+
+		shouldFail = false;
+		await retryButton.ClickAsync();
+
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
 			.Not.ToBeVisibleAsync();
 	}
 

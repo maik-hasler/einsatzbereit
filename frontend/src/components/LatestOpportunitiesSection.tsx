@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import OpportunityListItem from "./VolunteerOpportunitiesList/OpportunityListItem";
+import RouteState from "./RouteState";
 import Skeleton from "./Skeleton";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
@@ -42,21 +43,24 @@ export default function LatestOpportunitiesSection() {
 	// (VolunteerOpportunityReadRepository sorts on CreatedOn descending), so
 	// the heading says "just published" rather than claiming these are the
 	// soonest or the nearest.
-	// No getErrorMessage override: nothing here renders the message. A failure
-	// removes the section (see below), so translating the error would produce a
-	// string with nowhere to go.
-	const { items, loading, error } = useLoadMore<VolunteerOpportunitySummary>(
-		(pageNumber) =>
+	// No getErrorMessage override: nothing here renders a generic error message
+	// (see below, a non-offline failure removes the section entirely), so
+	// translating one would produce a string with nowhere to go.
+	const { items, loading, error, errorIsOffline, retryLoadMore } =
+		useLoadMore<VolunteerOpportunitySummary>((pageNumber) =>
 			fetchVolunteerOpportunities(api, { pageNumber, pageSize: PREVIEW_COUNT }),
-	);
+		);
 
-	// The section removes itself rather than rendering an empty state or an
-	// error box. Both would argue against the hero directly above them - a
-	// landing page that opens with "find an opportunity" and immediately
-	// reports that there are none, or that something broke, is worse than one
-	// that simply doesn't raise the subject. /opportunities is where a visitor
-	// gets the real empty state and a retry.
-	if (error || (!loading && items.length === 0)) return null;
+	// A generic failure still removes the section rather than rendering an
+	// error box - that would argue against the hero directly above it, and
+	// /opportunities is where a visitor gets the real error state and a retry.
+	// Offline is different (#2065): the section used to vanish then too, which
+	// on a reload with no connection threw away the one piece of evidence this
+	// page gives that there is anything to find, with no explanation - unlike
+	// /opportunities, which has said so since #1774. An empty result (no error,
+	// zero items) still removes the section either way.
+	if ((error && !errorIsOffline) || (!loading && items.length === 0))
+		return null;
 
 	return (
 		<section aria-labelledby={titleId} className="mb-20">
@@ -85,7 +89,29 @@ export default function LatestOpportunitiesSection() {
 				</Link>
 			</div>
 
-			{loading && items.length === 0 ? (
+			{/* Always mounted, not conditional on the message - registered before
+			the connection ever drops so writing into it on the offline transition
+			actually announces (a role="status" node inserted into the DOM already
+			populated does not reliably announce; see RouteState's own comment on
+			this and OpportunityResultsList's identical pattern for the
+			/opportunities list, #2065). RouteState's offline variant carries no
+			live region of its own by design - announcing the transition is left
+			to the caller, and unlike the list this section previously had
+			nothing else nearby that could double as one. */}
+			<p role="status" className="sr-only">
+				{error && errorIsOffline ? t("landing.offline") : ""}
+			</p>
+
+			{error && errorIsOffline ? (
+				<RouteState
+					inline
+					variant="offline"
+					title={t("routeState.offline.title")}
+					message={t("landing.offline")}
+					onRetry={retryLoadMore}
+					data-testid="landing-latest-offline"
+				/>
+			) : loading && items.length === 0 ? (
 				<div className={GRID_CLASS}>
 					{Array.from({ length: PREVIEW_COUNT }).map((_, i) => (
 						<div

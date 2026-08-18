@@ -46,12 +46,17 @@ public class ErrorBoundaryOfflineTests(AspireFixture fixture) : VisualTestBase(f
 				.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 			// The two halves of the old behaviour, both gone: the generic crash
-			// screen, and a reload button that could not possibly succeed while
-			// still offline.
+			// screen, and its "Reload" button (which offers no acknowledgement
+			// the cause was connectivity).
 			await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" }))
 				.Not.ToBeVisibleAsync();
 			await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reload" }))
 				.Not.ToBeVisibleAsync();
+			// #2065: the offline state's own "Try again" button - a real reload
+			// (see ErrorBoundary.tsx's onRetry), for a connection that comes back
+			// without the browser ever firing an `online` event.
+			await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
+				.ToBeVisibleAsync();
 		}
 		finally
 		{

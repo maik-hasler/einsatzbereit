@@ -65,6 +65,7 @@
       "latestLabel": "Gerade veröffentlicht",
       "latestTitle": "Diese Einsätze suchen Leute",
       "latestLink": "Alle Einsätze ansehen",
+      "offline": "Sobald deine Verbindung zurück ist, zeigen wir diese Einsätze wieder.",
       "missionLabel": "Vom Gründer",
       "missionTitle": "Warum ich Einsatzbereit gebaut habe",
       "missionText": "Ehrenamt sollte nicht an Papierkram scheitern. Ich habe immer wieder erlebt, wie Leute helfen wollten und an Anmeldeformularen, Wartelisten oder schlicht fehlenden Einstiegspunkten gescheitert sind. Einsatzbereit nimmt jede dieser Hürden weg: Mikro-Ehrenamt, das in eine echte Woche passt - kostenlos, ohne Wartelisten, komplett open source.",
@@ -104,8 +105,8 @@
       "searchPlaceholder": "Organisationen nach Namen suchen…",
       "loading": "Organisationen werden geladen…",
       "error": "Fehler: {{message}}",
-      "offline": "Du bist offline. Sobald deine Verbindung zurück ist, laden wir die Organisationen.",
-      "offlineLoadMore": "Du bist offline. Das sind die Organisationen, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist.",
+      "offline": "Sobald deine Verbindung zurück ist, laden wir die Organisationen.",
+      "offlineLoadMore": "Das sind die Organisationen, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist.",
       "noResults": "Keine Organisationen gefunden.",
       "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
       "clearSearch": "Suche zurücksetzen",
@@ -238,8 +239,9 @@
       "factWhen": "Wann",
       "factFormat": "Ablauf",
       "factWhere": "Wo",
-      "offline": "Du bist offline. Sobald deine Verbindung zurück ist, laden wir die Einsätze.",
-      "offlineLoadMore": "Du bist offline. Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist."
+      "offline": "Sobald deine Verbindung zurück ist, laden wir die Einsätze.",
+      "offlineLoadMore": "Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden - den Rest holen wir, sobald du wieder online bist.",
+      "offlineDetail": "Sobald deine Verbindung zurück ist, laden wir diese Seite erneut."
     },
     "createOpportunity": {
       "title": "Einsatz erstellen",

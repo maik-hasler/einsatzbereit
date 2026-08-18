@@ -118,7 +118,9 @@ export default function OpportunityResultsList({
 			and then used to throw all of that away by reporting "an unexpected
 			error occurred" here, next to a retry button that could not succeed
 			while the connection was down. useLoadMore refetches on its own once
-			the connection returns, so this state needs no action at all. */}
+			the connection returns, so this state needs no action - the retry
+			button below is only a fallback for a connection that came back
+			without the browser ever firing an `online` event (#2065). */}
 			{error &&
 				(errorIsOffline ? (
 					<RouteState
@@ -126,6 +128,7 @@ export default function OpportunityResultsList({
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("opportunities.offline")}
+						onRetry={onRetryLoadMore}
 						data-testid="opportunities-offline"
 					/>
 				) : (
@@ -173,6 +176,7 @@ export default function OpportunityResultsList({
 									variant="offline"
 									title={t("routeState.offline.title")}
 									message={t("opportunities.offlineLoadMore")}
+									onRetry={onRetryLoadMore}
 									data-testid="opportunities-offline-load-more"
 								/>
 							) : (

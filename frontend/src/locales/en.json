@@ -65,6 +65,7 @@
       "latestLabel": "Just published",
       "latestTitle": "These opportunities need people",
       "latestLink": "Browse all opportunities",
+      "offline": "We will show these opportunities again as soon as your connection is back.",
       "missionLabel": "From the founder",
       "missionTitle": "Why I built Einsatzbereit",
       "missionText": "Volunteering shouldn't require paperwork. I kept watching people who wanted to help get stuck on registration forms, waitlists, or simply not knowing where to start. Einsatzbereit removes every one of those barriers: micro-volunteering that fits into a real week - free, no waiting lists, and fully open source.",
@@ -104,8 +105,8 @@
       "searchPlaceholder": "Search organizations by name…",
       "loading": "Loading organizations…",
       "error": "Error: {{message}}",
-      "offline": "You are offline. We will load the organizations as soon as your connection is back.",
-      "offlineLoadMore": "You are offline. These are the organizations that loaded before the connection dropped - we will fetch the rest as soon as you are back online.",
+      "offline": "We will load the organizations as soon as your connection is back.",
+      "offlineLoadMore": "These are the organizations that loaded before the connection dropped - we will fetch the rest as soon as you are back online.",
       "noResults": "No organizations found.",
       "noResultsWithSearch": "No organizations match \"{{search}}\".",
       "clearSearch": "Clear search",
@@ -238,8 +239,9 @@
       "factWhen": "When",
       "factFormat": "How it works",
       "factWhere": "Where",
-      "offline": "You are offline. We will load the opportunities as soon as your connection is back.",
-      "offlineLoadMore": "You are offline. These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as you are back online."
+      "offline": "We will load the opportunities as soon as your connection is back.",
+      "offlineLoadMore": "These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as you are back online.",
+      "offlineDetail": "We will load this page again as soon as your connection is back."
     },
     "createOpportunity": {
       "title": "Create opportunity",
