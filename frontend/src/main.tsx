@@ -34,6 +34,12 @@ const oidcConfig = {
 	post_logout_redirect_uri: window.location.origin,
 	scope: "openid profile email",
 	automaticSilentRenew: true,
+	// A dedicated, minimal page (src/silentRenew.ts) rather than defaulting to
+	// /callback (#2042) - oidc-client-ts's hidden iframe for automaticSilentRenew/
+	// signinSilent() would otherwise boot the full SPA every renewal cycle, and
+	// the CSP's frame-src has to allow 'self' for this origin's own iframe to
+	// load at all (see frontend/nginx.conf.template).
+	silent_redirect_uri: window.location.origin + "/silent-renew.html",
 	// sessionStorage, not localStorage: tokens (incl. refresh_token, since the
 	// realm has "rememberMe": true) must not survive tab close or browser
 	// restart on a shared/kiosk machine - a realistic setting for a

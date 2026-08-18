@@ -207,7 +207,20 @@ jobs:
           [ -n "$csp" ] || { echo "::error::No Content-Security-Policy header"; exit 1; }
           echo "$csp" | grep -q "${{ inputs.vite_api_url }}" || { echo "::error::CSP does not allow the runtime API origin (connect-src)"; exit 1; }
           echo "$csp" | grep -q "${{ inputs.keycloak_origin }}" || { echo "::error::CSP does not allow the runtime Keycloak origin (frame-src)"; exit 1; }
+          echo "$csp" | grep -qE "frame-src[^;]*'self'" || { echo "::error::CSP frame-src does not allow 'self' - automaticSilentRenew/signinSilent()'s same-origin hidden iframe (silent_redirect_uri) would be blocked in production (#2042)"; exit 1; }
           echo "$csp" | grep -q "${{ inputs.storage_public_url }}" || { echo "::error::CSP does not allow the runtime storage origin (img-src) - cross-origin images would be blocked"; exit 1; }
+
+      # frame-src 'self' above only controls what the *parent* page may embed -
+      # whether the browser actually renders silent-renew.html inside that
+      # hidden iframe is a separate check against this response's *own*
+      # X-Frame-Options/frame-ancestors (#2042). Both must be verified, or a
+      # regression in either one silently re-breaks automaticSilentRenew.
+      - name: silent-renew.html allows same-origin framing
+        run: |
+          headers=$(curl -fsSI http://localhost:8081/silent-renew.html | tr -d '\r')
+          echo "$headers"
+          echo "$headers" | grep -qi '^x-frame-options: SAMEORIGIN$' || { echo "::error::/silent-renew.html's X-Frame-Options is not SAMEORIGIN - the site-wide DENY would block automaticSilentRenew's hidden iframe (#2042)"; exit 1; }
+          echo "$headers" | grep -i '^content-security-policy:' | grep -qE "frame-ancestors[^;]*'self'" || { echo "::error::/silent-renew.html's CSP does not allow frame-ancestors 'self' (#2042)"; exit 1; }
 
       - name: gzip_static serves precompressed assets
         run: |
