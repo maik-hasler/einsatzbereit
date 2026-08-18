@@ -12,10 +12,16 @@ import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useMyOrganizations } from "../hooks/useMyOrganizations";
+import { useApiClient } from "../hooks/useApiClient";
 import { WAVE_PATH } from "../lib/wavePath";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
+import {
+	filterByLabelMatch,
+	sortByLabelPrefixMatch,
+} from "../lib/citySuggestionSort";
+import { dispatchToast } from "../lib/toastBus";
 import {
 	MagnifyingGlassIcon,
 	PlusIcon,
@@ -37,6 +43,7 @@ export default function HomePage() {
 	usePageTitle(t("landing.pageTitle"));
 	const auth = useAuth();
 	const navigate = useNavigate();
+	const api = useApiClient();
 
 	const heroTitleId = useId();
 	const missionTitleId = useId();
@@ -70,6 +77,7 @@ export default function HomePage() {
 		() => searchParams.get("city") ?? "",
 	);
 	const [heroLocation, setHeroLocation] = useState<CitySuggestion | null>(null);
+	const [resolvingHeroLocation, setResolvingHeroLocation] = useState(false);
 
 	// Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint sends
 	// signed-out visitors through Keycloak's registration flow with
@@ -111,17 +119,49 @@ export default function HomePage() {
 	// Search from the hero (vostel.de pattern). The results list is its own
 	// route now, so this hands the same URL params VolunteerOpportunitiesList
 	// reads straight to /opportunities instead of scrolling to an anchor on
-	// this page. Location only applies if a suggestion was actually picked
-	// (heroLocation), matching the filter bar's own city-search convention -
-	// free-typed, ungeocoded text is dropped rather than sent as a filter.
-	function handleHeroSearch(e: FormEvent) {
+	// this page. A location the visitor typed but never confirmed via a
+	// suggestion click (heroLocation still null) previously got silently
+	// dropped instead of sent as a filter - now it's resolved through the
+	// same /v1/maps/cities lookup the autocomplete itself uses, right before
+	// navigating, so pressing "Suchen" without picking a suggestion still
+	// searches near the typed city. A toast (survives the navigation - see
+	// ToastProvider, mounted at the app root) tells the visitor when their
+	// text didn't resolve to any city at all, rather than silently searching
+	// unfiltered (#2046).
+	async function handleHeroSearch(e: FormEvent) {
 		e.preventDefault();
+		let location = heroLocation;
+		if (!location && heroCityInput.trim()) {
+			setResolvingHeroLocation(true);
+			try {
+				const places = await api.searchCities(heroCityInput.trim());
+				const [best] = sortByLabelPrefixMatch(
+					filterByLabelMatch(
+						places.map((place) => ({
+							label: place.label,
+							lat: place.latitude,
+							lng: place.longitude,
+						})),
+						heroCityInput,
+					),
+					heroCityInput,
+				);
+				location = best ?? null;
+			} catch {
+				location = null;
+			} finally {
+				setResolvingHeroLocation(false);
+			}
+			if (!location) {
+				dispatchToast("info", t("landing.heroSearchLocationNotFound"));
+			}
+		}
 		const next = new URLSearchParams();
 		if (heroKeyword.trim()) next.set("q", heroKeyword.trim());
-		if (heroLocation) {
-			next.set("city", heroLocation.label);
-			next.set("lat", String(heroLocation.lat));
-			next.set("lng", String(heroLocation.lng));
+		if (location) {
+			next.set("city", location.label);
+			next.set("lat", String(location.lat));
+			next.set("lng", String(location.lng));
 			next.set("radius", "10");
 		}
 		const query = next.toString();
@@ -336,6 +376,7 @@ export default function HomePage() {
 									type="submit"
 									size="lg"
 									pill
+									disabled={resolvingHeroLocation}
 									className="shrink-0 shadow-md"
 								>
 									{t("landing.heroSearchButton")}
