@@ -36,7 +36,12 @@ import {
 	selectClass,
 } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
+import {
+	CheckIconSolid,
+	QrCodeIcon,
+	StarIcon,
+	TrashIcon,
+} from "../components/icons";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -507,6 +512,8 @@ export default function EngagementManagementPage() {
 		setCancelError(null);
 	}
 
+	const cancelTarget = engagements.find((e) => e.id === confirmCancelId);
+
 	if (notFound) {
 		return <NotFoundPage />;
 	}
@@ -851,6 +858,7 @@ export default function EngagementManagementPage() {
 														name: volunteerDisplayName(e),
 													})}
 												>
+													<TrashIcon className="h-3.5 w-3.5" />
 													{t("engagementManagement.cancel")}
 												</Button>
 											</div>
@@ -890,6 +898,7 @@ export default function EngagementManagementPage() {
 														name: volunteerDisplayName(e),
 													})}
 												>
+													<TrashIcon className="h-3.5 w-3.5" />
 													{t("engagementManagement.cancel")}
 												</Button>
 											</div>
@@ -945,7 +954,12 @@ export default function EngagementManagementPage() {
 			{confirmCancelId && (
 				<ConfirmDialog
 					title={t("confirmDialog.cancel.title")}
-					message={t("confirmDialog.cancel.message")}
+					message={t("confirmDialog.cancel.message", {
+						name: cancelTarget
+							? volunteerDisplayName(cancelTarget)
+							: t("engagementManagement.anonymizedVolunteer"),
+						opportunity: opportunityTitle ?? t("engagementManagement.title"),
+					})}
 					confirmLabel={t("confirmDialog.cancel.confirm")}
 					onConfirm={handleCancelConfirm}
 					onClose={handleCancelClose}
