@@ -1397,49 +1397,49 @@
     },
     "apiError": {
       "AchievementId": {
-        "Empty": "AchievementId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "NotificationId": {
-        "Empty": "NotificationId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "EngagementId": {
-        "Empty": "EngagementId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "VolunteerOpportunityId": {
-        "Empty": "VolunteerOpportunityId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "OrganizationId": {
-        "Empty": "OrganizationId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "OrganizationInvitationId": {
-        "Empty": "OrganizationInvitationId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "OrganizationMembershipId": {
-        "Empty": "OrganizationMembershipId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "OrganizationDashboardLayoutId": {
-        "Empty": "OrganizationDashboardLayoutId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "TimeSlotId": {
-        "Empty": "TimeSlotId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "UserId": {
-        "Empty": "UserId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "UserStreakId": {
-        "Empty": "UserStreakId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "ReportId": {
-        "Empty": "ReportId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "AuditLogId": {
-        "Empty": "AuditLogId must not be empty."
+        "Empty": "This request was incomplete. Reload the page and try again."
       },
       "User": {
         "InvalidId": "Invalid user.",
         "NotFound": "User not found.",
-        "AlreadyDeleted": "User is already shadow-deleted.",
-        "NotDeleted": "User is not shadow-deleted.",
+        "AlreadyDeleted": "User is already hidden.",
+        "NotDeleted": "User is not hidden.",
         "InvalidUnsubscribeToken": "The unsubscribe link is invalid or has already been used with a different token.",
         "SoleOrganizerOfOrganizations": "You are the sole organizer of one or more organizations. Transfer ownership to another organizer or delete these organizations before deleting your account."
       },
@@ -1471,8 +1471,8 @@
         "NotMember": "You do not have permission to view this resource.",
         "WebsiteInvalid": "Website must be a valid http or https URL.",
         "WebsiteTooLong": "Website must not exceed 500 characters.",
-        "AlreadyDeleted": "Organization is already shadow-deleted.",
-        "NotDeleted": "Organization is not shadow-deleted."
+        "AlreadyDeleted": "Organization is already hidden.",
+        "NotDeleted": "Organization is not hidden."
       },
       "OrganizationInvitation": {
         "NotPending": "Invitation is not pending.",
@@ -1518,8 +1518,8 @@
         "CannotCancelDraft": "A draft opportunity cannot be cancelled - delete it instead.",
         "CannotPublishCancelled": "A cancelled opportunity cannot be published again.",
         "NotPublished": "Only a published opportunity can be unpublished.",
-        "AlreadyDeleted": "Opportunity is already shadow-deleted.",
-        "NotDeleted": "Opportunity is not shadow-deleted.",
+        "AlreadyDeleted": "Opportunity is already hidden.",
+        "NotDeleted": "Opportunity is not hidden.",
         "ValidUntilMustBeFuture": "Deadline must be in the future.",
         "ValidUntilNotAllowed": "A deadline can only be set for Individual contact opportunities.",
         "IndividualContactRequiresValidUntil": "An Individual contact opportunity must have a deadline before it can be published.",
