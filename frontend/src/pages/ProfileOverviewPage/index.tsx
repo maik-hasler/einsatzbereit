@@ -23,7 +23,7 @@ import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
 import Button from "../../components/Button";
-import { CheckIcon, PencilIcon } from "../../components/icons";
+import { CalendarIcon, CheckIcon, PencilIcon } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
 import {
 	useProfileForm,
@@ -497,7 +497,7 @@ export default function ProfileOverviewPage() {
 															data-testid="profile-stat-login-streak"
 															className="flex items-center gap-1.5 text-xs text-brand-800"
 														>
-															<FireIcon className="h-3.5 w-3.5" />
+															<CalendarIcon className="h-3.5 w-3.5" />
 															{t("achievements.loginStreak", {
 																count: streaks.loginStreak,
 																badge: t(
