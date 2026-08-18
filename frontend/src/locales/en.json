@@ -906,7 +906,7 @@
       "de": "Deutsch",
       "en": "English",
       "switchLanguage": "Switch language",
-      "switchLanguageCurrent": "Switch language, currently {{language}}",
+      "switchLanguageCurrent": "{{code}} - Switch language, currently {{language}}",
       "switchedFromAccount": "Switched to {{language}} based on your account"
     },
     "auth": {

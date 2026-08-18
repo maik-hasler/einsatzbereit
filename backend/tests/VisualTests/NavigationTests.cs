@@ -357,6 +357,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			new Regex($".*{Regex.Escape(expectedLanguageName)}.*")
 		);
 
+		// #2072: the accessible name used to replace the visible "EN"/"DE" text
+		// outright rather than extend it - a WCAG 2.5.3 Label-in-Name violation,
+		// since it never contained the string a speech-input user would say
+		// ("Klick DE") to target this control. It must now lead with that code.
+		await Expect(langBtn).ToHaveAttributeAsync(
+			"aria-label",
+			new Regex($"^{Regex.Escape(activeCode)}\\b.*")
+		);
+
 		await langBtn.ClickAsync();
 
 		var dropdown = banner.GetByTestId("language-selector-menu");

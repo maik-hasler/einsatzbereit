@@ -40,7 +40,13 @@ export default function LanguageSelector({
 				type="button"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
+				// #2072: the accessible name used to replace the visible "EN"/"DE"
+				// text outright instead of extending it, a WCAG 2.5.3 Label-in-Name
+				// violation - "Klick DE" (speech input) wouldn't have matched an
+				// accessible name that never contains "DE". Leading with the same
+				// code the button displays keeps the two in sync.
 				aria-label={t("language.switchLanguageCurrent", {
+					code: current.short,
 					language: t(`language.${currentCode}`),
 				})}
 				data-testid="language-selector-trigger"
