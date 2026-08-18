@@ -305,7 +305,12 @@ export default function CreateVolunteerOpportunityModal({
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
 	const isRemote = watch("isRemote");
+	const titleDe = watch("titleDe");
 	const isScheduledSlots = participationType === "ScheduledSlots";
+	// A title-less draft renders as an unnamed, indistinguishable row wherever
+	// drafts are listed (see "unnamedDraft" fallback) - block the save instead
+	// of letting an empty form through silently (#2076).
+	const draftTitleMissing = !titleDe.trim();
 
 	useEffect(() => {
 		if (isEditMode) return;
@@ -1159,56 +1164,79 @@ export default function CreateVolunteerOpportunityModal({
 					)}
 				</div>
 
-				<div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
-					<Button
-						type="button"
-						variant="secondary"
-						data-testid="modal-cancel"
-						onClick={() => (step > 1 ? setStep((s) => s - 1) : requestClose())}
-					>
-						{step === 1
-							? t("createOpportunity.cancel")
-							: t("createOpportunity.back")}
-					</Button>
+				<div className="border-t border-gray-100 bg-gray-50">
+					{/* Visible, not sr-only: native `disabled` drops "Save as draft"
+					from the tab order, so a keyboard-only user can never focus it to
+					hear its aria-describedby, and never hovers it to see its `title`
+					tooltip either (same gap OrgMembersPage's leave-organization hint
+					documents, #1926) - the on-page text is the only channel that
+					reaches them. */}
+					{canSaveDraft && draftTitleMissing && (
+						<p id="save-draft-hint" className="px-6 pt-3 text-xs text-gray-500">
+							{t("createOpportunity.saveDraftRequiresTitle")}
+						</p>
+					)}
+					<div className="flex items-center justify-between gap-3 px-6 py-4">
+						<Button
+							type="button"
+							variant="secondary"
+							data-testid="modal-cancel"
+							onClick={() =>
+								step > 1 ? setStep((s) => s - 1) : requestClose()
+							}
+						>
+							{step === 1
+								? t("createOpportunity.cancel")
+								: t("createOpportunity.back")}
+						</Button>
 
-					<div className="flex items-center gap-2">
-						{canSaveDraft && (
-							<Button
-								type="button"
-								variant="tertiary"
-								data-testid="modal-save-draft"
-								disabled={submitting !== null}
-								onClick={() => void submit(true)}
-							>
-								{submitting === "draft"
-									? t("createOpportunity.savingDraft")
-									: t("createOpportunity.saveDraft")}
-							</Button>
-						)}
-						{step < TOTAL_STEPS ? (
-							<Button
-								type="button"
-								data-testid="modal-next"
-								onClick={() => void handleNext()}
-							>
-								{t("createOpportunity.next")}
-							</Button>
-						) : (
-							<Button
-								type="button"
-								disabled={submitting !== null}
-								data-testid="modal-submit"
-								onClick={() => void submit(false)}
-							>
-								{submitting === "publish"
-									? isEditMode
-										? t("createOpportunity.saving")
-										: t("createOpportunity.creating")
-									: isEditMode
-										? t("createOpportunity.save")
-										: t("createOpportunity.publish")}
-							</Button>
-						)}
+						<div className="flex items-center gap-2">
+							{canSaveDraft && (
+								<Button
+									type="button"
+									variant="outline"
+									data-testid="modal-save-draft"
+									disabled={submitting !== null || draftTitleMissing}
+									aria-describedby={
+										draftTitleMissing ? "save-draft-hint" : undefined
+									}
+									title={
+										draftTitleMissing
+											? t("createOpportunity.saveDraftRequiresTitle")
+											: undefined
+									}
+									onClick={() => void submit(true)}
+								>
+									{submitting === "draft"
+										? t("createOpportunity.savingDraft")
+										: t("createOpportunity.saveDraft")}
+								</Button>
+							)}
+							{step < TOTAL_STEPS ? (
+								<Button
+									type="button"
+									data-testid="modal-next"
+									onClick={() => void handleNext()}
+								>
+									{t("createOpportunity.next")}
+								</Button>
+							) : (
+								<Button
+									type="button"
+									disabled={submitting !== null}
+									data-testid="modal-submit"
+									onClick={() => void submit(false)}
+								>
+									{submitting === "publish"
+										? isEditMode
+											? t("createOpportunity.saving")
+											: t("createOpportunity.creating")
+										: isEditMode
+											? t("createOpportunity.save")
+											: t("createOpportunity.publish")}
+								</Button>
+							)}
+						</div>
 					</div>
 				</div>
 			</Modal>
