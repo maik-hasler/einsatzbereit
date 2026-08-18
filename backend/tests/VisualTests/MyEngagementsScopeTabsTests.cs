@@ -103,7 +103,11 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Expect(card.GetByText("Withdrawn")).ToBeVisibleAsync();
+		// Exact match: the opportunity's own fixture title ("ScopeTabsWithdrawnFuture")
+		// contains "Withdrawn" as a substring too, so a non-exact GetByText here
+		// is a strict-mode violation - it resolves to both the title link and
+		// the actual "Withdrawn" status badge this assertion means to check.
+		await Expect(card.GetByText("Withdrawn", new() { Exact = true })).ToBeVisibleAsync();
 		await Expect(card.GetByText("Express interest by")).Not.ToBeVisibleAsync();
 	}
 
