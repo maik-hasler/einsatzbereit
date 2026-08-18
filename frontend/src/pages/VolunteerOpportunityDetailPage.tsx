@@ -43,6 +43,7 @@ import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
 import {
 	CalendarIcon,
+	CheckIconSolid,
 	EnvelopeIcon,
 	FlagIcon,
 	GlobeIcon,
@@ -438,17 +439,29 @@ export default function VolunteerOpportunityDetailPage() {
 										</span>
 									</p>
 								)}
+								{cue.isCheckedIn && (
+									<Chip tone="success" size="sm" className="mt-2">
+										<CheckIconSolid className="h-3 w-3" />
+										{t("checkIn.checkedInLabel")}
+									</Chip>
+								)}
 							</div>
-							<Button
-								type="button"
-								variant="dangerOutline"
-								size="sm"
-								className="shrink-0"
-								onClick={() => setShowWithdrawConfirm(true)}
-								disabled={withdrawing}
-							>
-								{t("myEngagements.withdraw")}
-							</Button>
+							{/* Withdrawing after check-in is rejected server-side (Engagement.Withdraw's
+							IsCheckedIn guard, #673) - hide the action rather than let a volunteer hit
+							that 409, matching the same isCheckedIn gate /my-signups already applies
+							(#1893). */}
+							{!cue.isCheckedIn && (
+								<Button
+									type="button"
+									variant="dangerOutline"
+									size="sm"
+									className="shrink-0"
+									onClick={() => setShowWithdrawConfirm(true)}
+									disabled={withdrawing}
+								>
+									{t("myEngagements.withdraw")}
+								</Button>
+							)}
 						</div>
 					</div>
 				)}

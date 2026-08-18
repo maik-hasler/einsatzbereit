@@ -367,6 +367,42 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_ApplicationStatusCheckedIn_AsVera_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1893: once the volunteer's engagement is checked in, the
+		// application-status card swaps its Withdraw button out for a "Checked
+		// in" Chip (Engagement.Withdraw's IsCheckedIn guard would otherwise
+		// reject the withdrawal with a 409) - a render state none of this
+		// file's other detail-page scans reach, since none of them check
+		// anyone in.
+		var (_, opportunityId, engagementId) =
+			await SeedConfirmedEngagementAsync("Manual", "DetailCheckedInA11y");
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw the checked-in state, rather than
+		// passing against a page where the Withdraw button just never rendered
+		// for an unrelated reason.
+		var statusCard = Page.GetByTestId("application-status");
+		await Expect(statusCard.GetByText("Checked in")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(statusCard.GetByRole(AriaRole.Button, new() { Name = "Withdraw" }))
+			.Not.ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
 	{
 		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an

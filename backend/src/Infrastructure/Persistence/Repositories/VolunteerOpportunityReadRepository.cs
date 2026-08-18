@@ -581,14 +581,15 @@ internal sealed class VolunteerOpportunityReadRepository(
 					e.VolunteerId == userId_ &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 				.OrderByDescending(e => e.CreatedOn)
-				.Select(e => new { e.Id, e.Status, e.TimeSlotId })
+				.Select(e => new { e.Id, e.Status, e.TimeSlotId, e.IsCheckedIn })
 				.FirstOrDefaultAsync(cancellationToken);
 
 			if (engagement is not null)
 				currentUserEngagement = new CurrentUserEngagementInfo(
 					engagement.Id.Value,
 					engagement.Status.ToString(),
-					engagement.TimeSlotId?.Value);
+					engagement.TimeSlotId?.Value,
+					engagement.IsCheckedIn);
 		}
 
 		return new VolunteerOpportunityDetails(

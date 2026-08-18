@@ -877,6 +877,41 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		details.Should().NotBeNull();
 	}
 
+	// Regression for #1893: the opportunity detail page's Withdraw action used
+	// to ignore check-in state entirely because CurrentUserEngagementInfo never
+	// carried IsCheckedIn, guaranteeing a 409 from Engagement.Withdraw's guard
+	// once a volunteer had checked in. This pins the field the frontend now
+	// gates on, mirroring GetMyEngagements' IsCheckedIn (already covered above).
+	[Test]
+	public async Task GetVolunteerOpportunityDetails_ShouldReflectCheckedInStatus_OnCurrentUserEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		var beforeCheckIn = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+		beforeCheckIn.CurrentUserEngagement.Should().NotBeNull();
+		beforeCheckIn.CurrentUserEngagement!.IsCheckedIn.Should().BeFalse();
+
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		var afterCheckIn = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+		afterCheckIn.CurrentUserEngagement.Should().NotBeNull();
+		afterCheckIn.CurrentUserEngagement!.IsCheckedIn.Should().BeTrue();
+
+		var act = () => veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
 	[Test]
 	public async Task CheckInWithPin_ShouldReturn400_WhenVolunteerTriesToCheckInSomeoneElsesEngagement(
 		CancellationToken cancellationToken)

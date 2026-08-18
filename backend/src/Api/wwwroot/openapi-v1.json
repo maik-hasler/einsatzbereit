@@ -7956,7 +7956,8 @@
         "required": [
           "id",
           "status",
-          "timeSlotId"
+          "timeSlotId",
+          "isCheckedIn"
         ],
         "type": "object",
         "properties": {
@@ -7973,6 +7974,9 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "isCheckedIn": {
+            "type": "boolean"
           }
         }
       },
