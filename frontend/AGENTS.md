@@ -156,6 +156,19 @@ Shared UI primitives live in `src/components/` and `src/lib/` (no separate desig
 
 **Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs); cards, panels and modals use the separate `rounded-card` (16px) token instead - see `surfaceClasses.ts` and `Modal.tsx`. `rounded-md` is reserved for `Skeleton` loading blocks.
 
+## Copy Conventions
+
+- **"Zeitslot" vs "Termin"** (opportunity-detail page, `/my-signups`): both
+  words describe the same `TimeSlot` entity, but the split is a deliberate
+  register shift, not drift (#1920). "Zeitslot" (`opportunities.availableTimeSlots`,
+  `opportunities.joinWaitlist`, etc.) is used while a slot is still one of
+  several open options to choose from - an inventory listing. Once the
+  volunteer has committed to one, both the opportunity-detail page and
+  `/my-signups` switch to "Termin" (`myEngagements.scheduledFor`) - the
+  volunteer's own confirmed appointment. Keep this pairing when touching
+  either surface; don't rename one into the other to "fix" the apparent
+  inconsistency.
+
 ## Accessibility (a11y)
 
 `eslint-plugin-jsx-a11y` is enabled with the recommended ruleset. All violations are errors - CI will fail on any a11y lint issue.
