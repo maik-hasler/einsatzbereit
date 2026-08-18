@@ -4,6 +4,7 @@ import {
 	inputClass,
 	textareaClass,
 	labelClass,
+	selectClass,
 } from "./formClasses";
 
 describe("formClasses", () => {
@@ -41,5 +42,27 @@ describe("formClasses", () => {
 	it("keeps labelClass a small muted label style", () => {
 		expect(labelClass).toContain("text-xs");
 		expect(labelClass).toContain("text-gray-600");
+	});
+
+	it("keeps the select chevron's data URI free of raw whitespace Tailwind can't parse (#2051)", () => {
+		// Tailwind splits utility candidates on whitespace, so a raw space
+		// inside this arbitrary value silently drops the whole bg-[url(...)]
+		// class from the generated CSS - the chevron then never renders.
+		const urlToken = selectClass.match(/bg-\[url\('([^']+)'\)\]/);
+		expect(urlToken).not.toBeNull();
+		const dataUri = urlToken?.[1] ?? "";
+		expect(dataUri).not.toBe("");
+		expect(/\s/.test(dataUri)).toBe(false);
+
+		// Guard against swapping in underscores instead: Tailwind detects
+		// url(...) arbitrary values and, unlike other arbitrary values,
+		// leaves underscores as literal underscores rather than converting
+		// them to spaces - which would corrupt the SVG markup below.
+		const svgMarkup = decodeURIComponent(
+			dataUri.slice(dataUri.indexOf(",") + 1),
+		);
+		const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
+		expect(doc.querySelector("parsererror")).toBeNull();
+		expect(doc.querySelector("svg")).not.toBeNull();
 	});
 });
