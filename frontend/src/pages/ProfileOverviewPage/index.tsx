@@ -459,55 +459,55 @@ export default function ProfileOverviewPage() {
 												</div>
 											</div>
 										)}
-										{streaks &&
-											(streaks.activityStreak > 0 ||
-												streaks.loginStreak > 0) && (
-												// Grouped in one flex-col unit instead of two siblings of
-												// the engagement chip, so the login-streak caption stacks
-												// directly under the stat pill it explains instead of
-												// landing on its own at the far right of the row at
-												// sm:justify-between widths, disconnected from the streak
-												// it describes (#1892).
-												<div className="flex flex-col gap-1.5">
-													{streaks.activityStreak > 0 && (
-														<div
-															data-testid="profile-stat-streak"
-															className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
-														>
-															<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-																<FireIcon />
-															</span>
-															<div>
-																<p className="text-xl font-bold text-gray-900">
-																	{streaks.activityStreak}
-																</p>
-																<p className="text-xs text-gray-500">
-																	{t("achievements.activityStreak", {
-																		count: streaks.activityStreak,
-																		badge: t(
-																			"achievements.badges.weekly-hero-4.name",
-																		),
-																	})}
-																</p>
-															</div>
-														</div>
-													)}
-													{streaks.loginStreak > 0 && (
-														<p
-															data-testid="profile-stat-login-streak"
-															className="flex items-center gap-1.5 text-xs text-brand-800"
-														>
-															<CalendarIcon className="h-3.5 w-3.5" />
-															{t("achievements.loginStreak", {
-																count: streaks.loginStreak,
-																badge: t(
-																	"achievements.badges.on-a-roll-7.name",
-																),
-															})}
-														</p>
-													)}
+										{/* Each streak gets its own tile, the same shape as the
+									engagement chip above (#2066) - a login-streak day count
+									used to hang below the activity-streak tile as a bare
+									caption line, reading as a layout accident rather than a
+									third stat. All three now wrap as equal siblings. */}
+										{streaks && streaks.activityStreak > 0 && (
+											<div
+												data-testid="profile-stat-streak"
+												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+											>
+												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+													<FireIcon />
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.activityStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.activityStreak", {
+															count: streaks.activityStreak,
+															badge: t(
+																"achievements.badges.weekly-hero-4.name",
+															),
+														})}
+													</p>
 												</div>
-											)}
+											</div>
+										)}
+										{streaks && streaks.loginStreak > 0 && (
+											<div
+												data-testid="profile-stat-login-streak"
+												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+											>
+												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+													<CalendarIcon className="h-5 w-5" />
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.loginStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.loginStreakLabel", {
+															count: streaks.loginStreak,
+															badge: t("achievements.badges.on-a-roll-7.name"),
+														})}
+													</p>
+												</div>
+											</div>
+										)}
 									</div>
 								</div>
 							)}
@@ -515,19 +515,7 @@ export default function ProfileOverviewPage() {
 							<section className="mb-10">
 								<div className="flex items-center justify-between gap-3">
 									<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
-									{!editing ? (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => setEditing(true)}
-											data-testid="profile-edit"
-											className="shrink-0"
-										>
-											<PencilIcon className="h-4 w-4" />
-											{t("common.edit")}
-										</Button>
-									) : (
+									{editing ? (
 										<div className="flex shrink-0 items-center gap-2">
 											<Button
 												type="button"
@@ -554,6 +542,25 @@ export default function ProfileOverviewPage() {
 												{saving ? t("common.saving") : t("common.save")}
 											</Button>
 										</div>
+									) : (
+										// Dropped while the panel is empty (#2066): EmptyState's own
+										// CTA below already starts editing, and a bare "Bearbeiten"
+										// with nothing to edit yet was a second control for the same
+										// job. Reuses this button's own testid ("profile-edit") on
+										// that CTA instead, so there is always exactly one way in.
+										!isProfileFieldsEmpty && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={() => setEditing(true)}
+												data-testid="profile-edit"
+												className="shrink-0"
+											>
+												<PencilIcon className="h-4 w-4" />
+												{t("common.edit")}
+											</Button>
+										)
 									)}
 								</div>
 
@@ -565,6 +572,7 @@ export default function ProfileOverviewPage() {
 											action={{
 												label: t("profile.emptyStateCta"),
 												onClick: () => setEditing(true),
+												testId: "profile-edit",
 											}}
 										/>
 									) : (
@@ -869,7 +877,10 @@ export default function ProfileOverviewPage() {
 			independent data fetch starts immediately, and so its section id
 			exists right away for the legacy ?tab=achievements scroll-to-section
 			effect above regardless of how long the profile fetch takes. */}
-					<AchievementsSection />
+					<AchievementsSection
+						engagementCount={engagementCount}
+						streaks={streaks}
+					/>
 				</div>
 			</div>
 
