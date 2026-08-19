@@ -89,7 +89,12 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(card.GetByText("Pending")).ToBeVisibleAsync();
+		// Exact match required: the card also renders the opportunity title
+		// link ("PendingExplain Opportunity ...") and org link ("PendingExplain
+		// Org ...") this test itself seeded, both of which contain "Pending"
+		// as a substring - a non-exact GetByText resolves to all three and
+		// trips Playwright's strict-mode check.
+		await Expect(card.GetByText("Pending", new() { Exact = true })).ToBeVisibleAsync();
 		await Expect(card.GetByText(ExplanationText)).ToBeVisibleAsync();
 	}
 
@@ -160,7 +165,12 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(card.GetByText("Confirmed")).ToBeVisibleAsync();
+		// Exact match required: the card also renders the opportunity title
+		// link ("PendingExplainConfirmed Opportunity ...") and org link
+		// ("PendingExplainConfirmed Org ...") this test itself seeded, both of
+		// which contain "Confirmed" as a substring - a non-exact GetByText
+		// resolves to all three and trips Playwright's strict-mode check.
+		await Expect(card.GetByText("Confirmed", new() { Exact = true })).ToBeVisibleAsync();
 		await Expect(card.GetByText(ExplanationText)).ToHaveCountAsync(0);
 	}
 }
