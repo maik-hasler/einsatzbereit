@@ -97,7 +97,11 @@ export default function CheckInModal({
 					<p className="text-center text-sm text-gray-600">
 						{t("checkIn.qrInstruction")}
 					</p>
-					<QRCodeSVG value={engagementId} size={200} />
+					<QRCodeSVG
+						value={engagementId}
+						size={200}
+						title={t("checkIn.qrCodeAlt")}
+					/>
 					{/* dl/dt/dd (not two sibling <p>s) so the code's accessible name
 					includes its label - the same label-value association ESLint/axe
 					don't require for plain text, but a screen-reader user landing
