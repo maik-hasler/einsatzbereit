@@ -25,10 +25,12 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await link.ClickAsync();
-		// /administration is a shell that redirects to its first section.
+		// /administration is a shell that redirects to its first section - the
+		// h1 names that section, not the shell itself (#2052).
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration/organizations");
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Administration");
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Organizations");
+		await Expect(Page).ToHaveTitleAsync("Organizations - Administration | Einsatzbereit");
 	}
 
 	[Test]
@@ -50,10 +52,10 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 	// Regression for #1026: the nav link was already hidden for non-admins
 	// (see the test above), but /administration itself had no role check -
 	// a non-admin who typed the URL directly still got the page shell (the
-	// "Administration" heading) with every section immediately failing its
-	// API call and rendering an error banner, instead of being kept off the
-	// page entirely. ProtectedRoute's requiredRole="admin" now keeps such
-	// visitors out before AdministrationPage ever mounts.
+	// section h1, e.g. "Organizations") with every section immediately
+	// failing its API call and rendering an error banner, instead of being
+	// kept off the page entirely. ProtectedRoute's requiredRole="admin" now
+	// keeps such visitors out before AdministrationPage ever mounts.
 	//
 	// Amended by #1774: keeping them out used to mean <Navigate to="/" />,
 	// which silently dumped anyone following a bookmarked or shared admin link
@@ -77,7 +79,7 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByText("Your account does not have admin rights", new() { Exact = false }))
 			.ToBeVisibleAsync();
 		// The page itself still never mounts - the point of #1026 stands.
-		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Administration");
+		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Organizations");
 		// ...and the URL is still the one that was asked for, rather than "/".
 		await Expect(Page).ToHaveURLAsync($"{origin}/administration");
 		// AdministrationPage is what would normally set the tab title, and it is
@@ -101,6 +103,6 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GotoAsync($"{origin}/administration");
 
 		await Page.WaitForURLAsync($"{origin}/administration/organizations", new() { Timeout = 15_000 });
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Administration");
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Organizations");
 	}
 }
