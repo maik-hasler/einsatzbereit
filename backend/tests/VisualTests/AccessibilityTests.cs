@@ -2641,6 +2641,32 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task MyEngagementsPage_CheckInModalQrCode_AsVera_HasNoSeriousA11yViolations()
+	{
+		// CheckInModal's QRCode state - the QR image plus the labeled short
+		// fallback code (#2064) - is reachable from no other scan in this file.
+		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("QRCode", "CheckInModalQrA11y");
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		// ActivitySection lives at /my-signups, not /profile.
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Check in" }).ClickAsync();
+		await Expect(Page.GetByTestId("checkin-fallback-code")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task EngagementManagementPage_ConfirmSuccessToast_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// The only scan that opens a toast - white-on-yellow-500/green-600

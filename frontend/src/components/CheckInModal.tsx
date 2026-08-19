@@ -97,10 +97,31 @@ export default function CheckInModal({
 					<p className="text-center text-sm text-gray-600">
 						{t("checkIn.qrInstruction")}
 					</p>
-					<QRCodeSVG value={engagementId} size={200} />
-					<p className="font-mono text-xs break-all text-gray-500">
-						{engagementId}
-					</p>
+					<QRCodeSVG
+						value={engagementId}
+						size={200}
+						title={t("checkIn.qrCodeAlt")}
+					/>
+					{/* dl/dt/dd (not two sibling <p>s) so the code's accessible name
+					includes its label - the same label-value association ESLint/axe
+					don't require for plain text, but a screen-reader user landing
+					directly on the value would otherwise get zero context for it. */}
+					<dl className="text-center">
+						<dt className="text-xs text-gray-600">
+							{t("checkIn.qrFallbackLabel")}
+						</dt>
+						{/* No tracking-widest here (unlike this codebase's other
+						label/value pairs): letter-spacing this wide can make VoiceOver
+						spell out the code character-by-character with irregular pauses
+						instead of reading it as one token - the opposite of what a code
+						meant to be read aloud to an organizer needs. */}
+						<dd
+							data-testid="checkin-fallback-code"
+							className="mt-1 font-mono text-xl font-semibold text-gray-700"
+						>
+							{engagementId.slice(0, 8)}
+						</dd>
+					</dl>
 				</div>
 			)}
 
