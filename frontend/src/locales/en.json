@@ -631,6 +631,7 @@
       "checkedInLabel": "Checked in",
       "title": "Check in",
       "qrInstruction": "Show this QR code to the organizer to check in.",
+      "qrFallbackLabel": "If the scan doesn't work, tell the organizer this code:",
       "pinInstruction": "Enter the PIN provided by the organizer.",
       "pinLabel": "PIN",
       "pinPlaceholder": "4-digit PIN",

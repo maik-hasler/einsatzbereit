@@ -631,6 +631,7 @@
       "checkedInLabel": "Eingecheckt",
       "title": "Einchecken",
       "qrInstruction": "Zeige diesen QR-Code dem:der Organisator:in zum Einchecken.",
+      "qrFallbackLabel": "Falls der Scan nicht klappt, nenne diesen Code:",
       "pinInstruction": "Gib die PIN des:der Organisator:in ein.",
       "pinLabel": "PIN",
       "pinPlaceholder": "4-stellige PIN",
