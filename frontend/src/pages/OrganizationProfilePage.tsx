@@ -19,7 +19,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { FlagIcon, GlobeIcon } from "../components/icons";
 import PageHeaderBand from "../components/PageHeaderBand";
-import PublicOpportunityCard from "../components/PublicOpportunityCard";
+import OpportunityCard from "../components/OpportunityCard";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -143,7 +143,7 @@ export default function OrganizationProfilePage() {
 				) : (
 					<ul className="grid gap-4 sm:grid-cols-2">
 						{profile.openOpportunities.map((opp) => (
-							<PublicOpportunityCard key={opp.id} opportunity={opp} />
+							<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
 						))}
 					</ul>
 				)}

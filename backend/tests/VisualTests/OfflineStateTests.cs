@@ -64,7 +64,7 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			// CheckInModal and ToastContext). That region is empty before the
 			// connection drops and is written into here, which is what makes the
 			// offline state audible rather than only visible.
-			await Expect(Page.GetByTestId("opportunities-result-count"))
+			await Expect(Page.GetByTestId("opportunities-live-region"))
 				.ToHaveTextAsync(new Regex("You are offline"));
 			await Expect(offline.Locator("[role='status'], [role='alert']")).ToHaveCountAsync(0);
 		}
@@ -153,8 +153,14 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await offline.GetByRole(AriaRole.Button, new() { Name = "Try again" }).ClickAsync();
 
 		await Expect(offline).Not.ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(Page.GetByTestId("opportunities-result-count"))
-			.ToHaveTextAsync(new Regex(@"opportunit(y|ies)"), new() { Timeout = 20_000 });
+
+		// Positive proof the retry's refetch actually completed, not just that
+		// the offline notice unmounted: the shared test session has seed data
+		// plus dozens of other classes' seeded opportunities, so an unfiltered
+		// list rendering a card is what a genuinely successful fetch looks like
+		// (same selector OpportunityCardContractTests uses for the same reason).
+		await Expect(Page.GetByTestId("opportunity-date-line").First)
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 	}
 
 	[Test]
@@ -184,12 +190,13 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// Both of the above would also hold for a single frame the instant
 		// `online` flipped, before any refetch had happened - so settle on
-		// positive proof instead. OpportunityResultsList's result-count live
-		// region carries a count only once a fetch has completed with no error
-		// (while failed it holds the offline text, and while loading it is
-		// empty), so a count here means the refetch really ran and succeeded.
-		await Expect(Page.GetByTestId("opportunities-result-count"))
-			.ToHaveTextAsync(new Regex(@"opportunit(y|ies)"), new() { Timeout = 20_000 });
+		// positive proof instead: a rendered card. The shared test session has
+		// seed data plus dozens of other classes' seeded opportunities, so an
+		// unfiltered list rendering one is what a genuinely successful refetch
+		// looks like (same selector OpportunityCardContractTests uses for the
+		// same reason).
+		await Expect(Page.GetByTestId("opportunity-date-line").First)
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 	}
 
 }
