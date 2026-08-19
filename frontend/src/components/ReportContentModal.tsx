@@ -18,12 +18,18 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 
 interface ReportContentModalProps {
 	targetLabel: string;
+	/** `targetLabel`'s actual language, when it may differ from the active
+	 * UI language - e.g. a German-only opportunity title reported from the
+	 * English UI (einsatzbereit#2057). Omit when `targetLabel` is always in
+	 * the UI language. */
+	targetLabelLang?: string;
 	onSubmit: (reason: ReportReason, details: string) => Promise<void>;
 	onClose: () => void;
 }
 
 export default function ReportContentModal({
 	targetLabel,
+	targetLabelLang,
 	onSubmit,
 	onClose,
 }: ReportContentModalProps) {
@@ -59,7 +65,9 @@ export default function ReportContentModal({
 			>
 				{t("report.title")}
 			</h2>
-			<p className="mb-5 text-sm text-gray-500">{targetLabel}</p>
+			<p lang={targetLabelLang} className="mb-5 text-sm text-gray-500">
+				{targetLabel}
+			</p>
 
 			<form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
 				<div>

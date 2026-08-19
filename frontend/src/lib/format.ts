@@ -59,6 +59,16 @@ export function formatSignUpCount(
 	}
 }
 
+/** A resolved piece of localized text, paired with the language it's actually
+ * written in - which doesn't always match the viewer's active UI language
+ * (see `pickLocalizedText`). Render `lang` on the element that displays
+ * `text` so assistive tech (and `hreflang`-aware tooling) doesn't announce
+ * German content with English phonetics or vice versa (einsatzbereit#2057). */
+export interface LocalizedText {
+	text: string;
+	lang: string;
+}
+
 /**
  * Organizer-authored opportunity title/description carry a required German
  * variant and an optional English one (einsatzbereit#1946) - this picks
@@ -67,24 +77,31 @@ export function formatSignUpCount(
  * Single source of truth so every card/list/detail surface that renders an
  * opportunity's title or description resolves the same way instead of each
  * re-deriving its own fallback.
+ *
+ * The returned `lang` is the resolved text's *actual* language, not the
+ * viewer's UI language - the two diverge exactly when a German-only
+ * opportunity is viewed under the English UI, which is the fallback case
+ * callers need to mark (einsatzbereit#2057).
  */
 export function pickLocalizedText(
 	textDe: string,
 	textEn: string | null | undefined,
 	lng: string,
-): string;
+): LocalizedText;
 export function pickLocalizedText(
 	textDe: string | null | undefined,
 	textEn: string | null | undefined,
 	lng: string,
-): string | undefined;
+): LocalizedText | undefined;
 export function pickLocalizedText(
 	textDe: string | null | undefined,
 	textEn: string | null | undefined,
 	lng: string,
-): string | undefined {
-	if (lng === "en" && textEn && textEn.trim().length > 0) return textEn;
-	return textDe ?? undefined;
+): LocalizedText | undefined {
+	if (lng === "en" && textEn && textEn.trim().length > 0) {
+		return { text: textEn, lang: "en" };
+	}
+	return textDe != null ? { text: textDe, lang: "de" } : undefined;
 }
 
 /** i18n's UI language ("de"/"en") -> the Intl/date-fns locale used for date

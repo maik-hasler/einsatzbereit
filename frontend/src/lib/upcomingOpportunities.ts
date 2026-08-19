@@ -61,7 +61,8 @@ export function selectUpcomingOpportunities(
 			return [
 				{
 					id: o.id,
-					title: pickLocalizedText(o.titleDe, o.titleEn, lang) || unnamedTitle,
+					title:
+						pickLocalizedText(o.titleDe, o.titleEn, lang).text || unnamedTitle,
 					nextStart,
 					nextStartMs,
 					bookedCount: o.currentParticipantCount,

@@ -192,6 +192,7 @@
       "joinWaitlist": "Sign up for a slot",
       "expressInterest": "Express interest",
       "notFound": "Not found.",
+      "germanOnlyNotice": "Only available in German",
       "flexibleDate": "Flexible date",
       "applyBy": "Express interest by {{date}}",
       "startsOn": "Starts {{date}}",

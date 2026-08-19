@@ -188,6 +188,13 @@ export default function OpportunityCard({
 		item.descriptionEn,
 		i18n.language,
 	);
+	// Only ever true for the English UI falling back to German content - the
+	// German variant is required, so the reverse never happens (#2057). Checked
+	// on both fields independently since an organizer may translate one but
+	// not the other.
+	const isGermanFallback =
+		title.lang !== i18n.language ||
+		(description !== undefined && description.lang !== i18n.language);
 	const hasOrganization = !!item.organizationId && !!item.organizationName;
 
 	// ScheduledSlots is the only participation type that ever carries a real
@@ -212,7 +219,8 @@ export default function OpportunityCard({
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10 rounded-card"
-				aria-label={title}
+				aria-label={title.text}
+				lang={title.lang}
 			/>
 			<div className="flex h-full flex-col">
 				{/* Banner, only when the organization actually uploaded a photo -
@@ -262,9 +270,17 @@ export default function OpportunityCard({
 					</div>
 					{/* h2 by default, h3 when a section heading sits above the grid -
 					see the headingLevel prop. */}
-					<Heading className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg">
-						{title}
+					<Heading
+						lang={title.lang}
+						className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg"
+					>
+						{title.text}
 					</Heading>
+					{isGermanFallback && (
+						<p className="mt-0.5 text-xs text-gray-500">
+							{t("opportunities.germanOnlyNotice")}
+						</p>
+					)}
 					{/* Date/deadline and capacity, side by side: the two facts that
 					used to compete for the top-right slot now sit together instead,
 					next to each other rather than one replacing the other. See
@@ -288,8 +304,11 @@ export default function OpportunityCard({
 						</Chip>
 					</div>
 					{description && (
-						<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
-							{description}
+						<p
+							lang={description.lang}
+							className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500"
+						>
+							{description.text}
 						</p>
 					)}
 					{item.tags && item.tags.length > 0 && (

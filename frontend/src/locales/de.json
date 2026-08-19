@@ -192,6 +192,7 @@
       "joinWaitlist": "Für Zeitslot anmelden",
       "expressInterest": "Interesse bekunden",
       "notFound": "Nicht gefunden.",
+      "germanOnlyNotice": "Nur auf Deutsch verfügbar",
       "flexibleDate": "Flexibler Termin",
       "applyBy": "Interesse bekunden bis {{date}}",
       "startsOn": "Beginnt am {{date}}",

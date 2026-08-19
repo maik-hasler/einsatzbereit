@@ -136,7 +136,7 @@ function QuickCheckInWidget({
 							options={qrOpportunities.map((o) => ({
 								value: o.id,
 								label:
-									pickLocalizedText(o.titleDe, o.titleEn, i18n.language) ||
+									pickLocalizedText(o.titleDe, o.titleEn, i18n.language).text ||
 									t("orgDashboard.unnamedDraft"),
 							}))}
 						/>

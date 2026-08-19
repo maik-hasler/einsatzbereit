@@ -138,11 +138,8 @@ export default function VolunteerOpportunityDetailPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	usePageTitle(
 		opportunity &&
-			pickLocalizedText(
-				opportunity.titleDe,
-				opportunity.titleEn,
-				i18n.language,
-			),
+			pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language)
+				.text,
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -627,6 +624,24 @@ export default function VolunteerOpportunityDetailPage() {
 		);
 	}
 
+	const headerTitle = pickLocalizedText(
+		opportunity.titleDe,
+		opportunity.titleEn,
+		i18n.language,
+	);
+	const headerLead = pickLocalizedText(
+		opportunity.descriptionDe,
+		opportunity.descriptionEn,
+		i18n.language,
+	);
+	// Only ever true for the English UI falling back to German content - the
+	// German variant is required, so the reverse never happens (#2057). Checked
+	// on both fields independently since an organizer may translate one but
+	// not the other.
+	const isGermanFallback =
+		headerTitle.lang !== i18n.language ||
+		(headerLead !== undefined && headerLead.lang !== i18n.language);
+
 	return (
 		<>
 			<PageHeaderBand
@@ -638,17 +653,17 @@ export default function VolunteerOpportunityDetailPage() {
 						{opportunity.organizationName}
 					</Link>
 				}
-				title={pickLocalizedText(
-					opportunity.titleDe,
-					opportunity.titleEn,
-					i18n.language,
+				title={headerTitle.text}
+				titleLang={headerTitle.lang}
+				lead={headerLead?.text}
+				leadLang={headerLead?.lang}
+			>
+				{isGermanFallback && (
+					<p className="text-sm text-brand-200">
+						{t("opportunities.germanOnlyNotice")}
+					</p>
 				)}
-				lead={pickLocalizedText(
-					opportunity.descriptionDe,
-					opportunity.descriptionEn,
-					i18n.language,
-				)}
-			/>
+			</PageHeaderBand>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
 				{/* Banner image - spans the full width of this wider wrapper; a
@@ -1092,13 +1107,7 @@ export default function VolunteerOpportunityDetailPage() {
 							cue.remainingReactivations === 0
 								? "confirmDialog.withdraw.messageLimitReached"
 								: "confirmDialog.withdraw.message",
-							{
-								title: pickLocalizedText(
-									opportunity.titleDe,
-									opportunity.titleEn,
-									i18n.language,
-								),
-							},
+							{ title: headerTitle.text },
 						)}
 						confirmLabel={t("confirmDialog.withdraw.confirm")}
 						onConfirm={handleWithdrawConfirm}
@@ -1130,11 +1139,8 @@ export default function VolunteerOpportunityDetailPage() {
 
 				{showReport && (
 					<ReportContentModal
-						targetLabel={pickLocalizedText(
-							opportunity.titleDe,
-							opportunity.titleEn,
-							i18n.language,
-						)}
+						targetLabel={headerTitle.text}
+						targetLabelLang={headerTitle.lang}
 						onSubmit={handleReportSubmit}
 						onClose={() => setShowReport(false)}
 					/>
