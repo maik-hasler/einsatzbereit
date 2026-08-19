@@ -137,7 +137,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		olafHttp.DefaultRequestHeaders.Add(
 			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"Visual1780 {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -214,7 +214,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add(
 			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"Visual1780 Error {Guid.NewGuid():N}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -387,7 +387,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// full run, and this test only cares about a lone Calendar widget in
 		// its default (compact) placement.
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1254 {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual1254 {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -488,7 +488,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1959 {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual1959 {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -603,7 +603,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual812 {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual812 {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -730,7 +730,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1397 {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual1397 {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -838,7 +838,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual Upcoming {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual Upcoming {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

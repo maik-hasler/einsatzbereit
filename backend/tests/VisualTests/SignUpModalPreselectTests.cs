@@ -9,7 +9,7 @@ namespace VisualTests;
 /// Regression for #657: SignUpModal always initialized the time-slot dropdown
 /// to empty, even when a ScheduledSlots opportunity had exactly one (non-full) time
 /// slot and there was nothing else to pick - forcing an avoidable extra click
-/// before "Sign up" was enabled.
+/// before "Confirm sign-up" was enabled.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -17,7 +17,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task SignUpModal_PreselectsTheOnlyAvailableTimeSlot()
 	{
-		// The "Sign up" button itself is only disabled while submitting or when
+		// The "Confirm sign-up" button itself is only disabled while submitting or when
 		// there are zero time slots (SignUpModal.tsx) - it does not reflect
 		// whether a slot is selected. Pre-selection is instead verified directly:
 		// the dropdown must no longer show the empty placeholder once the modal
@@ -34,7 +34,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		var slotDropdown = Page.Locator("#sign-up-time-slot");
@@ -58,7 +58,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		var slotDropdown = Page.Locator("#sign-up-time-slot");
@@ -70,7 +70,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		// Behaviour is unchanged: submitting without picking a slot still
 		// surfaces the existing client-side validation error instead of
 		// silently proceeding.
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Confirm sign-up" }).ClickAsync();
 		await Expect(Page.GetByText("Please select a time slot.")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
 	}

@@ -316,14 +316,15 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 
 	/// <summary>
 	/// #1912: the organization profile page's "current needs" list renders
-	/// through PublicOpportunityCard, the same card the opportunity detail
-	/// page's "more from this organization" rail uses - and both used to omit
-	/// the category chip and capacity badge entirely, showing only a generic
-	/// sign-up-mode pill. The org-profile surface never made #1777's list
-	/// because that fix only touched the cards backed by
-	/// VolunteerOpportunitySummary; this DTO gained the same capacity fields
-	/// so PublicOpportunityCard could resolve them through the identical
-	/// `getOpportunityCapacity`/`capacityChip` pair OpportunityListItem uses.
+	/// through the same shared card the opportunity detail page's "more from
+	/// this organization" rail uses (OpportunityCard, formerly two separate
+	/// components - see #2054) - and both used to omit the category chip and
+	/// capacity badge entirely, showing only a generic sign-up-mode pill. The
+	/// org-profile surface never made #1777's list because that fix only
+	/// touched the cards backed by VolunteerOpportunitySummary; this DTO
+	/// gained the same capacity fields so the shared card could resolve them
+	/// through the identical `getOpportunityCapacity`/`capacityChip` pair
+	/// every surface uses.
 	/// </summary>
 	[Test]
 	public async Task OrganizationProfile_RelatedOpportunityCard_StatesItsCategoryAndCapacity()
@@ -350,6 +351,85 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		await Expect(card.GetByText("Other").First).ToBeVisibleAsync();
 		await Expect(card.GetByTestId("opportunity-capacity"))
 			.ToHaveTextAsync($"{SlotCapacity} spots left");
+	}
+
+	/// <summary>
+	/// #2054: the organization profile and "more from this organization" cards
+	/// used to drop the date/deadline entirely, showing only "One-time"/
+	/// "Recurring" where the public grid showed a real start date or
+	/// application deadline in the same slot - because PublicOpportunitySummaryDto
+	/// (backing those two surfaces) never carried ValidUntil/NextTimeSlotStart,
+	/// even though the repository call behind it already resolved both. Same
+	/// date-line contract as PublicGrid_EveryCard_StatesADateKindAndACapacity,
+	/// now proven on the org-scoped surfaces too.
+	/// </summary>
+	[Test]
+	public async Task OrganizationProfile_RelatedOpportunityCard_StatesARealDateNotJustOccurrence()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardOrgProfileDate{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		await PublishSlotBasedOpportunityAsync(organizer, organizationId, keyword);
+
+		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("li", new() { HasText = keyword }).First;
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var dateLine = card.GetByTestId("opportunity-date-line");
+		await Expect(dateLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(dateLine).ToHaveAttributeAsync("data-date-kind", "start");
+		await Expect(dateLine).ToContainTextAsync("Starts");
+	}
+
+	/// <summary>
+	/// #2054: the top-right chip slot used to carry three unrelated kinds of
+	/// fact depending on the opportunity's state (a spots-left count, an
+	/// "unlimited spots" flag, or a sign-up-mode pill), with colour not
+	/// tracking any of them consistently. It now always states the same one
+	/// fact - how a volunteer signs up - moved to its own testid, distinct
+	/// from the capacity chip. For an interest-based opportunity the slot is
+	/// deliberately empty rather than repeating the capacity chip's own "By
+	/// expression of interest" wording a second time on the same card (the
+	/// literal duplicate #1943's grid-wording contract already ruled out).
+	/// </summary>
+	[Test]
+	public async Task OpportunityDetail_MoreFromOrganizationCard_StatesSignUpMechanismWithoutDuplicatingCapacityWording()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var keyword = $"CardSignUpMechanism{Guid.NewGuid():N}";
+		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
+		var organizationId = await CreateOrganizationAsync(organizer, keyword);
+		var opportunityId =
+			await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} primary");
+		await PublishSlotBasedOpportunityAsync(organizer, organizationId, $"{keyword} scheduled");
+		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} interest");
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var moreSection = Page.GetByTestId("more-from-organization");
+		await Expect(moreSection).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var scheduledCard = moreSection.Locator("li", new() { HasText = $"{keyword} scheduled" });
+		await Expect(scheduledCard.GetByTestId("opportunity-signup-mechanism"))
+			.ToHaveTextAsync("Scheduled slots");
+
+		var interestCard = moreSection.Locator("li", new() { HasText = $"{keyword} interest" });
+		await Expect(interestCard.GetByTestId("opportunity-capacity"))
+			.ToHaveTextAsync("By expression of interest");
+		(await interestCard.GetByTestId("opportunity-signup-mechanism").CountAsync()).Should().Be(0,
+			"the capacity chip already states \"By expression of interest\" - a second chip repeating it would be the exact duplicate #1943 ruled out");
 	}
 
 	/// <summary>
@@ -543,7 +623,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 
 	private static async Task<string> CreateOrganizationAsync(HttpClient organizer, string keyword)
 	{
-		var response = await organizer.PostAsJsonAsync("/v1/organizations", new { name = $"Org {keyword}" });
+		var response = await PostJsonWithRetryAsync(organizer, "/v1/organizations", new { name = $"Org {keyword}" });
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return body.GetProperty("id").GetProperty("value").GetString()

@@ -120,7 +120,7 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"{label} Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"{label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;

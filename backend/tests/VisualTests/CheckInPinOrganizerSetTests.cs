@@ -86,7 +86,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInPinEdit Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"CheckInPinEdit Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
