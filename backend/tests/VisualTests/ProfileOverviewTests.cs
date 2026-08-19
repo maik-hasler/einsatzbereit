@@ -398,7 +398,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()
 			?? throw new InvalidOperationException("Created organization had no id.");
 
-		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		var oppResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/volunteer-opportunities", new
 		{
 			titleDe = $"FeedbackEdit Opportunity {suffix}",
 			descriptionDe = "Created by ProfileOverviewTests",
@@ -418,7 +418,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var veraSession = await Fixture.SignInAsync("vera", "vera123");
 		using var veraHttp = new HttpClient { BaseAddress = backend };
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
-		var applyResponse = await veraHttp.PostAsJsonAsync(
+		var applyResponse = await PostJsonWithRetryAsync(veraHttp,
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
 			new { message = "FeedbackEdit application." });
 		applyResponse.EnsureSuccessStatusCode();
