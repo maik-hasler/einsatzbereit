@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
 import Button from "./Button";
 import { WAVE_PATH } from "../lib/wavePath";
@@ -19,8 +19,13 @@ export default function Footer({
 	headingLevel?: 2 | 3;
 }) {
 	const { t } = useTranslation();
+	const location = useLocation();
 	const currentYear = new Date().getFullYear();
 	const Heading = headingLevel === 3 ? "h3" : "h2";
+	// The CTA always points at /opportunities - showing it there would be a
+	// button back to the page already open, so it's dropped rather than
+	// pointed at itself (#2060).
+	const showCta = location.pathname !== "/opportunities";
 
 	// Logged-in app shells (e.g. OrgAppLayout) use this utility variant instead
 	// of the full marketing footer - same legal links, one implementation, so
@@ -86,7 +91,11 @@ export default function Footer({
 				<path d={WAVE_PATH} fill="currentColor" />
 			</svg>
 			<div className="mx-auto max-w-page px-4 pt-6 pb-12 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+				<div
+					className={
+						showCta ? "grid grid-cols-1 gap-8 lg:grid-cols-3" : undefined
+					}
+				>
 					{/* CTA card - a direct path back into the opportunities list, so
 					the footer pulls its own weight instead of being pure sitemap
 					(#1749 footer redesign). One third of the row on desktop, the
@@ -94,33 +103,40 @@ export default function Footer({
 					glass panel over the brand-100 stage rather than a solid fill,
 					so the page's own color shows through it. Text drops to the
 					dark end of the brand ramp (brand-900/brand-800) to hold
-					contrast against that lighter glass. */}
-					<div className="relative isolate overflow-hidden rounded-card bg-accent-400/50 p-8 shadow-resting sm:p-10 lg:col-span-1">
-						<div
-							aria-hidden="true"
-							className="pointer-events-none absolute -top-10 -right-14 h-40 w-40 rounded-full bg-white/30"
-						/>
-						<div
-							aria-hidden="true"
-							className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand-600/20"
-						/>
-						<div className="relative">
-							<Heading className="font-display text-4xl font-bold text-brand-900 sm:text-5xl">
-								{t("footer.ctaTitle")}
-							</Heading>
-							<p className="mt-4 text-base leading-relaxed text-brand-800">
-								{t("brand.description")}
-							</p>
-							<Button
-								href="/opportunities"
-								variant="primary"
-								size="lg"
-								className="mt-8 shadow-md"
-							>
-								{t("footer.ctaButton")}
-							</Button>
+					contrast against that lighter glass. Dropped entirely on
+					/opportunities itself - see showCta above (#2060). */}
+					{showCta && (
+						<div className="relative isolate overflow-hidden rounded-card bg-accent-400/50 p-8 shadow-resting sm:p-10 lg:col-span-1">
+							<div
+								aria-hidden="true"
+								className="pointer-events-none absolute -top-10 -right-14 h-40 w-40 rounded-full bg-white/30"
+							/>
+							<div
+								aria-hidden="true"
+								className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand-600/20"
+							/>
+							<div className="relative">
+								{/* Kept below the text-3xl/sm:text-4xl scale real
+								content-page section headings use (e.g. HomePage's and
+								ImprintPage's own <h2>s) so this footer widget never
+								outranks the page it's sitting under (#2060). */}
+								<Heading className="font-display text-2xl font-bold text-brand-900 sm:text-3xl">
+									{t("footer.ctaTitle")}
+								</Heading>
+								<p className="mt-4 text-base leading-relaxed text-brand-800">
+									{t("brand.description")}
+								</p>
+								<Button
+									href="/opportunities"
+									variant="primary"
+									size="lg"
+									className="mt-8 shadow-md"
+								>
+									{t("footer.ctaButton")}
+								</Button>
+							</div>
 						</div>
-					</div>
+					)}
 
 					{/* Links - two thirds of the row, sitting directly on the
 					brand-100 stage rather than a second boxed card (see the
@@ -132,8 +148,14 @@ export default function Footer({
 					text left the two headings sitting at visibly different heights.
 					Only applied at lg, where the grid actually goes two-column
 					(lg:grid-cols-3 below) - the stacked mobile layout has no second
-					box to align against, so no offset there. */}
-					<div className="flex flex-col lg:col-span-2 lg:pt-10">
+					box to align against, so no offset there. Neither offset applies
+					when the CTA card is dropped (showCta false): there is no card
+					to align against or share a row with. */}
+					<div
+						className={
+							showCta ? "flex flex-col lg:col-span-2 lg:pt-10" : "flex flex-col"
+						}
+					>
 						<div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
 							{/* Three columns of real links. "Contact" and "Help" used to
 							sit under the Legal heading while Terms and Privacy - the

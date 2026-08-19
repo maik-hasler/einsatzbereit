@@ -46,6 +46,7 @@ import { getApiErrorMessage, isNetworkError } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
 import {
+	ArrowTopRightOnSquareIcon,
 	CalendarIcon,
 	CheckIconSolid,
 	ChevronRightIcon,
@@ -405,6 +406,22 @@ export default function VolunteerOpportunityDetailPage() {
 		tone: capacityTone,
 		secondaryLabel: capacitySecondaryLabel,
 	} = describeCapacity(capacity, t);
+
+	// Used for the "Where" fact, the map's accessible name, and the
+	// directions link below - one computed string instead of three inline
+	// copies of the same template literal drifting apart.
+	const address = opportunity.isRemote
+		? ""
+		: `${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`;
+	// Coordinates aren't always available (geocoding failure/pending retry,
+	// see backend/AGENTS.md's "Domain events") - fall back to a text query so
+	// the directions link (the only escape hatch off this page onto an
+	// actually routable map, #2058) still works even when SingleMarkerMap
+	// itself can't render.
+	const directionsUrl =
+		opportunity.latitude != null && opportunity.longitude != null
+			? `https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`
+			: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 
 	// formatPostedAgo's relative text ("Vor 5 Tagen veroeffentlicht") is the
 	// one documented exception to the site's numeric date convention - it
@@ -814,9 +831,7 @@ export default function VolunteerOpportunityDetailPage() {
 										{t("opportunities.factWhere")}
 									</dt>
 									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{opportunity.isRemote
-											? t("opportunities.remote")
-											: `${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
+										{opportunity.isRemote ? t("opportunities.remote") : address}
 									</dd>
 								</div>
 							</dl>
@@ -884,33 +899,44 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							)}
 
-							{!opportunity.isRemote &&
-								(opportunity.latitude != null &&
-								opportunity.longitude != null ? (
-									<div className="mb-6 overflow-hidden rounded-card border border-gray-100 shadow-resting">
-										<Suspense fallback={<Skeleton className="h-64 w-full" />}>
-											<SingleMarkerMap
-												latitude={opportunity.latitude}
-												longitude={opportunity.longitude}
-												label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
-											/>
-										</Suspense>
-									</div>
-								) : (
-									// Coordinates can be missing (geocoding failure/pending
-									// retry, see backend/AGENTS.md's "Domain events") - showing
-									// this note instead of omitting the section keeps the layout
-									// consistent with opportunities that do have a map (#1963).
-									<div
-										data-testid="map-unavailable"
-										className="mb-6 flex h-64 flex-col items-center justify-center gap-2 rounded-card border border-gray-100 bg-gray-50 shadow-resting"
+							{!opportunity.isRemote && (
+								<div className="mb-6">
+									{/* Coordinates can be missing (geocoding failure/pending
+									retry, see backend/AGENTS.md's "Domain events") - in that
+									case the address above (already promoted into the "Where"
+									fact) is all there is to show; a same-sized placeholder box
+									saying so again added nothing but reserved space (#2058). */}
+									{opportunity.latitude != null &&
+										opportunity.longitude != null && (
+											<div className="overflow-hidden rounded-card border border-gray-100 shadow-resting">
+												<Suspense
+													fallback={<Skeleton className="h-64 w-full" />}
+												>
+													<SingleMarkerMap
+														latitude={opportunity.latitude}
+														longitude={opportunity.longitude}
+														label={address}
+													/>
+												</Suspense>
+											</div>
+										)}
+									{/* The map (when it renders) has every pan/zoom interaction
+									disabled by design - this is the escape hatch that was
+									missing entirely before (#2058): a real, routable map in
+									another app. Falls back to a text-address query above when
+									there are no coordinates to link to directly. */}
+									<a
+										href={directionsUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										data-testid="opportunity-directions-link"
+										className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 									>
-										<MapPinIcon className="h-6 w-6 text-gray-400" />
-										<p className="text-sm text-gray-500">
-											{t("opportunities.mapUnavailable")}
-										</p>
-									</div>
-								))}
+										<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+										{t("opportunities.getDirections")}
+									</a>
+								</div>
+							)}
 						</div>
 
 						{/* Time slots - held to the same max-w-2xl measure as the blocks

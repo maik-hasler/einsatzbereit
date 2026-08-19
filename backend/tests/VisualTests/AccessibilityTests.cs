@@ -605,6 +605,17 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(marker).ToHaveAttributeAsync("role", "button");
 		await Expect(marker).ToHaveAttributeAsync("title", "Teststrasse 1, 12345 Musterstadt");
 
+		// The map container itself (not just the marker) needs an accessible
+		// name too (#2058) - it stays a focusable, swipeable target even with
+		// every pan/zoom interaction disabled, so an unnamed container would
+		// be as much of a silent tab stop as the marker was before #1681.
+		// role="group", not "img": "img" flattens focusable descendants like
+		// the marker above out of the accessibility tree entirely.
+		var mapContainer = Page.Locator(".leaflet-container");
+		await Expect(mapContainer).ToHaveAttributeAsync("role", "group");
+		await Expect(mapContainer).ToHaveAttributeAsync(
+			"aria-label", "Map showing the location of Teststrasse 1, 12345 Musterstadt");
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
@@ -613,11 +624,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task VolunteerOpportunityDetailPage_MapUnavailable_HasNoSeriousA11yViolations()
 	{
 		// A non-remote opportunity whose address has not resolved to coordinates
-		// renders a "no map available" note in place of the map section. A
-		// freshly seeded one always lands in that state under
-		// FakeGeocodingService, so no route patching is needed. Assert the
-		// placeholder is visible before scanning, so a regression that stopped it
-		// rendering would not silently reduce this to a no-op pass.
+		// renders no map section at all - just the address (already stated in
+		// the "Where" fact) and the directions link (#2058; a same-sized "no
+		// map available" placeholder used to take its place, #1963, but said
+		// nothing the address text above it didn't already say). A freshly
+		// seeded one always lands in that state under FakeGeocodingService, so
+		// no route patching is needed. Assert the directions link is visible
+		// before scanning, so a regression that stopped it rendering would not
+		// silently reduce this to a no-op pass.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -636,7 +650,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
 			titleDe = title,
-			descriptionDe = "Seeded for the map-unavailable placeholder a11y regression (#1963).",
+			descriptionDe = "Seeded for the missing-coordinates a11y regression (#2058, #1963).",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -655,7 +669,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Expect(Page.Locator("h1").First).ToHaveTextAsync(title, new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("map-unavailable")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator(".leaflet-container")).Not.ToBeAttachedAsync();
+		await Expect(Page.GetByTestId("opportunity-directions-link")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

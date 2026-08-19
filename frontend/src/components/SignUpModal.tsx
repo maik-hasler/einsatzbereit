@@ -186,7 +186,7 @@ export default function SignUpModal({
 												ts.startDateTime as unknown as string,
 												ts.endDateTime as unknown as string,
 												i18n.language,
-											)} ${
+											)} · ${
 												spotsLeft === null
 													? t("opportunities.unlimitedSpots")
 													: slotFull
