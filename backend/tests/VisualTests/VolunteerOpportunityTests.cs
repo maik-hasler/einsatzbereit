@@ -252,11 +252,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// than shipping unnoticed.
 		await Expect(Page.GetByTestId("share-opportunity")).ToHaveCountAsync(0);
 
-		// With Share gone the whole action row is conditional, and an
-		// anonymous visitor gets none of its contents - it must not render as
-		// an empty strip with its mb-4 left behind between the band and the
-		// at-a-glance panel.
-		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToHaveCountAsync(0);
+		// The action row still renders for an anonymous visitor: Report is
+		// reachable without being signed in (clicking it redirects to sign-in
+		// instead of the control being hidden entirely, #2061) - Share is the
+		// only thing genuinely gone from it.
+		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync();
 	}
 
 	[Test]
