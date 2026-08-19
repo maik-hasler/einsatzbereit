@@ -1,39 +1,73 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import {
 	formatDate,
 	formatDateTime,
 	formatOccurrence,
+	formatParticipationType,
 	isDeadlineImminent,
 	pickLocalizedText,
-} from "../../lib/format";
-import Chip, { type ChipTone } from "../Chip";
-import { getInitials } from "../../lib/initials";
+} from "../lib/format";
+import Chip, { type ChipTone } from "./Chip";
+import { getInitials } from "../lib/initials";
 import {
 	FEW_SPOTS_THRESHOLD,
 	getOpportunityCapacity,
 	type OpportunityCapacity,
-} from "../../lib/opportunityCapacity";
+} from "../lib/opportunityCapacity";
 import {
 	ArrowsRightLeftIcon,
 	CalendarIcon,
 	ClockIcon,
 	GlobeIcon,
 	MapPinIcon,
-} from "../icons";
-import { CategoryGlyph } from "./CategoryGlyph";
+} from "./icons";
+import { CategoryGlyph } from "./VolunteerOpportunitiesList/CategoryGlyph";
 
-// A card carries a banner only when the organization uploaded a photo; there
-// is no synthetic per-category color block standing in for one. Both the
-// rainbow version (one Tailwind swatch per category) and the single-tint
-// glyph tile that replaced it were rejected - the first read as a generic
-// admin-dashboard tag system against the muted brand-green language, the
-// second put 128px of near-empty rectangle at the top of nearly every card,
-// since almost no opportunity has a photo. Cross-checked against
-// idealist.org and betterplace.org, neither of which recolors a listing by
-// category. Category is carried by the icon+label chip instead.
+// The one opportunity card, shared by every surface that shows one (#2054):
+// /opportunities and the landing page preview (both backed by the full
+// VolunteerOpportunitySummary), and the organization profile's "current
+// needs" list plus the opportunity detail page's "more from this
+// organization" rail (both backed by the leaner PublicOpportunitySummaryDto,
+// which carries no organization identity, tags or banner - those two blocks
+// below are gated on the fields actually being present rather than picking
+// between two different card components). Before this, the same opportunity
+// rendered as two visually and informationally different cards depending on
+// which page it was reached from - most visibly, the org-scoped surfaces
+// dropped the date/deadline entirely and showed only "Einmalig"/"Regelmaessig"
+// where the other surfaces showed a real date.
+export interface OpportunityCardItem {
+	id: string;
+	titleDe: string;
+	titleEn: string | undefined;
+	descriptionDe: string | undefined;
+	descriptionEn: string | undefined;
+	street: string | undefined;
+	houseNumber: string | undefined;
+	zipCode: string | undefined;
+	city: string | undefined;
+	isRemote: boolean;
+	occurrence: string;
+	participationType: string;
+	category: string | undefined;
+	totalMaxParticipants: number | undefined;
+	currentParticipantCount: number;
+	validUntil: Date | undefined;
+	nextTimeSlotStart: Date | undefined;
+	/**
+	 * Present only on the richer VolunteerOpportunitySummary DTO - gates the
+	 * banner and organization footer below. Absent on PublicOpportunitySummaryDto,
+	 * whose surfaces (org profile, "more from this organization") already sit on
+	 * that one organization's own page, so a footer repeating its identity would
+	 * be redundant; those cards fall back to a plain address line instead.
+	 */
+	organizationId?: string;
+	organizationName?: string;
+	organizationLogoUrl?: string;
+	tags?: string[];
+	bannerImageUrl?: string;
+}
 
 /**
  * The capacity chip always renders, in every one of the contract's states -
@@ -88,7 +122,7 @@ export function capacityChip(
  * falls back to the same neutral tone as a set start date.
  */
 function dateLine(
-	item: VolunteerOpportunitySummary,
+	item: OpportunityCardItem,
 	t: TFunction,
 	language: string,
 ): {
@@ -131,16 +165,15 @@ function dateLine(
 	};
 }
 
-export default function OpportunityListItem({
+export default function OpportunityCard({
 	item,
 	headingLevel = 2,
 }: {
-	item: VolunteerOpportunitySummary;
+	item: OpportunityCardItem;
 	/**
-	 * Level for the card's title. Defaults to 2 for /opportunities, where the
-	 * page header band's h1 is the only heading above the grid. The landing
-	 * page's preview passes 3: its own section heading is an h2, and cards
-	 * belong under it rather than beside it.
+	 * Level for the card's title. Defaults to 2 for a card that is the only
+	 * heading above a grid; every current call site sits under its own visible
+	 * or sr-only section heading and passes 3.
 	 */
 	headingLevel?: 2 | 3;
 }) {
@@ -162,6 +195,16 @@ export default function OpportunityListItem({
 	const isGermanFallback =
 		title.lang !== i18n.language ||
 		(description !== undefined && description.lang !== i18n.language);
+	const hasOrganization = !!item.organizationId && !!item.organizationName;
+
+	// ScheduledSlots is the only participation type that ever carries a real
+	// time-slot capacity - IndividualContact opportunities can never have time
+	// slots (see VolunteerOpportunity.AddTimeSlot), so their capacity chip
+	// below already says "By expression of interest" on its own. A second chip
+	// repeating that exact wording here would be the literal duplicate #1943's
+	// grid-wording contract ruled out, so this slot only ever states the one
+	// fact it can state without repeating the capacity chip.
+	const showSignUpMechanismChip = item.participationType === "ScheduledSlots";
 
 	// No overflow-hidden on the card any more. The stretched link below is what
 	// a keyboard user actually lands on (the title is inside it, not focusable
@@ -180,14 +223,10 @@ export default function OpportunityListItem({
 				lang={title.lang}
 			/>
 			<div className="flex h-full flex-col">
-				{/* Banner, only when the organization actually uploaded a photo.
-				There used to be a 128px category-glyph tile in its place on every
-				photo-less card, added back when the demo content was thin enough
-				that cards had little else to tell them apart. With real titles,
-				dates, organizations and cities on the card that no longer holds,
-				and since almost no opportunity carries a photo it meant most of
-				the grid's top third was a tinted rectangle with a small icon
-				centred in it. A photo-less card is a text card now. */}
+				{/* Banner, only when the organization actually uploaded a photo -
+				never present on the leaner PublicOpportunitySummaryDto (see
+				OpportunityCardItem's doc comment). A photo-less card is a text
+				card, not a tinted placeholder tile. */}
 				{item.bannerImageUrl && (
 					<div className="relative h-32 w-full shrink-0 overflow-hidden rounded-t-card bg-gradient-to-br from-brand-50 to-brand-100">
 						<img
@@ -212,31 +251,25 @@ export default function OpportunityListItem({
 						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>
-						<Chip
-							data-testid="opportunity-capacity"
-							tone={capacity.tone}
-							size="sm"
-							className="ml-auto shrink-0"
-						>
-							{capacity.label}
-						</Chip>
-						{/* No report control here. It sat inline in this metadata row,
-						immediately after the category and capacity chips, giving a
-						moderation action the same weight and adjacency as the
-						listing's own attributes - and it broke the row's rhythm,
-						since it needed a conditional ml-auto depending on whether a
-						capacity chip happened to be present. Reporting stays on the
-						opportunity's own page, where the reader has the full listing
-						in front of them to judge. */}
+						{/* The top-right slot used to be the capacity chip, which for a
+						capped/unlimited/not-yet-published opportunity said three
+						unrelated kinds of thing in the same spot with no consistent
+						colour telling them apart (#2054). It now always states the
+						same one fact - how a volunteer signs up - and the capacity
+						count moves down next to the date line below. */}
+						{showSignUpMechanismChip && (
+							<Chip
+								data-testid="opportunity-signup-mechanism"
+								tone="neutral"
+								size="sm"
+								className="ml-auto shrink-0"
+							>
+								{formatParticipationType(item.participationType, t)}
+							</Chip>
+						)}
 					</div>
 					{/* h2 by default, h3 when a section heading sits above the grid -
-					see the headingLevel prop. This list used to be fixed at h3
-					because it lived inside the landing page behind a "Current
-					Opportunities" <h2>; #1755 gave it its own route, where the page
-					header band's <h1> is the only heading above it, so a fixed h3
-					skipped a level and axe failed the page on heading-order. The
-					landing page has a section heading over these cards again, hence
-					a prop rather than a second fixed level. */}
+					see the headingLevel prop. */}
 					<Heading
 						lang={title.lang}
 						className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg"
@@ -248,16 +281,28 @@ export default function OpportunityListItem({
 							{t("opportunities.germanOnlyNotice")}
 						</p>
 					)}
-					{/* See dateLine() above for the three kinds this slot can state and
-					why each one carries its own glyph and tone. */}
-					<p
-						data-testid="opportunity-date-line"
-						data-date-kind={date.kind}
-						className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${date.tone}`}
-					>
-						<DateIcon className="h-4 w-4 shrink-0" />
-						<span>{date.label}</span>
-					</p>
+					{/* Date/deadline and capacity, side by side: the two facts that
+					used to compete for the top-right slot now sit together instead,
+					next to each other rather than one replacing the other. See
+					dateLine() above for the three kinds this slot can state. */}
+					<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+						<p
+							data-testid="opportunity-date-line"
+							data-date-kind={date.kind}
+							className={`flex items-center gap-1.5 text-sm font-medium ${date.tone}`}
+						>
+							<DateIcon className="h-4 w-4 shrink-0" />
+							<span>{date.label}</span>
+						</p>
+						<Chip
+							data-testid="opportunity-capacity"
+							tone={capacity.tone}
+							size="sm"
+							className="shrink-0"
+						>
+							{capacity.label}
+						</Chip>
+					</div>
 					{description && (
 						<p
 							lang={description.lang}
@@ -266,7 +311,7 @@ export default function OpportunityListItem({
 							{description.text}
 						</p>
 					)}
-					{item.tags.length > 0 && (
+					{item.tags && item.tags.length > 0 && (
 						<div className="relative z-20 mt-2 flex flex-wrap gap-1.5">
 							{item.tags.map((tag) => (
 								<Chip
@@ -281,49 +326,74 @@ export default function OpportunityListItem({
 							))}
 						</div>
 					)}
-					<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
-						<Link
-							to={`/organizations/${item.organizationId}`}
-							data-testid="opportunity-org-link"
-							className="group/org relative z-20 inline-flex items-center gap-2"
-						>
-							{item.organizationLogoUrl ? (
-								<img
-									src={item.organizationLogoUrl}
-									alt=""
-									width={28}
-									height={28}
-									loading="lazy"
-									className="h-7 w-7 shrink-0 rounded-full object-cover"
-								/>
-							) : (
-								<span
-									aria-hidden="true"
-									className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
-								>
-									{getInitials(item.organizationName)}
+					{hasOrganization ? (
+						<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
+							<Link
+								to={`/organizations/${item.organizationId}`}
+								data-testid="opportunity-org-link"
+								className="group/org relative z-20 inline-flex items-center gap-2"
+							>
+								{item.organizationLogoUrl ? (
+									<img
+										src={item.organizationLogoUrl}
+										alt=""
+										width={28}
+										height={28}
+										loading="lazy"
+										className="h-7 w-7 shrink-0 rounded-full object-cover"
+									/>
+								) : (
+									<span
+										aria-hidden="true"
+										className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
+									>
+										{getInitials(item.organizationName ?? "")}
+									</span>
+								)}
+								<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
+									{item.organizationName}
+								</span>
+							</Link>
+							{(item.isRemote || item.city) && (
+								<span className="ml-auto flex items-center gap-1 text-xs text-gray-500">
+									{item.isRemote ? (
+										<>
+											<GlobeIcon className="h-3.5 w-3.5 shrink-0" />
+											<span>{t("opportunities.remote")}</span>
+										</>
+									) : (
+										<>
+											<MapPinIcon className="h-3.5 w-3.5 shrink-0" />
+											<span>{item.city}</span>
+										</>
+									)}
 								</span>
 							)}
-							<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
-								{item.organizationName}
-							</span>
-						</Link>
-						{(item.isRemote || item.city) && (
-							<span className="ml-auto flex items-center gap-1 text-xs text-gray-500">
-								{item.isRemote ? (
+						</div>
+					) : (
+						// No organization footer to repeat: this card already sits on
+						// that organization's own page (org profile, or the detail
+						// page's "more from this organization" rail), so the full
+						// address stands in for it instead of a city-only badge.
+						<div className="mt-auto flex items-start gap-2 pt-2 text-sm text-gray-600">
+							{item.isRemote ? (
+								<>
+									<GlobeIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+									<span>{t("opportunities.remote")}</span>
+								</>
+							) : (
+								item.street && (
 									<>
-										<GlobeIcon className="h-3.5 w-3.5 shrink-0" />
-										<span>{t("opportunities.remote")}</span>
+										<MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+										<span>
+											{item.street} {item.houseNumber}, {item.zipCode}{" "}
+											{item.city}
+										</span>
 									</>
-								) : (
-									<>
-										<MapPinIcon className="h-3.5 w-3.5 shrink-0" />
-										<span>{item.city}</span>
-									</>
-								)}
-							</span>
-						)}
-					</div>
+								)
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		</li>

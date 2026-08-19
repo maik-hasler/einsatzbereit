@@ -198,7 +198,7 @@ This asymmetry with the backend is deliberate, but it is an asymmetry: a feature
 |`frontend/src/pages/`, `frontend/src/pages/app/`
 
 |Components
-|Reusable UI building blocks - stateless or locally stateful, styled with Tailwind CSS. Includes the domain-flavoured ones (`SignUpModal`, `CheckInModal`, `PublicOpportunityCard`) and the generic ones (`Button`, `Modal`, `Field`).
+|Reusable UI building blocks - stateless or locally stateful, styled with Tailwind CSS. Includes the domain-flavoured ones (`SignUpModal`, `CheckInModal`, `OpportunityCard`) and the generic ones (`Button`, `Modal`, `Field`).
 |`frontend/src/components/`
 
 |API Client
