@@ -118,10 +118,11 @@ export default function SignUpModal({
 				{isScheduledSlots && (
 					<div>
 						{/* Visually hidden, not removed - the dialog title just above
-						("Select a slot") already conveys this on screen, so showing it
-						again here read as a duplicated label (#987); the dropdown still
-						needs its own accessible name for screen reader users landing on
-						it directly. */}
+						("Sign up for a slot") already conveys this on screen, so showing
+						it again here read as a duplicated label (#987); the dropdown
+						still needs its own accessible name for screen reader users
+						landing on it directly, shortened to the field's name alone so it
+						doesn't just restate the title (#2056). */}
 						<label htmlFor="sign-up-time-slot" className="sr-only">
 							{t("signUp.selectTimeSlot")}
 						</label>
