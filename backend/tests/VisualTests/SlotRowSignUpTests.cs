@@ -44,7 +44,11 @@ public class SlotRowSignUpTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(dialog.Locator("#sign-up-dialog-title")).ToHaveTextAsync("Confirm sign-up");
 		await Expect(dialog.GetByTestId("sign-up-confirmed-slot")).ToBeVisibleAsync();
 
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		// The confirmed-slot variant's submit button carries the same label as
+		// the dialog title ("Confirm sign-up", signUp.submitWaitlist/titleConfirm)
+		// - not the generic "Sign up" wording, which was renamed by main's
+		// vocabulary-unification pass (abf1817).
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Confirm sign-up" }).ClickAsync();
 		await Expect(dialog).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByText("Sign-up submitted.")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -82,7 +86,9 @@ public class SlotRowSignUpTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(dialog.Locator("#sign-up-time-slot")).ToHaveCountAsync(0);
 		await Expect(dialog.GetByTestId("sign-up-confirmed-slot")).ToContainTextAsync(clickedRangeText!);
 
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		// See the single-slot test above for why this is "Confirm sign-up",
+		// not "Sign up".
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Confirm sign-up" }).ClickAsync();
 		await Expect(dialog).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// The engagement that was actually created must carry the same slot the

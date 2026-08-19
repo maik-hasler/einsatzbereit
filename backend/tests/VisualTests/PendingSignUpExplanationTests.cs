@@ -62,6 +62,8 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
 			new { message = "Applying via PendingSignUpExplanationTests." });
 		engagementResponse.EnsureSuccessStatusCode();
+		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
@@ -74,7 +76,18 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		var card = Page.Locator("li", new() { HasText = oppTitle });
+		// This is a shared Aspire session (~50 VisualTests classes running
+		// concurrently) - IndividualContact engagements have no time slot, and
+		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
+		// upcoming" scope by time-slot start (slot-less entries sort last), so
+		// vera's other concurrently-created, time-slotted engagements can push
+		// this card past the first (10-item) page. Page through to it by its
+		// stable data-engagement-id the same way MyEngagementsTests does,
+		// instead of assuming it lands on page 1.
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(card.GetByText("Pending")).ToBeVisibleAsync();
 		await Expect(card.GetByText(ExplanationText)).ToBeVisibleAsync();
@@ -139,7 +152,13 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		var card = Page.Locator("li", new() { HasText = oppTitle });
+		// See PendingExplanation_IsShown_OnOpportunityDetailPageAndMySignUps
+		// above for why this pages through by data-engagement-id rather than
+		// assuming the card lands on page 1.
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await LoadMoreUntilVisibleAsync(card);
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(card.GetByText("Confirmed")).ToBeVisibleAsync();
 		await Expect(card.GetByText(ExplanationText)).ToHaveCountAsync(0);
