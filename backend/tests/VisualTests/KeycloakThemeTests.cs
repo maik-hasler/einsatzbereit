@@ -111,6 +111,10 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Sign in");
 		await Expect(Page.Locator("#password")).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-login")).ToBeVisibleAsync();
+		// #2063: stock Keycloak's doLogIn is Title Case ("Sign In"), which read
+		// inconsistently against the sentence-case eyebrow right above it and
+		// the rest of the app.
+		await Expect(Page.Locator("#kc-login")).ToHaveAttributeAsync("value", "Sign in");
 	}
 
 	[Test]
@@ -151,6 +155,79 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var background = await Page.Locator("#kc-login")
 			.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
 		background.Should().Be("rgb(34, 105, 71)", "the primary button should use brand-700");
+	}
+
+	[Test]
+	public async Task Login_ForgotPasswordLink_MatchesRegisterLinkTreatment()
+	{
+		// #2063: "Forgot password?" used to render in the same muted grey as
+		// the static "Remember me" label beside it, with no underline and
+		// nothing marking it as interactive - while the less critical
+		// "Register" link in the card footer got full brand-700 treatment.
+		// Also pins the sentence-case wording (stock Keycloak's doForgotPassword
+		// is Title Case: "Forgot Password?").
+		await Page.GotoAsync(AuthUrl(locale: "en"));
+		var forgotPassword = Page.GetByRole(AriaRole.Link, new() { Name = "Forgot password?", Exact = true });
+		await Expect(forgotPassword).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		var color = await forgotPassword.EvaluateAsync<string>("el => getComputedStyle(el).color");
+		color.Should().Be("rgb(34, 105, 71)",
+			"login: \"Forgot password?\" should get the same brand-700 treatment as \"Register\"");
+	}
+
+	[Test]
+	public async Task Login_FailedAttempt_AssociatesErrorWithBothFieldsAndRecolorsFocusRing()
+	{
+		// #2063: both fields got aria-invalid="true" after a failed attempt,
+		// but neither pointed aria-describedby at the error message span - a
+		// screen-reader user tabbing back into them heard "invalid" with no
+		// explanation why. Separately, the theme's global brand-green
+		// :focus-visible ring was drawn on top of the red error border, so the
+		// field the user is actually looking at looked the least like it had
+		// a problem - the ring should turn red to match instead.
+		await Page.GotoAsync(AuthUrl(locale: "en"));
+		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		await Page.Locator("#username").FillAsync($"no-such-user-{Guid.NewGuid():N}");
+		await Page.Locator("#password").FillAsync("wrong-password");
+		await Page.Locator("#kc-login").ClickAsync();
+
+		await Expect(Page.Locator("#input-error")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Expect(Page.Locator("#username")).ToHaveAttributeAsync("aria-invalid", "true");
+		await Expect(Page.Locator("#username")).ToHaveAttributeAsync("aria-describedby", "input-error");
+		await Expect(Page.Locator("#password")).ToHaveAttributeAsync("aria-invalid", "true");
+		await Expect(Page.Locator("#password")).ToHaveAttributeAsync("aria-describedby", "input-error");
+
+		await Page.Locator("#username").FocusAsync();
+		var outlineColor = await Page.Locator("#username")
+			.EvaluateAsync<string>("el => getComputedStyle(el).outlineColor");
+		outlineColor.Should().Be("rgb(220, 38, 38)",
+			"login: the focus ring on an invalid, focused field should turn red, not stay the brand green");
+	}
+
+	[Test]
+	public async Task Login_LanguageMenu_LabelsAreEndonymsRegardlessOfCurrentLocale()
+	{
+		// #2063: stock Keycloak's messages_de.properties lists "Deutsch" for
+		// German but "Englisch (English)" for English - translating the other
+		// locale's name into the current one, with the endonym only in
+		// brackets. The in-app switcher (Header/LanguageSelector.tsx) uses
+		// endonyms for both languages regardless of which one is currently
+		// active; the theme's menu should match.
+		foreach (var locale in new[] { "en", "de" })
+		{
+			await Page.GotoAsync(AuthUrl(locale: locale));
+			await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+			await Page.Locator(".lang-trigger").ClickAsync();
+			var items = Page.Locator(".lang-menu .lang-item");
+			await Expect(items).ToHaveCountAsync(2);
+
+			var labels = (await items.AllTextContentsAsync()).Select(l => l.Trim());
+			labels.Should().BeEquivalentTo(["Deutsch", "English"],
+				$"locale={locale}: the language menu should list endonyms for both languages");
+		}
 	}
 
 	[Test]
@@ -225,7 +302,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Forgot Password?" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Forgot password?" }).ClickAsync();
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await AssertThemeShellAsync("reset-password");

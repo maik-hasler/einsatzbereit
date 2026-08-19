@@ -189,7 +189,7 @@ public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var createOrgResponse = await olafHttp.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

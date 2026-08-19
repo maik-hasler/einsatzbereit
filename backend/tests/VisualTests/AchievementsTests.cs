@@ -42,7 +42,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 			seedHttp.DefaultRequestHeaders.Add(
 				"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-			var orgResponse = await seedHttp.PostAsJsonAsync(
+			var orgResponse = await PostJsonWithRetryAsync(seedHttp,
 				"/v1/organizations", new { name = $"AchievementsSelfSeed Org {suffix}" });
 			orgResponse.EnsureSuccessStatusCode();
 			var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -93,7 +93,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 			setupHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {setupSession.AccessToken}");
 
 			var setupSuffix = Guid.NewGuid().ToString("N");
-			var orgResponse = await setupHttp.PostAsJsonAsync(
+			var orgResponse = await PostJsonWithRetryAsync(setupHttp,
 				"/v1/organizations", new { name = $"AchievementSeed Org {setupSuffix}" });
 			orgResponse.EnsureSuccessStatusCode();
 			var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

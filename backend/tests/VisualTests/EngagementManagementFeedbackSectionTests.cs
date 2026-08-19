@@ -91,7 +91,7 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 		// Fresh organization rather than olaf's shared seed org - other
 		// VisualTests running concurrently in this shared Aspire session can
 		// mutate/delete shared orgs (see EngagementManagementCheckInPinTests).
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"FeedbackSection {label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

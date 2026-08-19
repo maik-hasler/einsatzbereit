@@ -93,7 +93,7 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var createOrgResponse = await olafHttp.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations",
 			new { name = $"Milestone668 Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();
