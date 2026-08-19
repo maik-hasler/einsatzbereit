@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router";
@@ -22,7 +21,6 @@ import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Chip from "../components/Chip";
 import PageHeaderBand from "../components/PageHeaderBand";
-import PageSectionHeading from "../components/PageSectionHeading";
 import SubNavRail from "../components/SubNavRail";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
@@ -79,17 +77,21 @@ export const ADMIN_TABS = [
 export default function AdministrationPage() {
 	const { t } = useTranslation();
 	const { pathname } = useLocation();
-	usePageTitle(t("administration.title"));
 
-	const active =
-		ADMIN_TABS.find((tab) => pathname.startsWith(tab.href))?.key ??
-		"organizations";
+	// The active tab drives the page title/h1 below, not just the rail's
+	// highlighted item - each of the four routes needs its own distinct pair
+	// (#2052), where the shell used to render the fixed "Administration" for
+	// all of them and left the section name in an h2 further down.
+	const activeTab =
+		ADMIN_TABS.find((tab) => pathname.startsWith(tab.href)) ?? ADMIN_TABS[0];
+	const sectionTitle = t(activeTab.labelKey);
+	usePageTitle(`${sectionTitle} - ${t("administration.title")}`);
 
 	return (
 		<>
 			<PageHeaderBand
-				eyebrow={t("administration.eyebrow")}
-				title={t("administration.title")}
+				eyebrow={t("administration.title")}
+				title={sectionTitle}
 			/>
 
 			<div
@@ -98,7 +100,7 @@ export default function AdministrationPage() {
 			>
 				<SubNavRail
 					ariaLabel={t("administration.subNavLabel")}
-					active={active}
+					active={activeTab.key}
 					items={ADMIN_TABS.map((tab) => ({
 						key: tab.key,
 						href: tab.href,
@@ -113,60 +115,30 @@ export default function AdministrationPage() {
 	);
 }
 
-function AdminSection({
-	headingKey,
-	descriptionKey,
-	children,
-}: {
-	headingKey: string;
-	descriptionKey?: string;
-	children: ReactNode;
-}) {
-	const { t } = useTranslation();
-	return (
-		<section>
-			<PageSectionHeading
-				description={descriptionKey ? t(descriptionKey) : undefined}
-			>
-				{t(headingKey)}
-			</PageSectionHeading>
-			{children}
-		</section>
-	);
-}
-
 export function AdminOrganizationsPage() {
-	return (
-		<AdminSection headingKey="administration.organizationsHeading">
-			<OrganizationsSection />
-		</AdminSection>
-	);
+	return <OrganizationsSection />;
 }
 
 export function AdminUsersPage() {
-	return (
-		<AdminSection headingKey="administration.usersHeading">
-			<UsersSection />
-		</AdminSection>
-	);
+	return <UsersSection />;
 }
 
 export function AdminReportsPage() {
-	return (
-		<AdminSection headingKey="administration.reportsHeading">
-			<ReportsSection />
-		</AdminSection>
-	);
+	return <ReportsSection />;
 }
 
 export function AdminAuditLogPage() {
+	const { t } = useTranslation();
 	return (
-		<AdminSection
-			headingKey="administration.auditLogHeading"
-			descriptionKey="administration.auditLog.scopeDescription"
-		>
+		<>
+			{/* No repeated "Audit log" heading here - the band's h1 above already
+			says that (#2052). Only the scope note, which the old h2 pairing used
+			to carry as PageSectionHeading's description, still earns its keep. */}
+			<p className="mb-4 text-sm text-gray-500">
+				{t("administration.auditLog.scopeDescription")}
+			</p>
 			<AuditLogSection />
-		</AdminSection>
+		</>
 	);
 }
 

@@ -26,6 +26,7 @@
 							value="${(login.username!'')}"
 							type="text"
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
+							<#if messagesPerField.existsError('username','password')>aria-describedby="input-error"</#if>
 							autocomplete="username"
 							autofocus
 							required
@@ -61,6 +62,7 @@
 							name="password"
 							type="password"
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
+							<#if messagesPerField.existsError('username','password')>aria-describedby="input-error"</#if>
 							autocomplete="current-password"
 							required
 							placeholder=" "
@@ -94,7 +96,7 @@
 						</#if>
 					</div>
 					<#if realm.resetPasswordAllowed>
-						<a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+						<a href="${url.loginResetCredentialsUrl}" class="link-accent">${msg("doForgotPassword")}</a>
 					</#if>
 				</div>
 

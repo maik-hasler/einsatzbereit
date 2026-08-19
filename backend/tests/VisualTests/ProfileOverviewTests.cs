@@ -385,7 +385,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"FeedbackEdit Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

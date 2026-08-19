@@ -119,11 +119,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_SignedInNonOwner_AsVera_HasNoSeriousA11yViolations()
 	{
-		// The action row above the at-a-glance panel renders conditionally, so
-		// the signed-in-non-owner state - the row holding nothing but Report -
-		// is the only render path of it the anonymous scan above cannot reach.
-		// Vera is a plain user, never an organizer, so isOwner is false for
-		// every opportunity.
+		// The action row above the at-a-glance panel renders conditionally.
+		// Report shows for anonymous visitors too since #2061, so the
+		// anonymous scan above already covers a row holding nothing but
+		// Report - this scan additionally covers the signed-in header state
+		// (account menu, notifications) around that same row. Vera is a
+		// plain user, never an organizer, so isOwner is false for every
+		// opportunity.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -183,7 +185,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new
 		{
 			name = $"A11y Focus Order Org {suffix}",
 			contactEmail = "contact@example.org",
@@ -280,7 +282,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Draft Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"A11y Draft Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -334,7 +336,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Owner Notice Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"A11y Owner Notice Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -381,7 +383,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Mobile Rail Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"A11y Mobile Rail Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -434,7 +436,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var organizerHttp = new HttpClient { BaseAddress = backend };
 		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Status Slot Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(organizerHttp, "/v1/organizations", new { name = $"A11y Status Slot Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -548,7 +550,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Marker A11y Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Marker A11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -625,7 +627,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"No Map A11y Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"No Map A11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -806,7 +808,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
 		// Targets the org link by data-testid, not a Tailwind class combination:
-		// OpportunityListItem.tsx's org link is `relative z-20` while the
+		// OpportunityCard.tsx's org link is `relative z-20` while the
 		// stretched card-cover Link is the z-10 one, so a class-based locator
 		// silently matches nothing and skips the scan. Seed data always
 		// publishes opportunities (ApplicationDbContextInitializer.cs), so a
@@ -1222,7 +1224,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11yLogo {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"A11yLogo {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1424,7 +1426,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"EmptyDashA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -1503,7 +1505,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"EngagementManagementA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -1570,7 +1572,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"OrgEngagementsA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -1735,7 +1737,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 
-		// "Select a slot" only exists on an opportunity's own detail page
+		// "Sign up for a slot" only exists on an opportunity's own detail page
 		// (VolunteerOpportunityDetailPage.tsx) - the home page's cards link
 		// there but never render the button themselves. Filter to ScheduledSlots-type
 		// opportunities (seed data has two, both with open capacity) and follow
@@ -1761,7 +1763,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" });
 		try
 		{
 			await signUpBtn.WaitForAsync(new() { Timeout = 10_000 });
@@ -1809,7 +1811,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var organizerHttp = new HttpClient { BaseAddress = backend };
 		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y SlotRow Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(organizerHttp, "/v1/organizations", new { name = $"A11y SlotRow Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1878,7 +1880,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var organizerHttp = new HttpClient { BaseAddress = backend };
 		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y SlotRowConfirm Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(organizerHttp, "/v1/organizations", new { name = $"A11y SlotRowConfirm Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -2032,7 +2034,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"NotifA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2213,7 +2215,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"DetailOfflineA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2409,7 +2411,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var response = await http.PostAsJsonAsync("/v1/organizations", new { name = $"{label} {suffix}" });
+		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"{label} {suffix}" });
 		response.EnsureSuccessStatusCode();
 		var org = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return org.GetProperty("id").GetProperty("value").GetString()
@@ -2433,7 +2435,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"CancelDialogA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2493,7 +2495,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"OrgEngagementsCancelDialogA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2553,7 +2555,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"CancelOpportunityDialogA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2601,7 +2603,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"{label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2774,7 +2776,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"ToastA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -2853,7 +2855,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"MarkedDayA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

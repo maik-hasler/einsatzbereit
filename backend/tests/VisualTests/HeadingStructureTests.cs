@@ -36,7 +36,7 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 
 		var suffix = Guid.NewGuid().ToString("N");
 		var orgName = $"HeadingA11y Org {suffix}";
-		(await http.PostAsJsonAsync("/v1/organizations", new { name = orgName })).EnsureSuccessStatusCode();
+		(await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = orgName })).EnsureSuccessStatusCode();
 
 		await Page.GotoAsync($"{origin}/organizations");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -69,7 +69,7 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 		var suffix = Guid.NewGuid().ToString("N");
 		var tag = $"heading2071-{suffix}";
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"HeadingA11y Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"HeadingA11y Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

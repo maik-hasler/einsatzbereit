@@ -37,7 +37,7 @@ import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
-import PublicOpportunityCard from "../components/PublicOpportunityCard";
+import OpportunityCard from "../components/OpportunityCard";
 import RouteState from "../components/RouteState";
 import WarningBanner from "../components/WarningBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -374,10 +374,13 @@ export default function VolunteerOpportunityDetailPage() {
 	const isDraft = opportunity.status === "Draft";
 
 	// Everything in the action row above the at-a-glance panel is conditional,
-	// so the row itself has to be too - otherwise an anonymous visitor (the
-	// bulk of this page's traffic) gets an empty flex row and its mb-4 as a
-	// dead gap between the band and the panel.
-	const hasActionRow = (isDraft && isOwner) || (isAuthenticated && !isOwner);
+	// so the row itself has to be too - otherwise a visitor who qualifies for
+	// none of its contents gets an empty flex row and its mb-4 as a dead gap
+	// between the band and the panel. Report no longer requires
+	// isAuthenticated to render (#2061), so its own condition is just
+	// !isOwner now; simplifies to isDraft || !isOwner ((isDraft && isOwner)
+	// || !isOwner) rather than restating both branches' original shape.
+	const hasActionRow = isDraft || !isOwner;
 
 	const cue = opportunity.currentUserEngagement;
 
@@ -720,11 +723,20 @@ export default function VolunteerOpportunityDetailPage() {
 									needed an empty placeholder div to keep the actions right of
 									the column for everyone who doesn't see the chip. */}
 									<div className="ml-auto flex shrink-0 gap-2">
-										{isAuthenticated && !isOwner && (
+										{/* Shown to anonymous visitors too - they're the ones most
+										likely to encounter spam - with the click routed through
+										sign-in first instead of hiding the control entirely
+										(#2061), since reporting itself requires an authenticated
+										account on the backend. */}
+										{!isOwner && (
 											<Button
 												variant="outline"
 												size="sm"
-												onClick={() => setShowReport(true)}
+												onClick={() =>
+													isAuthenticated
+														? setShowReport(true)
+														: auth.signinRedirect(signinLocaleArgs())
+												}
 												data-testid="report-opportunity"
 												aria-label={t("opportunities.reportOpportunity")}
 											>
@@ -1081,7 +1093,7 @@ export default function VolunteerOpportunityDetailPage() {
 						</SectionHeading>
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							{otherOrgOpportunities.map((opp) => (
-								<PublicOpportunityCard key={opp.id} opportunity={opp} />
+								<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
 							))}
 						</ul>
 					</div>

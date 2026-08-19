@@ -32,7 +32,7 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 		using var organizerHttp = new HttpClient { BaseAddress = backend };
 		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"PendingExplain Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(organizerHttp, "/v1/organizations", new { name = $"PendingExplain Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -92,7 +92,7 @@ public class PendingSignUpExplanationTests(AspireFixture fixture) : VisualTestBa
 		using var organizerHttp = new HttpClient { BaseAddress = backend };
 		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"PendingExplainConfirmed Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(organizerHttp, "/v1/organizations", new { name = $"PendingExplainConfirmed Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
