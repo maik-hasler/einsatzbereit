@@ -49,9 +49,10 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Profile fields render read-only until "Edit" is clicked.
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })
-			.First.ClickAsync();
+		// Profile fields render read-only until "Edit" is clicked - the header
+		// button once the profile has data, or the empty-state CTA while it
+		// does not (#2066); both carry the "profile-edit" testid.
+		await Page.GetByTestId("profile-edit").ClickAsync();
 
 		var profileInput = Page.Locator("#first-name");
 		await Expect(profileInput).ToBeVisibleAsync(new() { Timeout = 20_000 });

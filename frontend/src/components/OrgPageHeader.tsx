@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import { useQuickActionsList } from "../contexts/QuickActionsContext";
+import { useScrollFade } from "../hooks/useScrollFade";
 import Button from "./Button";
 import { ChevronLeftIcon } from "./icons";
 
@@ -53,47 +54,40 @@ export default function OrgPageHeader({
 	// on-light variants now that they no longer sit on brand-800.
 	const actions = useQuickActionsList();
 
-	// #1898: the tab row scrolls (overflow-x-auto below) but nothing on screen
-	// said so - on a 375px viewport "Mitglieder" fell off the edge with no
-	// fade/arrow/peek to suggest more tabs existed. Track scroll position so
-	// each edge's fade mask only shows while there is actually more to reveal
-	// in that direction, rather than a static mask that would still show once
-	// fully scrolled to an end.
+	// #1898/#2062: the tab row scrolls (overflow-x-auto below) but nothing on
+	// screen said so - on a 375px viewport "Mitglieder" fell off the edge with
+	// no fade/arrow/peek to suggest more tabs existed. useScrollFade tracks
+	// scroll position so each edge's fade mask only shows while there is
+	// actually more to reveal in that direction, rather than a static mask
+	// that would still show once fully scrolled to an end.
 	const navRef = useRef<HTMLElement>(null);
-	const [canScrollLeft, setCanScrollLeft] = useState(false);
-	const [canScrollRight, setCanScrollRight] = useState(false);
+	const { canScrollStart: canScrollLeft, canScrollEnd: canScrollRight } =
+		useScrollFade(navRef, "x");
 
+	// #2062: bring the active tab into view on load/navigation instead of
+	// requiring the organizer to notice and scroll to it themselves - most
+	// useful on narrow viewports where a tab further down the list (e.g.
+	// "Mitglieder") can start out fully scrolled past the right edge.
+	// Adjusts navRef's own scrollLeft directly rather than
+	// activeTabRef.current.scrollIntoView(): that walks every scrollable
+	// ancestor including the window itself, so a reader who had scrolled
+	// deep into a long page and then switched tabs via the header's org
+	// switcher or mobile menu would get the whole page snapped back to the
+	// top just to bring this row's tab back on screen - a jarring, unasked
+	// side effect of what's meant to be a horizontal-only fix.
+	const activeTabRef = useRef<HTMLAnchorElement>(null);
 	useEffect(() => {
-		const el = navRef.current;
-		if (!el) return;
-
-		function updateFades() {
-			if (!el) return;
-			setCanScrollLeft(el.scrollLeft > 0);
-			setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+		const nav = navRef.current;
+		const tab = activeTabRef.current;
+		if (!nav || !tab) return;
+		const tabStart = tab.offsetLeft;
+		const tabEnd = tabStart + tab.offsetWidth;
+		if (tabStart < nav.scrollLeft) {
+			nav.scrollLeft = tabStart;
+		} else if (tabEnd > nav.scrollLeft + nav.clientWidth) {
+			nav.scrollLeft = tabEnd - nav.clientWidth;
 		}
-
-		updateFades();
-		el.addEventListener("scroll", updateFades, { passive: true });
-		window.addEventListener("resize", updateFades);
-		// Catches tab-label width changes that don't resize the nav element
-		// itself, e.g. a language switch re-rendering longer/shorter text.
-		const mutationObserver = new MutationObserver(updateFades);
-		mutationObserver.observe(el, {
-			childList: true,
-			subtree: true,
-			characterData: true,
-		});
-		const resizeObserver = new ResizeObserver(updateFades);
-		resizeObserver.observe(el);
-
-		return () => {
-			el.removeEventListener("scroll", updateFades);
-			window.removeEventListener("resize", updateFades);
-			mutationObserver.disconnect();
-			resizeObserver.disconnect();
-		};
-	}, []);
+	}, [activeTabKey]);
 
 	return (
 		<div data-testid="org-app-header" className="mb-6 sm:mb-8">
@@ -166,6 +160,7 @@ export default function OrgPageHeader({
 						return (
 							<Link
 								key={tab.key}
+								ref={isActive ? activeTabRef : undefined}
 								to={orgTabPath(organizationId, tab.key)}
 								aria-current={isActive ? "page" : undefined}
 								data-testid={`org-tab-${tab.key}`}

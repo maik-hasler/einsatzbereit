@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
+	StreakSummary,
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
@@ -10,7 +11,18 @@ import BadgeGrid from "../../components/BadgeGrid";
 import ErrorBanner from "../../components/ErrorBanner";
 import SectionHeading from "../../components/SectionHeading";
 
-export default function AchievementsSection() {
+interface Props {
+	// Already fetched by the parent for the identity hero's stat tiles -
+	// reused here rather than re-fetched, so each locked badge can show
+	// progress ("2 von 5") against the same counters (#2066).
+	engagementCount: number | null;
+	streaks: StreakSummary | null;
+}
+
+export default function AchievementsSection({
+	engagementCount,
+	streaks,
+}: Props) {
 	const api = useApiClient();
 	const { t } = useTranslation();
 
@@ -36,7 +48,16 @@ export default function AchievementsSection() {
 			{error ? (
 				<ErrorBanner message={t("achievements.error", { message: error })} />
 			) : (
-				<BadgeGrid earned={achievements} catalog={catalog} loading={loading} />
+				<BadgeGrid
+					earned={achievements}
+					catalog={catalog}
+					loading={loading}
+					progress={{
+						engagements: engagementCount ?? 0,
+						loginStreak: streaks?.loginStreak ?? 0,
+						activityStreak: streaks?.activityStreak ?? 0,
+					}}
+				/>
 			)}
 		</section>
 	);

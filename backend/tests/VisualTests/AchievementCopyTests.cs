@@ -38,6 +38,12 @@ namespace VisualTests;
 ///    other cue to tell them apart. Each label now also names its own badge
 ///    ("Wochenheld" / "Anmeldeserie") so the two read as distinct at a
 ///    glance even when both are nonzero at once.
+/// 6. (#2066) The day-streak caption used to be a single line of text hanging
+///    below the week-streak tile instead of a tile of its own - the stat row
+///    read as unbalanced (two aligned tiles, then one line floating under the
+///    second). It is now a third stat tile with the same bare-number-over-label
+///    shape as the other two, so the count and the label live in separate
+///    elements rather than one interpolated sentence.
 ///
 /// These are locale-file values, so nothing in the backend test suite would
 /// otherwise notice them regressing.
@@ -98,9 +104,14 @@ public class AchievementCopyTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// SeedLoginStreakForVeraAsync above guarantees this is exactly 1 - a
 		// same-day RecordLogin is a no-op past the first call, so the count
 		// never drifts regardless of what else runs in this shared session.
+		// #2066 turned this into a stat tile (bare number, then caption, as
+		// separate elements - see ProfileActivityStreakTile_... below for the
+		// same pattern), so the count and the label are asserted separately
+		// rather than as one continuous "1 Tag in Folge angemeldet" string.
 		var loginStreakIndicator = Page.GetByTestId("profile-stat-login-streak");
 		await Expect(loginStreakIndicator).ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(loginStreakIndicator).ToContainTextAsync("1 Tag in Folge angemeldet");
+		await Expect(loginStreakIndicator.Locator("p").First).ToHaveTextAsync("1");
+		await Expect(loginStreakIndicator).ToContainTextAsync("Tag in Folge angemeldet");
 		await Expect(loginStreakIndicator).Not.ToContainTextAsync("Login-Serie");
 	}
 
