@@ -119,11 +119,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_SignedInNonOwner_AsVera_HasNoSeriousA11yViolations()
 	{
-		// The action row above the at-a-glance panel renders conditionally, so
-		// the signed-in-non-owner state - the row holding nothing but Report -
-		// is the only render path of it the anonymous scan above cannot reach.
-		// Vera is a plain user, never an organizer, so isOwner is false for
-		// every opportunity.
+		// The action row above the at-a-glance panel renders conditionally.
+		// Report shows for anonymous visitors too since #2061, so the
+		// anonymous scan above already covers a row holding nothing but
+		// Report - this scan additionally covers the signed-in header state
+		// (account menu, notifications) around that same row. Vera is a
+		// plain user, never an organizer, so isOwner is false for every
+		// opportunity.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 

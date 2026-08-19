@@ -14,6 +14,7 @@ import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { signinLocaleArgs } from "../lib/authLocale";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { FlagIcon, GlobeIcon } from "../components/icons";
@@ -148,21 +149,27 @@ export default function OrganizationProfilePage() {
 				)}
 
 				{/* Moved out of the header band: a moderation action belongs with
-				the administrative footnotes, not as the page's primary control. */}
-				{auth.isAuthenticated && (
-					<div className="mt-10 border-t border-gray-100 pt-6">
-						<button
-							type="button"
-							onClick={() => setShowReport(true)}
-							data-testid="report-organization"
-							aria-label={t("orgProfile.reportOrganization")}
-							className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-700"
-						>
-							<FlagIcon className="h-4 w-4" />
-							{t("orgProfile.report")}
-						</button>
-					</div>
-				)}
+				the administrative footnotes, not as the page's primary control.
+				Shown to anonymous visitors too - they're the ones most likely to
+				encounter spam - with the click routed through sign-in first
+				instead of hiding the control entirely (#2061), since reporting
+				itself requires an authenticated account on the backend. */}
+				<div className="mt-10 border-t border-gray-100 pt-6">
+					<button
+						type="button"
+						onClick={() =>
+							auth.isAuthenticated
+								? setShowReport(true)
+								: auth.signinRedirect(signinLocaleArgs())
+						}
+						data-testid="report-organization"
+						aria-label={t("orgProfile.reportOrganization")}
+						className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-700"
+					>
+						<FlagIcon className="h-4 w-4" />
+						{t("orgProfile.report")}
+					</button>
+				</div>
 			</OrganizationProfileView>
 
 			{showReport && (
