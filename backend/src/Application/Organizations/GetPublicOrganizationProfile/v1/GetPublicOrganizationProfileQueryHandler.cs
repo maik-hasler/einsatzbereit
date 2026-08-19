@@ -51,6 +51,8 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 				o.Occurrence,
 				o.ParticipationType,
 				o.CreatedOn,
+				o.ValidUntil,
+				o.NextTimeSlotStart,
 				o.Category,
 				o.TotalMaxParticipants,
 				o.CurrentParticipantCount))

@@ -5,7 +5,7 @@ import Skeleton from "../Skeleton";
 import LoadMoreError from "../LoadMoreError";
 import LoadMoreButton from "../LoadMoreButton";
 import RouteState from "../RouteState";
-import OpportunityListItem from "./OpportunityListItem";
+import OpportunityCard from "../OpportunityCard";
 
 export default function OpportunityResultsList({
 	loading,
@@ -151,16 +151,12 @@ export default function OpportunityResultsList({
 					) : (
 						// The sr-only "Search results" <h2> above already gives this
 						// region its name; the cards below just need to nest under it,
-						// hence headingLevel 3 - the same demotion OpportunityListItem
+						// hence headingLevel 3 - the same demotion OpportunityCard
 						// already does for LatestOpportunitiesSection's cards under its
 						// own "Current opportunities" <h2> (#2071).
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
-								<OpportunityListItem
-									key={item.id}
-									item={item}
-									headingLevel={3}
-								/>
+								<OpportunityCard key={item.id} item={item} headingLevel={3} />
 							))}
 						</ul>
 					)}
