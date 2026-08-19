@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { brandColor } from "../lib/brandColor";
 // Colocated with this component (not styles/global.css) - see #1383 and the
@@ -14,6 +15,38 @@ import "./SingleMarkerMap.css";
 const TILE_URL = `${runtimeConfig.apiUrl}/v1/maps/tiles/{z}/{x}/{y}.png`;
 const ATTRIBUTION =
 	'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+// MapContainerProps doesn't expose role/aria-label (it isn't a plain
+// HTMLAttributes passthrough), so the only way to name Leaflet's own
+// .leaflet-container div - not just this component's outer wrapper - is
+// to reach it via useMap() from a child rendered inside <MapContainer>.
+// A child only ever renders once react-leaflet's context already holds
+// the constructed map, so useMap() returns a ready, non-null map
+// synchronously on first render - no timing race like chasing a
+// forwarded ref from the parent would have. Without this, a screen
+// reader announces a nameless, purposeless focusable element (#2058):
+// the container stays reachable by tab/swipe even with every pan/zoom
+// interaction disabled below, since that only stops Leaflet's own
+// handlers from claiming it, not the browser's native focus traversal.
+// role="group", not "img": the Marker below is a real, separately
+// focusable role="button" with its own accessible name (#1681) -
+// role="img" has "children presentational: true" in the ARIA spec,
+// which would flatten that button (and its Popup) out of the
+// accessibility tree entirely, undoing #1681 for screen reader users.
+// "group" names this container without hiding what's inside it.
+function MapAccessibleName({ label }: { label: string }) {
+	const map = useMap();
+	const { t } = useTranslation();
+	useEffect(() => {
+		const container = map.getContainer();
+		container.setAttribute("role", "group");
+		container.setAttribute(
+			"aria-label",
+			t("opportunities.mapLabel", { location: label }),
+		);
+	}, [map, label, t]);
+	return null;
+}
 
 interface Props {
 	latitude: number;
@@ -57,6 +90,7 @@ export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 				zoomControl={false}
 				className="h-full w-full"
 			>
+				<MapAccessibleName label={label} />
 				<TileLayer attribution={ATTRIBUTION} url={TILE_URL} />
 				{/* Leaflet gives the marker's role="button" focus stop this as its
 				accessible name (icon.title, works on any element - unlike `alt`,

@@ -130,7 +130,9 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// visible; assert on its (lack of) text content instead.
 		await Expect(successBanner).ToHaveTextAsync("");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		// #2066: "Edit" is the header button once the profile has data, or the
+		// empty-state CTA while it does not - both carry "profile-edit".
+		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
