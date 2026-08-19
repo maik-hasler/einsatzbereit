@@ -94,7 +94,7 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		// Create a fresh organization rather than reusing olaf's shared seed
 		// org - other VisualTests running concurrently in this shared Aspire
 		// session can mutate/delete shared orgs (see EngagementReactivationTests).
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"EngagementStatusContrast Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

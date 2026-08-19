@@ -252,11 +252,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// than shipping unnoticed.
 		await Expect(Page.GetByTestId("share-opportunity")).ToHaveCountAsync(0);
 
-		// With Share gone the whole action row is conditional, and an
-		// anonymous visitor gets none of its contents - it must not render as
-		// an empty strip with its mb-4 left behind between the band and the
-		// at-a-glance panel.
-		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToHaveCountAsync(0);
+		// The action row still renders for an anonymous visitor: Report is
+		// reachable without being signed in (clicking it redirects to sign-in
+		// instead of the control being hidden entirely, #2061) - Share is the
+		// only thing genuinely gone from it.
+		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -342,7 +343,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var orgName = $"Detail Enrichment Org {suffix}";
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -694,7 +695,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"VisualOppHub {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"VisualOppHub {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -854,7 +855,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Stale Error Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Stale Error Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -956,7 +957,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Draft Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Detail Draft Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1020,7 +1021,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Published Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Detail Published Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1070,7 +1071,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Owner Notice Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Detail Owner Notice Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1130,7 +1131,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Tag Chip Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Tag Chip Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1194,7 +1195,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"List Tag Chip Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"List Tag Chip Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1264,7 +1265,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Bilingual Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Bilingual Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -1325,7 +1326,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"German Only Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"German Only Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

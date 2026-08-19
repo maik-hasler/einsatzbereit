@@ -393,6 +393,12 @@ a { color: inherit; }
 
 .form-input[aria-invalid="true"] { border-color: var(--destructive); }
 
+/* The global :focus-visible ring above is brand-700 (green) - on a field
+ * that also has a red error border, that made the one field the user is
+ * actually looking at look the least like it had a problem (#2063). Recolor
+ * the ring to match the error instead of overriding it away. */
+.form-input[aria-invalid="true"]:focus-visible { outline-color: var(--destructive); }
+
 .form-input:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
@@ -522,6 +528,16 @@ a { color: inherit; }
 .form-options-wrapper a:hover {
 	color: var(--foreground);
 	text-decoration: underline;
+}
+
+/* "Forgot password?" sat in the same muted grey as the static "Remember me"
+ * label beside it, with nothing marking it as interactive, while the
+ * .card-footer "Register" link on the same card got full brand treatment
+ * (#2063). Same color/weight here, resting and hovered alike. */
+.form-options a.link-accent,
+.form-options a.link-accent:hover {
+	color: var(--brand-700);
+	font-weight: 600;
 }
 
 /* One checkbox treatment for the whole theme. Previously "remember me" was

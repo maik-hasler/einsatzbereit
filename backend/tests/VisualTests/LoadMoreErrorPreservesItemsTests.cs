@@ -48,7 +48,7 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		// and ListLayoutGridTests for the same tag-scoping pattern).
 		var tag = $"loadmore1226-{suffix}";
 
-		var orgResponse = await http.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations", new { name = $"LoadMoreError {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

@@ -80,7 +80,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var olafHttp = new HttpClient { BaseAddress = backendOrigin };
 		olafHttp.DefaultRequestHeaders.Add(
 			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 
 		var authErrors = new List<string>();

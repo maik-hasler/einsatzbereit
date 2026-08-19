@@ -30,7 +30,7 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Static Map Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Static Map Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

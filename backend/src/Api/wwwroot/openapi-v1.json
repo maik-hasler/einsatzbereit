@@ -9352,6 +9352,8 @@
           "occurrence",
           "participationType",
           "createdOn",
+          "validUntil",
+          "nextTimeSlotStart",
           "category",
           "totalMaxParticipants",
           "currentParticipantCount"
@@ -9418,6 +9420,20 @@
           },
           "createdOn": {
             "type": "string",
+            "format": "date-time"
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "nextTimeSlotStart": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "category": {

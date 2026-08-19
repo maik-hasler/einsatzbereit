@@ -96,7 +96,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		// org - other VisualTests running concurrently in this shared Aspire
 		// session can mutate/delete shared orgs, which made GET
 		// /v1/organizations intermittently race to an empty list here.
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"CheckInPin Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

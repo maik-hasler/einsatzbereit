@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import { cardClass } from "../lib/surfaceClasses";
@@ -6,6 +6,9 @@ import { cardClass } from "../lib/surfaceClasses";
 export default function ImprintPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("imprint.title"));
+
+	const linkClass =
+		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	// The first three blocks are all short records of the same shape (a name,
 	// an address, a way to reach someone), so they read as a row of cards
@@ -15,7 +18,14 @@ export default function ImprintPage() {
 	// rather than a duplication bug.
 	const records = [
 		{ title: t("imprint.section1Title"), body: t("imprint.section1Body") },
-		{ title: t("imprint.section2Title"), body: t("imprint.section2Body") },
+		{
+			title: t("imprint.section2Title"),
+			body: t("imprint.section2Body"),
+			// Contact is the one record with an email address in its body -
+			// rendered via Trans below so that address is a mailto: link
+			// rather than the plain, unclickable text it used to be (#2061).
+			isContact: true,
+		},
 		{ title: t("imprint.section3Title"), body: t("imprint.section3Body") },
 	];
 
@@ -32,13 +42,28 @@ export default function ImprintPage() {
 				"§ 18 MStV"), so a second, unrelated numbering running alongside
 				would read as a competing citation scheme. */}
 				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-					{records.map(({ title, body }) => (
+					{records.map(({ title, body, isContact }) => (
 						<section key={title} className={cardClass}>
 							<h2 className="text-xs font-semibold tracking-widest text-brand-700 uppercase">
 								{title}
 							</h2>
 							<p className="mt-3 leading-7 whitespace-pre-line text-gray-700">
-								{body}
+								{isContact ? (
+									<Trans
+										i18nKey="imprint.section2Body"
+										components={{
+											emailLink: (
+												// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
+												<a
+													href={`mailto:${t("contact.email")}`}
+													className={linkClass}
+												/>
+											),
+										}}
+									/>
+								) : (
+									body
+								)}
 							</p>
 						</section>
 					))}
