@@ -7957,7 +7957,8 @@
           "id",
           "status",
           "timeSlotId",
-          "isCheckedIn"
+          "isCheckedIn",
+          "remainingReactivations"
         ],
         "type": "object",
         "properties": {
@@ -7977,6 +7978,14 @@
           },
           "isCheckedIn": {
             "type": "boolean"
+          },
+          "remainingReactivations": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -8285,6 +8294,15 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "remainingReactivations": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

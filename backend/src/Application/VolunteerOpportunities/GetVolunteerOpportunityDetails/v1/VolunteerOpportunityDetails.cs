@@ -42,4 +42,7 @@ public sealed record CurrentUserEngagementInfo(
 	Guid Id,
 	string Status,
 	Guid? TimeSlotId,
-	bool IsCheckedIn);
+	bool IsCheckedIn,
+	// See EngagementSummary.RemainingReactivations - same purpose, for the
+	// opportunity detail page's own withdraw dialog (#2043).
+	int RemainingReactivations);

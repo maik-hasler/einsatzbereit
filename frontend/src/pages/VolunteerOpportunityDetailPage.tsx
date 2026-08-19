@@ -39,6 +39,7 @@ import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
 import PublicOpportunityCard from "../components/PublicOpportunityCard";
 import RouteState from "../components/RouteState";
+import WarningBanner from "../components/WarningBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isNetworkError } from "../lib/apiError";
@@ -158,6 +159,18 @@ export default function VolunteerOpportunityDetailPage() {
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [publishing, setPublishing] = useState(false);
+
+	// See ActivitySection.tsx's identical ref/effect for why: a role="status"
+	// region that's already populated the instant the withdraw dialog mounts
+	// isn't reliably announced by assistive tech, so focus is moved there once
+	// instead of trusting the live region alone (#2043).
+	const withdrawLimitWarningRef = useRef<HTMLParagraphElement>(null);
+	const withdrawLimitWarningActive =
+		showWithdrawConfirm &&
+		opportunity?.currentUserEngagement?.remainingReactivations === 1;
+	useEffect(() => {
+		if (withdrawLimitWarningActive) withdrawLimitWarningRef.current?.focus();
+	}, [showWithdrawConfirm, withdrawLimitWarningActive]);
 
 	const isAuthenticated = auth.isAuthenticated;
 	const roles = (
@@ -288,6 +301,7 @@ export default function VolunteerOpportunityDetailPage() {
 		setWithdrawError(null);
 		try {
 			await api.withdrawEngagement(opportunity.currentUserEngagement.id);
+			dispatchToast("success", t("myEngagements.withdrawSuccess"));
 			setShowWithdrawConfirm(false);
 			load();
 		} catch (err) {
@@ -1021,20 +1035,33 @@ export default function VolunteerOpportunityDetailPage() {
 				{showSignUp && (
 					<SignUpModal
 						opportunityId={opportunity.id}
+						organizationId={opportunity.organizationId}
 						participationType={opportunity.participationType}
 						timeSlots={opportunity.timeSlots}
 						onClose={() => setShowSignUp(false)}
 						onSuccess={() => {
 							setShowSignUp(false);
+							dispatchToast("success", t("signUp.success"));
 							load();
 						}}
 					/>
 				)}
 
-				{showWithdrawConfirm && (
+				{showWithdrawConfirm && cue && (
 					<ConfirmDialog
 						title={t("confirmDialog.withdraw.title")}
-						message={t("confirmDialog.withdraw.message")}
+						message={t(
+							cue.remainingReactivations === 0
+								? "confirmDialog.withdraw.messageLimitReached"
+								: "confirmDialog.withdraw.message",
+							{
+								title: pickLocalizedText(
+									opportunity.titleDe,
+									opportunity.titleEn,
+									i18n.language,
+								),
+							},
+						)}
 						confirmLabel={t("confirmDialog.withdraw.confirm")}
 						onConfirm={handleWithdrawConfirm}
 						onClose={() => {
@@ -1043,7 +1070,24 @@ export default function VolunteerOpportunityDetailPage() {
 						}}
 						loading={withdrawing}
 						error={withdrawError}
-					/>
+					>
+						{cue.remainingReactivations === 0 && (
+							<Link
+								to={`/organizations/${opportunity.organizationId}`}
+								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+							>
+								{t("common.contactOrganization")}
+							</Link>
+						)}
+						{withdrawLimitWarningActive && (
+							<WarningBanner
+								ref={withdrawLimitWarningRef}
+								tabIndex={-1}
+								className="focus:outline-none"
+								message={t("confirmDialog.withdraw.limitWarning")}
+							/>
+						)}
+					</ConfirmDialog>
 				)}
 
 				{showReport && (

@@ -581,7 +581,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 					e.VolunteerId == userId_ &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 				.OrderByDescending(e => e.CreatedOn)
-				.Select(e => new { e.Id, e.Status, e.TimeSlotId, e.IsCheckedIn })
+				.Select(e => new { e.Id, e.Status, e.TimeSlotId, e.IsCheckedIn, e.ReactivationCount })
 				.FirstOrDefaultAsync(cancellationToken);
 
 			if (engagement is not null)
@@ -589,7 +589,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 					engagement.Id.Value,
 					engagement.Status.ToString(),
 					engagement.TimeSlotId?.Value,
-					engagement.IsCheckedIn);
+					engagement.IsCheckedIn,
+					Engagement.MaxReactivationCount - engagement.ReactivationCount);
 		}
 
 		return new VolunteerOpportunityDetails(

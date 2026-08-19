@@ -53,7 +53,7 @@ public sealed class Engagement
 	// reused via Reactivate: without a cap, a volunteer could loop create/withdraw
 	// indefinitely against the same opportunity, and every cycle mails the
 	// volunteer plus every organizer of the org (einsatzbereit#1174).
-	private const int MaxReactivationCount = 5;
+	public const int MaxReactivationCount = 5;
 
 	// Reasonable window (#1069) for a volunteer to reconsider a submitted rating
 	// or comment. Measured from the original FeedbackSubmittedAt rather than

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
@@ -7,7 +8,7 @@ import {
 	formatDateTimeRange,
 	isSlotFull,
 } from "../lib/format";
-import { getApiErrorMessage } from "../lib/apiError";
+import { getApiErrorMessage, isApiErrorCode } from "../lib/apiError";
 import { labelClass, textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
@@ -17,6 +18,7 @@ import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
 
 interface Props {
 	opportunityId: string;
+	organizationId: string;
 	participationType: string;
 	timeSlots: TimeSlotDetail[];
 	onClose: () => void;
@@ -25,6 +27,7 @@ interface Props {
 
 export default function SignUpModal({
 	opportunityId,
+	organizationId,
 	participationType,
 	timeSlots,
 	onClose,
@@ -41,6 +44,13 @@ export default function SignUpModal({
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// Set alongside `error` (never independently) when the failure is
+	// specifically the reactivation churn limit (Engagement.Reactivate,
+	// backend/src/Domain/Engagements/Engagement.cs) - the error message names
+	// "the organization" as the remedy but has no way to link to it on its
+	// own, so this renders an actual link below it instead (#2043).
+	const [showContactOrganizationLink, setShowContactOrganizationLink] =
+		useState(false);
 	const [messageError, setMessageError] = useState<string | null>(null);
 	const messageFieldRef = useRef<HTMLTextAreaElement>(null);
 
@@ -59,6 +69,7 @@ export default function SignUpModal({
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
+		setShowContactOrganizationLink(false);
 		if (isScheduledSlots && timeSlots.length > 0 && !selectedTimeSlotId) {
 			setError(t("signUp.selectTimeSlotRequired"));
 			return;
@@ -83,6 +94,9 @@ export default function SignUpModal({
 			onClose();
 		} catch (err) {
 			setError(getApiErrorMessage(err, t("signUp.unknownError")));
+			setShowContactOrganizationLink(
+				isApiErrorCode(err, "Engagement.ReactivationLimitReached"),
+			);
 		} finally {
 			setSubmitting(false);
 		}
@@ -188,7 +202,19 @@ export default function SignUpModal({
 					</div>
 				)}
 
-				{error && <ErrorBanner message={error} />}
+				{error && (
+					<>
+						<ErrorBanner message={error} />
+						{showContactOrganizationLink && (
+							<Link
+								to={`/organizations/${organizationId}`}
+								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+							>
+								{t("common.contactOrganization")}
+							</Link>
+						)}
+					</>
+				)}
 
 				<div className="flex justify-end gap-2">
 					<Button type="button" variant="secondary" onClick={onClose}>
