@@ -34,7 +34,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var orgName = $"MyEngagements Org {suffix}";
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		// CreateOrganizationEndpoint returns the raw domain Organization

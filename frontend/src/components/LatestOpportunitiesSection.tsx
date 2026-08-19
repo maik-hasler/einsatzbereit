@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
-import OpportunityListItem from "./VolunteerOpportunitiesList/OpportunityListItem";
+import OpportunityCard from "./OpportunityCard";
 import RouteState from "./RouteState";
 import Skeleton from "./Skeleton";
 import { useApiClient } from "../hooks/useApiClient";
@@ -18,7 +18,7 @@ import { ArrowRightIcon } from "./icons";
 //
 // Three cards, not the grid: this is proof of inventory plus a way in, and
 // /opportunities owns browsing. It deliberately renders the same
-// OpportunityListItem that page uses rather than a second, leaner card - a
+// OpportunityCard that page uses rather than a second, leaner card - a
 // visitor who follows the link should land on the thing they just clicked
 // past, and the design system exists to stop one concept growing three
 // representations.
@@ -26,7 +26,7 @@ const PREVIEW_COUNT = 3;
 
 // One column until sm, capped at a readable measure; two from sm to match
 // /opportunities' grid at the same breakpoint (both render the same
-// OpportunityListItem, so the two surfaces should look alike at 768px);
+// OpportunityCard, so the two surfaces should look alike at 768px);
 // three across from lg. Shared verbatim by the skeletons so the layout
 // doesn't shift when the fetch settles. Three items in a two-column grid
 // leaves the third sitting alone in the first column on tablet - preferred
@@ -140,7 +140,7 @@ export default function LatestOpportunitiesSection() {
 					data-testid="landing-latest-opportunities"
 				>
 					{items.map((item) => (
-						<OpportunityListItem key={item.id} item={item} headingLevel={3} />
+						<OpportunityCard key={item.id} item={item} headingLevel={3} />
 					))}
 				</ul>
 			)}

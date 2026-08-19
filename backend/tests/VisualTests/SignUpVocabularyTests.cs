@@ -173,7 +173,7 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 		// A fresh organization per test rather than olaf's shared seed org -
 		// other tests in this shared Aspire session mutate the seed orgs (see
 		// EngagementCancellationReasonTests for the same reasoning).
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

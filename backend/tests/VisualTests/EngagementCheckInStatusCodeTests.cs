@@ -26,7 +26,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInStatusCode Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckInStatusCode Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -73,7 +73,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInPinOwner Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckInPinOwner Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -131,7 +131,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInPinOracle Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckInPinOracle Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -193,7 +193,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInPinLockout Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckInPinLockout Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

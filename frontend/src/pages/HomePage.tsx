@@ -211,11 +211,14 @@ export default function HomePage() {
 		},
 	];
 
+	// Sourced from help.general* rather than a separate landing.faq* copy -
+	// /help is the single FAQ source, and this is its genuine subset (#2061),
+	// not a disjoint set of questions the Help Center doesn't actually answer.
 	const faqItems = [
-		{ q: t("landing.faqQ1"), a: t("landing.faqA1") },
-		{ q: t("landing.faqQ2"), a: t("landing.faqA2") },
-		{ q: t("landing.faqQ3"), a: t("landing.faqA3") },
-		{ q: t("landing.faqQ4"), a: t("landing.faqA4") },
+		{ q: t("help.generalQ1"), a: t("help.generalA1") },
+		{ q: t("help.generalQ2"), a: t("help.generalA2") },
+		{ q: t("help.generalQ3"), a: t("help.generalA3") },
+		{ q: t("help.generalQ4"), a: t("help.generalA4") },
 	];
 
 	return (
@@ -623,10 +626,14 @@ export default function HomePage() {
 			{/* FAQ - closes the page on objection-handling rather than a third
 			pitch: cost, account requirement, org onboarding speed, and
 			license, in that order (volunteer concerns first, since the page
-			is volunteer-facing until the org CTA above). The accordion itself
-			is shared with HelpPage (FaqAccordion) - the "More questions?"
-			link below leads there, and the two used to be visibly different
-			pieces of markup, so following it left the design system (#1755).
+			is volunteer-facing until the org CTA above). Content is the same
+			help.general* copy HelpPage's own General section renders, not a
+			separately maintained set of questions - the two had drifted into
+			entirely disjoint FAQs, so the "More questions? See Help" link
+			below used to lead to a page that answered none of these four
+			(#2061). The accordion itself is shared with HelpPage
+			(FaqAccordion) - the two used to be visibly different pieces of
+			markup, so following that link left the design system (#1755).
 			mb-20 (not mt-20) since this is the last content section before
 			Footer - matches how the org CTA used to own this same trailing
 			gap before it moved above the founder band. Trimmed to mb-10: the

@@ -55,7 +55,7 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 	private static async Task SeedPublishedOpportunitiesAsync(HttpClient http)
 	{
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1798 FilterRow {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Visual1798 FilterRow {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
