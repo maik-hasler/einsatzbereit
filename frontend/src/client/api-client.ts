@@ -6883,6 +6883,8 @@ export interface PublicOpportunitySummaryDto {
     occurrence: string;
     participationType: string;
     createdOn: Date;
+    validUntil: Date | undefined;
+    nextTimeSlotStart: Date | undefined;
     category: string | undefined;
     totalMaxParticipants: number | undefined;
     currentParticipantCount: number;

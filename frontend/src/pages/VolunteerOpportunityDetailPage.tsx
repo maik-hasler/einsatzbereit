@@ -37,7 +37,7 @@ import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
-import PublicOpportunityCard from "../components/PublicOpportunityCard";
+import OpportunityCard from "../components/OpportunityCard";
 import RouteState from "../components/RouteState";
 import WarningBanner from "../components/WarningBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -1065,7 +1065,7 @@ export default function VolunteerOpportunityDetailPage() {
 						</SectionHeading>
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							{otherOrgOpportunities.map((opp) => (
-								<PublicOpportunityCard key={opp.id} opportunity={opp} />
+								<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
 							))}
 						</ul>
 					</div>

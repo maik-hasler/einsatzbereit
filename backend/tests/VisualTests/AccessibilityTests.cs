@@ -823,7 +823,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
 		// Targets the org link by data-testid, not a Tailwind class combination:
-		// OpportunityListItem.tsx's org link is `relative z-20` while the
+		// OpportunityCard.tsx's org link is `relative z-20` while the
 		// stretched card-cover Link is the z-10 one, so a class-based locator
 		// silently matches nothing and skips the scan. Seed data always
 		// publishes opportunities (ApplicationDbContextInitializer.cs), so a
