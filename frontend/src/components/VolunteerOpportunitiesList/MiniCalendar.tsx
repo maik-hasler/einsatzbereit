@@ -371,8 +371,17 @@ export default function MiniCalendar({
 														// component.
 														"bg-brand-700 font-semibold text-white"
 													: isToday
-														? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
-														: "text-gray-700 hover:bg-gray-100",
+														? // Selection (isEdge) already wins on contrast, so a
+															// marked-and-today day just gets a stronger hover
+															// on top of its own ring rather than losing the ring.
+															`font-medium text-brand-700 ring-2 ring-brand-300 ${isMarked ? "bg-brand-50 hover:bg-brand-100" : "hover:bg-brand-50"}`
+														: isMarked
+															? // Filled background, not just the dot below, per
+																// #2084 - the dot alone at 6px is still easy to
+																// miss, and brand-50 is pale enough that the dot's
+																// WCAG 1.4.11 contrast (see below) still clears.
+																"bg-brand-50 text-gray-700 hover:bg-brand-100"
+															: "text-gray-700 hover:bg-gray-100",
 										].join(" ")}
 									>
 										{day.getDate()}
@@ -381,10 +390,13 @@ export default function MiniCalendar({
 											// in-range cell): this dot is the only non-assistive
 											// signal that a day has anything on it, so it has to
 											// clear WCAG 1.4.11's 3:1 floor for non-text content on
-											// both backgrounds it can land on.
+											// every background it can land on (white, brand-50,
+											// brand-100). Sized to match the legend dot below (6px,
+											// not the 4px original - #2084) since the fill/hover
+											// treatment above already carries most of the signal now.
 											<span
 												aria-hidden="true"
-												className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
+												className={`absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full ${
 													isEdge ? "bg-white" : "bg-brand-600"
 												}`}
 											/>
