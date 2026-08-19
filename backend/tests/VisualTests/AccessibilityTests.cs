@@ -1735,7 +1735,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 
-		// "Select a slot" only exists on an opportunity's own detail page
+		// "Sign up for a slot" only exists on an opportunity's own detail page
 		// (VolunteerOpportunityDetailPage.tsx) - the home page's cards link
 		// there but never render the button themselves. Filter to ScheduledSlots-type
 		// opportunities (seed data has two, both with open capacity) and follow
@@ -1761,7 +1761,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" });
 		try
 		{
 			await signUpBtn.WaitForAsync(new() { Timeout = 10_000 });

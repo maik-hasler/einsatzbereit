@@ -305,8 +305,8 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "Select a slot" is the English label for the ScheduledSlots sign-up button.
-		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		// "Sign up for a slot" is the English label for the ScheduledSlots sign-up button.
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" });
 		await Expect(signUpBtn).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await signUpBtn.ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
@@ -408,7 +408,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			.ToHaveTextAsync("Unlimited spots", new() { Timeout = 10_000 });
 		await Expect(Page.GetByText("This opportunity is currently full.")).ToHaveCountAsync(0);
 
-		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign up for a slot" });
 		await Expect(signUpBtn).ToBeVisibleAsync();
 		await Expect(signUpBtn).ToBeEnabledAsync();
 		await signUpBtn.ClickAsync();
