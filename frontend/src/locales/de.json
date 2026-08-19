@@ -554,7 +554,7 @@
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
       "leaveOrganization": "Verlassen",
       "leaveOrganizationError": "Organisation konnte nicht verlassen werden.",
-      "leaveOrganizationLastOrganizerHint": "Du bist der:die einzige Organisator:in dieser Organisation - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
+      "leaveOrganizationLastOrganizerHint": "Entferne zuerst die anderen Mitglieder, danach kannst du die Organisation in den <settingsLink>Einstellungen</settingsLink> löschen.",
       "searching": "Suche läuft…",
       "searchMinChars": "Mindestens 4 Zeichen eingeben",
       "noSearchResults": "Keine Nutzer:innen gefunden.",
