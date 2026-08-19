@@ -1249,7 +1249,6 @@
     },
     "administration": {
       "title": "Administration",
-      "eyebrow": "Platform",
       "subNavLabel": "Administration sections",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
