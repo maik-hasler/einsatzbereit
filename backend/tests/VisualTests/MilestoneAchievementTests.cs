@@ -100,7 +100,7 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 		var org = await createOrgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
-		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		var oppResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/volunteer-opportunities", new
 		{
 			titleDe = $"Milestone668 {label} {suffix}",
 			descriptionDe = "Created by MilestoneAchievementTests",
@@ -119,7 +119,7 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 
 	private static async Task<string> ApplyAsync(HttpClient volunteerHttp, string opportunityId, string message)
 	{
-		var response = await volunteerHttp.PostAsJsonAsync(
+		var response = await PostJsonWithRetryAsync(volunteerHttp,
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
 			new { message });
 		response.EnsureSuccessStatusCode();

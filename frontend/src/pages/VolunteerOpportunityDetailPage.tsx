@@ -11,6 +11,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
 	computeSpotsLeft,
+	findNextTimeSlot,
 	formatDate,
 	formatDateTime,
 	formatDateTimeRange,
@@ -126,6 +127,53 @@ function slotCapacityLabel(
 	return isSlotFull(slot.maxParticipants, slot.bookedCount)
 		? t("opportunities.full")
 		: t("opportunities.spotsLeft", { count: spotsLeft });
+}
+
+/**
+ * The at-a-glance panel's WANN fact - the next upcoming time slot's start,
+ * or the application deadline for an expression-of-interest opportunity.
+ * This field used to show the recurrence category ("Einmalig"/"One-time")
+ * instead - the one label a scanning reader trusts to carry a date carried
+ * none, while the real date sat ~500px further down in the time slot list
+ * (#2055). Recurrence isn't dropped, just demoted to a Chip in the meta row
+ * below, matching how the browse list's cards already state it
+ * (OpportunityListItem).
+ */
+function describeWhenFact(
+	opportunity: VolunteerOpportunityDetails,
+	t: TFunction,
+	lng: string,
+): string {
+	if (opportunity.participationType === "IndividualContact") {
+		return opportunity.validUntil
+			? t("opportunities.applyBy", {
+					date: formatDate(opportunity.validUntil as unknown as string, lng),
+				})
+			: t("opportunities.flexibleDate");
+	}
+
+	const nextSlot = findNextTimeSlot(opportunity.timeSlots);
+	return nextSlot
+		? formatDateTime(nextSlot.startDateTime as unknown as string, lng)
+		: t("opportunities.flexibleDate");
+}
+
+/**
+ * The at-a-glance panel's ABLAUF/"How it works" fact. Used to restate the
+ * participation type category ("Zeitslots") - the exact word the time slot
+ * list's own section heading carries a few hundred pixels below, so the fact
+ * added nothing a reader couldn't already see there (#2055). A Scheduled-
+ * slots opportunity now states its actual slot count instead; an interest-
+ * based one keeps the participation type, since it has no such list to
+ * duplicate and the category itself is still real information there.
+ */
+function describeHowFact(
+	opportunity: VolunteerOpportunityDetails,
+	t: TFunction,
+): string {
+	return opportunity.participationType === "ScheduledSlots"
+		? t("opportunities.slotCount", { count: opportunity.timeSlots.length })
+		: formatParticipationType(opportunity.participationType, t);
 }
 
 export default function VolunteerOpportunityDetailPage() {
@@ -802,8 +850,11 @@ export default function VolunteerOpportunityDetailPage() {
 										<CalendarIcon className="h-4 w-4 shrink-0" />
 										{t("opportunities.factWhen")}
 									</dt>
-									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{formatOccurrence(opportunity.occurrence, t)}
+									<dd
+										className="mt-2 text-sm font-medium text-gray-900"
+										data-testid="opportunity-detail-when"
+									>
+										{describeWhenFact(opportunity, t, i18n.language)}
 									</dd>
 								</div>
 
@@ -812,8 +863,11 @@ export default function VolunteerOpportunityDetailPage() {
 										<UserGroupIcon className="h-4 w-4 shrink-0" />
 										{t("opportunities.factFormat")}
 									</dt>
-									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{formatParticipationType(opportunity.participationType, t)}
+									<dd
+										className="mt-2 text-sm font-medium text-gray-900"
+										data-testid="opportunity-detail-how"
+									>
+										{describeHowFact(opportunity, t)}
 									</dd>
 								</div>
 
@@ -840,6 +894,17 @@ export default function VolunteerOpportunityDetailPage() {
 										{t(`opportunities.category.${opportunity.category}`)}
 									</Chip>
 								)}
+								{/* Recurrence, demoted from the at-a-glance panel's WANN slot
+								(#2055) - that field now carries the actual next date/deadline
+								instead, matching how the browse list's cards already state
+								recurrence as a Chip beside the category one. */}
+								<Chip
+									tone="neutral"
+									size="sm"
+									data-testid="opportunity-occurrence"
+								>
+									{formatOccurrence(opportunity.occurrence, t)}
+								</Chip>
 								{opportunity.tags?.map((tag) => (
 									<Chip
 										key={tag}
