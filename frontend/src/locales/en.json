@@ -109,6 +109,7 @@
       "noResults": "No organizations found.",
       "noResultsWithSearch": "No organizations match \"{{search}}\".",
       "clearSearch": "Clear search",
+      "resultsHeading": "Search results",
       "resultCount": "{{count}} organizations found.",
       "resultCount_one": "{{count}} organization found.",
       "resultCount_other": "{{count}} organizations found.",
@@ -129,6 +130,7 @@
       "error": "Error: {{message}}",
       "noResults": "No opportunities found.",
       "noResultsWithFilters": "Try adjusting or clearing your filters.",
+      "resultsHeading": "Search results",
       "resultCount": "{{count}} opportunities found.",
       "resultCount_one": "{{count}} opportunity found.",
       "resultCount_other": "{{count}} opportunities found.",
@@ -654,7 +656,7 @@
       "loadError": "This opportunity is no longer available."
     },
     "myEngagements": {
-      "title": "My sign-ups",
+      "listHeading": "Sign-ups list",
       "loading": "Loading…",
       "error": "Error: {{message}}",
       "noEngagements": "No sign-ups yet.",

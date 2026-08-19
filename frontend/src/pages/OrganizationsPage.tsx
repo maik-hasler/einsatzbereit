@@ -215,75 +215,89 @@ export default function OrganizationsPage() {
 							}
 						/>
 					) : (
-						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-							{items.map((org) => {
-								const avatarColor = avatarColorClasses(org.id);
-								return (
-									<li
-										key={org.id}
-										className={`relative flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
-									>
-										<Link
-											to={`/organizations/${org.id}`}
-											className="absolute inset-0 rounded-card"
-											aria-label={org.name}
-										/>
-										<div className="flex items-center gap-3">
-											{org.logoUrl ? (
-												<img
-													src={org.logoUrl}
-													alt=""
-													width={48}
-													height={48}
-													loading="lazy"
-													className="h-12 w-12 shrink-0 rounded-full object-cover"
-												/>
-											) : (
-												<span
-													className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${avatarColor.bg} ${avatarColor.text}`}
-												>
-													{getInitials(org.name)}
-												</span>
-											)}
-											<div className="flex min-w-0 flex-1 items-center gap-2">
-												<strong className="block truncate text-sm font-semibold text-gray-900">
-													{org.name}
-												</strong>
+						<>
+							{/* Visually hidden: PageHeaderBand's <h1> already names the
+							page, and a visible line here would just repeat the result
+							count above. Its job is structural - giving the per-card
+							<h3>s below a parent, so the outline reads as one results
+							region instead of a flat run of identically-styled headings
+							with nothing distinguishing them from each other or from the
+							page title (#2071). */}
+							<h2 className="sr-only">
+								{t("organizationsPage.resultsHeading")}
+							</h2>
+							<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{items.map((org) => {
+									const avatarColor = avatarColorClasses(org.id);
+									return (
+										<li
+											key={org.id}
+											className={`relative flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
+										>
+											<Link
+												to={`/organizations/${org.id}`}
+												className="absolute inset-0 rounded-card"
+												aria-label={org.name}
+											/>
+											<div className="flex items-center gap-3">
+												{org.logoUrl ? (
+													<img
+														src={org.logoUrl}
+														alt=""
+														width={48}
+														height={48}
+														loading="lazy"
+														className="h-12 w-12 shrink-0 rounded-full object-cover"
+													/>
+												) : (
+													<span
+														className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${avatarColor.bg} ${avatarColor.text}`}
+													>
+														{getInitials(org.name)}
+													</span>
+												)}
+												<div className="flex min-w-0 flex-1 items-center gap-2">
+													<h3 className="block truncate text-sm font-semibold text-gray-900">
+														{org.name}
+													</h3>
+												</div>
+												{auth.isAuthenticated && (
+													<ReportFlagButton
+														targetLabel={org.name}
+														ariaLabel={t("orgProfile.reportOrganization")}
+														onReport={async (reason, details) => {
+															await api.reportOrganization(org.id, {
+																reason,
+																details: details || undefined,
+															});
+														}}
+													/>
+												)}
 											</div>
-											{auth.isAuthenticated && (
-												<ReportFlagButton
-													targetLabel={org.name}
-													ariaLabel={t("orgProfile.reportOrganization")}
-													onReport={async (reason, details) => {
-														await api.reportOrganization(org.id, {
-															reason,
-															details: details || undefined,
-														});
-													}}
-												/>
-											)}
-										</div>
-										<div className="min-w-0 flex-1">
-											{org.description && (
-												<p className="line-clamp-2 text-sm text-gray-500">
-													{org.description}
-												</p>
-											)}
-											{org.city && (
-												<p className="mt-1 text-xs text-gray-500">{org.city}</p>
-											)}
-											{org.openOpportunityCount > 0 && (
-												<p className="mt-1 text-xs font-medium text-brand-700">
-													{t("organizationsPage.openOpportunities", {
-														count: org.openOpportunityCount,
-													})}
-												</p>
-											)}
-										</div>
-									</li>
-								);
-							})}
-						</ul>
+											<div className="min-w-0 flex-1">
+												{org.description && (
+													<p className="line-clamp-2 text-sm text-gray-500">
+														{org.description}
+													</p>
+												)}
+												{org.city && (
+													<p className="mt-1 text-xs text-gray-500">
+														{org.city}
+													</p>
+												)}
+												{org.openOpportunityCount > 0 && (
+													<p className="mt-1 text-xs font-medium text-brand-700">
+														{t("organizationsPage.openOpportunities", {
+															count: org.openOpportunityCount,
+														})}
+													</p>
+												)}
+											</div>
+										</li>
+									);
+								})}
+							</ul>
+						</>
 					)}
 
 					{items.length > 0 &&

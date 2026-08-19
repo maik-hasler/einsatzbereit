@@ -107,17 +107,21 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task MyEngagementsPage_StatesItsTitleOnce_WithTheInContentHeadingSrOnly()
+	public async Task MyEngagementsPage_StatesItsTitleOnce_WithADistinctSrOnlyInContentHeading()
 	{
 		// #1796: /my-signups printed its own title twice - once as the header
 		// band's <h1> ("My sign-ups", myEngagementsPage.title) and again
 		// roughly 200px below it as a SectionHeading eyebrow rendering a second
 		// key with the same string ("My sign-ups", myEngagements.title), where
 		// every other page's eyebrow carries a *category* the title does not
-		// repeat. That second one is sr-only now: it still marks where the
-		// invitations block ends and the sign-ups list begins for a screen
-		// reader, but it no longer costs vertical space on a page that is short
-		// of content, and the scope tabs move up into the space it held.
+		// repeat. That second one went sr-only in #1796 - still marking where
+		// the invitations block ends and the sign-ups list begins for a screen
+		// reader - but kept the <h1>'s exact wording, so a screen reader still
+		// announced "My sign-ups" twice back to back with no visible change a
+		// sighted user could point to as the reason. #2071 gives it its own
+		// string ("Sign-ups list", myEngagements.listHeading) instead of
+		// dropping it, since removing it entirely would lose the one thing it
+		// was doing: marking the sign-ups list's start in the heading outline.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -127,14 +131,17 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		// Accessible-name matching is case-insensitive, so this finds the
-		// in-content heading whichever of the two casings it carries.
+		// No heading anywhere in the sign-ups section repeats the <h1>'s exact
+		// wording - the duplicate-announcement bug #2071 reported.
+		await Expect(Page.Locator("#activity").GetByRole(AriaRole.Heading, new() { Name = "My sign-ups" }))
+			.ToHaveCountAsync(0);
+
 		var inContentTitle = Page.Locator("#activity")
-			.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups" });
+			.GetByRole(AriaRole.Heading, new() { Name = "Sign-ups list" });
 		await Expect(inContentTitle).ToHaveCountAsync(1);
 
 		// sr-only clips it to a 1px box: still in the accessibility tree, gone
-		// from the page. The eyebrow this replaces rendered ~16px tall, so a
+		// from the page. The eyebrow this replaced rendered ~16px tall, so a
 		// regression would blow well past this bound. Playwright counts an
 		// sr-only element as visible (it has a non-empty box), which is why
 		// this asserts geometry rather than Not.ToBeVisibleAsync().

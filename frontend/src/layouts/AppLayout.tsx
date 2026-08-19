@@ -44,7 +44,9 @@ function AppLayoutInner() {
 					</Suspense>
 				</ErrorBoundary>
 			</main>
-			<Footer />
+			{/* /opportunities renders a grid of identically-styled cards right
+			above this footer - see Footer's headingLevel doc comment (#2071). */}
+			<Footer headingLevel={location.pathname === "/opportunities" ? 3 : 2} />
 		</div>
 	);
 }

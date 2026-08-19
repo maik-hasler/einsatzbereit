@@ -91,6 +91,17 @@ export default function OpportunityResultsList({
 			>
 				{liveMessage}
 			</p>
+			{/* Visually hidden: PageHeaderBand's <h1> already names the page. Its
+			job is structural - giving this whole section a name in the outline
+			regardless of which of the four states below (loading/error/empty/
+			results) is currently mounted, so /opportunities's Footer (headingLevel
+			3 on this route only, see AppLayout) always lands under a real <h2>
+			instead of skipping straight from the <h1> to the footer's <h3>s
+			whenever the results grid itself isn't rendered - axe's heading-order
+			rule catches exactly that skip (#2071). Unconditional for the same
+			reason: an offline/error/empty state that unmounted it would reopen
+			the same gap. */}
+			<h2 className="sr-only">{t("opportunities.resultsHeading")}</h2>
 			{loading && items.length === 0 && (
 				<div
 					role="status"
@@ -155,9 +166,18 @@ export default function OpportunityResultsList({
 							}
 						/>
 					) : (
+						// The sr-only "Search results" <h2> above already gives this
+						// region its name; the cards below just need to nest under it,
+						// hence headingLevel 3 - the same demotion OpportunityListItem
+						// already does for LatestOpportunitiesSection's cards under its
+						// own "Current opportunities" <h2> (#2071).
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
-								<OpportunityListItem key={item.id} item={item} />
+								<OpportunityListItem
+									key={item.id}
+									item={item}
+									headingLevel={3}
+								/>
 							))}
 						</ul>
 					)}
