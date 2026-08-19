@@ -18,7 +18,10 @@ import {
 } from "./useOpportunityDateAvailability";
 import type { CitySuggestion } from "./useCitySuggestions";
 import { resolveDateLocale } from "../../lib/format";
-import { sortByLabelPrefixMatch } from "../../lib/citySuggestionSort";
+import {
+	filterByLabelMatch,
+	sortByLabelPrefixMatch,
+} from "../../lib/citySuggestionSort";
 import { SpinnerIcon } from "../Spinner";
 import {
 	BroomIcon,
@@ -104,11 +107,14 @@ export default function VolunteerOpportunitiesList() {
 			try {
 				const places = await api.searchCities(city, controller.signal);
 				const [best] = sortByLabelPrefixMatch(
-					places.map((place) => ({
-						label: place.label,
-						lat: place.latitude,
-						lng: place.longitude,
-					})),
+					filterByLabelMatch(
+						places.map((place) => ({
+							label: place.label,
+							lat: place.latitude,
+							lng: place.longitude,
+						})),
+						city,
+					),
 					city,
 				);
 				if (!best) return;
@@ -322,6 +328,11 @@ export default function VolunteerOpportunitiesList() {
 
 	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : city;
 
+	// A radius has no centre to measure from until a city (or "Near me") has
+	// actually resolved to coordinates - before that, every chip here would
+	// be selectable but silently have no effect on the results (#2046).
+	const radiusDisabled = !lat || !lng;
+
 	const categoryDisplayValue =
 		selectedCategories.length === 0
 			? ""
@@ -419,7 +430,11 @@ export default function VolunteerOpportunitiesList() {
 										type="button"
 										onClick={() => updateFilter("radius", String(r))}
 										aria-pressed={radius === String(r)}
-										className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+										disabled={radiusDisabled}
+										aria-describedby={
+											radiusDisabled ? "opportunities-radius-hint" : undefined
+										}
+										className={`rounded-full border px-3 py-1 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-200 ${
 											radius === String(r)
 												? "border-brand-600 bg-brand-50 font-medium text-brand-700"
 												: "border-gray-500 text-gray-600 hover:border-gray-600"
@@ -429,6 +444,19 @@ export default function VolunteerOpportunitiesList() {
 									</button>
 								))}
 							</div>
+							{/* aria-describedby on each disabled chip above ties it to this
+							id - native `disabled` removes a button from the tab order, so
+							a screen-reader user's virtual cursor would otherwise reach all
+							five chips with no programmatic link to this explanation, same
+							as OrgMembersPage.tsx's disabled "Leave" button + hint pattern. */}
+							{radiusDisabled && (
+								<p
+									id="opportunities-radius-hint"
+									className="mt-1.5 text-xs text-gray-500"
+								>
+									{t("opportunities.radiusRequiresLocation")}
+								</p>
+							)}
 						</div>
 					</FilterDropdown>
 

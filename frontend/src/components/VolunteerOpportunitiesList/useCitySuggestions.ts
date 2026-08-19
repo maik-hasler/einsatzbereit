@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
-import { sortByLabelPrefixMatch } from "../../lib/citySuggestionSort";
+import {
+	filterByLabelMatch,
+	sortByLabelPrefixMatch,
+} from "../../lib/citySuggestionSort";
 
 export interface CitySuggestion {
 	label: string;
@@ -63,11 +66,14 @@ export function useCitySuggestions(query: string) {
 			try {
 				const places = await api.searchCities(query, controller.signal);
 				const results: CitySuggestion[] = sortByLabelPrefixMatch(
-					places.map((place) => ({
-						label: place.label,
-						lat: place.latitude,
-						lng: place.longitude,
-					})),
+					filterByLabelMatch(
+						places.map((place) => ({
+							label: place.label,
+							lat: place.latitude,
+							lng: place.longitude,
+						})),
+						query,
+					),
 					query,
 				);
 				if (results.length > 0) {

@@ -19,8 +19,14 @@ internal sealed class FakeGeocodingService : IGeocodingService
 	// (obviously synthetic - not a real place) exercises that fixture
 	// deterministically; every other query still returns no results, which
 	// is what CityOnlyDeepLinkLocationFilterTests relies on.
+	// The other result's label deliberately contains the query as a
+	// non-prefix substring (not just anything unrelated) - since #2046,
+	// filterByLabelMatch drops any suggestion whose label doesn't contain
+	// the typed query at all, so a genuinely unrelated "other" fixture like
+	// the old "Zzztestwalde" would itself get filtered out, collapsing this
+	// test's two-result scenario down to one before it could ever run.
 	internal const string ExactMatchFixtureQuery = "Zzztestdorf";
-	internal const string ExactMatchFixtureOtherResult = "Zzztestwalde";
+	internal const string ExactMatchFixtureOtherResult = "Neu-Zzztestdorf";
 
 	public Task<GeocodingResult> GeocodeAsync(
 		string street,
