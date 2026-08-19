@@ -85,7 +85,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// unpositioned, so its z-index competes directly with Header.tsx's
 		// sticky z-40 at the document root instead of nesting inside it - pin
 		// it below the header rather than the old z-[200] that painted over
-		// it (#1119).
+		// it.
 		var panel = oneTimeOption.Locator("xpath=..");
 		await Expect(panel).ToHaveCSSAsync("z-index", "30");
 	}
@@ -98,9 +98,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Page.GotoAsync($"{origin}/opportunities");
 
-		// #1755 moved the list off the landing page onto its own route, so the
-		// old centred "Current opportunities" section heading is gone - the
-		// page header band's <h1> is what introduces the list now.
+		// The list has its own route, so the page header band's <h1> introduces
+		// it rather than a centred section heading.
 		var heading = Page
 			.GetByRole(AriaRole.Heading, new() { Name = "Find opportunities", Level = 1 })
 			.First;
@@ -126,7 +125,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
-		// #1708: seed data always publishes opportunities, and the list only
+		// Seed data always publishes opportunities, and the list only
 		// mounts <ul>/<li> once its loading skeleton clears - a non-waiting
 		// CountAsync() right after the heading check above raced that fetch
 		// and could silently skip these card-specific assertions.
@@ -154,8 +153,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
 
-		// Plain header (#676 Pitch 2 dropped the one-off gradient accent bar
-		// in favor of the same plain header every other modal uses).
+		// Plain header - the same one every other modal uses, with no one-off
+		// gradient accent bar.
 		var accent = dialog.Locator("[class*='from-brand-600']");
 		await Expect(accent).Not.ToBeAttachedAsync();
 
@@ -193,15 +192,14 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Banner upload affordance present on step 1.
 		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
 
-		// Step 2 hint card present. Selects on data-testid rather than the
-		// bg-brand-50 Tailwind utility class - see #1328. That class match
-		// was never actually anchored to the hint card: the remote-checkbox
-		// label a few lines above it in LocationStep.tsx also carries
-		// "bg-brand-50" (as part of hover:bg-brand-50/has-[:checked]:bg-brand-50)
-		// and always renders, so `[class*='bg-brand-50']` silently matched
-		// that label instead - passing regardless of remote state. The hint
-		// card itself only renders when not remote, so "remote" (checked
-		// above to skip step 2's address validation) must be unchecked
+		// Step 2 hint card present. Selects on data-testid, not the bg-brand-50
+		// Tailwind class: LocationStep.tsx's remote-checkbox label a few lines
+		// above also carries bg-brand-50 (via
+		// hover:bg-brand-50/has-[:checked]:bg-brand-50) and always renders, so
+		// `[class*='bg-brand-50']` silently matches that label instead and passes
+		// regardless of remote state. The hint card only renders when not remote,
+		// so "remote" (checked above to skip step 2's address validation) must be
+		// unchecked
 		// again first for this to assert against the real element.
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").UncheckAsync();
@@ -226,7 +224,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
-		// #1708: seed data always publishes opportunities - a non-waiting
+		// Seed data always publishes opportunities - a non-waiting
 		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
@@ -239,22 +237,19 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #394 wanted a way back from this page. #1755 moved that into the
-		// PageHeaderBand and dropped the bar; the band's own "Home" link is
-		// gone in turn, because a link home is not a property of this page -
-		// it is a site destination, and it now sits in the header nav where it
-		// is reachable from every page rather than being restated inside each
-		// one's hero.
+		// No breadcrumb bar and no in-page "Home" link: a link home is a site
+		// destination rather than a property of this page, so it lives in the
+		// header nav, reachable everywhere, instead of being restated in each
+		// page's hero.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
 			.ToHaveCountAsync(0);
 		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
 
-		// #373 added a Share button here; it is gone again - every browser and
-		// OS this page runs on already offers sharing the current URL, so the
-		// in-page duplicate only spent room in the action row. Pinned by the
-		// same stable test id it used to render with, so a re-introduction
-		// fails here rather than shipping unnoticed.
+		// No Share button: every browser and OS this page runs on already offers
+		// sharing the current URL, so an in-page duplicate only spends room in the
+		// action row. Pinned by test id so a re-introduction fails here rather
+		// than shipping unnoticed.
 		await Expect(Page.GetByTestId("share-opportunity")).ToHaveCountAsync(0);
 
 		// With Share gone the whole action row is conditional, and an
@@ -267,7 +262,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_AnonymousVisitor_SeesPrimarySignInButton()
 	{
-		// Regression for #979: the anonymous sign-up CTA used to be an
+		// The anonymous sign-up CTA used to be an
 		// underlined text link inside a grey notice, with less visual weight
 		// than the (since removed) Share button beside the title. It must now
 		// use the shared primary Button component (solid brand background),
@@ -278,7 +273,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
-		// #1708: seed data always publishes opportunities - a non-waiting
+		// Seed data always publishes opportunities - a non-waiting
 		// CountAsync() right after the h1 check above raced the browse page's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
@@ -303,7 +298,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_ContentIsCenteredWithinMain()
 	{
-		// Regression for #694: the content wrapper (`max-w-2xl`) had no
+		// The content wrapper (`max-w-2xl`) had no
 		// `mx-auto`, so it hugged the left edge of <main> instead of being
 		// centered within the page like every other page.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -312,7 +307,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
-		// #1708: seed data always publishes opportunities - a non-waiting
+		// Seed data always publishes opportunities - a non-waiting
 		// CountAsync() right after the h1 check above raced the browse page's
 		// opportunity fetch (h1 paints before the list leaves its loading
 		// skeleton) and could silently skip this test instead of failing.
@@ -331,12 +326,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_ShowsAboutOrganizationCard_SocialProofStat_AndMoreFromOrgTeaser()
 	{
-		// Issue #759: the detail page adds four frontend-only enrichment
-		// sections so it stays substantial even when an organizer writes a
-		// short description - an "About this organization" card (reusing the
-		// org's already-public contact info), a participant-count social-proof
-		// stat, a "more from this organization" teaser capped at 3 and
-		// excluding the opportunity being viewed, and a "posted X days ago"
+		// Four frontend-only enrichment sections keep the detail page substantial
+		// even when an organizer writes a short description: an "About this
+		// organization" card (reusing already-public contact info), a
+		// participant-count stat, a "more from this organization" teaser capped at
+		// 3 and excluding the opportunity being viewed, and a "posted X days ago"
 		// freshness line.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -515,7 +509,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Draft status pill present - selects on data-testid and asserts the
 		// draft-specific label rather than matching the bg-amber-100 Tailwind
 		// utility class directly, which a cosmetic restyle would otherwise
-		// silently break (see #1328).
+		// silently break.
 		var statusBadge = draftsSection.GetByTestId("opportunity-status-badge").First;
 		await Expect(statusBadge).ToHaveTextAsync("Draft");
 
@@ -535,7 +529,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task SaveDraft_RoutesToOpportunitiesTab_ToastAndHighlight()
 	{
-		// Regression for #708: after saving a new opportunity as a draft from the
+		// After saving a new opportunity as a draft from the
 		// Calendar tab, the organizer could not tell where the draft landed.
 		// Drafts now live on the Opportunities tab; saving one routes there, the
 		// toast names that tab, and the just-saved draft is highlighted.
@@ -574,7 +568,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task EditWizard_ReopenedDraft_ShowsSaveAsDraftAndAcceptsPartialSave()
 	{
-		// Regression for #707: reopening a saved draft via "Edit" hid the
+		// Reopening a saved draft via "Edit" hid the
 		// "Save as draft" action entirely (gated on create-vs-edit mode
 		// instead of the opportunity's actual Draft/Published status), so an
 		// organizer could not persist further incremental edits without
@@ -613,8 +607,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
 
-		// The #707 regression: this action must be available in edit mode too,
-		// since the opportunity being edited is still a Draft.
+		// This action must be available in edit mode too, since the opportunity
+		// being edited is still a Draft.
 		var saveDraftBtn = Page.GetByTestId("modal-save-draft");
 		await Expect(saveDraftBtn).ToBeVisibleAsync();
 
@@ -756,7 +750,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task PublishScheduledSlots_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
 	{
-		// Regression for #542: a ScheduledSlots opportunity could be published with
+		// A ScheduledSlots opportunity could be published with
 		// zero time slots via the direct-create-as-Published path, since
 		// VolunteerOpportunity.Create() had no equivalent guard to Publish().
 		// Verifies the UI still blocks publishing with no slots, and that the
@@ -794,9 +788,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
 		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
 
-		// #688 regression: the publish-blocking error must be announced
-		// (role="alert") and scrolled/focused into view, not merely present
-		// somewhere in the DOM below the fold of the modal's scrollable body.
+		// The publish-blocking error must be announced (role="alert") and
+		// scrolled/focused into view, not merely present in the DOM below the fold
+		// of the modal's scrollable body.
 		var publishError = Page.GetByRole(AriaRole.Alert)
 			.Filter(new() { HasTextString = "time slot" });
 		await Expect(publishError).ToBeVisibleAsync();
@@ -844,7 +838,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_ClearsStaleError_AfterClientSideNavigationToAnotherOpportunity()
 	{
-		// Regression for #1223: load() reset `loading` but never reset `error`,
+		// Load() reset `loading` but never reset `error`,
 		// so once one opportunity failed to load, the ErrorBanner stayed pinned
 		// over every opportunity visited afterwards - render checks `error`
 		// before `opportunity`, and the component instance is reused across
@@ -933,7 +927,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_OwnerViewingOwnDraft_ShowsDraftBadgeAndCanEditAndPublish()
 	{
-		// Regression for #1027: a lens audit found that isDraft/isOwner were
+		// A lens audit found that isDraft/isOwner were
 		// already computed on this page, and the draftBadge string already
 		// existed, but nothing rendered them here - an organizer opening their
 		// own draft's public detail page saw what looked like a published
@@ -1014,10 +1008,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_OwnerViewingOwnPublishedOpportunity_HidesDraftBadgeAndPublishEditActions()
 	{
-		// Edge case for #1027: the new affordances are gated on isDraft &&
-		// isOwner, not isOwner alone - an organizer viewing their own already-
-		// published opportunity must not see the draft badge or the Edit/
-		// Publish actions this fix adds.
+		// The draft affordances are gated on isDraft && isOwner, not isOwner alone
+		// - an organizer viewing their own already-published opportunity must see
+		// neither the draft badge nor the Edit/Publish actions.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -1123,7 +1116,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task DetailPage_TagChip_IsClickableLink_FiltersBrowseList()
 	{
-		// Regression for #1021: tag chips used to render as plain,
+		// Tag chips used to render as plain,
 		// non-interactive <span> elements - nothing in the UI could ever
 		// produce a `?tag=` URL, so organizers tagging opportunities was a
 		// dead feature nobody could act on. The chip must now be a real link
@@ -1185,7 +1178,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters()
 	{
 		// Companion to DetailPage_TagChip_IsClickableLink_FiltersBrowseList
-		// (#1021): list cards must expose the same clickable tag chips, since
+		//: list cards must expose the same clickable tag chips, since
 		// that's where most volunteers actually browse before ever opening a
 		// detail page. Also covers two edge cases: an opportunity with more
 		// than one tag renders a distinct chip per tag, and a tag containing
@@ -1256,7 +1249,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task OpportunityDetailPage_TitleAndDescription_FollowTheLanguageSwitch()
 	{
-		// Regression for #1946: organizer-authored title/description used to
+		// Organizer-authored title/description used to
 		// stay in whichever language they were entered in regardless of the
 		// site's language switcher - only UI chrome (badges, dates) actually
 		// translated. Opportunities now carry a required German variant and an
@@ -1320,7 +1313,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task OpportunityDetailPage_FallsBackToGermanTitle_WhenNoEnglishTranslationProvided()
 	{
 		// Companion to OpportunityDetailPage_TitleAndDescription_FollowTheLanguageSwitch:
-		// English is optional (#1946) - an opportunity without a translation must
+		// English is optional - an opportunity without a translation must
 		// still show its German content when viewed in English, rather than a
 		// blank title/description.
 		var frontend = Fixture.GetEndpoint("frontend");

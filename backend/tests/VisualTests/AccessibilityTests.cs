@@ -12,13 +12,11 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// #973: axe reports the "page has no h1" defect (page-has-heading-one) and
-	// most landmark-structure defects at "moderate" impact, not "serious" or
-	// "critical" - the plain serious/critical filter below let all four org app
-	// pages ship with no h1 for months without CI ever seeing it. Escalate just
-	// these rule IDs to CI-blocking rather than every moderate violation, which
-	// would also flag things like color-contrast-enhanced noise unrelated to
-	// this gate's purpose.
+	// Axe reports "page has no h1" (page-has-heading-one) and most
+	// landmark-structure defects at "moderate" impact, which the
+	// serious/critical filter below would let through. Escalate just these
+	// rule IDs rather than every moderate violation, which would also flag
+	// color-contrast-enhanced noise unrelated to this gate's purpose.
 	private static readonly string[] EscalatedModerateRuleIds =
 	[
 		"page-has-heading-one",
@@ -32,16 +30,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		"landmark-no-duplicate-contentinfo",
 		"landmark-no-duplicate-main",
 		"landmark-unique",
-		// "region" (also moderate) is deliberately NOT escalated here: axe's
-		// region rule flags any visible content not contained by a landmark,
-		// and ToastContext.tsx mounts its toast list at the app root (outside
-		// AppLayout's <main>) - escalating this blind, without being able to
-		// run the full ~200-test Playwright suite in this sandbox (no Docker/
-		// Aspire, see root AGENTS.md), risks breaking CI across every test
-		// that happens to scan a page with a toast or similar page-root
-		// overlay visible. Fixed the one instance found by inspection
-		// (ToastList now has role="region" + aria-label) without gating CI on
-		// a rule this sandbox can't verify page-by-page.
+		// "region" (also moderate) is deliberately NOT escalated: axe's region
+		// rule flags any visible content outside a landmark, and ToastContext.tsx
+		// mounts its toast list at the app root, outside AppLayout's <main>.
+		// Escalating it would fail every scan that catches a toast or similar
+		// page-root overlay mid-render.
 	];
 
 	private static void AssertNoViolations(AxeResult result)
@@ -76,7 +69,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_SkipLink_MovesFocusToMainContent()
 	{
-		// einsatzbereit#1284: neither layout had a bypass mechanism - a keyboard
+		// Neither layout had a bypass mechanism - a keyboard
 		// user had to tab through the entire header (brand link, nav links,
 		// language selector, sign-in/register) on every single page before this.
 		// The skip link is the first child in the DOM (before <Header>), so it
@@ -126,13 +119,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_SignedInNonOwner_AsVera_HasNoSeriousA11yViolations()
 	{
-		// The action row above the at-a-glance panel used to render for every
-		// visitor (the Share button was its one unconditional child), so the
-		// anonymous scan above incidentally covered it. Share is gone and the
-		// row is now conditional, which leaves the signed-in-non-owner state -
-		// the row holding nothing but Report - as the only render path of it
-		// that no axe scan reaches. Vera is a plain user, never an organizer,
-		// so isOwner is false for every opportunity.
+		// The action row above the at-a-glance panel renders conditionally, so
+		// the signed-in-non-owner state - the row holding nothing but Report -
+		// is the only render path of it the anonymous scan above cannot reach.
+		// Vera is a plain user, never an organizer, so isOwner is false for
+		// every opportunity.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -261,7 +252,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1027: the draftBadge chip plus owner-only Edit/Publish actions
+		// The draftBadge chip plus owner-only Edit/Publish actions
 		// (isDraft && isOwner) are new interactive elements this page never
 		// rendered before - VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations
 		// above only ever reaches the anonymous/non-owner render path via a
@@ -375,7 +366,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_MobileActionRail_AsVera_HasNoSeriousA11yViolations()
 	{
-		// #1965: the sign-up CTA (and its deadline/status/login-prompt
+		// The sign-up CTA (and its deadline/status/login-prompt
 		// siblings) now renders a second time - testid-suffixed "-mobile" -
 		// right above the map on narrow viewports, with the desktop `<aside>`
 		// hidden below `lg` instead. Every detail-page scan above runs at
@@ -427,7 +418,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_ApplicationStatusWithTimeSlot_AsVera_HasNoSeriousA11yViolations()
 	{
-		// #1938: the sidebar "application-status" card (label + status Chip +
+		// The sidebar "application-status" card (label + status Chip +
 		// Withdraw button) now also renders the registered slot's date/time -
 		// new content in a render state ("signed-in volunteer with an existing
 		// engagement") none of this file's other detail-page scans ever reach,
@@ -507,12 +498,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_ApplicationStatusCheckedIn_AsVera_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1893: once the volunteer's engagement is checked in, the
-		// application-status card swaps its Withdraw button out for a "Checked
-		// in" Chip (Engagement.Withdraw's IsCheckedIn guard would otherwise
-		// reject the withdrawal with a 409) - a render state none of this
-		// file's other detail-page scans reach, since none of them check
-		// anyone in.
+		// Once the engagement is checked in, the application-status card swaps
+		// Withdraw for a "Checked in" Chip (Engagement.Withdraw's IsCheckedIn
+		// guard would 409 otherwise) - a render state no other detail-page scan
+		// in this file reaches, since none of them check anyone in.
 		var (_, opportunityId, engagementId) =
 			await SeedConfirmedEngagementAsync("Manual", "DetailCheckedInA11y");
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -543,17 +532,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName()
 	{
-		// #1681: SingleMarkerMap.tsx's Leaflet divIcon marker rendered an
-		// unnamed role="button" tab stop (WCAG 4.1.2) - axe's button-name rule
-		// would flag this (impact "critical"), but no seeded opportunity here
-		// ever gets real coordinates (VisualTests always runs against
-		// FakeGeocodingService, which reports TransientFailure - see
-		// SingleMarkerMapTouchScrollTests.cs), so the map - and this entire bug
-		// class - was structurally unreachable by any existing scan, including
-		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above.
-		// Patch coordinates the same way SingleMarkerMapTouchScrollTests does
-		// to actually exercise it, and assert the fix (Marker's title prop)
-		// directly rather than relying only on the axe scan.
+		// No seeded opportunity ever gets real coordinates - VisualTests always
+		// runs against FakeGeocodingService, which reports TransientFailure - so
+		// the map is structurally unreachable by every other scan in this file.
+		// Patch coordinates the way SingleMarkerMapTouchScrollTests does to
+		// exercise it, and assert the marker's accessible name directly rather
+		// than relying only on the axe scan (an unnamed role="button" tab stop
+		// is WCAG 4.1.2 / axe's button-name rule).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -625,16 +610,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_MapUnavailable_HasNoSeriousA11yViolations()
 	{
-		// #1963: a non-remote opportunity whose address hasn't resolved to
-		// coordinates now renders a "no map available" note in place of the
-		// map section instead of omitting it silently. VisualTests always runs
-		// against FakeGeocodingService (see VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName
-		// above), which reports TransientFailure - a freshly seeded non-remote
-		// opportunity here always lands in that state, so no route patching is
-		// needed to reach it deterministically. Assert the placeholder is
-		// actually visible before scanning, same as the sibling tests in this
-		// file, so a future regression that made it stop rendering wouldn't
-		// silently reduce this to a no-op pass.
+		// A non-remote opportunity whose address has not resolved to coordinates
+		// renders a "no map available" note in place of the map section. A
+		// freshly seeded one always lands in that state under
+		// FakeGeocodingService, so no route patching is needed. Assert the
+		// placeholder is visible before scanning, so a regression that stopped it
+		// rendering would not silently reduce this to a no-op pass.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -681,11 +662,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
-		// #794: /profile was consolidated from a Profile/Activity tab switcher
-		// into a single page. #1684: it was later split again - Profile
-		// Details and Badges render here; invitations/sign-ups moved to
-		// /my-signups and notifications/export/deletion moved to
-		// /profile/settings (both scanned separately below).
+		// /profile renders Profile Details and Badges only. Invitations and
+		// sign-ups live at /my-signups; notifications, export and deletion at
+		// /profile/settings - both scanned separately below.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -699,12 +678,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task ProfileOverviewPage_EditMode_HasNoSeriousA11yViolations()
 	{
-		// #794: Edit/Save/Cancel moved from inline buttons into the header's
-		// quick actions - the read-only scan above never opens the edit form,
-		// so scan it separately here. Also asserts the Badges section stays
-		// mounted and visible alongside the open edit form, since it doesn't
-		// live behind a separate tab. #1684: My sign-ups no longer lives on
-		// this page - see MyEngagementsPage_HasNoSeriousA11yViolations below.
+		// Edit/Save/Cancel live in the header's quick actions, and the read-only
+		// scan above never opens the edit form - scan it separately here. Also
+		// asserts Badges stays mounted alongside the open edit form, since it is
+		// not behind a separate tab.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -723,7 +700,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_HasNoSeriousA11yViolations()
 	{
-		// #1684: invitations/sign-ups split out of /profile onto their own
+		// Invitations/sign-ups split out of /profile onto their own
 		// page - this scan is what ProfileOverviewPage_EditMode's "My
 		// sign-ups" heading assertion used to (indirectly) cover.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -732,12 +709,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Pinned to the page's <h1>: #1755 gave the page a header band whose
-		// title carries this name, and the section heading further down the
-		// page still carries it too, so an unqualified lookup matches both.
-		// #1796 made that second one sr-only (it is structure now, not a
-		// visible eyebrow) - it keeps its accessible name, so it keeps
-		// matching an unqualified lookup and the level pin is still needed.
+		// Pinned to the page's <h1>: the header band's title and the sr-only
+		// section heading further down both carry this name, so an unqualified
+		// lookup matches two elements.
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
@@ -748,7 +722,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task ProfileSettingsPage_HasNoSeriousA11yViolations()
 	{
-		// #1684: email notification preferences, data export and account
+		// Email notification preferences, data export and account
 		// deletion split out of /profile onto their own page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -756,7 +730,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/settings");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #1792: this panel's heading is "Delete account" now, not the shared
+		// This panel's heading is "Delete account" now, not the shared
 		// "Danger zone".
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete account" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
@@ -768,11 +742,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task ProfileSettingsPage_AsOrganizationMember_HasNoSeriousA11yViolations()
 	{
-		// #1783 gated the two organizer-only email preferences on organization
-		// membership, and the scan above signs in as vera, who has none - so
-		// without this sibling scan those two rows would render in production
-		// and never be scanned at all. Olaf belongs to seeded organizations,
-		// which is what makes them render here.
+		// The two organizer-only email preferences are gated on organization
+		// membership, and the scan above signs in as vera, who has none. Olaf
+		// belongs to seeded organizations, which is what makes them render here.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -797,7 +769,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[NotInParallel("visualtests-vera-avatar")]
 	public async Task ProfileOverviewPage_EditModeWithAvatar_HasNoSeriousA11yViolations()
 	{
-		// #1063: the "Remove" button next to the avatar only renders once the
+		// The "Remove" button next to the avatar only renders once the
 		// user has an avatar. Vera's seeded account has none, so the edit-mode
 		// scan above never renders it - seed an avatar via the upload endpoint
 		// here instead of mutating Vera's shared seed data further.
@@ -833,14 +805,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
-		// #1708: the old locator (`ul > li .relative.z-10 a`) never matched
-		// anything - OpportunityListItem.tsx's org link carries `relative
-		// z-20` (the stretched card-cover Link is the one at z-10), so this
-		// test always timed out and silently skipped, giving /organizations/{id}
-		// zero axe coverage. Target the org link by data-testid instead of a
-		// brittle Tailwind class combination, and seed data always publishes
-		// opportunities (ApplicationDbContextInitializer.cs), so a missing
-		// link is a genuine failure, not a "not seeded yet" skip.
+		// Targets the org link by data-testid, not a Tailwind class combination:
+		// OpportunityListItem.tsx's org link is `relative z-20` while the
+		// stretched card-cover Link is the z-10 one, so a class-based locator
+		// silently matches nothing and skips the scan. Seed data always
+		// publishes opportunities (ApplicationDbContextInitializer.cs), so a
+		// missing link is a genuine failure, not a "not seeded yet" skip.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
@@ -861,10 +831,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task UserProfilePage_HasNoSeriousA11yViolations()
 	{
-		// #576: the public /users/{userId} page previously showed only avatar,
-		// name, engagement count, and badges - it now also renders bio/skills/
-		// languages via the shared ProfileFieldsView component (preferredContact
-		// is deliberately excluded from this page, see #1028).
+		// The public /users/{userId} page renders bio/skills/languages via the
+		// shared ProfileFieldsView component; preferredContact is deliberately
+		// excluded from this page.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -905,7 +874,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		// OrgAppShell previously rendered no h1 on any org app page.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
 
 		var result = await Page.RunAxe();
@@ -915,7 +884,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_AsOlaf_SkipLink_MovesFocusToMainContent()
 	{
-		// einsatzbereit#1284: same bypass gap as HomePage's skip link, but the
+		// Same bypass gap as HomePage's skip link, but the
 		// org app shell's header (org switcher, notification bell, avatar menu,
 		// breadcrumb + quick actions) is a separate implementation from the
 		// public site's - this covers OrgAppLayout's own copy.
@@ -934,17 +903,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_CalendarWidgetMonthView_AsOlaf_DateCellsHaveAccessibleDateLabel()
 	{
-		// einsatzbereit#1924: Month view's date-number button - rendered by
-		// react-big-calendar's own default DateHeader (node_modules/
-		// react-big-calendar/lib/DateHeader.js) - had no accessible name beyond
-		// the bare day-of-month digit visible on screen ("27"). CalendarWidget.tsx's
-		// components.month.dateHeader (CalDateHeader) now sets aria-label to a
-		// full date instead. Forces Month view via the toolbar rather than
-		// relying on olaf's seeded events landing in whichever month happens to
-		// be visible on the day this test runs (the color-dialog tests above
-		// Skip.Test for exactly that reason) - the day grid itself renders the
-		// same whether or not any event exists that month, so no seed data is
-		// needed here. Asserts the accessible name directly (mirroring
+		// react-big-calendar's default DateHeader gives Month view's date-number
+		// button no accessible name beyond the visible digit, so
+		// CalendarWidget.tsx's components.month.dateHeader (CalDateHeader) sets
+		// aria-label to a full date. Forces Month view via the toolbar rather than
+		// relying on seeded events landing in the visible month - the day grid
+		// renders the same either way, so no seed data is needed. Asserts the
+		// accessible name directly (mirroring
 		// VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName above)
 		// rather than only an axe scan: the original bug already had visible
 		// button text, which satisfies axe's own accessible-name rules and
@@ -974,7 +939,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_LayoutLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1234: a failed dashboard-layout fetch now renders its own inline
+		// A failed dashboard-layout fetch now renders its own inline
 		// error banner + retry button and disables the "Edit" quick action -
 		// a DOM state the plain page-load scan above never reaches, since its
 		// GET .../dashboard/layout always succeeds.
@@ -999,7 +964,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_KpiLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1780: the KPI endpoint is a different request from the layout fetch
+		// The KPI endpoint is a different request from the layout fetch
 		// covered above - GET .../dashboard, not .../dashboard/layout - and
 		// since the split it feeds two tiles at once (ToDo and VolunteerStats),
 		// so one failure renders two inline banners side by side. Both are
@@ -1033,9 +998,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_CalendarWidgetColorDialog_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #762 rebuilt the dashboard as a widget grid; the Calendar widget's
-		// color-picker dialog only exists in the DOM while open, so the plain
-		// page-load scan above can't reach it.
+		// The Calendar widget's color-picker dialog only exists in the DOM while
+		// open, so the plain page-load scan above cannot reach it.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
@@ -1061,7 +1025,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_CalendarWidgetColorDialogInvalidContrast_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1726: picking a color that fails the 4.5:1 chip-text
+		// Picking a color that fails the 4.5:1 chip-text
 		// contrast floor now renders a conditional aria-invalid/aria-describedby
 		// pair on the color input plus an inline warning paragraph and disables
 		// Save - a DOM state the plain color-dialog scan above never reaches,
@@ -1106,7 +1070,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		// OrgAppShell previously rendered no h1 on any org app page.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Opportunities");
 
 		var result = await Page.RunAxe();
@@ -1119,14 +1083,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
-		// the same rail an organizer uses, and unambiguous unlike a bare
-		// "member" name match, which the Settings widget's own member-count link
-		// also answers to.
+		// Via the page header's section rail, not a bare "member" name match -
+		// the Settings widget's member-count link answers to that too.
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		// OrgAppShell previously rendered no h1 on any org app page.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Members");
 
 		var result = await Page.RunAxe();
@@ -1136,7 +1098,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgMembersPage_MemberRowWithPromoteDemoteButtons_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1050: the new "Promote to organizer"/"Demote to member" button pair
+		// The new "Promote to organizer"/"Demote to member" button pair
 		// only renders for a non-self member row - NavigateToOrgAppDashboardAsOlafAsync
 		// pins an org where Olaf is the only member, so the scan above never
 		// reaches it. Create a fresh org rather than adding a second member to
@@ -1169,7 +1131,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// force a refetch, same as OrganizationTests.cs's equivalent setup.
 		await Page.ReloadAsync();
 		await Page.GetByTestId("org-tab-members").ClickAsync();
-		// einsatzbereit#1294: this button's accessible name now interpolates
+		// This button's accessible name now interpolates
 		// the member's own name in the middle ("Promote {name} to organizer"),
 		// so match with a regex rather than the old literal substring.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") }))
@@ -1185,12 +1147,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
-		// #771: the tab bar is gone - reach the page via the Settings widget's
+		// The tab bar is gone - reach the page via the Settings widget's
 		// "Edit settings" link instead.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		// OrgAppShell previously rendered no h1 on any org app page.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Settings");
 
 		var result = await Page.RunAxe();
@@ -1200,9 +1162,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationSettingsPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// The Edit/Save/Cancel buttons moved from inline page content into the
-		// header's quick actions (#771 follow-up) - the read-only scan above
-		// never opens the edit form itself, so scan it separately here.
+		// Edit/Save/Cancel live in the header's quick actions, and the read-only
+		// scan above never opens the edit form - scan it separately here.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
@@ -1219,10 +1180,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationSettingsPage_EditModeValidationError_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #851: OrgSettingsPage gained the same react-hook-form + zod
-		// validation as CreateOrganizationModal (previously it had none) -
-		// scan the new inline validation-error state, not just the clean
-		// edit-mode form covered above.
+		// OrgSettingsPage carries the same react-hook-form + zod validation as
+		// CreateOrganizationModal - scan its inline validation-error state, not
+		// just the clean edit-mode form covered above.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
@@ -1244,7 +1204,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationSettingsPage_EditModeWithLogo_HasNoSeriousA11yViolations()
 	{
-		// #845: the "Remove" button next to the logo only renders once an
+		// The "Remove" button next to the logo only renders once an
 		// organization has a logo. Olaf's seeded org has none, so the edit-mode
 		// scan above never renders it - seed a fresh org with a logo here
 		// instead of mutating Olaf's shared seed data.
@@ -1326,7 +1286,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_PlacingAWidget_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// Corner-to-corner placement (#782) renders its own extra surface
+		// Corner-to-corner placement renders its own extra surface
 		// while active - the green/blue/red-tinted grid backdrop and the
 		// role="status" placement banner - that the plain edit-mode scan
 		// above never reaches, since it never clicks "Move or resize".
@@ -1344,9 +1304,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// The "Add Widget" picker (#771 follow-up review feedback) only
-		// exists in the DOM while open - the edit-mode scan above never
-		// opens it.
+		// The "Add Widget" picker only exists in the DOM while open - the
+		// edit-mode scan above never opens it.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
@@ -1390,15 +1349,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_RowBandedLayout_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1932: a saved layout with some rows narrower than the full grid
-		// now renders each row as its own independent, width-capped grid
-		// container (groupIntoRowBands in widgetCatalog.ts) instead of one
-		// shared full-width grid - a DOM shape the plain page-load scan above
-		// never reaches, since a fresh org's DEFAULT_LAYOUT always fills
-		// every row edge to edge. Settings (full width) plus VolunteerStats
-		// (a separate, narrower row right below it) reproduces the mixed
-		// shape - one uncapped band next to a capped one - that #1932's own
-		// fix is about.
+		// A saved layout with rows narrower than the full grid renders each row
+		// as its own width-capped grid container (groupIntoRowBands in
+		// widgetCatalog.ts) - a DOM shape the page-load scan above never reaches,
+		// since a fresh org's DEFAULT_LAYOUT fills every row edge to edge.
+		// Settings (full width) plus VolunteerStats (a narrower row below it)
+		// reproduces the mixed shape: one uncapped band next to a capped one.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var organizationId = await CreateOrganizationAsOlafAsync("A11yRowBanding");
 
@@ -1426,11 +1382,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	/// <summary>
-	/// Same per-widget removal loop OrgDashboardCustomizeTests.cs and
-	/// OrgDashboardRowBandingTests.cs each already have their own copy of -
-	/// kept local here too rather than shared, matching how every VisualTests
-	/// class in this suite already owns its own copy of this kind of setup
-	/// helper.
+	/// Deliberately local rather than shared with the identical loops in
+	/// OrgDashboardCustomizeTests.cs and OrgDashboardRowBandingTests.cs -
+	/// every class in this suite owns its own copy of this kind of setup.
 	/// </summary>
 	private async Task RemoveAllDashboardWidgetsAsync()
 	{
@@ -1456,21 +1410,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgDashboardPage_EmptyOpportunitiesCreateOpportunityCta_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1122: UpcomingOpportunitiesWidget and QuickCheckInWidget's empty
-		// states gained a "Create one" CTA (EmptyState's new compact
-		// variant) that opens CreateVolunteerOpportunityModal directly from
-		// the widget - worded distinctly from CreateOpportunityWidget's own
-		// "Create opportunity" button (also on this dashboard by default)
-		// so the two don't collide as duplicate accessible names. Olaf's
-		// seeded org (used by NavigateToOrgAppDashboardAsOlafAsync above)
-		// almost certainly already has opportunities by the time this suite
-		// runs - a fresh, otherwise-untouched org is the only deterministic
-		// way to reach this branch.
-		//
-		// A fresh org also has zero pending sign-ups, so this is the scan that
-		// reaches ToDoWidget's #1780 "resolved" branch (the check chip plus
-		// "Nothing pending - every sign-up is handled.") for real - keep the
-		// org fresh here, or that state loses its only axe coverage.
+		// The empty-state "Create one" CTAs are worded distinctly from
+		// CreateOpportunityWidget's "Create opportunity" button on the same
+		// dashboard, so the two do not collide as duplicate accessible names.
+		// Needs a fresh org: olaf's shared one has opportunities by now, and a
+		// fresh one also has zero pending sign-ups, which is the only way to reach
+		// ToDoWidget's "resolved" branch.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
@@ -1545,14 +1490,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1306: this used to reach the page via olaf's shared
-		// seed data and Skip.Test when no published opportunity with a
-		// pending applicant happened to exist, so the page's "Confirm"
-		// button (the finding's subject) had no guaranteed axe coverage -
-		// same gap the CancelDialog test below closed for the cancel/revoke
-		// dialog. Seed a fresh org/opportunity/engagement instead, mirroring
-		// that pattern, so this fails loudly on a regression rather than
-		// silently passing on an empty scan.
+		// Seeds a fresh org/opportunity/engagement rather than relying on olaf's
+		// shared seed data, which would let this skip when no published
+		// opportunity with a pending applicant happens to exist - leaving the
+		// page's "Confirm" button with no guaranteed coverage. Same pattern as
+		// the CancelDialog test below.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
@@ -1596,7 +1538,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #973: on a nested route, the h1 must track the breadcrumb's trailing
+		// On a nested route, the h1 must track the breadcrumb's trailing
 		// "extra" segment (the opportunity title, set via
 		// useSetOrgBreadcrumbExtra) rather than staying on the parent tab's
 		// own label ("Opportunities") - the one place this pageTitle logic
@@ -1613,7 +1555,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgEngagementsPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1048: the dashboard's "To-Do" widget counts pending
+		// The dashboard's "To-Do" widget counts pending
 		// engagements across every opportunity in the organization, but the
 		// only way to view them used to be per-opportunity via
 		// EngagementManagementPage above. This is the resulting org-wide
@@ -1663,7 +1605,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/engagements?status=Pending");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// einsatzbereit#1680: "engagements" became a real ORG_TABS entry, so the
+		// "engagements" became a real ORG_TABS entry, so the
 		// h1 now comes from OrgAppLayout's own tab-label lookup (orgOverview.tabEngagements)
 		// like every other tab, rather than from a page-local useSetOrgBreadcrumbExtra call.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Sign-ups");
@@ -1786,7 +1728,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task SignUpModal_OpenTimeSlotDropdown_HasNoSeriousA11yViolations()
 	{
-		// #573: the native time slot <select> was replaced with a custom
+		// The native time slot <select> was replaced with a custom
 		// accessible combobox/listbox - assert the open dropdown itself is
 		// axe-clean, not just the page around it.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -1832,7 +1774,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await signUpBtn.ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
-		// #1708: the SignUpModal is already open and this opportunity was just
+		// The SignUpModal is already open and this opportunity was just
 		// filtered above to one with open ScheduledSlots capacity, so the
 		// dropdown is always going to render - a non-waiting CountAsync() here
 		// raced the modal's own mount and could silently skip the axe scan
@@ -1850,16 +1792,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task LanguageSelector_Open_HasNoSeriousA11yViolations()
 	{
-		// #1772: the header's language switcher wrapped each <button> in an
-		// <li role="option">, which axe reports as nested-interactive
-		// ("Interactive controls must not be nested", serious). This control
-		// sits in the header of every page, so the violation was site-wide -
-		// and still invisible to every scan in this file, because none of them
-		// opens this particular overlay. Scanned on /opportunities (where the
-		// review found it) rather than the home page: that route renders a
-		// PageHeaderBand, so the header is transparent and this covers the
-		// selector's white-on-dark variant, which no other scan reaches with
-		// the menu open.
+		// The header's language switcher is in every page's header, but no other
+		// scan in this file opens the overlay, so nested-interactive violations
+		// there stay invisible. Scanned on /opportunities rather than the home
+		// page: that route renders a PageHeaderBand, so the header is
+		// transparent and this covers the selector's white-on-dark variant.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
@@ -1886,10 +1823,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations()
 	{
-		// #676 Pitch 2 rewrote this modal with custom ARIA machinery (a manual
-		// Tab trap, an aria-live step announcer, sr-only radio-cards, and a
-		// nested unsaved-changes ConfirmDialog) that a plain page-load axe
-		// scan can't reach, since the modal only exists in the DOM while open.
+		// This modal carries custom ARIA machinery (a manual Tab trap, an
+		// aria-live step announcer, sr-only radio-cards, and a nested
+		// unsaved-changes ConfirmDialog) that a page-load scan cannot reach,
+		// since the modal only exists in the DOM while open.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
@@ -1916,7 +1853,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CreateOrganizationModal_HasNoSeriousA11yViolations()
 	{
-		// #851: this modal gained react-hook-form + zod validation (it
+		// This modal gained react-hook-form + zod validation (it
 		// previously had none) - scan both the clean state and the
 		// blank-submit validation-error state it can now render.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -1944,7 +1881,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task NotificationDropdown_Open_HasNoSeriousA11yViolations()
 	{
-		// #1384: the dropdown gained cursor-based "load more" pagination on top
+		// The dropdown gained cursor-based "load more" pagination on top
 		// of the existing mark-all-read/per-item controls - the panel only
 		// exists in the DOM while open, so a plain page-load scan never reaches
 		// it (see NotificationBell_OpensPanel_WhenClicked in NotificationTests.cs
@@ -2004,15 +1941,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// #1672: MobileMenu gained a scrim, role="dialog"/aria-modal, a Tab
-		// focus trap, and a body scroll lock - none of that markup existed
-		// when this suite's other scans ran, and every other scan here runs
-		// at the default desktop viewport (the panel is md:hidden), so
-		// nothing has ever axe-scanned it. Olaf, not Vera, so the org
-		// entry and its section links (#775, promoted out of the account
-		// section's disclosure by #1785) are present too - the whole
-		// panel's markup exercised in one scan, not just the
-		// anonymous/no-org subset.
+		// MobileMenu carries a scrim, role="dialog"/aria-modal, a Tab focus trap
+		// and a body scroll lock. Every other scan here runs at the default
+		// desktop viewport and the panel is md:hidden, so nothing else reaches
+		// it. Olaf, not Vera, so the org entry and its section links are present
+		// too - the whole panel in one scan, not the anonymous/no-org subset.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		// FastSignInAsync verifies auth via the desktop "User menu" button,
@@ -2043,21 +1976,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// One case per administration section: they are separate routes behind a
-	// shared left rail now, not four stacked sections on one page, so a single
-	// scan of /administration would only ever cover the first of them.
+	// One case per administration section: separate routes behind a shared left
+	// rail, so a single scan of /administration covers only the first.
 	//
-	// [Retry(2)]: this is the one AuthHelper.LoginAsync call site that reliably
-	// lands in the very first concurrently-started batch of tests (see the
-	// "organizations" case, which repeatedly logged as one of the first two
-	// "[slow] still running" entries across many unrelated PRs' CI runs). The
-	// real Keycloak round trip it drives occasionally exceeds even a generous
-	// fixed timeout while the Aspire stack is still warming up - raising
-	// AuthHelper's timeout from 30s to 90s across several rounds never
-	// eliminated it, it just kept landing a few seconds past whatever ceiling
-	// was set (63s at a 60s cap, ~93.5s at a 90s cap). A per-test retry costs
-	// nothing on the common case (a fast top-of-suite login) and absorbs the
-	// rare slow one without inflating every other LoginAsync caller's timeout.
+	// [Retry(2)]: this LoginAsync call site lands in the first concurrent batch,
+	// where the Keycloak round trip can outlast any fixed timeout while Aspire
+	// is still warming up. Cheaper than inflating every caller's timeout.
 	[Test]
 	[Retry(2)]
 	[Arguments("organizations")]
@@ -2077,13 +2001,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// #1774 introduced one shared route-level state component (RouteState) for
-	// the four ways a route can fail to show what was asked for. Two scans, one
-	// per shell it renders in: inside AppLayout (header/main/footer already
-	// present, so this is the heading-order and landmark case) and inside the
-	// org app, which bypasses AppLayout entirely and has to supply its own
-	// <main> - the exact landmark the previous 404 branch got wrong by handing
-	// a chrome-less NotFoundPage to a route with no layout above it.
+	// RouteState is one shared component for the four ways a route can fail to
+	// show what was asked for. Two scans, one per shell it renders in: inside
+	// AppLayout (header/main/footer already present - the heading-order and
+	// landmark case) and inside the org app, which bypasses AppLayout entirely
+	// and has to supply its own <main>.
 	[Test]
 	public async Task AdminOnlyRouteAsNonAdmin_HasNoSeriousA11yViolations()
 	{
@@ -2239,8 +2161,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Assert something rendered before scanning - a scan of a page whose
-		// list failed to load passes vacuously.
+		// A scan of a page whose list failed to load passes vacuously.
 		await Expect(Page.GetByTestId("opportunities-keyword-input"))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -2256,8 +2177,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/organizations");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Assert something rendered before scanning - a scan of a page whose
-		// list failed to load passes vacuously.
+		// A scan of a page whose list failed to load passes vacuously.
 		await Expect(Page.GetByTestId("organizations-search"))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -2287,10 +2207,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// #1224: OrgAppLayout's "not authorized" screen (a non-organizer hitting
-	// a 403) had zero axe coverage before this, despite predating the fix -
-	// pinning down its own unique markup while touching this file for the
-	// new "error" state right below.
+	// OrgAppLayout's "not authorized" screen (a non-organizer hitting a 403)
+	// has its own unique markup no other scan reaches.
 	[Test]
 	public async Task OrgAppLayout_Forbidden_AsVera_HasNoSeriousA11yViolations()
 	{
@@ -2306,11 +2224,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// #1224: the new recoverable "something went wrong, try again" state (a
-	// 500/network failure, as opposed to the permanent 403 above) - its own
-	// unique markup, otherwise never scanned. OrgAppLayoutErrorStatesTests.cs
-	// covers this state's functional behavior (branching + retry); this is
-	// its axe-core pass.
+	// The recoverable "something went wrong, try again" state (a 500/network
+	// failure, as opposed to the permanent 403 above) - its own unique markup,
+	// otherwise never scanned. OrgAppLayoutErrorStatesTests.cs covers its
+	// functional behavior; this is its axe-core pass.
 	[Test]
 	public async Task OrgAppLayout_ServerError_AsOlaf_HasNoSeriousA11yViolations()
 	{
@@ -2364,7 +2281,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_CancelDialog_HasNoSeriousA11yViolations()
 	{
-		// #1051: the cancel/revoke ConfirmDialog gained an optional reason
+		// The cancel/revoke ConfirmDialog gained an optional reason
 		// <label>/<textarea> + character-counter <p> (previously a plain
 		// yes/no dialog with no form control) - EngagementManagementPage_AsOlaf_...
 		// above never opens this dialog, so its new markup had zero axe
@@ -2485,15 +2402,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrgOpportunitiesPage_CancelDialog_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1038: the org opportunities hub gained an Unpublish
-		// action (a plain confirm, same shape as the existing unscanned Delete
-		// dialog on this page) and a Cancel action whose ConfirmDialog carries
-		// an optional reason <label>/<textarea> + character-counter <p> - the
-		// same "new form control on a previously plain confirm" gap
-		// EngagementManagementPage_CancelDialog_HasNoSeriousA11yViolations
-		// above exists to cover. OrgOpportunitiesPage_AsOlaf_... never opens
-		// this dialog, so seed a fresh published opportunity here instead of
-		// relying on olaf's shared seed data.
+		// The hub's Cancel ConfirmDialog carries an optional reason
+		// <label>/<textarea> + character-counter <p>, the same form-control-on-a-
+		// plain-confirm shape EngagementManagementPage_CancelDialog_... covers.
+		// OrgOpportunitiesPage_AsOlaf_... never opens it, so seed a fresh published
+		// opportunity rather than relying on olaf's shared seed data.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
@@ -2536,11 +2449,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// einsatzbereit#1297: the axe gate never opened a toast, CheckInModal,
-	// SubmitFeedbackModal, or the home page's date-range popover - all four
-	// states below are seeded deterministically (not "skip if missing seed
-	// data" like several of the tests above) so a regression fails loudly
-	// instead of silently passing on an empty scan.
+	// Seeds the toast, CheckInModal, SubmitFeedbackModal and date-range
+	// popover states deterministically, rather than skipping on missing seed
+	// data like several tests above, so a regression fails loudly instead of
+	// passing on an empty scan.
 	private async Task<(string OrganizationId, string OpportunityId, string EngagementId)>
 		SeedConfirmedEngagementAsync(string checkInMethod, string label)
 	{
@@ -2594,11 +2506,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1305/#1297: the "Leave feedback" button (white text on
-		// yellow-500) only renders for a checked-in-without-feedback engagement -
-		// vera's seeded data never has one, so the base MyEngagementsPage scan
-		// never actually rendered this control. Also exercises SubmitFeedbackModal
-		// (einsatzbereit#1287's star-rating contrast fix).
+		// The "Leave feedback" button only renders for a
+		// checked-in-without-feedback engagement, which vera's seeded data never
+		// has - so the base MyEngagementsPage scan never renders this control.
+		// Also exercises SubmitFeedbackModal's star rating.
 		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("Manual", "FeedbackA11y");
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -2609,12 +2520,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-signups.
+		// ActivitySection lives at /my-signups, not /profile.
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
+		// A checked-in Confirmed engagement is classified as
 		// Past (it represents a shift that already happened), not "Current &
 		// upcoming" - see EngagementReadRepository.GetByVolunteerAsync.
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
@@ -2635,7 +2545,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_EditableFeedback_AsVera_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1069: the axe gate above only ever renders the
+		// The axe gate above only ever renders the
 		// create-mode "Leave feedback" state - it never opens the edit-mode
 		// SubmitFeedbackModal, the badge+Edit+Delete buttons state, or the
 		// delete-feedback ConfirmDialog. Seed feedback that's already been
@@ -2656,8 +2566,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-signups.
+		// ActivitySection lives at /my-signups, not /profile.
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("engagements-scope-past").ClickAsync();
@@ -2687,14 +2596,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1297: CheckInModal's PIN-entry state (and its
-		// einsatzbereit#1289 success announcement) never had axe coverage.
+		// CheckInModal's PIN-entry state and its success announcement are
+		// reachable from no other scan in this file.
 		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("PINCode", "CheckInModalA11y");
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		// #1684: ActivitySection (and this data-testid) moved from /profile to
-		// its own page at /my-signups.
+		// ActivitySection lives at /my-signups, not /profile.
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -2718,10 +2626,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_ConfirmSuccessToast_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1297/#1285: no scan ever opened a toast, so the
-		// white-on-yellow-500/green-600 contrast failures shipped unnoticed.
-		// Also exercises einsatzbereit#1289's new success-toast dispatch on
-		// confirm (previously only the failure path was announced at all).
+		// The only scan that opens a toast - white-on-yellow-500/green-600
+		// contrast is invisible to every other test here. Also exercises the
+		// success-toast dispatch on confirm, not just the failure path.
 		var backend = Fixture.GetEndpoint("backend");
 		var suffix = Guid.NewGuid().ToString("N");
 
@@ -2775,10 +2682,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OpportunitiesPage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1297/#1292: none of the seven home-page filter popovers
-		// were ever scanned - MiniCalendar's day-grid gained full ARIA
-		// grid/keyboard-navigation semantics (einsatzbereit#1292) with no test
-		// covering the open state those semantics live in.
+		// MiniCalendar's day grid carries full ARIA grid/keyboard-navigation
+		// semantics that only exist while the popover is open, which no other
+		// scan of the seven home-page filter popovers reaches.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
@@ -2794,7 +2700,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OpportunitiesPage_DateRangeFilterWithMarkedDays_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1779: the day grid gained two states the scan above can
+		// The day grid gained two states the scan above can
 		// never see, because it seeds nothing and only ever opens on the current
 		// month - a marked day (dot + "N opportunities" in its accessible name)
 		// and the legend that only renders once some day in view is marked. This
@@ -2870,9 +2776,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OpportunitiesPage_FilterApplied_HasNoSeriousA11yViolations()
 	{
-		// Previously only covered as a side effect of the search-alert toggle's
-		// own a11y test (removed along with that feature) - preserves the only
-		// scan of /opportunities in its "active filter" DOM state: a
+		// The only scan of /opportunities in its "active filter" DOM state: a
 		// FilterDropdown's active/selected trigger variant plus its clear ("x")
 		// button, and the "Reset" pill that only renders once a filter is applied.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -2902,7 +2806,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task CallbackPage_HasNoSeriousA11yViolations()
 	{
-		// einsatzbereit#1297: /callback (the OIDC redirect landing page) never
+		// /callback (the OIDC redirect landing page) never
 		// had axe coverage of any kind.
 		var frontend = Fixture.GetEndpoint("frontend");
 

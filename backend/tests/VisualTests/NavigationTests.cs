@@ -21,7 +21,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_HasNoBreadcrumb()
 	{
-		// #574: pages that don't call usePageToolbar must not render a stray
+		// Pages that don't call usePageToolbar must not render a stray
 		// breadcrumb bar - the home page has no parent to link back to.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -34,22 +34,18 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
 	{
-		// #574: OrganizationProfilePage had no way back at all - revived
-		// breadcrumb must show "Home > {organization name}". #772/#763 had
-		// briefly inserted an "Organizations" middle crumb linking to a
-		// public directory page - removed along with that directory feature
-		// (organizations are now found via the volunteer-opportunity search's
-		// keyword field instead of a separate browse page), so the trail is
-		// back to a direct "Home > {org name}".
+		// The breadcrumb is a direct "Home > {organization name}" - no
+		// "Organizations" middle crumb, since organizations are found via the
+		// volunteer-opportunity search's keyword field, not a browse page.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		// #1755 moved the opportunity list (and with it the org links on its
-		// cards) off the landing page onto /opportunities.
+		// The opportunity list, and the org links on its cards, live on
+		// /opportunities rather than the landing page.
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// #1708: seed data always publishes opportunities - a non-waiting
+		// Seed data always publishes opportunities - a non-waiting
 		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch and could silently skip this test instead of failing.
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
@@ -61,9 +57,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #1755 replaced this page's breadcrumb bar with a PageHeaderBand: the
-		// band states the org name as the h1, so the bar restating it directly
-		// above was pure duplication.
+		// No breadcrumb bar: the PageHeaderBand already states the org name as the
+		// h1, so a bar directly above restating it is duplication.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
@@ -80,18 +75,17 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task VolunteerOpportunityDetailPage_BreadcrumbShowsOrgAndOpportunityTitle()
 	{
-		// #574: the old back link always went to "/#opportunities" regardless of
+		// The old back link always went to "/#opportunities" regardless of
 		// where the user came from. The revived breadcrumb must instead reflect
 		// the opportunity's actual organization and title.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		// #1755 moved the opportunity list off the landing page onto
-		// /opportunities.
+		// The opportunity list lives on /opportunities, not the landing page.
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// #1708: seed data always publishes opportunities - a non-waiting
+		// Seed data always publishes opportunities - a non-waiting
 		// CountAsync() right after the h1 check above raced the list's
 		// opportunity fetch and could silently skip this test instead of failing.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -103,7 +97,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #1755: the breadcrumb bar is gone from this page too - the
+		// The breadcrumb bar is gone from this page too - the
 		// PageHeaderBand states the opportunity title as the h1 and puts the
 		// link to the owning organization in its eyebrow, which is where the
 		// middle crumb's job moved.
@@ -121,13 +115,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_BreadcrumbPersistsRegardlessOfApplicationCount()
 	{
-		// #574: back navigation used to only appear in the empty-application state.
-		// The revived breadcrumb must be present unconditionally.
-		//
-		// #751 review follow-up: the breadcrumb must show the specific
-		// opportunity being managed - Home > Opportunities > {title}, with
-		// "Opportunities" demoted to a link back to the hub - instead of a
-		// fixed "Opportunities" label plus a separate context line in the page.
+		// The breadcrumb must be present unconditionally, not just in the
+		// empty-application state, and must name the opportunity being managed:
+		// Home > Opportunities > {title}, with "Opportunities" a link back to the
+		// hub rather than a fixed label plus a separate in-page context line.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -167,12 +158,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
-		// #751: engagement management moved into the org app as a nested route
-		// under /app/:organizationId/dashboard/opportunities/:opportunityId/engagements -
-		// the org switcher must stay visible instead of swapping to the public
-		// site header/footer. #771 removed the tab bar entirely (aria-current
-		// on a tab link no longer applies), so leaving back to the opportunities
-		// list now happens via the breadcrumb's "Opportunities" link instead.
+		// Engagement management is a nested org app route, so the org switcher must
+		// stay visible rather than swapping to the public site header/footer. With
+		// no tab bar, the way back to the opportunities list is the breadcrumb's
+		// "Opportunities" link.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -208,7 +197,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToTheSameTabInThatOrg()
 	{
-		// #702: the switcher moved out of the global header into the /app shell,
+		// The switcher moved out of the global header into the /app shell,
 		// where selecting a different org must preserve whatever tab you're
 		// currently on rather than always resetting to the dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -216,17 +205,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
-		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
-		// the same rail an organizer uses, and unambiguous unlike a bare
-		// "member" name match, which the Settings widget's own member-count link
-		// also answers to.
+		// Via the page header's section rail, not a bare "member" name match -
+		// the Settings widget's member-count link answers to that too.
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
-		// #1708: wait for the switcher panel to actually render its rows before
+		// Wait for the switcher panel to actually render its rows before
 		// counting them - a bare CountAsync() right after the click raced the
 		// panel's own mount, which could misreport "< 2" and skip this test even
 		// when olaf's seed data has the two orgs it needs.
@@ -247,7 +234,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task DirectNavigation_ToEachDashboardNestedRoute_RendersRealContent_NotErrorBoundary()
 	{
-		// Regression for #783/#787: opportunities/members/settings (and the
+		// Opportunities/members/settings (and the
 		// dashboard index) are nested under a pathless "dashboard" parent
 		// route (see App.tsx) whose element used to be a bare <Outlet />
 		// with no `context` prop - that starts a brand new outlet context
@@ -296,7 +283,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_ClosesOnEscape()
 	{
-		// #884: dropdown/overlay menus in the Header only closed on outside
+		// Dropdown/overlay menus in the Header only closed on outside
 		// click - Escape did nothing. useDismissableOverlay fixes this.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -317,7 +304,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_AnnouncesDisclosureSemantics()
 	{
-		// #1772: the selector used to wrap each <button> in an <li role="option">
+		// The selector used to wrap each <button> in an <li role="option">
 		// under a role="listbox" <ul>, with the trigger advertising
 		// aria-haspopup="listbox" - a keyboard model (arrow keys,
 		// aria-activedescendant) the component has never implemented, since
@@ -347,7 +334,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(langBtn).Not.ToHaveAttributeAsync("aria-haspopup", new Regex(".*"));
 		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "false");
 
-		// #1940: the closed trigger's accessible name used to be just "Switch
+		// The closed trigger's accessible name used to be just "Switch
 		// language"/"Sprache wechseln", overriding the visible "EN"/"DE" text
 		// with no indication of which language is currently active. It must
 		// now name the current language too, e.g. "..., currently English".
@@ -386,7 +373,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_SwitchingLanguage_LazilyLoadsAndAppliesTranslations()
 	{
-		// #1395: both translation bundles used to be statically imported into the
+		// Both translation bundles used to be statically imported into the
 		// entry chunk. Each language's JSON is now fetched lazily on demand via a
 		// custom i18next backend - switching language must still dynamically load
 		// and apply the target locale's strings, and switching back must reuse the
@@ -422,7 +409,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_DropdownStaysInsideViewportAt1440px()
 	{
-		// #1936: the open <ul> was anchored "top-full left-0" with a fixed
+		// The open <ul> was anchored "top-full left-0" with a fixed
 		// w-36 (144px) width, so it grew rightward from the trigger's left
 		// edge instead of the trigger's own right edge - at 1440px that pushed
 		// the panel's right edge past the viewport, clipping its border/
@@ -449,7 +436,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MobileMenu_ClosesOnEscape()
 	{
-		// #884: MobileMenu offered neither outside-click nor Escape dismissal
+		// MobileMenu offered neither outside-click nor Escape dismissal
 		// at all - useDismissableOverlay now backs it too.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -489,11 +476,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Footer_CtaLink_FromHomePage_NavigatesToOpportunitiesPage()
 	{
-		// #1031 covered a fragment link ("/#opportunities") that had to scroll
-		// the landing page. #1755 gave the list its own route, so the footer
-		// CTA is a plain destination link now - what still needs guarding is
-		// that it actually lands on the populated list rather than the
-		// landing page it used to scroll.
+		// The footer CTA is a plain destination link, not a "/#opportunities"
+		// fragment that scrolls the landing page - guard that it lands on the
+		// populated list.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
@@ -533,7 +518,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task AccountControls_UserMenu_ClosesOnEscape()
 	{
-		// #884: the account/notification dropdowns (useAccountMenu) only
+		// The account/notification dropdowns (useAccountMenu) only
 		// closed on outside click.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -552,7 +537,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task AccountControls_UserMenu_ClosesAfterNavigatingToOwnLink()
 	{
-		// #1956: none of the dropdown's own links (My profile, My signups,
+		// None of the dropdown's own links (My profile, My signups,
 		// Profile settings, Administration) closed the disclosure on click -
 		// only the outside-click/Escape handling in useAccountMenu did. The
 		// stale panel stayed rendered (aria-expanded="true", panel still

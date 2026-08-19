@@ -9,11 +9,10 @@ namespace VisualTests;
 /// <summary>
 /// Visual tests for the customizable dashboard widget grid (add/remove/place
 /// behind an "Edit" quick action, persisted via GET/PUT .../dashboard/layout).
-/// #782 replaced the automatic skyline packer with organizer-drawn
-/// corner-to-corner placement: each widget carries an explicit X/Y/Width/
-/// Height, set by clicking (or tapping) two grid cells, or via the keyboard
-/// (a per-widget "Move or resize" button, arrow keys to move a cursor,
-/// Enter/Space to lock each corner, Escape to cancel).
+/// Placement is organizer-drawn corner-to-corner: each widget carries an
+/// explicit X/Y/Width/Height, set by clicking (or tapping) two grid cells, or
+/// via the keyboard (a per-widget "Move or resize" button, arrow keys to move
+/// a cursor, Enter/Space to lock each corner, Escape to cancel).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -82,8 +81,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			new() { Timeout = 10_000 });
 
 		// The removed widget is offered back via the "Add Widget" quick action's
-		// modal (#771 follow-up review feedback moved this from an always-visible
-		// inline panel into a picker with a preview per widget).
+		// modal - a picker with a preview per widget, not an always-visible inline
+		// panel.
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
@@ -94,10 +93,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task AddWidgetModal_AddingAWidget_AppearsInGridAndPersistsAcrossReload()
 	{
-		// #771 follow-up review feedback: "Add a widget" moved from an
-		// always-visible inline panel to a quick action that opens a modal
-		// picker (with a small preview per widget) - this covers the actual
-		// add flow through that modal end to end.
+		// Covers the add flow through the "Add a widget" quick action's modal
+		// picker end to end.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -165,13 +162,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task CancellingEdit_DiscardsAddedWidget()
 	{
-		// #1899: CancellingEdit_DiscardsRemovedWidget above covers a removal -
-		// this is the same guarantee for the opposite edit, an addition made
-		// through the picker. Adding a widget writes straight into the draft
-		// layout the moment it's picked (see AddWidgetModal_AddingAWidget_...
-		// above), so Cancel must discard it exactly like any other pending
-		// change, not just leave it invisible until a stray future Save picks
-		// it back up.
+		// The same guarantee CancellingEdit_DiscardsRemovedWidget above makes for a
+		// removal, for the opposite edit. Picking a widget writes straight into the
+		// draft layout (see AddWidgetModal_AddingAWidget_... above), so Cancel must
+		// discard it like any other pending change rather than leave it for a stray
+		// future Save to pick back up.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -205,13 +200,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task NavigatingAwayWhileEditing_DiscardsAddedWidget()
 	{
-		// #1899 regression guard: reported as the widget editor persisting an
-		// addition to the shared, saved layout despite the organizer never
-		// clicking "Speichern" - leaving edit mode via in-app navigation
-		// (rather than the Cancel quick action) instead. Picks a widget from
-		// the picker, then leaves via the tab bar's Opportunities link -
-		// unmounting OrgDashboardPage without ever calling handleSave/
-		// handleCancel - and confirms the addition never reached the backend.
+		// Leaving edit mode by in-app navigation, rather than the Cancel quick
+		// action, must not persist an addition to the shared saved layout. Picks a
+		// widget, then leaves via the tab bar's Opportunities link - unmounting
+		// OrgDashboardPage without handleSave/handleCancel ever running - and
+		// confirms the addition never reached the backend.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -259,11 +252,10 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task GridBackdrop_OnlyRendersWhileEditing_AndHasNoLegacySizeControls()
 	{
-		// #782 removed the automatic packing algorithm entirely, along with
-		// the manual size slider it had itself replaced (#771) - covers that
-		// no manual size control exists, and that the green cell backdrop
-		// (the corner-to-corner placement surface, see widgetCatalog.ts's
-		// GRID_COLUMNS) only renders while editing.
+		// There is no automatic packer and no manual size slider - covers that no
+		// manual size control exists, and that the green cell backdrop (the
+		// corner-to-corner placement surface, see widgetCatalog.ts's GRID_COLUMNS)
+		// only renders while editing.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -287,14 +279,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task CustomizeHint_OnlyRendersInViewMode_AndEntersEditModeOnClick()
 	{
-		// #1939: a first-time organizer landing on their (fully-packed) default
-		// layout in view mode had no visual cue that the dashboard was
-		// customizable at all, short of stumbling into the "Edit" quick action
-		// themselves. This dashed "+" placeholder is the persistent-cue
-		// direction chosen for that gap: visible in the grid row right below
-		// the current layout any time the dashboard isn't already being
-		// edited, and a second entry point into edit mode besides the quick
-		// action.
+		// The dashed "+" placeholder is the persistent cue that the dashboard is
+		// customizable at all - a first-time organizer on a fully-packed default
+		// layout would otherwise have to stumble into the "Edit" quick action. It
+		// renders in the grid row below the current layout whenever the dashboard
+		// is not already being edited, and doubles as a second entry into edit mode.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -322,18 +311,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task GridBackdrop_CapsIdleRowsPastLastWidget_AndExpandsWhileActivelyPlacing()
 	{
-		// #1902: the backdrop used to always render 4 spare rows past the
-		// last widget (or the live placement cursor/preview, whichever was
-		// lower), even while nothing was being placed - on a dashboard with
-		// only a handful of widgets that read as a wall of undifferentiated
-		// green placeholder tiles reaching well past the fold. It's now
-		// capped to a single spare row while idle, only opening back up to
-		// the old 4-row buffer once a placement (corner-to-corner flow or a
-		// real pointer drag) is actually in progress, giving the organizer
-		// room to drop a widget below the existing content. DEFAULT_LAYOUT's
-		// last widget (Settings) ends at row 8 (see widgetCatalog.ts), so
-		// idle is 8 content rows + 1 spare = 9 rows of 8 columns = 72 cells;
-		// mid-placement it's 8 + 4 = 12 rows = 96 cells.
+		// The backdrop shows a single spare row past the last widget while idle,
+		// opening up to a 4-row buffer only once a placement (corner-to-corner flow
+		// or a real pointer drag) is in progress - otherwise a dashboard with a few
+		// widgets reads as a wall of green placeholder tiles past the fold.
+		// DEFAULT_LAYOUT's last widget (Settings) ends at row 8, so idle is 8 + 1 =
+		// 9 rows of 8 columns = 72 cells; mid-placement 8 + 4 = 12 rows = 96 cells.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -359,15 +342,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task DefaultLayout_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt()
 	{
-		// Regression guard for the same CSS technique the old auto-fit packer
-		// relied on: a widget tile needs an explicit gridColumn/gridRow start
-		// line (not just a `span N`), because the green backdrop cells claim
-		// every single cell of the grid explicitly and would otherwise
-		// saturate CSS Grid's auto-placement algorithm, pushing the tile into
-		// a separate stack of cards below the whole backdrop. #782 still
-		// relies on this (see index.tsx's explicit `col / span N` styling),
-		// now sourced from the organizer's own stored placement instead of a
-		// packer's output.
+		// A widget tile needs an explicit gridColumn/gridRow start line, not just a
+		// `span N`: the green backdrop cells claim every cell of the grid
+		// explicitly, which would otherwise saturate CSS Grid's auto-placement and
+		// push the tile into a separate stack of cards below the whole backdrop.
+		// index.tsx's `col / span N` styling sources those lines from the
+		// organizer's stored placement.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -454,16 +434,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task CornerPlacement_HoveringAGuideCell_UpdatesThePlacementBanner()
 	{
-		// #1402: the grid-guide backdrop cells' click/hover handling moved from
-		// one onClick/onPointerEnter pair per cell (up to 832 of them) to a
-		// single delegated pair on the grid container, which reads the hovered
-		// cell's col/row off data-col/data-row attributes via closest() rather
-		// than a per-cell closure. This is the regression guard for the hover
-		// half of that refactor: hovering a cell that was never clicked must
-		// still move the live placement cursor, purely via a real bubbled
-		// pointerover - the click-driven half is already exercised end to end
-		// by every other placement test in this file (each click bubbles
-		// through the same delegated container handler).
+		// The grid-guide cells share one delegated click/pointerover pair on the
+		// grid container, reading col/row off data-col/data-row via closest()
+		// rather than a per-cell closure. This guards the hover half: hovering a
+		// cell that was never clicked must still move the live placement cursor via
+		// a real bubbled pointerover. Every other placement test in this file
+		// exercises the click half through the same handler.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -498,15 +474,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task PointerDrag_WithManyRapidIntermediateMoves_StillCommitsTheFinalPosition()
 	{
-		// #1402: dragging now batches its live preview updates to at most one
-		// per animation frame (see useWidgetPlacement's rAF throttle) instead
-		// of one per raw pointermove - a high-polling-rate mouse/trackpad can
-		// fire pointermove well past the screen's refresh rate. The widget's
-		// actual committed rect on release must still reflect the very last
-		// pointer position even though most of the intermediate ones were
-		// coalesced away, so this drags through many more intermediate steps
-		// than PointerDrag_MovingAWidget_... above to make sure nothing about
-		// that batching drops or staggers the final commit.
+		// Dragging batches live preview updates to one per animation frame (see
+		// useWidgetPlacement's rAF throttle), since a high-polling-rate pointer
+		// fires pointermove well past the refresh rate. The committed rect on
+		// release must still reflect the very last pointer position even though
+		// the intermediate ones were coalesced away - hence many more steps than
+		// PointerDrag_MovingAWidget_... above.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -517,8 +490,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
+		// One widget, so placeNewWidget lands it at (x=1, y=1, width=4, height=1).
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -554,10 +526,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task PointerDrag_MovingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
 	{
-		// #16: a real press-and-drag on the grip button, distinct from the
-		// click-click-click flow covered above - moves the widget live under
-		// the pointer and commits on release, with no corner-picking banner
-		// involved at all.
+		// A real press-and-drag on the grip button, distinct from the
+		// click-click-click flow above - moves the widget live under the pointer
+		// and commits on release, with no corner-picking banner involved.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -568,8 +539,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
+		// One widget, so placeNewWidget lands it at (x=1, y=1, width=4, height=1).
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -607,16 +577,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task CornerResizeHandle_PointerDrag_ResizesBothAxesTogether_AndPersistsAcrossReload()
 	{
-		// #830 briefly added dedicated right-edge/bottom-edge handles alongside
-		// this corner one, for single-axis resizing - reverted in the #783
-		// review round-trip: on top of the existing grip/corner-resize/remove
-		// trio, two more permanently-visible controls left too little bare
-		// tile surface to grab-and-drag on the smaller widget sizes, which the
-		// organizer read as "you added more buttons, I can't move anything
-		// else - it's just not working". The corner handle (both axes at once
-		// via a real pointer drag, distinct from the click-click-click/
-		// keyboard flow covered elsewhere in this file) is the only
-		// mouse-driven resize affordance again - this is its regression guard.
+		// The corner handle is deliberately the only mouse-driven resize
+		// affordance: adding single-axis edge handles alongside the existing
+		// grip/corner-resize/remove trio leaves too little bare tile surface to
+		// grab-and-drag at the smaller widget sizes. It resizes both axes at once
+		// via a real pointer drag, distinct from the click-click-click/keyboard
+		// flow covered elsewhere in this file.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -627,8 +593,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
+		// One widget, so placeNewWidget lands it at (x=1, y=1, width=4, height=1).
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -663,17 +628,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task GridCellShape_StaysConsistentAcrossViewportWidths()
 	{
-		// #783 review feedback (comment #5049781309): "When I move it to a
-		// different sized monitor, everything becomes a weird size." The grid
-		// used a flat auto-rows-[64px] while column width already scaled with
-		// the viewport (grid-cols-8's 1fr tracks) - a widget's on-screen shape
-		// (row height relative to column width) would warp between a wide
-		// monitor and a narrower one even though its stored cell width/height
-		// never changed. Row height now tracks the actual rendered column
-		// width via a container query (.dashboard-widget-grid in global.css),
-		// so a grid cell's aspect ratio should barely move between two very
-		// differently-sized viewports, even though its absolute pixel size
-		// does.
+		// Row height tracks the rendered column width via a container query
+		// (.dashboard-widget-grid in global.css), not a flat auto-rows-[64px]:
+		// column width already scales with the viewport (grid-cols-8's 1fr tracks),
+		// so a fixed row height would warp a widget's on-screen shape between a
+		// wide monitor and a narrow one even though its stored cell size never
+		// changed. A cell's aspect ratio should barely move between two very
+		// differently-sized viewports, even though its absolute pixel size does.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -730,17 +691,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task RemovingAWidget_AutomaticallyClosesTheHorizontalGapNextToIt()
 	{
-		// #830 follow-up on the widget-placement UX: compaction used to only
-		// close gaps vertically (sliding widgets up), so removing or shrinking
-		// a widget could leave a horizontal hole next to it that nothing ever
-		// reflowed into - the grid only felt "automatic" on one axis. DEFAULT_
-		// LAYOUT places CreateOpportunity, ToDo and VolunteerStats across the
-		// same row (x=1 width=3, x=4 width=3, x=7 width=2 - see #1780) -
-		// removing CreateOpportunity should now slide ToDo all the way left
-		// into column 1, not leave it at column 4 with an empty gap to its
-		// left. VolunteerStats is asserted too: compaction runs to a fixed
-		// point, so the tile beyond the one that moved has to follow it left
-		// rather than stopping at the hole ToDo just vacated.
+		// Compaction closes gaps on both axes, not just vertically. DEFAULT_LAYOUT
+		// places CreateOpportunity, ToDo and VolunteerStats across the same row
+		// (x=1 width=3, x=4 width=3, x=7 width=2), so removing CreateOpportunity
+		// must slide ToDo all the way left into column 1, not leave a hole.
+		// VolunteerStats is asserted too: compaction runs to a fixed point, so the
+		// tile beyond the one that moved has to follow it left rather than stopping
+		// at the hole ToDo just vacated.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -777,8 +734,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await CreateOrganizationAsync("Visual DashKeyboardPlace", pinnedOrgId!.Value);
 
-		// ToDo starts at (x=4, y=1, width=3, height=1) in DEFAULT_LAYOUT
-		// (#1780 made room for VolunteerStats in the same row).
+		// ToDo starts at (x=4, y=1, width=3, height=1) in DEFAULT_LAYOUT, sharing
+		// the row with VolunteerStats.
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
@@ -854,10 +811,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task OverlappingPlacement_DisplacesTheOtherWidgetDownward_InsteadOfBeingRejected()
 	{
-		// #18: an overlapping placement used to be rejected outright - it now
-		// pushes whatever's in the way straight down instead (then closes any
-		// gap that leaves further up, see #14's compaction), and persists
-		// that displacement across a reload just like any other placement.
+		// An overlapping placement pushes whatever is in the way straight down
+		// (then compaction closes any gap that leaves further up), and the
+		// displacement persists across a reload like any other placement.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -907,9 +863,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task ResizingBelowAWidgetsMinimumSize_IsRejected_WithErrorToast_AndKeepsPreviousPosition()
 	{
-		// #15/#18: overlap alone no longer rejects a placement, but a widget's
-		// restored per-type minimum size still does - there's nowhere to
-		// "push" a widget that's shrunk smaller than it can usefully render.
+		// Overlap alone does not reject a placement, but a widget's per-type
+		// minimum size does - there is nowhere to "push" a widget shrunk smaller
+		// than it can usefully render.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -955,12 +911,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task RemovingAllWidgets_AndSaving_ShowsEmptyState_NotDefaultLayoutAfterReload()
 	{
-		// Regression guard for the #771 follow-up review feedback bug: an
-		// organizer who removes every widget and saves that must see a
-		// genuinely empty dashboard (with an "add a widget" empty state) on
-		// the next load - not silently reset back to the default widget set,
-		// which is what happened before HasCustomLayout distinguished "never
-		// customized" from "customized to empty" (see DashboardLayoutResponse.cs).
+		// An organizer who removes every widget and saves must see a genuinely
+		// empty dashboard (with an "add a widget" empty state) on the next load,
+		// not a silent reset to the default set - HasCustomLayout is what
+		// distinguishes "never customized" from "customized to empty" (see
+		// DashboardLayoutResponse.cs).
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -995,18 +950,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task WidgetContentOverflow_DoesNotStretchTheSharedGridRow()
 	{
-		// Follow-up review feedback on #782/#787's redesign: the grid used to
-		// size its rows with auto-rows-[minmax(64px,auto)], which grows the
-		// WHOLE row band - every column, not just the cell whose content
-		// demanded the extra height - so one widget with more content than
-		// its allotted rows used to stretch the green backdrop guide cells
-		// (and every sibling sharing that row) too, making edit mode look
-		// randomly, inconsistently sized. The grid row height is now fixed
-		// (see index.tsx), so an overflowing widget's own WidgetCard content
-		// area scrolls internally instead - this publishes enough
+		// Grid row height is fixed (see index.tsx) rather than
+		// auto-rows-[minmax(64px,auto)], which would grow the whole row band - every
+		// column, not just the cell that demanded the height - stretching the green
+		// backdrop cells and every sibling sharing that row. An overflowing widget's
+		// own WidgetCard content area scrolls internally instead. Publishes enough
 		// opportunities to overflow UpcomingOpportunitiesWidget (height=2,
-		// MAX_ITEMS=5) and confirms every backdrop row still shares the
-		// same rendered height as an unaffected row.
+		// MAX_ITEMS=5), then confirms every backdrop row still shares one height.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
@@ -1090,15 +1040,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task MobileViewport_RendersWidgetsInPositionOrder_NotArrayOrder()
 	{
-		// #1845: settlePlacement (widgetCatalog.ts) always prepends whichever
-		// widget just moved to the front of the layout array. That's harmless
-		// at lg+, where every tile still gets an explicit gridColumn/gridRow
-		// (see index.tsx's gridStyle), but below `lg` the grid collapses to a
-		// single stacked column with no gridStyle at all - plain document
-		// flow, where DOM order IS the visual order. Moving CreateOpportunity
-		// (DEFAULT_LAYOUT's very first widget, x=1/y=1) below every other
-		// widget used to still render it FIRST on mobile, because it was now
-		// first in the array despite being last by saved position.
+		// settlePlacement (widgetCatalog.ts) prepends whichever widget just moved to
+		// the front of the layout array. That is harmless at lg+, where every tile
+		// gets an explicit gridColumn/gridRow (index.tsx's gridStyle), but below
+		// `lg` the grid collapses to one stacked column with no gridStyle - plain
+		// document flow, where DOM order IS visual order. So a widget moved below
+		// every other must not still render first on mobile.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -1160,9 +1107,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	/// <summary>
-	/// Hovers the grid guide cell at 1-based (col, row) without clicking it -
-	/// a real mouse move, so it exercises the same delegated pointerover
-	/// handler on the grid container a real drag would (see #1402).
+	/// Hovers the grid guide cell at 1-based (col, row) without clicking it - a
+	/// real mouse move, so it exercises the same delegated pointerover handler
+	/// on the grid container a real drag would.
 	/// </summary>
 	private async Task HoverGridCellAsync(int col, int row)
 	{
@@ -1170,17 +1117,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	/// <summary>
-	/// Asserts a widget tile's rendered bounds line up with the backdrop
-	/// cells at its expected 1-based (x, y, width, height) grid placement.
-	/// Deliberately does NOT inspect the tile's "style" attribute - browsers
-	/// are free to serialize the separately-set gridColumn/gridRow inline
-	/// styles into a combined "grid-area" shorthand (observed on CI's
-	/// Chromium build), so asserting on the raw attribute string would be
-	/// coupled to that serialization choice rather than the actual layout.
-	/// Comparing rendered pixel bounds against the same backdrop cells the
-	/// organizer clicked to make the placement is what
-	/// DefaultLayout_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt
-	/// above already does for the same reason.
+	/// Asserts a widget tile's rendered bounds line up with the backdrop cells at
+	/// its expected 1-based (x, y, width, height) grid placement.
+	///
+	/// Deliberately does NOT inspect the tile's "style" attribute: browsers may
+	/// serialize the separately-set gridColumn/gridRow inline styles into a
+	/// combined "grid-area" shorthand, so asserting on the raw attribute string
+	/// couples to that serialization choice rather than the actual layout.
 	/// </summary>
 	private async Task AssertWidgetOccupiesCellsAsync(string widgetTestId, int x, int y, int width, int height)
 	{
@@ -1193,13 +1136,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(topLeftCell).ToBeVisibleAsync();
 		await Expect(bottomRightCell).ToBeVisibleAsync();
 
-		// All four edge deltas computed together inside a single
-		// EvaluateAsync call (rather than three separate BoundingBoxAsync
-		// round trips), so nothing can shift layout between reading the
-		// tile's box and the two backdrop cells' boxes that describe the
-		// same expected placement - this is the shared helper every
-		// placement test in this file calls, so fixing it here fixes every
-		// caller.
+		// All four edge deltas computed in a single EvaluateAsync call rather than
+		// three BoundingBoxAsync round trips, so nothing can shift layout between
+		// reading the tile's box and the two backdrop cells' boxes.
 		double leftDelta = 0, topDelta = 0, rightDelta = 0, bottomDelta = 0;
 		await PollUntilAsync(async () =>
 		{
