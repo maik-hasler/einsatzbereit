@@ -373,8 +373,10 @@
     },
     "signUp": {
       "titleWaitlist": "Für Zeitslot anmelden",
+      "titleConfirm": "Anmeldung bestätigen",
       "titleInterest": "Interesse bekunden",
       "selectTimeSlot": "Zeitslot",
+      "confirmTimeSlot": "Du meldest dich für {{range}} an.",
       "noTimeSlots": "Keine Zeitslots verfügbar.",
       "selectPlaceholder": "Bitte wählen…",
       "message": "Nachricht",
@@ -670,6 +672,7 @@
       "noFixedDate": "Kein festes Datum - Interessenbekundung",
       "yourMessage": "Deine Nachricht:",
       "registeredOn": "Angemeldet: {{date}}",
+      "pendingExplanation": "Die Organisation prüft deine Anmeldung. Du bekommst eine Nachricht, sobald sie bestätigt ist.",
       "deletedOpportunityTitle": "Dieser Einsatz wurde entfernt",
       "cancellationReason": "Grund: {{reason}}",
       "withdraw": "Zurückziehen",

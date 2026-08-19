@@ -49,8 +49,12 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 
 		// Scoped to the desktop testid (#1965 added a second, lg:hidden copy of
 		// this same "Your sign-up" text right above the map for narrow
-		// viewports - an unscoped Page.GetByText would match both).
-		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up"))
+		// viewports - an unscoped Page.GetByText would match both). Exact match
+		// is required too: #2075's pendingExplanation copy ("The organization is
+		// reviewing your sign-up...") lives inside the same testid and contains
+		// "your sign-up" as a substring, so a non-exact GetByText resolves to
+		// both paragraphs and trips Playwright's strict-mode check.
+		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up", new() { Exact = true }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
@@ -95,8 +99,12 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 
 		// Scoped to the desktop testid (#1965 added a second, lg:hidden copy of
 		// this same "Your sign-up" text right above the map for narrow
-		// viewports - an unscoped Page.GetByText would match both).
-		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up"))
+		// viewports - an unscoped Page.GetByText would match both). Exact match
+		// is required too: #2075's pendingExplanation copy ("The organization is
+		// reviewing your sign-up...") lives inside the same testid and contains
+		// "your sign-up" as a substring, so a non-exact GetByText resolves to
+		// both paragraphs and trips Playwright's strict-mode check.
+		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up", new() { Exact = true }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();

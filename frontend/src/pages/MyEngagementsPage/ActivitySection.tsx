@@ -605,6 +605,14 @@ export default function ActivitySection() {
 									{STATUS_LABELS[e.status] ?? e.status}
 								</span>
 							</div>
+							{/* Pending previously had no explanation anywhere on this page
+							either - reused verbatim from the opportunity-detail page's rail
+							(#2075). */}
+							{e.status === "Pending" && (
+								<p className="text-xs text-gray-600">
+									{t("myEngagements.pendingExplanation")}
+								</p>
+							)}
 							<div className="mt-auto flex flex-wrap items-center gap-2">
 								{e.status === "Confirmed" &&
 									!e.isCheckedIn &&
