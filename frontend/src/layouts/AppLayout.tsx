@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import SkipLink from "../components/SkipLink";
 import ErrorBoundary from "../components/ErrorBoundary";
+import { isAuthenticatedRoute } from "../lib/authenticatedRoutes";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { QuickActionsProvider } from "../contexts/QuickActionsContext";
 import {
@@ -44,9 +45,17 @@ function AppLayoutInner() {
 					</Suspense>
 				</ErrorBoundary>
 			</main>
-			{/* /opportunities renders a grid of identically-styled cards right
-			above this footer - see Footer's headingLevel doc comment (#2071). */}
-			<Footer headingLevel={location.pathname === "/opportunities" ? 3 : 2} />
+			{/* Account/admin pages get the org console's slim link-row footer
+			instead of the public marketing one - its acquisition CTA has no
+			business framing a settings form or an operational admin list
+			(#2060). */}
+			{isAuthenticatedRoute(location.pathname) ? (
+				<Footer compact />
+			) : (
+				// /opportunities renders a grid of identically-styled cards right
+				// above this footer - see Footer's headingLevel doc comment (#2071).
+				<Footer headingLevel={location.pathname === "/opportunities" ? 3 : 2} />
+			)}
 		</div>
 	);
 }

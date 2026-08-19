@@ -25,13 +25,14 @@ function SettingsIconWidget({ organizationId, size }: Props) {
 		<WidgetCard
 			titleId="widget-settings-icon-title"
 			title={title}
-			className="relative"
+			stretchedLink={
+				<Link
+					to={`/app/${organizationId}/dashboard/settings`}
+					className="absolute inset-0"
+					aria-label={title}
+				/>
+			}
 		>
-			<Link
-				to={`/app/${organizationId}/dashboard/settings`}
-				className="absolute inset-0"
-				aria-label={title}
-			/>
 			<div
 				aria-hidden="true"
 				className={`flex items-center justify-center py-2 text-brand-700 ${size === "compact" ? "flex-col gap-1" : "flex-row gap-3"}`}

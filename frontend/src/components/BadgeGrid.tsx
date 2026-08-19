@@ -17,6 +17,35 @@ const EDGE_MARGIN = 8;
 // so getBoundingClientRect/offsetWidth would read 0 anyway).
 const TOOLTIP_WIDTH = 192;
 
+// The catalog (BadgeCatalogEntry) carries no threshold number - only the
+// static name/description text does ("Verdient nach 5 bestaetigten
+// Einsaetzen"). The counters that satisfy each threshold already render
+// elsewhere on /profile (engagement count, login streak, activity streak),
+// so this mirrors AchievementTypeIcon's per-key approach below: keyed on
+// `catalog.key`, has to be kept in sync with appsettings.json's
+// BadgeCatalog:Badges by hand. early-adopter has no counter to show
+// progress against ("one of the first volunteers") and is intentionally
+// absent here.
+export type BadgeProgressMetric =
+	"engagements" | "loginStreak" | "activityStreak";
+
+export const BADGE_PROGRESS_TARGETS: Record<
+	string,
+	{ target: number; metric: BadgeProgressMetric }
+> = {
+	"first-step": { target: 1, metric: "engagements" },
+	"dedicated-5": { target: 5, metric: "engagements" },
+	"centurion-100": { target: 100, metric: "engagements" },
+	"on-a-roll-7": { target: 7, metric: "loginStreak" },
+	"weekly-hero-4": { target: 4, metric: "activityStreak" },
+};
+
+export interface BadgeProgressSummary {
+	engagements: number;
+	loginStreak: number;
+	activityStreak: number;
+}
+
 // Milestone (first-step/dedicated-5/centurion-100) and Streak (on-a-roll-7/
 // weekly-hero-4) each group two-to-three badges under one AchievementType,
 // so keying the icon on `type` alone gave every badge in a group the same
@@ -123,15 +152,30 @@ function AchievementTypeIcon({
 interface BadgeCardProps {
 	catalog: BadgeCatalogEntry;
 	earned?: AchievementSummary;
+	// Optional: UserProfilePage (someone else's public profile) has no access
+	// to another user's streak/engagement counters, so it renders badges with
+	// no progress indicator rather than fetching or faking one.
+	progress?: BadgeProgressSummary;
 }
 
-function BadgeCard({ catalog, earned }: BadgeCardProps) {
+function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 	const { t, i18n } = useTranslation();
 	const isEarned = !!earned;
 	const isHidden = catalog.isHidden && !isEarned;
 	const typeName = isEarned
 		? achievementTypeLabel(earned.type)
 		: achievementTypeLabel(catalog.type);
+	const progressTarget = progress
+		? BADGE_PROGRESS_TARGETS[catalog.key]
+		: undefined;
+	// Capped at the target: a badge can lag its counter by a beat (the award
+	// runs as a follow-up domain-event handler, not inline with the action
+	// that pushed the counter past the threshold), so briefly showing "6 von
+	// 5" instead of "5 von 5" would read as a bug.
+	const currentProgress =
+		progressTarget && progress
+			? Math.min(progress[progressTarget.metric], progressTarget.target)
+			: null;
 	const tooltipId = `badge-tooltip-${catalog.key}`;
 	const nameId = `badge-name-${catalog.key}`;
 	const cardRef = useRef<HTMLDivElement>(null);
@@ -225,6 +269,32 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 					})}
 				</p>
 			)}
+			{!isEarned && !isHidden && progressTarget && currentProgress !== null && (
+				<div className="mt-2 w-full">
+					<div
+						className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100"
+						aria-hidden="true"
+					>
+						<div
+							className="h-full rounded-full bg-brand-600"
+							style={{
+								width: `${(currentProgress / progressTarget.target) * 100}%`,
+							}}
+						/>
+					</div>
+					<p className="mt-1 text-xs font-medium text-brand-700">
+						{t("achievements.badgeProgress", {
+							current: currentProgress,
+							target: progressTarget.target,
+						})}
+					</p>
+				</div>
+			)}
+			{isHidden && (
+				<p className="mt-1 text-xs text-gray-500">
+					{t("achievements.hiddenBadgeTeaser")}
+				</p>
+			)}
 			{!isHidden && (
 				<div
 					id={tooltipId}
@@ -242,6 +312,14 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 							defaultValue: catalog.description,
 						})}
 					</p>
+					{!isEarned && progressTarget && currentProgress !== null && (
+						<p className="mt-1 text-brand-300">
+							{t("achievements.badgeProgress", {
+								current: currentProgress,
+								target: progressTarget.target,
+							})}
+						</p>
+					)}
 					{isEarned && (
 						<p className="mt-1 text-brand-300">
 							{t("achievements.types." + typeName)}
@@ -256,12 +334,14 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 interface BadgeGridProps {
 	earned: AchievementSummary[];
 	catalog: BadgeCatalogEntry[];
+	progress?: BadgeProgressSummary;
 	loading?: boolean;
 }
 
 export default function BadgeGrid({
 	earned,
 	catalog,
+	progress,
 	loading,
 }: BadgeGridProps) {
 	const { t } = useTranslation();
@@ -286,6 +366,7 @@ export default function BadgeGrid({
 					key={entry.key}
 					catalog={entry}
 					earned={earnedByKey.get(entry.key)}
+					progress={progress}
 				/>
 			))}
 			{catalog.length === 0 && earned.length === 0 && (

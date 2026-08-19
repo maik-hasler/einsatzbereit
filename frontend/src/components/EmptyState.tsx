@@ -11,6 +11,10 @@ interface Props {
 		label: string;
 		to?: string;
 		onClick?: () => void;
+		// Lets a caller reuse an existing testid on the CTA - e.g. ProfileOverviewPage
+		// points this at "profile-edit" so the empty-state CTA is reachable the same
+		// way as the header edit button it replaces while the panel is empty (#2066).
+		testId?: string;
 	};
 	// Smaller padding/type for dashboard widgets and dropdown panels, where
 	// the default py-12 is too much space for the room available - #1122.
@@ -68,6 +72,7 @@ export default function EmptyState({
 						to={action.to}
 						size={compact ? "sm" : "md"}
 						className={compact ? "mt-3" : "mt-4"}
+						data-testid={action.testId}
 					>
 						{action.label}
 					</Button>
@@ -77,6 +82,7 @@ export default function EmptyState({
 						onClick={action.onClick}
 						size={compact ? "sm" : "md"}
 						className={compact ? "mt-3" : "mt-4"}
+						data-testid={action.testId}
 					>
 						{action.label}
 					</Button>

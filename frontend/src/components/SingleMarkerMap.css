@@ -54,12 +54,16 @@ it for ~5 kB gzip. */
 	background: none;
 }
 
-/* ── Leaflet attribution link contrast ───────────────────────────────────── */
-/* Leaflet ships no color for its attribution links, so they render at
-~3.6:1 against the semi-transparent bar over the desaturated tiles above -
-below WCAG AA. Darkened to clear 4.5:1 (measures ~5.1:1) while staying the
-same blue; the ODbL-required attribution text itself stays untouched
-(einsatzbereit#1671). */
+/* ── Leaflet attribution link color ──────────────────────────────────────── */
+/* Leaflet ships no color for its attribution links, so they rendered in its
+own default blue instead of the brand green used everywhere else in the app,
+including the manifest theme color (#2058). brand-700 (not a lighter shade)
+keeps this at least as readable as the old color against the semi-transparent
+bar here: #226947 computes to ~6.6:1 against plain white (WCAG
+relative-luminance formula) versus the old #006086's ~7.0:1, both comfortably
+above the 4.5:1 AA floor that made darkening the link color necessary in the
+first place (einsatzbereit#1671); the ODbL-required attribution text itself
+stays untouched. */
 .leaflet-control-attribution a {
-	color: #006086;
+	color: var(--color-brand-700);
 }

@@ -7,13 +7,19 @@ namespace VisualTests;
 // #1963: a non-remote opportunity whose address hasn't (yet) resolved to
 // coordinates used to omit the map section entirely, with no acknowledgment
 // either way - two offers from the same organization could render the detail
-// page inconsistently depending on hidden geocoding success. Now a
-// "no map available" note takes its place instead.
+// page inconsistently depending on hidden geocoding success. A "no map
+// available" placeholder (the same size as the map it stood in for) fixed
+// that, but reserved map-sized space to restate the address that was already
+// printed as text in the "Where" fact just above it (#2058). The placeholder
+// is now gone entirely - the address stays promoted where it already was,
+// and the directions link (missing for every opportunity before #2058, with
+// or without coordinates) still gives a text-address-based escape hatch even
+// when there is no pin to link to directly.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
-public class MapUnavailablePlaceholderTests(AspireFixture fixture) : VisualTestBase(fixture)
+public class MissingCoordinatesFallbackTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OpportunityDetailPage_ShowsMapUnavailableNote_WhenCoordinatesAreMissing()
+	public async Task OpportunityDetailPage_CollapsesMapSection_AndLinksDirectionsByAddress_WhenCoordinatesAreMissing()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -38,7 +44,7 @@ public class MapUnavailablePlaceholderTests(AspireFixture fixture) : VisualTestB
 		var oppResponse = await PostJsonWithRetryAsync(http, "/v1/volunteer-opportunities", new
 		{
 			titleDe = title,
-			descriptionDe = "Created by OpportunityDetailPage_ShowsMapUnavailableNote_WhenCoordinatesAreMissing",
+			descriptionDe = "Created by OpportunityDetailPage_CollapsesMapSection_AndLinksDirectionsByAddress_WhenCoordinatesAreMissing",
 			organizationId,
 			isRemote = false,
 			street = "Teststrasse",
@@ -58,7 +64,13 @@ public class MapUnavailablePlaceholderTests(AspireFixture fixture) : VisualTestB
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Expect(Page.Locator("h1").First).ToHaveTextAsync(title, new() { Timeout = 15_000 });
 
-		await Expect(Page.GetByTestId("map-unavailable")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("map-unavailable")).Not.ToBeAttachedAsync();
 		await Expect(Page.Locator(".leaflet-container")).Not.ToBeAttachedAsync();
+
+		var directionsLink = Page.GetByTestId("opportunity-directions-link");
+		await Expect(directionsLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(directionsLink).ToHaveAttributeAsync(
+			"href",
+			"https://www.google.com/maps/dir/?api=1&destination=Teststrasse%201%2C%2012345%20Musterstadt");
 	}
 }
