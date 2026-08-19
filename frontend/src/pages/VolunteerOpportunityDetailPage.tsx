@@ -48,6 +48,7 @@ import { cardClass } from "../lib/surfaceClasses";
 import {
 	CalendarIcon,
 	CheckIconSolid,
+	ChevronRightIcon,
 	EnvelopeIcon,
 	FlagIcon,
 	GlobeIcon,
@@ -153,6 +154,13 @@ export default function VolunteerOpportunityDetailPage() {
 	const online = useOnlineStatus();
 	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
 	const [showSignUp, setShowSignUp] = useState(false);
+	// Set when the sign-up modal was opened from a specific slot row rather
+	// than the rail's generic sign-up button - undefined for the rail's own
+	// "secondary entry point" (#2075), which still lets the modal pick for a
+	// multi-slot opportunity.
+	const [preselectedSlotId, setPreselectedSlotId] = useState<
+		string | undefined
+	>(undefined);
 	const [showReport, setShowReport] = useState(false);
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
@@ -505,6 +513,14 @@ export default function VolunteerOpportunityDetailPage() {
 								>
 									{t(`myEngagements.status.${cue.status}`)}
 								</Chip>
+								{/* Pending previously had no explanation anywhere on this
+								page - the amber chip alone didn't say what "pending" means,
+								who resolves it, or how long it takes (#2075). */}
+								{cue.status === "Pending" && (
+									<p className="mt-1.5 text-xs text-gray-600">
+										{t("myEngagements.pendingExplanation")}
+									</p>
+								)}
 								{registeredTimeSlot && (
 									<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
 										<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
@@ -562,7 +578,10 @@ export default function VolunteerOpportunityDetailPage() {
 							</p>
 						)}
 						<Button
-							onClick={() => setShowSignUp(true)}
+							onClick={() => {
+								setPreselectedSlotId(undefined);
+								setShowSignUp(true);
+							}}
 							disabled={isFull}
 							fullWidth
 							size="lg"
@@ -899,27 +918,62 @@ export default function VolunteerOpportunityDetailPage() {
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
 									<ul className="space-y-2">
-										{opportunity.timeSlots.map((ts) => (
-											<li
-												key={ts.id}
-												className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
-											>
-												<span>
-													{formatDateTimeRange(
-														ts.startDateTime as unknown as string,
-														ts.endDateTime as unknown as string,
-														i18n.language,
+										{opportunity.timeSlots.map((ts) => {
+											// The rows themselves are the primary control now - not
+											// just an inert preview of what the rail's sign-up button
+											// opens ~700px away (#2075). Only wired up where a click
+											// could actually do something: a slot with no spots left
+											// can't be signed up for, and every other viewer state
+											// (anonymous, owner, already applied, draft) has no
+											// sign-up action to trigger in the first place.
+											const clickable =
+												showSignUpCta &&
+												!isSlotFull(ts.maxParticipants, ts.bookedCount);
+											const rowContent = (
+												<>
+													<span>
+														{formatDateTimeRange(
+															ts.startDateTime as unknown as string,
+															ts.endDateTime as unknown as string,
+															i18n.language,
+														)}
+													</span>
+													{/* Free places, the same framing the cards and the sign-up
+													modal's slot picker use. This said "(max. N people)" while the
+													card that linked here said "N spots left", so the two
+													disagreed about the same opportunity (#1777). */}
+													<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
+														{slotCapacityLabel(ts, t)}
+														{clickable && (
+															<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
+														)}
+													</span>
+												</>
+											);
+											return (
+												<li key={ts.id}>
+													{clickable ? (
+														<button
+															type="button"
+															onClick={() => {
+																setPreselectedSlotId(ts.id);
+																setShowSignUp(true);
+															}}
+															data-testid="opportunity-time-slot-row"
+															className={`flex w-full items-center justify-between ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
+														>
+															{rowContent}
+														</button>
+													) : (
+														<div
+															className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+														>
+															{rowContent}
+														</div>
 													)}
-												</span>
-												{/* Free places, the same framing the cards and the sign-up
-												modal's slot picker use. This said "(max. N people)" while the
-												card that linked here said "N spots left", so the two
-												disagreed about the same opportunity (#1777). */}
-												<span className="ml-3 shrink-0 text-xs text-gray-600">
-													{slotCapacityLabel(ts, t)}
-												</span>
-											</li>
-										))}
+												</li>
+											);
+										})}
 									</ul>
 								</div>
 							)}
@@ -1038,9 +1092,14 @@ export default function VolunteerOpportunityDetailPage() {
 						organizationId={opportunity.organizationId}
 						participationType={opportunity.participationType}
 						timeSlots={opportunity.timeSlots}
-						onClose={() => setShowSignUp(false)}
+						preselectedTimeSlotId={preselectedSlotId}
+						onClose={() => {
+							setShowSignUp(false);
+							setPreselectedSlotId(undefined);
+						}}
 						onSuccess={() => {
 							setShowSignUp(false);
+							setPreselectedSlotId(undefined);
 							dispatchToast("success", t("signUp.success"));
 							load();
 						}}

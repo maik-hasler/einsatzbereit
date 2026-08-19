@@ -21,6 +21,11 @@ interface Props {
 	organizationId: string;
 	participationType: string;
 	timeSlots: TimeSlotDetail[];
+	// Set when the volunteer clicked a specific slot row on the detail page
+	// rather than the rail's generic sign-up button (#2075) - that click
+	// already answered "which slot", so this skips the redundant re-picking
+	// step below and goes straight to a confirmation of that one slot.
+	preselectedTimeSlotId?: string;
 	onClose: () => void;
 	onSuccess: () => void;
 }
@@ -30,12 +35,22 @@ export default function SignUpModal({
 	organizationId,
 	participationType,
 	timeSlots,
+	preselectedTimeSlotId,
 	onClose,
 	onSuccess,
 }: Props) {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
+	// Only a row click settles which slot up front - the rail button is a
+	// generic "sign up" trigger with no slot of its own in mind, so it always
+	// goes through the picker below just as before (pre-selected once there's
+	// only one open slot to pick, #657 - not skipped, since the rail button
+	// remains a secondary entry point without a slot already in hand, #2075).
+	const confirmedTimeSlot = preselectedTimeSlotId
+		? timeSlots.find((ts) => ts.id === preselectedTimeSlotId)
+		: undefined;
 	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>(() => {
+		if (confirmedTimeSlot) return confirmedTimeSlot.id;
 		const availableSlots = timeSlots.filter(
 			(ts) => !isSlotFull(ts.maxParticipants, ts.bookedCount),
 		);
@@ -110,56 +125,77 @@ export default function SignUpModal({
 		>
 			<h2 id="sign-up-dialog-title" className="mb-4 text-lg font-semibold">
 				{isScheduledSlots
-					? t("signUp.titleWaitlist")
+					? confirmedTimeSlot
+						? t("signUp.titleConfirm")
+						: t("signUp.titleWaitlist")
 					: t("signUp.titleInterest")}
 			</h2>
 
 			<form onSubmit={handleSubmit} className="space-y-4">
 				{isScheduledSlots && (
 					<div>
-						{/* Visually hidden, not removed - the dialog title just above
-						("Select a slot") already conveys this on screen, so showing it
-						again here read as a duplicated label (#987); the dropdown still
-						needs its own accessible name for screen reader users landing on
-						it directly. */}
-						<label htmlFor="sign-up-time-slot" className="sr-only">
-							{t("signUp.selectTimeSlot")}
-						</label>
 						{timeSlots.length === 0 ? (
 							<p className="text-sm text-gray-500">{t("signUp.noTimeSlots")}</p>
-						) : (
-							<Dropdown
-								id="sign-up-time-slot"
-								value={selectedTimeSlotId}
-								onChange={setSelectedTimeSlotId}
-								placeholder={t("signUp.selectPlaceholder")}
-								className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
-								options={timeSlots.map((ts) => {
-									const spotsLeft = computeSpotsLeft(
-										ts.maxParticipants,
-										ts.bookedCount,
-									);
-									const slotFull = isSlotFull(
-										ts.maxParticipants,
-										ts.bookedCount,
-									);
-									return {
-										value: ts.id,
-										disabled: slotFull,
-										label: `${formatDateTimeRange(
-											ts.startDateTime as unknown as string,
-											ts.endDateTime as unknown as string,
-											i18n.language,
-										)} ${
-											spotsLeft === null
-												? t("opportunities.unlimitedSpots")
-												: slotFull
-													? t("opportunities.full")
-													: t("opportunities.spotsLeft", { count: spotsLeft })
-										}`,
-									};
+						) : confirmedTimeSlot ? (
+							// The volunteer already named this exact slot by clicking its
+							// row, so this states it as a fact instead of making them
+							// re-pick it from the same dropdown they'd otherwise see below
+							// (#2075).
+							<p
+								className="text-sm text-gray-700"
+								data-testid="sign-up-confirmed-slot"
+							>
+								{t("signUp.confirmTimeSlot", {
+									range: formatDateTimeRange(
+										confirmedTimeSlot.startDateTime as unknown as string,
+										confirmedTimeSlot.endDateTime as unknown as string,
+										i18n.language,
+									),
 								})}
-							/>
+							</p>
+						) : (
+							<>
+								{/* Visually hidden, not removed - the dialog title just above
+								("Select a slot") already conveys this on screen, so showing it
+								again here read as a duplicated label (#987); the dropdown still
+								needs its own accessible name for screen reader users landing on
+								it directly. */}
+								<label htmlFor="sign-up-time-slot" className="sr-only">
+									{t("signUp.selectTimeSlot")}
+								</label>
+								<Dropdown
+									id="sign-up-time-slot"
+									value={selectedTimeSlotId}
+									onChange={setSelectedTimeSlotId}
+									placeholder={t("signUp.selectPlaceholder")}
+									className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
+									options={timeSlots.map((ts) => {
+										const spotsLeft = computeSpotsLeft(
+											ts.maxParticipants,
+											ts.bookedCount,
+										);
+										const slotFull = isSlotFull(
+											ts.maxParticipants,
+											ts.bookedCount,
+										);
+										return {
+											value: ts.id,
+											disabled: slotFull,
+											label: `${formatDateTimeRange(
+												ts.startDateTime as unknown as string,
+												ts.endDateTime as unknown as string,
+												i18n.language,
+											)} ${
+												spotsLeft === null
+													? t("opportunities.unlimitedSpots")
+													: slotFull
+														? t("opportunities.full")
+														: t("opportunities.spotsLeft", { count: spotsLeft })
+											}`,
+										};
+									})}
+								/>
+							</>
 						)}
 					</div>
 				)}

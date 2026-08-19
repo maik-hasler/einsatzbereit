@@ -382,8 +382,10 @@
     },
     "signUp": {
       "titleWaitlist": "Select a slot",
+      "titleConfirm": "Confirm sign-up",
       "titleInterest": "Express interest",
       "selectTimeSlot": "Select time slot",
+      "confirmTimeSlot": "You're signing up for {{range}}.",
       "noTimeSlots": "No time slots available.",
       "selectPlaceholder": "Please select…",
       "message": "Message",
@@ -677,6 +679,7 @@
       "noFixedDate": "No fixed date - expression of interest",
       "yourMessage": "Your message:",
       "registeredOn": "Signed up: {{date}}",
+      "pendingExplanation": "The organization is reviewing your sign-up. You'll get a message once it's confirmed.",
       "deletedOpportunityTitle": "This opportunity has been removed",
       "cancellationReason": "Reason: {{reason}}",
       "withdraw": "Withdraw",

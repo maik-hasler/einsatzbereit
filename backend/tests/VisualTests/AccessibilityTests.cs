@@ -1790,6 +1790,144 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_ClickableTimeSlotRows_AsVera_HasNoSeriousA11yViolations()
+	{
+		// #2075: "Available time slots" rows are now a <button> (not an inert
+		// <div>) whenever the current viewer can sign up - a render state none
+		// of this file's other detail-page scans reach, since they're all
+		// anonymous (rows stay plain <div>s, see the SlotRow_IsNotClickable_
+		// ToAnonymousVisitor regression in SlotRowSignUpTests) or already
+		// past the sign-up-CTA state entirely. Two open slots, not one, so
+		// this also covers multiple clickable rows on the same page instead
+		// of just a single one.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var organizerHttp = new HttpClient { BaseAddress = backend };
+		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y SlotRow Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = $"A11y SlotRow Test {suffix}",
+			descriptionDe = "Seeded for #2075 clickable time-slot row a11y coverage.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var firstStart = DateTimeOffset.UtcNow.AddDays(5);
+		(await organizerHttp.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = firstStart,
+			endDateTime = firstStart.AddHours(2),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+		var secondStart = firstStart.AddDays(7);
+		(await organizerHttp.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = secondStart,
+			endDateTime = secondStart.AddHours(2),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+
+		(await organizerHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Proves the scan below actually saw clickable rows, not the inert
+		// <div> variant.
+		await Expect(Page.GetByTestId("opportunity-time-slot-row")).ToHaveCountAsync(2, new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task SignUpModal_ConfirmedTimeSlot_HasNoSeriousA11yViolations()
+	{
+		// #2075: clicking a time-slot row opens the sign-up dialog straight
+		// into a "confirm this exact slot" state that skips the #sign-up-time-slot
+		// Dropdown entirely - a dialog render state SignUpModal_OpenTimeSlotDropdown_
+		// HasNoSeriousA11yViolations above never reaches, since it always opens
+		// via the rail's generic "Select a slot" button.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var organizerHttp = new HttpClient { BaseAddress = backend };
+		organizerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await organizerHttp.PostAsJsonAsync("/v1/organizations", new { name = $"A11y SlotRowConfirm Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await organizerHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = $"A11y SlotRowConfirm Test {suffix}",
+			descriptionDe = "Seeded for #2075 sign-up-confirmation dialog a11y coverage.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(5);
+		(await organizerHttp.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start,
+			endDateTime = start.AddHours(2),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+
+		(await organizerHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("opportunity-time-slot-row").ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		// Proves the scan below actually saw the confirmation state, not the
+		// dropdown-picker state SignUpModal_OpenTimeSlotDropdown_
+		// HasNoSeriousA11yViolations already covers.
+		await Expect(Page.GetByTestId("sign-up-confirmed-slot")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator("#sign-up-time-slot")).ToHaveCountAsync(0);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task LanguageSelector_Open_HasNoSeriousA11yViolations()
 	{
 		// The header's language switcher is in every page's header, but no other
