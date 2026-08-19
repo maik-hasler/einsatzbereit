@@ -135,7 +135,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckedInFuture Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckedInFuture Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -251,7 +251,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		// Create a fresh organization rather than reusing olaf's shared seed
 		// org - other VisualTests running concurrently in this shared Aspire
 		// session can mutate/delete shared orgs (see EngagementReactivationTests).
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"MyEngagementsScopeTabs Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

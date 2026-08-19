@@ -50,7 +50,7 @@ public class LogoUploadRejectionMessageTests(AspireFixture fixture) : VisualTest
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"LogoReject {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"LogoReject {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

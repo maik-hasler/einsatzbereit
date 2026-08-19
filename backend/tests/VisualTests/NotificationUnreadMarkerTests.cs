@@ -39,7 +39,7 @@ public class NotificationUnreadMarkerTests(AspireFixture fixture) : VisualTestBa
 
 		// A fresh org rather than olaf's shared seed org - other VisualTests in
 		// this shared Aspire session mutate/delete shared orgs concurrently.
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"NotifUnreadMarker Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

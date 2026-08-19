@@ -33,7 +33,7 @@ public class AdminReportsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations",
 			new { name = $"Admin Reports Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();

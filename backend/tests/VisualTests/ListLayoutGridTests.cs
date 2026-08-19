@@ -44,7 +44,7 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 	private static async Task<string> CreateOrganizationAsync(HttpClient http, string namePrefix)
 	{
 		var suffix = Guid.NewGuid().ToString("N")[..8];
-		var response = await http.PostAsJsonAsync("/v1/organizations", new { name = $"{namePrefix} {suffix}" });
+		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"{namePrefix} {suffix}" });
 		response.EnsureSuccessStatusCode();
 		var org = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return org.GetProperty("id").GetProperty("value").GetString()!;

@@ -26,7 +26,7 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInModalDeleted Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckInModalDeleted Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

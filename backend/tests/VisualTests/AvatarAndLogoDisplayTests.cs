@@ -97,7 +97,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"VisualLogo {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"VisualLogo {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -168,7 +168,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 
 		var suffix = Guid.NewGuid().ToString("N");
 
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"LogoRemoval {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"LogoRemoval {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

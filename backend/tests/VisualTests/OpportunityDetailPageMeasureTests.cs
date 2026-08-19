@@ -80,7 +80,7 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
 		var orgName = $"Measure1794 {suffix}";
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;

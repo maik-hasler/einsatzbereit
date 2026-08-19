@@ -136,7 +136,7 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations", new { name = $"Stale Session Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
