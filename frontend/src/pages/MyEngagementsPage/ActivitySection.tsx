@@ -8,7 +8,10 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
+import {
+	ENGAGEMENT_STATUS_COLORS,
+	isTerminalEngagementStatus,
+} from "../../lib/engagementStatus";
 import { isFeedbackEditable } from "../../lib/feedback";
 import { formatDate, formatDateTimeRange } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
@@ -508,19 +511,26 @@ export default function ActivitySection() {
 												<ArrowsRightLeftIcon className="h-3.5 w-3.5 shrink-0" />
 												<span>{t("myEngagements.noFixedDate")}</span>
 											</p>
-											{e.opportunityValidUntil && (
-												<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
-													<ClockIcon className="h-3.5 w-3.5 shrink-0" />
-													<span>
-														{t("opportunities.applyBy", {
-															date: formatDate(
-																e.opportunityValidUntil as unknown as string,
-																i18n.language,
-															),
-														})}
-													</span>
-												</p>
-											)}
+											{/* Cancelled/Withdrawn is terminal - the opportunity's own
+											application deadline is no longer actionable for this
+											engagement, so showing it read as a future-looking date on a
+											card that is otherwise done (#2070). The status chip at the
+											top of the card is the one piece of temporal-status
+											information that still applies. */}
+											{!isTerminalEngagementStatus(e.status) &&
+												e.opportunityValidUntil && (
+													<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
+														<ClockIcon className="h-3.5 w-3.5 shrink-0" />
+														<span>
+															{t("opportunities.applyBy", {
+																date: formatDate(
+																	e.opportunityValidUntil as unknown as string,
+																	i18n.language,
+																),
+															})}
+														</span>
+													</p>
+												)}
 										</>
 									)}
 									{e.status === "Cancelled" && e.cancellationReason && (

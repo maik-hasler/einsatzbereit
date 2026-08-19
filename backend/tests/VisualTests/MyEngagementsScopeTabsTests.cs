@@ -67,6 +67,51 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 	}
 
 	/// <summary>
+	/// Regression for #2070: a Withdrawn engagement whose opportunity still has
+	/// a future "express interest by" deadline (the common shape for an
+	/// IndividualContact opportunity - it stays open for other volunteers long
+	/// after this one withdrew) used to keep showing that future-dated deadline
+	/// on its card in the "Past" scope, contradicting the scope's own label.
+	/// Once terminal (Cancelled/Withdrawn), the deadline is no longer
+	/// actionable for this engagement, so the card should drop it and rely on
+	/// the status chip instead.
+	/// </summary>
+	[Test]
+	public async Task EngagementsTab_PastScope_HidesFutureApplyByDeadline_ForWithdrawnEngagement()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "ScopeTabsWithdrawnFuture");
+
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+
+		var engagementId = await ApplyAsync(veraHttp, opportunityId, "Withdrawing right away.");
+		var withdrawResponse = await veraHttp.PostAsync($"/v1/engagements/{engagementId}/withdraw", content: null);
+		withdrawResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/my-signups");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await LoadMoreUntilVisibleAsync(card);
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Exact match: the opportunity's own fixture title ("ScopeTabsWithdrawnFuture")
+		// contains "Withdrawn" as a substring too, so a non-exact GetByText here
+		// is a strict-mode violation - it resolves to both the title link and
+		// the actual "Withdrawn" status badge this assertion means to check.
+		await Expect(card.GetByText("Withdrawn", new() { Exact = true })).ToBeVisibleAsync();
+		await Expect(card.GetByText("Express interest by")).Not.ToBeVisibleAsync();
+	}
+
+	/// <summary>
 	/// Regression for #1855: Engagement.CheckIn() has no time-based guard, so an
 	/// organizer can check a volunteer in as soon as an engagement is Confirmed -
 	/// e.g. at arrival for a still-ongoing multi-hour shift, or (as filed) for a
