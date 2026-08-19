@@ -2126,6 +2126,95 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 	}
 
+	/// <summary>
+	/// #2065: the opportunity detail page's new full-page (non-`inline`) offline
+	/// branch - a different DOM/landmark shape than the `inline` case
+	/// <see cref="OpportunityListOffline_HasNoSeriousA11yViolations"/> above
+	/// covers (this one replaces <c>PageHeaderBand</c> and the rest of the page
+	/// too, the same way the page's existing not-found/generic-error branches
+	/// already do), and it also now carries a "Try again" button neither of
+	/// those two variants had axe coverage for on this page before.
+	///
+	/// Simulated by pinning <c>navigator.onLine</c> false and aborting just the
+	/// detail request, not <c>Context.SetOfflineAsync</c> - same technique
+	/// <c>OrgAppLayoutErrorStatesTests</c> uses for the org shell, and simpler
+	/// than the warm-then-navigate dance the test above needs, since this page
+	/// is reached with a normal document <c>GotoAsync</c> either way.
+	/// </summary>
+	[Test]
+	public async Task VolunteerOpportunityDetailPage_Offline_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"DetailOfflineA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = $"DetailOfflineA11y Opportunity {suffix}",
+			descriptionDe = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.AddInitScriptAsync(
+			"Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });");
+		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", route =>
+			route.AbortAsync("internetdisconnected"));
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	/// <summary>
+	/// #2065: the landing page's "These opportunities need people" preview
+	/// section used to remove itself on any failure, offline included, so its
+	/// new inline offline notice (plus the "Try again" button #2065 added to
+	/// the offline variant generally) had no axe coverage anywhere - the plain
+	/// <see cref="HomePage_HasNoSeriousA11yViolations"/> scan above never
+	/// simulates a failure.
+	/// </summary>
+	[Test]
+	public async Task HomePage_LatestOpportunitiesOffline_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.AddInitScriptAsync(
+			"Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });");
+		await Page.RouteAsync("**/v1/volunteer-opportunities*", route =>
+			route.AbortAsync("internetdisconnected"));
+
+		await Page.GotoAsync(origin);
+		await Expect(Page.GetByTestId("landing-latest-offline"))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	[Test]
 	public async Task OrgAppUnknownOrganization_HasNoSeriousA11yViolations()
 	{

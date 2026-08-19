@@ -91,6 +91,11 @@ export default class ErrorBoundary extends Component<Props, State> {
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("routeState.offline.message")}
+						// A real reload, not a state reset (#2065's fallback for a
+						// connection that came back without the browser firing
+						// `online`) - see componentDidMount for why React.lazy()'s
+						// cached rejection needs exactly that.
+						onRetry={() => window.location.reload()}
 					/>
 				);
 			}

@@ -8,6 +8,7 @@ import type {
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
 	computeSpotsLeft,
 	formatDate,
@@ -40,7 +41,7 @@ import PublicOpportunityCard from "../components/PublicOpportunityCard";
 import RouteState from "../components/RouteState";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
-import { getApiErrorMessage } from "../lib/apiError";
+import { getApiErrorMessage, isNetworkError } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
 import {
@@ -143,6 +144,13 @@ export default function VolunteerOpportunityDetailPage() {
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	// #2065: whether `error` came from a request that never got an HTTP
+	// response at all - the same offline signal useLoadMore/OrgAppLayout use,
+	// since `navigator.onLine` alone can misreport `true` right after a hard
+	// reload while genuinely offline (#1901).
+	const [errorIsNetworkFailure, setErrorIsNetworkFailure] = useState(false);
+	const online = useOnlineStatus();
+	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
 	const [showSignUp, setShowSignUp] = useState(false);
 	const [showReport, setShowReport] = useState(false);
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
@@ -233,6 +241,7 @@ export default function VolunteerOpportunityDetailPage() {
 		const requestId = ++latestRequestRef.current;
 		setLoading(true);
 		setError(null);
+		setErrorIsNetworkFailure(false);
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then((details) => {
@@ -242,6 +251,7 @@ export default function VolunteerOpportunityDetailPage() {
 			.catch((err) => {
 				if (requestId !== latestRequestRef.current) return;
 				setError(getApiErrorMessage(err, t("error.serverError")));
+				setErrorIsNetworkFailure(isNetworkError(err));
 			})
 			.finally(() => {
 				if (requestId !== latestRequestRef.current) return;
@@ -309,7 +319,20 @@ export default function VolunteerOpportunityDetailPage() {
 			</div>
 		);
 	if (error)
-		return (
+		return errorIsOffline ? (
+			// #2065: this page had no offline handling at all - a dropped
+			// connection fell into the generic error branch below, with a retry
+			// button that could not succeed while the connection was down. Not
+			// `inline`: unlike OpportunityResultsList's offline notice, this
+			// replaces the whole route rather than one section of a page that
+			// already owns an <h1>.
+			<RouteState
+				variant="offline"
+				title={t("routeState.offline.title")}
+				message={t("opportunities.offlineDetail")}
+				onRetry={load}
+			/>
+		) : (
 			<LoadMoreError
 				message={t("opportunities.error", { message: error })}
 				// load() unconditionally flips `loading` back to true, so the

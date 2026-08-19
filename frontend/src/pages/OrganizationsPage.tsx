@@ -185,6 +185,7 @@ export default function OrganizationsPage() {
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("organizationsPage.offline")}
+						onRetry={retryLoadMore}
 						data-testid="organizations-offline"
 					/>
 				) : (
@@ -309,6 +310,7 @@ export default function OrganizationsPage() {
 									variant="offline"
 									title={t("routeState.offline.title")}
 									message={t("organizationsPage.offlineLoadMore")}
+									onRetry={retryLoadMore}
 									data-testid="organizations-offline-load-more"
 								/>
 							) : (

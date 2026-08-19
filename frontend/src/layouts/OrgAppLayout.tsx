@@ -239,10 +239,11 @@ export default function OrgAppLayout() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
-	// The offline state deliberately has no retry button, so regaining the
-	// connection is what has to drive the recovery (#1774). Scoped to a failed
-	// load: a shell that is already showing an organization is never refetched
-	// out from under the user just because a tunnel ended.
+	// The primary recovery path stays the `online` event, not the offline
+	// state's manual retry button (#2065) - it needs no click and covers the
+	// common case. Scoped to a failed load: a shell that is already showing an
+	// organization is never refetched out from under the user just because a
+	// tunnel ended.
 	useEffect(() => {
 		if (online && status === "error") load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -323,6 +324,7 @@ export default function OrgAppLayout() {
 					variant="offline"
 					title={t("routeState.offline.title")}
 					message={t("routeState.offline.message")}
+					onRetry={load}
 					action={backToSite}
 				/>
 			),

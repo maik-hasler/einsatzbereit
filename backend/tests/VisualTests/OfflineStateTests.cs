@@ -13,8 +13,12 @@ namespace VisualTests;
 /// next to a "Retry" button that could not possibly succeed while the
 /// connection was down.
 ///
-/// The list now says it is offline, offers no action it cannot honour, and
-/// refetches by itself the moment the connection is back.
+/// The list now says it is offline and refetches by itself the moment the
+/// connection is back. #2065 added a manual "Try again" fallback on top of
+/// that: the automatic recovery depends on the browser firing an `online`
+/// event, which some captive portals and mobile networks never do even once
+/// the connection is genuinely back, and a manual retry that re-issues the
+/// same request can still succeed in exactly that case.
 ///
 /// Both tests reach <c>/opportunities</c> by clicking through the header nav
 /// rather than by <c>GotoAsync</c> while offline. That is deliberate on two
@@ -29,7 +33,7 @@ namespace VisualTests;
 public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OpportunityList_WhileOffline_SaysSoInsteadOfOfferingADeadRetry()
+	public async Task OpportunityList_WhileOffline_SaysSoAndOffersAManualRetryFallback()
 	{
 		var origin = await WarmOpportunitiesRouteThenLeaveAsync();
 
@@ -42,13 +46,16 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Expect(offline).ToBeVisibleAsync(new() { Timeout = 20_000 });
 			await Expect(offline).ToContainTextAsync("You are offline");
 
-			// The two halves of the old behaviour, both gone: the generic
-			// server-error wording, and the retry that cannot succeed. The retry
-			// is asserted absent inside the offline block rather than page-wide,
-			// so this can't trip Playwright's strict mode on some unrelated
-			// control elsewhere in the chrome.
+			// The old generic server-error wording is gone. #2065: unlike the
+			// original #1774 design, a single "Try again" button is now offered
+			// alongside the offline notice - the fallback for a connection that
+			// came back without the browser ever firing an `online` event.
+			// Scoped to the offline block rather than page-wide, so this can't
+			// trip Playwright's strict mode on some unrelated control elsewhere
+			// in the chrome.
 			await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
-			await Expect(offline.GetByRole(AriaRole.Button)).ToHaveCountAsync(0);
+			await Expect(offline.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
+				.ToHaveCountAsync(1);
 
 			// The announcement has to come from the list's own always-mounted
 			// sr-only region, not from a region inside the notice above: a
@@ -108,7 +115,46 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(offline).ToContainTextAsync("You are offline");
 
 		await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
-		await Expect(offline.GetByRole(AriaRole.Button)).ToHaveCountAsync(0);
+		await Expect(offline.GetByRole(AriaRole.Button, new() { Name = "Try again" }))
+			.ToHaveCountAsync(1);
+	}
+
+	/// <summary>
+	/// Regression for #2065's core scenario: a connection that came back
+	/// without the browser ever firing an <c>online</c> event (a captive
+	/// portal, some mobile networks). No <c>Context.SetOfflineAsync</c> and no
+	/// <c>online</c> DOM event anywhere in this test - recovery has to come
+	/// from the click alone, proving the manual retry does not depend on the
+	/// event-driven path the other tests in this class exercise.
+	/// </summary>
+	[Test]
+	public async Task OpportunityList_ManualRetry_SucceedsWithoutAnOnlineEvent()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var shouldFail = true;
+		await Page.RouteAsync("**/v1/volunteer-opportunities*", async route =>
+		{
+			if (!shouldFail)
+			{
+				await route.ContinueAsync();
+				return;
+			}
+			await route.AbortAsync("internetdisconnected");
+		});
+
+		await Page.GotoAsync($"{origin}/opportunities");
+
+		var offline = Page.GetByTestId("opportunities-offline");
+		await Expect(offline).ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		shouldFail = false;
+		await offline.GetByRole(AriaRole.Button, new() { Name = "Try again" }).ClickAsync();
+
+		await Expect(offline).Not.ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(Page.GetByTestId("opportunities-result-count"))
+			.ToHaveTextAsync(new Regex(@"opportunit(y|ies)"), new() { Timeout = 20_000 });
 	}
 
 	[Test]
@@ -128,8 +174,9 @@ public class OfflineStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Context.SetOfflineAsync(false);
 		}
 
-		// No click, no reload: the `online` event alone has to drive the
-		// recovery, because the offline state deliberately offers no action.
+		// No click, no reload: the `online` event alone drives the recovery here
+		// - the manual "Try again" button #2065 added is a fallback for when
+		// that event never fires, not a replacement for it.
 		await Expect(Page.GetByTestId("opportunities-offline"))
 			.Not.ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByTestId("opportunities-error"))

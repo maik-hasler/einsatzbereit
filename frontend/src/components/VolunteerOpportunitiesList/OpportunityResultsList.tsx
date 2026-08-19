@@ -50,8 +50,17 @@ export default function OpportunityResultsList({
 	// This one was mounted and empty long before the connection dropped, so
 	// writing into it does. An *online* failure stays silent here: it renders
 	// LoadMoreError, whose ErrorBanner is already role="alert".
+	//
+	// Prefixed with routeState.offline.title rather than just
+	// opportunities.offline (#2065 trimmed that string's own "You are
+	// offline." lead-in, since the visible RouteState notice already carries
+	// it as its own heading) - this node has no heading next to it, so the
+	// announcement needs to say so itself or a screen reader hears only "we
+	// will load the opportunities..." with no indication why.
 	const liveMessage =
-		error && errorIsOffline ? t("opportunities.offline") : countMessage;
+		error && errorIsOffline
+			? `${t("routeState.offline.title")}. ${t("opportunities.offline")}`
+			: countMessage;
 
 	return (
 		<>
@@ -129,7 +138,9 @@ export default function OpportunityResultsList({
 			and then used to throw all of that away by reporting "an unexpected
 			error occurred" here, next to a retry button that could not succeed
 			while the connection was down. useLoadMore refetches on its own once
-			the connection returns, so this state needs no action at all. */}
+			the connection returns, so this state needs no action - the retry
+			button below is only a fallback for a connection that came back
+			without the browser ever firing an `online` event (#2065). */}
 			{error &&
 				(errorIsOffline ? (
 					<RouteState
@@ -137,6 +148,7 @@ export default function OpportunityResultsList({
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("opportunities.offline")}
+						onRetry={onRetryLoadMore}
 						data-testid="opportunities-offline"
 					/>
 				) : (
@@ -193,6 +205,7 @@ export default function OpportunityResultsList({
 									variant="offline"
 									title={t("routeState.offline.title")}
 									message={t("opportunities.offlineLoadMore")}
+									onRetry={onRetryLoadMore}
 									data-testid="opportunities-offline-load-more"
 								/>
 							) : (

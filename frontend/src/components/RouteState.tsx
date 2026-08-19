@@ -44,11 +44,14 @@ interface Props {
 	title: string;
 	message: string;
 	/**
-	 * Honoured for `error` only - the one variant where trying the same thing
-	 * again can actually work. A 403/404 is permanent, and retrying while
-	 * offline is guaranteed to fail, so those two recover by other means (see
-	 * the `online`-event refetches in OrgAppLayout and useLoadMore) rather
-	 * than by handing the user a button that does nothing.
+	 * Honoured for `error` and `offline` - not `notFound`/`forbidden`, which
+	 * name a permanent fact about the request that retrying cannot change.
+	 * `offline` already recovers on its own via the `online`-event refetches
+	 * in OrgAppLayout and useLoadMore, but that path depends on the browser
+	 * actually firing the event - which some captive portals and mobile
+	 * networks never do even once the connection is genuinely back (#2065).
+	 * This is the manual fallback for exactly that case, so callers should
+	 * still pass it for `offline` rather than relying on the event alone.
 	 */
 	onRetry?: () => void;
 	/** Escape hatch out of a dead end - rendered as a real link, not a button. */
@@ -73,7 +76,7 @@ export default function RouteState({
 }: Props) {
 	const { t } = useTranslation();
 	const Icon = VARIANT_ICONS[variant];
-	const canRetry = variant === "error" && !!onRetry;
+	const canRetry = (variant === "error" || variant === "offline") && !!onRetry;
 	// A route-level state is the page, so it owns the tab title - the
 	// unknown-organization branch used to get this for free from NotFoundPage,
 	// and /administration as a non-admin never had it at all (the page whose
