@@ -13885,6 +13885,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("nextTimeSlotStart")]
+        public System.DateTimeOffset? NextTimeSlotStart { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("category")]
         public string? Category { get; set; } = default!;
 

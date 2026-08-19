@@ -11,7 +11,7 @@ namespace VisualTests;
 /// transform transition kept running regardless, since each one needs its
 /// own motion-reduce:transition-none the way LatestOpportunitiesSection.tsx's
 /// arrow already had it. Covers the two the issue's audit found unguarded:
-/// OpportunityListItem's banner hover zoom and the shared ChevronDownIcon's
+/// OpportunityCard's banner hover zoom and the shared ChevronDownIcon's
 /// open-state rotate (used by every dropdown/filter built on it).
 ///
 /// VisualTestBase already emulates prefers-reduced-motion: reduce for the
@@ -86,7 +86,7 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// The banner <img> is the card's first <img> - it sits above the
-		// organization-logo image in OpportunityListItem's markup.
+		// organization-logo image in OpportunityCard's markup.
 		var banner = card.Locator("img").First;
 		await Expect(banner).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
