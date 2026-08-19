@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { differenceInCalendarDays, isSameDay } from "date-fns";
+import type { TimeSlotDetail } from "../client/api-client";
 import type { OpportunityCapacity } from "./opportunityCapacity";
 
 export function formatOccurrence(occurrence: string, t: TFunction): string {
@@ -28,6 +29,27 @@ export function isSlotFull(
 ): boolean {
 	const spotsLeft = computeSpotsLeft(maxParticipants, bookedCount);
 	return spotsLeft !== null && spotsLeft <= 0;
+}
+
+/**
+ * The earliest of an opportunity's time slots that hasn't ended yet - the
+ * same "next" slot `VolunteerOpportunityReadRepository`'s browse listing
+ * precomputes server-side as `nextTimeSlotStart`/`nextTimeSlotEnd` (ordered
+ * by start, filtered to `EndDateTime >= now`). The opportunity detail
+ * page's `VolunteerOpportunityDetails` contract doesn't carry that
+ * precomputed pair - it hands over every slot instead, already ordered by
+ * start ascending (`GetVolunteerOpportunityDetailsQueryHandler`) - so this
+ * re-derives the same slot client-side instead of inventing a different
+ * "next" than the one volunteers already see on the browse list for the
+ * same opportunity (#2055).
+ */
+export function findNextTimeSlot(
+	timeSlots: TimeSlotDetail[],
+): TimeSlotDetail | undefined {
+	const now = Date.now();
+	return timeSlots.find(
+		(ts) => new Date(ts.endDateTime as unknown as string).getTime() >= now,
+	);
 }
 
 /**

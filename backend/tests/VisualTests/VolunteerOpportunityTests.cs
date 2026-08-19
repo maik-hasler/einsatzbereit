@@ -1357,4 +1357,128 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("h1")).ToContainTextAsync(titleDe, new() { Timeout = 15_000 });
 		await Expect(Page.GetByText(descriptionDe)).ToBeVisibleAsync();
 	}
+
+	/// <summary>
+	/// Regression for #2055: the at-a-glance panel's WANN slot used to show the
+	/// recurrence category ("One-time"/"Recurring") - a bare word with no
+	/// digits at all - while the real date sat ~500px further down in the time
+	/// slot list. It must now carry the next slot's actual date/time, which
+	/// (unlike a recurrence label) always contains a digit. Recurrence itself
+	/// isn't dropped, just demoted to a Chip in the meta row, and ABLAUF/"How
+	/// it works" must state real information (the slot count) instead of just
+	/// restating the "Zeitslots" section heading below it.
+	/// </summary>
+	[Test]
+	public async Task DetailPage_ScheduledSlots_AtAGlanceShowsNextSlotDateAndSlotCount()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"WhenFact Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var title = $"WhenFact Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = title,
+			descriptionDe = "Seeded for the at-a-glance WANN/ABLAUF regression (#2055).",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(14);
+		(await http.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start,
+			endDateTime = start.AddHours(3),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+		(await http.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start.AddDays(7),
+			endDateTime = start.AddDays(7).AddHours(3),
+			maxParticipants = 5,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1")).ToContainTextAsync(title, new() { Timeout = 15_000 });
+
+		var whenText = (await Page.GetByTestId("opportunity-detail-when").InnerTextAsync()).Trim();
+		whenText.Should().NotBe("One-time", "the WANN slot must no longer restate the recurrence category");
+		whenText.Should().NotBe("Recurring", "the WANN slot must no longer restate the recurrence category");
+		Regex.IsMatch(whenText, @"\d").Should().BeTrue(
+			$"the WANN slot must carry the next slot's actual date/time, but got '{whenText}'");
+
+		await Expect(Page.GetByTestId("opportunity-detail-how")).ToHaveTextAsync("2 time slots");
+		await Expect(Page.GetByTestId("opportunity-occurrence")).ToHaveTextAsync("One-time");
+	}
+
+	/// <summary>
+	/// Companion to <see cref="DetailPage_ScheduledSlots_AtAGlanceShowsNextSlotDateAndSlotCount"/>
+	/// for the other participation type (#2055): an expression-of-interest
+	/// opportunity has no time slot at all, so its WANN fact must be the
+	/// application deadline instead - phrased the same way the sign-up rail
+	/// already states it ("Express interest by ..."), not a bare date that
+	/// could be misread as a fixed event date.
+	/// </summary>
+	[Test]
+	public async Task DetailPage_IndividualContact_AtAGlanceShowsApplicationDeadline()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"WhenFact Deadline Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var title = $"WhenFact Deadline Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = title,
+			descriptionDe = "Seeded for the at-a-glance deadline regression (#2055).",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1")).ToContainTextAsync(title, new() { Timeout = 15_000 });
+
+		await Expect(Page.GetByTestId("opportunity-detail-when")).ToContainTextAsync("Express interest by");
+		await Expect(Page.GetByTestId("opportunity-detail-how")).ToHaveTextAsync("By expression of interest");
+		await Expect(Page.GetByTestId("opportunity-occurrence")).ToHaveTextAsync("One-time");
+	}
 }

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { TFunction } from "i18next";
+import type { TimeSlotDetail } from "../client/api-client";
 import {
 	computeSpotsLeft,
+	findNextTimeSlot,
 	formatOccurrence,
 	formatParticipationType,
 	formatDate,
@@ -16,6 +18,20 @@ import {
 } from "./format";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function makeTimeSlot(overrides: Partial<TimeSlotDetail>): TimeSlotDetail {
+	return {
+		id: "slot-1",
+		startDateTime: "2026-01-01T09:00:00Z" as unknown as Date,
+		endDateTime: "2026-01-01T12:00:00Z" as unknown as Date,
+		maxParticipants: undefined,
+		bookedCount: 0,
+		seriesId: undefined,
+		recurrenceFrequency: undefined,
+		recurrenceCount: undefined,
+		...overrides,
+	};
+}
 
 function fakeT(): TFunction {
 	return vi.fn((key: string, options?: Record<string, unknown>) =>
@@ -86,6 +102,57 @@ describe("isSlotFull", () => {
 
 	it("is full when bookings exceed capacity", () => {
 		expect(isSlotFull(5, 6)).toBe(true);
+	});
+});
+
+describe("findNextTimeSlot", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("returns the earliest slot that hasn't ended yet, out of an ascending-ordered list", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-15T12:00:00Z"));
+		const past = makeTimeSlot({
+			id: "past",
+			startDateTime: "2026-03-01T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-01T12:00:00Z" as unknown as Date,
+		});
+		const next = makeTimeSlot({
+			id: "next",
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		const later = makeTimeSlot({
+			id: "later",
+			startDateTime: "2026-03-27T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-27T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([past, next, later])).toBe(next);
+	});
+
+	it("counts a slot still in progress (started but not yet ended) as next", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-20T10:00:00Z"));
+		const inProgress = makeTimeSlot({
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([inProgress])).toBe(inProgress);
+	});
+
+	it("returns undefined once every slot has already ended", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-04-01T00:00:00Z"));
+		const past = makeTimeSlot({
+			startDateTime: "2026-03-01T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-01T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([past])).toBeUndefined();
+	});
+
+	it("returns undefined for an empty list", () => {
+		expect(findNextTimeSlot([])).toBeUndefined();
 	});
 });
 
