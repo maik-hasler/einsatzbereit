@@ -209,6 +209,8 @@ export default function CreateVolunteerOpportunityModal({
 		getValues,
 		trigger,
 		clearErrors,
+		setFocus,
+		getFieldState,
 		formState: { errors, isDirty },
 	} = useForm<OpportunityFormValues>({
 		resolver: zodResolver(schema),
@@ -302,6 +304,17 @@ export default function CreateVolunteerOpportunityModal({
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 
+	// This wizard never calls react-hook-form's own `handleSubmit()` - "Next",
+	// a blocked stepper jump and the final submit all call `trigger()`
+	// directly instead (see the revalidation comment on `registerWithRevalidate`
+	// below) - so `shouldFocusError`'s automatic focus-the-first-invalid-field
+	// never runs (mirrors the gap SignUpModal.tsx's message field closed by
+	// hand). `focusFieldsRef` carries the field list to check once the
+	// relevant step is on screen; `focusAttempt` is the trigger for the effect
+	// below, bumped even when the target step doesn't change (einsatzbereit#2077).
+	const focusFieldsRef = useRef<(keyof OpportunityFormValues)[] | null>(null);
+	const [focusAttempt, setFocusAttempt] = useState(0);
+
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
 	const isRemote = watch("isRemote");
@@ -368,6 +381,29 @@ export default function CreateVolunteerOpportunityModal({
 		setBlockedJump(null);
 	}, [step]);
 
+	// Runs after the step named in `focusFieldsRef` has actually committed to
+	// the DOM (a failed "Next" leaves the step unchanged; a failed final
+	// submit or blocked stepper jump may have just switched to it via
+	// `setStep`), so the field it focuses is guaranteed to be mounted -
+	// including BasicsStep's German/English toggle, whose own effect (keyed
+	// on `revalidationAttempt` as well as the error messages themselves, see
+	// its comment) un-hides the German tab first if needed. react-hook-form's
+	// own `setFocus` does not call the DOM `.focus()` synchronously - it
+	// defers by a tick - which is what actually closes this race rather than
+	// React's own effect-ordering: BasicsStep's cascading tab-switch render
+	// settles well within that tick.
+	useEffect(() => {
+		if (focusAttempt === 0 || !focusFieldsRef.current) return;
+		for (const field of focusFieldsRef.current) {
+			if (getFieldState(field).invalid) {
+				setFocus(field);
+				break;
+			}
+		}
+		focusFieldsRef.current = null;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [focusAttempt]);
+
 	function requestClose() {
 		// isDirty only tracks react-hook-form's own fields - time slots, the
 		// banner file and its removal all live in separate useState outside the
@@ -401,6 +437,13 @@ export default function CreateVolunteerOpportunityModal({
 			},
 		});
 
+	/** Queued for the effect above - see its comment for why this can't just
+	 * call `setFocus` inline. */
+	function requestFocusFirstInvalid(fields: (keyof OpportunityFormValues)[]) {
+		focusFieldsRef.current = fields;
+		setFocusAttempt((n) => n + 1);
+	}
+
 	function applyOrgAddress() {
 		if (!orgAddress) return;
 		setValue("street", orgAddress.street);
@@ -421,7 +464,10 @@ export default function CreateVolunteerOpportunityModal({
 	async function handleNext() {
 		const fields = STEP_FIELDS[step];
 		const valid = fields.length === 0 || (await trigger(fields));
-		if (!valid) return;
+		if (!valid) {
+			requestFocusFirstInvalid(fields);
+			return;
+		}
 		setStep((s) => Math.min(TOTAL_STEPS, s + 1));
 	}
 
@@ -455,6 +501,10 @@ export default function CreateVolunteerOpportunityModal({
 				blocking: blockingStep,
 				attempt: (prev?.attempt ?? 0) + 1,
 			}));
+			// Only the current step's own fields are on screen to focus - a
+			// blocking step further along stays unreached, and the live region
+			// above already names it.
+			if (blockingStep === step) requestFocusFirstInvalid(STEP_FIELDS[step]);
 			return;
 		}
 		setStep(n);
@@ -704,6 +754,7 @@ export default function CreateVolunteerOpportunityModal({
 				const stepValid = await trigger(fields);
 				if (!stepValid) {
 					setStep(s);
+					requestFocusFirstInvalid(fields);
 					return;
 				}
 			}
@@ -1098,6 +1149,7 @@ export default function CreateVolunteerOpportunityModal({
 							titleEnError={errors.titleEn?.message}
 							descriptionDeError={errors.descriptionDe?.message}
 							descriptionEnError={errors.descriptionEn?.message}
+							revalidationAttempt={focusAttempt}
 							bannerPreview={bannerPreview}
 							bannerError={bannerError}
 							onBannerChange={handleBannerChange}
