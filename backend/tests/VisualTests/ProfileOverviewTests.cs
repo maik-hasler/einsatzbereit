@@ -174,7 +174,11 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First.ClickAsync();
+		// #2066: the header "Edit" button only renders once the profile has
+		// bio/skills/languages already filled in - vera's profile starts empty
+		// in this shared session, so the reachable control is the empty-state
+		// CTA instead, which carries the same "profile-edit" testid.
+		await Page.GetByTestId("profile-edit").ClickAsync();
 
 		var bioText = $"Public profile smoke test bio {Guid.NewGuid()}";
 		await Page.Locator("#bio").FillAsync(bioText);
@@ -235,9 +239,11 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Page.GotoAsync($"{origin}/profile");
 
-		// Edit is a single quick-action button in the header toolbar (#794) -
-		// .First is a harmless no-op.
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		// Edit is a single quick-action control reachable via "profile-edit"
+		// (#794) - either the header button once the profile has data, or the
+		// empty-state CTA while it does not (#2066), so the testid is stable
+		// across both states rather than the header button's own role name.
+		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
@@ -256,7 +262,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Page.GotoAsync($"{origin}/profile");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await editButton.ClickAsync();
 
@@ -274,7 +280,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Page.GotoAsync($"{origin}/profile");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
@@ -338,7 +344,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
