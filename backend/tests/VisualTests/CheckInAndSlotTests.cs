@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -340,6 +341,14 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			? "slot options must be rendered, but none were found"
 			: "each slot option should include booking count info like '4 spots left'. "
 				+ $"Actual options: [{string.Join(", ", options)}]");
+
+		// #2053: the collapsed label used to concatenate the end time and the
+		// capacity text with a bare space (e.g. "17:00 20 spots left"), letting
+		// "17:00" and "20" run together and briefly parse as one number. A middle
+		// dot must separate the two, matching how the product joins similar meta
+		// pairs elsewhere (AdministrationPage.tsx's "N members · Created on ...").
+		options.Should().OnlyContain(o => o.Contains(" · "),
+			"each slot option must separate its date/time range from the capacity text with \" · \"");
 	}
 
 	/// <summary>
