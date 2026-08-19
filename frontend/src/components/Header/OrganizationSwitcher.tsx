@@ -6,6 +6,7 @@ import type {
 	OrganizationSummaryDto,
 } from "../../client/api-client";
 import { orgTabPath } from "../../lib/orgTabs";
+import { splitForMiddleTruncation } from "../../lib/middleTruncateSplit";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import OrgAvatar from "./OrgAvatar";
 import ModalLoadingFallback from "../ModalLoadingFallback";
@@ -49,6 +50,9 @@ export default function OrganizationSwitcher({
 	);
 
 	const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
+	const [currentOrgNameHead, currentOrgNameTail] = currentOrg
+		? splitForMiddleTruncation(currentOrg.name)
+		: ["", ""];
 
 	function orgPath(org: OrganizationSummaryDto) {
 		return orgTabPath(org.id, currentTab);
@@ -90,17 +94,40 @@ export default function OrganizationSwitcher({
 							logoUrl={currentOrg?.logoUrl}
 						/>
 					)}
-					{/* title so a truncated name is still readable on hover - two
-					seeded orgs share a leading word, so the visible text can be
-					identical for both once cut. */}
+					{/* Middle-ellipsis, not end-truncation: two names sharing a
+					leading word (e.g. two seeded orgs both starting "Lindenauer")
+					used to become indistinguishable once cut. Split into a
+					`truncate` head (grows the browser's own end-ellipsis when
+					squeezed) and a `shrink-0` tail (never truncated) rather than
+					doing this in JS, so the DOM text stays the exact, full org
+					name - only the *rendered* width adapts - and a title
+					attribute still covers hover regardless of how much is
+					visible (#2080). */}
 					<span
 						data-testid="org-switcher-current-name"
 						title={error ? undefined : currentOrg?.name}
-						className="max-w-50 flex-1 truncate sm:min-w-24"
+						className="flex max-w-85 min-w-0 flex-1 overflow-hidden sm:min-w-24"
 					>
-						{error
-							? t("organization.loadError")
-							: (currentOrg?.name ?? t("organization.selectPlaceholder"))}
+						{error ? (
+							t("organization.loadError")
+						) : currentOrg ? (
+							<>
+								<span
+									data-testid="org-switcher-current-name-head"
+									className="min-w-0 truncate"
+								>
+									{currentOrgNameHead}
+								</span>
+								<span
+									data-testid="org-switcher-current-name-tail"
+									className="shrink-0 whitespace-nowrap"
+								>
+									{currentOrgNameTail}
+								</span>
+							</>
+						) : (
+							t("organization.selectPlaceholder")
+						)}
 					</span>
 					<ChevronDownIcon
 						open={open}
