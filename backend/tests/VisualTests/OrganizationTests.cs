@@ -148,7 +148,17 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var hint = Page.Locator($"#{describedBy}");
 		await Expect(hint).ToBeVisibleAsync();
 		await Expect(hint).ToContainTextAsync(
-			"You're the only organizer of this organization - delete the organization instead if you want to close it.");
+			"Remove the other members first, then you can delete the organization in settings.");
+
+		// The hint states the full leave-org-to-delete-org path (#2074): the
+		// "settings" word is a live link straight to this org's settings tab,
+		// not just prose telling the user to go find it themselves. Read the
+		// active org's id from the URL, not pinnedOrgId - CreateOrganizationAsync
+		// switched into a brand-new org with its own id.
+		var organizationId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
+		await Expect(hint.GetByRole(AriaRole.Link, new() { Name = "settings" })).ToHaveAttributeAsync(
+			"href",
+			$"/app/{organizationId}/dashboard/settings");
 	}
 
 	[Test]

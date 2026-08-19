@@ -541,7 +541,7 @@
       "removeMemberError": "Could not remove member.",
       "leaveOrganization": "Leave",
       "leaveOrganizationError": "Could not leave organization.",
-      "leaveOrganizationLastOrganizerHint": "You're the only organizer of this organization - delete the organization instead if you want to close it.",
+      "leaveOrganizationLastOrganizerHint": "Remove the other members first, then you can delete the organization in <settingsLink>settings</settingsLink>.",
       "searching": "Searching…",
       "searchMinChars": "Enter at least 4 characters",
       "noSearchResults": "No users found.",
