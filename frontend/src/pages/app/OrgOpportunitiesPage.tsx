@@ -359,9 +359,10 @@ export default function OrgOpportunitiesPage() {
 					<div className="flex items-center gap-2">
 						<Link
 							to={`/volunteer-opportunities/${item.id}`}
+							lang={title.text ? title.lang : undefined}
 							className="truncate text-sm font-semibold text-gray-900 hover:text-brand-700 hover:underline"
 						>
-							{title || t("orgDashboard.unnamedDraft")}
+							{title.text || t("orgDashboard.unnamedDraft")}
 						</Link>
 						{showStatusBadge && (
 							<Chip
@@ -375,8 +376,11 @@ export default function OrgOpportunitiesPage() {
 						)}
 					</div>
 					{description && (
-						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-							{description}
+						<p
+							lang={description.lang}
+							className="mt-0.5 line-clamp-1 text-xs text-gray-500"
+						>
+							{description.text}
 						</p>
 					)}
 					{/* Unconditional: this is the number an organizer opens the page
@@ -425,7 +429,7 @@ export default function OrgOpportunitiesPage() {
 						<div className="ml-auto">
 							<RowActionsMenu
 								label={t("orgOpportunities.moreActionsFor", {
-									title: title || t("orgDashboard.unnamedDraft"),
+									title: title.text || t("orgDashboard.unnamedDraft"),
 								})}
 								actions={[
 									...(status !== "Cancelled"

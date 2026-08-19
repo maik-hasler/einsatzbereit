@@ -62,7 +62,8 @@ export default function EngagementManagementPage() {
 	const [retryingOpportunity, setRetryingOpportunity] = useState(false);
 	const opportunityTitle =
 		opportunity &&
-		pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language);
+		pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language)
+			.text;
 	usePageTitle(
 		opportunityTitle
 			? `${t("engagementManagement.title")} - ${opportunityTitle}`

@@ -155,6 +155,13 @@ export default function OpportunityListItem({
 		item.descriptionEn,
 		i18n.language,
 	);
+	// Only ever true for the English UI falling back to German content - the
+	// German variant is required, so the reverse never happens (#2057). Checked
+	// on both fields independently since an organizer may translate one but
+	// not the other.
+	const isGermanFallback =
+		title.lang !== i18n.language ||
+		(description !== undefined && description.lang !== i18n.language);
 
 	// No overflow-hidden on the card any more. The stretched link below is what
 	// a keyboard user actually lands on (the title is inside it, not focusable
@@ -169,7 +176,8 @@ export default function OpportunityListItem({
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10 rounded-card"
-				aria-label={title}
+				aria-label={title.text}
+				lang={title.lang}
 			/>
 			<div className="flex h-full flex-col">
 				{/* Banner, only when the organization actually uploaded a photo.
@@ -229,9 +237,17 @@ export default function OpportunityListItem({
 					skipped a level and axe failed the page on heading-order. The
 					landing page has a section heading over these cards again, hence
 					a prop rather than a second fixed level. */}
-					<Heading className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg">
-						{title}
+					<Heading
+						lang={title.lang}
+						className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg"
+					>
+						{title.text}
 					</Heading>
+					{isGermanFallback && (
+						<p className="mt-0.5 text-xs text-gray-500">
+							{t("opportunities.germanOnlyNotice")}
+						</p>
+					)}
 					{/* See dateLine() above for the three kinds this slot can state and
 					why each one carries its own glyph and tone. */}
 					<p
@@ -243,8 +259,11 @@ export default function OpportunityListItem({
 						<span>{date.label}</span>
 					</p>
 					{description && (
-						<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
-							{description}
+						<p
+							lang={description.lang}
+							className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500"
+						>
+							{description.text}
 						</p>
 					)}
 					{item.tags.length > 0 && (

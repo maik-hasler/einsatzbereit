@@ -48,13 +48,21 @@ export default function PublicOpportunityCard({
 		opportunity.descriptionEn,
 		i18n.language,
 	);
+	// Only ever true for the English UI falling back to German content - the
+	// German variant is required, so the reverse never happens (#2057). Checked
+	// on both fields independently since an organizer may translate one but
+	// not the other.
+	const isGermanFallback =
+		title.lang !== i18n.language ||
+		(description !== undefined && description.lang !== i18n.language);
 
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting transition-shadow hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${opportunity.id}`}
 				className="absolute inset-0 rounded-card"
-				aria-label={title}
+				aria-label={title.text}
+				lang={title.lang}
 			/>
 
 			{/* Category left, capacity top-right - the same chip row
@@ -88,13 +96,24 @@ export default function PublicOpportunityCard({
 				{formatOccurrence(opportunity.occurrence, t)}
 			</p>
 
-			<h3 className="mt-2 font-display text-xl font-bold text-gray-900 group-hover:text-brand-800">
-				{title}
+			<h3
+				lang={title.lang}
+				className="mt-2 font-display text-xl font-bold text-gray-900 group-hover:text-brand-800"
+			>
+				{title.text}
 			</h3>
+			{isGermanFallback && (
+				<p className="mt-0.5 text-xs text-gray-500">
+					{t("opportunities.germanOnlyNotice")}
+				</p>
+			)}
 
 			{description && (
-				<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-600">
-					{description}
+				<p
+					lang={description.lang}
+					className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-600"
+				>
+					{description.text}
 				</p>
 			)}
 

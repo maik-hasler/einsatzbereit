@@ -90,31 +90,39 @@ describe("isSlotFull", () => {
 });
 
 describe("pickLocalizedText", () => {
-	it("returns the German text when the viewer's language is German", () => {
-		expect(pickLocalizedText("Deutscher Titel", "English Title", "de")).toBe(
-			"Deutscher Titel",
+	it("returns the German text tagged de when the viewer's language is German", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "de")).toEqual(
+			{ text: "Deutscher Titel", lang: "de" },
 		);
 	});
 
-	it("returns the English text when the viewer's language is English", () => {
-		expect(pickLocalizedText("Deutscher Titel", "English Title", "en")).toBe(
-			"English Title",
+	it("returns the English text tagged en when the viewer's language is English", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "en")).toEqual(
+			{ text: "English Title", lang: "en" },
 		);
 	});
 
-	it("falls back to German when no English variant was provided", () => {
-		expect(pickLocalizedText("Deutscher Titel", undefined, "en")).toBe(
-			"Deutscher Titel",
-		);
-		expect(pickLocalizedText("Deutscher Titel", null, "en")).toBe(
-			"Deutscher Titel",
-		);
+	it("falls back to German (tagged de) when no English variant was provided", () => {
+		expect(pickLocalizedText("Deutscher Titel", undefined, "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
+		expect(pickLocalizedText("Deutscher Titel", null, "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
 	});
 
-	it("falls back to German when the English variant is blank", () => {
-		expect(pickLocalizedText("Deutscher Titel", "   ", "en")).toBe(
-			"Deutscher Titel",
-		);
+	it("falls back to German (tagged de) when the English variant is blank", () => {
+		expect(pickLocalizedText("Deutscher Titel", "   ", "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
+	});
+
+	it("returns undefined when no German text is available either", () => {
+		expect(pickLocalizedText(undefined, undefined, "en")).toBeUndefined();
+		expect(pickLocalizedText(null, "English Title", "de")).toBeUndefined();
 	});
 });
 

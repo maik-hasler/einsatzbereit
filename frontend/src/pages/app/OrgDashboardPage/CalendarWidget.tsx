@@ -333,7 +333,8 @@ function CalendarWidget({
 			(displayedCalData ?? []).flatMap((opp) =>
 				opp.timeSlots.map((slot) => ({
 					id: slot.timeSlotId,
-					title: pickLocalizedText(opp.titleDe, opp.titleEn, i18n.language),
+					title: pickLocalizedText(opp.titleDe, opp.titleEn, i18n.language)
+						.text,
 					start: new Date(slot.startDateTime),
 					end: new Date(slot.endDateTime),
 					opportunityId: opp.opportunityId,

@@ -13,8 +13,17 @@ interface Props {
 	 */
 	eyebrow: ReactNode;
 	title: string;
+	/**
+	 * Overrides the title's `lang` attribute when it's known to differ from
+	 * the active UI language - e.g. a German-only opportunity title shown
+	 * under the English UI (einsatzbereit#2057). Omit when the title is
+	 * always in the UI language (most pages).
+	 */
+	titleLang?: string;
 	/** Optional one-line standfirst under the title. */
 	lead?: string;
+	/** Same as `titleLang`, for `lead`. */
+	leadLang?: string;
 	/** Optional trailing row (a "last updated" chip, a CTA). */
 	children?: ReactNode;
 	/**
@@ -83,7 +92,9 @@ interface Props {
 export default function PageHeaderBand({
 	eyebrow,
 	title,
+	titleLang,
 	lead,
+	leadLang,
 	children,
 	fullWidth = false,
 	compactTitle = false,
@@ -151,6 +162,7 @@ export default function PageHeaderBand({
 							{eyebrow}
 						</p>
 						<h1
+							lang={titleLang}
 							className={`animate-fade-up-d1 mt-3 max-w-4xl font-display font-bold tracking-tight text-white ${
 								compactTitle
 									? "text-3xl sm:text-4xl"
@@ -160,7 +172,10 @@ export default function PageHeaderBand({
 							{title}
 						</h1>
 						{lead && (
-							<p className="animate-fade-up-d2 mt-5 max-w-2xl text-base leading-relaxed text-brand-100 sm:text-lg">
+							<p
+								lang={leadLang}
+								className="animate-fade-up-d2 mt-5 max-w-2xl text-base leading-relaxed text-brand-100 sm:text-lg"
+							>
 								{lead}
 							</p>
 						)}
