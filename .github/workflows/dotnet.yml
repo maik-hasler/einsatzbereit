@@ -63,9 +63,24 @@ jobs:
   # standalone, now behind this job's setup+build time.
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # VisualTests.csproj's InstallPlaywrightBrowsers target (below, via
+      # `dotnet build`) shells out to `playwright install --with-deps
+      # chromium`, which runs its own `apt-get update`/`install` on every
+      # Playwright-cache miss. apt has no default network timeout, so a
+      # stalled connection to the runner's mirror hangs silently instead of
+      # failing - observed burning this job's entire timeout with zero
+      # output partway through `apt-get update` (einsatzbereit#2139-2138
+      # CI). Retries + a bounded per-request timeout turn that hang into a
+      # fast retry/failure instead.
+      - name: Harden apt against CI mirror stalls
+        run: |
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          echo 'Acquire::http::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
+          echo 'Acquire::https::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
