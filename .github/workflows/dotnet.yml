@@ -82,6 +82,27 @@ jobs:
           echo 'Acquire::http::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::https::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
 
+      # Reproduced locally: a concurrent `apt-get install` (this repo's own
+      # sandbox ran several `dotnet build` invocations in parallel) fails
+      # this same Playwright `--with-deps` install immediately with "E:
+      # Could not get lock /var/lib/dpkg/lock-frontend" instead of hanging -
+      # a different symptom from the mirror stall above, but the same
+      # command is exposed to it. GitHub-hosted runners run apt-daily.timer/
+      # apt-daily-upgrade.timer shortly after boot, which can hold this same
+      # lock for a few minutes; waiting it out here is cheap insurance
+      # against that immediate failure mode landing on this step instead.
+      - name: Wait for background apt/dpkg locks to clear
+        run: |
+          for i in $(seq 1 60); do
+            if sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+              echo "apt/dpkg lock held (attempt $i/60) - waiting..."
+              sleep 5
+            else
+              exit 0
+            fi
+          done
+          echo "::warning::apt/dpkg lock still held after 5 minutes - proceeding anyway"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
