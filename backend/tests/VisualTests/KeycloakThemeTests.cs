@@ -108,7 +108,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		await AssertThemeShellAsync("login");
-		await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Sign in");
+		await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Account");
 		await Expect(Page.Locator("#password")).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-login")).ToBeVisibleAsync();
 		// #2063: stock Keycloak's doLogIn is Title Case ("Sign In"), which read

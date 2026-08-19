@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router";
-import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, Link } from "react-router";
+import { Trans, useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type {
 	MemberCandidateDto,
@@ -11,6 +11,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { looksLikeEmail } from "../../lib/emailLike";
 import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
+import { orgTabPath } from "../../lib/orgTabs";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
@@ -593,7 +594,21 @@ export default function OrgMembersPage() {
 													id="leave-organization-hint"
 													className="max-w-48 text-right text-xs text-gray-500"
 												>
-													{t("orgSettings.leaveOrganizationLastOrganizerHint")}
+													{/* States the whole path here, at the point the user
+													first hits the wall, instead of leaving them to piece
+													it together from this page's disabled button plus the
+													separate hint on the settings page (#2074). */}
+													<Trans
+														i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
+														components={{
+															settingsLink: (
+																<Link
+																	to={orgTabPath(org.id, "settings")}
+																	className="underline hover:text-brand-700"
+																/>
+															),
+														}}
+													/>
 												</p>
 											)}
 										</div>
