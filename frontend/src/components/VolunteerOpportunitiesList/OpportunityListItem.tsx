@@ -188,7 +188,7 @@ export default function OpportunityListItem({
 							width={1200}
 							height={480}
 							loading="lazy"
-							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
 						/>
 					</div>
 				)}

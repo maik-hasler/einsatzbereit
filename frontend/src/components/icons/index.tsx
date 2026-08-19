@@ -68,7 +68,7 @@ export function ChevronDownIcon({
 }: ChevronIconProps) {
 	return (
 		<StrokeIcon
-			className={`${className} transition-transform ${open ? "rotate-180" : ""}`}
+			className={`${className} transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
 		>
 			<path
 				strokeLinecap="round"
@@ -97,7 +97,7 @@ export function ChevronRightIcon({
 }: ChevronIconProps) {
 	return (
 		<StrokeIcon
-			className={`${className} transition-transform ${open ? "rotate-180" : ""}`}
+			className={`${className} transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
 		>
 			<path
 				strokeLinecap="round"
