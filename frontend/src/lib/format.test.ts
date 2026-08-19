@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { TFunction } from "i18next";
+import type { TimeSlotDetail } from "../client/api-client";
 import {
 	computeSpotsLeft,
+	findNextTimeSlot,
 	formatOccurrence,
 	formatParticipationType,
 	formatDate,
@@ -16,6 +18,20 @@ import {
 } from "./format";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function makeTimeSlot(overrides: Partial<TimeSlotDetail>): TimeSlotDetail {
+	return {
+		id: "slot-1",
+		startDateTime: "2026-01-01T09:00:00Z" as unknown as Date,
+		endDateTime: "2026-01-01T12:00:00Z" as unknown as Date,
+		maxParticipants: undefined,
+		bookedCount: 0,
+		seriesId: undefined,
+		recurrenceFrequency: undefined,
+		recurrenceCount: undefined,
+		...overrides,
+	};
+}
 
 function fakeT(): TFunction {
 	return vi.fn((key: string, options?: Record<string, unknown>) =>
@@ -89,32 +105,91 @@ describe("isSlotFull", () => {
 	});
 });
 
+describe("findNextTimeSlot", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("returns the earliest slot that hasn't ended yet, out of an ascending-ordered list", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-15T12:00:00Z"));
+		const past = makeTimeSlot({
+			id: "past",
+			startDateTime: "2026-03-01T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-01T12:00:00Z" as unknown as Date,
+		});
+		const next = makeTimeSlot({
+			id: "next",
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		const later = makeTimeSlot({
+			id: "later",
+			startDateTime: "2026-03-27T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-27T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([past, next, later])).toBe(next);
+	});
+
+	it("counts a slot still in progress (started but not yet ended) as next", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-20T10:00:00Z"));
+		const inProgress = makeTimeSlot({
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([inProgress])).toBe(inProgress);
+	});
+
+	it("returns undefined once every slot has already ended", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-04-01T00:00:00Z"));
+		const past = makeTimeSlot({
+			startDateTime: "2026-03-01T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-01T12:00:00Z" as unknown as Date,
+		});
+		expect(findNextTimeSlot([past])).toBeUndefined();
+	});
+
+	it("returns undefined for an empty list", () => {
+		expect(findNextTimeSlot([])).toBeUndefined();
+	});
+});
+
 describe("pickLocalizedText", () => {
-	it("returns the German text when the viewer's language is German", () => {
-		expect(pickLocalizedText("Deutscher Titel", "English Title", "de")).toBe(
-			"Deutscher Titel",
+	it("returns the German text tagged de when the viewer's language is German", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "de")).toEqual(
+			{ text: "Deutscher Titel", lang: "de" },
 		);
 	});
 
-	it("returns the English text when the viewer's language is English", () => {
-		expect(pickLocalizedText("Deutscher Titel", "English Title", "en")).toBe(
-			"English Title",
+	it("returns the English text tagged en when the viewer's language is English", () => {
+		expect(pickLocalizedText("Deutscher Titel", "English Title", "en")).toEqual(
+			{ text: "English Title", lang: "en" },
 		);
 	});
 
-	it("falls back to German when no English variant was provided", () => {
-		expect(pickLocalizedText("Deutscher Titel", undefined, "en")).toBe(
-			"Deutscher Titel",
-		);
-		expect(pickLocalizedText("Deutscher Titel", null, "en")).toBe(
-			"Deutscher Titel",
-		);
+	it("falls back to German (tagged de) when no English variant was provided", () => {
+		expect(pickLocalizedText("Deutscher Titel", undefined, "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
+		expect(pickLocalizedText("Deutscher Titel", null, "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
 	});
 
-	it("falls back to German when the English variant is blank", () => {
-		expect(pickLocalizedText("Deutscher Titel", "   ", "en")).toBe(
-			"Deutscher Titel",
-		);
+	it("falls back to German (tagged de) when the English variant is blank", () => {
+		expect(pickLocalizedText("Deutscher Titel", "   ", "en")).toEqual({
+			text: "Deutscher Titel",
+			lang: "de",
+		});
+	});
+
+	it("returns undefined when no German text is available either", () => {
+		expect(pickLocalizedText(undefined, undefined, "en")).toBeUndefined();
+		expect(pickLocalizedText(null, "English Title", "de")).toBeUndefined();
 	});
 });
 

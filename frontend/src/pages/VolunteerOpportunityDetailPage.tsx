@@ -11,6 +11,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
 	computeSpotsLeft,
+	findNextTimeSlot,
 	formatDate,
 	formatDateTime,
 	formatDateTimeRange,
@@ -49,6 +50,7 @@ import {
 	ArrowTopRightOnSquareIcon,
 	CalendarIcon,
 	CheckIconSolid,
+	ChevronRightIcon,
 	EnvelopeIcon,
 	FlagIcon,
 	GlobeIcon,
@@ -128,6 +130,53 @@ function slotCapacityLabel(
 		: t("opportunities.spotsLeft", { count: spotsLeft });
 }
 
+/**
+ * The at-a-glance panel's WANN fact - the next upcoming time slot's start,
+ * or the application deadline for an expression-of-interest opportunity.
+ * This field used to show the recurrence category ("Einmalig"/"One-time")
+ * instead - the one label a scanning reader trusts to carry a date carried
+ * none, while the real date sat ~500px further down in the time slot list
+ * (#2055). Recurrence isn't dropped, just demoted to a Chip in the meta row
+ * below, matching how the browse list's cards already state it
+ * (OpportunityListItem).
+ */
+function describeWhenFact(
+	opportunity: VolunteerOpportunityDetails,
+	t: TFunction,
+	lng: string,
+): string {
+	if (opportunity.participationType === "IndividualContact") {
+		return opportunity.validUntil
+			? t("opportunities.applyBy", {
+					date: formatDate(opportunity.validUntil as unknown as string, lng),
+				})
+			: t("opportunities.flexibleDate");
+	}
+
+	const nextSlot = findNextTimeSlot(opportunity.timeSlots);
+	return nextSlot
+		? formatDateTime(nextSlot.startDateTime as unknown as string, lng)
+		: t("opportunities.flexibleDate");
+}
+
+/**
+ * The at-a-glance panel's ABLAUF/"How it works" fact. Used to restate the
+ * participation type category ("Zeitslots") - the exact word the time slot
+ * list's own section heading carries a few hundred pixels below, so the fact
+ * added nothing a reader couldn't already see there (#2055). A Scheduled-
+ * slots opportunity now states its actual slot count instead; an interest-
+ * based one keeps the participation type, since it has no such list to
+ * duplicate and the category itself is still real information there.
+ */
+function describeHowFact(
+	opportunity: VolunteerOpportunityDetails,
+	t: TFunction,
+): string {
+	return opportunity.participationType === "ScheduledSlots"
+		? t("opportunities.slotCount", { count: opportunity.timeSlots.length })
+		: formatParticipationType(opportunity.participationType, t);
+}
+
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const auth = useAuth();
@@ -138,11 +187,8 @@ export default function VolunteerOpportunityDetailPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	usePageTitle(
 		opportunity &&
-			pickLocalizedText(
-				opportunity.titleDe,
-				opportunity.titleEn,
-				i18n.language,
-			),
+			pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language)
+				.text,
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -154,6 +200,13 @@ export default function VolunteerOpportunityDetailPage() {
 	const online = useOnlineStatus();
 	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
 	const [showSignUp, setShowSignUp] = useState(false);
+	// Set when the sign-up modal was opened from a specific slot row rather
+	// than the rail's generic sign-up button - undefined for the rail's own
+	// "secondary entry point" (#2075), which still lets the modal pick for a
+	// multi-slot opportunity.
+	const [preselectedSlotId, setPreselectedSlotId] = useState<
+		string | undefined
+	>(undefined);
 	const [showReport, setShowReport] = useState(false);
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
@@ -525,6 +578,14 @@ export default function VolunteerOpportunityDetailPage() {
 								>
 									{t(`myEngagements.status.${cue.status}`)}
 								</Chip>
+								{/* Pending previously had no explanation anywhere on this
+								page - the amber chip alone didn't say what "pending" means,
+								who resolves it, or how long it takes (#2075). */}
+								{cue.status === "Pending" && (
+									<p className="mt-1.5 text-xs text-gray-600">
+										{t("myEngagements.pendingExplanation")}
+									</p>
+								)}
 								{registeredTimeSlot && (
 									<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
 										<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
@@ -582,7 +643,10 @@ export default function VolunteerOpportunityDetailPage() {
 							</p>
 						)}
 						<Button
-							onClick={() => setShowSignUp(true)}
+							onClick={() => {
+								setPreselectedSlotId(undefined);
+								setShowSignUp(true);
+							}}
 							disabled={isFull}
 							fullWidth
 							size="lg"
@@ -627,6 +691,24 @@ export default function VolunteerOpportunityDetailPage() {
 		);
 	}
 
+	const headerTitle = pickLocalizedText(
+		opportunity.titleDe,
+		opportunity.titleEn,
+		i18n.language,
+	);
+	const headerLead = pickLocalizedText(
+		opportunity.descriptionDe,
+		opportunity.descriptionEn,
+		i18n.language,
+	);
+	// Only ever true for the English UI falling back to German content - the
+	// German variant is required, so the reverse never happens (#2057). Checked
+	// on both fields independently since an organizer may translate one but
+	// not the other.
+	const isGermanFallback =
+		headerTitle.lang !== i18n.language ||
+		(headerLead !== undefined && headerLead.lang !== i18n.language);
+
 	return (
 		<>
 			<PageHeaderBand
@@ -638,17 +720,17 @@ export default function VolunteerOpportunityDetailPage() {
 						{opportunity.organizationName}
 					</Link>
 				}
-				title={pickLocalizedText(
-					opportunity.titleDe,
-					opportunity.titleEn,
-					i18n.language,
+				title={headerTitle.text}
+				titleLang={headerTitle.lang}
+				lead={headerLead?.text}
+				leadLang={headerLead?.lang}
+			>
+				{isGermanFallback && (
+					<p className="text-sm text-brand-200">
+						{t("opportunities.germanOnlyNotice")}
+					</p>
 				)}
-				lead={pickLocalizedText(
-					opportunity.descriptionDe,
-					opportunity.descriptionEn,
-					i18n.language,
-				)}
-			/>
+			</PageHeaderBand>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
 				{/* Banner image - spans the full width of this wider wrapper; a
@@ -787,8 +869,11 @@ export default function VolunteerOpportunityDetailPage() {
 										<CalendarIcon className="h-4 w-4 shrink-0" />
 										{t("opportunities.factWhen")}
 									</dt>
-									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{formatOccurrence(opportunity.occurrence, t)}
+									<dd
+										className="mt-2 text-sm font-medium text-gray-900"
+										data-testid="opportunity-detail-when"
+									>
+										{describeWhenFact(opportunity, t, i18n.language)}
 									</dd>
 								</div>
 
@@ -797,8 +882,11 @@ export default function VolunteerOpportunityDetailPage() {
 										<UserGroupIcon className="h-4 w-4 shrink-0" />
 										{t("opportunities.factFormat")}
 									</dt>
-									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{formatParticipationType(opportunity.participationType, t)}
+									<dd
+										className="mt-2 text-sm font-medium text-gray-900"
+										data-testid="opportunity-detail-how"
+									>
+										{describeHowFact(opportunity, t)}
 									</dd>
 								</div>
 
@@ -825,6 +913,17 @@ export default function VolunteerOpportunityDetailPage() {
 										{t(`opportunities.category.${opportunity.category}`)}
 									</Chip>
 								)}
+								{/* Recurrence, demoted from the at-a-glance panel's WANN slot
+								(#2055) - that field now carries the actual next date/deadline
+								instead, matching how the browse list's cards already state
+								recurrence as a Chip beside the category one. */}
+								<Chip
+									tone="neutral"
+									size="sm"
+									data-testid="opportunity-occurrence"
+								>
+									{formatOccurrence(opportunity.occurrence, t)}
+								</Chip>
 								{opportunity.tags?.map((tag) => (
 									<Chip
 										key={tag}
@@ -937,27 +1036,62 @@ export default function VolunteerOpportunityDetailPage() {
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
 									<ul className="space-y-2">
-										{opportunity.timeSlots.map((ts) => (
-											<li
-												key={ts.id}
-												className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
-											>
-												<span>
-													{formatDateTimeRange(
-														ts.startDateTime as unknown as string,
-														ts.endDateTime as unknown as string,
-														i18n.language,
+										{opportunity.timeSlots.map((ts) => {
+											// The rows themselves are the primary control now - not
+											// just an inert preview of what the rail's sign-up button
+											// opens ~700px away (#2075). Only wired up where a click
+											// could actually do something: a slot with no spots left
+											// can't be signed up for, and every other viewer state
+											// (anonymous, owner, already applied, draft) has no
+											// sign-up action to trigger in the first place.
+											const clickable =
+												showSignUpCta &&
+												!isSlotFull(ts.maxParticipants, ts.bookedCount);
+											const rowContent = (
+												<>
+													<span>
+														{formatDateTimeRange(
+															ts.startDateTime as unknown as string,
+															ts.endDateTime as unknown as string,
+															i18n.language,
+														)}
+													</span>
+													{/* Free places, the same framing the cards and the sign-up
+													modal's slot picker use. This said "(max. N people)" while the
+													card that linked here said "N spots left", so the two
+													disagreed about the same opportunity (#1777). */}
+													<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
+														{slotCapacityLabel(ts, t)}
+														{clickable && (
+															<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
+														)}
+													</span>
+												</>
+											);
+											return (
+												<li key={ts.id}>
+													{clickable ? (
+														<button
+															type="button"
+															onClick={() => {
+																setPreselectedSlotId(ts.id);
+																setShowSignUp(true);
+															}}
+															data-testid="opportunity-time-slot-row"
+															className={`flex w-full items-center justify-between ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
+														>
+															{rowContent}
+														</button>
+													) : (
+														<div
+															className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+														>
+															{rowContent}
+														</div>
 													)}
-												</span>
-												{/* Free places, the same framing the cards and the sign-up
-												modal's slot picker use. This said "(max. N people)" while the
-												card that linked here said "N spots left", so the two
-												disagreed about the same opportunity (#1777). */}
-												<span className="ml-3 shrink-0 text-xs text-gray-600">
-													{slotCapacityLabel(ts, t)}
-												</span>
-											</li>
-										))}
+												</li>
+											);
+										})}
 									</ul>
 								</div>
 							)}
@@ -1076,9 +1210,14 @@ export default function VolunteerOpportunityDetailPage() {
 						organizationId={opportunity.organizationId}
 						participationType={opportunity.participationType}
 						timeSlots={opportunity.timeSlots}
-						onClose={() => setShowSignUp(false)}
+						preselectedTimeSlotId={preselectedSlotId}
+						onClose={() => {
+							setShowSignUp(false);
+							setPreselectedSlotId(undefined);
+						}}
 						onSuccess={() => {
 							setShowSignUp(false);
+							setPreselectedSlotId(undefined);
 							dispatchToast("success", t("signUp.success"));
 							load();
 						}}
@@ -1092,13 +1231,7 @@ export default function VolunteerOpportunityDetailPage() {
 							cue.remainingReactivations === 0
 								? "confirmDialog.withdraw.messageLimitReached"
 								: "confirmDialog.withdraw.message",
-							{
-								title: pickLocalizedText(
-									opportunity.titleDe,
-									opportunity.titleEn,
-									i18n.language,
-								),
-							},
+							{ title: headerTitle.text },
 						)}
 						confirmLabel={t("confirmDialog.withdraw.confirm")}
 						onConfirm={handleWithdrawConfirm}
@@ -1130,11 +1263,8 @@ export default function VolunteerOpportunityDetailPage() {
 
 				{showReport && (
 					<ReportContentModal
-						targetLabel={pickLocalizedText(
-							opportunity.titleDe,
-							opportunity.titleEn,
-							i18n.language,
-						)}
+						targetLabel={headerTitle.text}
+						targetLabelLang={headerTitle.lang}
 						onSubmit={handleReportSubmit}
 						onClose={() => setShowReport(false)}
 					/>

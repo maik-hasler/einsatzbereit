@@ -12,6 +12,11 @@ interface Props {
 	orgName: string;
 	/** The current page's own name - the tab's label, or a nested page's title. */
 	title: string;
+	/** `title`'s actual language, when it may differ from the active UI
+	 * language - e.g. a German-only opportunity title (einsatzbereit#2057).
+	 * Omit when `title` is always in the UI language (the common case: a
+	 * tab's own label). */
+	titleLang?: string;
 	activeTabKey: string;
 	/** Only set on a nested page (e.g. an opportunity's sign-ups), pointing at
 	 * the tab that owns it. A tab page needs none: its own entry in the section
@@ -38,6 +43,7 @@ export default function OrgPageHeader({
 	organizationId,
 	orgName,
 	title,
+	titleLang,
 	activeTabKey,
 	back,
 }: Props) {
@@ -104,7 +110,10 @@ export default function OrgPageHeader({
 					<p className="truncate text-xs font-semibold tracking-widest text-gray-500 uppercase">
 						{orgName}
 					</p>
-					<h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+					<h1
+						lang={titleLang}
+						className="font-display text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl"
+					>
 						{title}
 					</h1>
 				</div>

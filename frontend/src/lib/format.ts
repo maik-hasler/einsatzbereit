@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { differenceInCalendarDays, isSameDay } from "date-fns";
+import type { TimeSlotDetail } from "../client/api-client";
 import type { OpportunityCapacity } from "./opportunityCapacity";
 
 export function formatOccurrence(occurrence: string, t: TFunction): string {
@@ -31,6 +32,27 @@ export function isSlotFull(
 }
 
 /**
+ * The earliest of an opportunity's time slots that hasn't ended yet - the
+ * same "next" slot `VolunteerOpportunityReadRepository`'s browse listing
+ * precomputes server-side as `nextTimeSlotStart`/`nextTimeSlotEnd` (ordered
+ * by start, filtered to `EndDateTime >= now`). The opportunity detail
+ * page's `VolunteerOpportunityDetails` contract doesn't carry that
+ * precomputed pair - it hands over every slot instead, already ordered by
+ * start ascending (`GetVolunteerOpportunityDetailsQueryHandler`) - so this
+ * re-derives the same slot client-side instead of inventing a different
+ * "next" than the one volunteers already see on the browse list for the
+ * same opportunity (#2055).
+ */
+export function findNextTimeSlot(
+	timeSlots: TimeSlotDetail[],
+): TimeSlotDetail | undefined {
+	const now = Date.now();
+	return timeSlots.find(
+		(ts) => new Date(ts.endDateTime as unknown as string).getTime() >= now,
+	);
+}
+
+/**
  * The organizer-facing sign-up count - "3/10 sign-ups", "3 sign-ups (no
  * cap)" - for every state of the capacity contract (`lib/opportunityCapacity`).
  *
@@ -59,6 +81,16 @@ export function formatSignUpCount(
 	}
 }
 
+/** A resolved piece of localized text, paired with the language it's actually
+ * written in - which doesn't always match the viewer's active UI language
+ * (see `pickLocalizedText`). Render `lang` on the element that displays
+ * `text` so assistive tech (and `hreflang`-aware tooling) doesn't announce
+ * German content with English phonetics or vice versa (einsatzbereit#2057). */
+export interface LocalizedText {
+	text: string;
+	lang: string;
+}
+
 /**
  * Organizer-authored opportunity title/description carry a required German
  * variant and an optional English one (einsatzbereit#1946) - this picks
@@ -67,24 +99,31 @@ export function formatSignUpCount(
  * Single source of truth so every card/list/detail surface that renders an
  * opportunity's title or description resolves the same way instead of each
  * re-deriving its own fallback.
+ *
+ * The returned `lang` is the resolved text's *actual* language, not the
+ * viewer's UI language - the two diverge exactly when a German-only
+ * opportunity is viewed under the English UI, which is the fallback case
+ * callers need to mark (einsatzbereit#2057).
  */
 export function pickLocalizedText(
 	textDe: string,
 	textEn: string | null | undefined,
 	lng: string,
-): string;
+): LocalizedText;
 export function pickLocalizedText(
 	textDe: string | null | undefined,
 	textEn: string | null | undefined,
 	lng: string,
-): string | undefined;
+): LocalizedText | undefined;
 export function pickLocalizedText(
 	textDe: string | null | undefined,
 	textEn: string | null | undefined,
 	lng: string,
-): string | undefined {
-	if (lng === "en" && textEn && textEn.trim().length > 0) return textEn;
-	return textDe ?? undefined;
+): LocalizedText | undefined {
+	if (lng === "en" && textEn && textEn.trim().length > 0) {
+		return { text: textEn, lang: "en" };
+	}
+	return textDe != null ? { text: textDe, lang: "de" } : undefined;
 }
 
 /** i18n's UI language ("de"/"en") -> the Intl/date-fns locale used for date
