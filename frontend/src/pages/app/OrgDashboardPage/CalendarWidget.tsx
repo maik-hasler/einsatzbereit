@@ -65,6 +65,9 @@ const localizer = dateFnsLocalizer({
 interface CalEvent {
 	id: string;
 	title: string;
+	/** `title`'s actual language, when it may differ from the active UI
+	 * language - e.g. a German-only opportunity title (einsatzbereit#2057). */
+	titleLang: string;
 	start: Date;
 	end: Date;
 	opportunityId: string;
@@ -123,7 +126,9 @@ function CalEventChip({
 				onActivate(event);
 			}}
 		>
-			<span className="truncate">{e.title}</span>
+			<span lang={e.titleLang} className="truncate">
+				{e.title}
+			</span>
 			{capacityLabel && (
 				<span className="shrink-0 text-xs">{capacityLabel}</span>
 			)}
@@ -330,19 +335,24 @@ function CalendarWidget({
 
 	const calEvents: CalEvent[] = useMemo(
 		() =>
-			(displayedCalData ?? []).flatMap((opp) =>
-				opp.timeSlots.map((slot) => ({
+			(displayedCalData ?? []).flatMap((opp) => {
+				const title = pickLocalizedText(
+					opp.titleDe,
+					opp.titleEn,
+					i18n.language,
+				);
+				return opp.timeSlots.map((slot) => ({
 					id: slot.timeSlotId,
-					title: pickLocalizedText(opp.titleDe, opp.titleEn, i18n.language)
-						.text,
+					title: title.text,
+					titleLang: title.lang,
 					start: new Date(slot.startDateTime),
 					end: new Date(slot.endDateTime),
 					opportunityId: opp.opportunityId,
 					color: opp.color,
 					bookedCount: slot.bookedCount,
 					maxParticipants: slot.maxParticipants ?? null,
-				})),
-			),
+				}));
+			}),
 		[displayedCalData, i18n.language],
 	);
 
@@ -569,6 +579,7 @@ function CalendarWidget({
 				>
 					<h3
 						id="color-dialog-title"
+						lang={selectedEvent.titleLang}
 						className="mb-4 text-lg font-semibold text-gray-900"
 					>
 						{selectedEvent.title}

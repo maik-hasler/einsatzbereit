@@ -60,16 +60,18 @@ export default function EngagementManagementPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	const [opportunityError, setOpportunityError] = useState<string | null>(null);
 	const [retryingOpportunity, setRetryingOpportunity] = useState(false);
-	const opportunityTitle =
+	const resolvedOpportunityTitle =
 		opportunity &&
-		pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language)
-			.text;
+		pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language);
+	const opportunityTitle = resolvedOpportunityTitle?.text;
 	usePageTitle(
 		opportunityTitle
 			? `${t("engagementManagement.title")} - ${opportunityTitle}`
 			: t("engagementManagement.title"),
 	);
-	useSetOrgBreadcrumbExtra(opportunityTitle);
+	// Carries the title's actual language through to OrgPageHeader's <h1> - see
+	// useSetOrgBreadcrumbExtra's own doc comment (einsatzbereit#2057).
+	useSetOrgBreadcrumbExtra(opportunityTitle, resolvedOpportunityTitle?.lang);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("engagementManagement.status.Pending"),

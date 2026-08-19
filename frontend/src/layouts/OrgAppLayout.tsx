@@ -16,6 +16,7 @@ import {
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
+	useOrgBreadcrumbExtraLang,
 } from "../contexts/OrgBreadcrumbContext";
 import { QuickActionsProvider } from "../contexts/QuickActionsContext";
 import Header from "../components/Header/Header";
@@ -62,6 +63,7 @@ function OrgAppShell({
 	const { t } = useTranslation();
 	const location = useLocation();
 	const extra = useOrgBreadcrumbExtra();
+	const extraLang = useOrgBreadcrumbExtraLang();
 	// Answered from organization_membership (see OrganizationDetailsResponse's
 	// requestingUserRole), not by scanning the Keycloak-sourced org.members roster
 	// below - so the shell's own nav/actions still know the caller's role even
@@ -86,6 +88,9 @@ function OrgAppShell({
 	// render it as a real h1 here rather than in each of the four tab pages, so
 	// axe's page-has-heading-one/heading-order rules pass on every org app page.
 	const pageTitle = extra ?? activeTabLabel;
+	// extraLang only applies while `extra` (not the tab's own, always-UI-language
+	// label) is actually what's shown.
+	const pageTitleLang = extra ? (extraLang ?? undefined) : undefined;
 
 	return (
 		// bg-gray-50 stays: it is the app canvas that makes the dashboard's
@@ -111,6 +116,7 @@ function OrgAppShell({
 					organizationId={org.id}
 					orgName={org.name}
 					title={pageTitle}
+					titleLang={pageTitleLang}
 					activeTabKey={activeTabKey}
 					back={back}
 				/>
