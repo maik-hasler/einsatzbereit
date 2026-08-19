@@ -159,9 +159,11 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 
 		// h3, not h2 - the card takes a headingLevel prop and this section
 		// passes 3, because its own "These opportunities need people" heading is
-		// the h2 these cards sit under. On /opportunities the same card renders
-		// an h2, directly below that page's h1. Asserting the level here rather
-		// than matching "h2, h3" keeps that distinction pinned.
+		// the h2 these cards sit under. /opportunities passes 3 too, for its own
+		// sr-only "Search results" h2 (#2071) - every current call site of the
+		// shared OpportunityCard sits under a section heading and demotes to h3.
+		// Asserting the level here rather than matching "h2, h3" keeps that
+		// pinned regardless.
 		var firstCard = preview.Locator("li").First;
 		var title = (await firstCard.Locator("h3").InnerTextAsync()).Trim();
 
