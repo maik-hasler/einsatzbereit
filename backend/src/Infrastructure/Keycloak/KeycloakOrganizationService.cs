@@ -37,11 +37,27 @@ internal sealed class KeycloakOrganizationService(
 		var alias = GenerateAlias(name);
 		var request = new { name, alias };
 
-		var response = await httpClient.PostAsJsonAsync(
-			$"/admin/realms/{_options.Realm}/organizations",
-			request,
-			JsonOptions,
-			cancellationToken);
+		HttpResponseMessage response;
+		try
+		{
+			response = await httpClient.PostAsJsonAsync(
+				$"/admin/realms/{_options.Realm}/organizations",
+				request,
+				JsonOptions,
+				cancellationToken);
+		}
+		catch (ExecutionRejectedException ex)
+		{
+			// Same normalization as GetMembersAsync above: this is the single
+			// most-called Keycloak write in the app (every organization creation
+			// goes through it), so it is also the most likely to observe
+			// AddStandardResilienceHandler's circuit breaker/timeout/rate limiter
+			// rejecting the call outright under sustained load, before it ever
+			// reaches EnsureSuccessAsync below.
+			throw new HttpRequestException(
+				$"Keycloak organization creation for '{name}' was rejected by the resilience pipeline: {ex.Message}",
+				ex);
+		}
 
 		await EnsureSuccessAsync(response, cancellationToken);
 

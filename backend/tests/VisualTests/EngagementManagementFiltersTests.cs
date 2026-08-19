@@ -69,7 +69,7 @@ public class EngagementManagementFiltersTests(AspireFixture fixture) : VisualTes
 
 		// Fresh organization rather than olaf's shared seed org - see the
 		// identical note in EngagementManagementCheckInPinTests.
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

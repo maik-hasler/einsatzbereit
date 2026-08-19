@@ -40,7 +40,7 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"ReducedMotion {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"ReducedMotion {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();

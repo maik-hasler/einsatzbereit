@@ -543,7 +543,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 
 	private static async Task<string> CreateOrganizationAsync(HttpClient organizer, string keyword)
 	{
-		var response = await organizer.PostAsJsonAsync("/v1/organizations", new { name = $"Org {keyword}" });
+		var response = await PostJsonWithRetryAsync(organizer, "/v1/organizations", new { name = $"Org {keyword}" });
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return body.GetProperty("id").GetProperty("value").GetString()

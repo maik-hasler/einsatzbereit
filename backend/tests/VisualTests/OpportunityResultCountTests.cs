@@ -43,7 +43,7 @@ public class OpportunityResultCountTests(AspireFixture fixture) : VisualTestBase
 	private static async Task SeedTaggedOpportunitiesAsync(
 		HttpClient http, string tag, IReadOnlyList<string> titles)
 	{
-		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"ResultCount {tag}" });
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"ResultCount {tag}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
