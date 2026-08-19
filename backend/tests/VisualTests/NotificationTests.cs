@@ -51,7 +51,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"NotifDeepLink Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -135,7 +135,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var suffix = Guid.NewGuid().ToString("N");
 		var orgName = $"NotifInvite Org {suffix}";
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
@@ -197,7 +197,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		var orgResponse = await olafHttp.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"NotifMarkReadFail Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();

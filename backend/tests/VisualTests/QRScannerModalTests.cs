@@ -296,7 +296,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		using var veraHttp = new HttpClient { BaseAddress = backend };
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
 
-		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"QRScanner {label} Org {suffix}" });
+		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"QRScanner {label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;

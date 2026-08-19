@@ -142,7 +142,7 @@ public class EngagementCoreJourneysTests(AspireFixture fixture) : VisualTestBase
 		// Create a fresh organization rather than reusing olaf's shared seed
 		// org - other VisualTests running concurrently in this shared Aspire
 		// session can mutate/delete shared orgs (see EngagementCancellationReasonTests.cs).
-		var createOrgResponse = await http.PostAsJsonAsync(
+		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();

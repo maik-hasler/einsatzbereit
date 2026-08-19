@@ -753,7 +753,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var animalShelterName = $"Lindenauer{suffix} Tierschutzverein e.V.";
 
 		foreach (var name in new[] { neighborhoodName, animalShelterName })
-			(await http.PostAsJsonAsync("/v1/organizations", new { name })).EnsureSuccessStatusCode();
+			(await PostJsonWithRetryAsync(http, "/v1/organizations", new { name })).EnsureSuccessStatusCode();
 
 		await Page.GotoAsync($"{origin}/organizations");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

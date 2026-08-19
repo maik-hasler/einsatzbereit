@@ -32,7 +32,7 @@ public class OpportunityDetailOfflineTests(AspireFixture fixture) : VisualTestBa
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
 
-		var orgResponse = await http.PostAsJsonAsync(
+		var orgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations", new { name = $"DetailOffline2065 {label} {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
