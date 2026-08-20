@@ -281,7 +281,7 @@ Strategic (larger change, defer until justified):
 
 *The concurrency trap - the most important finding here, because it decides whether the number is usable at all.* The first pass ran at Stryker's suggested `concurrency: 2` and produced 71.60 % / 73.47 %. Repeating it at the same commit produced 70.68 % / 72.85 %. The mutant *sets* were identical both times, but individual verdicts churned: 47 of 872 Domain mutants and 99 of 1818 Application mutants changed status between two runs of unchanged code. Disabling Stryker's `bail` and `mix-mutants` optimisations did not help (34 flips remained, at no cost in runtime), which ruled out mutant batching as the cause.
 
-Dropping to `concurrency: 1` did. Two runs per project at concurrency 1 were *bit-for-bit identical* - zero flips out of 872 and out of 1818. Comparing the concurrency-2 runs against that deterministic baseline shows the error is one-directional:
+Dropping to `concurrency: 1` did. Two runs per project at concurrency 1 were *bit-for-bit identical* - zero flips out of 872 and out of 1818. The determinism survives a dependency change too: re-running both projects after merging `main`'s TUnit 1.65.31 -> 1.65.38 bump (#2144) reproduced every single verdict, 0 flips out of 2690 mutants and the same 66.75 % / 68.49 %. So the number tracks the test suite, not the machine or the engine underneath it. Comparing the concurrency-2 runs against that deterministic baseline shows the error is one-directional:
 
 [cols="3,1,1" options="header"]
 |===
