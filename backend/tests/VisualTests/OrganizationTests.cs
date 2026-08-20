@@ -91,7 +91,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Locator("#member-search").FillAsync("ver");
 
 		// OrgMembersPage renders this hint for any non-empty query still under the
-		// 4-char threshold (see MemberSearchMinCharsHintTests), so it is a real
+		// 4-char threshold (see frontend/src/pages/app/OrgMembersPage.test.tsx),
+		// so it is a real
 		// signal that the component has processed "ver" - which is all the fixed
 		// wait here was standing in for. Without something positive to wait on,
 		// the negative assertion below passes just as readily against a page that
