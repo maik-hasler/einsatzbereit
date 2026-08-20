@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -184,13 +185,24 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 				$"Engagement '{engagementId}' not found in GetEngagements response.");
 	}
 
-	private static async Task<ApiException<ProblemDetails>> CaptureFailureAsync(Func<Task> act)
+	/// <summary>
+	/// Catches the base <see cref="ApiException"/>, not
+	/// <c>ApiException&lt;ProblemDetails&gt;</c>, because which of the two a
+	/// failure arrives as depends on the status code. NSwag generates a typed
+	/// branch only for the responses the OpenAPI document declares: for
+	/// <c>UndoCheckInEngagement</c> that is 401/403/404, so a 403 throws
+	/// <c>ApiException&lt;ProblemDetails&gt;</c> while the 409s this class
+	/// asserts fall through to the generated catch-all, which throws the
+	/// non-generic <see cref="ApiException"/>. Catching only the generic form
+	/// let both 409 tests fail with the very exception they were asserting.
+	/// </summary>
+	private static async Task<ApiException> CaptureFailureAsync(Func<Task> act)
 	{
 		try
 		{
 			await act();
 		}
-		catch (ApiException<ProblemDetails> ex)
+		catch (ApiException ex)
 		{
 			return ex;
 		}
@@ -199,16 +211,30 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	}
 
 	/// <summary>
-	/// Not from <see cref="ApiException.Response"/>: NSwag only fills that raw
-	/// string when <c>ReadResponseAsString</c> is on, which it is not here, so
-	/// <c>Response</c> is "" while the parsed body sits on <c>Result</c>.
-	/// <c>errorCode</c> is a ProblemDetails extension member, so it lands in
-	/// <c>AdditionalProperties</c> rather than on a generated property.
+	/// Reads the domain error code from whichever place the generated client
+	/// actually put it, for the same reason
+	/// <see cref="CaptureFailureAsync"/> catches the base type.
+	///
+	/// <c>errorCode</c> is a ProblemDetails extension member either way, so it
+	/// never lands on a generated property. On a typed exception the body is
+	/// already deserialized onto <c>Result.AdditionalProperties</c>; on the
+	/// untyped catch-all it is only ever the raw JSON string in
+	/// <see cref="ApiException.Response"/>, so that has to be parsed here.
 	/// </summary>
-	private static string? ErrorCodeOf(ApiException<ProblemDetails> ex)
+	private static string? ErrorCodeOf(ApiException ex)
 	{
-		ex.Result.AdditionalProperties.Should().ContainKey("errorCode",
+		if (ex is ApiException<ProblemDetails> typed)
+		{
+			typed.Result.AdditionalProperties.Should().ContainKey("errorCode",
+				"the API's ProblemDetails carries the domain error code as an extension member");
+			return typed.Result.AdditionalProperties["errorCode"]?.ToString();
+		}
+
+		ex.Response.Should().NotBeNullOrEmpty(
+			"an untyped ApiException carries the unparsed ProblemDetails body as its Response");
+		using var problem = JsonDocument.Parse(ex.Response);
+		problem.RootElement.TryGetProperty("errorCode", out var errorCode).Should().BeTrue(
 			"the API's ProblemDetails carries the domain error code as an extension member");
-		return ex.Result.AdditionalProperties["errorCode"]?.ToString();
+		return errorCode.GetString();
 	}
 }
