@@ -13,9 +13,63 @@ public static class AuthHelper
 	// key is keyed on, regardless of which client actually issued the token.
 	private const string FrontendClientId = "frontend";
 
+	/// <summary>
+	/// Drives the real Keycloak login UI, retrying the round trip once.
+	///
+	/// The retry is here rather than on the calling test on purpose. The budget
+	/// below used to lean on "callers that still time out carry their own
+	/// [Retry(2)]", which is not true - of the 15 classes that drive a real login,
+	/// only AccessibilityTests does, and einsatzbereit#2145's sharding made that
+	/// gap bite: every shard now boots its own Keycloak, so more classes run
+	/// against a cold stack than when one 542-test session amortised that window
+	/// across the whole suite.
+	///
+	/// Retrying at this level keeps #1321's distinction intact. What gets a second
+	/// chance is a browser round trip through an external identity provider -
+	/// genuinely non-deterministic infrastructure - and never a product assertion
+	/// in the test body, which is what the blanket [assembly: Retry(2)] #1321
+	/// removed was masking.
+	/// </summary>
 	public static async Task LoginAsync(IPage page, Uri frontendUrl, string username, string password)
 	{
 		await AllowKeycloakCrossOriginRequestsAsync(page);
+
+		try
+		{
+			await DriveLoginAsync(page, frontendUrl, username, password);
+			return;
+		}
+		// Both types are needed, for the reason VisualTestBase's LoadMore helper
+		// documents: there is no Microsoft.Playwright.TimeoutException in this
+		// version, so a Playwright timeout surfaces as a *System*.TimeoutException
+		// which does not derive from PlaywrightException. Catching only the latter
+		// would miss the timeout this retry exists for.
+		catch (Exception ex) when (ex is PlaywrightException or TimeoutException)
+		{
+			// Fall through to the single retry below.
+		}
+
+		// The first attempt can have succeeded at Keycloak and only lost the race
+		// on the client render, which leaves a live session and no "Sign in"
+		// button for the retry to click. Check for the authenticated shell before
+		// assuming the form is still there.
+		await page.GotoAsync(frontendUrl.ToString());
+		try
+		{
+			await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
+				.WaitForAsync(new() { Timeout = 15_000 });
+			return;
+		}
+		catch (Exception ex) when (ex is PlaywrightException or TimeoutException)
+		{
+			// Genuinely not signed in - drive the form again.
+		}
+
+		await DriveLoginAsync(page, frontendUrl, username, password);
+	}
+
+	private static async Task DriveLoginAsync(IPage page, Uri frontendUrl, string username, string password)
+	{
 		await page.GotoAsync(frontendUrl.ToString());
 
 		await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First.ClickAsync();
@@ -37,8 +91,9 @@ public static class AuthHelper
 		// 45s rather than 30s because this is the only caller driving the real
 		// Keycloak round trip rather than seeding a token, so it is the most
 		// exposed to AssemblyParallelLimit.cs's documented CPU contention. Do not
-		// raise it further: callers that still time out carry their own [Retry(2)],
-		// so this only has to cover the common case.
+		// raise it further - LoginAsync above retries the whole round trip once,
+		// which covers a cold stack better than a longer single wait would, and
+		// without making every genuine failure take proportionally longer.
 		await page.GetByRole(AriaRole.Button, new() { Name = "User menu" })
 			.WaitForAsync(new() { Timeout = 45_000 });
 	}

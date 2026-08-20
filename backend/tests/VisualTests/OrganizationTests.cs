@@ -89,7 +89,15 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("org-tab-members").ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("ver");
-		await Page.WaitForTimeoutAsync(800);
+
+		// OrgMembersPage renders this hint for any non-empty query still under the
+		// 4-char threshold (see MemberSearchMinCharsHintTests), so it is a real
+		// signal that the component has processed "ver" - which is all the fixed
+		// wait here was standing in for. Without something positive to wait on,
+		// the negative assertion below passes just as readily against a page that
+		// has not re-rendered yet as against one that correctly found nothing.
+		await Expect(Page.GetByText("Enter at least 4 characters"))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Invite" })).Not.ToBeVisibleAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");

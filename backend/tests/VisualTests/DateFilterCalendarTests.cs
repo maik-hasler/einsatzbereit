@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
+using TUnit.Core;
 
 namespace VisualTests;
 
@@ -16,6 +17,19 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class DateFilterCalendarTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	// The grid's idea of "today" comes from the browser's clock; the expectations
+	// below are computed on the runner. Left unpinned the two are the same date
+	// only by luck of the runner's local zone - they disagree outright for the
+	// hours either side of midnight, which is exactly when this class used to
+	// fail. Pinning the context to UTC and computing in UTC below makes both
+	// sides read the same calendar day at every instant of the day.
+	public override BrowserNewContextOptions ContextOptions(TestContext testContext)
+	{
+		var options = base.ContextOptions(testContext);
+		options.TimezoneId = "UTC";
+		return options;
+	}
+
 	private async Task OpenDateFilterAsync(Uri frontend)
 	{
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/opportunities");
@@ -67,7 +81,8 @@ public class DateFilterCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 
 		await OpenDateFilterAsync(frontend);
 
-		var today = DateTime.Now.Date;
+		// UTC, matching the context timezone pinned in ContextOptions above.
+		var today = DateTime.UtcNow.Date;
 		var todayCell = Page.Locator($"[data-date='{Iso(today)}']");
 		await Expect(todayCell).ToBeVisibleAsync();
 		await Expect(todayCell).Not.ToHaveAttributeAsync("aria-disabled", "true");

@@ -116,7 +116,7 @@ dotnet run --project tests/Application.UnitTests
 dotnet run --project tests/ArchitectureTests
 ```
 
-Integration tests use Testcontainers and require Docker:
+Integration tests boot the real Aspire AppHost (`Aspire.Hosting.Testing`) and require Docker:
 ```bash
 dotnet run --project tests/IntegrationTests
 ```

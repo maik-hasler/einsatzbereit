@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -15,6 +17,10 @@ namespace VisualTests;
 public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 {
 	private const string Realm = "einsatzbereit";
+
+	// Also referenced by dotnet.yml/publish.yml's "Report Aspire stack startup
+	// cost" step - renaming it here means renaming it there.
+	public const string BootTimingFileName = "aspire-boot-seconds.txt";
 
 	// ROPC-enabled test-only client (see keycloak/AGENTS.md) - same one
 	// IntegrationTestFixture.GetAccessTokenAsync already uses. Its protocol
@@ -52,6 +58,14 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	public async Task InitializeAsync()
 	{
+		// Sharding trades one Aspire stack for one per shard (einsatzbereit#2145),
+		// so this boot is now a fixed cost paid N times rather than once - it is
+		// what decides how many shards are still worth adding. Timing it here puts
+		// the number in every visual-tests job log instead of leaving it to be
+		// re-derived from step timestamps and TUnit's "[slow] still running"
+		// lines, which is all that was available when the shard count was chosen.
+		var bootStartedAt = Stopwatch.GetTimestamp();
+
 		// DistributedApplicationTestingBuilder.CreateAsync<AppHost>() defaults the
 		// AppHost's own hosting environment to "Development", not "Testing", so
 		// --environment must be passed explicitly for AppHost.cs's isTestEnv gate
@@ -72,6 +86,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		}
 
 		await WaitForRealmReadyAsync();
+		await WarmKeycloakLoginPageAsync();
 		await WaitForBackendReadyAsync();
 
 		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
@@ -80,6 +95,25 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		_keycloakClient = _app.CreateHttpClient("keycloak");
 
 		await CaptureBaselineSnapshotAsync();
+
+		// Written to a file rather than only Console.WriteLine because this runs
+		// inside the first test that pulls the fixture in, and TUnit attributes
+		// console output to that test's context - on a green run nothing would
+		// ever print it. dotnet.yml/publish.yml read this file back into the job
+		// summary after the run (see their "Report Aspire stack startup cost"
+		// steps), so the number is in the log whether the shard passed or failed.
+		var bootSeconds = Stopwatch.GetElapsedTime(bootStartedAt).TotalSeconds;
+		Console.WriteLine($"[aspire-fixture] stack ready in {bootSeconds:F1}s");
+		try
+		{
+			await File.WriteAllTextAsync(
+				Path.Combine(AppContext.BaseDirectory, BootTimingFileName),
+				bootSeconds.ToString("F1", CultureInfo.InvariantCulture));
+		}
+		catch (IOException)
+		{
+			// A timing breadcrumb is never worth failing a whole shard's boot over.
+		}
 	}
 
 	// Restores vera's own account state for tests that need it deterministic -
@@ -465,6 +499,50 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		}
 
 		throw new TimeoutException("Backend did not become healthy in time.");
+	}
+
+	/// <summary>
+	/// Renders the realm's login page once, during boot.
+	///
+	/// <see cref="WaitForRealmReadyAsync"/> proves the realm imported, but it only
+	/// ever fetches JSON (<c>.well-known/openid-configuration</c>) - no template is
+	/// involved. The first request that actually renders a page is what pays for
+	/// compiling this repo's custom Freemarker login theme (<c>keycloak/themes/
+	/// einsatzbereit</c>, set realm-wide as <c>loginTheme</c>); Keycloak caches it
+	/// only afterwards.
+	///
+	/// Unsharded, that cost was paid once per 542-test session and landed on
+	/// whichever test happened to run first - in practice almost always one of
+	/// AccessibilityTests' 90, which carry their own [Retry]. Sharded
+	/// (einsatzbereit#2145) every shard boots its own Keycloak, so the cost recurs
+	/// per shard and lands on whichever classes that shard happens to start with -
+	/// and for a shard holding the real-login classes that means AuthHelper's
+	/// login budget absorbs it on top of ordinary CPU contention. Paying it here
+	/// moves it inside this initializer's own generous budget instead.
+	///
+	/// Best-effort by design: if this fails, the first real login is merely as
+	/// slow as it was before, which is not worth failing a whole shard's boot for.
+	/// </summary>
+	private async Task WarmKeycloakLoginPageAsync()
+	{
+		try
+		{
+			using var client = _app.CreateHttpClient("keycloak");
+
+			// redirect_uri only has to satisfy the frontend client's
+			// "http://localhost:*" (AppHost.cs relaxes it to that for local runs) -
+			// nothing ever follows it, so the port is arbitrary.
+			using var response = await client.GetAsync(
+				$"/realms/{Realm}/protocol/openid-connect/auth"
+				+ "?client_id=frontend&response_type=code&scope=openid"
+				+ "&redirect_uri=http%3A%2F%2Flocalhost%3A1%2Fcallback");
+
+			response.EnsureSuccessStatusCode();
+		}
+		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+		{
+			Console.WriteLine($"[aspire-fixture] login-page warm-up skipped: {ex.Message}");
+		}
 	}
 
 	private async Task WaitForRealmReadyAsync()

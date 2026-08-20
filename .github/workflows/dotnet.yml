@@ -25,6 +25,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The shard split is computed, not checked in, so nothing in a normal run
+  # would notice if it stopped covering everything - a class that falls out of
+  # every shard's filter does not fail, it just silently stops being tested.
+  # This asserts the four shards still partition the suite exactly: every test
+  # class in exactly one shard, none dropped, none run twice. No .NET, no
+  # Docker, no `needs` - it fails within seconds of the run starting.
+  visual-test-shard-partition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify the shards partition the VisualTests suite
+        run: |
+          shards=4
+          : > /tmp/assigned.txt
+          for shard in $(seq 1 "$shards"); do
+            out=$(.github/scripts/visual-test-shard.sh "$shard" "$shards")
+            echo "$out" | sed -n 's/^filter=//p' \
+              | tr '|' '\n' | sed 's#^/\*/\*/##; s#/\*$##; s#^(##; s#)$##' >> /tmp/assigned.txt
+            echo "shard $shard/$shards: $(echo "$out" | sed -n 's/^classes=//p') classes, $(echo "$out" | sed -n 's/^expected-tests=//p') tests"
+          done
+
+          grep -l '^\s*\[Test\]' backend/tests/VisualTests/*.cs \
+            | xargs -n1 basename | sed 's/\.cs$//' | sort > /tmp/discovered.txt
+          sort /tmp/assigned.txt > /tmp/assigned-sorted.txt
+
+          if ! diff -u /tmp/discovered.txt /tmp/assigned-sorted.txt; then
+            echo "::error::The visual-tests shards no longer partition the suite - a test class is missing from every shard, or assigned to more than one. Left = classes with [Test] methods, right = classes the shard filters select."
+            exit 1
+          fi
+          echo "OK: $(wc -l < /tmp/discovered.txt) test classes, each in exactly one shard."
+
   format-check:
     needs: build
     runs-on: ubuntu-latest
@@ -335,10 +368,29 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
+  # Sharded across several standard ubuntu-latest runners (einsatzbereit#2145).
+  # This one job was ~78% of the workflow's wall-clock and failed 53% of runs:
+  # 542 tests on a 4-vCPU runner, where AssemblyParallelLimit.cs caps concurrency
+  # at ProcessorCount - 2 (= 2), is ~271 sequential slots no matter how fast any
+  # single test is. A bigger runner would have fixed that in one line, but larger
+  # runners are metered per-minute even on a public repo, so this stays on the
+  # free standard tier and buys the parallelism by adding runners instead of
+  # cores - each shard gets its own 4 vCPUs and its own Aspire stack.
+  #
+  # fail-fast: false because a shard failing tells you nothing about the other
+  # three; cancelling them would just hide three quarters of the signal behind
+  # one flake.
   visual-tests:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Each shard measures ~7 min (see docs/TDRs/2_slow_ci_pipeline.adoc); this is
+    # a hang guard, deliberately far above the expected runtime rather than the
+    # near-miss the old unsharded 25 min was against a 19-25 min job.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -402,9 +454,36 @@ jobs:
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
+      # strategy.job-total is the matrix length, so the shard count is never
+      # written down twice and can't drift from the `shard:` list above.
+      - name: Resolve shard filter
+        id: shard
+        run: |
+          shard=$(.github/scripts/visual-test-shard.sh "${{ matrix.shard }}" "${{ strategy.job-total }}")
+          echo "$shard"
+          echo "$shard" >> "$GITHUB_OUTPUT"
+
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-restore --no-build
+        run: |
+          dotnet run --project tests/VisualTests --no-restore --no-build -- \
+            --treenode-filter "${{ steps.shard.outputs.filter }}" \
+            --minimum-expected-tests "${{ steps.shard.outputs.min-tests }}"
+
+      # #2145's first acceptance criterion: the fixed per-shard Aspire boot is
+      # what decides how many shards are still worth adding, so keep measuring it
+      # rather than re-deriving it from step timestamps once. AspireFixture writes
+      # the file at the end of InitializeAsync.
+      - name: Report Aspire stack startup cost
+        if: always()
+        working-directory: backend
+        run: |
+          timing=$(find tests/VisualTests/bin -name aspire-boot-seconds.txt -print -quit 2>/dev/null || true)
+          if [ -n "$timing" ]; then
+            echo "shard ${{ matrix.shard }}: Aspire stack ready in $(cat "$timing")s" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::shard ${{ matrix.shard }}: no Aspire boot timing recorded - the stack never finished starting"
+          fi
 
       # VisualTestBase only keeps a trace for tests that actually failed (see
       # TeardownTracingAsync) - upload whatever landed so a flake can be
@@ -414,7 +493,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-traces
+          # Per shard: upload-artifact rejects a second upload under a name
+          # another matrix leg already claimed.
+          name: playwright-traces-shard-${{ matrix.shard }}
           path: backend/tests/VisualTests/bin/**/trace-artifacts/**
           if-no-files-found: ignore
           retention-days: 7

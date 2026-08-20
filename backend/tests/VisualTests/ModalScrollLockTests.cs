@@ -40,12 +40,44 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.Mouse.MoveAsync(x, y);
 		for (var i = 0; i < ticks; i++)
 			await Page.Mouse.WheelAsync(0, 400);
-		// One settle beat: under this suite's own CPU contention
-		// (AssemblyParallelLimit.cs) the scroll a wheel event causes is not
-		// guaranteed to be reflected in the very next evaluate.
-		await Page.WaitForTimeoutAsync(400);
-		return await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)");
+		return await ReadSettledScrollYAsync();
 	}
+
+	/// <summary>
+	/// Reads <c>window.scrollY</c> once it has stopped moving, counting rendered
+	/// frames rather than milliseconds.
+	///
+	/// The scroll a wheel event causes lands on a later frame, and under this
+	/// suite's own CPU contention (AssemblyParallelLimit.cs) that frame is not
+	/// guaranteed to be the next one - which is what the fixed settle beat this
+	/// replaces was covering for. A wall-clock wait is the wrong instrument for
+	/// it in both directions: it is dead time on an idle runner, and it is still
+	/// a guess on a loaded one. Waiting for the offset to hold steady across
+	/// several consecutive animation frames instead scales with how fast the
+	/// browser is actually painting.
+	///
+	/// Several frames, not two: most assertions here are that the page did *not*
+	/// move, and a two-sample check could settle on the unchanged offset in the
+	/// window before a broken lock's scroll had been applied at all - passing the
+	/// test for the wrong reason.
+	/// </summary>
+	private Task<int> ReadSettledScrollYAsync() =>
+		Page.EvaluateAsync<int>(
+			"""
+			() => new Promise(resolve => {
+				let last = null, stable = 0, frames = 0;
+				const tick = () => {
+					const y = Math.round(window.scrollY);
+					stable = y === last ? stable + 1 : 0;
+					last = y;
+					// The frame cap keeps a page that never stops moving (a
+					// smooth-scroll animation, say) from hanging the evaluate.
+					if (stable >= 5 || ++frames > 120) resolve(y);
+					else requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			})
+			""");
 
 	/// <summary>
 	/// The page behind must actually be scrollable, or every "did not scroll"
@@ -83,7 +115,12 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// Start away from the top so "the offset survives the dialog" is a real
 		// claim about a real offset rather than about zero.
 		await Page.EvaluateAsync("() => window.scrollTo(0, 200)");
-		await Page.WaitForTimeoutAsync(200);
+		// Assert the scroll landed rather than waiting a fixed beat and hoping:
+		// every later assertion in this test compares against this offset, so a
+		// dialog opened before the page got there would be measured against the
+		// wrong baseline.
+		(await ReadSettledScrollYAsync()).Should().Be(200,
+			"the page has to actually be at the starting offset before the dialog opens");
 
 		await createBtn.ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync(new() { Timeout = 10_000 });

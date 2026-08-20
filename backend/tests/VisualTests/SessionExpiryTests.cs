@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -186,19 +187,46 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"window.sessionStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
 			+ $"{JsonSerializer.Serialize(storageValue)});");
 
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
-		await Expect(Page.Locator("h1").First).ToHaveTextAsync(oppTitle, new() { Timeout = 15_000 });
+		// Every main-frame navigation from here on, not just wherever the page
+		// happens to sit when the observation window closes: the bug being
+		// guarded against is a redirect to Keycloak, and a redirect that bounced
+		// and came back would leave Page.Url looking innocent. Recorded before
+		// the navigation below so the load itself is covered too.
+		var navigations = new ConcurrentQueue<string>();
+		void RecordNavigation(object? _, IFrame frame)
+		{
+			if (frame == Page.MainFrame)
+				navigations.Enqueue(frame.Url);
+		}
 
-		// The anonymous sign-in CTA renders - the page must not treat this
-		// visitor as authenticated just because a stale profile is present.
-		await Expect(Page.GetByTestId("opportunity-signin")).ToBeVisibleAsync();
+		Page.FrameNavigated += RecordNavigation;
 
-		// Give automaticSilentRenew's background failure and the (old) 2s
-		// redirect timer time to fire - generous margin over that 2s under a
-		// contended CI runner - then confirm we're still on the SPA rather
-		// than having been bounced to Keycloak's login page.
-		await Page.WaitForTimeoutAsync(5000);
+		try
+		{
+			await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+			await Expect(Page.Locator("h1").First).ToHaveTextAsync(oppTitle, new() { Timeout = 15_000 });
+
+			// The anonymous sign-in CTA renders - the page must not treat this
+			// visitor as authenticated just because a stale profile is present.
+			await Expect(Page.GetByTestId("opportunity-signin")).ToBeVisibleAsync();
+
+			// Unlike the other waits in this suite, this one is not standing in
+			// for a signal that exists: the claim is that a redirect never
+			// happens, and nothing announces the absence of an event. So this is
+			// an observation window, deliberately sized well past the 2s timer
+			// the regression used to arm, and it is the one kind of wait that
+			// should not be traded for a web-first assertion (einsatzbereit#2145).
+			await Page.WaitForTimeoutAsync(5000);
+		}
+		finally
+		{
+			Page.FrameNavigated -= RecordNavigation;
+		}
+
 		Page.Url.Should().StartWith(origin);
+		navigations.Where(url => !url.StartsWith(origin)).Should().BeEmpty(
+			"a stale session must never bounce the visitor to Keycloak's login page, "
+			+ "not even briefly");
 	}
 
 	// Regression for #1850: a 401 on the notifications-list fetch specifically

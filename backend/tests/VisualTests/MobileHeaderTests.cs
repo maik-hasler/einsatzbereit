@@ -27,10 +27,13 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// On mobile the Sign in button lives inside the hamburger menu.
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForTimeoutAsync(400);
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First
-			.ClickAsync(new() { Timeout = 10_000 });
+		// The menu's entrance is what the fixed wait here was for. Asserting the
+		// button it reveals is visible waits on the same thing without guessing at
+		// how long it takes on a contended runner.
+		var signIn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First;
+		await Expect(signIn).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await signIn.ClickAsync(new() { Timeout = 10_000 });
 
 		// Wait on Keycloak's login form element, not the URL - WaitForURLAsync
 		// races the frame's own navigation/detachment during the redirect (see
@@ -47,7 +50,12 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/",
 			new() { Timeout = 30_000 });
 
-		await Page.WaitForTimeoutAsync(1_000);
+		// Back on the SPA, but the URL lands before the app has rendered anything.
+		// This test measures the bell's position, so waiting for the shell to
+		// exist first is what makes the bounding box below a real layout rather
+		// than a mid-hydration one - the fixed second here was a guess at the same
+		// thing.
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var bell = Page.GetByTestId("notification-bell-mobile");
 		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
