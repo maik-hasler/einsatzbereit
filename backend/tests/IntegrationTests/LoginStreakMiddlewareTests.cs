@@ -22,6 +22,16 @@ namespace IntegrationTests;
 // request for every user. The fix keys dedup per user in an IMemoryCache
 // entry that expires at a fixed server-timezone midnight, never a
 // header-derived one.
+//
+// Also covers a second regression (see AchievementCopyTests in VisualTests for
+// the user-visible symptom): the middleware used to cache a bare `true`
+// synchronously and only await the DB write on the winning request's own path.
+// Every other concurrent request for the same user saw the flag already set
+// and fell straight through to `next` (its own handler, e.g.
+// GetMyStreaksQueryHandler) without waiting for the winner's still-in-flight
+// RecordLoginCommand write - letting it read UserStreak before that write had
+// committed. The fix caches the write's own Task, so every concurrent request
+// - winner and followers alike - awaits that same Task before calling next.
 public class LoginStreakMiddlewareTests
 {
 	[Test]
@@ -87,6 +97,44 @@ public class LoginStreakMiddlewareTests
 	}
 
 	[Test]
+	public async Task InvokeAsync_ShouldNotCallNext_ForAnyConcurrentRequest_UntilTheSharedWriteCompletes()
+	{
+		// The two InvokeAsync calls below are deliberately not awaited between one
+		// another - each runs synchronously up to its own first genuine suspension
+		// point (blocked on writeGate, inside the gated sender below) before control
+		// returns to this method, exactly mirroring how two requests for the same
+		// user overlap in the real pipeline. No Task.Run/real threading is needed
+		// for that overlap to be real: the second call observes the first call's
+		// cached (still in-flight) Task synchronously, under the same lock.
+		var writeGate = new TaskCompletionSource();
+		var sender = new GatedRecordingSender(writeGate.Task);
+		var nextCallCount = 0;
+		var sut = new LoginStreakMiddleware(
+			_ => { Interlocked.Increment(ref nextCallCount); return Task.CompletedTask; },
+			new MemoryCache(new MemoryCacheOptions()),
+			new FakeTimeProvider());
+		var subClaim = Guid.NewGuid().ToString();
+
+		var task1 = sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
+		var task2 = sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
+
+		sender.SentRequests.Should().ContainSingle(
+			"the write must be single-flighted - two concurrent requests for the same "
+			+ "user must not each start their own RecordLoginCommand");
+		nextCallCount.Should().Be(0,
+			"neither concurrent request should reach its own handler before the shared "
+			+ "login-streak write has completed");
+		task1.IsCompleted.Should().BeFalse();
+		task2.IsCompleted.Should().BeFalse();
+
+		writeGate.SetResult();
+		await Task.WhenAll(task1, task2);
+
+		nextCallCount.Should().Be(2, "both requests must still proceed once the shared write finishes");
+		sender.SentRequests.Should().ContainSingle("the write must still only have happened once");
+	}
+
+	[Test]
 	public async Task InvokeAsync_ShouldNotCallSender_WhenUserIsNotAuthenticated()
 	{
 		var sender = new RecordingSender();
@@ -132,6 +180,26 @@ public class LoginStreakMiddlewareTests
 		{
 			SentRequests.Add(request);
 			return ValueTask.FromResult<TResponse>(default!);
+		}
+	}
+
+	/// <summary>
+	/// Records every request sent, like <see cref="RecordingSender"/>, but does
+	/// not complete <see cref="Send{TResponse}"/> until <paramref name="gate"/>
+	/// completes - lets a test hold a "DB write" open to observe what concurrent
+	/// callers do while it is still in flight.
+	/// </summary>
+	private sealed class GatedRecordingSender(Task gate) : ISender
+	{
+		public List<object?> SentRequests { get; } = [];
+
+		public async ValueTask<TResponse> Send<TResponse>(
+			IRequest<TResponse> request,
+			CancellationToken cancellationToken = default)
+		{
+			SentRequests.Add(request);
+			await gate;
+			return default!;
 		}
 	}
 

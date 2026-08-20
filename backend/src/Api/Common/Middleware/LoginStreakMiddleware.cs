@@ -49,33 +49,55 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache c
 				// force an early reset.
 				var cacheKey = $"login-streak-recorded:{subClaim}";
 
-				bool shouldUpdate;
+				// Cache the in-flight write itself, not just a "handled" flag. A page
+				// load fires several authenticated requests concurrently (profile,
+				// streaks, achievements...), all racing into this middleware for the
+				// same user. Storing a bare `true` synchronously and awaiting the DB
+				// write only on the winner's own path let every other concurrent
+				// request see the flag already set and fall straight through to its
+				// own handler - which could read the UserStreak row before the
+				// winner's write had actually committed, e.g. GET /v1/me/streaks
+				// intermittently returning yesterday's count. Single-flighting the
+				// Task means every concurrent request - winner and followers alike -
+				// awaits the *same* write below before proceeding.
+				Task recordTask;
 				lock (_lock)
 				{
-					shouldUpdate = !cache.TryGetValue(cacheKey, out _);
-					if (shouldUpdate)
+					if (!cache.TryGetValue(cacheKey, out Task? existing) || existing is null)
 					{
-						cache.Set(cacheKey, true, NextServerMidnight());
+						recordTask = RecordLoginSafeAsync(sender, userId, today);
+						cache.Set(cacheKey, recordTask, NextServerMidnight());
+					}
+					else
+					{
+						recordTask = existing;
 					}
 				}
 
-				if (shouldUpdate)
-				{
-					try
-					{
-						await sender.Send(
-							new RecordLoginCommand(UserId.Create(userId).GetValueOrThrow(), today),
-							context.RequestAborted);
-					}
-					catch
-					{
-						// never fail a request due to streak tracking
-					}
-				}
+				await recordTask;
 			}
 		}
 
 		await next(context);
+	}
+
+	// CancellationToken.None, deliberately not context.RequestAborted: this task
+	// is cached and shared across every concurrent request for this user today
+	// (see InvokeAsync above), so it must not be cancelled just because the one
+	// request whose pipeline happened to start it gets aborted while a sibling
+	// request elsewhere is still awaiting this same shared task.
+	private static async Task RecordLoginSafeAsync(ISender sender, Guid userId, DateOnly today)
+	{
+		try
+		{
+			await sender.Send(
+				new RecordLoginCommand(UserId.Create(userId).GetValueOrThrow(), today),
+				CancellationToken.None);
+		}
+		catch
+		{
+			// never fail a request due to streak tracking
+		}
 	}
 
 	private DateTimeOffset NextServerMidnight()
