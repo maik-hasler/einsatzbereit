@@ -2,7 +2,7 @@
 
 ## Overview
 
-Custom Keycloak 26.7.1 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via the `publish-keycloak` job in `.github/workflows/publish.yml`; `.github/workflows/keycloak-realm-import.yml` guards that the committed realm still imports cleanly on that Keycloak version before it reaches staging.
+Custom Keycloak 26.7.2 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via the `publish-keycloak` job in `.github/workflows/publish.yml`; `.github/workflows/keycloak-realm-import.yml` guards that the committed realm still imports cleanly on that Keycloak version before it reaches staging.
 
 ```
 keycloak/
@@ -94,7 +94,7 @@ Keycloak organizations are enabled (`"organizationsEnabled": true`). The backend
 ## Docker Image
 
 Multi-stage Dockerfile:
-1. **Builder stage**: `quay.io/keycloak/keycloak:26.7.1` - runs `kc.sh build` with PostgreSQL provider
+1. **Builder stage**: `quay.io/keycloak/keycloak:26.7.2` - runs `kc.sh build` with PostgreSQL provider
 2. **Runtime stage**: Copies optimized build, runs with `--optimized` flag
 
 See `README.md` for the required runtime environment variables.
