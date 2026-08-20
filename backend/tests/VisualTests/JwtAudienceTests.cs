@@ -48,7 +48,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// regression (a real 401/403 from the backend) - a page-wide GetByText
 		// scan for "401" is a fragile proxy on top of it: this suite's shared,
 		// PerTestSession fixture accumulates test data across the whole run, and
-		// other tests (e.g. EngagementCheckInStatusCodeTests) name orgs/
+		// other tests name orgs/
 		// opportunities with a random GUID suffix that can coincidentally
 		// contain "401", tripping this exact assertion with no real auth error
 		// present.
