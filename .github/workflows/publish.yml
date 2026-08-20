@@ -263,7 +263,7 @@ jobs:
         if: always()
         working-directory: backend
         run: |
-          timing=$(find tests/VisualTests/bin -name aspire-boot-seconds.txt -print -quit)
+          timing=$(find tests/VisualTests/bin -name aspire-boot-seconds.txt -print -quit 2>/dev/null || true)
           if [ -n "$timing" ]; then
             echo "shard ${{ matrix.shard }}: Aspire stack ready in $(cat "$timing")s" | tee -a "$GITHUB_STEP_SUMMARY"
           else
