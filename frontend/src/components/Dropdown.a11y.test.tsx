@@ -22,9 +22,10 @@ function Harness({ initial = "" }: { initial?: string }) {
 	const [value, setValue] = useState(initial);
 	return (
 		<div>
-			<label id="slot-label" htmlFor="slot">
-				Time slot
-			</label>
+			{/* Same shape SignUpModal uses: a real <label htmlFor> pointing at
+			the trigger, which is a <button role="combobox"> rather than a
+			<select>. */}
+			<label htmlFor="slot">Time slot</label>
 			<Dropdown
 				id="slot"
 				value={value}

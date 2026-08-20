@@ -1,5 +1,6 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { createRef } from "react";
+import { screen } from "@testing-library/react";
 import MobileMenu from "./MobileMenu";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
@@ -41,6 +42,14 @@ describe("MobileMenu a11y", () => {
 				}}
 			/>,
 		);
+
+		// The panel is the widest state this component has - the org entry and
+		// its four sub-links only exist here - so pin that the scan below is
+		// actually looking at it.
+		expect(screen.getByRole("dialog")).toHaveAccessibleName();
+		expect(
+			screen.getByRole("link", { name: /Freiwillige Feuerwehr/ }),
+		).toBeInTheDocument();
 		await expectNoA11yViolations();
 	});
 

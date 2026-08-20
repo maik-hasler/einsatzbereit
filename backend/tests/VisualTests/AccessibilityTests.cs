@@ -346,9 +346,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_HasNoSeriousA11yViolations()
 	{
-		// Invitations/sign-ups split out of /profile onto their own
-		// page - this scan is what ProfileOverviewPage_EditMode's "My
-		// sign-ups" heading assertion used to (indirectly) cover.
+		// Invitations/sign-ups live on their own page rather than under
+		// /profile, so the profile scan above does not reach them - this is
+		// their only page-level scan.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -449,8 +449,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Seeds a fresh org/opportunity/engagement rather than relying on olaf's
 		// shared seed data, which would let this skip when no published
 		// opportunity with a pending applicant happens to exist - leaving the
-		// page's "Confirm" button with no guaranteed coverage. Same pattern as
-		// the CancelDialog test below.
+		// page's "Confirm" button with no guaranteed coverage.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 

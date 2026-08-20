@@ -83,3 +83,13 @@ describe("expectNoA11yViolations guards", () => {
 		);
 	});
 });
+
+describe("expectNoA11yViolations detached targets", () => {
+	it("refuses a node that is not in the document", async () => {
+		const detached = document.createElement("div");
+		detached.appendChild(document.createElement("p"));
+		await expect(expectNoA11yViolations(detached)).rejects.toThrow(
+			/detached element/,
+		);
+	});
+});

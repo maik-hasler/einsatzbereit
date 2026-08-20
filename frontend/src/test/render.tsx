@@ -7,10 +7,13 @@ import type { AuthContextProps } from "react-oidc-context";
 import { createTestI18n } from "./i18n";
 
 /**
- * The slice of react-oidc-context a component test needs. Everything a
- * component actually reads off `useAuth()` in this app is here (see
- * frontend/AGENTS.md, "Role Checks"); the rest of AuthContextProps is filled
- * with no-ops so the cast below stays honest about what is stubbed.
+ * The slice of react-oidc-context a component test needs - everything this app
+ * actually reads off `useAuth()` (see frontend/AGENTS.md, "Role Checks").
+ *
+ * The rest of `AuthContextProps` is filled with no-ops rather than left off:
+ * `signoutRedirect`/`signinRedirect` and friends are called straight from
+ * click handlers (Header, MobileMenu), and an undefined one turns a rendered
+ * sign-out button into a crash the moment a test clicks it.
  */
 export interface TestAuth {
 	isAuthenticated?: boolean;

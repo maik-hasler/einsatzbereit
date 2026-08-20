@@ -6,9 +6,9 @@ import type { RunOptions } from "axe-core";
  * Component-level axe-core scanning, the counterpart to
  * `backend/tests/VisualTests/AccessibilityTests.cs`'s `AssertNoViolations`.
  *
- * The two gates deliberately apply the *same* impact filter (see
- * `IMPACT_FILTER` below), so moving a scan down from Playwright to here is a
- * change of altitude, not a change of standard. What differs is scope, and it
+ * The two gates deliberately apply the *same* impact filter (serious,
+ * critical, and a short list of escalated moderate rules), so moving a scan
+ * down from Playwright to here is a change of altitude, not of standard. What differs is scope, and it
  * differs in both directions:
  *
  * - Rules about whole-document structure (one <main>, a page <h1>, a lang
@@ -75,6 +75,17 @@ export async function expectNoA11yViolations(
 	options: RunOptions = {},
 ): Promise<void> {
 	const element = target instanceof Document ? target.body : target;
+
+	// vitest-axe scans an element in place only while it is attached; handed a
+	// detached node it falls back to writing the node's outerHTML into
+	// document.body, scanning that copy, and restoring afterwards - which
+	// scans markup React no longer owns and silently invalidates every node
+	// reference the test is holding. Refuse rather than scan a copy.
+	if (!element.isConnected) {
+		throw new Error(
+			"expectNoA11yViolations was given a detached element - render it (or pass its container) so axe scans the live tree.",
+		);
+	}
 
 	// A component that renders null - a guard clause that fired, a prop shape
 	// that silently changed - produces an empty subtree, and an empty subtree
