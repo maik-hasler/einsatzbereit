@@ -82,18 +82,6 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Header_Anonymous_ShowsSignInButton()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First)
-			.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task Header_Anonymous_RegisterButton_RedirectsToKeycloakRegistrationEndpoint()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

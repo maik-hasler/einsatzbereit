@@ -68,4 +68,19 @@ describe("account dropdown", () => {
 		).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Administration" })).toBeNull();
 	});
+
+	it("no longer links out to Keycloak's own account console", () => {
+		// #1675: the "Account Settings" entry linked to ${authority}/account -
+		// a console the realm never provisions a client for, which errors on
+		// staging. Everything it uniquely offered is either already reachable
+		// branded (password reset, /profile) or not configured in the realm at
+		// all (2FA, session management), so the entry point was removed rather
+		// than themed.
+		render(false);
+
+		expect(
+			screen.getByRole("link", { name: "My profile" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Account Settings" })).toBeNull();
+	});
 });

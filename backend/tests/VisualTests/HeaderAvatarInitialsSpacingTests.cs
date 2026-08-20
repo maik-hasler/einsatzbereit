@@ -51,7 +51,7 @@ public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTes
 		// FastSignInAsync's own "User menu" wait needs the desktop-width nav
 		// visible (DesktopHeader.tsx's "hidden md:flex") - sign in at the
 		// default (desktop-sized) viewport, then shrink down to mobile only
-		// afterward, mirroring AccountConsoleLinkTests's own viewport handling.
+		// afterward - the same viewport handling every mobile-menu test needs.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 

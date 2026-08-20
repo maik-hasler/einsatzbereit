@@ -62,4 +62,15 @@ describe("MobileMenu a11y", () => {
 		renderWithProviders(<MobileMenu {...base} isLoggedIn isTransparent />);
 		await expectNoA11yViolations();
 	});
+
+	it("no longer links out to Keycloak's own account console (#1675)", () => {
+		// The mobile half of the same guard - see
+		// AccountControls.test.tsx for the desktop one and the rationale.
+		renderWithProviders(<MobileMenu {...base} isLoggedIn />);
+
+		expect(
+			screen.getByRole("link", { name: "My profile" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Account Settings" })).toBeNull();
+	});
 });

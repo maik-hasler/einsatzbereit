@@ -26,6 +26,10 @@ export interface TestAuth {
 	name?: string;
 	email?: string;
 	accessToken?: string;
+	/** Override one of the no-op auth actions, to assert it was called. */
+	signinRedirect?: () => Promise<void>;
+	signoutRedirect?: () => Promise<void>;
+	removeUser?: () => Promise<void>;
 }
 
 function buildAuthValue(auth: TestAuth): AuthContextProps {
@@ -36,6 +40,9 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		name = "Test User",
 		email = "test.user@example.test",
 		accessToken = "test-token",
+		signinRedirect = async () => {},
+		signoutRedirect = async () => {},
+		removeUser = async () => {},
 	} = auth;
 
 	return {
@@ -44,19 +51,32 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		activeNavigator: undefined,
 		error: undefined,
 		settings: {},
-		events: {},
+		// oidc-client-ts's event registry: each add* returns its own
+		// unsubscribe. useSessionExpiryHandler subscribes to
+		// addSilentRenewError on mount and calls the returned function on
+		// cleanup, so both halves have to exist.
+		events: {
+			addUserLoaded: () => () => {},
+			addUserUnloaded: () => () => {},
+			addSilentRenewError: () => () => {},
+			addUserSignedIn: () => () => {},
+			addUserSignedOut: () => () => {},
+			addUserSessionChanged: () => () => {},
+			addAccessTokenExpiring: () => () => {},
+			addAccessTokenExpired: () => () => {},
+		},
 		user: isAuthenticated
 			? {
 					access_token: accessToken,
 					profile: { sub, name, email, roles },
 				}
 			: undefined,
-		removeUser: async () => {},
-		signinRedirect: async () => {},
+		removeUser,
+		signinRedirect,
 		signinPopup: async () => {},
 		signinSilent: async () => null,
 		signinResourceOwnerCredentials: async () => {},
-		signoutRedirect: async () => {},
+		signoutRedirect,
 		signoutPopup: async () => {},
 		signoutSilent: async () => {},
 		querySessionStatus: async () => null,
