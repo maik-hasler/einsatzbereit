@@ -205,7 +205,28 @@ So roughly 2 min 45 s per shard is fixed and does not divide. At 4 shards that i
 
 *`AssemblyParallelLimit` was deliberately left alone.* Each shard is still a 4-vCPU runner, so concurrency stays 2 and per-instant CPU contention per stack is unchanged - the win here is four stacks, not a busier one. Changing the parallel limit in the same commit would have confounded the one measurement this change exists to produce.
 
-*Not yet re-measured.* The numbers above are the pre-change baseline plus the arithmetic the shard count was chosen from. Re-measure at n=20+ before treating ~9.5 min as the new figure, and treat the failure rate as the primary success criterion, not the wall-clock.
+*First sharded run* (n=1, 2026-08-20, run `32345414446`):
+
+[cols="3,1" options="header"]
+|===
+|Job |Duration
+
+|`build` |2 min 45 s
+|`visual-tests (1)` |6 min 57 s
+|`visual-tests (2)` |6 min 07 s
+|`visual-tests (3)` |7 min 07 s
+|`visual-tests (4)` |7 min 34 s
+|`integration-tests` |4 min 46 s
+|**Critical path** |**~10 min 19 s** (down from 21 min 58 s)
+|===
+
+The Aspire boot instrumented above reported *63.0 s* on shard 4, confirming the ~1 min the shard count was chosen from. Shard sizes came out at 136/136/135/135 test cases.
+
+Wall-clock is therefore just over the < 10 min target rather than under it, and the residual is almost entirely fixed cost: ~2 min 45 s of `build` plus ~1 min 45 s of per-shard setup plus ~1 min of Aspire boot is ~5 min 30 s before a single test runs. More shards barely move that; the levers that would are the E2E rebalance (option C, issue #2148) and the `build`-artifact round trip this document's 2026-07-28 note already flagged as re-measurable.
+
+*One failure in that run*, on shard 4: `JwtAudienceTests.Administration_AuthenticatedAdmin_LoadsOrganizationsWithoutAuthError`, a 45 s timeout on the post-submit leg of a real Keycloak login. That is the contention flake this document has tracked since 2026-07-28, but sharding changes its distribution in a way worth recording: *every shard now has a "first concurrent batch" against a cold Keycloak*, where one 542-test session used to have exactly one, statistically absorbed by `AccessibilityTests`' 90 cases - which is why the only `[Retry(2)]` in the suite sits on exactly such a call site, with a comment naming that same cause. `AuthHelper.LoginAsync`'s own comment claimed callers carried that retry; only 1 of the 15 classes driving a real login actually did. The retry now lives inside the helper (scoped to the identity round trip, never to a product assertion, so #1321's distinction holds) and `AspireFixture` renders the login page once during boot so the custom Freemarker theme compiles inside the initializer's budget rather than inside a test's.
+
+*Still to re-measure.* The above is n=1. Re-measure at n=20+ before treating ~10 min as the new figure, and treat the failure rate as the primary success criterion, not the wall-clock - runtime was only ever half of what made this debt expensive.
 ====
 
 Strategic (larger change, defer until justified):

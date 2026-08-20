@@ -86,6 +86,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		}
 
 		await WaitForRealmReadyAsync();
+		await WarmKeycloakLoginPageAsync();
 		await WaitForBackendReadyAsync();
 
 		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
@@ -498,6 +499,50 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		}
 
 		throw new TimeoutException("Backend did not become healthy in time.");
+	}
+
+	/// <summary>
+	/// Renders the realm's login page once, during boot.
+	///
+	/// <see cref="WaitForRealmReadyAsync"/> proves the realm imported, but it only
+	/// ever fetches JSON (<c>.well-known/openid-configuration</c>) - no template is
+	/// involved. The first request that actually renders a page is what pays for
+	/// compiling this repo's custom Freemarker login theme (<c>keycloak/themes/
+	/// einsatzbereit</c>, set realm-wide as <c>loginTheme</c>); Keycloak caches it
+	/// only afterwards.
+	///
+	/// Unsharded, that cost was paid once per 542-test session and landed on
+	/// whichever test happened to run first - in practice almost always one of
+	/// AccessibilityTests' 90, which carry their own [Retry]. Sharded
+	/// (einsatzbereit#2145) every shard boots its own Keycloak, so the cost recurs
+	/// per shard and lands on whichever classes that shard happens to start with -
+	/// and for a shard holding the real-login classes that means AuthHelper's
+	/// login budget absorbs it on top of ordinary CPU contention. Paying it here
+	/// moves it inside this initializer's own generous budget instead.
+	///
+	/// Best-effort by design: if this fails, the first real login is merely as
+	/// slow as it was before, which is not worth failing a whole shard's boot for.
+	/// </summary>
+	private async Task WarmKeycloakLoginPageAsync()
+	{
+		try
+		{
+			using var client = _app.CreateHttpClient("keycloak");
+
+			// redirect_uri only has to satisfy the frontend client's
+			// "http://localhost:*" (AppHost.cs relaxes it to that for local runs) -
+			// nothing ever follows it, so the port is arbitrary.
+			using var response = await client.GetAsync(
+				$"/realms/{Realm}/protocol/openid-connect/auth"
+				+ "?client_id=frontend&response_type=code&scope=openid"
+				+ "&redirect_uri=http%3A%2F%2Flocalhost%3A1%2Fcallback");
+
+			response.EnsureSuccessStatusCode();
+		}
+		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+		{
+			Console.WriteLine($"[aspire-fixture] login-page warm-up skipped: {ex.Message}");
+		}
 	}
 
 	private async Task WaitForRealmReadyAsync()
