@@ -26,12 +26,12 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var olafToken = await GetTokenAsync(keycloak, "olaf", "olaf123");
+		var olafToken = await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123");
 		var (opportunityId, organizationId, firstSlotId, secondSlotId) =
 			await CreateScheduledSlotsOpportunityWithTwoSlotsAsync(keycloak, backend, olafToken, "BulkConfirmPartial");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 		var firstEngagementId = await ApplyForSlotAsync(veraHttp, opportunityId, firstSlotId);
 		var secondEngagementId = await ApplyForSlotAsync(veraHttp, opportunityId, secondSlotId);
 
@@ -77,24 +77,6 @@ public class EngagementBulkActionsTests(AspireFixture fixture) : VisualTestBase(
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return body.GetProperty("id").GetString()!;
-	}
-
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
 	}
 
 	private static async Task<(string OpportunityId, string OrganizationId, string FirstSlotId, string SecondSlotId)>

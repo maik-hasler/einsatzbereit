@@ -33,7 +33,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"CheckInNone Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -100,7 +100,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"CheckInManual Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -146,24 +146,6 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Check in" })).Not.ToBeVisibleAsync();
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
 	[Test]
 	public async Task EditOpportunity_SwitchToPINCode_ShowsSetPinOnManagePage()
 	{
@@ -183,7 +165,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		const string pin = "4821";
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"CheckInPinSwitch Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -262,7 +244,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"SlotCounts Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -372,7 +354,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"Unlimited Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();

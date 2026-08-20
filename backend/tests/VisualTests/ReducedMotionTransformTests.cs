@@ -35,7 +35,7 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var token = await GetTokenAsync(keycloak, "olaf", "olaf123");
+		var token = await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123");
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
@@ -122,22 +122,4 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 			"the shared ChevronDownIcon's open-state rotate is a transform transition too, per #2068's audit");
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()
-			?? throw new InvalidOperationException("no access_token in the token response");
-	}
 }

@@ -69,7 +69,7 @@ public class SelfRegistrationDefaultRoleTests(AspireFixture fixture) : VisualTes
 		await Expect(Page.Locator("#kc-register-form")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
-		adminHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetAdminTokenAsync(adminHttp)}");
+		adminHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetAdminTokenAsync(keycloak)}");
 
 		var userId = await FindUserIdAsync(adminHttp, username);
 		try
@@ -80,7 +80,7 @@ public class SelfRegistrationDefaultRoleTests(AspireFixture fixture) : VisualTes
 			// registration just created and call the baseline authenticated
 			// endpoint directly. Before the fix, "user" was missing from the
 			// token's roles claim and this returned 403.
-			var accessToken = await GetTokenAsync(keycloak, username, password);
+			var accessToken = await AuthHelper.GetTokenAsync(keycloak, username, password);
 
 			using var http = new HttpClient { BaseAddress = backend };
 			http.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
@@ -95,21 +95,6 @@ public class SelfRegistrationDefaultRoleTests(AspireFixture fixture) : VisualTes
 		{
 			await adminHttp.DeleteAsync($"/admin/realms/{Realm}/users/{userId}");
 		}
-	}
-
-	private static async Task<string> GetAdminTokenAsync(HttpClient keycloakHttp)
-	{
-		var response = await keycloakHttp.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "client_credentials",
-				["client_id"] = "backend",
-				["client_secret"] = "backend-secret",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
 	}
 
 	private static async Task<string> FindUserIdAsync(HttpClient adminHttp, string username)
@@ -140,21 +125,4 @@ public class SelfRegistrationDefaultRoleTests(AspireFixture fixture) : VisualTes
 		resetPasswordResponse.EnsureSuccessStatusCode();
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

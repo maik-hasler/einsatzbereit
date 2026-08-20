@@ -27,7 +27,7 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var mailpit = Fixture.GetEndpoint("mailpit", "webui");
 		var email = $"emaildelivery-{Guid.NewGuid():N}@example.test";
 
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
@@ -128,22 +128,6 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"Mailpit did not receive a message to '{recipientEmail}'"
 			+ (subjectContains is null ? "" : $" with subject containing '{subjectContains}'")
 			+ " within 30s.");
-	}
-
-	private static async Task<string> GetAdminTokenAsync(Uri keycloak)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "client_credentials",
-				["client_id"] = "backend",
-				["client_secret"] = "backend-secret",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
 	}
 
 	private async Task<string> CreateIndividualContactOpportunityAsync(string title)

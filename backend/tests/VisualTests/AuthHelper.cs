@@ -1,7 +1,12 @@
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
+
+// Aliased rather than a plain `using System.Net`, which would make Cookie
+// ambiguous against Microsoft.Playwright.Cookie further down this file.
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace VisualTests;
 
@@ -12,6 +17,104 @@ public static class AuthHelper
 	// mint the token in FastSignInAsync. This is what oidc-client-ts's storage
 	// key is keyed on, regardless of which client actually issued the token.
 	private const string FrontendClientId = "frontend";
+
+	// The realm and the two clients every direct token request in this suite uses.
+	// These were duplicated as private consts across ~25 test classes, each with
+	// its own copy of the token request below - which is exactly how those copies
+	// ended up bypassing the retry AspireFixture already had (einsatzbereit#2147).
+	private const string Realm = "einsatzbereit";
+	private const string FrontendTestClientId = "frontend-test";
+	private const string BackendClientId = "backend";
+	private const string BackendClientSecret = "backend-secret";
+
+	/// <summary>
+	/// Mints a user access token straight from Keycloak, no browser involved.
+	///
+	/// This is the single implementation for the whole suite. Every test class
+	/// that needs one used to carry its own private copy - 25 of them, all
+	/// semantically identical, none retrying - so a transient 500 from Keycloak's
+	/// token endpoint failed an unrelated test outright. AspireFixture had solved
+	/// this for its own sign-ins already; the copies simply never went through it.
+	/// </summary>
+	public static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		using var response = await PostTokenRequestWithRetryAsync(
+			http,
+			$"/realms/{Realm}/protocol/openid-connect/token",
+			() => new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "password",
+				["client_id"] = FrontendTestClientId,
+				["username"] = username,
+				["password"] = password,
+				["scope"] = "openid",
+			}));
+		response.EnsureSuccessStatusCode();
+
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()
+			?? throw new InvalidOperationException("Keycloak returned no access_token.");
+	}
+
+	/// <summary>
+	/// Mints a service-account token for the <c>backend</c> client, for tests that
+	/// drive Keycloak's admin API directly. Same retry story as
+	/// <see cref="GetTokenAsync"/> - four classes carried their own unprotected copy.
+	/// </summary>
+	public static async Task<string> GetAdminTokenAsync(Uri keycloak)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		using var response = await PostTokenRequestWithRetryAsync(
+			http,
+			$"/realms/{Realm}/protocol/openid-connect/token",
+			() => new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "client_credentials",
+				["client_id"] = BackendClientId,
+				["client_secret"] = BackendClientSecret,
+			}));
+		response.EnsureSuccessStatusCode();
+
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()
+			?? throw new InvalidOperationException("Keycloak returned no access_token.");
+	}
+
+	/// <summary>
+	/// The one retry policy for every Keycloak token request the suite makes.
+	/// AspireFixture delegates to this too, so widening the budget here widens it
+	/// everywhere rather than in one of several near-identical copies.
+	///
+	/// Every sign-in and every admin-token mint hits the token endpoint, hundreds
+	/// of times per run, and under that load it occasionally answers with a
+	/// transient 500 no request here caused. Never retries a 4xx (wrong
+	/// credentials, bad client config) - that is a real failure, not a blip.
+	///
+	/// The budget is four attempts over ~3.5 s (0.5 s, 1 s, 2 s). Three attempts
+	/// over ~1.5 s was not enough: einsatzbereit#2147 observed a run exhaust the
+	/// old budget against a shard's cold stack, and sharding (#2145) means every
+	/// shard now has its own cold window instead of one per suite.
+	/// </summary>
+	public static async Task<HttpResponseMessage> PostTokenRequestWithRetryAsync(
+		HttpClient client, string requestUri, Func<FormUrlEncodedContent> contentFactory,
+		CancellationToken cancellationToken = default)
+	{
+		const int maxAttempts = 4;
+		HttpResponseMessage response;
+		for (var attempt = 1; ; attempt++)
+		{
+			using var content = contentFactory();
+			response = await client.PostAsync(requestUri, content, cancellationToken);
+			if (response.StatusCode < HttpStatusCode.InternalServerError || attempt >= maxAttempts)
+				break;
+
+			response.Dispose();
+			await Task.Delay(TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1)), cancellationToken);
+		}
+
+		return response;
+	}
 
 	/// <summary>
 	/// Drives the real Keycloak login UI, retrying the round trip once.

@@ -79,7 +79,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		using var olafHttp = new HttpClient { BaseAddress = backendOrigin };
 		olafHttp.DefaultRequestHeaders.Add(
-			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+			"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 
@@ -110,7 +110,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// organizations exist or what order this test runs in.
 		using var adminHttp = new HttpClient { BaseAddress = backendOrigin };
 		adminHttp.DefaultRequestHeaders.Add(
-			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "admin", "admin123")}");
+			"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "admin", "admin123")}");
 
 		var found = false;
 		for (var page = 1; !found; page++)
@@ -139,21 +139,4 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 				+ string.Join(", ", authErrors));
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

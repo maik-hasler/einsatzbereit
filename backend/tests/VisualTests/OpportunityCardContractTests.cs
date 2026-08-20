@@ -615,7 +615,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		string username,
 		string password)
 	{
-		var token = await GetTokenAsync(keycloak, username, password);
+		var token = await AuthHelper.GetTokenAsync(keycloak, username, password);
 		var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 		return http;
@@ -700,22 +700,4 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 			?? throw new InvalidOperationException("opportunity id missing");
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()
-			?? throw new InvalidOperationException("no access_token in the token response");
-	}
 }

@@ -126,7 +126,13 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	protected static async Task<HttpResponseMessage> PostJsonWithRetryAsync(
 		HttpClient client, string requestUri, object body, CancellationToken cancellationToken = default)
 	{
-		const int maxAttempts = 3;
+		// Four attempts over ~3.5 s (0.5 s, 1 s, 2 s), matching
+		// AuthHelper.PostTokenRequestWithRetryAsync. Three attempts over ~1.5 s with
+		// a linear backoff was not enough: einsatzbereit#2147 observed an
+		// organization-creation POST exhaust the old budget outright against a
+		// shard's cold stack, and #2145's sharding gives every shard its own cold
+		// window instead of one per suite.
+		const int maxAttempts = 4;
 		HttpResponseMessage response;
 		for (var attempt = 1; ; attempt++)
 		{
@@ -135,7 +141,7 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				break;
 
 			response.Dispose();
-			await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
+			await Task.Delay(TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1)), cancellationToken);
 		}
 
 		return response;

@@ -135,7 +135,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var suffix = Guid.NewGuid().ToString("N");
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add(
-			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+			"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"Visual1780 {suffix}" });
@@ -176,7 +176,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
 		veraHttp.DefaultRequestHeaders.Add(
-			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+			"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 		(await veraHttp.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
 			new { message = "Sign-up for the #1780 pending queue" }))
@@ -213,7 +213,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add(
-			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+			"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"Visual1780 Error {Guid.NewGuid():N}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -908,26 +908,4 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
 
-	/// <summary>
-	/// Mints a token straight from Keycloak's password grant, for the
-	/// second actor in a test (vera signing up while the browser stays
-	/// logged in as olaf) - same helper as EngagementManagementFiltersTests.
-	/// </summary>
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

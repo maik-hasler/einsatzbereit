@@ -28,7 +28,7 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend);
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var applyResponse = await http.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
@@ -66,30 +66,12 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		}
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
 	private static async Task<string> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		// Create a fresh organization rather than reusing olaf's shared seed
 		// org - other VisualTests running concurrently in this shared Aspire
