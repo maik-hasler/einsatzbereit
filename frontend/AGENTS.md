@@ -102,12 +102,13 @@ pnpm i18n:check      # verify en.json/de.json key parity - CI hard gate, run bef
 
 ## Unit Tests
 
-Vitest (`vitest.config.ts`, jsdom environment) covers two things, colocated next to what they test:
+Vitest (`vitest.config.ts`, jsdom environment) covers three things, colocated next to what they test:
 
 - **Pure logic in `src/lib/`**, as `*.test.ts` (e.g. `src/lib/activeOrg.test.ts`).
-- **Component accessibility**, as `*.a11y.test.tsx` next to the component (e.g. `src/components/ConfirmDialog.a11y.test.tsx`) - see "Accessibility (a11y)" below.
+- **Component and page behaviour**, as `*.test.tsx` next to the component or page (e.g. `src/pages/app/OrgSettingsPage.test.tsx`) - rendered copy, form state, which branch a component takes for a given prop or a given rejected promise.
+- **Component accessibility**, as `*.a11y.test.tsx` (e.g. `src/components/ConfirmDialog.a11y.test.tsx`) - see "Accessibility (a11y)" below.
 
-Everything else at component/page level - real navigation, real focus movement, colour contrast, anything needing a browser - is covered by the Playwright suite in `backend/tests/VisualTests/` instead; see root `AGENTS.md`.
+What stays in the Playwright suite in `backend/tests/VisualTests/` is what a browser is genuinely needed for: rendered layout (jsdom has no layout engine, so anything measuring a width, a computed colour or a bounding box cannot move), real keyboard and pointer input, real focus movement, a real Keycloak round trip, real offline, and page-level axe scans. #2148 moved everything else down; see root `AGENTS.md` and `docs/TDRs/2_slow_ci_pipeline.adoc`.
 
 `src/test/` holds the shared harness for the component suites and is not itself a test target:
 
@@ -116,6 +117,7 @@ Everything else at component/page level - real navigation, real focus movement, 
 | `render.tsx` | `renderWithProviders(ui, { lng, route, auth })` - wraps the tree in the three providers every non-trivial component assumes (i18n, router, auth). Defaults to English, `/`, signed out |
 | `i18n.ts` | A synchronous i18n instance preloaded from the shipped `en.json`/`de.json`. The app's own `src/i18n.ts` loads locales through a *dynamic import*, so a component rendered in the same tick still shows raw keys - and an accessible name of "opportunities.signUp" is not the name a user gets |
 | `a11y.ts` | `expectNoA11yViolations(target?)` - see below |
+| `apiMock.ts` | `createApiMock()` - a Proxy standing in for the generated `EinsatzbereitApi`, where every endpoint resolves to a `vi.fn()` on first access. A page pulls from five or more endpoints across its own effects and its children's; listing each by hand makes a test fail on a call it never cared about every time an unrelated fetch is added |
 | `setup.ts` | Registers jest-dom matchers and Testing Library cleanup (this config has `globals: false`, so RTL's own auto-cleanup never registers), plus the jsdom stubs axe needs |
 
 Conventions used across the existing suite:

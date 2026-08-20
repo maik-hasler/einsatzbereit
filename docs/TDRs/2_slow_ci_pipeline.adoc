@@ -391,7 +391,98 @@ So what stayed is one scan per distinct layout and palette - public landing, bro
 
 *Shard count deliberately not changed yet.* #2148's acceptance criteria call for shrinking the `visual-tests` shard count once the ~2 min 45 s of fixed per-shard cost starts dominating. It plausibly now does - the suite is down to 474 cases - but the numbers that would decide it come from a real run of this branch, not from an estimate, and this document has twice had to correct a figure that was reasoned about rather than measured. Re-read the shard timings from this change's own `dotnet.yml` run before touching the matrix.
 
-*Next waves, unchanged from #2148's table:* pure UI behaviour (`ModalScrollLockTests`, `MobileHeaderTests`, `HeaderNavBreakpointTests`, `LoadingStateTests`, `ReducedMotionTransformTests`, `DateFilterCalendarTests`, `AvatarAndLogoDisplayTests`) down to Vitest/RTL, then API-behaviour-through-the-UI down to `IntegrationTests`. `RequiredFieldMarkerTests` and `LiveRegionTests` are adjacent a11y files left alone on purpose: both assert page-level composition (one legend per *form*, a live region mounted before it is populated) rather than component markup, so they belong with whichever wave takes page composition.
+*Next waves* follow #2148's own table - see the waves 2-5 note below for what they turned into.
+====
++
+[NOTE]
+====
+*Waves 2-5 - the rest of the rebalance, and what the target ratio actually turned out to be (issue #2148, 2026-08-20).*
+
+*What moved.* 84 more cases left `VisualTests` after wave 1's 68, in four waves:
+
+[cols="1,4,1" options="header"]
+|===
+|Wave |What moved, and where |Cases
+
+|2 - pure UI behaviour
+|Static content pages, the create-opportunity wizard's react-hook-form behaviour, the design-system markup assertions (`RequiredFieldMarker`, `SharedFormClasses`, `DangerZonePanel`), the rendered-offline states, live regions and loading skeletons, the administration routes, the member-search empty states, and six of the seven org-shell error states - all to colocated RTL suites under `frontend/src/`
+|68
+
+|3 - auth/session
+|Four of `SessionExpiryTests`' five to a hook test, `AccountConsoleLinkTests` and one `AuthGuardTests` case to component tests, and `JwtAudienceTests`' admin half to `IntegrationTests`
+|7
+
+|4 - email
+|`EmailDeliveryTests`' Keycloak-realm-SMTP case to `IntegrationTests` - it never opened a browser even as a visual test
+|1
+
+|5 - API behaviour
+|The three classes that used no browser API at all (`EngagementCheckInStatusCodeTests`, `MilestoneAchievementTests`, `LoginStreakConcurrencyTests`), to `IntegrationTests`
+|6
+
+|===
+
+*The measured shape, before and after.* Counting every executable case in each project (`Application.UnitTests` + `ArchitectureTests` + `frontend`'s Vitest suite as "unit", `IntegrationTests` as "integration", `VisualTests` as "E2E"):
+
+[cols="2,1,1,1,1" options="header"]
+|===
+|Layer |Before |After |Change |#2148's target
+
+|Unit
+|1766 (63.5 %)
+|*1953 (69.2 %)*
+|+187
+|~1400 (69 %)
+
+|Integration
+|471 (16.9 %)
+|*480 (17.0 %)*
+|+9
+|~570 (28 %)
+
+|E2E
+|542 (19.5 %)
+|*391 (13.8 %)*
+|-151
+|~50 (2.5 %)
+|===
+
+*So: the unit share hit its target exactly, and the E2E share did not come close.* That is the finding, and it is worth stating plainly rather than filing as unfinished work.
+
+*Why ~2.5 % E2E is not reachable here.* Classifying every one of the 391 surviving cases by what it actually depends on - not by which file it sits in:
+
+[cols="1,3,1" options="header"]
+|===
+|Cases |Depends on |Can it move?
+
+|~131
+|Rendered layout or real input: `SetViewportSize`, `getComputedStyle`, `BoundingBox`, drag/resize, keyboard, focus, `Context.SetOffline`
+|*No.* jsdom has no layout engine and no canvas. This is the same limit wave 1 documented for `color-contrast`, and it is why `KeycloakThemeTests` (19 cases over a Freemarker theme asserted through computed styles) never even entered a wave.
+
+|~47
+|A real Keycloak round trip - the login form, the registration endpoint, an SSO session across tabs, a locale stored on the account
+|*No*, and #2148 says to keep these.
+
+|~15
+|A page-level axe scan - landmarks, heading order, colour contrast
+|*No*, per wave 1's own reasoning.
+
+|~198
+|API/domain behaviour, reached through the UI
+|*Yes, in principle* - this is wave 5's remaining pool.
+|===
+
+Moving *every* one of the remaining ~198 - which would mean rewriting the two largest classes in the suite (`VolunteerOpportunityTests`, `OrganizationTests`) plus a long tail - lands E2E at roughly *190 cases, or ~7 %*. The floor is set by the ~193 that need a browser, not by appetite. Reaching 50 would mean deleting layout, theme and real-auth regressions that have no lower-altitude equivalent - which is the exact failure #2147's mutation baseline exists to prevent, just at a layer that baseline cannot see.
+
+*Recommendation:* treat ~7 % as the realistic target and close #2148 against it, or reopen the question as "should layout regressions be covered by visual-diff snapshots instead of Playwright assertions", which is a different decision with a different cost.
+
+*The cheapest win was not the case count.* `HomePageOrgCtaTests` called `fixture.ResetAsync()` before every test and carried `[NotInParallel("visualtests-db")]` so it could guarantee vera organized nothing. Three of its four cases moved, and with them the database reset and the serialization - that class no longer blocks every other DB-touching class in the suite. Three more classes (`EngagementCheckInStatusCodeTests`, `MilestoneAchievementTests`, `LoginStreakConcurrencyTests`) were paying for a Chromium context, a frontend and Playwright's ~290 MiB browser download to make plain HTTP calls. Neither shows up as much in a case count and both cost real wall-clock.
+
+*Mutation score after waves 2-5:* still to be re-run at the end of this branch, on the same concurrency-1 Stryker 4.16.0 configuration as the #2147 baseline. Waves 2-4 changed no file under `backend/src`; wave 5 changed none either, only which project three test classes live in. The expectation is therefore an unchanged 66.75 % / 68.49 % / 67.89 %, and a movement would mean something quite specific: that `IntegrationTests` and `VisualTests` are not what the number measures at all (it is driven by `Application.UnitTests`), so any drop would be a tooling problem rather than lost coverage.
+
+*Shard count: still four, and now for a measured reason.* Wave 1's own CI run put the four `visual-tests` shards at 5 min 45 s - 7 min 09 s with ~101 cases each, against ~2 min 45 s of fixed per-shard cost (1 min 43 s job setup + ~1 min Aspire boot). At 391 cases that is ~98 per shard - close enough that the arithmetic has not changed: three shards would be roughly neutral and save one runner, two would be clearly worse, and collapsing to one only becomes right if the suite ever reaches the low hundreds *of seconds* of test work. The matrix is worth touching once, at whatever the final number turns out to be, rather than re-tuned per wave to land in the same place.
+
+*`AssemblyParallelLimit`'s `ProcessorCount - 2` is likewise unchanged.* #2148 suggested revisiting it "once the suite is much smaller". It is 28 % smaller, not much smaller, and the contention it guards against (Playwright and axe-core sessions competing with the Aspire stack they all call into) is unchanged per-shard. Raising it is a controlled experiment against real CI failure rates, not a follow-on edit.
 ====
 - *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
 
