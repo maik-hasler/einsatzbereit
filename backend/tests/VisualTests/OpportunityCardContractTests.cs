@@ -45,6 +45,19 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	/// </summary>
 	private const int MaxLoadMorePages = 12;
 
+	/// <summary>
+	/// Resolves once a "Load more" click has visibly landed: either the list
+	/// grew past the row count passed in, or the button is no longer rendered
+	/// (last page reached, or the load failed and LoadMoreError took its
+	/// place). See <see cref="RevealMySignUpCardAsync"/>.
+	/// </summary>
+	private const string MoreRowsOrNoLoadMoreButton =
+		"""
+		rowsBefore =>
+			document.querySelectorAll("#activity [data-testid='engagement-card']").length > rowsBefore
+			|| !document.querySelector("[data-testid='load-more']")
+		""";
+
 	[Test]
 	public async Task PublicGrid_EveryCard_StatesADateKindAndACapacity()
 	{
@@ -578,8 +591,8 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	/// </summary>
 	private async Task<ILocator> RevealMySignUpCardAsync(string keyword)
 	{
-		var card = Page.Locator("#activity [data-testid='engagement-card']")
-			.Filter(new() { HasText = keyword }).First;
+		var cards = Page.Locator("#activity [data-testid='engagement-card']");
+		var card = cards.Filter(new() { HasText = keyword }).First;
 		// The test id, not the accessible name: the button's label flips to
 		// "Loading…" while a page is in flight, so a name-based locator matches
 		// nothing mid-load (see LoadMoreButton.tsx's own note).
@@ -593,10 +606,37 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 			if (await loadMore.CountAsync() == 0)
 				break;
 
-			// ClickAsync auto-waits for enabled, i.e. for the previous page to
-			// have landed. A spurious extra click costs one page and nothing else.
-			await loadMore.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+			var rowsBefore = await cards.CountAsync();
+
+			try
+			{
+				// ClickAsync auto-waits for enabled, i.e. for the previous page to
+				// have landed. A spurious extra click costs one page and nothing else.
+				//
+				// The CountAsync above is a sample, not a lease: ActivitySection
+				// renders this button only while `hasMore` holds and no load-more
+				// has failed, so it can leave the DOM between that sample and the
+				// click - the final page landing, or LoadMoreError swapping in.
+				// Either way there is nothing left to page through, which is what
+				// CountAsync() == 0 above already treats as "stop", so a click that
+				// never finds the button means the same thing. Left to time out at
+				// the 30s default it instead fails the test here, hiding the
+				// assertion this helper exists to reach.
+				await loadMore.ClickAsync(new() { Timeout = 10_000 });
+
+				// Not WaitForLoadStateAsync(NetworkIdle): that samples the whole
+				// page's network rather than this list, so it can return before the
+				// request the click started has even been dispatched - and the next
+				// iteration then reads a button that is about to re-render. Wait on
+				// the state this loop actually depends on instead: either more rows
+				// arrived, or the button is gone and there is nothing more to click.
+				await Page.WaitForFunctionAsync(MoreRowsOrNoLoadMoreButton, rowsBefore,
+					new() { Timeout = 15_000 });
+			}
+			catch (TimeoutException)
+			{
+				break;
+			}
 		}
 
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
