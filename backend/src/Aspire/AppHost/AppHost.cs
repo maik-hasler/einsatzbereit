@@ -114,7 +114,7 @@ File.WriteAllText(
 	Path.Combine(keycloakRealmImportPath, "einsatzbereit-realm.json"),
 	localRealm.ToJsonString());
 
-var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.7.1")
+var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.7.2")
 	.WithEnvironment("KC_DB", "dev-file")
 	.WithBindMount(keycloakRealmImportPath, "/opt/keycloak/data/import", isReadOnly: true)
 	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)

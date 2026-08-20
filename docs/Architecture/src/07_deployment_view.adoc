@@ -38,7 +38,7 @@ Local development is optimized for fast iteration, not production performance. A
 
 |Identity Provider
 |Docker container
-|`quay.io/keycloak/keycloak:26.7.1`, port 8080
+|`quay.io/keycloak/keycloak:26.7.2`, port 8080
 
 |Application Database
 |Docker container
