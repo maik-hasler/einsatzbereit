@@ -1,84 +1,24 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #655: once a volunteer opportunity is deleted, the
-/// EngagementCreated notification that was already generated for it resolves
-/// its title via a live lookup of the (now-gone) opportunity, so
-/// relatedTitle stays null forever, and its actionUrl 404s. Covers both the
-/// frontend fallback title text and EngagementManagementPage rendering the
-/// existing NotFoundPage instead of a raw error string on that 404.
+/// The browser half of #655: an EngagementCreated notification for a
+/// since-deleted opportunity has no resolvable actionUrl, so following the
+/// notification lands on a 404 - EngagementManagementPage must render the
+/// existing NotFoundPage there rather than a raw error string.
 ///
-/// Also covers #2073: the volunteer-facing OpportunityDeleted notification
-/// must keep its title after the same deletion, unlike the organizer-facing
-/// EngagementCreated notification above - see
-/// Notification_KeepsRelatedTitle_ForOpportunityDeletedKind_AfterOpportunityDeleted.
+/// The read-model assertions behind it (relatedTitle and actionUrl going
+/// null for #655, and #2073's OpportunityDeleted notification keeping its
+/// snapshotted title through the same deletion) moved to
+/// <c>IntegrationTests/NotificationTests.cs</c> in einsatzbereit#2148,
+/// beside the happy-path deep-link test they are the negative twin of.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	[Test]
-	public async Task Notification_KeepsNullRelatedTitle_AfterOpportunityDeleted()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		var (opportunityId, _, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedTitle");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-
-		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
-		deleteResponse.EnsureSuccessStatusCode();
-
-		var notification = await GetEngagementCreatedNotificationAsync(olafHttp);
-
-		notification.TryGetProperty("relatedTitle", out var relatedTitle).Should().BeTrue();
-		(relatedTitle.ValueKind is JsonValueKind.Null).Should().BeTrue(
-			"the opportunity backing this notification no longer exists, so its title can no longer be resolved");
-		notification.GetProperty("actionUrl").ValueKind.Should().Be(JsonValueKind.Null,
-			"the opportunity's organization can no longer be resolved either, so no org-app deep link can be built");
-	}
-
-	[Test]
-	public async Task Notification_KeepsRelatedTitle_ForOpportunityDeletedKind_AfterOpportunityDeleted()
-	{
-		// Regression for #2073: unlike EngagementCreated above, the volunteer's
-		// own OpportunityDeleted notification is the only way they learn which
-		// sign-up was affected, so it must not go the same route and lose its
-		// title once the opportunity row is gone. Notification.TitleSnapshot is
-		// captured when this notification is created - before the delete
-		// removes the opportunity row - and NotificationReadRepository falls
-		// back to it once the live title join finds nothing.
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		var (opportunityId, _, title) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedKeepsTitle");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-
-		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
-		deleteResponse.EnsureSuccessStatusCode();
-
-		var notification = await GetNotificationByKindAsync(veraHttp, "OpportunityDeleted");
-
-		notification.GetProperty("relatedTitle").GetString().Should().Be(title,
-			"the title was snapshotted onto the notification when it was created, before the opportunity row disappeared");
-	}
-
 	[Test]
 	public async Task EngagementManagementPage_RendersNotFoundPage_ForDeletedOpportunity()
 	{
@@ -101,30 +41,6 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-	}
-
-	private static async Task<string> ApplyAsync(HttpClient http, string opportunityId, string message)
-	{
-		var response = await http.PostAsJsonAsync(
-			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
-			new { message });
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("id").GetString()!;
-	}
-
-	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http) =>
-		await GetNotificationByKindAsync(http, "EngagementCreated");
-
-	private static async Task<JsonElement> GetNotificationByKindAsync(HttpClient http, string kind)
-	{
-		var response = await http.GetAsync("/v1/notifications");
-		response.EnsureSuccessStatusCode();
-		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
-		// GetMyNotifications returns a NotificationsPage ({ items, hasMore }),
-		// not a bare array, since einsatzbereit#1384 added cursor pagination.
-		return page.GetProperty("items").EnumerateArray()
-			.First(n => n.GetProperty("kind").GetString() == kind);
 	}
 
 	private static async Task<(string OpportunityId, string OrganizationId, string Title)> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)

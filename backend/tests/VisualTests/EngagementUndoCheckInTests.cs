@@ -1,131 +1,27 @@
-using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
 
 /// <summary>
-/// Coverage for #1041: check-in had no way back - IsCheckedIn had exactly one
-/// writer (CheckIn()) and no method cleared it short of Reactivate(), which
-/// requires the engagement to already be terminated. An organizer mis-click
-/// or wrong QR scan permanently locked a volunteer into "attended". These
-/// tests cover the new Engagement.UndoCheckIn() guard rails plus the
-/// organizer-facing "Undo check-in" action on EngagementManagementPage.
+/// The organizer-facing half of #1041: undoing a check-in on
+/// EngagementManagementPage must swap the "Checked in" badge back for the
+/// "Mark as checked in" button, so a mis-click is visibly recoverable.
+///
+/// The four status-code and IsCheckedIn-flag assertions that used to sit
+/// beside it moved to <c>IntegrationTests/EngagementUndoCheckInTests.cs</c>
+/// in einsatzbereit#2148 - they opened no page at all, and paid for a
+/// Chromium context and a frontend to make plain HTTP calls.
+///
+/// Background: check-in had no way back. IsCheckedIn had exactly one writer
+/// (CheckIn()) and nothing cleared it short of Reactivate(), which requires
+/// the engagement to already be terminated - so an organizer mis-click or a
+/// wrong QR scan locked a volunteer into "attended" permanently.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	[Test]
-	public async Task UndoCheckInEngagement_ClearsCheckedInFlag_WhenCalledByOrganizer()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(olafHttp, "UndoCheckInHappyPath");
-		var engagementId = await CreateAndConfirmEngagementAsync(veraHttp, olafHttp, opportunityId);
-
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null))
-			.EnsureSuccessStatusCode();
-
-		var undoResponse = await olafHttp.PostAsync($"/v1/engagements/{engagementId}/undo-check-in", null);
-		undoResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-		var undoBody = await undoResponse.Content.ReadFromJsonAsync<JsonElement>();
-		undoBody.GetProperty("status").GetString().Should().Be(
-			"Confirmed",
-			"undoing a check-in must not change the engagement's Confirmed status, only the check-in flag");
-
-		var engagement = await GetEngagementAsync(olafHttp, opportunityId, engagementId);
-		engagement.GetProperty("isCheckedIn").GetBoolean().Should().BeFalse();
-	}
-
-	[Test]
-	public async Task UndoCheckInEngagement_Returns409_WhenEngagementIsNotCheckedIn()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(olafHttp, "UndoCheckInNotCheckedIn");
-		var engagementId = await CreateAndConfirmEngagementAsync(veraHttp, olafHttp, opportunityId);
-
-		var undoResponse = await olafHttp.PostAsync($"/v1/engagements/{engagementId}/undo-check-in", null);
-
-		undoResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
-		var problem = await undoResponse.Content.ReadFromJsonAsync<JsonElement>();
-		problem.GetProperty("errorCode").GetString().Should().Be("Engagement.CheckInNotActive");
-	}
-
-	[Test]
-	public async Task UndoCheckInEngagement_Returns409_WhenEngagementIsTerminated()
-	{
-		// A checked-in engagement that gets cancelled afterwards keeps
-		// IsCheckedIn = true (Cancel() never touches it - the exact
-		// unlabelled state the issue calls out) - undo-check-in must still
-		// refuse to reopen a terminated engagement.
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(olafHttp, "UndoCheckInTerminated");
-		var engagementId = await CreateAndConfirmEngagementAsync(veraHttp, olafHttp, opportunityId);
-
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null))
-			.EnsureSuccessStatusCode();
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/cancel", null))
-			.EnsureSuccessStatusCode();
-
-		var undoResponse = await olafHttp.PostAsync($"/v1/engagements/{engagementId}/undo-check-in", null);
-
-		undoResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
-		var problem = await undoResponse.Content.ReadFromJsonAsync<JsonElement>();
-		problem.GetProperty("errorCode").GetString().Should().Be("Engagement.AlreadyTerminated");
-	}
-
-	[Test]
-	public async Task UndoCheckInEngagement_Returns403_WhenCallerIsNotOrganizer()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		using var adminHttp = new HttpClient { BaseAddress = backend };
-		adminHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "admin", "admin123")}");
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(olafHttp, "UndoCheckInForbidden");
-		var engagementId = await CreateAndConfirmEngagementAsync(veraHttp, olafHttp, opportunityId);
-
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null))
-			.EnsureSuccessStatusCode();
-
-		// admin is not a member of olaf's organization, so this must be
-		// rejected before ever touching the check-in flag.
-		var undoResponse = await adminHttp.PostAsync($"/v1/engagements/{engagementId}/undo-check-in", null);
-
-		undoResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-		var engagement = await GetEngagementAsync(olafHttp, opportunityId, engagementId);
-		engagement.GetProperty("isCheckedIn").GetBoolean().Should().BeTrue();
-	}
-
 	[Test]
 	public async Task ManageApplicationsPage_UndoCheckIn_RestoresManualCheckInButton()
 	{
@@ -208,19 +104,5 @@ public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(
 		confirmResponse.EnsureSuccessStatusCode();
 
 		return engagementId;
-	}
-
-	private static async Task<JsonElement> GetEngagementAsync(HttpClient olafHttp, string opportunityId, string engagementId)
-	{
-		var response = await olafHttp.GetAsync($"/v1/volunteer-opportunities/{opportunityId}/engagements?pageNumber=1&pageSize=10");
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		foreach (var item in body.GetProperty("items").EnumerateArray())
-		{
-			if (item.GetProperty("id").GetString() == engagementId)
-				return item;
-		}
-
-		throw new InvalidOperationException($"Engagement '{engagementId}' not found in GetEngagements response.");
 	}
 }

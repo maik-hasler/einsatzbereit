@@ -18,41 +18,6 @@ namespace VisualTests;
 public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task MyEngagements_StillListsEngagement_AfterItsOpportunityIsDeleted()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "EngHistDeleted");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		var engagementId = await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-
-		var confirmResponse = await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null);
-		confirmResponse.EnsureSuccessStatusCode();
-
-		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
-		deleteResponse.EnsureSuccessStatusCode();
-
-		var myEngagementsResponse = await veraHttp.GetAsync("/v1/me/engagements?pageNumber=1&pageSize=50&upcoming=false");
-		myEngagementsResponse.EnsureSuccessStatusCode();
-		var myEngagements = await myEngagementsResponse.Content.ReadFromJsonAsync<JsonElement>();
-
-		var engagement = myEngagements.GetProperty("items").EnumerateArray()
-			.FirstOrDefault(e => e.GetProperty("id").GetString() == engagementId);
-
-		engagement.ValueKind.Should().NotBe(JsonValueKind.Undefined,
-			"the engagement must still appear in the volunteer's own history, not disappear entirely, once its opportunity is deleted");
-		engagement.GetProperty("status").GetString().Should().Be("Cancelled");
-		engagement.GetProperty("opportunityTitle").ValueKind.Should().Be(JsonValueKind.Null,
-			"the opportunity backing this engagement no longer exists, so its title can no longer be resolved");
-	}
-
-	[Test]
 	public async Task MyEngagementsPage_ShowsFallbackTitle_ForDeletedOpportunity()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

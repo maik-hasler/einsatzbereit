@@ -19,47 +19,6 @@ namespace VisualTests;
 public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task Reactivate_DoesNotChangeCreatedOn_AfterWithdrawThenReapply()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "Reactivation");
-
-		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-
-		var firstEngagement = await ApplyAsync(http, opportunityId, "Original application.");
-		var firstCreatedOn = await GetCreatedOnAsync(http, opportunityId);
-
-		var withdrawResponse = await http.PostAsync($"/v1/engagements/{firstEngagement}/withdraw", content: null);
-		withdrawResponse.EnsureSuccessStatusCode();
-
-		// The regression this guards against sets CreatedOn to the re-application
-		// time, so the test is only meaningful if "the original time" and "now"
-		// are distinguishable. That used to be arranged by sleeping two seconds
-		// between the two applications; marking the instant the second one starts
-		// establishes the same separation without spending the two seconds, and
-		// states the invariant more directly besides - a refreshed CreatedOn would
-		// land at or after this mark, an untouched one strictly before it.
-		var reapplyStartedAt = DateTimeOffset.UtcNow;
-
-		var secondEngagement = await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
-		secondEngagement.Should().Be(firstEngagement, "reactivation reuses the same terminal engagement row");
-
-		var secondCreatedOn = await GetCreatedOnAsync(http, opportunityId);
-
-		secondCreatedOn.Should().Be(firstCreatedOn,
-			"Engagement.Reactivate must not change CreatedOn - it must stay pinned to the original application time");
-		secondCreatedOn.Should().BeBefore(reapplyStartedAt,
-			"CreatedOn must predate the re-application entirely, not merely happen to match a value read earlier");
-
-		// Leave vera's account clean for the rest of this shared Aspire session.
-		var cleanupResponse = await http.PostAsync($"/v1/engagements/{secondEngagement}/withdraw", content: null);
-		cleanupResponse.EnsureSuccessStatusCode();
-	}
-
-	[Test]
 	public async Task EngagementsTab_RendersReactivatedEngagement()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -97,16 +56,6 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return body.GetProperty("id").GetString()!;
-	}
-
-	private static async Task<DateTimeOffset> GetCreatedOnAsync(HttpClient http, string opportunityId)
-	{
-		var response = await http.GetAsync("/v1/me/engagements?pageNumber=1&pageSize=50&upcoming=true");
-		response.EnsureSuccessStatusCode();
-		var engagements = await response.Content.ReadFromJsonAsync<JsonElement>();
-		var match = engagements.GetProperty("items").EnumerateArray()
-			.First(e => e.GetProperty("opportunityId").GetString() == opportunityId);
-		return match.GetProperty("createdOn").GetDateTimeOffset();
 	}
 
 	private static async Task<string> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
