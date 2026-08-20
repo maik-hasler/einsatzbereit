@@ -260,24 +260,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 			""");
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
 	/// <summary>
 	/// Creates a fresh organization + QRCode-check-in opportunity, has vera
 	/// apply, and has olaf confirm the application - the precondition for a
@@ -292,9 +274,9 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"QRScanner {label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();

@@ -322,31 +322,14 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		return token.AccessToken;
 	}
 
-	// Every sign-in and every admin-token mint hits Keycloak's token endpoint,
-	// hundreds of times per run, and under that load it occasionally answers
-	// with a transient 500 no request here caused. Retries a 5xx a few times
-	// with a short backoff so one blip does not fail an unrelated test. Never
-	// retries a 4xx (wrong credentials, bad client config) - that's a real
-	// failure, not a blip.
-	private static async Task<HttpResponseMessage> PostTokenRequestWithRetryAsync(
+	// Delegates to AuthHelper so the whole suite shares one retry policy rather
+	// than this copy plus the ~29 hand-rolled ones the test classes carried
+	// (einsatzbereit#2147). Kept as a thin local name so the call sites above
+	// read the same as before.
+	private static Task<HttpResponseMessage> PostTokenRequestWithRetryAsync(
 		HttpClient client, string requestUri, Func<FormUrlEncodedContent> contentFactory,
 		CancellationToken cancellationToken = default)
-	{
-		const int maxAttempts = 3;
-		HttpResponseMessage response;
-		for (var attempt = 1; ; attempt++)
-		{
-			using var content = contentFactory();
-			response = await client.PostAsync(requestUri, content, cancellationToken);
-			if (response.StatusCode < HttpStatusCode.InternalServerError || attempt >= maxAttempts)
-				break;
-
-			response.Dispose();
-			await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
-		}
-
-		return response;
-	}
+		=> AuthHelper.PostTokenRequestWithRetryAsync(client, requestUri, contentFactory, cancellationToken);
 
 	private static async Task EnsureSuccessAsync(HttpResponseMessage response)
 	{

@@ -22,7 +22,7 @@ public class CheckInModalQrFallbackCodeTests(AspireFixture fixture) : VisualTest
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await olafHttp.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInQrFallback Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -47,7 +47,7 @@ public class CheckInModalQrFallbackCodeTests(AspireFixture fixture) : VisualTest
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 		var engagementResponse = await veraHttp.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
 			new { message = "Applying via CheckInModalQrFallbackCodeTests." });
@@ -94,21 +94,4 @@ public class CheckInModalQrFallbackCodeTests(AspireFixture fixture) : VisualTest
 		await Expect(dialog.GetByText(engagementId, new() { Exact = true })).Not.ToBeVisibleAsync();
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

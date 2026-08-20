@@ -93,11 +93,11 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 			await CreateIndividualContactOpportunityAsync(keycloak, backend, "VocabularyOrganizer");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 		var engagementId = await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		// Confirmed, not Pending - the confirmed row is the one that used to
 		// carry the odd verb out ("Stornieren").
@@ -144,31 +144,13 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 		return body.GetProperty("id").GetString()!;
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
 	private static async Task<(string OpportunityId, string OrganizationId)> CreateIndividualContactOpportunityAsync(
 		Uri keycloak, Uri backend, string label)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		// A fresh organization per test rather than olaf's shared seed org -
 		// other tests in this shared Aspire session mutate the seed orgs (see

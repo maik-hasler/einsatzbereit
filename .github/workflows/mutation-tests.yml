@@ -1,0 +1,144 @@
+name: Mutation Testing
+
+# Report-only, and deliberately not wired into the PR gate (#2147).
+#
+# Two reasons it is manual rather than automatic:
+#
+#   1. Cost. A full pass over Domain + Application takes ~12 minutes against a
+#      test suite that runs in 3 seconds - every mutant re-runs the tests that
+#      cover it, one mutant at a time (see the concurrency note below). The
+#      measured numbers live in docs/TDRs/2_slow_ci_pipeline.adoc; they are far
+#      outside what belongs on the critical path #773/#2145 spent their effort
+#      cutting.
+#   2. Purpose. This number exists as the guardrail for the E2E rebalance
+#      (#2148): record it before a migration wave, re-run it after, and if the
+#      score did not drop, the removed end-to-end coverage was redundant. That
+#      is a per-wave question, not a per-commit one.
+#
+# There is deliberately NO score threshold that can block a merge - the config
+# (backend/tests/Application.UnitTests/stryker-config.json) pins
+# `thresholds.break` to 0 so Stryker always exits 0 on a low score. This job
+# only fails if Stryker itself fails, which is a tooling break worth seeing.
+# Same posture as the coverage summary in `fast-tests` (#1327): visibility is
+# the point, gating is not.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # One runner per mutated project, because they are independent runs against
+  # the same test project and the wall-clock is dominated by the larger one.
+  # fail-fast: false - a Stryker failure on one project says nothing about the
+  # other, and losing the half that would have completed wastes the whole run.
+  mutation-tests:
+    runs-on: ubuntu-latest
+    # Hang guard, not a target: the measured legs are ~4 min (Domain) and ~8 min
+    # (Application). Stryker has no overall timeout of its own, so without this a
+    # wedged test session would sit on the default 360 minutes.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [Domain, Application]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: backend/global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Pinned for the same reason dotnet-ef is pinned in dotnet.yml: the score
+      # is only comparable across runs if the mutant set is, and a new Stryker
+      # version can add or drop mutators. Bumping this is a deliberate act that
+      # invalidates the recorded baseline - re-record it in the TDR when you do.
+      - name: Install Stryker.NET
+        run: dotnet tool install --global dotnet-stryker --version 4.16.0
+
+      # Run from the test project directory on purpose. Stryker picks up
+      # stryker-config.json from the working directory, and - more importantly -
+      # from backend/ it would find Einsatzbereit.slnx, switch to solution mode,
+      # and try to build the whole solution, which drags in VisualTests and its
+      # ~290 MiB Playwright browser download for a run that never opens a
+      # browser. From here it builds Application.UnitTests.csproj and nothing
+      # else.
+      #
+      # `--project` selects which of the test project's referenced projects gets
+      # mutated; the tests driving it are Application.UnitTests either way.
+      #
+      # `concurrency: 1` in stryker-config.json is load-bearing and must not be
+      # raised to "use the runner's other cores" - see #2147. At concurrency 2
+      # the preview MTP runner reports 30-73 kills per run that concurrency 1
+      # does not, never the reverse, and a different subset every time: across
+      # four Domain runs the spurious sets intersected in zero mutants. That
+      # inflates the score by ~5 points and jitters it by ~1, which would make
+      # this number useless for the one job it has (deciding whether an E2E
+      # migration wave lost real coverage). At concurrency 1 two runs at the
+      # same commit are bit-for-bit identical, so any movement is real.
+      - name: Run Stryker.NET - ${{ matrix.project }}
+        working-directory: backend/tests/Application.UnitTests
+        run: |
+          start=$(date +%s)
+          dotnet-stryker --project ${{ matrix.project }}.csproj --output "$RUNNER_TEMP/stryker-${{ matrix.project }}"
+          echo "STRYKER_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      # Report-only summary, written straight to the job's step summary rather
+      # than via a third-party action - same reasoning as the coverage summary
+      # in dotnet.yml's fast-tests job. Killed + Timeout over
+      # Killed + Timeout + Survived + NoCoverage is Stryker's own score
+      # definition: CompileError and Ignored mutants are excluded from the
+      # denominator, so they neither help nor hurt the number.
+      - name: Publish mutation score summary
+        if: always()
+        run: |
+          report="$RUNNER_TEMP/stryker-${{ matrix.project }}/reports/mutation-report.json"
+          if [ ! -f "$report" ]; then
+            echo "### Mutation score - ${{ matrix.project }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_No report produced - the Stryker run did not complete._" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          jq -r --arg project "${{ matrix.project }}" --arg seconds "${STRYKER_SECONDS:-unknown}" '
+            [.files[].mutants[].status] as $all
+            | (($all | map(select(. == "Killed" or . == "Timeout")) | length)) as $killed
+            | (($all | map(select(. == "Survived")) | length)) as $survived
+            | (($all | map(select(. == "NoCoverage")) | length)) as $uncovered
+            | ($killed + $survived + $uncovered) as $scored
+            | "### Mutation score - \($project)",
+              "",
+              "| Metric | Value |",
+              "| --- | --- |",
+              "| Score | \(if $scored == 0 then "n/a" else ((10000 * $killed / $scored | round) / 100 | tostring) + " %" end) |",
+              "| Killed (incl. timeout) | \($killed) |",
+              "| Survived | \($survived) |",
+              "| Not covered | \($uncovered) |",
+              "| Mutants scored | \($scored) |",
+              "| Mutants generated | \($all | length) |",
+              "| Wall-clock | \($seconds) s |",
+              "",
+              "_Report-only (#2147). No threshold gates this workflow._"
+          ' "$report" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-report-${{ matrix.project }}
+          path: ${{ runner.temp }}/stryker-${{ matrix.project }}/reports/**
+          if-no-files-found: warn
+          retention-days: 14

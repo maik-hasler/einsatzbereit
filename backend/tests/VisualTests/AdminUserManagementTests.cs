@@ -249,7 +249,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 
 	private static async Task<bool> IsUserEnabledAsync(Uri keycloak, string userId)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -262,7 +262,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 
 	private static async Task<bool> HasAdminRealmRoleAsync(Uri keycloak, string userId)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -276,7 +276,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 
 	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(Uri keycloak)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 		// Not "admintest760-..." (deliberately doesn't contain "admin" as a
 		// substring): Keycloak's search= does infix matching, so a name
 		// containing "admin" would also match AdministrationPage_OwnRow_
@@ -314,7 +314,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 
 	private static async Task DeleteKeycloakUserAsync(Uri keycloak, string userId)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -323,19 +323,4 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		response.EnsureSuccessStatusCode();
 	}
 
-	private static async Task<string> GetAdminTokenAsync(Uri keycloak)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "client_credentials",
-				["client_id"] = "backend",
-				["client_secret"] = "backend-secret",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

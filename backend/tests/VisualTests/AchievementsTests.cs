@@ -40,7 +40,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		using (var seedHttp = new HttpClient { BaseAddress = backend })
 		{
 			seedHttp.DefaultRequestHeaders.Add(
-				"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+				"Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 			var orgResponse = await PostJsonWithRetryAsync(seedHttp,
 				"/v1/organizations", new { name = $"AchievementsSelfSeed Org {suffix}" });
@@ -196,21 +196,4 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(badgeToast).ToHaveCountAsync(0);
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }

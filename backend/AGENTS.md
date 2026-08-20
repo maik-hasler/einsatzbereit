@@ -171,6 +171,23 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - `AuthHelper.cs` - `LoginAsync` drives the real Keycloak login UI; `FastSignInAsync` seeds a minted token straight into `localStorage` to skip the redirect round trip for tests that only need an authenticated session as a precondition
 - Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 6
 
+### Mutation testing (`Stryker.NET`, manual)
+
+Report-only, never a merge gate (#2147). Exists as the falsifiable guardrail for the E2E rebalance (#2148): record the score, move a wave of `VisualTests` cases down the pyramid, re-run - if the score held, the coverage that was removed was redundant. Line coverage cannot answer that question, because a deleted redundant test and a deleted load-bearing one look identical to it.
+
+```bash
+dotnet tool install --global dotnet-stryker --version 4.16.0
+cd backend/tests/Application.UnitTests
+dotnet-stryker --project Domain.csproj
+dotnet-stryker --project Application.csproj
+```
+
+- **Run from `tests/Application.UnitTests/`, not from `backend/`.** Stryker picks up `stryker-config.json` from the working directory, and from `backend/` it finds `Einsatzbereit.slnx`, switches to solution mode, and tries to build the whole solution - which drags in `VisualTests` and its ~290 MiB Playwright browser download for a run that never opens a browser.
+- **`test-runner: mtp` is mandatory** and is set in `stryker-config.json`. Stryker's default VSTest runner discovers zero tests against TUnit (Microsoft.Testing.Platform only, no VSTest adapter) and reports a vacuous pass. The MTP runner is still marked preview by Stryker and says so on every run.
+- **`concurrency: 1` is load-bearing, not a performance setting.** That preview MTP runner miscounts above concurrency 1: 30-73 kills per run that concurrency 1 does not report, never the reverse, and a different subset each time. The score comes out ~5 points high and moves ~1 point between identical runs, which makes it useless as a before/after guardrail. At concurrency 1 two runs at the same commit are bit-for-bit identical. Do not raise it.
+- **`Application.UnitTests.csproj` references `Domain.csproj` directly** purely so `--project Domain.csproj` resolves - Stryker only matches the project to mutate against the *direct* ProjectReference list. It is redundant to the compiler; see the comment in the csproj.
+- Recorded baseline (`Domain` 66.75 %, `Application` 68.49 %, combined 67.89 % at commit `c4a143b`), wall-clock (~4 min + ~8 min), and how to read the number: `docs/TDRs/2_slow_ci_pipeline.adoc`. CI equivalent: `.github/workflows/mutation-tests.yml` (`workflow_dispatch` only).
+
 ### Run all tests
 TUnit uses Microsoft.Testing.Platform, not the `dotnet test` new testing
 experience - run each project directly, the same way CI does:

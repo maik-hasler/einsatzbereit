@@ -25,7 +25,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		var pastOpportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "ScopeTabsPast");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var upcomingEngagementId = await ApplyAsync(veraHttp, upcomingOpportunityId, "Still pending.");
 		var pastEngagementId = await ApplyAsync(veraHttp, pastOpportunityId, "About to withdraw.");
@@ -87,7 +87,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "ScopeTabsWithdrawnFuture");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var engagementId = await ApplyAsync(veraHttp, opportunityId, "Withdrawing right away.");
 		var withdrawResponse = await veraHttp.PostAsync($"/v1/engagements/{engagementId}/withdraw", content: null);
@@ -133,7 +133,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = $"CheckedInFuture Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();
@@ -170,7 +170,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 			.EnsureSuccessStatusCode();
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
 
 		var engagementResponse = await veraHttp.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
@@ -223,30 +223,12 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		return body.GetProperty("id").GetString()!;
 	}
 
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			"/realms/einsatzbereit/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = "frontend-test",
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
 	private static async Task<string> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
 		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
 		// Create a fresh organization rather than reusing olaf's shared seed
 		// org - other VisualTests running concurrently in this shared Aspire

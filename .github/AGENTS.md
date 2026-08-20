@@ -12,6 +12,7 @@
 ├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, create a GitHub Release, then deploy-staging (RC tags) or deploy-production (stable tags)
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── reset-staging.yml           Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
+├── mutation-tests.yml          Manual (workflow_dispatch): Stryker.NET over Domain + Application, report-only
 ├── lint.yml                    Ban em/en dashes + EditorConfig check
 └── pr-title.yml                Validate PR title against Conventional Commits
 ```
@@ -119,6 +120,18 @@ Rotating the staging host's SSH host key (a fresh box, a reinstall) requires upd
 **Required `staging` Environment secrets:** `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` - a generated (not MinIO root) credential pair the `minio-init` compose service provisions on first deploy, scoped to only the `einsatzbereit` bucket. The backend authenticates with these instead of `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` (#1353) - a leaked value can then only read/write that one bucket, not administer the whole MinIO instance.
 
 **Required `staging`/`production` Environment secrets:** `OFFSITE_S3_ENDPOINT` / `OFFSITE_S3_ACCESS_KEY` / `OFFSITE_S3_SECRET_KEY` - point `minio-backup`'s offsite leg (#1087) at the `einsatzbereit-backups` S3-compatible Object Storage bucket, mirroring `postgres_backups`/`minio_backups` off the host daily. A distinct bucket/credential pair from anything MinIO-related above - this is a backup destination, not application storage. Shared across both Environments since staging and production are the same host today (see "`deploy-staging` vs `deploy-production`" above).
+
+## Mutation Testing Workflow (manual)
+
+`mutation-tests.yml` runs Stryker.NET over the two layers that `Application.UnitTests` can drive without Docker.
+
+- **Trigger:** `workflow_dispatch` only - never on push or pull request, so it can never gate a merge
+- **Jobs:** one `mutation-tests` job, a `fail-fast: false` matrix over `project: [Domain, Application]`, so it reports as two checks. Each leg installs `dotnet-stryker` (pinned to 4.16.0) and runs it from `backend/tests/Application.UnitTests/`, mutating one source project while `Application.UnitTests` (1017 tests, no Docker) does the killing. Measured ~4 min (`Domain`) and ~8 min (`Application`)
+- **Report-only (#2147), by two independent mechanisms:** the workflow is manual so it is never a required check, and `stryker-config.json` pins `thresholds.break` to `0` so a low score exits 0 anyway. Same posture as the coverage summary in `fast-tests` (#1327). **Do not add a break threshold** - the whole point of the number is that it is allowed to move
+- **Why manual and not on the PR path:** it is roughly two orders of magnitude more expensive than the `fast-tests` job whose test suite it reuses. It exists as the guardrail for the E2E rebalance (#2148) - record the score, migrate a wave of end-to-end tests down the pyramid, re-run, and if the score held, the removed coverage was redundant. See `docs/TDRs/2_slow_ci_pipeline.adoc` for the recorded baseline, the wall-clock, and how to read the number
+- **Run it from `backend/tests/Application.UnitTests/`, never from `backend/`** - from `backend/` Stryker finds `Einsatzbereit.slnx`, switches to solution mode, and builds the whole solution including `VisualTests` and its ~290 MiB Playwright download, for a run that never opens a browser
+- **`concurrency: 1` in `stryker-config.json` is load-bearing, not a performance knob (#2147).** Stryker's Microsoft.Testing.Platform runner is preview, and above concurrency 1 it reports kills that never happened: 30-73 extra kills per run, never a lost one, and a different subset every time (across four `Domain` runs the spurious sets intersected in zero mutants). That inflates the score by ~5 points and jitters it by ~1. At concurrency 1 two runs at the same commit are bit-for-bit identical. Raising it to use the runner's spare cores destroys the only property that makes the number worth recording
+- **`Application.UnitTests.csproj` references `Domain.csproj` directly** even though Application already pulls it in transitively. That reference exists only so Stryker can resolve `--project Domain.csproj`; see the comment in the csproj before removing it as redundant
 
 ## Reset Workflow (manual)
 

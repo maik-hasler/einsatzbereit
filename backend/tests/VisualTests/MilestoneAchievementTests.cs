@@ -29,9 +29,6 @@ namespace VisualTests;
 public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const string Realm = "einsatzbereit";
-	private const string BackendClientId = "backend";
-	private const string BackendClientSecret = "backend-secret";
-	private const string FrontendClientId = "frontend-test";
 
 	[Test]
 	public async Task DedicatedBadge_IsAwarded_OnFifthConfirmation_EvenAfterAnEarlierConfirmedOpportunityWasDeleted()
@@ -44,11 +41,11 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 		{
 			using var olafHttp = new HttpClient { BaseAddress = backend };
 			olafHttp.DefaultRequestHeaders.Authorization =
-				new AuthenticationHeaderValue("Bearer", await GetTokenAsync(keycloak, "olaf", "olaf123"));
+				new AuthenticationHeaderValue("Bearer", await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123"));
 
 			using var volunteerHttp = new HttpClient { BaseAddress = backend };
 			volunteerHttp.DefaultRequestHeaders.Authorization =
-				new AuthenticationHeaderValue("Bearer", await GetTokenAsync(keycloak, volunteerUsername, volunteerPassword));
+				new AuthenticationHeaderValue("Bearer", await AuthHelper.GetTokenAsync(keycloak, volunteerUsername, volunteerPassword));
 
 			var engagementIds = new List<string>();
 			var opportunityIds = new List<string>();
@@ -135,7 +132,7 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 
 	private static async Task<(string Username, string Password, string UserId)> CreateDisposableVolunteerAsync(Uri keycloak)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 		var username = $"milestone668-{Guid.NewGuid():N}";
 		var password = $"Milestone668!{Guid.NewGuid():N}";
 
@@ -167,7 +164,7 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 
 	private static async Task DeleteKeycloakUserAsync(Uri keycloak, string userId)
 	{
-		var adminToken = await GetAdminTokenAsync(keycloak);
+		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -176,37 +173,4 @@ public class MilestoneAchievementTests(AspireFixture fixture) : VisualTestBase(f
 		response.EnsureSuccessStatusCode();
 	}
 
-	private static async Task<string> GetAdminTokenAsync(Uri keycloak)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "client_credentials",
-				["client_id"] = BackendClientId,
-				["client_secret"] = BackendClientSecret,
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
-
-	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
-	{
-		using var http = new HttpClient { BaseAddress = keycloak };
-		var response = await http.PostAsync(
-			$"/realms/{Realm}/protocol/openid-connect/token",
-			new FormUrlEncodedContent(new Dictionary<string, string>
-			{
-				["grant_type"] = "password",
-				["client_id"] = FrontendClientId,
-				["username"] = username,
-				["password"] = password,
-				["scope"] = "openid",
-			}));
-		response.EnsureSuccessStatusCode();
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return body.GetProperty("access_token").GetString()!;
-	}
 }
