@@ -226,7 +226,9 @@ Wall-clock is therefore just over the < 10 min target rather than under it, and 
 
 *One failure in that run*, on shard 4: `JwtAudienceTests.Administration_AuthenticatedAdmin_LoadsOrganizationsWithoutAuthError`, a 45 s timeout on the post-submit leg of a real Keycloak login. That is the contention flake this document has tracked since 2026-07-28, but sharding changes its distribution in a way worth recording: *every shard now has a "first concurrent batch" against a cold Keycloak*, where one 542-test session used to have exactly one, statistically absorbed by `AccessibilityTests`' 90 cases - which is why the only `[Retry(2)]` in the suite sits on exactly such a call site, with a comment naming that same cause. `AuthHelper.LoginAsync`'s own comment claimed callers carried that retry; only 1 of the 15 classes driving a real login actually did. The retry now lives inside the helper (scoped to the identity round trip, never to a product assertion, so #1321's distinction holds) and `AspireFixture` renders the login page once during boot so the custom Freemarker theme compiles inside the initializer's budget rather than inside a test's.
 
-*Still to re-measure.* The above is n=1. Re-measure at n=20+ before treating ~10 min as the new figure, and treat the failure rate as the primary success criterion, not the wall-clock - runtime was only ever half of what made this debt expensive.
+*Second run, after the login fix* (2026-08-20, run `32346711001`): all four shards green, `visual-tests (4)` back to 135 tests / 0 failures, shards 6 min 41 s - 7 min 43 s, Aspire boot 64.9 s, critical path ~10 min 33 s. The same shape held on the release path (`v1.0.0-rc.362`, run `32347940443`), which is the only thing that exercises `publish.yml`'s copy of the matrix.
+
+*Still to re-measure.* The above is n=2. Re-measure at n=20+ before treating ~10 min as the new figure, and treat the failure rate as the primary success criterion, not the wall-clock - runtime was only ever half of what made this debt expensive.
 ====
 
 Strategic (larger change, defer until justified):
