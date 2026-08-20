@@ -95,7 +95,8 @@ public class NotificationUnreadMarkerTests(AspireFixture fixture) : VisualTestBa
 		// visual shorthand. Not a Not.ToBeVisibleAsync() check: Tailwind's sr-only
 		// is clip-based rather than display:none (deliberately, so the node stays
 		// in the accessibility tree), which Playwright still counts as visible -
-		// same reasoning as LiveRegionTests' SuccessBanner assertion.
+		// same reasoning as frontend/src/components/ErrorBanner.test.tsx's
+		// SuccessBanner assertion.
 		await Expect(unreadRow.Locator("span.sr-only")).ToHaveTextAsync("Unread");
 		await Expect(readRow.Locator("span.sr-only")).ToHaveCountAsync(0);
 	}

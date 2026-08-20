@@ -50,38 +50,6 @@ public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixtu
 	}
 
 	[Test]
-	public async Task SignUpModal_InGerman_KeepsOneVerbFromTriggerToSubmit()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "VocabularyInterest");
-
-		// FastSignInAsync waits on the English "User menu" label, so the switch
-		// to German has to come after it (see LocalizedCheckInPinErrorTests).
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await SwitchToGermanAsync();
-
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Interesse bekunden" })
-			.ClickAsync();
-
-		var dialog = Page.Locator("[role='dialog']");
-		await Expect(dialog).ToBeVisibleAsync();
-		await Expect(dialog.Locator("#sign-up-dialog-title")).ToHaveTextAsync("Interesse bekunden");
-		await Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "Interesse bekunden" }))
-			.ToBeVisibleAsync();
-
-		// The submit button used to say "Anmelden" here - the same word as the
-		// header's authentication action.
-		await Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "Anmelden" })).ToHaveCountAsync(0);
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_InGerman_CancelsWithAbsagenEndToEnd()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

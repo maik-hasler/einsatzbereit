@@ -4,6 +4,10 @@ import { AuthContext } from "react-oidc-context";
 import { render, type RenderResult } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import type { AuthContextProps } from "react-oidc-context";
+import { ToastProvider } from "../contexts/ToastContext";
+import { QuickActionsProvider } from "../contexts/QuickActionsContext";
+import { HeaderOverlayProvider } from "../contexts/HeaderOverlayContext";
+import { OrgBreadcrumbProvider } from "../contexts/OrgBreadcrumbContext";
 import { createTestI18n } from "./i18n";
 
 /**
@@ -76,10 +80,14 @@ export interface RenderOptions {
 }
 
 /**
- * Renders `ui` inside the three providers every non-trivial component in this
- * app assumes: i18n (accessible names are translation strings), a router
- * (Button/EmptyState render <Link> when given `to`), and an auth context
- * (useApiClient reads the access token off it).
+ * Renders `ui` inside the same provider stack the running app puts every page
+ * and component inside (main.tsx plus AppLayout/OrgAppLayout): i18n, because
+ * accessible names are translation strings; a router, because Button and
+ * EmptyState render a <Link> when given `to`; auth, because useApiClient
+ * reads the access token off it; and the four app contexts, because a page
+ * that calls useQuickActions or useOrgBreadcrumb throws outright without
+ * them. Rendering inside the real stack rather than a narrower one is what
+ * lets a page be tested here at all.
  */
 export function renderWithProviders(
 	ui: ReactElement,
@@ -90,11 +98,19 @@ export function renderWithProviders(
 
 	function Wrapper({ children }: { children: ReactNode }) {
 		return (
-			<AuthContext.Provider value={authValue}>
-				<I18nextProvider i18n={i18n}>
-					<MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-				</I18nextProvider>
-			</AuthContext.Provider>
+			<ToastProvider>
+				<AuthContext.Provider value={authValue}>
+					<I18nextProvider i18n={i18n}>
+						<MemoryRouter initialEntries={[route]}>
+							<QuickActionsProvider>
+								<HeaderOverlayProvider>
+									<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>
+								</HeaderOverlayProvider>
+							</QuickActionsProvider>
+						</MemoryRouter>
+					</I18nextProvider>
+				</AuthContext.Provider>
+			</ToastProvider>
 		);
 	}
 

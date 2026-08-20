@@ -14,7 +14,8 @@ namespace VisualTests;
 /// primary control: clicking one selects that exact slot and jumps straight to
 /// a confirmation, skipping the dropdown picker entirely. The rail button
 /// remains a secondary entry point and is unaffected - see
-/// SignUpModalPreselectTests/CheckInAndSlotTests for its still-dropdown-based
+/// frontend/src/components/SignUpModal.test.tsx and CheckInAndSlotTests for
+/// its still-dropdown-based
 /// coverage.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]

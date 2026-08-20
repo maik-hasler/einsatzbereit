@@ -8,7 +8,8 @@ namespace VisualTests;
 /// The mobile burger menu reaches every org dashboard tab (issue #775), not just
 /// the org app's landing tab, so a phone user isn't left with the desktop org
 /// switcher and the homepage hero CTA. Gated the same way as the admin-only
-/// "Administration" entry (see AdministrationNavLinkTests) and resolved via the
+/// "Administration" entry (see frontend/src/components/Header/AccountControls.test.tsx)
+/// and resolved via the
 /// same active-org-cookie-then-alphabetical logic HomePage uses.
 ///
 /// #1785 promoted those links out of the account section: the organization is one

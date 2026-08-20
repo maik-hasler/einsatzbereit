@@ -235,7 +235,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			// Cross-origin in this test environment - a fulfilled response still
 			// needs CORS headers or fetch() rejects before the app's own
 			// error-handling code (and thus the toast) ever runs, same as
-			// ToastDeduplicationTests.
+			// frontend/src/contexts/ToastContext.test.tsx's coalescing case.
 			await route.FulfillAsync(new()
 			{
 				Status = 500,

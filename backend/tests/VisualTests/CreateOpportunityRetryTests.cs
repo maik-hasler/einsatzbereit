@@ -84,7 +84,8 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 				return;
 			}
 
-			// Cross-origin in this test environment (see ToastDeduplicationTests)
+			// Cross-origin in this test environment (see NotificationTests for the
+			// same note)
 			// - a fulfilled response still needs CORS headers or the browser
 			// rejects it before the app's own error handling runs.
 			await route.FulfillAsync(new()
