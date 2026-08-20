@@ -14,10 +14,11 @@
 # sources on every run: every class that carries a [Test] lands in exactly one
 # shard by construction.
 #
-# Balance matters because class sizes are wildly uneven - AccessibilityTests
-# alone holds 90 of the 542 cases, while most classes hold 1-5 - so classes are
-# packed longest-first into whichever shard is currently lightest (LPT), not
-# split alphabetically.
+# Balance matters because class sizes are wildly uneven - most classes hold
+# 1-5 cases while a handful hold dozens (AccessibilityTests alone held 90 of
+# 542 until einsatzbereit#2148 moved its component-level scans down to
+# vitest-axe) - so classes are packed longest-first into whichever shard is
+# currently lightest (LPT), not split alphabetically.
 #
 # Usage: visual-test-shard.sh <shard-index> <shard-count> [tests-dir]
 #   shard-index  1-based

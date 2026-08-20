@@ -379,8 +379,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	// einsatzbereit#1069: seeds a checked-in engagement with feedback already
-	// submitted (via raw HTTP, same pattern as AccessibilityTests's
-	// SeedConfirmedEngagementAsync) so the Edit/Delete tests below don't have to
+	// submitted (via raw HTTP) so the Edit/Delete tests below don't have to
 	// drive the initial "Leave feedback" submission through the UI first.
 	private async Task<string> SeedCheckedInEngagementWithFeedbackAsync(int rating, string comment)
 	{

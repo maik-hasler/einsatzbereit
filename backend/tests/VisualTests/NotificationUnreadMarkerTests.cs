@@ -10,9 +10,11 @@ namespace VisualTests;
 /// empty decorative dot span plus a font-weight/colour difference, so read and
 /// unread rows were indistinguishable to a screen reader and unread state was
 /// announced only in aggregate on the bell (WCAG 2.2 A, 1.4.1 Use of Color).
-/// axe cannot catch this - an unlabelled decorative span violates no rule,
-/// which is why AccessibilityTests' NotificationDropdown_Open scan stayed green
-/// throughout - so the per-row marker needs its own targeted assertion.
+/// axe cannot catch this - an unlabelled decorative span violates no rule, so
+/// the dropdown's axe scan (now
+/// <c>frontend/src/components/Header/NotificationDropdown.a11y.test.tsx</c>)
+/// stayed green throughout, and the per-row marker needs its own targeted
+/// assertion.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class NotificationUnreadMarkerTests(AspireFixture fixture) : VisualTestBase(fixture)

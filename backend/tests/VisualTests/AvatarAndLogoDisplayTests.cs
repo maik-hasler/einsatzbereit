@@ -22,9 +22,9 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 	// field. This test uploads an avatar and then asserts the nav bar renders an
 	// <img> instead of her initials - but RemoveUserAvatar_... below (same class,
 	// so TUnit co-schedules the two by default) uploads and then DELETEs that
-	// same field, and AccessibilityTests' ProfileOverviewPage_EditModeWithAvatar_...
-	// uploads it too. Those three are the only writers of /v1/users/me/avatar in
-	// the suite. With the delete landing between this upload and this assertion,
+	// same field. Those two are the only writers of /v1/users/me/avatar left in
+	// the suite (AccessibilityTests' ProfileOverviewPage_EditModeWithAvatar_...
+	// was a third until einsatzbereit#2148 moved it down to a component test). With the delete landing between this upload and this assertion,
 	// GET /v1/users/me returns avatarUrl: null and AccountControls renders the
 	// initials span with no <img> at all - the exact observed CI failure
 	// ("element(s) not found", aria snapshot showing button "User menu": VV).

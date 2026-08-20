@@ -102,7 +102,21 @@ pnpm i18n:check      # verify en.json/de.json key parity - CI hard gate, run bef
 
 ## Unit Tests
 
-Vitest (`vitest.config.ts`, jsdom environment) tests pure logic in `src/lib/`, colocated as `*.test.ts` next to the module under test (e.g. `src/lib/activeOrg.test.ts`). Component/page-level behavior is covered by the Playwright suite in `backend/tests/VisualTests/` instead - see root `AGENTS.md`.
+Vitest (`vitest.config.ts`, jsdom environment) covers two things, colocated next to what they test:
+
+- **Pure logic in `src/lib/`**, as `*.test.ts` (e.g. `src/lib/activeOrg.test.ts`).
+- **Component accessibility**, as `*.a11y.test.tsx` next to the component (e.g. `src/components/ConfirmDialog.a11y.test.tsx`) - see "Accessibility (a11y)" below.
+
+Everything else at component/page level - real navigation, real focus movement, colour contrast, anything needing a browser - is covered by the Playwright suite in `backend/tests/VisualTests/` instead; see root `AGENTS.md`.
+
+`src/test/` holds the shared harness for the component suites and is not itself a test target:
+
+| File | What it gives you |
+| ---- | ----------------- |
+| `render.tsx` | `renderWithProviders(ui, { lng, route, auth })` - wraps the tree in the three providers every non-trivial component assumes (i18n, router, auth). Defaults to English, `/`, signed out |
+| `i18n.ts` | A synchronous i18n instance preloaded from the shipped `en.json`/`de.json`. The app's own `src/i18n.ts` loads locales through a *dynamic import*, so a component rendered in the same tick still shows raw keys - and an accessible name of "opportunities.signUp" is not the name a user gets |
+| `a11y.ts` | `expectNoA11yViolations(target?)` - see below |
+| `setup.ts` | Registers jest-dom matchers and Testing Library cleanup (this config has `globals: false`, so RTL's own auto-cleanup never registers), plus the jsdom stubs axe needs |
 
 Conventions used across the existing suite:
 
@@ -205,7 +219,19 @@ Key conventions:
 - **Color contrast (text)**: `text-gray-400` (2.6:1 on white) fails the WCAG AA 4.5:1 floor for text - reserve it for decorative icons and input placeholders only, never for body copy, labels, timestamps, or other real content. Use `text-gray-500` (4.9:1) or darker for content; an interactive control's resting label needs to clear at least the 3:1 UI-component floor too.
 - **Color contrast (non-text)**: WCAG 1.4.11 sets the same 3:1 floor for meaningful icons and interactive-control borders (outline-button/chip borders, checkbox/radio boundaries) - axe-core's `color-contrast` check doesn't evaluate this, so it slips past CI silently (#2048). `-200`/`-300` border tokens and `brand-400`/`brand-500` icon fills all measure under 3:1 against a white or brand-50 background - use `border-gray-500`+, `border-red-500`+, `border-brand-600`+ for borders, and `text-brand-600`/`text-brand-700` for functional icons instead. See `Button.tsx`'s `outline`/`dangerOutline` variants and `FilterDropdown.tsx`'s active/inactive icon colors for the reference values.
 
-Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page and several stateful views (edit mode, modals, widget dialogs) - grep that file for `HasNoSeriousA11yViolations` for the current, authoritative list rather than trusting a copy of it here. Tests fail on any "serious" or "critical" axe violation. A new page/route needs a matching test in that file - `a11y-check` flags a missing one.
+Automated axe-core checks run at two altitudes (#2148). Both apply the same gate - fail on any "serious" or "critical" violation, plus a short list of escalated "moderate" rules - so the split is about scope, not about standard:
+
+| | Where | Covers | Run by |
+| - | ----- | ------ | ------ |
+| **Component** | `src/**/*.a11y.test.tsx`, via `expectNoA11yViolations` from `src/test/a11y.ts` | Roles, accessible names, labelling, ARIA validity, interactive nesting - per component and per component *state* (open/closed, loading, empty, error, validation-rejected) | `pnpm test`, seconds, no browser |
+| **Page** | `backend/tests/VisualTests/AccessibilityTests.cs` | Landmark structure, heading order, **colour contrast**, real focus movement, tab order - one scan per distinct layout and palette | `dotnet.yml`'s `visual-tests` shards, minutes, real Chromium + Aspire |
+
+Two consequences worth knowing before adding a test:
+
+- **jsdom has no layout engine and no canvas**, so axe can only ever report `color-contrast` as *inconclusive* there. It is disabled outright in `src/test/a11y.ts` rather than left to look like a passing check. The page scans are the only place contrast is genuinely evaluated - which is why the contrast rules above are stated as conventions here rather than left to CI to discover.
+- **Page-scope rules cannot be judged from a fragment** (a component has no `<main>`, no page `<h1>`, no `lang`), so they are disabled in the component harness too and stay the page scans' job.
+
+So: a new component or component state gets a colocated `*.a11y.test.tsx`; a new page/route additionally gets a scan in `AccessibilityTests.cs`. `a11y-check` flags a missing one of either. `src/test/a11y.test.tsx` is the harness's own negative control - it asserts the scanner can still *fail*, and is the first place to look if the a11y suite goes green through a change that should have broken it.
 
 ## Production
 

@@ -59,11 +59,11 @@ public class MemberSearchErrorTests(AspireFixture fixture) : VisualTestBase(fixt
 		// a search that genuinely found nobody.
 		await Expect(Page.GetByText("No users found.")).Not.ToBeVisibleAsync();
 
-		// AccessibilityTests covers this page's baseline state, but not this
-		// failed-search one - and this test has already built it, so scan it
-		// here rather than standing up the same route intercept a second time
-		// over there (same rationale as OrgSettingsFormActionsTests's own
-		// failed-save test).
+		// A failed *request* state needs the real backend to fail, so it can't
+		// move down to a component scan - and this test has already built it,
+		// so scan it here rather than standing up the same route intercept a
+		// second time elsewhere (same rationale as OrgSettingsFormActionsTests's
+		// own failed-save test).
 		var axe = await Page.RunAxe();
 		axe.Violations.Where(v => v.Impact is "serious" or "critical").Should().BeEmpty();
 

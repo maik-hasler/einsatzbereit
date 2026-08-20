@@ -310,10 +310,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// aria-activedescendant) the component has never implemented, since
 		// Escape via useDismissableOverlay is the only key it handles. The axe
 		// side of that defect is guarded by
-		// LanguageSelector_Open_HasNoSeriousA11yViolations in
-		// AccessibilityTests.cs; this is the DOM-shape half, so a regression
-		// names itself instead of surfacing as a generic nested-interactive
-		// scan failure.
+		// frontend/src/components/Header/LanguageSelector.a11y.test.tsx
+		// (einsatzbereit#2148); this is the DOM-shape half in a real browser,
+		// so a regression names itself instead of surfacing as a generic
+		// nested-interactive scan failure.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());

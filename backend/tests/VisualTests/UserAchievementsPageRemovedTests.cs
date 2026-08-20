@@ -15,8 +15,7 @@ public class UserAchievementsPageRemovedTests(AspireFixture fixture) : VisualTes
 {
 	// Vera is a plain "user" account, not an organizer, so FastSignInAsync's
 	// returned pinned-org id is always null for her - the actual user id has
-	// to be read back out of the seeded oidc-client-ts session instead, same
-	// as AccessibilityTests.cs's UserProfilePage/UserAchievementsPage cases did.
+	// to be read back out of the seeded oidc-client-ts session instead.
 	private static async Task<string?> GetSignedInUserIdAsync(IPage page) =>
 		await page.EvaluateAsync<string?>(@"() => {
 			for (let i = 0; i < sessionStorage.length; i++) {

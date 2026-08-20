@@ -6,12 +6,13 @@ namespace VisualTests;
 /// <summary>
 /// Regression for #1961: the mini-calendar's selected date-range endpoints
 /// (MiniCalendar.tsx's `isEdge` cells) rendered white, font-semibold text on
-/// a bg-brand-600 fill (~4.28:1), failing the WCAG AA 4.5:1 floor. Neither
-/// OpportunitiesPage_DateRangeFilterOpen_HasNoSeriousA11yViolations nor
-/// OpportunitiesPage_DateRangeFilterWithMarkedDays_HasNoSeriousA11yViolations
-/// in AccessibilityTests.cs ever selects a range, so no scan ever rendered an
-/// `isEdge` cell. This test deterministically selects a start and end day so
-/// the fix (bg-brand-700, ~9.5:1) is always exercised.
+/// a bg-brand-600 fill (~4.28:1), failing the WCAG AA 4.5:1 floor. The two
+/// date-filter scans that existed in AccessibilityTests.cs at the time both
+/// opened the calendar without ever selecting a range, so no scan ever
+/// rendered an `isEdge` cell. This test deterministically selects a start and
+/// end day so the fix (bg-brand-700, ~9.5:1) is always exercised - and it has
+/// to stay in Playwright either way, since jsdom has no layout or canvas for
+/// axe to sample a rendered colour from (einsatzbereit#2148).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class DateRangeContrastTests(AspireFixture fixture) : VisualTestBase(fixture)

@@ -1,19 +1,24 @@
 # Lens: Accessibility
 
 Goal: accessibility problems that survive past `eslint-plugin-jsx-a11y`
-(CI-blocking on every PR) and the axe-core checks in
-`backend/tests/VisualTests/AccessibilityTests.cs` (CI-blocking on every
-page that has a test). Both are real, both are narrower than they sound -
-this lens is the depth pass behind them, not a repeat of either.
+(CI-blocking on every PR) and the two axe-core gates - component-level
+`frontend/src/**/*.a11y.test.tsx` and page-level
+`backend/tests/VisualTests/AccessibilityTests.cs` (#2148). All three are
+real, all three are narrower than they sound - this lens is the depth pass
+behind them, not a repeat of any.
 
 ## Method
 
-1. **Map coverage before hunting bugs.** Grep
+1. **Map coverage before hunting bugs**, at both altitudes. Grep
    `AccessibilityTests.cs` for `HasNoSeriousA11yViolations` and diff that
-   list against every route in `frontend/src/App.tsx`. A route with no
-   matching test has zero automated a11y coverage, silently, forever -
-   that gap is itself a finding (feed it to `lens-test-gaps.md`'s
-   inventory if that lens runs too, or report it here).
+   list against every route in `frontend/src/App.tsx`; then list
+   `frontend/src/**/*.a11y.test.tsx` and diff *that* against
+   `frontend/src/components/`. A route with no page scan has zero coverage
+   of landmark structure, heading order and colour contrast - none of which
+   jsdom can evaluate - and a component with no suite has zero coverage of
+   roles and names. Either gap is itself a finding (feed it to
+   `lens-test-gaps.md`'s inventory if that lens runs too, or report it
+   here).
 2. **Static pass for the patterns neither tool catches** (see
    `frontend/AGENTS.md`'s "Accessibility (a11y)" section for the full
    list; jsx-a11y has no rule for these): the modal backdrop-button
@@ -54,8 +59,8 @@ Hypothesis.
 
 ## Traps
 
-Don't re-report what jsx-a11y or the existing `AccessibilityTests.cs`
-suite already guarantees - confirm the specific rule/test doesn't cover
+Don't re-report what jsx-a11y or either existing axe suite
+(`*.a11y.test.tsx`, `AccessibilityTests.cs`) already guarantees - confirm the specific rule/test doesn't cover
 the case before writing it up, not just that this particular page's test
 happens to pass (it may pass because the violation is in a state the test
 never reaches - edit mode, a modal, an error state). A component library

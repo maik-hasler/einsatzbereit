@@ -215,10 +215,11 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 		// fix and retry rather than retype.
 		await Expect(formSave).ToBeVisibleAsync();
 
-		// AccessibilityTests covers this page's read-only, edit and
-		// field-validation states, but not the server-error one - and this test
-		// has already built it, so scan it here rather than standing up the
-		// same 400 intercept a second time over there.
+		// The form's own edit and field-validation states are scanned at the
+		// component level (frontend/src/components/CreateOrganizationModal.a11y.test.tsx,
+		// einsatzbereit#2148), but a *server*-error state needs the real
+		// backend - and this test has already built it, so scan it here rather
+		// than standing up the same 400 intercept a second time elsewhere.
 		var axe = await Page.RunAxe();
 		axe.Violations.Where(v => v.Impact is "serious" or "critical").Should().BeEmpty();
 

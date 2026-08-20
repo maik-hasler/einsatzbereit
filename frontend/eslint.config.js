@@ -87,6 +87,18 @@ export default tseslint.config(
 			"tailwindcss/enforces-negative-arbitrary-values": "warn",
 		},
 	},
+	{
+		// Test fixtures are not user-facing UI: a <button>Discard</button> in a
+		// component test is scaffolding for the assertion, not copy a visitor
+		// ever reads, and routing it through i18n would only hide what the test
+		// renders behind a key lookup. Everything else - including the whole
+		// jsx-a11y ruleset, which is exactly what the a11y suites are about -
+		// stays on.
+		files: ["src/**/*.test.{ts,tsx}", "src/test/**/*.{ts,tsx}"],
+		rules: {
+			"i18next/no-literal-string": "off",
+		},
+	},
 	prettier,
 	{
 		ignores: ["dist/", "node_modules/", "scripts/", "public/"],

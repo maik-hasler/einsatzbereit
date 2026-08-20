@@ -167,7 +167,7 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 ### Visual tests (`VisualTests`)
 - TUnit.Playwright + Aspire: boots the full stack (Postgres, Keycloak, backend API, frontend) and drives it through a real browser - E2E flows plus axe-core a11y checks
 - Largest and slowest suite (~50 test classes) - included in `dotnet.yml`'s CI run, not a separate job
-- `AccessibilityTests.cs` - axe-core scans per page, fails on serious/critical violations; add a case here for any new page
+- `AccessibilityTests.cs` - the **page-level** axe-core gate: one scan per distinct layout/palette plus the handful of assertions that need a real browser (skip-link focus, the Leaflet marker's accessible name, tab order). Component-level scans live in `frontend/src/**/*.a11y.test.tsx` under `vitest-axe` (#2148) - add a case *here* for a new route, and a component suite *there* for a new component or component state. See the class summary for the full division of labour
 - `AuthHelper.cs` - `LoginAsync` drives the real Keycloak login UI; `FastSignInAsync` seeds a minted token straight into `localStorage` to skip the redirect round trip for tests that only need an authenticated session as a precondition
 - Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 6
 

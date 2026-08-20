@@ -95,8 +95,8 @@ public class QuickCheckInWidgetTests(AspireFixture fixture) : VisualTestBase(fix
 	/// <summary>
 	/// QuickCheckIn isn't in DEFAULT_LAYOUT (see widgetCatalog.ts), so a fresh
 	/// org's dashboard never renders it without going through the "Edit" ->
-	/// "Add widget" picker first - same flow AccessibilityTests.cs uses to
-	/// reach this widget's real rendered content.
+	/// "Add widget" picker first, which is the only way to reach this widget's
+	/// real rendered content in a browser.
 	/// </summary>
 	private async Task<ILocator> AddQuickCheckInWidgetAsync()
 	{
