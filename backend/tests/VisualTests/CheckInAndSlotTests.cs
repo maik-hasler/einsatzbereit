@@ -74,9 +74,14 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Give the card a moment to finish rendering its action row before
-		// asserting a negative - there's no positive signal to wait on here.
-		await Page.WaitForTimeoutAsync(500);
+		// The status chip and the action row are emitted by the same render of the
+		// same card (ActivitySection.tsx), so the chip appearing is proof the
+		// action row has rendered too - the positive signal the fixed wait here
+		// was substituting for. Waiting on it means the negative assertion below
+		// is about a card that decided not to show "Check in", rather than about
+		// one that simply had not painted yet.
+		await Expect(row.GetByText("Confirmed", new() { Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Check in" })).Not.ToBeVisibleAsync();
 	}
 

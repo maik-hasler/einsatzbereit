@@ -79,23 +79,29 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Delay any unauthenticated GET to the details endpoint so it resolves
-		// *after* a later authenticated GET - reproducing the out-of-order
-		// response race the request-id guard defends against: an earlier-sent
-		// request must not overwrite the result of a later-sent one just
-		// because it resolves later.
+		// Hold any unauthenticated GET to the details endpoint open so it can be
+		// released *after* a later authenticated GET has already been applied -
+		// reproducing the out-of-order response race the request-id guard defends
+		// against: an earlier-sent request must not overwrite the result of a
+		// later-sent one just because it resolves later.
+		//
+		// Held rather than delayed by a fixed 1.5s: the ordering is the whole
+		// point of the test, and a timer only produces it while the authenticated
+		// round trip happens to finish inside the delay. On a contended runner it
+		// may not, in which case the responses arrive in their natural order and
+		// the test quietly stops exercising the guard at all - passing either way.
+		var releaseAnonymousRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
 		{
 			if (route.Request.Method == "GET" && !route.Request.Headers.ContainsKey("authorization"))
 			{
-				await Task.Delay(1500);
+				await releaseAnonymousRead.Task;
 			}
 
 			await route.ContinueAsync();
 		});
 
 		await Page.GotoAsync(detailUrl);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Scoped to the desktop testid (#1965 added a second, lg:hidden copy of
 		// this same "Your sign-up" text right above the map for narrow
@@ -104,8 +110,19 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		// reviewing your sign-up...") lives inside the same testid and contains
 		// "your sign-up" as a substring, so a non-exact GetByText resolves to
 		// both paragraphs and trips Playwright's strict-mode check.
-		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up", new() { Exact = true }))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var signUpStatus = Page.GetByTestId("application-status")
+			.GetByText("Your sign-up", new() { Exact = true });
+
+		// The authenticated read has landed and rendered...
+		await Expect(signUpStatus).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// ...so now let the earlier, anonymous read resolve on top of it. This is
+		// the moment the guard exists for, and it is now guaranteed to happen in
+		// this order on every machine rather than only on a fast one.
+		releaseAnonymousRead.TrySetResult();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(signUpStatus).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
 	}

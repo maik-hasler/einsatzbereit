@@ -2,7 +2,7 @@
 
 - *Author:* @maik-hasler
 - *Version:* identified in v1.0.0
-- *Date:* 2026-07-18
+- *Date:* 2026-07-18 (last re-measured 2026-08-20, issue #2145)
 - *Status:* In Progress
 
 === Description
@@ -81,6 +81,11 @@ Within a representative `dotnet.yml` run, the `build-and-test` job (~10.3 min) b
 
 *Trend:* the same workflow measured ~4.5 min in late May 2026, ~5-6 min in mid-June, and ~8-10 min in July - it has roughly doubled in about two months as end-to-end coverage grew.
 
+[IMPORTANT]
+====
+*The table and breakdown above are the July 2026 measurement and are no longer current.* A fresh pass on 2026-08-20 (56 runs, issue #2145) measured a median of *21 min 58 s* with a *36.4 % completion rate* - the ~9.6 min figure above, and the ~6 min figure the #773 note below reports, have both been overtaken. The `build-and-test` step breakdown is doubly historical: that single job no longer exists, having been split by #773 and then sharded by #2145. See the Severity section and the sharding note under Proposed Solution for the current numbers and what was done about them; this section is kept as the record of where the trend started.
+====
+
 [NOTE]
 ====
 Earlier project documentation described this workflow as taking "~20-30 minutes". That figure does not match the measured data (median ~9.6 min) and has been corrected in `.github/AGENTS.md` alongside this record. The real risk is the growth trajectory, not the present absolute duration.
@@ -114,9 +119,11 @@ Earlier project documentation described this workflow as taking "~20-30 minutes"
 
 === Severity
 
-Low to Medium.
+High (raised from "Low to Medium" on 2026-08-20, see issue #2145).
 
-The absolute runtime (~10 min) is currently tolerable and well below the point of blocking work. The debt is the trajectory and structure: a single, unbounded, sequential job dominated by one test project, growing steadily. Severity rises toward High as the `VisualTests` suite expands or if the project opens up to more contributors who each feel the feedback latency.
+The earlier rating rested on a ~10 min median that was "tolerable and well below the point of blocking work", with the debt framed as trajectory rather than present cost. The trajectory arrived: by 2026-08-20 the median was 21 min 58 s and only 36.4 % of runs completed at all. The thing that rose was not just runtime - `visual-tests` was failing 53 % of the time, which is the more important number, because a gate that is wrong every second run stops being a gate. The prediction in the original text ("severity rises toward High as the `VisualTests` suite expands") held exactly; the suite went from 117 tests at the time of #773 to 542.
+
+Sharding (below) brings the wall-clock back under the original baseline. The severity stays High until the failure rate is measured back under 20 %, because runtime was only ever half of what made this debt expensive.
 
 === Proposed Solution
 
@@ -155,7 +162,51 @@ Structural (medium effort):
 - *`VisualTests` parallel-limit tightened for flakiness, not speed:* `VisualTestsParallelLimit` (`AssemblyParallelLimit.cs`) capped concurrent tests at `Environment.ProcessorCount`, which leaves zero spare CPU for the Aspire-hosted stack itself (backend/Postgres/Keycloak/frontend) once that many Chromium+axe-core tests are running - a plausible structural cause of the recurring "tips over the timeout" pattern already called out in `AuthHelper.GoToOrgAppDashboardAsync`'s comment (most recently: two `AccessibilityTests` methods timed out on the same `GET /v1/organizations` round trip in the same 2026-07-28 run). Changed to `Environment.ProcessorCount - 1` (minimum 1) to reserve one core for the stack. This is a structural mitigation, not a fix confirmed by controlled experiment - Docker/Aspire can't be run in a sandboxed session to load-test it locally, so treat it as a hypothesis to re-evaluate against real CI failure rates over the following runs; if flakiness persists, sharding (below) is the next lever, now for reliability as well as speed.
 - *Found a second, distinct flake live on this change's own PR run:* `HomePage_HasNoSeriousA11yViolations` failed on a `color-contrast` violation against `text-brand-200` stats-row labels, which sit inside `global.css`'s `.animate-fade-up-d4` entrance animation (opacity 0 -> 1, staggered ~0.5s delay). Axe-core is deterministic given the DOM it's handed, so this was not the CPU-contention timing pattern above - it was a race between the scan and a still-fading element being caught at partial opacity, reading a lower (alpha-blended) contrast than the settled UI ever shows. Fixed at the source rather than in the one page it happened to surface on: `VisualTestBase` now overrides `ContextOptions` to set `ReducedMotion = ReducedMotion.Reduce`, which skips `global.css`'s `@media (prefers-reduced-motion: no-preference)`-gated animations entirely for every `VisualTests` browser context - the same rendering a real reduced-motion user gets, and immune to this race by construction rather than by timing the scan around it.
 ====
-- *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker. Not warranted yet: even the slowest job today (`visual-tests`, ~6 min) is well short of being the pipeline's own blocker, consistent with this document's policy of stopping at the first option that keeps runtime bounded.
+- *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker.
++
+[NOTE]
+====
+*Implemented (issue #2145, 2026-08-20).* The "not warranted yet" note this replaces was written when `visual-tests` ran ~6 min. It became warranted.
+
+*What the measurements actually said* (56 `dotnet.yml` runs over 15.5 h, 2026-08-20):
+
+[cols="3,1" options="header"]
+|===
+|Metric |Value
+
+|`dotnet.yml` median wall-clock |21 min 58 s
+|Completion rate |36.4 % (20 success / 20 cancelled / 15 failure)
+|`visual-tests` median |19 min 25 s (~78 % of wall-clock)
+|`visual-tests` failures |9 of 17 usable runs (53 %)
+|`integration-tests` / `build` / `format-check` / `fast-tests` |4 min 19 s / 2 min 37 s / 2 min 26 s / 1 min 25 s, none notable
+|===
+
+This was never a "CI is slow" problem - 471 integration tests in 4 min 19 s is a good number. It was one job. The 20 cancelled runs are part of the finding rather than noise: `run_attempt > 1` was 0 across 210 runs despite 15 failures, so contributors were not re-running a red job, they were pushing over it and letting `cancel-in-progress` clean up. That is what a gate nobody trusts looks like.
+
+*Root cause.* 542 tests on a 4-vCPU `ubuntu-latest` runner, with `AssemblyParallelLimit.cs` capping concurrency at `ProcessorCount - 2` (= 2), is ~271 sequential slots. 1165 s / 271 ~= 4.3 s per slot, which matches the measured median. The cap was not a mistake - it was tightened twice (`ProcessorCount` -> `-1` in the 2026-07-28 note above, then `-2`) precisely because CPU contention between Playwright/axe-core sessions and the Aspire stack they all call into was causing timeouts. But reducing parallelism buys reliability with runtime, and by 542 tests that trade had gone net-negative: it bought 19 minutes and roughly the same failure rate.
+
+*Why B (sharding) and not A (a bigger runner).* A would have been a one-line change - `runs-on: ubuntu-latest-8-cores` and `ProcessorCount - 2` scales itself to 6 - and it addresses the measured cause head-on. It was rejected on cost, not on merit: only the default `ubuntu-latest`/`windows-latest`/`macos-latest` tier is free and unlimited on a public repository, and every larger-runner tier is billed per minute regardless of repository visibility (https://docs.github.com/en/billing/reference/actions-runner-pricing[GitHub Actions runner pricing]). That is incompatible with the minimal-budget constraint in this record's own Business Impact section. Sharding buys the same parallelism by adding runners rather than cores, and standard runners stay free, so it is $0 - the same reasoning #773 used.
+
+*Measured fixed per-shard cost*, which is what decides how many shards are worth having (run 32337102365, `visual-tests`, 2026-08-20):
+
+[cols="3,1" options="header"]
+|===
+|Segment |Duration
+
+|Job setup (checkout -> Docker pre-pull complete) |1 min 43 s
+|Aspire stack boot, inside the test step |~1 min (the first two tests were still flagged `[slow] still running after 1m 00s` with 0 completed)
+|Test work |~15 min 50 s
+|Test step total (TUnit self-reported 16 min 48 s) |16 min 50 s
+|===
+
+So roughly 2 min 45 s per shard is fixed and does not divide. At 4 shards that is ~3 min 50 s of test work each, for a ~6.5-7 min job and a ~9.5 min critical path once `build` (2 min 38 s) is added - under the 10 min target. Six shards would reach ~8 min end to end, and past that the fixed cost dominates entirely, so 4 is the point where the returns flatten rather than an arbitrary pick. The Aspire boot figure above had to be reconstructed from step timestamps and TUnit's `[slow]` lines; `AspireFixture` now times its own boot and both workflows print it (their "Report Aspire stack startup cost" steps), so the next revision of this table is a direct reading rather than an inference.
+
+*How the shard split is expressed.* TUnit 1.65.31 has no native sharding flag - its documented flag set is `--list-tests`/`--treenode-filter`/`--maximum-parallel-tests`/etc., with nothing that splits a run across machines - so a shard is a Microsoft.Testing.Platform `--treenode-filter` over class names, which was #2145's stated fallback. The split is *computed* by `.github/scripts/visual-test-shard.sh` on every run rather than checked in: a hand-written list would silently stop running any newly added test class, since a class in no shard's filter is simply never selected. Classes are packed longest-first into whichever shard is lightest, because sizes are extremely uneven - `AccessibilityTests` alone is 90 of the 542 cases while most classes are 1-5 - which lands the four shards at 136/136/135/135 cases. The script fails loudly if a file's class name ever stops matching its file name, since that is the one way a class could fall out of every filter.
+
+*`AssemblyParallelLimit` was deliberately left alone.* Each shard is still a 4-vCPU runner, so concurrency stays 2 and per-instant CPU contention per stack is unchanged - the win here is four stacks, not a busier one. Changing the parallel limit in the same commit would have confounded the one measurement this change exists to produce.
+
+*Not yet re-measured.* The numbers above are the pre-change baseline plus the arithmetic the shard count was chosen from. Re-measure at n=20+ before treating ~9.5 min as the new figure, and treat the failure rate as the primary success criterion, not the wall-clock.
+====
 
 Strategic (larger change, defer until justified):
 

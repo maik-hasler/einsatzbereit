@@ -57,7 +57,7 @@ src/
 
 tests/
 ├── Application.UnitTests/      Handler tests, NSubstitute mocks, no DB
-├── IntegrationTests/           Testcontainers (Postgres 18 + Keycloak 26), Respawn
+├── IntegrationTests/           Aspire.Hosting.Testing (the AppHost's own Postgres + Keycloak + MinIO + Mailpit), Respawn
 ├── ArchitectureTests/          NetArchTest layer rules + naming conventions
 └── VisualTests/                TUnit.Playwright + Aspire, E2E and axe-core a11y - largest, slowest suite
 ```
@@ -194,7 +194,7 @@ All versions centrally managed in `Directory.Packages.props`.
 | `NSwag.MSBuild` | Api - generates OpenAPI spec + TS client on build |
 | `EFCore.NamingConventions` | Infrastructure - snake_case |
 | `Npgsql.EntityFrameworkCore.PostgreSQL` | Infrastructure - Postgres provider |
-| `Testcontainers.PostgreSql` + `.Keycloak` | IntegrationTests |
+| `Aspire.Hosting.Testing` | IntegrationTests + VisualTests - boots the real AppHost (Postgres, Keycloak, MinIO, Mailpit, API) once per test session |
 | `Respawn` | IntegrationTests - DB reset |
 | `NetArchTest.Rules` | ArchitectureTests |
 | `NSubstitute` | Application.UnitTests |

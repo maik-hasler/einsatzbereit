@@ -13,15 +13,31 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	/// <summary>
+	/// Holds a routed response open until the test releases it.
+	///
+	/// A loading state can only be asserted on while the request behind it is
+	/// still in flight, so these tests have to keep one there deliberately. That
+	/// used to be a fixed <c>Task.Delay(1500)</c> inside the route handler, which
+	/// turns the assertions into a race against a stopwatch: on a contended
+	/// runner the response can land before the skeleton is ever looked at, and
+	/// the test fails with nothing wrong in the UI. Holding the response until
+	/// the assertions have run inverts that - the request stays in flight exactly
+	/// as long as they need, however slow the machine is, and no longer.
+	/// </summary>
+	private static TaskCompletionSource NewResponseGate() =>
+		new(TaskCreationOptions.RunContinuationsAsynchronously);
+
 	[Test]
 	public async Task OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		var listResponse = NewResponseGate();
 		await Page.RouteAsync("**/v1/volunteer-opportunities?*", async route =>
 		{
 			if (route.Request.Method == "GET")
-				await Task.Delay(1500);
+				await listResponse.Task;
 			await route.ContinueAsync();
 		});
 
@@ -35,9 +51,20 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// and briefly present while the page's JS chunk downloads, racing
 		// this one for "first role='status' on the page".
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
-		await Expect(loadingStatus).ToBeVisibleAsync();
-		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		try
+		{
+			await Expect(loadingStatus).ToBeVisibleAsync();
+			await Expect(loadingStatus).ToContainTextAsync("Loading");
+			await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		}
+		finally
+		{
+			// The skeleton has been seen, so let the request behind it finish and
+			// the rest of this test assert what replaces it. In a finally, so a
+			// failed assertion above surfaces as itself rather than as a request
+			// left hanging until Playwright's timeout.
+			listResponse.TrySetResult();
+		}
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
@@ -53,10 +80,11 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var opportunityId = await CreateIndividualContactOpportunityAsync("LoadingSkeleton");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
+		var detailResponse = NewResponseGate();
 		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
 		{
 			if (route.Request.Method == "GET")
-				await Task.Delay(1500);
+				await detailResponse.Task;
 			await route.ContinueAsync();
 		});
 
@@ -65,9 +93,20 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// See the comment in OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
 		// above on why this is scoped to ":has(.animate-pulse)".
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
-		await Expect(loadingStatus).ToBeVisibleAsync();
-		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		try
+		{
+			await Expect(loadingStatus).ToBeVisibleAsync();
+			await Expect(loadingStatus).ToContainTextAsync("Loading");
+			await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		}
+		finally
+		{
+			// The skeleton has been seen, so let the request behind it finish and
+			// the rest of this test assert what replaces it. In a finally, so a
+			// failed assertion above surfaces as itself rather than as a request
+			// left hanging until Playwright's timeout.
+			detailResponse.TrySetResult();
+		}
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
@@ -94,10 +133,11 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
 
+		var organizationsResponse = NewResponseGate();
 		await Page.RouteAsync("**/v1/admin/organizations?*", async route =>
 		{
 			if (route.Request.Method == "GET")
-				await Task.Delay(1500);
+				await organizationsResponse.Task;
 			await route.ContinueAsync();
 		});
 
@@ -108,12 +148,23 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// is lazy-loaded (#1403), so AppLayout's own Suspense fallback (a spinner,
 		// also role="status") briefly races this one for "first role='status' on
 		// the page". The Organizations section renders before the Users section,
-		// so its skeleton (the one actually delayed above) is the first match once
+		// so its skeleton (the one whose response is held above) is the first match once
 		// that race resolves.
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
-		await Expect(loadingStatus).ToBeVisibleAsync();
-		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		try
+		{
+			await Expect(loadingStatus).ToBeVisibleAsync();
+			await Expect(loadingStatus).ToContainTextAsync("Loading");
+			await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
+		}
+		finally
+		{
+			// The skeleton has been seen, so let the request behind it finish and
+			// the rest of this test assert what replaces it. In a finally, so a
+			// failed assertion above surfaces as itself rather than as a request
+			// left hanging until Playwright's timeout.
+			organizationsResponse.TrySetResult();
+		}
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });

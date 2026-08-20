@@ -35,7 +35,14 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		var withdrawResponse = await http.PostAsync($"/v1/engagements/{firstEngagement}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
 
-		await Task.Delay(2000);
+		// The regression this guards against sets CreatedOn to the re-application
+		// time, so the test is only meaningful if "the original time" and "now"
+		// are distinguishable. That used to be arranged by sleeping two seconds
+		// between the two applications; marking the instant the second one starts
+		// establishes the same separation without spending the two seconds, and
+		// states the invariant more directly besides - a refreshed CreatedOn would
+		// land at or after this mark, an untouched one strictly before it.
+		var reapplyStartedAt = DateTimeOffset.UtcNow;
 
 		var secondEngagement = await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
 		secondEngagement.Should().Be(firstEngagement, "reactivation reuses the same terminal engagement row");
@@ -44,6 +51,8 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 		secondCreatedOn.Should().Be(firstCreatedOn,
 			"Engagement.Reactivate must not change CreatedOn - it must stay pinned to the original application time");
+		secondCreatedOn.Should().BeBefore(reapplyStartedAt,
+			"CreatedOn must predate the re-application entirely, not merely happen to match a value read earlier");
 
 		// Leave vera's account clean for the rest of this shared Aspire session.
 		var cleanupResponse = await http.PostAsync($"/v1/engagements/{secondEngagement}/withdraw", content: null);

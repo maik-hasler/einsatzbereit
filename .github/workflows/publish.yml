@@ -167,11 +167,20 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
+  # Sharded exactly as dotnet.yml's visual-tests job is - see that job's comment
+  # for why (einsatzbereit#2145). The two must stay in step: this is the same
+  # suite gating a release that the PR gate runs, so a split that only existed on
+  # one side would mean the release path and the PR path disagree about how long
+  # the gate takes and which tests ran together.
   backend-visual-tests:
-    name: Backend Visual Tests
+    name: Backend Visual Tests (shard ${{ matrix.shard }})
     needs: backend-build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -230,9 +239,36 @@ jobs:
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
+      # strategy.job-total is the matrix length, so the shard count is never
+      # written down twice and can't drift from the `shard:` list above.
+      - name: Resolve shard filter
+        id: shard
+        run: |
+          shard=$(.github/scripts/visual-test-shard.sh "${{ matrix.shard }}" "${{ strategy.job-total }}")
+          echo "$shard"
+          echo "$shard" >> "$GITHUB_OUTPUT"
+
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-restore --no-build
+        run: |
+          dotnet run --project tests/VisualTests --no-restore --no-build -- \
+            --treenode-filter "${{ steps.shard.outputs.filter }}" \
+            --minimum-expected-tests "${{ steps.shard.outputs.min-tests }}"
+
+      # #2145's first acceptance criterion: the fixed per-shard Aspire boot is
+      # what decides how many shards are still worth adding, so keep measuring it
+      # rather than re-deriving it from step timestamps once. AspireFixture writes
+      # the file at the end of InitializeAsync.
+      - name: Report Aspire stack startup cost
+        if: always()
+        working-directory: backend
+        run: |
+          timing=$(find tests/VisualTests/bin -name aspire-boot-seconds.txt -print -quit)
+          if [ -n "$timing" ]; then
+            echo "shard ${{ matrix.shard }}: Aspire stack ready in $(cat "$timing")s" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::shard ${{ matrix.shard }}: no Aspire boot timing recorded - the stack never finished starting"
+          fi
 
   publish-backend:
     name: Publish Backend
