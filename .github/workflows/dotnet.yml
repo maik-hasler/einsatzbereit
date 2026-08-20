@@ -82,6 +82,20 @@ jobs:
           echo 'Acquire::http::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::https::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
 
+          # Acquire::http::Timeout only aborts a connection that goes fully
+          # silent - it doesn't catch one that's merely glacial. Observed a
+          # `.deb` package trickle in at ~8 KB/s from azure.archive.ubuntu.com
+          # (one runner-images mirrorlist entry, /etc/apt/apt-mirrors.txt)
+          # for 7+ minutes before the next package stalled outright, burning
+          # the whole job timeout without ever going idle long enough to
+          # retry (einsatzbereit#2139 CI). Drop that entry from the
+          # mirrorlist so apt only ever considers the direct, historically
+          # reliable archive - a plain substring swap, safe even if the
+          # file's exact format changes upstream.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+          fi
+
       # Reproduced locally: a concurrent `apt-get install` (this repo's own
       # sandbox ran several `dotnet build` invocations in parallel) fails
       # this same Playwright `--with-deps` install immediately with "E:
