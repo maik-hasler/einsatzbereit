@@ -27,8 +27,12 @@ namespace IntegrationTests;
 /// against them was not practical).
 /// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class MilestoneAchievementTests(IntegrationTestFixture fixture)
 {
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
+
 	[Test]
 	public async Task DedicatedBadge_IsAwarded_OnFifthConfirmation_EvenAfterAnEarlierConfirmedOpportunityWasDeleted(
 		CancellationToken cancellationToken)

@@ -25,8 +25,12 @@ namespace IntegrationTests;
 /// instead of 1 rather than some other user's already-nonzero count.
 /// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class LoginStreakConcurrencyTests(IntegrationTestFixture fixture)
 {
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
+
 	[Test]
 	public async Task GetMyStreaks_ConcurrentRequestsOnFirstEverLogin_AllObserveTheSameCompletedWrite(
 		CancellationToken cancellationToken)

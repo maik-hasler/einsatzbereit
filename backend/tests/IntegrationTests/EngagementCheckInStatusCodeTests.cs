@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Text.Json;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,9 +14,13 @@ namespace IntegrationTests;
 /// wrong one through the error response), and the per-engagement lockout.
 /// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 {
 	private const string Pin = "482170";
+
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
 
 	[Test]
 	public async Task CheckInEngagement_Returns400_WhenEngagementIsNotConfirmed(
@@ -158,13 +161,13 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	/// Every assertion here is about a *failure* response, so the exception is
 	/// the subject rather than something to let escape.
 	/// </summary>
-	private static async Task<ApiException> CaptureFailureAsync(Func<Task> act)
+	private static async Task<ApiException<ProblemDetails>> CaptureFailureAsync(Func<Task> act)
 	{
 		try
 		{
 			await act();
 		}
-		catch (ApiException ex)
+		catch (ApiException<ProblemDetails> ex)
 		{
 			return ex;
 		}
@@ -172,16 +175,21 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		throw new Exception("Expected the check-in call to fail, but it succeeded.");
 	}
 
-	private static string? ErrorCodeOf(ApiException ex)
+	/// <summary>
+	/// Reads the Result-pattern <c>errorCode</c> off a failure.
+	///
+	/// Not from <c>ApiException.Response</c>: NSwag only fills that raw string
+	/// when <c>ReadResponseAsString</c> is on, and this client deserializes
+	/// straight from the stream instead - so <c>Response</c> is <c>""</c> while
+	/// the parsed body sits on <c>Result</c>. <c>errorCode</c> is a
+	/// ProblemDetails extension member (see ResultFailureExceptionHandler), so
+	/// it lands in <c>AdditionalProperties</c> rather than on a typed property.
+	/// </summary>
+	private static string? ErrorCodeOf(ApiException<ProblemDetails> ex)
 	{
-		// ApiException.Response is the raw ProblemDetails body - typed as
-		// nullable by NSwag, but a Result-pattern failure always carries one
-		// (ResultFailureExceptionHandler), so an empty body here is itself the
-		// regression.
-		ex.Response.Should().NotBeNullOrEmpty(
-			"a Result-pattern failure must carry a ProblemDetails body with an errorCode");
-		return JsonDocument.Parse(ex.Response!).RootElement
-			.GetProperty("errorCode").GetString();
+		ex.Result.AdditionalProperties.Should().ContainKey("errorCode",
+			"a Result-pattern failure must carry an errorCode in its ProblemDetails");
+		return ex.Result.AdditionalProperties["errorCode"]?.ToString();
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
