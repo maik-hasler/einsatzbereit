@@ -2,7 +2,7 @@
 
 - *Author:* @maik-hasler
 - *Version:* identified in v1.0.0
-- *Date:* 2026-07-18 (last re-measured 2026-08-20, issue #2145)
+- *Date:* 2026-07-18 (last re-measured 2026-08-20, issues #2145 and #2147)
 - *Status:* In Progress
 
 === Description
@@ -234,6 +234,140 @@ Wall-clock is therefore just over the < 10 min target rather than under it, and 
 Strategic (larger change, defer until justified):
 
 - *Move end-to-end tests off the per-PR critical path:* Keep build, unit, architecture, and integration tests on every pull request (fast and deterministic) and run the full `VisualTests` suite on a merge queue or nightly schedule instead of every push. This is the largest feedback-time win and best fits the Maintainability goal, at the cost of slightly later end-to-end signal.
+- *Rebalance the test pyramid (issue #2148):* Move the bulk of the `VisualTests` suite down into `IntegrationTests` and `Application.UnitTests`, keeping end-to-end coverage only for what genuinely needs a browser. 542 end-to-end tests is roughly 24 % of the whole suite sitting in the slowest and most fragile layer, and sharding only divides that cost rather than removing it. The risk is deleting real coverage along with redundant coverage, which is why the guardrail below had to be recorded first.
++
+[NOTE]
+====
+*Mutation-score baseline recorded (issue #2147, 2026-08-20).* Deliberately scoped to producing the number: no test changes, no threshold gate.
+
+*Why this and not line coverage.* Line coverage cannot answer the question #2148 raises. A redundant end-to-end test and a load-bearing one look identical to it: delete either, and the lines they touched are still executed by something else, so the percentage barely moves. Mutation testing gives a falsifiable condition instead - record the score now, re-run it after each migration wave, and *if the score does not drop, the coverage that was removed was redundant.* Without a recorded number first, #2148 is unfalsifiable and should not start.
+
+*What was measured.* Stryker.NET 4.16.0 mutating `backend/src/Domain` and `backend/src/Application`, one run per source project, both driven by `Application.UnitTests` (1017 tests, no Docker). .NET SDK 10.0.400, `mutation-level: Standard`, `concurrency: 1` (see "The concurrency trap" below), on a 4-vCPU machine. Measured at commit `c4a143b` (`ci: shard visual-tests across four runners and cut fixed waits (#2146)`). The configuration is checked in at `backend/tests/Application.UnitTests/stryker-config.json`, so the run is reproducible by anyone.
+
+.Mutation-score baseline, commit `c4a143b`, Stryker.NET 4.16.0, concurrency 1
+[cols="2,1,1,1,1,1,1,1" options="header"]
+|===
+|Project |Generated |Scored |Killed |Survived |No coverage |Score |Wall-clock
+
+|`Domain`
+|872
+|764
+|510
+|173
+|81
+|*66.75 %*
+|3 min 58 s
+
+|`Application`
+|1818
+|1466
+|1004
+|343
+|119
+|*68.49 %*
+|7 min 42 s
+
+|*Combined*
+|2690
+|2230
+|1514
+|516
+|200
+|*67.89 %*
+|11 min 40 s
+|===
+
+"Generated" minus "scored" is 460 mutants Stryker excludes from the score itself: 333 ignored (blocks already covered), 126 that did not compile, 1 runtime error. The score is `(killed + timeout) / (killed + timeout + survived + no coverage)`; there was exactly one timeout across both runs.
+
+*The concurrency trap - the most important finding here, because it decides whether the number is usable at all.* The first pass ran at Stryker's suggested `concurrency: 2` and produced 71.60 % / 73.47 %. Repeating it at the same commit produced 70.68 % / 72.85 %. The mutant *sets* were identical both times, but individual verdicts churned: 47 of 872 Domain mutants and 99 of 1818 Application mutants changed status between two runs of unchanged code. Disabling Stryker's `bail` and `mix-mutants` optimisations did not help (34 flips remained, at no cost in runtime), which ruled out mutant batching as the cause.
+
+Dropping to `concurrency: 1` did. Two runs per project at concurrency 1 were *bit-for-bit identical* - zero flips out of 872 and out of 1818. Comparing the concurrency-2 runs against that deterministic baseline shows the error is one-directional:
+
+[cols="3,1,1" options="header"]
+|===
+|Run |Kills concurrency 1 does not report |Kills concurrency 1 reports that it misses
+
+|`Domain`, four separate concurrency-2 runs
+|+37 / +30 / +40 / +38
+|0 / 0 / 0 / 0
+
+|`Application`, two separate concurrency-2 runs
+|+73 / +64
+|0 / 0
+|===
+
+Every parallel run invents kills and never loses one, and it invents a *different* set each time: across the four Domain runs the four spurious sets intersected in exactly zero mutants (75 distinct mutants were spuriously killed at least once). So concurrency inflates the score by roughly 5 points and jitters it by roughly 1. Stryker's Microsoft.Testing.Platform runner is marked preview and warns as much on every run; this looks like its per-mutant attribution losing track of which test host reported which failure. *`concurrency: 1` is therefore load-bearing, not a performance setting* - the whole value of this number is that a movement in it means something, and at concurrency 2 a 1-point drop is indistinguishable from running the tool twice.
+
+*Wall-clock: cheap enough to run per migration wave.* 11 min 40 s for both projects sequentially, and the two projects are independent, so `.github/workflows/mutation-tests.yml` runs them as a matrix on separate runners - CI wall-clock is the longer leg (~8 min) plus job setup, not the sum. That is affordable several times per wave. It is still ~150x the `fast-tests` job whose 1017 tests it reuses (3 s), which is why it stays off the per-PR path.
+
+*Decided: it runs in CI, but manually and report-only.* `mutation-tests.yml` is `workflow_dispatch` only, so it is never a required check and cannot block a merge, and `thresholds.break` is pinned to `0` so a low score exits 0 regardless. Same posture as the report-only coverage summary added to `fast-tests` in #1327: visibility is the point. *Do not add a break threshold* - a number whose whole purpose is to be free to move cannot double as a gate.
+
+*What 67.89 % is actually made of,* because the headline is misleading read alone:
+
+[cols="3,1,3" options="header"]
+|===
+|Slice |Score |What it says
+
+|Headline (everything scored)
+|67.89 %
+|The number to track across #2148's waves. Compare like with like: only against another concurrency-1 run of Stryker 4.16.0.
+
+|Excluding the string mutator
+|81.13 %
+|330 of the 516 survivors (64 %) are string-literal mutations. Nothing else is close - statement removal is 10.9 %, equality 8.3 %, and every remaining mutator is under 6 %.
+
+|Covered code only
+|74.58 %
+|Drops the 200 mutants no unit test reaches at all. That is a coverage gap rather than a test-quality one, and much of it is `Api`/`Infrastructure`-facing plumbing that `IntegrationTests` exercises instead.
+
+|Both adjustments
+|86.86 %
+|Mutants that are both reachable and not a bare string swap are killed at roughly 87 %.
+|===
+
+Domain and Application land within two points of each other on every one of those four slices (66.75/68.49, 80.39/81.52, 74.67/74.54, 85.89/87.37), which is a good sign the number measures a property of the test suite rather than of one layer.
+
+*The string survivors are not noise, and this is the single most actionable thing the run surfaced.* Splitting the string-literal mutants by what the literal actually is:
+
+[cols="3,1,1,1,1" options="header"]
+|===
+|Literal kind |Killed |Survived |No coverage |Kill rate
+
+|`Error` code (`"Engagement.NotPending"`)
+|6
+|174
+|44
+|*3 %*
+
+|Prose description (`"Only pending engagements can be confirmed."`)
+|132
+|84
+|51
+|49 %
+
+|Other short literals
+|146
+|72
+|5
+|65 %
+|===
+
+Error codes are essentially unasserted: 6 kills out of 224. The cause is `ResultFailureException(Error error) : Exception(error.Description)` - assertions written as `ThrowAsync<ResultFailureException>().WithMessage("*not found*")` pin the human-readable prose and leave `Error.Code` untouched, even though `Error.Code` is what `ResultFailureExceptionHandler` puts on the wire as `errorCode` and what the frontend branches on. The contract that can be reworded freely is tested; the contract that cannot be changed without breaking clients is not. Those 174 survivors are 34 % of every survivor in both projects, so closing that one pattern alone would move the combined score from 67.9 % to roughly 75.7 %. Out of scope for #2147 (no test changes), worth its own issue.
+
+*How to read the number, and what a "good" score here would be.* Stryker's own built-in thresholds (high 80, low 60) are generic defaults, and a single global target is the wrong instrument for this codebase - 64 % of the surviving mutants are string swaps, whose kill rate says more about assertion style than about test quality. Useful expectations, in the order they should be reached for:
+
+. *For #2148, the only threshold that matters is "did it drop".* The run is deterministic, so any drop at all is real. Treat a drop of more than ~0.5 points (~11 mutants) after a migration wave as coverage that was actually load-bearing, and go find which mutants stopped dying - the JSON report names them. A wave that holds the score flat has proven its case.
+. *As a standing target, 75 % combined is the realistic next rung* and is reachable without writing a single new test scenario - it is what asserting `Error.Code` instead of (or alongside) exception message text would produce on its own.
+. *Above that, judge the adjusted slices, not the headline.* "Reachable, non-string" mutants are already killed at 87 %, which is genuinely healthy; the headline is held down by literal mutations and by unreachable code, and neither is fixed by writing more of the same tests.
+. *80 % headline is a reasonable long-run ambition and a bad short-run gate.* Getting there means both fixing the error-code assertions and covering the 200 currently unreachable mutants, most of which belong to `IntegrationTests`' territory rather than to the unit suite.
+
+*Caveats on the number.*
+
+- Stryker's Microsoft.Testing.Platform runner is preview and prints a warning saying so on every run. It is not optional here: TUnit has no VSTest adapter, so Stryker's default VSTest runner discovers zero tests and reports a vacuous pass rather than an error. `test-runner: mtp` is pinned in the config for that reason, and the concurrency finding above is a concrete symptom of the runner's preview status.
+- The Stryker version is pinned (4.16.0) in the workflow and in the documented local command. A different version can add or drop mutators, which changes the denominator and makes the score incomparable with this baseline. Bumping it means re-recording this table.
+- `Application.UnitTests.csproj` gained a direct `ProjectReference` to `Domain.csproj`. It is redundant to the compiler (Application already pulls Domain in) and exists only because Stryker resolves the project it mutates from the test project's *direct* reference list; without it the Domain half cannot run at all.
+- Wall-clock was measured on a 4-vCPU sandbox, not a GitHub runner. Same core count as `ubuntu-latest`, so it should transfer, but treat it as an estimate until `mutation-tests.yml` has run for real.
+====
 - *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
 
 === Consequences of Delay

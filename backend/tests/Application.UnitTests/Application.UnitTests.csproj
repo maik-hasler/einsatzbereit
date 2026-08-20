@@ -15,6 +15,15 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Application\Application.csproj" />
+		<!--
+			Domain already arrives transitively through Application, so this reference adds
+			nothing to the compilation. It is here because Stryker.NET resolves the project it
+			mutates (its `project` option) from the *direct* ProjectReference list of the test
+			project that drives it. A transitively referenced project is invisible to that
+			lookup and fails with "Could not find an assembly reference to a mutable assembly",
+			so without this line the Domain half of the mutation run cannot start at all.
+		-->
+		<ProjectReference Include="..\..\src\Domain\Domain.csproj" />
 	</ItemGroup>
 
 </Project>

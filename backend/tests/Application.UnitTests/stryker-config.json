@@ -1,0 +1,8 @@
+{
+  "stryker-config": {
+    "test-runner": "mtp",
+    "reporters": ["json", "html"],
+    "concurrency": 1,
+    "thresholds": { "high": 80, "low": 60, "break": 0 }
+  }
+}
