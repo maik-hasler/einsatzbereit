@@ -97,3 +97,74 @@ describe("ProfileOverviewPage save feedback", () => {
 		);
 	});
 });
+
+/**
+ * The stat-tile half of `AchievementCopyTests`, moved down from `VisualTests`
+ * in #2148 wave 7. The E2E version seeded a login streak and a confirmed
+ * engagement through the API purely to make these two tiles render at all -
+ * both are gated on a non-zero count, which is a mocked response here.
+ */
+describe("ProfileOverviewPage streak stat tiles (German)", () => {
+	const renderWithStreaks = (streaks: {
+		loginStreak: number;
+		activityStreak: number;
+	}) => {
+		api.getMyStreaks.mockResolvedValue({
+			...streaks,
+			confirmedEngagements: 0,
+		});
+		return renderWithProviders(<ProfileOverviewPage />, {
+			lng: "de",
+			auth: { isAuthenticated: true },
+		});
+	};
+
+	it("gives the activity-streak tile a week unit instead of a bare number", async () => {
+		// The bug: the label was the unit-less "Aktivitaetsserie", so the tile
+		// read as a bare "1" with nothing saying one day, week or shift.
+		// UserStreak.ActivityStreak counts consecutive ISO weeks.
+		renderWithStreaks({ loginStreak: 0, activityStreak: 1 });
+
+		const tile = await screen.findByTestId("profile-stat-streak");
+		expect(tile).toHaveTextContent("Woche in Serie");
+		expect(tile).not.toHaveTextContent("Aktivitätsserie");
+	});
+
+	it("inflects the activity-streak unit for a count above one", async () => {
+		// The E2E version could not assert this: every confirmation in one test
+		// session lands in the same ISO week, so it only ever observed the _one
+		// form and had to branch on whatever rendered.
+		renderWithStreaks({ loginStreak: 0, activityStreak: 3 });
+
+		expect(await screen.findByTestId("profile-stat-streak")).toHaveTextContent(
+			"Wochen in Serie",
+		);
+	});
+
+	it("names each streak's own badge so the two tiles read as distinct", async () => {
+		// #1935: with both stats correctly labelled, the week-streak tile
+		// ("X Wochen in Serie") and the day-streak tile ("Y Tage in Folge
+		// angemeldet") still sat side by side reading as near-synonyms with
+		// different units. Each now names the badge it backs. Cross-check that
+		// neither carries the other's name - that mismatch is the reported
+		// confusion, and asserting only that each carries its own would miss it.
+		renderWithStreaks({ loginStreak: 2, activityStreak: 1 });
+
+		const streakTile = await screen.findByTestId("profile-stat-streak");
+		const loginTile = await screen.findByTestId("profile-stat-login-streak");
+
+		expect(streakTile).toHaveTextContent("Wochenheld");
+		expect(streakTile).not.toHaveTextContent("Anmeldeserie");
+		expect(loginTile).toHaveTextContent("Tage in Folge angemeldet");
+		expect(loginTile).toHaveTextContent("Anmeldeserie");
+		expect(loginTile).not.toHaveTextContent("Wochenheld");
+	});
+
+	it("inflects the login-streak unit for a single day", async () => {
+		renderWithStreaks({ loginStreak: 1, activityStreak: 0 });
+
+		const loginTile = await screen.findByTestId("profile-stat-login-streak");
+		expect(loginTile).toHaveTextContent("Tag in Folge angemeldet");
+		expect(loginTile).not.toHaveTextContent("Login-Serie");
+	});
+});
