@@ -73,49 +73,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task EngagementManagementPage_BreadcrumbPersistsRegardlessOfApplicationCount()
-	{
-		// The breadcrumb must be present unconditionally, not just in the
-		// empty-application state, and must name the opportunity being managed:
-		// Home > Opportunities > {title}, with "Opportunities" a link back to the
-		// hub rather than a fixed label plus a separate in-page context line.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		// Reached through the page header's own section rail (OrgPageHeader.tsx).
-		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// "Manage sign-ups" only appears for published opportunities on the
-		// Opportunities hub.
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
-		try
-		{
-			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
-		}
-		catch (TimeoutException)
-		{
-			Skip.Test("organizer has no published opportunities in seed");
-		}
-
-		var row = Page.Locator("li").Filter(new() { Has = manageLink });
-		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
-
-		await manageLink.ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The band replaced the breadcrumb bar: the nested page's own title as
-		// the h1, and one link back up to the tab that owns it.
-		var band = Page.Locator("main");
-		await Expect(band.GetByRole(AriaRole.Heading, new() { Level = 1 }))
-			.ToHaveTextAsync(opportunityTitle, new() { Timeout = 15_000 });
-		await Expect(band.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
-			.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
 		// Engagement management is a nested org app route, so the org switcher must

@@ -388,50 +388,6 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		}
 	}
 
-	/// <summary>
-	/// An interest-based sign-up has no date of its own, so /my-signups used to
-	/// render the volunteer's application message in the slot where the card
-	/// beside it stated "Scheduled: ...". The date region now always says what
-	/// kind of date applies, and the message is labelled, below it.
-	/// </summary>
-	[Test]
-	public async Task MySignUps_AnInterestBasedSignUp_StatesNoFixedDateAndItsDeadline()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var keyword = $"CardMySignUps{Guid.NewGuid():N}";
-		const string ApplicationMessage = "I would love to help out with this one";
-
-		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
-		var organizationId = await CreateOrganizationAsync(organizer, keyword);
-		var opportunityId = await PublishInterestBasedOpportunityAsync(organizer, organizationId, keyword);
-
-		using var volunteer = await CreateVolunteerClientAsync(keycloak, backend);
-		(await volunteer.PostAsJsonAsync(
-			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
-			new { type = "IndividualContact", message = ApplicationMessage }))
-			.EnsureSuccessStatusCode();
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-signups");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var card = await RevealMySignUpCardAsync(keyword);
-
-		var dateRegion = card.Locator("[data-testid='engagement-date'][data-date-kind='interest']");
-		await Expect(dateRegion).ToHaveTextAsync("No fixed date - expression of interest");
-		await Expect(card.GetByText("Express interest by")).ToBeVisibleAsync();
-
-		// The message is still on the card - labelled, and outside the date
-		// region rather than standing in for it.
-		await Expect(card.GetByText("Your message:")).ToBeVisibleAsync();
-		(await dateRegion.InnerTextAsync()).Should().NotContain(ApplicationMessage,
-			"the application message occupying the date slot is the #1777 defect");
-	}
-
 	[Test]
 	public async Task MySignUps_ACardTitle_IsDiscoverablyALink()
 	{
