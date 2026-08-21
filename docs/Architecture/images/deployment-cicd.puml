@@ -6,14 +6,13 @@ actor "Developer" as dev
 participant "GitHub\n(main branch / tag)" as github
 participant "GitHub Actions" as ci
 participant "GitHub Container\nRegistry (GHCR)" as ghcr
-participant "Staging host\n(Docker Compose)" as staging
 
 == Quality Gate (every push to main / PR) ==
 
 dev -> github: Push commit or open PR
 github -> ci: Trigger workflows
-ci -> ci: Backend (dotnet.yml): format-check + fast-tests + integration-tests + visual-tests\nrun as 4 parallel jobs, no needs between them\n(integration-tests/visual-tests boot the Aspire stack)
-ci -> ci: Frontend (frontend.yml): lint + build
+ci -> ci: Backend (dotnet.yml): build, then format-check + fast-tests +\nintegration-tests + visual-tests in parallel\n(integration-tests/visual-tests boot the Aspire stack)
+ci -> ci: Frontend (frontend.yml): lint + test + build
 ci -> ci: Lint (lint.yml): ASCII dashes + EditorConfig
 
 == Docs (push to main, docs/** only) ==
@@ -21,7 +20,7 @@ ci -> ci: Lint (lint.yml): ASCII dashes + EditorConfig
 dev -> github: Push to main (docs/**)
 github -> ci: Trigger docs.yml
 ci -> ci: asciidoctor build (arc42 -> HTML5)
-ci -> github: Deploy docs to GitHub Pages
+ci -> github: Publish docs to GitHub Pages
 
 == Release (version tag push) ==
 
@@ -29,11 +28,11 @@ dev -> github: Push tag vX.Y.Z (or vX.Y.Z-rc.N)
 github -> ci: Trigger publish.yml
 ci -> ci: Run full test suite
 ci -> ghcr: Build + push backend, frontend, keycloak images\nghcr.io/maik-hasler/einsatzbereit-<component>
-ci -> staging: Deploy RC to staging (SSH: docker compose pull + up)\nhealth-gated, auto-rollback on failure
+ci -> github: Create GitHub Release with generated notes
 
 note over ci,ghcr
 	One tag (vX.Y.Z) releases all three components at the same version.
-	RC tags (-rc.N) publish images and deploy to staging without moving 'latest'.
+	RC tags (-rc.N) publish images without moving 'latest'.
 	See VERSIONING.md for the full strategy.
 end note
 

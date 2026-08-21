@@ -245,8 +245,7 @@ public class OrgSettingsFormActionsTests(AspireFixture fixture) : VisualTestBase
 
 	/// <summary>
 	/// The shared olaf account accumulates test debris across this suite's
-	/// session (see the root AGENTS.md note about live staging) - clean up
-	/// the organizations these tests create.
+	/// session - clean up the organizations these tests create.
 	/// </summary>
 	private async Task DeleteOrganizationAsync(Uri backend, string organizationId)
 	{

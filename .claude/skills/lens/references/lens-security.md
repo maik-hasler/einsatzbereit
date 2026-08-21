@@ -8,10 +8,10 @@ no exploit development, no attack payloads in the report.
 
 1. **Secrets in tracked files:** pattern scan the whole tree (`secret`,
    `token`, `apikey`, `password`, `-----BEGIN`, JWTs, connection
-   strings). Judge hits against context - keycloak realm exports and
-   docker-compose dev credentials are expected dev material (repo-map
-   trap 4); the finding, if any, is prod-reachability or docs failing to
-   say "dev only". Check git history of any real hit (a rotated secret
+   strings). Judge hits against context - the keycloak realm export's
+   dev credentials and `${...}` placeholders are expected material
+   (repo-map trap 4); the finding, if any, is a real literal secret or
+   docs failing to say "dev only". Check git history of any real hit (a rotated secret
    still in history is a finding).
 2. **Endpoint authorization sweep:** enumerate all Api endpoints;
    for each, the auth requirement (anonymous? authenticated? policy?).

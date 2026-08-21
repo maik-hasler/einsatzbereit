@@ -71,7 +71,7 @@ Low-weight prose check, not the rubric.
    step now):** claim-test README/CONTRIBUTING/`AGENTS.md` against
    source of truth - commands exist and are spelled right, prerequisite
    versions match `global.json`/`.csproj`/`package.json` engines, the
-   services/ports table matches AppHost and docker-compose, CONTRIBUTING's
+   services/ports table matches AppHost, CONTRIBUTING's
    described PR process matches what `pr-title.yml` and branch
    protection actually enforce, referenced agents/hooks/paths in
    `AGENTS.md` exist. Internal links resolve to existing files/anchors;

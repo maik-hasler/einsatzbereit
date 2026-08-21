@@ -26,15 +26,15 @@ behind them, not a repeat of any.
    `href="#"` used where a `<button>` belongs, focus not visibly returned
    after a modal closes, a stretched-link card whose secondary links
    aren't lifted above it with `z-10`.
-3. **Live pass - drive it, don't just read it.** Reuse `lens-personas.md`'s
-   browser session if run in the same pass. Tab through a form or modal
-   with the keyboard only: does focus order match visual order, is the
-   focused element ever invisible, does Escape close what it should,
-   does a skip-to-content path exist on pages with a lot of nav chrome.
-   Where the `playwright` plugin or a script is driving the page anyway,
-   inject `axe-core` and run it against a page/state the C# suite doesn't
-   cover (a specific modal, an edit-mode view, a widget dialog) as a
-   spot-check - treat a hit here as Confirmed, same bar as the CI suite.
+3. **Driven pass, where a browser is available - drive it, don't just
+   read it.** Tab through a form or modal with the keyboard only: does
+   focus order match visual order, is the focused element ever invisible,
+   does Escape close what it should, does a skip-to-content path exist on
+   pages with a lot of nav chrome. Where the `playwright` plugin is driving
+   the page anyway, inject `axe-core` and run it against a page/state the
+   C# suite doesn't cover (a specific modal, an edit-mode view, a widget
+   dialog) as a spot-check - treat a hit here as Confirmed, same bar as
+   the CI suite.
 4. **Color contrast on rendered output**, not just Tailwind class names -
    a class can look fine and still fail contrast depending on what it's
    layered on. Check text-on-image (banner overlays), disabled-state
@@ -51,11 +51,10 @@ behind them, not a repeat of any.
 ## Verification bar
 
 A finding names the exact component/page, the specific pattern violated,
-and how it was checked (static read, live keyboard drive, injected
-axe-core, or a rendered-contrast check) - state which, since the confidence
-bar differs. A claim that "a screen reader user would struggle" without
-having actually driven the flow by keyboard/live axe-core caps at
-Hypothesis.
+and how it was checked (static read, keyboard drive, injected axe-core, or
+a rendered-contrast check) - state which, since the confidence bar differs.
+A claim that "a screen reader user would struggle" without having actually
+driven the flow by keyboard/axe-core caps at Hypothesis.
 
 ## Traps
 

@@ -10,8 +10,8 @@ description: >
 
 # Self-review
 
-Required step before opening a PR (see root `AGENTS.md`, "Mandatory: Deploy
-and verify"). Report only - never silently fix findings, surface them.
+Run this before opening a PR. Report only - never silently fix findings,
+surface them.
 
 ## Scope
 

@@ -60,8 +60,8 @@ const STATIC_LINKS: readonly StaticNavLink[] = [
  * - The desktop nav has no room for a fifth label. It renders from `lg`
  *   (1024px) up and no narrower, because the German labels do not fit a
  *   tablet-width row at all (#1793/#1811 - see DesktopHeader's own note), and
- *   1024px is therefore the tightest fit it ever has to survive: measured on
- *   live staging, a signed-in viewer has ~163px of slack there, while this
+ *   1024px is therefore the tightest fit it ever has to survive: measured in a
+ *   real browser, a signed-in viewer has ~163px of slack there, while this
  *   entry costs ~210px. Added as a fifth label it would overflow the row;
  *   swapping the slot leaves ~90px spare, since it only has to pay the
  *   difference against the ~137px label it replaces.

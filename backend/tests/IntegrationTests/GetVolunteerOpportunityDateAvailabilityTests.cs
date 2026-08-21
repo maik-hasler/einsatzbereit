@@ -279,7 +279,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	// Every anonymous request in this class gets its own X-Forwarded-For, the isolation
 	// OutputCachingTests.cs and RateLimitingTests.cs already use. Without it these reads
 	// join the single anonymous-IP bucket (60 req/60s - IntegrationTestFixture restores
-	// the production default on purpose) that the whole ~500-test suite shares, and what
+	// the real default on purpose) that the whole ~500-test suite shares, and what
 	// breaks is not these tests but whichever unrelated ones happen to run once the
 	// bucket is spent.
 	private EinsatzbereitApi CreateAnonymousClient(string clientIp)

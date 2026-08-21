@@ -1,0 +1,37 @@
+@startuml Deployed Runtime
+
+!include <C4/C4_Deployment>
+
+title Deployment View - Deployed Runtime
+
+Deployment_Node(runtime, "Container runtime", "Released images, configured via environment variables at container start") {
+
+	Deployment_Node(fe_node, "frontend", "einsatzbereit-frontend image") {
+		Container(fe, "Single Page Application", "static assets served by nginx")
+	}
+
+	Deployment_Node(be_node, "backend", "einsatzbereit-backend image") {
+		Container(be, "Backend API", "ASP.NET Core (.NET 10)")
+	}
+
+	Deployment_Node(kc_node, "keycloak", "einsatzbereit-keycloak image") {
+		Container(kc, "Identity Provider", "Keycloak, committed realm and theme")
+	}
+
+	Deployment_Node(pg_node, "postgres", "postgres:18") {
+		ContainerDb(pg, "Application Database", "einsatzbereit + keycloak databases, internal only")
+	}
+}
+
+System_Ext(objectstore, "Object storage", "S3-compatible: logos, avatars, banners")
+System_Ext(smtp, "SMTP relay", "Outbound notification and reminder email")
+
+Rel(fe, be, "REST API", "HTTPS / JSON, JWT Bearer")
+Rel(fe, kc, "OIDC", "Authorization Code Flow + PKCE")
+Rel(be, pg, "SQL / EF Core")
+Rel(be, kc, "JWKS + Admin API")
+Rel(be, objectstore, "S3 API")
+Rel(be, smtp, "SMTP")
+Rel(kc, pg, "Realm data")
+
+@enduml

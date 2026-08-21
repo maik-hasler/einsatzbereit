@@ -1,34 +1,31 @@
 ---
 name: lens
 description: >
-  Deep, single-lens review of the einsatzbereit repository and its live
-  staging site (https://github.com/maik-hasler/einsatzbereit,
-  https://einsatzbereit.maik-hasler.de). Each run triages where review
-  effort is most valuable right now, then goes deep on exactly ONE lens -
-  bugs, dead code, dead features, repo hygiene, docs quality, test gaps, CI
-  health, security, contributor accessibility, live personas (Volunteer
-  Vera/Organizer Olaf/Platform Admin - functional friction and visual/
-  content quality together), accessibility, code/comment complexity, or
-  comment bloat - and files evidenced, ranked GitHub issues. Never writes
-  code, never opens a branch or PR. Use whenever asked to review the repo
-  or the live app, run the recurring routine, audit einsatzbereit, hunt
-  for dead code/bugs/UX gaps/accessibility issues/overly complex code,
-  huge or meaningless comments, simulate a user, or names any of the
+  Deep, single-lens review of the einsatzbereit repository
+  (https://github.com/maik-hasler/einsatzbereit). Each run triages where
+  review effort is most valuable right now, then goes deep on exactly ONE
+  lens - bugs, dead code, dead features, repo hygiene, docs quality, test
+  gaps, CI health, security, contributor accessibility, accessibility,
+  code/comment complexity, or comment bloat - and files evidenced, ranked
+  GitHub issues. Never writes code, never opens a branch or PR. Use
+  whenever asked to review the repo, run the recurring routine, audit
+  einsatzbereit, hunt for dead code/bugs/UX gaps/accessibility issues/
+  overly complex code, huge or meaningless comments, or names any of the
   lenses - even without the word "review".
 ---
 
 # Lens
 
-One repository (code and live site both), one lens, full depth, filed as
-issues. This skill exists because shallow "review everything" passes
+One repository, one lens, full depth, filed as issues. This skill exists
+because shallow "review everything" passes
 produce noise; it runs routinely, so incomplete coverage per run is fine -
 depth is the whole point, same as it always was.
 
 This skill replaces three earlier ones - `issue-triage`, `persona-simulation`,
 and `deep-lens-review` - that used to divide this work. Two problems with
-that split: the live-persona lens and the static lenses never shared what
-they learned (a design flaw found live and its root cause in source were
-two separate findings instead of one), and a recurring "implement whatever
+that split: the lenses never shared what they learned (a symptom and its
+root cause in source were two separate findings instead of one), and a
+recurring "implement whatever
 Survey picks" loop kept shipping fixes for things nobody had actually
 looked at end to end. This skill only ever looks and reports; implementing
 a fix is a separate, deliberate act a human or a later session decides to
@@ -41,8 +38,8 @@ take on a specific filed issue.
    investigate it. The temptation to chase interesting side-findings is
    the main failure mode of this skill.
 2. **Evidence or it didn't happen.** Every finding carries proof: the
-   exact location (file:line, or the live page/persona/network evidence
-   for the live lenses), plus the command/search/repro/screenshot that
+   exact location (file:line, or the page/network evidence where a browser
+   was driven), plus the command/search/repro/screenshot that
    demonstrates it. A dead-code claim without the exhaustive reference
    search, or a "this looks broken" claim without a screenshot and a
    retry-with-wait, is worthless - worse, it costs trust in the whole run.
@@ -52,12 +49,12 @@ take on a specific filed issue.
    here too: cap at 5 filed issues per run, prioritized by severity/impact;
    group related micro-findings into one issue with a table rather than
    filing one issue each.
-4. **Run live-driving lenses yourself, never delegate them.** MCP tool
+4. **Run browser-driving work yourself, never delegate it.** MCP tool
    grants (including the `playwright` plugin) do not propagate to a
    subagent spawned via the `Agent` tool - confirmed the hard way, a
    subagent asked to drive a browser had none of the tools it needed and
-   came back empty-handed. `lens-personas.md` and `lens-accessibility.md`'s
-   live pass both drive the live app; do that in the current session
+   came back empty-handed. `lens-accessibility.md`'s driven pass is the
+   only lens that needs a browser; do that in the current session
    directly.
 
 ## Environment capabilities - probe, don't assume
@@ -75,12 +72,10 @@ probe them first and set the verification bar accordingly:
 - **Frontend toolchain:** npm registry is usually reachable everywhere.
   `npm i -g pnpm`, `pnpm install`, then real tooling: `pnpm check`,
   `pnpm lint`, `npx knip`.
-- **Live browser access:** required for `lens-personas.md` and
-  `lens-accessibility.md`'s live pass. `ToolSearch` for `browser_navigate`
-  (the `playwright` plugin); if nothing resolves, fall back to the
-  `/live-verify` skill's scratch-script recipe. If neither is available at
-  all, these two lenses cannot run this session - say so in triage and
-  exclude them from scoring rather than attempting a code-only substitute.
+- **Browser access:** optional, and only for `lens-accessibility.md`'s
+  keyboard/axe-core spot-check against a locally served page. `ToolSearch`
+  for `browser_navigate` (the `playwright` plugin); if nothing resolves,
+  run that lens statically and cap behavioral claims at Likely.
 - **GitHub API:** `search_issues`/`issue_write` for dedup and filing;
   unauthenticated `https://api.github.com/repos/maik-hasler/einsatzbereit/...`
   for Actions run durations and outcomes if authenticated tools aren't
@@ -96,7 +91,7 @@ it and raise the confidence bar.
 ### Step 0 - Lens named by the user?
 
 If the user names a lens (or something that clearly maps to one, e.g.
-"simulate a user" -> personas, "check contrast" -> accessibility, "find
+"check contrast" -> accessibility, "find
 overly clever code" -> complexity, "comments are too long/AI writes huge
 comments" -> comment-bloat), skip triage and go to Step 2. If they
 reference the previous run ("last time was CI"), exclude that lens from
@@ -132,12 +127,11 @@ lens; it is not the review. Do not start investigating findings here.
 | a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes; list `frontend/src/**/*.a11y.test.tsx`, diff against `frontend/src/components/` | accessibility |
 | Comment hedge scan | grep `careful\|hack\|workaround\|don't\|must\|NOTE\|WARNING` density across `backend/src`, `frontend/src` | complexity |
 | Comment density outliers | rough comment-line-to-code-line ratio per file (`grep -c '^\s*//\|^\s*\*\|^\s*///'` vs `wc -l`) on the churn-hotspot files from the churn probe; eyeball the 5 highest-ratio files | comment-bloat |
-| Days since last live pass | check recent closed/open issues labeled `lens` for a personas-lens finding's timestamp | personas |
 
 Score every lens 1-5 for **signal** (evidence something is off) and
 **impact** (cost if it stays unaddressed). Pick the highest product. On a
-tie, prefer whichever of bugs/security/personas scores highest - user-
-facing correctness and safety over polish. Record the full ranking - it
+tie, prefer whichever of bugs/security scores highest - user-facing
+correctness and safety over polish. Record the full ranking - it
 goes in the run's closing summary so future runs can steer.
 
 ### Step 2 - Load context, then the lens
@@ -158,8 +152,7 @@ Then read exactly one lens file:
 | CI health & performance | `references/lens-ci.md` | static |
 | Security smells | `references/lens-security.md` | static |
 | Contributor accessibility | `references/lens-contributor-dx.md` | static |
-| Personas | `references/lens-personas.md` | live - drives staging as Vera/Olaf/Admin; functional friction and visual/content quality together |
-| Accessibility | `references/lens-accessibility.md` | static + live |
+| Accessibility | `references/lens-accessibility.md` | static, with an optional keyboard/axe-core spot-check |
 | Code & comment complexity | `references/lens-complexity.md` | static |
 | Comment bloat & noise | `references/lens-comment-bloat.md` | static |
 
@@ -170,11 +163,11 @@ each candidate finding to one of these confidence levels before it may be
 filed:
 
 - **Confirmed** - executed proof: tool output, exhaustive search with
-  zero hits, a traced end-to-end repro narrative, or (for the live lenses)
-  a screenshot plus the specific evidence (network status, console error,
-  innerText comparison) - checked with the retry-with-wait discipline
+  zero hits, a traced end-to-end repro narrative, or (where a browser was
+  driven) a screenshot plus the specific evidence (network status, console
+  error, innerText comparison) - checked with the retry-with-wait discipline
   where "is this actually broken" is in question.
-- **Likely** - strong static cross-reference, or a live observation not
+- **Likely** - strong static cross-reference, or an observed symptom not
   yet root-caused in source; exactly one assumption you could not verify
   (name it in the evidence).
 - **Hypothesis** - plausible pattern; needs a human or a running system to
@@ -186,8 +179,8 @@ Severity rubric:
 
 - **Critical** - data loss, security exposure, or a broken main user flow.
 - **High** - user-visible defect, a maintainability landmine that will
-  bite the next contributor, or a live persona genuinely blocked from
-  their role's task.
+  bite the next contributor, or a user genuinely blocked from their
+  role's task.
 - **Medium** - quality erosion, an inconsistency next to clearly better
   work nearby, or complexity that will bite eventually; wrong but
   contained.
@@ -238,8 +231,7 @@ location - the 5-issue cap counts substantive findings, not individual
 occurrences.
 
 End every run with a short closing summary in chat (not a file): the lens
-chosen and why, what was exercised (which flows/personas for live lenses,
-which slice for static ones), how many issues were filed vs. deduped away,
+chosen and why, which slice was exercised, how many issues were filed vs. deduped away,
 and the parking lot. That summary is the entire visible output of a run
 that filed nothing - a clean pass is a fine, common outcome, not a failure
 to find something.

@@ -79,7 +79,7 @@ Role-based access control is enforced at the API endpoint level using ASP.NET Co
 
 The `organisator` role in the JWT only proves the user organizes *some* organization, not which one. "Own organization" access is gated by a separate, local `organization_membership` table (`organization_id`, `user_id`, `role`), not by anything in the token. `OwnershipGuard.EnsureIsOrganizerAsync` checks this table on every org-modifying endpoint and returns `403 Forbidden` (`Organization.NotOrganizer`) when the requesting user has no membership row for that organization. There is no Keycloak fallback at request time - Keycloak is the source of truth for who organizes an organization, but the request-time guard only ever reads the local table.
 
-Membership rows are written when a user is added to an organization, and once at startup by an idempotent backfill that pulls existing organizer members from Keycloak for any organization that predates the table and has no membership rows yet. The backfill runs after migrations on every startup path (development and staging), so a fresh deploy against pre-existing data does not lock out its existing organizers.
+Membership rows are written when a user is added to an organization, and once at startup by an idempotent backfill that pulls existing organizer members from Keycloak for any organization that predates the table and has no membership rows yet. The backfill runs after migrations on every startup path, so starting against pre-existing data does not lock out its existing organizers.
 
 *Token handling in the frontend:*
 
@@ -115,7 +115,7 @@ All endpoints are rate-limited using ASP.NET Core's built-in rate limiter, with 
 Database schema changes are managed via EF Core migrations.
 
 * Migrations are stored under `backend/src/Infrastructure/Persistence/Migrations/`.
-* In Development the application applies pending migrations automatically on startup; in other environments it does so only when `Database:MigrateOnStartup` is enabled (staging sets this), otherwise the schema is applied out of band (`dotnet ef database update`).
+* In Development the application applies pending migrations automatically on startup; in other environments it does so only when `Database:MigrateOnStartup` is enabled, otherwise the schema is applied out of band (`dotnet ef database update`).
 * Migration files are committed to the repository alongside the code changes that require them.
 
 === API Versioning
@@ -155,7 +155,7 @@ Tests are organized by what they need to run, which is also how CI parallelizes 
 
 The backend uses the .NET built-in `ILogger<T>` abstraction. Every request runs inside a logging scope that enriches its entries with the OpenTelemetry trace ID and the authenticated user ID.
 
-Observability is built on OpenTelemetry (via the Aspire service defaults in `backend/src/Aspire/ServiceDefaults/`): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by Grafana Tempo in staging/production (ADR-6).
+Observability is built on OpenTelemetry (via the Aspire service defaults in `backend/src/Aspire/ServiceDefaults/`): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP, collected by the Aspire dashboard in development. Anywhere else, the exporter stays inert unless `OTEL_EXPORTER_OTLP_ENDPOINT` names a collector.
 
 Key logged events:
 
@@ -165,10 +165,6 @@ Key logged events:
 
 === Operations
 
-The infrastructure these concepts run on is described in <<section-deployment-view>>; this section covers the decisions behind it, which apply across services rather than to any one node.
-
-*Backup and recovery.* PostgreSQL is backed up daily with tiered retention (7 days / 4 weeks / 6 months); the object storage bucket is mirrored daily with a flat retention window. Both local backup outputs are then mirrored off-host to Hetzner Object Storage (#1087). Local backups alone guard only against accidental deletion or corruption; the offsite mirror is what covers loss of the host itself.
-
 *Data retention.* Read notifications are pruned relative to when they were read rather than when they were created, and abuse reports concerning a deleted account are pruned from the point that account was deleted (#1725). Both run as scheduled background jobs.
 
-*Deployment safety.* Deployments are health-gated on the backend's `/alive` and `/health` endpoints and roll back to the previous images on failure. Release-candidate and stable deploys share a concurrency group so they can never race against the same host.
+*Health endpoints.* The backend exposes `/alive` (process liveness) and `/health` (readiness, including its dependencies). Both are anonymous and rate-limited, and are what a container runtime polls to decide whether an instance is ready to serve traffic.

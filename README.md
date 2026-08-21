@@ -6,7 +6,7 @@
 
 *Volunteer spontaneously. Find your local cause.*
 
-[Live Demo](https://einsatzbereit.maik-hasler.de) - [Architecture Docs](https://maik-hasler.github.io/einsatzbereit/Architecture.html) - [Report Bug](https://github.com/maik-hasler/einsatzbereit/issues/new/choose) - [Request Feature](https://github.com/maik-hasler/einsatzbereit/issues/new/choose)
+[Architecture Docs](https://maik-hasler.github.io/einsatzbereit/Architecture.html) - [Report Bug](https://github.com/maik-hasler/einsatzbereit/issues/new/choose) - [Request Feature](https://github.com/maik-hasler/einsatzbereit/issues/new/choose)
 
 [![Backend CI](https://img.shields.io/github/actions/workflow/status/maik-hasler/einsatzbereit/dotnet.yml?label=backend%20CI)](https://github.com/maik-hasler/einsatzbereit/actions/workflows/dotnet.yml)
 [![Frontend CI](https://img.shields.io/github/actions/workflow/status/maik-hasler/einsatzbereit/frontend.yml?label=frontend%20CI)](https://github.com/maik-hasler/einsatzbereit/actions/workflows/frontend.yml)
@@ -21,7 +21,6 @@
 
 - [About](#about)
 - [Features](#features)
-- [Live Demo](#live-demo)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
@@ -62,15 +61,6 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 
 ---
 
-## Live Demo
-
-A live staging deployment runs at **[einsatzbereit.maik-hasler.de](https://einsatzbereit.maik-hasler.de)**.
-
-> [!NOTE]
-> This is a disposable staging/QA environment, not a hardened production deployment. It intentionally shares the same Keycloak realm as local dev, including the test-user credentials listed under [Getting Started](#getting-started). That is a deliberate trade-off for demo infrastructure, not an oversight - staging gets wiped and reseeded rather than treated as anything precious.
-
----
-
 ## Tech Stack
 
 | Layer | Tech |
@@ -80,9 +70,8 @@ A live staging deployment runs at **[einsatzbereit.maik-hasler.de](https://einsa
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4, react-oidc-context, Leaflet/react-leaflet |
 | API client | NSwag-generated TypeScript client from the backend OpenAPI spec - never hand-edited |
 | Object storage | MinIO (avatars, organization logos, opportunity banners) |
-| Observability | Grafana, Prometheus, Alertmanager, Tempo (distributed tracing) - self-hosted in the separate `mgmt-hetzner` repo, this app's containers opt in via Docker labels |
 | Tests | TUnit + Aspire.Hosting.Testing + Respawn + NetArchTest (Application.UnitTests, IntegrationTests, ArchitectureTests), Vitest (frontend pure-logic units), Playwright + axe-core (E2E and accessibility, `backend/tests/VisualTests`) |
-| CI/CD | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push; deploy to staging is a separate `mgmt-hetzner` repo, triggered by a dispatch event) |
+| CI | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push) |
 | Dependency updates | Renovate |
 
 ---
@@ -93,7 +82,7 @@ The full system architecture is documented in arc42 format and published at:
 
 **[maik-hasler.github.io/einsatzbereit/Architecture.html](https://maik-hasler.github.io/einsatzbereit/Architecture.html)**
 
-It is built from the AsciiDoc sources in `docs/Architecture/` via AsciiDoctor and redeployed to GitHub Pages on every push to `main` (`docs.yml`). Individual Architecture Decision Records live alongside it in `docs/ADRs/`.
+It is built from the AsciiDoc sources in `docs/Architecture/` via AsciiDoctor and republished to GitHub Pages on every push to `main` (`docs.yml`). Individual Architecture Decision Records live alongside it in `docs/ADRs/`.
 
 ---
 
@@ -132,8 +121,6 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 | olaf | olaf123 | user, organisator | Organizer Olaf | Browse and create opportunities |
 | admin | admin123 | admin | Administrator | Full administration |
 
-These same credentials are intentionally also live on the public [staging deployment](#live-demo) - see the note above.
-
 ---
 
 ## Project Structure
@@ -144,7 +131,7 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4
 ├── keycloak/       Custom Keycloak image + realm config
 ├── docs/           arc42 architecture docs + ADRs
-└── .github/        CI/CD workflows + issue templates
+└── .github/        CI workflows + issue templates
 ```
 
 ---

@@ -18,7 +18,7 @@ internal sealed class MinioFileStorageService : IFileStorageService
 	// with no policy change. Transparent to callers - GetPublicUrl already returns the
 	// full URL - but changing this value only affects future uploads; existing objects
 	// stay under the old prefix, which is acceptable on this repo's disposable,
-	// resettable staging environment (not worth a migration script pre-1.0).
+	// resettable demo environment (not worth a migration script pre-1.0).
 	private const string PublicPrefix = "public/";
 
 	private readonly IMinioClient _minio;
@@ -106,7 +106,7 @@ internal sealed class MinioFileStorageService : IFileStorageService
 
 	// BucketExistsAsync's own bool result only distinguishes "bucket present"
 	// from "bucket absent" - both are a reachable server and neither should fail
-	// a readiness probe on a fresh deployment before EnsureBucketReadyAsync has
+	// a readiness probe on a fresh environment before EnsureBucketReadyAsync has
 	// ever run. Unreachability (the thing the probe actually cares about) surfaces
 	// as a thrown exception instead, which callers are expected to catch.
 	public async Task PingAsync(CancellationToken cancellationToken = default) =>

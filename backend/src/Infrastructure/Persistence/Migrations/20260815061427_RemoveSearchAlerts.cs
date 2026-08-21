@@ -27,9 +27,9 @@ namespace Infrastructure.Persistence.Migrations
 				table: "volunteer_opportunity");
 
 			// The 'NewMatchingOpportunity' kind is being dropped from the check
-			// constraint below - any existing notification row of that kind (e.g. on
-			// shared staging, where the digest job has been live) would otherwise fail
-			// the narrower constraint's validation and abort this migration.
+			// constraint below - any existing notification row of that kind (on a
+			// database where the digest job has been live) would otherwise fail the
+			// narrower constraint's validation and abort this migration.
 			migrationBuilder.Sql("DELETE FROM notification WHERE kind = 'NewMatchingOpportunity';");
 
 			migrationBuilder.AddCheckConstraint(

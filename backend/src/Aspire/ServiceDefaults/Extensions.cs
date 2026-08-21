@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -26,7 +24,6 @@ public static class ServiceDefaultsExtensions
 	{
 		builder.ConfigureOpenTelemetry();
 		builder.AddDefaultHealthChecks();
-		builder.AddMetricsPortListener();
 
 		builder.Services.AddMetrics();
 		builder.Services.AddServiceDiscovery();
@@ -55,8 +52,7 @@ public static class ServiceDefaultsExtensions
 					.AddHttpClientInstrumentation()
 					.AddRuntimeInstrumentation()
 					.AddMeter(EmailMeterName)
-					.AddMeter(OutboxMeterName)
-					.AddPrometheusExporter();
+					.AddMeter(OutboxMeterName);
 			})
 			.WithTracing(tracing =>
 			{
@@ -70,6 +66,9 @@ public static class ServiceDefaultsExtensions
 		return builder;
 	}
 
+	// OTLP is the only export path. Local Aspire dev sets OTEL_EXPORTER_OTLP_ENDPOINT to
+	// the dashboard's own collector; anywhere the variable is unset the exporter is never
+	// registered and telemetry stays in-process.
 	private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
 	{
 		if (!string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
@@ -88,46 +87,11 @@ public static class ServiceDefaultsExtensions
 		return builder;
 	}
 
-	// Metrics:Port (Metrics__Port in docker-compose.yml) is unset everywhere except
-	// staging, where it points Kestrel at a second listener that only Prometheus's
-	// internal "monitoring" docker network can reach - never the Traefik-routed main
-	// port, so /metrics is never publicly exposed (#1341). Optional/unset elsewhere
-	// (local Aspire dev already gets live metrics via its own OTLP dashboard).
-	private static TBuilder AddMetricsPortListener<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
-	{
-		if (builder is WebApplicationBuilder webBuilder && TryGetMetricsPort(builder.Configuration, out var port))
-		{
-			// An explicit Kestrel Listen call replaces ASP.NET Core's default URL
-			// binding (ASPNETCORE_HTTP_PORTS, set to 8080 by the base container
-			// image) instead of adding to it - without re-adding it here, the app
-			// ends up listening only on the metrics port, unreachable to both
-			// Traefik and the docker-compose healthcheck even though the process
-			// itself is healthy. Caused a staging outage the first time this
-			// second listener shipped (Metrics:Port was previously never set, so
-			// this branch never ran outside staging).
-			var mainPort = int.TryParse(builder.Configuration["ASPNETCORE_HTTP_PORTS"], out var configuredPort)
-				? configuredPort
-				: 8080;
-
-			webBuilder.WebHost.ConfigureKestrel(options =>
-			{
-				options.ListenAnyIP(mainPort);
-				options.ListenAnyIP(port);
-			});
-		}
-
-		return builder;
-	}
-
-	private static bool TryGetMetricsPort(IConfiguration configuration, out int port) =>
-		int.TryParse(configuration["Metrics:Port"], out port);
-
 	// configureHealthEndpoint/configureAliveEndpoint let the Api layer (which owns
 	// RateLimitingPolicies/OutputCachingPolicies) opt these anonymous, unauthenticated
 	// endpoints into its rate limiting and output caching conventions without this
 	// shared project taking a reference back onto Api - ServiceDefaults is also
-	// referenced standalone (MetricsPortListenerTests.cs), where both stay null and
-	// behavior is unchanged (#1172).
+	// referenced standalone, where both stay null and behavior is unchanged (#1172).
 	public static WebApplication MapDefaultEndpoints(
 		this WebApplication app,
 		Action<IEndpointConventionBuilder>? configureHealthEndpoint = null,
@@ -144,31 +108,6 @@ public static class ServiceDefaultsExtensions
 
 		configureHealthEndpoint?.Invoke(healthEndpoint);
 		configureAliveEndpoint?.Invoke(aliveEndpoint);
-
-		if (TryGetMetricsPort(app.Configuration, out var metricsPort))
-		{
-			// Deliberately not RequireHost($"*:{port}") - that matches the
-			// client-supplied Host header, not which physical Kestrel listener
-			// accepted the connection, so a request that reaches the
-			// Traefik-routed main port (8080) with a forged
-			// "Host: anything:8081" header would satisfy it. Connection.LocalPort
-			// reflects the actual socket the OS accepted the connection on and
-			// can't be spoofed the same way - only a caller on the
-			// docker-compose "monitoring" network (Prometheus) can ever hit the
-			// AddMetricsPortListener listener directly (#1341).
-			app.Use(async (context, next) =>
-			{
-				if (context.Request.Path == "/metrics" && context.Connection.LocalPort != metricsPort)
-				{
-					context.Response.StatusCode = StatusCodes.Status404NotFound;
-					return;
-				}
-
-				await next(context);
-			});
-
-			app.MapPrometheusScrapingEndpoint();
-		}
 
 		return app;
 	}

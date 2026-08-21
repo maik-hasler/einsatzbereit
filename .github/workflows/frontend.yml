@@ -23,10 +23,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Fake example.test origins - this is the PR/push gate, run against
-  # untrusted branches with no access to real infrastructure. publish.yml
-  # calls the same reusable workflow with the real maik-hasler.de origins
-  # before a release goes out - see #1733.
+  # Fake example.test origins - the released frontend image resolves its real
+  # origins at container start, so this gate only needs well-formed ones.
+  # publish.yml calls the same reusable workflow before a release goes out,
+  # so the PR gate and the release gate cannot drift apart - see #1733.
   checks:
     uses: ./.github/workflows/frontend-checks.yml
     with:

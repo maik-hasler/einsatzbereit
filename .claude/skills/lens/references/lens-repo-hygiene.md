@@ -28,10 +28,10 @@ be, what is missing that should exist, what sits in the wrong place.
    only scripts dir now (root `scripts/` was removed wholesale, see trap
    below - don't flag its absence). Config files that belong closer to
    their consumer. Naming consistency of dirs (casing, singular/plural).
-6. **Config drift:** `.env.example` keys vs variables actually read in
-   code, docker-compose, AppHost, and workflows (repo-map trap 7 - search
-   both naming conventions). Ports/credentials consistent across
-   README table, docker-compose, and AppHost.
+6. **Config drift:** environment variables actually read in code vs. what
+   AppHost, the workflows and `keycloak/README.md` document (repo-map trap
+   7 - search both naming conventions). Ports/credentials consistent across
+   the README table and AppHost.
 
 ## Verification bar
 
@@ -43,8 +43,7 @@ the concrete confusion they cause.
 
 ## Traps
 
-`.claude/` is first-class content. docker-compose next to Aspire is not
-automatically redundant - find its consumer (CI? production?) before
-flagging. There is no root `package.json` anymore - live-verification
-Playwright scripts are scratch-only, installed ad hoc outside the repo;
-do not flag its absence as a gap.
+`.claude/` is first-class content. There is no root `package.json` and no
+root `scripts/` directory - do not flag their absence as a gap. Nothing in
+this repo deploys or hosts the app, so a missing compose file, deploy
+workflow or ops runbook is not a gap either.

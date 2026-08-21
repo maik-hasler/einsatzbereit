@@ -35,10 +35,10 @@ Measured from the GitHub Actions API over recent `main` and pull-request runs (J
 |0.7 - 4.2 min
 |docs-only path filter
 
-|`publish.yml` (full suite + image build/push + deploy-staging)
+|`publish.yml` (full suite + image build/push)
 |~11.7 min (pre-split)
 |on tag push only
-|same test suite plus Docker build and deploy - now split the same way as `dotnet.yml` (see note below), not yet re-measured
+|same test suite plus the Docker image build - now split the same way as `dotnet.yml` (see note below), not yet re-measured
 |===
 
 Within a representative `dotnet.yml` run, the `build-and-test` job (~10.3 min) breaks down as follows.
@@ -148,7 +148,7 @@ Structural (medium effort):
 - *Cost: $0.* Public repo, plain `ubuntu-latest`, nowhere near the ~20 concurrent-job cap.
 - *`VisualTests` login cost cut:* 78 of 117 tests only needed a login as setup. `AuthHelper.FastSignInAsync` mints a token directly (same mechanism `IntegrationTestFixture` already used) and seeds it into browser storage instead of driving the login UI. Two logins stay real on purpose - `JwtAudienceTests` and a new round-trip test in `AuthGuardTests` - so the actual login flow and the frontend/frontend-test mapper parity the fast path relies on stay under real coverage.
 - *First real run (2026-07-19, n=1):* `format-check` ~1 min, `fast-tests` ~1 min, `integration-tests` ~4 min, `visual-tests` ~6 min, all parallel → critical path ~6 min. Down from ~9.6 min, better than the ~8 min estimate above (that estimate predated the login-cost fix). Preliminary - re-measure at n=20+ before treating 6 min as the new baseline.
-- *`publish.yml` got the same split* (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests` → `publish-backend`), since this project cuts an RC per bug fix/feature (not just on releases), so it runs often enough to matter. `publish-backend` keeps its job id for `deploy-staging`'s reference, now just version-extract → GHCR login → build → push, gated on all three test jobs. Not yet observed on a real tag push.
+- *`publish.yml` got the same split* (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests` → `publish-backend`). `publish-backend` is now just version-extract → GHCR login → build → push, gated on all three test jobs. Not yet observed on a real tag push.
 ====
 +
 [NOTE]

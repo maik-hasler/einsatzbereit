@@ -229,5 +229,5 @@ The building block structure maps directly onto the directory structure, so no s
 Three parts of the repository sit outside that scheme and are named here so no shipped code is left unaccounted for:
 
 * `backend/src/Aspire/ServiceDefaults/` is compiled into the Backend API and belongs to the Shared Kernel. It contributes the OpenTelemetry, health-check and service-discovery defaults described in <<section-concepts>>.
-* `backend/src/Aspire/AppHost/` is local orchestration only and is never deployed - see <<section-deployment-view>>.
+* `backend/src/Aspire/AppHost/` is local orchestration only and is never part of a released image - see <<section-deployment-view>>.
 * `backend/tests/` and `frontend/` test files carry no building block of their own; they are covered by the testing approach in <<section-concepts>>.

@@ -10,7 +10,7 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/AGENTS.md
 ├── keycloak/       Custom Keycloak image + realm config  → keycloak/AGENTS.md
 ├── docs/           arc42 architecture docs + ADRs        → docs/AGENTS.md
-└── .github/        CI/CD workflows + issue templates     → .github/AGENTS.md
+└── .github/        CI workflows + issue templates        → .github/AGENTS.md
 ```
 
 ## Tech Stack (quick ref)
@@ -26,8 +26,6 @@ dotnet run --project backend/src/Aspire/AppHost
 ```
 
 Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend. URLs surface in the Aspire dashboard. See README.md's Services and Test users tables for the full list.
-
-These same test-user credentials are intentionally also live on the public staging deployment (`https://einsatzbereit.maik-hasler.de`) - staging bakes in the same Keycloak realm as local dev, on purpose, since staging is disposable demo/QA infrastructure rather than production (see the `README.md` Test Users note and `keycloak/AGENTS.md` for the full rationale). Full admin access via these credentials on staging is a known, accepted trade-off, not a vulnerability to report.
 
 ## Key Conventions
 
@@ -52,23 +50,19 @@ edit on your own initiative):
   agent file for why), `i18n-check` (`en.json`/`de.json` translation key
   parity - nothing else in CI checks this).
 - **Skills** - `.claude/skills/self-review/` (`/self-review`, its frontmatter
-  description covers what it does; required before opening a PR - see below).
+  description covers what it does; run it before opening a PR).
   `.claude/skills/lens/` is this repo's autonomous routine and on-demand
-  review tool: one lens per run - static repo audits (bugs, dead code, dead
-  features, repo hygiene, docs quality, test gaps, CI, security, contributor
-  accessibility) or live passes against staging as Vera/Olaf/Admin
-  (personas, accessibility), code/comment complexity, or comment bloat -
-  chosen by triage or named by the user. Report-only: files GitHub issues
-  (label `lens`, capped at 5/run), never code or a PR.
+  review tool: one lens per run - bugs, dead code, dead features, repo
+  hygiene, docs quality, test gaps, CI, security, contributor accessibility,
+  accessibility, code/comment complexity, or comment bloat - chosen by
+  triage or named by the user. Report-only: files GitHub issues (label
+  `lens`, capped at 5/run), never code or a PR.
   `.claude/skills/frontend-design/` (vendored from `anthropics/skills`,
   Apache-2.0, `LICENSE` alongside it) pushes frontend redesign work
   toward a deliberate, non-generic visual direction - typography, color
   theming, motion, spatial composition - instead of generic AI-layout
   defaults; load it before visual/layout changes to frontend components
-  or pages. `.claude/skills/live-verify/` (`/live-verify`) is step 5 of
-  "Mandatory: Deploy and verify" below - the throwaway live-staging
-  Playwright recipe (TLS launch args, Keycloak login) lives there, not
-  inlined in this file.
+  or pages.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
@@ -83,42 +77,18 @@ edit on your own initiative):
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus `csharp-lsp`,
   `typescript-lsp`, and `playwright` (live browser control) are enabled in
-  `.claude/settings.json`. `playwright` is for interactive poking around,
-  not a replacement for the live-verification script required below.
-  **MCP tool grants don't propagate to an `Agent`-tool subagent** - drive
-  live browser sessions (a `lens` live pass, a design review) in the
-  current session directly, never delegate them. Availability can also
-  vary turn-to-turn even in the main session - `ToolSearch` for
-  `browser_navigate` first; if nothing resolves, fall back to the
-  `/live-verify` skill's scratch-script recipe.
+  `.claude/settings.json`. **MCP tool grants don't propagate to an
+  `Agent`-tool subagent** - drive browser sessions (e.g. a design review)
+  in the current session directly, never delegate them. Availability can
+  also vary turn-to-turn even in the main session - `ToolSearch` for
+  `browser_navigate` first.
 
 ## Sandbox Limitations (Claude Code on the web)
 
-- **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Aspire), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
+- **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Aspire), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner.
 - **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
 - **This repo ships fast** - `git fetch origin main` and skim recent commits before any review/analysis task, not just implementation work; assuming last week's state is current wastes most of a review's effort re-finding what already shipped.
 
 ## Releases (autonomous from Claude Code on the web)
 
-Releases are driven by tags. The Claude Code on the web git proxy blocks tag pushes (working-branch only), so **do not** ask the user to `git push` a tag - push a `release/vX.Y.Z[-rc.N]` branch instead and let `.github/workflows/release-rc.yml` promote it. Full flow + the one-time `RELEASE_TOKEN` setup are documented in `.github/AGENTS.md` under "Cutting a release from Claude Code on the web".
-
-## Mandatory: Deploy and verify every bug fix / feature
-
-After every bug fix or feature implementation, **always** cut a release candidate and verify changes on the live staging environment before closing out the task. This is not optional - a fix that has not been observed working in production is not done.
-
-**Steps (must be followed in order):**
-
-1. Self-review the diff (`/self-review`) and fix anything it flags before opening the PR.
-2. Determine the next RC version: check existing tags (`mcp__github__list_tags`) and increment the RC counter (e.g. `v1.0.0-rc.8` -> `v1.0.0-rc.9`).
-3. Create the release branch **from the feature branch** (so the fix is included):
-   ```bash
-   git checkout -b release/vX.Y.Z-rc.N <feature-branch>
-   git commit --allow-empty -m "release: vX.Y.Z-rc.N"
-   git push -u origin release/vX.Y.Z-rc.N
-   ```
-4. `release-rc.yml` creates the tag; `publish.yml` builds images and pushes them to GHCR, then stops - this repo's own workflow never deploys (see `.github/AGENTS.md`). Monitor `publish.yml` via `mcp__github__pull_request_read get_check_runs` on the release commit until `publish-backend`/`publish-frontend`/`publish-keycloak` succeed, then trigger the deploy yourself: `mcp__github__actions_run_trigger` (`run_workflow`) on `maik-hasler/mgmt-hetzner`'s `deploy-einsatzbereit.yaml`, `ref: main`, `inputs: {version: "<X.Y.Z-rc.N without the leading v>", environment: "staging"}`. Monitor that run the same way in `mgmt-hetzner` - it succeeding is what "deploy-staging succeeded" means now, not `publish.yml` going green.
-5. Once mgmt-hetzner's `deploy-einsatzbereit.yaml` (`deploy-staging` job) reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - there is no committed `scripts/` directory or root `package.json` anymore) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
-6. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). Keycloak uses a single-step login (username + password on one form) in both places - locally and on staging, where mgmt-hetzner's `deploy-einsatzbereit.yaml` "Bind single-step Keycloak browser flow" step selects it - so `AuthHelper.LoginAsync` and the step 5 scratch script drive the same form. This is the durable, reviewable record of the fix; the scratch script from step 5 is not - it gets deleted once it has served its purpose.
-7. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
-
-Live staging accumulates test debris over time from the shared `vera`/`olaf`/`admin` accounts - prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` (manual, destructive confirmation gate) wipes and reseeds staging when it gets bad enough - know it exists rather than working around dirty data by hand, but don't trigger it without the repo owner's go-ahead.
+Releases are driven by tags. The Claude Code on the web git proxy blocks tag pushes (working-branch only), so **do not** ask the user to `git push` a tag - push a `release/vX.Y.Z[-rc.N]` branch instead and let `.github/workflows/release-rc.yml` promote it. Full flow + the one-time `RELEASE_TOKEN` setup are documented in `.github/AGENTS.md` under "Cutting a release from Claude Code on the web". A release ends at published GHCR images and a GitHub Release - nothing in this repository runs or hosts the app.

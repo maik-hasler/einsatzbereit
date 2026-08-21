@@ -19,14 +19,14 @@ maintainer, German-named but English-documented.
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
 | `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see glossary). |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
-| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#). Live-staging Playwright scripts are scratch-only now - no root `package.json`, no committed `scripts/`. |
+| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#), which drive the local Aspire stack - there is no root `package.json` and no committed `scripts/`. |
 | `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. Vitest unit-test suite (see `frontend/AGENTS.md`'s Unit Tests section) is a CI-gating quality gate alongside `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
-| `.github/workflows` | 9 workflows; `publish.yml` alone is ~500 lines. |
+| `.github/workflows` | 10 workflows; `publish.yml` alone is ~500 lines. |
 | `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
-| `docker-compose.yml`, `.env.example`, `renovate.json` | Ops/dev support. docker-compose coexists with Aspire - do not assume one makes the other dead without checking who consumes which. |
+| `renovate.json` | Dependency-update config. |
 
 ## False-positive traps
 
@@ -48,8 +48,8 @@ codebases.
    dead code, never hygiene violations, regardless of age.
 4. **Keycloak artifacts.** FTL themes and realm JSON are consumed by
    Keycloak at runtime; no application code references them. Realm JSON
-   *may* legitimately contain non-production credentials - judge against
-   dev-vs-prod context before calling it a leak.
+   *may* legitimately contain dev-only credentials and `${...}` placeholders
+   resolved at container start - judge against that before calling it a leak.
 5. **Locale keys.** `t("...")` calls can build keys dynamically. Before
    flagging an unused key, search for its prefix segments too, and run
    `node frontend/scripts/check-i18n-keys.js` - the repo's own checker
@@ -57,10 +57,11 @@ codebases.
 6. **String-based wiring.** Aspire service names, route strings, policy
    names, and workflow `needs:` references connect things via strings.
    Rename/removal findings must trace string usage, not just symbols.
-7. **`.env.example`** documents variables; code reading them lives behind
-   configuration abstractions (`IConfiguration`, `import.meta.env`).
-   Search both naming conventions (SCREAMING_SNAKE and colon-nested)
-   before claiming a variable is unread.
+7. **Environment variables** are documented in `keycloak/README.md` and
+   `frontend/AGENTS.md`; code reading them lives behind configuration
+   abstractions (`IConfiguration`, `import.meta.env`). Search both naming
+   conventions (SCREAMING_SNAKE and colon-nested) before claiming a
+   variable is unread.
 
 ## Tooling quick reference
 

@@ -1,7 +1,6 @@
 #!/bin/sh
 # Substitutes runtime env vars into config.js and the nginx CSP header at
-# container start, so a single image can be deployed to any environment
-# (build once, deploy anywhere).
+# container start, so a single image runs anywhere without a rebuild.
 set -eu
 
 config="/usr/share/nginx/html/config.js"
@@ -17,9 +16,9 @@ fi
 
 # The Content-Security-Policy's connect-src/frame-src need the backend API
 # and Keycloak origins (scheme+host, no path), derived from the same env vars
-# as config.js above rather than hardcoded, so a fork or a second deployment
-# target isn't silently locked to this repo's staging domains. img-src
-# additionally needs the MinIO storage origin (STORAGE_PUBLIC_URL, matching
+# as config.js above rather than hardcoded, so whoever runs this image is not
+# silently locked to somebody else's origins. img-src additionally needs the
+# MinIO storage origin (STORAGE_PUBLIC_URL, matching
 # the backend's Storage__PublicEndpoint) since uploaded org logos/opportunity
 # banners/avatars are served from there, not from the API origin.
 : "${VITE_API_URL:=http://localhost:5000}"

@@ -7,5 +7,4 @@ dist
 .git
 .vscode
 Dockerfile*
-docker-compose*
 README.md

@@ -32,21 +32,22 @@ var keycloakRealmPath = Path.GetFullPath(
 var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
-// The committed realm keeps production security settings; some break the local
-// Aspire + Playwright flow. Write a dev-only copy with these relaxations and import
-// that. Production never runs this AppHost - it uses the baked image + committed realm.
+// The committed realm keeps the strict settings the released image ships with; some
+// break the local Aspire + Playwright flow. Write a dev-only copy with these
+// relaxations and import that. Only local dev and the test suites run this AppHost -
+// the released Keycloak image bakes in the committed realm as-is.
 //  - webOrigins: Aspire serves the frontend on a dynamic http://localhost:<port>
 //    origin that no fixed webOrigins entry matches (Keycloak webOrigins are exact CORS
 //    origins, not port wildcards), so the browser OIDC token exchange is CORS-blocked.
 //    Allow all origins for the public frontend client.
 //  - redirectUris / post.logout.redirect.uris: same dynamic-port problem as webOrigins
-//    above. The committed realm only lists the production callback (#1190 removed the
-//    "http://localhost:*" wildcard from the deployed realm to keep it out of
-//    production) - add it back here, local dev only.
+//    above. The committed realm only lists the callback its own environment supplies
+//    (#1190 removed the "http://localhost:*" wildcard from the committed realm to keep
+//    it out of the released image) - add it back here, local dev only.
 //  - bruteForceProtected: the parallel VisualTests log in concurrently as the shared
 //    seed users, which trips brute-force protection and gets rejected. Disable it.
 //  - frontend-test's "enabled": the committed realm ships it disabled (#1167 - a
-//    public ROPC-enabled client in the same realm baked into the staging/production
+//    public ROPC-enabled client in the same realm baked into the released
 //    image turns credential stuffing into a single scriptable token request, no
 //    browser or PKCE needed). IntegrationTestFixture.GetAccessTokenAsync and
 //    AspireFixture.SignInAsync both need it live to mint tokens for the test suites,
@@ -93,9 +94,9 @@ localRealm["accessTokenLifespan"] = 3600;
 
 // Local dev never has a real SMTP relay - point straight at the Mailpit
 // container by literal value instead of relying on Keycloak's "${VAR}"
-// realm-import substitution (which the committed realm now uses for
-// staging/production - see docker-compose.yml's keycloak service). Same
-// literal-override approach as the "backend" client secret above.
+// realm-import substitution (which the committed realm uses so the released
+// image can be pointed at a real relay). Same literal-override approach as
+// the "backend" client secret above.
 localRealm["smtpServer"] = new JsonObject
 {
 	["host"] = "mailpit",
@@ -142,7 +143,7 @@ var mailpitSmtpEndpoint = mailpit.GetEndpoint("smtp");
 
 // Defaults to the VisualTests-safe bump (see the WithEnvironment call below) -
 // IntegrationTestFixture.cs passes "--RateLimiting:Read:AnonymousPermitLimit=60"
-// to restore the real production default for its own dedicated rate-limit test.
+// to restore the real default for its own dedicated rate-limit test.
 var anonymousReadPermitLimit = builder.Configuration["RateLimiting:Read:AnonymousPermitLimit"] ?? "10000";
 
 var backend = builder.AddProject<Projects.Api>("backend")
@@ -167,12 +168,12 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "10000")
 	// VisualTests' AllowAnonymous endpoints (home page, opportunity detail,
 	// Leaflet map tiles - none of which can carry a bearer token) otherwise
-	// share the production default of 60 anonymous reads per 60s with no
+	// share the real default of 60 anonymous reads per 60s with no
 	// queueing, across every concurrent test hitting the same shared backend.
 	// A 429 there renders as an empty list, which looks like an unrelated
 	// locator timeout in whatever test happened to exhaust the bucket.
 	// IntegrationTests boots this same AppHost (IntegrationTestFixture.cs) and
-	// overrides this back down to the real production default via the
+	// overrides this back down to the real default via the
 	// RateLimiting:Read:AnonymousPermitLimit command-line arg - its
 	// RateLimitingTests.cs deliberately exercises that default's 429 behavior,
 	// which this VisualTests-only bump would otherwise silently defeat.
@@ -200,8 +201,8 @@ if (isTestEnv)
 	backend.WithEnvironment("Geocoding__UseFakeService", "true");
 }
 
-// dev mode (not a production build) is deliberate here: Aspire's AddViteApp
-// gives HMR for local iteration, and a separate prod-build path just for
+// dev mode (not a release build) is deliberate here: Aspire's AddViteApp
+// gives HMR for local iteration, and a separate release-build path just for
 // VisualTests would mean maintaining two different ways of running the same
 // frontend. React.StrictMode's double-invocation of effects (main.tsx) is
 // already accounted for rather than fought - useSharedOrgFetch dedupes
@@ -217,7 +218,7 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithEnvironment("STORAGE_PUBLIC_URL", ReferenceExpression.Create($"{minioApiEndpoint}"))
 	// Toasts otherwise auto-dismiss after 5s (ToastContext.tsx) in every test
 	// env too, forcing assertion windows to race that timer instead of just
-	// waiting for render. 0 = never auto-dismiss for test builds; production
+	// waiting for render. 0 = never auto-dismiss for test builds; a normal run
 	// keeps the runtimeConfig default (5000) via the VITE_TOAST_LIFETIME_MS
 	// fallback in runtimeConfig.ts.
 	.WithEnvironment("VITE_TOAST_LIFETIME_MS", isTestEnv ? "0" : "5000");
