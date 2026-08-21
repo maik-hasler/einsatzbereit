@@ -1,0 +1,81 @@
+== 7. Shared Monitoring Stack Ownership
+
+=== Status
+Proposed
+
+=== Date
+2026-08-21
+
+=== Context
+maik-hasler/mgmt-hetzner#2 asks whether Prometheus, Alertmanager, node-exporter, Grafana, Loki, Alloy and Tempo should move out of this repo's `docker-compose.yml` (`prometheus` through `tempo`, `docker-compose.yml:386-552`, plus their `prometheus-config`/`prometheus-rules`/`alertmanager-config`/`grafana-datasources`/`alloy-config`/`tempo-config` configs at `docker-compose.yml:679-854`) into `mgmt-hetzner`'s `docker-compose.yaml`, becoming genuinely shared, label-driven infra rather than living inside one app's repo.
+
+`mgmt-hetzner` already proves the pattern for one component: its `docker-compose.yaml` defines the `proxy` network (`name: proxy`, no `external: true`) and runs Traefik on it, while this repo's `docker-compose.yml` joins that same network as `external: true` (`networks.proxy`, `docker-compose.yml:554-556`) so any container with the right labels gets routed, regardless of which repo defined it - both this app and Blogfolio (`mgmt-hetzner/docker-compose.yaml`) do this today. `mgmt-hetzner/ias/servers.tf` also already provisions the one Hetzner host (`cx43`, `fsn1`) both stacks run on, and `mgmt-hetzner/.github/workflows/deploy.yaml` already deploys via the same `scp` + `ssh` pattern `publish.yml` uses here - the two repos are already deploying to the same box through parallel, independent pipelines.
+
+Today's gap the issue calls out is real: `publish.yml`'s `deploy-staging`/`deploy-production` jobs `docker compose pull && up -d --force-recreate` over this repo's *entire* `docker-compose.yml`, app and monitoring together, on every release (`publish.yml:606`, `:1006`). Because the monitoring images are pinned to `:latest`, a release can silently bump Grafana/Prometheus/Loki/Alertmanager/node-exporter/Alloy/Tempo and force their recreation as a side effect of an unrelated app deploy. Prometheus also does not yet follow the label-driven pattern ADR-6's own alternatives section already commits this stack to for Tempo ("Grafana, Prometheus, and Loki are already deployed and already the operational home for this app's metrics and logs") - `prometheus-config`'s `scrape_configs` use `static_configs` for itself/node-exporter and `dns_sd_configs` for the backend (`docker-compose.yml:693-714`), and Alloy's `discovery.relabel` filters strictly to `__meta_docker_container_label_com_docker_compose_project == "einsatzbereit"` (`docker-compose.yml:803-807`) - both scoped to this one project, neither opt-in by label the way Traefik routing already is.
+
+=== Decision
+Move the monitoring stack to `mgmt-hetzner`, switch Prometheus and Alloy from project-scoped to opt-in label-driven discovery, and give each app repo a way to contribute its own alert rules and dashboards without a PR against `mgmt-hetzner`. This ADR records the target design; it does not implement it - see Consequences for why the move itself is a separate, later PR against both repos.
+
+*Networks.* `mgmt-hetzner/docker-compose.yaml` gains a `monitoring` network defined the same way `proxy` is today (`name: monitoring`, no `external: true`). This repo's `docker-compose.yml` changes its own `monitoring` network from an internally-defined one (`docker-compose.yml:559`) to `external: true`, mirroring `proxy` at `docker-compose.yml:554-556` exactly. The backend keeps joining `proxy`, `einsatzbereit-db` and `monitoring` as it does today (`docker-compose.yml:227-249`'s comment on why it straddles all three); nothing about its own service definition changes.
+
+*Prometheus scrape discovery.* Replace `static_configs`/`dns_sd_configs` with `docker_sd_configs` plus `relabel_configs` keyed on two opt-in container labels: `prometheus.scrape=true` and `prometheus.port=<port>` (the direct analogue of the `prometheus.io/scrape`/`prometheus.io/port` Kubernetes pod-annotation convention the issue names). Any container on the host - from any repo's compose file - opts in by setting both labels, the same way a container opts into Traefik routing today with `traefik.enable=true`. This also natively covers the multi-replica case `dns_sd_configs` was chosen for (`docker-compose.yml:702-708`'s comment): Prometheus's `docker_sd_configs` returns one target per matching container, refreshed on its own interval, with no separate DNS step. Prometheus needs a read-only Docker socket mount to do this discovery (`/var/run/docker.sock:/var/run/docker.sock:ro`), which it does not have today - the same narrow, already-accepted grant Alloy and Traefik each already carry for their own discovery.
+
+*Alloy log discovery.* Widen `discovery.relabel`'s `rule` block (`docker-compose.yml:803-807`) from `__meta_docker_container_label_com_docker_compose_project == "einsatzbereit"` to an opt-in label, e.g. `__meta_docker_container_label_logs_scrape == "true"` (a container sets `logs.scrape=true`, which Alloy's Docker label-to-meta-label mapping turns into that same meta-label name, matching how `com.docker.compose.project` already becomes `__meta_docker_container_label_com_docker_compose_project`). Any project's containers can then be picked up without editing this config per project.
+
+*Grafana datasources* stay static (`grafana-datasources`, `docker-compose.yml:757-784`) - four fixed backends (Prometheus/Loki/Tempo/Alertmanager), not a discovery problem.
+
+*Alert rules and dashboards.* Today `prometheus-rules` and Grafana's dashboards are authored as compose-embedded config inside this repo, so every rule or dashboard change needs a PR here. Give `mgmt-hetzner`'s Prometheus a globbed `rule_files` entry (`/etc/prometheus/rules.d/*.yml`, which Prometheus already supports as a glob) backed by a bind-mounted `/opt/mgmt-hetzner/prometheus/rules.d/` directory, and Grafana's dashboard provisioner a `path` pointed at `/opt/mgmt-hetzner/grafana/dashboards.d/` with `foldersFromFilesStructure: true`, so each app repo's own subdirectory becomes its own Grafana folder. Each app's own release pipeline (this repo's `publish.yml`, following the same `scp` step it already runs for `docker-compose.yml`/`.env` at `publish.yml:606`/`:1006`) drops its rule file and dashboard JSON into its own subpath under those two directories - `einsatzbereit-rules.yml`, `dashboards.d/einsatzbereit/*.json` - on every release, with no PR against `mgmt-hetzner` required for a rule or dashboard-only change.
+
+*Secrets.* `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD` and `ALERT_NOTIFICATION_EMAIL` move from this repo's `staging`/`production` GitHub Environments to `mgmt-hetzner`'s secret store. Alertmanager's SMTP relay config (`alertmanager-config`, `docker-compose.yml:736-756`) needs its own copy of `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM_ADDRESS`/`SMTP_USERNAME`/`SMTP_PASSWORD` in `mgmt-hetzner` too, duplicating (not replacing) the copies this repo's backend and Keycloak already hold for their own mail sending - see Consequences. This is a manual, human step in each GitHub repo's secret settings; no automation in either repo's CI can move a secret *value* between repos.
+
+=== Considered Alternatives
+
+==== Status quo: leave the stack in this repo
+Keep Grafana/Prometheus/Loki/Alertmanager/node-exporter/Alloy/Tempo in `docker-compose.yml`, unchanged.
+
+* Pros
+** No migration work, no secret moves, no new cross-repo coupling
+** `deploy-staging`/`deploy-production` already know how to bring the whole stack up in one `docker compose up`
+* Cons
+** Every einsatzbereit release keeps forcing an unrelated `:latest`-pinned recreation of the entire monitoring stack (the exact problem the issue opened over)
+** Monitoring stays scoped to one app's repo even though the host, Traefik and (per this ADR) the discovery mechanism are already shared - Blogfolio and any future service on this host get no metrics, logs or dashboards unless they build their own stack
+** Does not fix Prometheus's `dns_sd_configs`/`static_configs` scoping; nothing forces the eventual label-driven convention this ADR argues for elsewhere in the same host
+
+==== Move the files, keep project-scoped discovery
+Relocate the seven services and their configs into `mgmt-hetzner/docker-compose.yaml` as-is, without switching Prometheus/Alloy to opt-in labels.
+
+* Pros
+** Smaller diff; the network and secret changes below are still needed, but the scrape/discovery-config rewrite is skipped
+* Cons
+** Defeats the point of the move: the stack becomes shared *infra* in name only, still hardwired to `com_docker_compose_project == "einsatzbereit"` and this repo's own container names, so Blogfolio or a future project still cannot opt in without editing `mgmt-hetzner`'s config directly
+** Leaves the exact inconsistency the issue's own "why this might belong here" section calls out: Traefik is genuinely label-driven, the relocated monitoring stack would not be
+
+==== Full move with label-driven discovery (chosen)
+As decided above.
+
+* Pros
+** Fixes the `:latest`-recreation coupling: monitoring images only move when `mgmt-hetzner`'s own compose file changes, never as a side effect of an einsatzbereit release
+** Matches the Traefik precedent already proven on this host - any container, from any repo, opts in via labels
+** Gives every future project on this host (not just einsatzbereit and Blogfolio) metrics, logs and a dashboards home for free
+* Cons
+** Real migration work across two repos: network wiring, Prometheus/Alloy config rewrites, a new rules/dashboards contribution mechanism, and a manual secret move - not a one-line change
+** `mgmt-hetzner` becomes a second place (beyond `staging`/`production` GitHub Environments here) that must be kept correctly secretly-configured for the stack to come up at all
+
+==== Separate monitoring host
+Run Prometheus/Grafana/Loki/Alertmanager/Alloy/Tempo on a second Hetzner server instead of colocating with the app host.
+
+* Pros
+** Removes the single-host coupling the issue's own Constraints section flags (`docker_sd_configs`/`discovery.docker` only see the local Docker daemon)
+** A monitoring outage or resource spike can no longer starve the app host, or vice versa
+* Cons
+** Doubles hosting cost for a project whose staging environment is explicitly disposable demo/QA infrastructure (root `AGENTS.md`), with no current traffic or team size that justifies it
+** `docker_sd_configs`/`discovery.docker`'s host-local discovery stops working outright across hosts; Prometheus/Alloy would need a cross-host discovery mechanism (Consul, static targets kept in sync some other way) this ADR does not need to solve today
+** Not what the issue asked to scope; revisit only if this host's resource budget actually becomes the bottleneck
+
+=== Consequences
+* This ADR is *Proposed*, not *Accepted*: it answers the design questions maik-hasler/mgmt-hetzner#2 raised (discovery mechanism, rules/dashboards contribution, network wiring, secret ownership) so the repo owner can accept or amend the plan, but it does not itself move any service, secret, or line of production config. Implementation is a separate, later PR (or PRs, one per repo) once accepted - matching the issue's own framing that this is "a real architecture change, not a config move."
+* Once implemented, this repo's `reset-staging.yml` must drop its `einsatzbereit_grafana_data` volume removal (`reset-staging.yml:177`) and the "Capture container logs on failure" step's `grafana` entry (`reset-staging.yml:208`) - Grafana's data and lifecycle would no longer be this repo's to reset. Whether `mgmt-hetzner` gets an equivalent reset workflow for the monitoring stack's own data is a separate, later decision, not scoped here.
+* `08_concepts.adoc`'s Operations section ("Self-hosted over SaaS", "Exposure of the monitoring stack", "Log and trace collection", "Alerting") and `07_deployment_view.adoc`'s service tables and network table describe the monitoring stack as living on this repo's host and networks; both need updating once the move ships to describe it as `mgmt-hetzner`-owned infra this repo's backend merely reports into, alongside a corresponding update to `09_architecture_decisions.adoc`'s ADR-6 row description.
+* ADR-6 (`6_distributed_tracing_via_tempo.adoc`) reasoned from "Grafana, Prometheus, and Loki are already deployed and already the operational home for this app's metrics and logs" to justify adding Tempo alongside them in this repo. ADR-6 itself is not amended - it correctly recorded the decision as of its own date - but this ADR supersedes that specific premise: the operational home moves to `mgmt-hetzner`, and Tempo moves with it as one of the seven services, with the backend continuing to push OTLP traces to it exactly as ADR-6 wired up, just across the (now external) `monitoring` network instead of within one compose file.
+* SMTP secrets end up duplicated between this repo's GitHub Environments (for the backend's and Keycloak's own mail) and `mgmt-hetzner`'s secret store (for Alertmanager's). This is an accepted trade-off, not an oversight: `mgmt-hetzner` has no equivalent of this repo's staging/production distinction to share a single copy across, and a leaked value in one store does not expose the other's use.
+* Prometheus gaining a read-only Docker socket mount is a repeat of a grant this host already accepts twice over (Traefik, Alloy) - consistent with the existing risk note in `08_concepts.adoc` ("a compromised container with socket access still has effective host-level reach"), not a new category of exposure.
