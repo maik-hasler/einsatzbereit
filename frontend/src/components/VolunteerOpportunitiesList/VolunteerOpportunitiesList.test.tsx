@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import VolunteerOpportunitiesList from "./VolunteerOpportunitiesList";
+import { useLocation } from "react-router";
 import { renderWithProviders } from "../../test/render";
 
 /**
@@ -163,4 +164,76 @@ describe("opportunity list while loading", () => {
 		expect(await screen.findByTestId("opportunity-date-line")).toBeVisible();
 		expect(document.querySelector("[role='status'] .animate-pulse")).toBeNull();
 	});
+});
+
+/**
+ * The filter/URL cases from `VolunteerOpportunityTests`, moved down in #2148
+ * wave 8.
+ *
+ * The filter bar is the URL's owner here: every control writes through
+ * `setSearchParams(..., { replace: true })`, and the query string is what
+ * makes a filtered list shareable and reloadable. That is router state and a
+ * click, neither of which needs a browser.
+ *
+ * `FrequencyFilter_PanelStaysBelowHeader` deliberately stays end-to-end: it
+ * asserts the open panel's computed `z-index` resolves to 30 so it paints
+ * under `Header.tsx`'s sticky `z-40`, and jsdom resolves no cascade.
+ */
+function LocationProbe() {
+	const location = useLocation();
+	return <output data-testid="location-search">{location.search}</output>;
+}
+
+describe("opportunity list filters and the URL", () => {
+	// The shared beforeEach resets every endpoint to resolve `undefined`, which
+	// the data hook cannot read a pageCount off - these cases care about the
+	// filter bar, not the results, so any well-formed page will do.
+	beforeEach(() => {
+		api.getVolunteerOpportunities.mockResolvedValue(page);
+	});
+
+	const renderList = () =>
+		renderWithProviders(
+			<>
+				<VolunteerOpportunitiesList />
+				<LocationProbe />
+			</>,
+			{ route: "/opportunities" },
+		);
+
+	const search = () => screen.getByTestId("location-search").textContent ?? "";
+
+	it("puts the chosen frequency in the query string", async () => {
+		renderList();
+
+		await userEvent.click(await screen.findByTestId("filter-frequency"));
+		await userEvent.click(screen.getByRole("button", { name: "One-time" }));
+
+		expect(new URLSearchParams(search()).get("occurrence")).toBe("OneTime");
+	});
+
+	it("puts the chosen participation type in the query string", async () => {
+		renderList();
+
+		await userEvent.click(await screen.findByTestId("filter-type"));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Scheduled slots" }),
+		);
+
+		expect(new URLSearchParams(search()).get("participationType")).toBe(
+			"ScheduledSlots",
+		);
+	});
+
+	// `MultipleFilters_AllReflectedInUrl` deliberately stays end-to-end, and
+	// the reason is a real inconsistency rather than a jsdom limitation.
+	// `updateFilter` rebuilds its params from `window.location.search`, while
+	// the five sibling handlers in the same component (`clearFilters`,
+	// `clearLocation`, `clearDateRange`, `handleDateChange`, ...) all use the
+	// functional `setSearchParams(prev => ...)` form. Reading the global works
+	// under `BrowserRouter`, which writes through to `window.location`, but
+	// under any router that does not - `MemoryRouter` here - the second
+	// filter's write rebuilds from a URL the first never reached and silently
+	// drops it. See the PR description: worth its own issue, not a fix to
+	// smuggle into a test-rebalance change.
 });

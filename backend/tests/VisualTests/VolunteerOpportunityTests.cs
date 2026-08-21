@@ -20,36 +20,17 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("main")).ToBeVisibleAsync();
 	}
 
-	[Test]
-	public async Task OccurrenceFilter_UpdatesUrlWithOccurrenceParam()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByTestId("filter-frequency").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
-
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*occurrence=OneTime"));
-	}
-
-	[Test]
-	public async Task ParticipationTypeFilter_UpdatesUrlWithParticipationTypeParam()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByTestId("filter-type").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
-
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=ScheduledSlots"));
-	}
-
+	/// <summary>
+	/// The single-filter halves of this case moved to
+	/// <c>VolunteerOpportunitiesList.test.tsx</c> in einsatzbereit#2148 wave 8.
+	/// This one stays, and for a reason worth keeping in view:
+	/// <c>updateFilter</c> rebuilds its params from
+	/// <c>window.location.search</c> rather than the functional
+	/// <c>setSearchParams(prev =&gt; ...)</c> form its five sibling handlers all
+	/// use, so it only survives a second filter write under a router that
+	/// writes through to <c>window.location</c>. That makes this the one
+	/// filter case a component test cannot reproduce.
+	/// </summary>
 	[Test]
 	public async Task MultipleFilters_AllReflectedInUrl()
 	{
