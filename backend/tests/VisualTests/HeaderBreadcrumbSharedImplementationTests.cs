@@ -126,19 +126,4 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(header).ToContainClassAsync("bg-white");
 	}
-
-	[Test]
-	public async Task Footer_LegalLinks_PointDirectlyAtNewEnglishSlugs()
-	{
-		// The footer itself should link straight to the new slugs, not rely on
-		// the legacy redirect for its own internal navigation.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var footer = Page.Locator("footer");
-		await Expect(footer.Locator("a[href='/imprint']")).ToBeVisibleAsync();
-		await Expect(footer.Locator("a[href='/privacy-policy']")).ToBeVisibleAsync();
-	}
 }

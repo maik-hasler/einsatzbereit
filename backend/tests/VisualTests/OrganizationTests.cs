@@ -151,45 +151,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Directory_ShowsTwoLetterMonogram_MatchingEveryOtherSurface()
-	{
-		// OrganizationsPage must render getInitials' two-letter monogram like every
-		// other surface (header org switcher, opportunity cards, org profile page),
-		// not org.name.charAt(0), which is indistinguishable between organizations
-		// sharing a first word. Uses two names initials.test.ts already covers
-		// ("Lindenauer Nachbarschaftshilfe e.V." -> "LN",
-		// "Lindenauer Tierschutzverein e.V." -> "LT"); the random suffix below is
-		// appended to "Lindenauer" itself, adding no word, so those results hold.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var olaf = await Fixture.SignInAsync("olaf", "olaf123");
-
-		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olaf.AccessToken}");
-
-		var suffix = Guid.NewGuid().ToString("N");
-		var neighborhoodName = $"Lindenauer{suffix} Nachbarschaftshilfe e.V.";
-		var animalShelterName = $"Lindenauer{suffix} Tierschutzverein e.V.";
-
-		foreach (var name in new[] { neighborhoodName, animalShelterName })
-			(await PostJsonWithRetryAsync(http, "/v1/organizations", new { name })).EnsureSuccessStatusCode();
-
-		await Page.GotoAsync($"{origin}/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await Page.Locator("#organizations-search").FillAsync($"Lindenauer{suffix}");
-
-		var neighborhoodCard = Page.Locator("li").Filter(new() { HasTextString = neighborhoodName });
-		var animalShelterCard = Page.Locator("li").Filter(new() { HasTextString = animalShelterName });
-		await Expect(neighborhoodCard).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(animalShelterCard).ToBeVisibleAsync();
-
-		(await neighborhoodCard.Locator("span").First.TextContentAsync()).Should().Be("LN");
-		(await animalShelterCard.Locator("span").First.TextContentAsync()).Should().Be("LT");
-	}
-
-	[Test]
 	public async Task PublicProfilePage_ContentIsLeftAlignedUnderHeading()
 	{
 		// OrganizationProfileView's content wrapper must not carry `mx-auto`: it

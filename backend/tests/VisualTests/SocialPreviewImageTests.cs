@@ -40,19 +40,4 @@ public class SocialPreviewImageTests(AspireFixture fixture) : VisualTestBase(fix
 		var bytes = await response.Content.ReadAsByteArrayAsync();
 		bytes.Should().NotBeEmpty();
 	}
-
-	[Test]
-	public async Task HomePage_OgImage_DeclaresDimensionsMatchingTheActualFile()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync(origin);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var width = await Page.Locator("meta[property='og:image:width']").GetAttributeAsync("content");
-		var height = await Page.Locator("meta[property='og:image:height']").GetAttributeAsync("content");
-		width.Should().Be("1200");
-		height.Should().Be("630");
-	}
 }

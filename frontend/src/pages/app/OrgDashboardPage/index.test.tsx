@@ -595,3 +595,47 @@ describe("OrgDashboardPage widget links", () => {
 		}
 	});
 });
+
+describe("OrgDashboardPage placement rejection", () => {
+	beforeEach(() => {
+		mockDashboardData();
+		useLargeViewport();
+	});
+
+	it("refuses a placement below the widget's minimum size and says why", async () => {
+		// Bounds and min-size violations hard-reject, unlike an overlap - which
+		// displaces instead (#18). There is nowhere to push a widget that does
+		// not fit on the grid at all, so the only honest answer is to say so and
+		// leave the tile where it was.
+		renderDashboard();
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+
+		const tile = screen.getByTestId("widget-tile-CreateOpportunity");
+		const before = tile.getAttribute("style");
+
+		// Start placement, then set both corners on the same cell - a 1x1
+		// rectangle, under CreateOpportunity's minWidth of 2.
+		await userEvent.click(
+			screen.getByRole("button", { name: "Move or resize Create opportunity" }),
+		);
+		const cell = document.querySelector<HTMLElement>(
+			'[data-testid="dashboard-grid-guide-cell"][data-col="1"][data-row="1"]',
+		);
+		expect(cell).not.toBeNull();
+		await userEvent.click(cell as HTMLElement);
+		await userEvent.click(cell as HTMLElement);
+
+		const toast = await screen.findByRole("alert");
+		expect(toast).toHaveTextContent("doesn't fit");
+
+		// And the tile is exactly where it started, not collapsed to the
+		// rejected size.
+		expect(
+			screen.getByTestId("widget-tile-CreateOpportunity").getAttribute("style"),
+		).toBe(before);
+	});
+});

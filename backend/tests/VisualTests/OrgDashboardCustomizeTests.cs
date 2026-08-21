@@ -539,54 +539,6 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task ResizingBelowAWidgetsMinimumSize_IsRejected_WithErrorToast_AndKeepsPreviousPosition()
-	{
-		// Overlap alone does not reject a placement, but a widget's per-type
-		// minimum size does - there is nowhere to "push" a widget shrunk smaller
-		// than it can usefully render.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual DashMinSizeReject", pinnedOrgId!.Value);
-
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await RemoveAllWidgetsAsync();
-
-		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
-		var dialog = Page.GetByRole(AriaRole.Dialog);
-		await dialog.GetByTestId("add-widget-option-Calendar").ClickAsync();
-		await dialog.GetByTestId("add-widget-done").ClickAsync();
-
-		var calendarTile = Page.GetByTestId("widget-tile-Calendar");
-		await Expect(calendarTile).ToBeVisibleAsync();
-		var styleBefore = await calendarTile.EvaluateAsync<string?>("el => el.getAttribute('style')");
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Calendar" }).ClickAsync();
-
-		// Calendar's minimum is 4x4 (see WIDGET_CATALOG in widgetCatalog.ts) -
-		// shrink it to 3x3 (x=1..3, y=1..3), below that floor on both axes.
-		await ClickGridCellAsync(col: 1, row: 1);
-		await ClickGridCellAsync(col: 3, row: 3);
-
-		await Expect(Page.GetByRole(AriaRole.Alert))
-			.ToContainTextAsync("doesn't fit");
-		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-
-		// No fixed expected value to Expect() against beyond the snapshot
-		// captured above - poll a fresh read of the live attribute until it
-		// settles back to matching that snapshot.
-		string? styleAfter = null;
-		await PollUntilAsync(async () =>
-		{
-			styleAfter = await calendarTile.EvaluateAsync<string?>("el => el.getAttribute('style')");
-			return styleAfter == styleBefore;
-		}, () => "a rejected placement must leave the widget at its previous position "
-			+ $"(before: \"{styleBefore}\", last observed after: \"{styleAfter}\")");
-	}
-
-	[Test]
 	public async Task WidgetContentOverflow_DoesNotStretchTheSharedGridRow()
 	{
 		// Grid row height is fixed (see index.tsx) rather than

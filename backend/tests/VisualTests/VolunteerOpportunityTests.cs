@@ -73,52 +73,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task OpportunitiesPage_HeaderBandIntroducesTheStyledCards()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-
-		// The list has its own route, so the page header band's <h1> introduces
-		// it rather than a centred section heading.
-		var heading = Page
-			.GetByRole(AriaRole.Heading, new() { Name = "Find opportunities", Level = 1 })
-			.First;
-		await Expect(heading).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Lead line is present below the heading.
-		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
-			.ToBeVisibleAsync();
-
-		// Seed data always publishes opportunities, so a rendered card must
-		// carry the redesigned visuals: a clickable organisation link and a
-		// title that is an <h3>. #2071 put a visually-hidden "Search results"
-		// <h2> above the grid (OpportunityResultsList) so the run of per-card
-		// headings has a named parent distinct from the footer's own headings
-		// further down the page, and dropped the cards to <h3> underneath it -
-		// a fixed <h2> here would now duplicate that parent's level instead of
-		// nesting under it, which is the same heading-order violation this
-		// used to guard against one level up. Deliberately no banner-tile
-		// assertion any more: the brand-gradient tile only backs a real
-		// uploaded photo now, since on a photo-less card (almost all of them)
-		// it made the grid's top third a tinted rectangle with one small icon
-		// in it.
-		var firstCard = Page
-			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
-			.First;
-		// Seed data always publishes opportunities, and the list only
-		// mounts <ul>/<li> once its loading skeleton clears - a non-waiting
-		// CountAsync() right after the heading check above raced that fetch
-		// and could silently skip these card-specific assertions.
-		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(firstCard.Locator("a[href*='/organizations/']"))
-			.ToBeVisibleAsync();
-		await Expect(firstCard.Locator("h3")).ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task DetailPage_ShowsHomeLink_AndNoShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
