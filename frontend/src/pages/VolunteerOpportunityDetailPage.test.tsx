@@ -1,0 +1,167 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useTranslation } from "react-i18next";
+import { Route, Routes } from "react-router";
+import VolunteerOpportunityDetailPage from "./VolunteerOpportunityDetailPage";
+import { renderWithProviders } from "../test/render";
+
+/**
+ * The bilingual-content cases from `VolunteerOpportunityTests`, moved down in
+ * #2148 wave 9.
+ *
+ * German is the required variant and English is optional (#2057), so the page
+ * resolves both its title and its lead through `pickLocalizedText` and falls
+ * back per field - an organizer may translate one and not the other.
+ * `pickLocalizedText` itself is already unit-tested in `lib/format.test.ts`;
+ * what these add is that the page actually routes its title and description
+ * through it, and re-derives them when the language changes rather than only
+ * on load.
+ *
+ * The E2E originals seeded an organization and an opportunity over four
+ * sequential API calls each, then drove the header's language menu, to assert
+ * a string that is a prop and a locale here.
+ */
+const { api } = await vi.hoisted(async () => {
+	const { createApiMock } = await import("../test/apiMock");
+	return { api: createApiMock() };
+});
+
+vi.mock("../hooks/useApiClient", () => ({ useApiClient: () => api }));
+
+const OPPORTUNITY_ID = "11111111-1111-1111-1111-111111111111";
+
+const details = {
+	id: OPPORTUNITY_ID,
+	organizationId: "22222222-2222-2222-2222-222222222222",
+	organizationName: "Bilingual Org",
+	titleDe: "Deutscher Titel",
+	titleEn: "English Title",
+	descriptionDe: "Deutsche Beschreibung.",
+	descriptionEn: "English description.",
+	street: "Teststrasse",
+	houseNumber: "1",
+	zipCode: "24103",
+	city: "Kiel",
+	isRemote: true,
+	occurrence: "OneTime",
+	participationType: "IndividualContact",
+	checkInMethod: "None",
+	status: "Published",
+	timeSlots: [],
+	tags: [],
+	currentUserEngagement: undefined,
+	validUntil: undefined,
+	// The page renders a "posted ago" line, so this has to be a real date -
+	// formatDateTime throws on an undefined one rather than rendering nothing.
+	createdOn: new Date(Date.UTC(2026, 7, 1, 9, 0)),
+};
+
+beforeEach(() => {
+	api.__reset();
+	api.getVolunteerOpportunityDetails.mockResolvedValue(details);
+	api.getPublicOrganization.mockResolvedValue({
+		id: details.organizationId,
+		name: details.organizationName,
+	});
+	api.getVolunteerOpportunities.mockResolvedValue({
+		items: [],
+		pageCount: 1,
+		totalCount: 0,
+	});
+});
+
+/**
+ * Switches the language the way `Header/LanguageSelector` does - through
+ * i18next - without coupling these cases to the header's own markup.
+ */
+function LanguageSwitch() {
+	const { i18n } = useTranslation();
+	return (
+		<button type="button" onClick={() => void i18n.changeLanguage("de")}>
+			switch to German
+		</button>
+	);
+}
+
+function renderDetail(lng: "de" | "en", extra?: React.ReactNode) {
+	return renderWithProviders(
+		<>
+			<Routes>
+				<Route
+					path="/volunteer-opportunities/:opportunityId"
+					element={<VolunteerOpportunityDetailPage />}
+				/>
+			</Routes>
+			{extra}
+		</>,
+		{ lng, route: `/volunteer-opportunities/${OPPORTUNITY_ID}` },
+	);
+}
+
+describe("opportunity detail page content language", () => {
+	it("shows the English variant to an English reader", async () => {
+		renderDetail("en");
+
+		expect(await screen.findByText("English Title")).toBeInTheDocument();
+		expect(screen.getByText("English description.")).toBeInTheDocument();
+		expect(screen.queryByText("Deutscher Titel")).toBeNull();
+	});
+
+	it("shows the German variant to a German reader", async () => {
+		renderDetail("de");
+
+		expect(await screen.findByText("Deutscher Titel")).toBeInTheDocument();
+		expect(screen.getByText("Deutsche Beschreibung.")).toBeInTheDocument();
+		expect(screen.queryByText("English Title")).toBeNull();
+	});
+
+	it("falls back to the German title when no English translation exists", async () => {
+		// English is optional. Without a fallback the header rendered an empty
+		// title and lead rather than the German content the organizer did
+		// provide.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			titleEn: undefined,
+			descriptionEn: undefined,
+		});
+
+		renderDetail("en");
+
+		expect(await screen.findByText("Deutscher Titel")).toBeInTheDocument();
+		expect(screen.getByText("Deutsche Beschreibung.")).toBeInTheDocument();
+	});
+
+	it("falls back per field when only one of the two is translated", async () => {
+		// The two fields resolve independently, so a half-translated
+		// opportunity has to mix languages rather than fall back wholesale.
+		// The E2E pair never covered this: seeding it would have meant a third
+		// opportunity and a third page load.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			descriptionEn: undefined,
+		});
+
+		renderDetail("en");
+
+		expect(await screen.findByText("English Title")).toBeInTheDocument();
+		expect(screen.getByText("Deutsche Beschreibung.")).toBeInTheDocument();
+	});
+
+	it("follows a language switch without reloading the page", async () => {
+		// The regression guarded here is content pinned at load: the page
+		// derives both fields from `i18n.language` on every render, so a switch
+		// has to swap them in place.
+		renderDetail("en", <LanguageSwitch />);
+
+		expect(await screen.findByText("English Title")).toBeInTheDocument();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "switch to German" }),
+		);
+
+		expect(await screen.findByText("Deutscher Titel")).toBeInTheDocument();
+		expect(screen.getByText("Deutsche Beschreibung.")).toBeInTheDocument();
+		expect(screen.queryByText("English Title")).toBeNull();
+	});
+});
