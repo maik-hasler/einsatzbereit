@@ -112,7 +112,7 @@ Images are published to GitHub Container Registry (GHCR) on version tag pushes. 
 |`v1.0.0`
 |===
 
-Release candidate tags (`v{semver}-rc.N`) publish images and deploy via the `deploy-staging` job without moving the `latest` tag. Stable tags (no `-rc` suffix) publish images, move `latest`, and deploy via a separate `deploy-production` job. See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
+Release candidate tags (`v{semver}-rc.N`) publish images without moving the `latest` tag; stable tags (no `-rc` suffix) publish images and move `latest`. Either way, `publish.yml` stops there - it does not deploy. Its final job (`trigger-deploy`) fires a `repository_dispatch` event at a separate, private infrastructure repository (`mgmt-hetzner`), which owns `docker-compose.yml` and the actual deploy for this host (see "Staging and Production" below). See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
 
 ==== Staging and Production
 
@@ -123,7 +123,7 @@ include::../images/deployment-staging.puml[]
 ....
 
 Motivation::
-The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host (a Hetzner `cx43`: 8 vCPU / 16 GB RAM / 40 GB disk, provisioned via Terraform in a separate, private infrastructure repository), behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). The same host also runs Blogfolio, an unrelated personal site - the two stacks share the machine but are otherwise fully independent (separate repos, separate deploy pipelines, no shared services beyond Traefik). This is the environment every release candidate is verified against before a change is considered done.
+The deployed environment serves real users at `*.maik-hasler.de`. It runs on a single host (a Hetzner `cx43`: 8 vCPU / 16 GB RAM / 40 GB disk), provisioned via Terraform and deployed via `docker-compose.yml` from a separate, private infrastructure repository (`mgmt-hetzner`) - this repo only builds and publishes the images that compose file references, it does not deploy them (see "Image Publishing" above). The host runs behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt), which mgmt-hetzner also owns, alongside a shared Prometheus/Grafana/Loki/Tempo monitoring stack this app's containers opt into via Docker labels. The same host also runs Blogfolio, an unrelated personal site - the app stacks share the machine but are otherwise fully independent (separate repos, separate `docker compose` projects, no shared services beyond Traefik/monitoring). This is the environment every release candidate is verified against before a change is considered done.
 
 Quality and Performance Characteristics::
 All public traffic is HTTPS via Traefik. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`). Backup and retention behaviour is described in <<section-concepts>> under Operations.
@@ -187,7 +187,7 @@ The mapping is 1:1 today - every Level-1 building block runs as exactly one cont
 |Reverse proxy, TLS termination via ACME / Let's Encrypt
 |===
 
-Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
+Deployment is release-driven but split across two repositories. A version tag pushed here triggers this repo's `publish.yml`, which builds and pushes the images to GHCR, then fires a `repository_dispatch` event at `mgmt-hetzner` instead of deploying itself. `mgmt-hetzner`'s `deploy-einsatzbereit.yaml` picks that up and does the actual deploy to the host over SSH (`docker compose pull` + `up`) via one of two jobs - staging for RC tags, production for stable tags (#1344), mirroring the split this repo used before the move. Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
 
 === Infrastructure Level 2: Deployed Host
 

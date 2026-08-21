@@ -41,7 +41,7 @@ Medium, rising to High once the project is generally available and carries real 
 === Proposed Solution
 
 - *Short term (implemented, #1344):* Split `deploy-staging`/`deploy-production` into separate jobs and GitHub Environments now, both currently pointed at the one existing host, so the *workflow* shape doesn't need to change again later - only the `production` Environment's secrets need to change once a real second host exists.
-- *Medium term:* Before or shortly after a real stable v1.0.0 release accumulates real user data, provision a genuinely separate production host (or at minimum, separate its database/object storage from staging's), and repoint the `production` GitHub Environment's `PRODUCTION_SSH_*` secrets at it.
+- *Medium term:* Before or shortly after a real stable v1.0.0 release accumulates real user data, provision a genuinely separate production host (or at minimum, separate its database/object storage from staging's), and repoint mgmt-hetzner's `einsatzbereit-production` GitHub Environment secrets at it (see the "Update" note below for where this now lives).
 - *Longer term:* Reassess whether `reset-staging.yml`'s destructive reset should remain scoped to a shared host once staging and production diverge, and whether staging needs its own smaller, cheaper host once production is real.
 
 === Consequences of Delay
@@ -51,4 +51,8 @@ Acceptable pre-1.0: no stable tag has been cut yet, so no real user data exists 
 === Dependencies
 
 - *Hosting budget/capacity:* A second host requires the repo owner to provision and pay for it - not something achievable from within the repository alone.
-- *GitHub Environment secrets:* `PRODUCTION_SSH_KEY`/`PRODUCTION_SSH_HOST_KEY`/`PRODUCTION_SSH_USER`/`PRODUCTION_SSH_HOST` need to be updated to the new host's values when it exists - see `.github/AGENTS.md`'s "`deploy-staging` vs `deploy-production`" section.
+- *GitHub Environment secrets:* the SSH/app secrets for reaching the new host need to be updated when it exists. As of the mgmt-hetzner deploy split (below), these live in that repo's `einsatzbereit-staging`/`einsatzbereit-production` GitHub Environments, not here - see mgmt-hetzner's `README.md` and this repo's `.github/AGENTS.md` "Deployment moved to mgmt-hetzner" section.
+
+=== Update: deploy ownership moved to mgmt-hetzner (2026-08-21)
+
+The `deploy-staging`/`deploy-production` jobs this TDR describes no longer live in this repo's `publish.yml` - they moved, largely unchanged, to `maik-hasler/mgmt-hetzner`'s `deploy-einsatzbereit.yaml` (`einsatzbereit-staging`/`einsatzbereit-production` GitHub Environments there), triggered by a `repository_dispatch` event this repo's `publish.yml` fires after publishing images. This is an ownership change, not a resolution of this TDR - the environment-separation and blast-radius analysis above is unchanged: staging and production still share the same single host, database, and object storage, just via a workflow in a different repository.

@@ -2,7 +2,7 @@
 
 ## Production (`Dockerfile`)
 
-Optimized multi-stage image. The values actually used on staging/production are set in `docker-compose.yml`'s `keycloak` service and sourced from `.env` (see `.env.example` at the repo root) - this table documents what each variable is for, it is not a second source of truth.
+Optimized multi-stage image. The values actually used on staging/production are set in `docker-compose.yml`'s `keycloak` service and sourced from `.env` - both now live in the separate `mgmt-hetzner` repo (`apps/einsatzbereit/docker-compose.yml`, `apps/einsatzbereit/.env.example`), not here. This table documents what each variable is for, it is not a second source of truth.
 
 | Variable | Purpose | Example |
 |---|---|---|
@@ -20,7 +20,7 @@ Optimized multi-stage image. The values actually used on staging/production are 
 | `KC_SMTP_PASSWORD` | SMTP auth password | - |
 | `KC_PROXY_HEADERS` | Trust `X-Forwarded-*` from the reverse proxy in front of Keycloak | `xforwarded` |
 
-`KEYCLOAK_BACKEND_SECRET` and the `KC_SMTP_*` values share the same underlying secrets as the backend's own `Keycloak__ClientSecret` and `Smtp__*` settings - see `docker-compose.yml` and `keycloak/AGENTS.md` for how the realm resolves them at import time.
+`KEYCLOAK_BACKEND_SECRET` and the `KC_SMTP_*` values share the same underlying secrets as the backend's own `Keycloak__ClientSecret` and `Smtp__*` settings - see mgmt-hetzner's `apps/einsatzbereit/docker-compose.yml` and `keycloak/AGENTS.md` for how the realm resolves them at import time.
 
 ## Local development
 

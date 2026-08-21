@@ -35,6 +35,8 @@ See [README.md](README.md#project-structure) for the top-level directory layout.
 
 There is no separate `postgres/` directory - the database init SQL is a
 `docker-compose.yml` `configs: postgres-init` entry, inline in that file.
+`docker-compose.yml` itself lives in the separate `mgmt-hetzner` repo (which
+owns deployment for this app - see `.github/AGENTS.md`), not here.
 
 Each component has its own `AGENTS.md` with component-specific conventions
 (Claude Code additionally reads a same-named `CLAUDE.md`, which imports

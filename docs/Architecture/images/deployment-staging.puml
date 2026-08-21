@@ -4,7 +4,7 @@
 
 title Deployment View - Staging / Production
 
-Deployment_Node(host, "Staging / Production Host (VM)", "Docker Compose - one host serves both today, see deploy-staging/deploy-production in 07_deployment_view.adoc") {
+Deployment_Node(host, "Staging / Production Host (VM)", "Docker Compose - one host serves both today, deployed by the separate mgmt-hetzner repo, see 07_deployment_view.adoc") {
 
 	Deployment_Node(traefik_node, "Traefik (host-level, shared)", "Reverse proxy, TLS via ACME / Let's Encrypt") {
 		Container(traefik, "Traefik", "Routes *.maik-hasler.de")
