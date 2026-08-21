@@ -3,6 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProfileOverviewPage from "./index";
 import { inputClass, labelClass } from "../../lib/formClasses";
+import { useLocation } from "react-router";
 import { renderWithProviders } from "../../test/render";
 
 /**
@@ -166,5 +167,151 @@ describe("ProfileOverviewPage streak stat tiles (German)", () => {
 		const loginTile = await screen.findByTestId("profile-stat-login-streak");
 		expect(loginTile).toHaveTextContent("Tag in Folge angemeldet");
 		expect(loginTile).not.toHaveTextContent("Login-Serie");
+	});
+});
+
+/**
+ * `ProfileOverviewTests` and `OrgAppRestructureTests`' profile case, moved
+ * down in #2148 wave 12. Remaining inventory: #2159.
+ *
+ * These are page composition and form state: which sections render, what the
+ * read-only identity fields carry, and what the save call sends. The E2E
+ * originals signed vera in and loaded /profile for each.
+ */
+describe("ProfileOverviewPage composition", () => {
+	it("renders one page with no tab switcher", async () => {
+		// #794 consolidated a Profile/Activity tab switcher into a single page,
+		// and #1684 moved sign-ups out to /my-signups. The positive headings
+		// come first deliberately: the three absence assertions below are the
+		// kind that pass forever on their own.
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		expect(
+			await screen.findByRole("heading", { name: "Profile details" }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Badges" })).toBeInTheDocument();
+
+		for (const name of ["Profile", "Activity", "Share achievements"]) {
+			expect(screen.queryByRole("button", { name })).toBeNull();
+		}
+	});
+
+	it("no longer carries an organizations section", async () => {
+		// The org app owns organizations now; this page used to list them too.
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await screen.findByRole("heading", { name: "Profile details" });
+		expect(
+			screen.queryByRole("heading", { name: /organi[sz]ations/i }),
+		).toBeNull();
+	});
+
+	it("carries no in-page Home link, since the header nav owns that", async () => {
+		// Every subpage used to restate "back to the home page" in its own title
+		// band. The header's `nav-home` is asserted in Header.test.tsx; what this
+		// page owes is *not* repeating it.
+		const { container } = renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await screen.findByRole("heading", { name: "Profile details" });
+		expect(container.querySelector("nav[aria-label='Breadcrumb']")).toBeNull();
+		expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+	});
+});
+
+describe("ProfileOverviewPage identity fields", () => {
+	it("shows username and email as read-only, beside a Save action", async () => {
+		api.getUserProfile.mockResolvedValue({
+			firstName: "Vera",
+			lastName: "Volunteer",
+			username: "vera",
+			email: "vera@example.com",
+			bio: "",
+			skills: [],
+			languages: [],
+		});
+
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		const username = screen.getByLabelText("Username");
+		const email = screen.getByLabelText("Email address");
+		expect(username).toHaveValue("vera");
+		expect(email).toHaveValue("vera@example.com");
+		// Read-only by design - identity lives in Keycloak, not here.
+		expect(username).toBeDisabled();
+		expect(email).toBeDisabled();
+		expect(screen.getByRole("button", { name: /^Save$/ })).toBeInTheDocument();
+	});
+
+	it("sends the edited name on save", async () => {
+		// The sibling case above asserts the success region; this one asserts
+		// what actually left for the server, which nothing else covered.
+		api.updateUserProfile.mockResolvedValue(undefined);
+
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		const first = screen.getByLabelText("First name");
+		await userEvent.clear(first);
+		await userEvent.type(first, "Vera");
+		const last = screen.getByLabelText("Last name");
+		await userEvent.clear(last);
+		await userEvent.type(last, "Sample");
+
+		await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+
+		await waitFor(() =>
+			expect(api.updateUserProfile).toHaveBeenCalledWith(
+				expect.objectContaining({ firstName: "Vera", lastName: "Sample" }),
+			),
+		);
+	});
+});
+
+describe("ProfileOverviewPage legacy tab deep links", () => {
+	function LocationProbe() {
+		const location = useLocation();
+		return <output data-testid="location">{location.pathname}</output>;
+	}
+
+	it("redirects the old engagements tab to /my-signups", async () => {
+		// Invitations and sign-ups moved to their own page (#1684); the old
+		// ?tab= deep links have to land there rather than on a tab that no
+		// longer exists.
+		renderWithProviders(
+			<>
+				<ProfileOverviewPage />
+				<LocationProbe />
+			</>,
+			{ auth: { isAuthenticated: true }, route: "/profile?tab=engagements" },
+		);
+
+		await waitFor(() =>
+			expect(screen.getByTestId("location")).toHaveTextContent("/my-signups"),
+		);
+	});
+
+	it("stays on /profile for a tab that is not a legacy alias", async () => {
+		renderWithProviders(
+			<>
+				<ProfileOverviewPage />
+				<LocationProbe />
+			</>,
+			{ auth: { isAuthenticated: true }, route: "/profile" },
+		);
+
+		await screen.findByRole("heading", { name: "Profile details" });
+		expect(screen.getByTestId("location")).toHaveTextContent("/profile");
 	});
 });

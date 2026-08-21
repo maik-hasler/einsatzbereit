@@ -47,24 +47,6 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	}
 
 	[Test]
-	public async Task ProfilePage_NoLongerShowsOrganizationsSection()
-	{
-		// Regression guard: the "Your organizations" card (org list + its own
-		// "Create organization" button) moved entirely into the org app shell -
-		// the profile page must not still surface it, even for a user who
-		// organizes orgs and would previously have populated it.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(Page.GetByTestId("your-organizations-link")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByTestId("create-org-btn")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task HomeCta_ZeroOrgs_CreatingOrgEntersItsDashboardDirectly()
 	{
 		// Vera organizes nothing in seed data - the home page's "Create an
