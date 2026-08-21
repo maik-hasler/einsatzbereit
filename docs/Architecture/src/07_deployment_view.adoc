@@ -5,7 +5,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 Einsatzbereit runs in three environments: the local developer stack (orchestrated by .NET Aspire), the CI/CD pipeline (GitHub Actions), and the deployed staging/production host.
 
-This chapter describes the infrastructure and which building blocks run where. The operational decisions behind that infrastructure - why the monitoring stack is self-hosted, what the backup strategy guards against, how alerting is routed - are cross-cutting and live in <<section-concepts>> under Operations.
+This chapter describes the infrastructure and which building blocks run where. The operational decisions behind that infrastructure - what the backup strategy guards against - are cross-cutting and live in <<section-concepts>> under Operations.
 
 === Infrastructure Level 1
 
@@ -181,41 +181,6 @@ The mapping is 1:1 today - every Level-1 building block runs as exactly one cont
 |internal
 |Daily mirror of the einsatzbereit bucket, then mirrors its own and db-backup's local output off-host (#1087)
 
-|Grafana
-|`grafana/grafana`
-|`grafana.maik-hasler.de`
-|Dashboards; datasources are Prometheus, Loki, Tempo and Alertmanager
-
-|Prometheus
-|`prom/prometheus`
-|internal only
-|Metrics store; scrapes node-exporter, evaluates alert rules
-
-|Alertmanager
-|`prom/alertmanager`
-|internal only
-|Routes firing alerts to email over the SMTP relay
-
-|node-exporter
-|`prom/node-exporter`
-|internal only
-|Host-level CPU/memory/disk/network metrics, read-only mounts, no privileged mode
-
-|Loki
-|`grafana/loki`
-|internal only
-|Log store; receives pushes from Alloy
-
-|Alloy
-|`grafana/alloy`
-|internal only
-|Ships container logs to Loki; discovers containers via a read-only Docker socket mount
-
-|Tempo
-|`grafana/tempo`
-|internal only
-|Trace store; receives OTLP pushes directly from the backend
-
 |Traefik
 |host-level (shared)
 |`*.maik-hasler.de`
@@ -226,25 +191,25 @@ Deployment is release-driven: a version tag triggers `publish.yml`, which builds
 
 === Infrastructure Level 2: Deployed Host
 
-The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps the unauthenticated monitoring services off the internet. Everything above runs as containers on a single Docker daemon, split across three networks:
+The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps PostgreSQL unreachable from outside this stack. Everything above runs as containers on a single Docker daemon, split across networks:
 
 [cols="1,3,3" options="header"]
 |===
 |Network |Members |Reachability
 
 |`proxy` (external, shared with Blogfolio)
-|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup, Grafana
-|Attached to the host-level Traefik. Frontend, Backend API, Keycloak, MinIO and Grafana each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
+|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup
+|Attached to the host-level Traefik. Frontend, Backend API, Keycloak and MinIO each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
 
 |`einsatzbereit-db`
 |PostgreSQL, Keycloak, Backend API, db-backup
 |Container-to-container only. PostgreSQL publishes no port and is reachable by name from this network alone.
 
-|`einsatzbereit-monitoring`
-|Prometheus, Alertmanager, node-exporter, Loki, Alloy, Tempo, Grafana, Backend API
-|No Traefik route except through Grafana. See <<section-concepts>> under Operations for why the rest are not exposed.
+|`monitoring` (external)
+|Backend API
+|No Traefik route from this repo's own containers.
 |===
 
-Three containers deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, `monitoring` to push OTLP traces to Tempo. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale. *Grafana* is on `proxy` and `monitoring` so it can be publicly reachable while reading datasources that are not.
+Two containers deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, `monitoring` to export metrics and traces. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale.
 
-Those three are therefore where an authentication gap has the widest blast radius, which is why Grafana carries its own admin login and the Backend API validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).
+The Backend API is therefore where an authentication gap has the widest blast radius, which is why it validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).

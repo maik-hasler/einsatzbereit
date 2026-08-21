@@ -33,47 +33,16 @@ Deployment_Node(host, "Staging / Production Host (VM)", "Docker Compose - one ho
 	Deployment_Node(bk_node, "db-backup", "postgres-backup-local:18") {
 		Container(bk, "Daily backups", "retention 7d / 4w / 6m")
 	}
-
-	Deployment_Node(gf_node, "grafana", "grafana/grafana") {
-		Container(gf, "Dashboards", "Grafana", "grafana.maik-hasler.de")
-	}
-
-	Deployment_Node(pr_node, "prometheus", "prom/prometheus") {
-		Container(pr, "Metrics store", "Prometheus", "internal only")
-	}
-
-	Deployment_Node(ne_node, "node-exporter", "prom/node-exporter") {
-		Container(ne, "Host metrics", "node_exporter", "internal only")
-	}
-
-	Deployment_Node(lo_node, "loki", "grafana/loki") {
-		Container(lo, "Log store", "Loki", "internal only")
-	}
-
-	Deployment_Node(al_node, "alloy", "grafana/alloy") {
-		Container(al, "Log shipper", "Grafana Alloy", "internal only")
-	}
-
-	Deployment_Node(tm_node, "tempo", "grafana/tempo") {
-		Container(tm, "Trace store", "Tempo", "internal only")
-	}
 }
 
 Rel(traefik, fe, "HTTPS")
 Rel(traefik, be, "HTTPS")
 Rel(traefik, kc, "HTTPS")
 Rel(traefik, mo, "HTTPS")
-Rel(traefik, gf, "HTTPS")
 Rel(be, pg, "SQL / EF Core")
 Rel(be, kc, "JWKS + Admin API")
 Rel(be, mo, "S3 API")
 Rel(kc, pg, "Realm data")
 Rel(bk, pg, "pg_dump")
-Rel(gf, pr, "PromQL queries")
-Rel(gf, lo, "LogQL queries")
-Rel(gf, tm, "TraceQL queries")
-Rel(pr, ne, "scrape /metrics")
-Rel(al, lo, "push logs")
-Rel(be, tm, "OTLP traces (gRPC)")
 
 @enduml
