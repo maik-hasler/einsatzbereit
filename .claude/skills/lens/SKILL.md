@@ -240,6 +240,6 @@ to find something.
 
 The repository ships its own `.claude/skills/self-review` - that one is
 diff-scoped and pre-PR, for whoever is about to open one. This skill is
-whole-repo (and whole-live-site) and routine, and it never touches code.
+whole-repo and routine, and it never touches code.
 Never substitute one for the other; if the user asks about a diff or a
 PR, this is the wrong skill.
