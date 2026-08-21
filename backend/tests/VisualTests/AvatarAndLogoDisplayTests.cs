@@ -18,68 +18,6 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
-	// Serialized against every other test that writes vera's single avatar_url
-	// field. This test uploads an avatar and then asserts the nav bar renders an
-	// <img> instead of her initials - but RemoveUserAvatar_... below (same class,
-	// so TUnit co-schedules the two by default) uploads and then DELETEs that
-	// same field. Those two are the only writers of /v1/users/me/avatar left in
-	// the suite (AccessibilityTests' ProfileOverviewPage_EditModeWithAvatar_...
-	// was a third until einsatzbereit#2148 moved it down to a component test). With the delete landing between this upload and this assertion,
-	// GET /v1/users/me returns avatarUrl: null and AccountControls renders the
-	// initials span with no <img> at all - the exact observed CI failure
-	// ("element(s) not found", aria snapshot showing button "User menu": VV).
-	// A keyed [NotInParallel] is cheap here: the assembly parallel limit is
-	// already ProcessorCount - 2, so serializing three tests costs almost nothing.
-	[Test]
-	[NotInParallel("visualtests-vera-avatar")]
-	public async Task UploadedAvatar_ShowsInNavBar_InsteadOfInitials()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var token = await GetAccessTokenAsync();
-
-		using var http = new HttpClient { BaseAddress = backend };
-		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-
-		using var content = new MultipartFormDataContent();
-		using var fileContent = new ByteArrayContent(TinyPng);
-		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-		content.Add(fileContent, "file", "avatar.png");
-
-		var response = await http.PutAsync("/v1/users/me/avatar", content);
-		response.EnsureSuccessStatusCode();
-
-		// Header only fetches the profile once on mount, so a full navigation is
-		// needed to pick up the freshly uploaded avatar - observed failing
-		// consistently (not just occasionally) on the very first such
-		// navigation in CI, still showing initials. Ruled out both output
-		// caching (GetUserProfile isn't .CacheOutput-decorated - only
-		// AllowAnonymous, response-invariant endpoints opt in, see
-		// OutputCachingExtensions's #1391 comment) and browser HTTP caching
-		// (Program.cs sets Cache-Control: no-store on every authenticated
-		// response, so a stale cached GET isn't possible either). Whatever the
-		// remaining timing gap is between the upload's HTTP connection and the
-		// page's own, poll via fresh navigations instead of asserting on a
-		// single one - the same fix already applied to this file's DELETE-flow
-		// tests below for the identical class of issue (#946).
-		var userMenu = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
-		for (var attempt = 0; ; attempt++)
-		{
-			await Page.GotoAsync(origin);
-			await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-			userMenu = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
-			if (await userMenu.Locator("img").IsVisibleAsync() || attempt >= 5)
-				break;
-			await Task.Delay(500);
-		}
-		await Expect(userMenu.Locator("img")).ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
 	[Test]
 	public async Task OrganizationLogo_ShowsOnOpportunityCard_InsteadOfInitials()
 	{

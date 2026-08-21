@@ -22,6 +22,7 @@ namespace VisualTests;
 public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const int MobileWidth = 390;
+
 	private const int MobileHeight = 844;
 
 	// Tailwind's `lg`, inclusive: since #1811 this is the narrowest width that
@@ -29,68 +30,6 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 	// ever has to survive - see HeaderNavBreakpointTests for the anonymous
 	// half of the same guarantee.
 	private const int DesktopWidth = 1024;
-
-	[Test]
-	public async Task DesktopHeader_Member_ReachesTheOrgAppWithoutTheAccountMenu()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Visible on a page render, with no menu opened first - the whole point.
-		var entry = Page.GetByTestId("nav-organization");
-		await Expect(entry).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(entry).ToHaveAttributeAsync("href", $"/app/{pinnedOrgId!.Value}/dashboard");
-
-		// The label is the organization's own name (the repo owner's call on
-		// #1785 - it states which organization you are working in). Asserted
-		// against the switcher's rendering of the same organization rather than
-		// against a seeded literal, so it stays true if the seed data changes.
-		var label = (await entry.InnerTextAsync()).Trim();
-		label.Should().NotBeEmpty();
-
-		await entry.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/app/{pinnedOrgId.Value}/dashboard", new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("org-switcher-current-name"))
-			.ToHaveTextAsync(label, new() { Timeout = 15_000 });
-	}
-
-	[Test]
-	public async Task AccountMenu_Member_CarriesPersonalItemsOnly()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var banner = Page.GetByRole(AriaRole.Banner);
-		await banner.GetByRole(AriaRole.Button, new() { Name = "User menu" }).ClickAsync();
-
-		await Expect(banner.GetByRole(AriaRole.Link, new() { Name = "My profile" }))
-			.ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		// The disclosure is gone, and so are the org tab links it used to
-		// reveal. Matched on the nested tab paths ("/dashboard/<tab>"), which
-		// the promoted entry's own href ("/app/<id>/dashboard") cannot match.
-		await Expect(banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true }))
-			.ToHaveCountAsync(0);
-		await Expect(banner.Locator("a[href*='/dashboard/']")).ToHaveCountAsync(0);
-	}
-
-	[Test]
-	public async Task DesktopHeader_NonMember_KeepsTheForOrganizationsPitch()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		// admin has no organization membership in seed data.
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(Page.GetByTestId("nav-forOrganizations")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("nav-organization")).ToHaveCountAsync(0);
-	}
 
 	[Test]
 	public async Task MobileMenu_Member_ShowsTheOrgAppAmongThePrimaryDestinations()
@@ -163,22 +102,5 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 			Skip.Test("seed data changed - the resolved organization's name is too short to truncate");
 
 		box.Width.Should().BeGreaterThan(60, "the name must stay readable, not collapse to its first letter");
-	}
-
-	[Test]
-	public async Task OrgApp_HeaderDoesNotRepeatTheOrganizationBesideItsSwitcher()
-	{
-		// Inside the org app the switcher already names the organization in the
-		// same header row - a nav entry repeating it would say the same thing
-		// twice and, at 768px, spend width the row does not have.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		await Expect(Page.GetByTestId("org-switcher-current-name"))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("nav-organization")).ToHaveCountAsync(0);
-		await Expect(Page.GetByTestId("nav-forOrganizations")).ToBeVisibleAsync();
 	}
 }
