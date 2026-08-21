@@ -562,7 +562,40 @@ The first, third, fourth and fifth rows are the same four categories the waves 2
 
 *Frontend coverage, which does move.* `vitest.config.ts`'s `coverage.include` was `src/lib/**/*.ts` - correct while that suite was only the pure-function tests, and blind to everything #2148 moved down. Widened to `src/**/*.{ts,tsx}` (excluding the tests themselves, the `src/test/` harness, the NSwag-generated client and composition roots), the same measurement reads *7.22 % statements before, 60.94 % after* - 4.45 % to 60.02 % branches, 7.32 % to 56.85 % functions. That is the number that actually moved, and it moved because coverage of components and pages now exists at a layer something measures.
 
-*Shard count and `AssemblyParallelLimit`: still four and still `ProcessorCount - 2`.* The model recorded above (`shard ~= 156 s + 2.1 s * (cases / N)`) now predicts ~2 min 58 s per shard at 232 cases across four - which puts the fixed share at roughly 88 %, well past the 50 % threshold this document named as the point where folding shards starts to pay. That threshold is now crossed, so the matrix *is* worth touching - but per the same paragraph's own lesson, from a measured run of this suite at this size, not from the model. Re-read the shard timings from this change's `dotnet.yml` run before editing `dotnet.yml`.
+*A gap this document should name: nothing measures the moved tests' own strength.* The mutation score above is Stryker.NET mutating `Domain`/`Application` under `Application.UnitTests`. It is silent about the Vitest suite by construction, so "identical score" says the moved cases took no backend coverage with them and nothing more.
+
+StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`) closes exactly that gap, and a scoped trial run during this work confirms it is practical: 269 mutants over four components in 2 min 46 s at concurrency 3, `coverageAnalysis: "perTest"`, using a cut-down vitest config so each mutant re-runs seconds of tests rather than the whole suite. Three findings worth recording before anyone repeats it:
+
+* *The first numbers are low, and mostly real.* `OpportunityCard.tsx` scores *39.68 %* (42.37 % of covered) against the full suite - 50 killed, 68 survived, 8 with no coverage. Only 5 of 76 survivors sit on a `className` line, so this is not Tailwind-string noise: the survivors are unasserted branches (`capacity.isFull`, the `unlimited` case, the `FEW_SPOTS_THRESHOLD` tone).
+* *Scope changes the number less than expected.* The same file against only its own test suite scores 34.92 %, against the whole 709-case suite 39.68 % - so the colocated suite carries most of the weight, and a per-file run is a fair cheap proxy.
+* *It cannot answer whether this PR lost coverage.* There is no before-baseline: Stryker.NET cannot drive Playwright against mutated frontend source, and StrykerJS cannot run the C# suite, so the Playwright originals' own kill rate is unknowable. StrykerJS is a forward-looking gate, not a retrospective one - the same position #2147 put the backend in before #2148 leaned on it.
+
+Two practical notes: under pnpm the plugin must be listed explicitly in `plugins` or Stryker reports no test runner found, and the whole thing belongs in its own change rather than here, mirroring how #2147 established the backend baseline before #2148 used it.
+
+*Shard count and `AssemblyParallelLimit`: still four and still `ProcessorCount - 2`, and the reason is a correction to this document's own framing.*
+
+Measured on this branch's green run at 232 cases: `build` 2 min 12 s, shards *4 min 36 s / 5 min 21 s / 4 min 51 s / 5 min 04 s* (mean 4 min 58 s), `integration-tests` 4 min 23 s, *critical path 7 min 33 s* - against 9 min 05 s at 391 cases and ~9 min 50 s at 474. The model (`shard ~= 156 s + 2.1 s * (cases / N)`) predicts 4 min 38 s at N = 4 against an observed 4 min 58 s mean, so it still under-predicts the middle by ~20 s and tracks the tail; unchanged in character from the two runs above.
+
+The fixed share is now *52 %* of a shard's wall clock (156 s of the 298 s mean), so the 50 % threshold recorded above has indeed been crossed. *It does not mean what this document said it meant.* A high fixed share means adding shards has stopped paying - not that removing them starts to. Folding a shard moves its cases onto the survivors, which are running in parallel, so as long as variable work is positive the critical path always gets worse:
+
+[cols="1,1,1" options="header"]
+|===
+|Shards |Modelled shard |Modelled critical path
+
+|2
+|6 min 40 s
+|~9 min 35 s
+
+|3
+|5 min 19 s
+|~8 min 13 s
+
+|*4 (today)*
+|*4 min 38 s*
+|*7 min 33 s (observed)*
+|===
+
+So folding to three costs ~40 s of critical path and saves one runner; folding to two costs ~2 minutes. The trade is *runners against wall clock*, and it never was a speed win - the earlier framing ("only then does folding shards start to pay") was wrong, and the arithmetic that produced it was reasoned about rather than measured, which is the third time this document has had to record that exact mistake. Four shards stay unless the runner budget becomes the binding constraint.
 ====
 
 - *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
