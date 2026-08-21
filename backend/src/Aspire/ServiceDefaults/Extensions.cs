@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -90,8 +89,8 @@ public static class ServiceDefaultsExtensions
 	// configureHealthEndpoint/configureAliveEndpoint let the Api layer (which owns
 	// RateLimitingPolicies/OutputCachingPolicies) opt these anonymous, unauthenticated
 	// endpoints into its rate limiting and output caching conventions without this
-	// shared project taking a reference back onto Api - ServiceDefaults is also
-	// referenced standalone, where both stay null and behavior is unchanged (#1172).
+	// shared project taking a reference back onto Api - both are optional, so a
+	// caller with no such conventions passes neither and behavior is unchanged (#1172).
 	public static WebApplication MapDefaultEndpoints(
 		this WebApplication app,
 		Action<IEndpointConventionBuilder>? configureHealthEndpoint = null,

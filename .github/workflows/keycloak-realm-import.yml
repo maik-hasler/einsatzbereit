@@ -64,6 +64,7 @@ jobs:
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
             -e KC_FRONTEND_URL=https://app.example.test \
+            -e KEYCLOAK_BACKEND_SECRET=dummy-not-a-real-secret \
             -e KC_SMTP_HOST=localhost \
             -e KC_SMTP_PORT=1025 \
             -e KC_SMTP_FROM=noreply@example.test \
@@ -95,17 +96,17 @@ jobs:
           # runtime instead. So assert the substitution actually happened,
           # rather than only that the realm came up.
           placeholders=""
-          frontend_client=""
+          clients=""
           if [ "$ready" = "1" ]; then
             token=$(curl -fsS -X POST \
               "http://localhost:8080/realms/master/protocol/openid-connect/token" \
               -d 'grant_type=password' -d 'client_id=admin-cli' \
               -d 'username=admin' -d 'password=admin' \
               | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p') || true
-            frontend_client=$(curl -fsS \
+            clients=$(curl -fsS \
               -H "Authorization: Bearer $token" \
-              "http://localhost:8080/admin/realms/einsatzbereit/clients?clientId=frontend") || true
-            placeholders=$(printf '%s' "$frontend_client" | grep -o '\${[A-Z_]*}' || true)
+              "http://localhost:8080/admin/realms/einsatzbereit/clients") || true
+            placeholders=$(printf '%s' "$clients" | grep -o '\${[A-Z_]*}' || true)
           fi
 
           echo "::group::Keycloak container logs"
@@ -119,14 +120,14 @@ jobs:
             exit 1
           fi
 
-          if [ "$ready" = "1" ] && ! printf '%s' "$frontend_client" | grep -q '"clientId":"frontend"'; then
-            echo "::error::Could not read the imported 'frontend' client back through the admin API, so the placeholder check below proves nothing."
+          if [ "$ready" = "1" ] && ! printf '%s' "$clients" | grep -q '"clientId":"frontend"'; then
+            echo "::error::Could not read the imported clients back through the admin API, so the placeholder check below proves nothing."
             exit 1
           fi
 
           if [ -n "$placeholders" ]; then
-            echo "::error::The imported 'frontend' client still carries unresolved placeholders ($placeholders) - Keycloak did not substitute them, so every OIDC redirect would fail at runtime."
+            echo "::error::The imported clients still carry unresolved placeholders ($placeholders) - Keycloak did not substitute them, so OIDC redirects (or the backend's client secret) would fail at runtime."
             exit 1
           fi
 
-          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all 'frontend' client placeholders resolved."
+          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all client placeholders resolved."
