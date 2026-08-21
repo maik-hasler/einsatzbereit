@@ -112,7 +112,7 @@ Images are published to GitHub Container Registry (GHCR) on version tag pushes. 
 |`v1.0.0`
 |===
 
-Release candidate tags (`v{semver}-rc.N`) publish images without moving the `latest` tag; stable tags (no `-rc` suffix) publish images and move `latest`. Either way, `publish.yml` stops there - it does not deploy. Its final job (`trigger-deploy`) fires a `repository_dispatch` event at a separate, private infrastructure repository (`mgmt-hetzner`), which owns `docker-compose.yml` and the actual deploy for this host (see "Staging and Production" below). See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
+Release candidate tags (`v{semver}-rc.N`) publish images without moving the `latest` tag; stable tags (no `-rc` suffix) publish images and move `latest`. Either way, `publish.yml` stops there - it does not deploy, and does not trigger anything to deploy. Deploying a published tag is a deliberate, separate, manual step against a different, private infrastructure repository (`mgmt-hetzner`), which owns `docker-compose.yml` and the actual deploy for this host (see "Staging and Production" below). See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
 
 ==== Staging and Production
 
@@ -187,7 +187,7 @@ The mapping is 1:1 today - every Level-1 building block runs as exactly one cont
 |Reverse proxy, TLS termination via ACME / Let's Encrypt
 |===
 
-Deployment is release-driven but split across two repositories. A version tag pushed here triggers this repo's `publish.yml`, which builds and pushes the images to GHCR, then fires a `repository_dispatch` event at `mgmt-hetzner` instead of deploying itself. `mgmt-hetzner`'s `deploy-einsatzbereit.yaml` picks that up and does the actual deploy to the host over SSH (`docker compose pull` + `up`) via one of two jobs - staging for RC tags, production for stable tags (#1344), mirroring the split this repo used before the move. Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
+Deployment is manually triggered and split across two repositories. A version tag pushed here triggers this repo's `publish.yml`, which builds and pushes the images to GHCR and stops - it does not deploy them or notify anything to. Deploying a published tag is a separate `workflow_dispatch` run of `mgmt-hetzner`'s `deploy-einsatzbereit.yaml` (version + target environment as inputs), which does the actual deploy to the host over SSH (`docker compose pull` + `up`) via one of two jobs - staging or production (#1344), mirroring the split this repo used before the move. Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
 
 === Infrastructure Level 2: Deployed Host
 

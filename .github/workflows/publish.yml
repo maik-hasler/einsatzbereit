@@ -449,51 +449,16 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # This is where publish.yml stops - it builds and pushes images, then hands
-  # off. The actual docker-compose.yml/deploy logic (SSH to the host, render
-  # .env, docker compose pull && up, health gate, rollback) now lives in the
-  # mgmt-hetzner repo, which also owns Traefik and the monitoring stack on
-  # this same host - see that repo's deploy-einsatzbereit.yaml and README.md.
-  # This job's only responsibility is telling it a new version is ready.
-  trigger-deploy:
-    name: Trigger mgmt-hetzner Deploy
-    needs: [publish-backend, publish-frontend, publish-keycloak]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Dispatch deploy event to mgmt-hetzner
-        env:
-          # Fine-grained PAT scoped to maik-hasler/mgmt-hetzner with
-          # Contents: write - repository_dispatch requires at least that;
-          # the default GITHUB_TOKEN can't fire an event in another repo.
-          DISPATCH_TOKEN: ${{ secrets.MGMT_HETZNER_DISPATCH_TOKEN }}
-          VERSION: ${{ needs.publish-backend.outputs.version }}
-          PRERELEASE: ${{ needs.publish-backend.outputs.prerelease }}
-        run: |
-          set -euo pipefail
-          PAYLOAD=$(jq -nc --arg version "$VERSION" --arg prerelease "$PRERELEASE" \
-            '{event_type: "einsatzbereit-deploy", client_payload: {version: $version, prerelease: ($prerelease == "true")}}')
-
-          http_code=$(curl -sS -o /tmp/dispatch-response.json -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer ${DISPATCH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/maik-hasler/mgmt-hetzner/dispatches" \
-            -d "$PAYLOAD")
-
-          if [ "$http_code" != "204" ]; then
-            echo "::error::mgmt-hetzner dispatch failed (HTTP ${http_code})"
-            cat /tmp/dispatch-response.json
-            exit 1
-          fi
-          echo "Dispatched einsatzbereit-deploy (version=${VERSION}, prerelease=${PRERELEASE}) to mgmt-hetzner."
-
   github-release:
     name: GitHub Release
-    # Depends on the three publish-* jobs directly, not trigger-deploy, so a
-    # GitHub Release is created as soon as the images it describes actually
-    # published, without waiting on (or failing because of) the mgmt-hetzner
-    # dispatch.
+    # This is where publish.yml stops - it builds and pushes images, then
+    # records the release. It does not deploy, and does not tell anything
+    # else to deploy either: no repository_dispatch, no cross-repo secret.
+    # The actual docker-compose.yml/deploy logic (SSH to the host, render
+    # .env, docker compose pull && up, health gate, rollback) lives in the
+    # mgmt-hetzner repo as a workflow_dispatch-only job, run by hand once a
+    # tag's images are confirmed published - see that repo's
+    # deploy-einsatzbereit.yaml and README.md.
     needs: [publish-backend, publish-frontend, publish-keycloak]
     runs-on: ubuntu-latest
     timeout-minutes: 10
