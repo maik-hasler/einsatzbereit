@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import OrgAppLayout from "./OrgAppLayout";
@@ -168,5 +168,74 @@ describe("OrgAppLayout org-load failures", () => {
 		expect(
 			screen.queryByRole("heading", { name: "You are offline" }),
 		).toBeNull();
+	});
+});
+
+/**
+ * `OrgAppShellHeaderTests`, `OrgAppAchievementNotifierTests` and the heading
+ * half of `OrgDashboardWidgetsTests`, moved down in #2148 wave 13. Remaining
+ * inventory: #2159.
+ *
+ * All three are about what the shell itself mounts, independent of which tab
+ * is inside it - which is exactly what rendering the layout around a stub
+ * child isolates, and what an E2E driving a real dashboard could not separate
+ * from the dashboard's own markup.
+ */
+describe("OrgAppLayout shell", () => {
+	beforeEach(() => {
+		api.getOrganizationDetails.mockResolvedValue({
+			id: ORG_ID,
+			name: "Freiwillige Feuerwehr Kiel",
+			members: [],
+			requestingUserRole: "Organizer",
+			membersUnavailable: false,
+			createdOn: new Date(Date.UTC(2026, 0, 1)),
+		});
+		api.getMyAchievements.mockResolvedValue([]);
+		// The Header's own org list, which the switcher renders from - left
+		// unmocked it never resolves and the switcher stays a skeleton.
+		api.getOrganizations.mockResolvedValue([
+			{ id: ORG_ID, name: "Freiwillige Feuerwehr Kiel" },
+		]);
+	});
+
+	it("names the page in the band, never the organization", async () => {
+		// The organization is the eyebrow above the title, not the title: an
+		// organizer inside the shell already knows which org they are in, and
+		// what they need from an <h1> is which of its pages they are on.
+		renderOrgApp();
+
+		const heading = await screen.findByRole("heading", { level: 1 });
+		expect(heading).toHaveTextContent("Dashboard");
+		expect(heading).not.toHaveTextContent("Freiwillige Feuerwehr Kiel");
+		// Exactly one - a second would make the page's identity ambiguous.
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+	});
+
+	it("keeps the way back and the way across in the chrome", async () => {
+		renderOrgApp();
+
+		// The switcher, for moving between organizations - awaited, since it
+		// renders a skeleton until the Header's own org list resolves.
+		expect(
+			await screen.findByRole("button", { name: "Switch organization" }),
+		).toBeInTheDocument();
+		// ...and the section rail, for moving between this one's pages.
+		const rail = screen.getByRole("navigation", {
+			name: "Organization sections",
+		});
+		expect(within(rail).getByTestId("org-tab-dashboard")).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+	});
+
+	it("runs its own achievements check on entry", async () => {
+		// #1034: the org app shell is a separate layout from AppLayout, so a
+		// volunteer who went straight into it never had their achievements
+		// polled - badges earned elsewhere silently never toasted.
+		renderOrgApp();
+
+		await waitFor(() => expect(api.getMyAchievements).toHaveBeenCalled());
 	});
 });

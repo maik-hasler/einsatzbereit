@@ -237,3 +237,55 @@ describe("opportunity list filters and the URL", () => {
 	// drops it. Tracked as einsatzbereit#2157, which also moves this case
 	// down once updateFilter uses the functional form.
 });
+
+/**
+ * `CityOnlyDeepLinkLocationFilterTests`, moved down in #2148 wave 13.
+ * Remaining inventory: #2159.
+ */
+describe("opportunity list with a city-only deep link", () => {
+	beforeEach(() => {
+		api.getVolunteerOpportunities.mockResolvedValue(page);
+	});
+
+	it("reads a bare ?city= as an active location filter", async () => {
+		// `hasLocationFilter` is `hasLocation || !!city`: a link carrying only a
+		// city name, with no coordinates or radius, is still a filter the list
+		// applies - so the bar has to say so, and offer a way out of it. The
+		// regression was a chip that read as inactive while the results were
+		// filtered.
+		renderWithProviders(
+			<>
+				<VolunteerOpportunitiesList />
+				<LocationProbe />
+			</>,
+			{ route: "/opportunities?city=Kiel" },
+		);
+
+		const chip = await screen.findByTestId("filter-location");
+		expect(chip).toHaveTextContent("Kiel");
+		// No radius suffix, because there are no coordinates to measure from.
+		expect(chip).not.toHaveTextContent("km");
+
+		expect(
+			screen.getByRole("button", { name: "Clear location filter" }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
+	});
+
+	it("drops the city from the query string when the filter is cleared", async () => {
+		renderWithProviders(
+			<>
+				<VolunteerOpportunitiesList />
+				<LocationProbe />
+			</>,
+			{ route: "/opportunities?city=Kiel" },
+		);
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Clear location filter" }),
+		);
+
+		const search = screen.getByTestId("location-search").textContent ?? "";
+		expect(new URLSearchParams(search).get("city")).toBeNull();
+	});
+});

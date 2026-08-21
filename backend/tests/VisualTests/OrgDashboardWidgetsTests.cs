@@ -83,64 +83,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
-	public async Task Dashboard_HasNoOrgNameHeading_AndWidgetLinksReachEverySubpage()
-	{
-		// OrgAppShell's h1 renders the tab/page title ("Dashboard"), never the org
-		// name - the header's org switcher already shows that, and duplicating it
-		// per page is what this asserts against. Also asserts the dashboard's own
-		// widgets are a second, independent way to reach every subsite, not just
-		// the tab bar (covered in OrgAppMobileResponsiveTests).
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual771 Reachability", pinnedOrgId!.Value);
-
-		// OrgAppShell renders one page-title h1, but it must still not
-		// duplicate the org name the header's org switcher already shows.
-		await Expect(Page.Locator("h1")).ToHaveCountAsync(1);
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
-
-		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
-		match.Success.Should().BeTrue();
-		var organizationId = match.Groups[1].Value;
-
-		var settingsWidget = Page.Locator("section", new()
-		{
-			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Organization", Exact = true }),
-		});
-
-		// Opportunities: reachable via a dashboard widget's "opportunities" link -
-		// scoped to that widget, since the page header's section rail (added with
-		// OrgPageHeader.tsx) carries its own "Opportunities" link now too and this
-		// test is specifically about the widgets being an independent second way
-		// to reach every subpage.
-		await Page.GetByTestId("widget-tile-UpcomingOpportunities")
-			.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
-		await Page.WaitForURLAsync(
-			$"{origin}/app/{organizationId}/dashboard/opportunities", new() { Timeout = 10_000 });
-
-		await Page.GoBackAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard$"), new() { Timeout = 10_000 });
-
-		// Members: reachable via the Settings widget's member-count link - scoped
-		// to that widget since the tab bar has its own separate "Members" link.
-		// The link reads "1 member" (singular) for a fresh single-member org, so
-		// match on "member" rather than "members".
-		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/members", new() { Timeout = 10_000 });
-
-		await Page.GoBackAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard$"), new() { Timeout = 10_000 });
-
-		// Settings: reachable via the Settings widget's "Edit settings" link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/settings", new() { Timeout = 10_000 });
-	}
-
-	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
 		// WidgetCard only set overflow-y-auto on its content wrapper, and
@@ -461,28 +403,5 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(upcomingWidget).ToContainTextAsync("0/5 sign-ups");
 		await Expect(upcomingWidget.GetByText("This widget couldn't be displayed"))
 			.ToHaveCountAsync(0);
-	}
-
-	private async Task CreateOrganizationAsync(string namePrefix, Guid organizationId)
-	{
-		// New orgs are created via the org switcher's "Create organization" entry
-		// - reachable from within any org the caller already organizes (olaf's
-		// seed data always has at least one) - and guarantees a clean, empty org
-		// (no opportunities/engagements yet) for deterministic widget assertions.
-		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, organizationId);
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-
-		var createDialog = Page.GetByRole(AriaRole.Dialog);
-		await Expect(createDialog).ToBeVisibleAsync();
-		await createDialog.Locator("input[type='text']").FillAsync(orgName);
-		await Page.GetByTestId("modal-submit").ClickAsync();
-
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
-			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import SignUpModal from "./SignUpModal";
 import type { TimeSlotDetail } from "../client/api-client";
 import { renderWithProviders } from "../test/render";
@@ -98,5 +99,64 @@ describe("SignUpModal vocabulary in German (#1775)", () => {
 		expect(
 			within(dialog).queryByRole("button", { name: "Anmelden" }),
 		).toBeNull();
+	});
+});
+
+/**
+ * `SignUpModalMessageFieldTests` and `CheckInAndSlotTests`' slot-count case,
+ * moved down in #2148 wave 13. Remaining inventory: #2159.
+ */
+describe("SignUpModal message field", () => {
+	const openInterest = (lng: "de" | "en" = "en") =>
+		open([], lng, "IndividualContact");
+
+	it("labels the field and marks it required, for both kinds of user", async () => {
+		openInterest();
+
+		const field = await screen.findByLabelText(/Message/);
+		// Both halves matter: the visible asterisk is what a sighted user reads,
+		// `aria-required` is what everyone else does. RequiredMark renders the
+		// asterisk aria-hidden precisely so the two do not double up.
+		expect(field).toHaveAttribute("aria-required", "true");
+		expect(field.id).toBe("sign-up-message");
+
+		const label = document.querySelector('label[for="sign-up-message"]');
+		expect(label?.textContent).toContain("*");
+		expect(label?.querySelector('[aria-hidden="true"]')).not.toBeNull();
+	});
+
+	it("rejects an empty message inline, in the reader's own language", async () => {
+		openInterest("de");
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Interesse bekunden" }),
+		);
+
+		const error = await screen.findByRole("alert");
+		expect(error.id).toBe("sign-up-message-error");
+		expect(error.textContent?.trim()).not.toBe("");
+		// The control has to point at the message, not just render it nearby.
+		expect(screen.getByLabelText(/Nachricht/)).toHaveAttribute(
+			"aria-describedby",
+			"sign-up-message-error",
+		);
+		// Rejected client-side: nothing was sent.
+		expect(api.createEngagement).not.toHaveBeenCalled();
+	});
+});
+
+describe("SignUpModal slot picker", () => {
+	it("states how full each slot already is", async () => {
+		// Which slot to take is the only decision this dialog asks for, and
+		// remaining capacity is the thing that decides it - a bare list of times
+		// makes the volunteer pick blind.
+		open([slot("slot-a", 9, 0), slot("slot-b", 14, 3)]);
+
+		await userEvent.click(await screen.findByRole("combobox"));
+
+		const options = screen.getAllByRole("option");
+		expect(options).toHaveLength(2);
+		expect(options[0]).toHaveTextContent("4 spots left");
+		expect(options[1]).toHaveTextContent("1 spot left");
 	});
 });

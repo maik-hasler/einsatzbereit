@@ -253,3 +253,65 @@ describe("create-opportunity wizard: distinct control names (#1957)", () => {
 		).toHaveLength(1);
 	});
 });
+
+/**
+ * The two wizard-shape cases from `VolunteerOpportunityTests`, moved down in
+ * #2148 wave 13. Remaining inventory: #2159.
+ */
+describe("create-opportunity wizard: shape and the draft gate", () => {
+	it("offers all four steps and a draft button, with no accent band", async () => {
+		openWizard();
+
+		for (const n of [1, 2, 3, 4]) {
+			expect(await screen.findByTestId(`wizard-stepper-${n}`)).toBeVisible();
+		}
+		expect(screen.getByTestId("modal-save-draft")).toBeInTheDocument();
+		// The gradient header band the wizard used to carry. Asserted as a class
+		// membership, which is what the E2E checked too - not a computed style,
+		// so jsdom answers it identically.
+		expect(document.querySelector(".from-brand-600")).toBeNull();
+	});
+
+	it("lets a step be reached directly, once the step before it validates", async () => {
+		// Free navigation is the point of a stepper: an organizer who knows they
+		// need to change the format should not have to walk through details
+		// first. What it must not do is skip validation - #1782.
+		openWizard();
+
+		await userEvent.click(await screen.findByTestId("wizard-stepper-2"));
+
+		// Step 1 is empty, so the jump is refused and says why.
+		await waitFor(() => expect(titleError()).not.toBeNull());
+		expect(screen.getByTestId("wizard-stepper-1")).toHaveAttribute(
+			"aria-current",
+			"step",
+		);
+
+		await userEvent.type(title(), "Deutscher Titel");
+		await userEvent.type(description(), "Eine ausreichend lange Beschreibung.");
+		await userEvent.click(screen.getByTestId("wizard-stepper-2"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-stepper-2")).toHaveAttribute(
+				"aria-current",
+				"step",
+			),
+		);
+	});
+
+	it("keeps Save draft disabled until a real title is typed", async () => {
+		// A draft with no title is unfindable afterwards - it lists as "Unnamed
+		// draft" and nothing distinguishes it from the next one.
+		openWizard();
+
+		const saveDraft = await screen.findByTestId("modal-save-draft");
+		expect(saveDraft).toBeDisabled();
+
+		await userEvent.type(title(), "   ");
+		expect(saveDraft).toBeDisabled();
+
+		await userEvent.clear(title());
+		await userEvent.type(title(), "Deutscher Titel");
+		await waitFor(() => expect(saveDraft).toBeEnabled());
+	});
+});

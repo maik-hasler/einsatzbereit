@@ -174,3 +174,99 @@ describe("OrgSettingsPage danger zone", () => {
 		).toBeInTheDocument();
 	});
 });
+
+/**
+ * The danger-zone hint case from `OrganizationTests` and
+ * `LogoUploadRejectionMessageTests`, moved down in #2148 wave 13. Remaining
+ * inventory: #2159.
+ */
+describe("OrgSettingsPage danger-zone hint", () => {
+	/** Renders the page for an organization with exactly `count` members. */
+	function renderWithMembers(count: number) {
+		const members = Array.from({ length: count }, (_, i) => ({
+			userId: `u${i}`,
+			username: `member${i}`,
+			role: i === 0 ? "Organizer" : "Member",
+		}));
+		return renderWithProviders(
+			<Routes>
+				<Route
+					element={
+						<Outlet
+							context={{
+								org: { ...org, members },
+								reloadOrg: () => {},
+								isOrganizer: true,
+							}}
+						/>
+					}
+				>
+					<Route index element={<OrgSettingsPage />} />
+				</Route>
+			</Routes>,
+			{ auth: { isAuthenticated: true } },
+		);
+	}
+
+	it("explains why deletion is available to a sole member", async () => {
+		renderWithMembers(1);
+
+		expect(
+			await screen.findByText(
+				"You are this organization's sole remaining member, so you can delete it.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("explains why it is not, once someone else is a member", async () => {
+		// The hint branches on the same member count the delete button's
+		// `disabled` already did - which is the point: a disabled button with no
+		// reason beside it tells a keyboard or screen-reader user nothing.
+		renderWithMembers(2);
+
+		expect(
+			await screen.findByText(
+				"Only the organization's sole remaining member can delete it. Remove other members first.",
+			),
+		).toBeInTheDocument();
+	});
+});
+
+describe("OrgSettingsPage logo upload rejection", () => {
+	it("names the violation instead of repeating the format hint", async () => {
+		// The hint ("JPEG, PNG or WebP, max. ...") is always on screen, so
+		// echoing it as the error told the organizer nothing about what went
+		// wrong with the file they actually picked.
+		renderPage();
+		await enterEditMode();
+
+		const input = document.querySelector<HTMLInputElement>("#logo-upload");
+		expect(input).not.toBeNull();
+
+		// jsdom reads only `type` and `size` off a File, which is exactly what
+		// `validateImageUpload` inspects - so the rejection path is identical
+		// here to a real picked file.
+		// `applyAccept: false` because the input carries an `accept` list and
+		// userEvent honours it by default - which would drop the file before the
+		// change event, leaving the client-side guard under test unexercised. A
+		// real file picker's accept filter is a convenience, not the guard.
+		await userEvent.upload(
+			input as HTMLInputElement,
+			new File(["not an image"], "notes.txt", { type: "text/plain" }),
+			{ applyAccept: false },
+		);
+
+		const error = await waitFor(() => {
+			const el = document.querySelector("#logo-upload-error");
+			expect(el).not.toBeNull();
+			return el as HTMLElement;
+		});
+		expect(error.textContent).toContain("notes.txt");
+		expect(error.textContent).toContain("not a supported image");
+		// And it is distinct from the hint, rather than a copy of it.
+		expect(error.textContent).not.toBe(
+			screen.getByTestId("logo-upload-hint").textContent,
+		);
+		expect(api.uploadOrganizationLogo).not.toHaveBeenCalled();
+	});
+});

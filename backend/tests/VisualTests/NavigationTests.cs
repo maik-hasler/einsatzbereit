@@ -426,30 +426,4 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Keyboard.PressAsync("Escape");
 		await Expect(profileLink).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
-
-	[Test]
-	public async Task AccountControls_UserMenu_ClosesAfterNavigatingToOwnLink()
-	{
-		// None of the dropdown's own links (My profile, My signups,
-		// Profile settings, Administration) closed the disclosure on click -
-		// only the outside-click/Escape handling in useAccountMenu did. The
-		// stale panel stayed rendered (aria-expanded="true", panel still
-		// visible) on top of the destination page until the user clicked
-		// elsewhere.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-
-		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
-		await userMenuBtn.ClickAsync();
-
-		var profileLink = Page.GetByRole(AriaRole.Link, new() { Name = "My profile" });
-		await Expect(profileLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		await profileLink.ClickAsync();
-
-		await Page.WaitForURLAsync(new Regex(@"/profile$"), new() { Timeout = 15_000 });
-		await Expect(userMenuBtn).ToHaveAttributeAsync("aria-expanded", "false", new() { Timeout = 5_000 });
-		await Expect(profileLink).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
-	}
 }

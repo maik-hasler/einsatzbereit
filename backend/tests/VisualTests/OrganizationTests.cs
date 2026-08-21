@@ -40,48 +40,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403()
-	{
-		// The dashboard's Members tab must call CreateInvitation, not the
-		// admin-only AddMember endpoint, which returns 403/401 for an organizer.
-		// The invitee shows up under Pending Invitations with no error banner.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// A throwaway org, not whichever seeded one olaf is pinned to: vera is a
-		// baseline member of one of the two, where she never surfaces as an
-		// invitable candidate ("No users found."). Which one is pinned comes from
-		// resolveActiveOrg's alphabetical fallback, which a seed-data rename flips.
-		await CreateOrganizationAsync("Visual579 InviteMember", pinnedOrgId!.Value);
-
-		// Members lives in the page header's section rail (OrgPageHeader.tsx) -
-		// the same rail an organizer uses, and unambiguous unlike a bare
-		// "member" name match, which the Settings widget's own member-count link
-		// also answers to.
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		await Page.Locator("#member-search").FillAsync("vera");
-
-		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
-
-		// A freshly created org has olaf as its only member and no invitation
-		// rows at all, so vera is always an invitable candidate here. Assert
-		// the invite button directly instead of tolerating "No users found."
-		// as an alternate outcome.
-		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await inviteButton.First.ClickAsync();
-
-		// No 403/401-driven error banner ("Could not send invitation.").
-		await Expect(Page.GetByText("Could not send invitation.")).Not.ToBeVisibleAsync();
-
-		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task MembersPage_ActionButtons_MeetMinimumTouchTargetSize()
 	{
 		// The member-row actions must clear WCAG 2.2 SC 2.5.8's 24x24 CSS px
@@ -190,49 +148,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
 		directory.GetProperty("totalItems").GetInt32().Should().Be(0,
 			"a deleted organization must not still be browsable in the public directory");
-	}
-
-	[Test]
-	public async Task DangerZoneHint_BranchesOnMemberCount_TheWayTheDeleteButtonAlreadyDid()
-	{
-		// DangerZonePanel's description must branch on member count, not just the
-		// button's `disabled` prop - otherwise the sole member, the one person who
-		// *can* delete, is told to remove members who are not there, next to an
-		// enabled Delete button.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual1789 DangerZoneHint", pinnedOrgId!.Value);
-		var organizationId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
-
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-
-		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
-		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		// Sole member: enabled button, and copy that agrees with it.
-		await Expect(deleteButton).ToBeEnabledAsync();
-		await Expect(Page.GetByText("You are this organization's sole remaining member, so you can delete it."))
-			.ToBeVisibleAsync();
-		await Expect(Page.GetByText("Remove other members first.")).ToHaveCountAsync(0);
-
-		// A second plain member (same escape hatch as the two-member members
-		// page test above, since accepting an invitation would grant Organizer
-		// too) makes the original sentence true again - and it must come back.
-		var vera = await Fixture.SignInAsync("vera", "vera123");
-		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
-
-		// OrgAppLayout only refetches org details on organizationId change, so
-		// without a reload the page keeps its pre-membership snapshot.
-		await Page.ReloadAsync();
-
-		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(deleteButton).ToBeDisabledAsync();
-		await Expect(Page.GetByText(
-			"Only the organization's sole remaining member can delete it. Remove other members first."))
-			.ToBeVisibleAsync();
 	}
 
 	[Test]

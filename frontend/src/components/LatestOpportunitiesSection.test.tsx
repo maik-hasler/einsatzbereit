@@ -91,3 +91,75 @@ describe("LatestOpportunitiesSection while offline", () => {
 		expect(screen.queryByTestId("landing-latest-offline")).toBeNull();
 	});
 });
+
+/**
+ * `LandingOpportunityPreviewTests`, moved down in #2148 wave 13. Remaining
+ * inventory: #2159.
+ */
+describe("LatestOpportunitiesSection preview", () => {
+	const summary = (id: string, titleDe: string) => ({
+		id,
+		titleDe,
+		titleEn: undefined,
+		descriptionDe: "Beschreibung.",
+		descriptionEn: undefined,
+		street: undefined,
+		houseNumber: undefined,
+		zipCode: undefined,
+		city: "Kiel",
+		isRemote: true,
+		occurrence: "OneTime",
+		participationType: "IndividualContact",
+		category: undefined,
+		totalMaxParticipants: 0,
+		currentParticipantCount: 0,
+		validUntil: undefined,
+		nextTimeSlotStart: undefined,
+		organizationId: "22222222-2222-2222-2222-222222222222",
+		organizationName: "Freiwillige Feuerwehr Kiel",
+		createdOn: new Date(Date.UTC(2026, 7, 1)),
+	});
+
+	it("shows at most three, and asks the API for exactly that many", async () => {
+		// The E2E could only count what rendered. Asserting the page size too is
+		// the half that actually keeps the preview a preview: a section that
+		// fetched fifty and sliced three would look identical on screen while
+		// costing the landing page fifty rows on every load.
+		api.getVolunteerOpportunities.mockResolvedValue({
+			items: [
+				summary("aaaa0001-0000-0000-0000-000000000001", "Erste"),
+				summary("aaaa0002-0000-0000-0000-000000000002", "Zweite"),
+				summary("aaaa0003-0000-0000-0000-000000000003", "Dritte"),
+			],
+			pageCount: 5,
+			totalCount: 42,
+		});
+
+		renderWithProviders(<LatestOpportunitiesSection />);
+
+		const list = await screen.findByTestId("landing-latest-opportunities");
+		expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+
+		// pageNumber and pageSize are the first two positional arguments of the
+		// generated client method; everything after them is a filter this
+		// section never sets (see lib/volunteerOpportunities.ts's named-options
+		// wrapper for why the call is positional at all).
+		expect(api.getVolunteerOpportunities.mock.calls[0].slice(0, 2)).toEqual([
+			1, 3,
+		]);
+	});
+
+	it("offers a way through to the full list", async () => {
+		api.getVolunteerOpportunities.mockResolvedValue({
+			items: [summary("aaaa0001-0000-0000-0000-000000000001", "Erste")],
+			pageCount: 1,
+			totalCount: 1,
+		});
+
+		renderWithProviders(<LatestOpportunitiesSection />);
+
+		const link = await screen.findByTestId("landing-all-opportunities-link");
+		expect(link).toHaveAttribute("href", "/opportunities");
+		expect(link).toHaveTextContent("Browse all opportunities");
+	});
+});

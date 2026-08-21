@@ -475,3 +475,46 @@ describe("OrgMembersPage invitations", () => {
 		);
 	});
 });
+
+/**
+ * `OrganizationTests`' invite case, moved down in #2148 wave 13. Remaining
+ * inventory: #2159.
+ *
+ * The server contract is already covered by `OrganizationSettingsTests`'
+ * CreateInvitation cases. What was left end-to-end is the client wiring, and
+ * that half is the whole regression: the page used to call the direct
+ * add-member endpoint, which an organizer without realm-admin rights is
+ * answered 403 for. Inviting is the path that works for them.
+ */
+describe("OrgMembersPage inviting rather than adding", () => {
+	it("creates an invitation and lists the invitee as pending", async () => {
+		api.createInvitation.mockResolvedValue(invitation);
+		api.searchMemberCandidates.mockResolvedValue([candidate]);
+		renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Invite" }),
+		);
+
+		await waitFor(() =>
+			expect(api.createInvitation).toHaveBeenCalledWith(
+				org.id,
+				expect.objectContaining({ inviteeId: candidate.userId }),
+			),
+		);
+
+		// The invitee has to show up as pending straight away - the E2E's own
+		// evidence that the invitation exists, without a reload.
+		const pending = await screen.findByRole("heading", {
+			name: "Pending invitations",
+		});
+		const list = pending.parentElement?.querySelector("ul");
+		expect(list).not.toBeNull();
+		expect(list).toHaveTextContent(invitation.inviteeName);
+
+		// And nothing on the page reaches for the direct add-member endpoint,
+		// which is what produced the 403.
+		expect(api.addOrganizationMember).not.toHaveBeenCalled();
+	});
+});

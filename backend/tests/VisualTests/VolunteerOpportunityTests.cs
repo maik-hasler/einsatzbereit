@@ -119,85 +119,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task CreateWizard_HasStepperFreeNavigationAndDraftButton()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await createBtn.First.ClickAsync();
-
-		var dialog = Page.Locator("[role='dialog']");
-		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-
-		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
-
-		// Plain header - the same one every other modal uses, with no one-off
-		// gradient accent bar.
-		var accent = dialog.Locator("[class*='from-brand-600']");
-		await Expect(accent).Not.ToBeAttachedAsync();
-
-		// Clickable stepper with 4 labelled steps.
-		for (var n = 1; n <= 4; n++)
-			await Expect(Page.GetByTestId($"wizard-stepper-{n}")).ToBeVisibleAsync();
-
-		// Save-as-draft action is always available.
-		await Expect(Page.GetByTestId("modal-save-draft")).ToBeVisibleAsync();
-
-		// Fail-fast validation: "Next" is blocked while step 1's required
-		// fields are empty, with the error shown before Publish-time.
-		var nextBtn = Page.GetByTestId("modal-next");
-		await nextBtn.ClickAsync();
-		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
-		await Expect(Page.Locator("#opportunity-title-error")).ToBeVisibleAsync();
-
-		// Fill in the required fields - Next now advances.
-		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
-		await Page.Locator("#opportunity-description").FillAsync(
-			"Visual test coverage for the Pitch 2 wizard rewrite.");
-		await nextBtn.ClickAsync();
-		await Expect(Page.GetByTestId("wizard-step-2")).ToBeVisibleAsync();
-
-		// Mark remote so step 2's address fields are no longer required,
-		// then the stepper can jump directly ahead to step 4.
-		await Page.Locator("#opportunity-remote").CheckAsync();
-		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
-		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
-
-		// Jump back to step 1 - always allowed, no validation on the way back.
-		await Page.GetByTestId("wizard-stepper-1").ClickAsync();
-		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
-
-		// Banner upload affordance present on step 1.
-		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
-
-		// Step 2 hint card present. Selects on data-testid, not the bg-brand-50
-		// Tailwind class: LocationStep.tsx's remote-checkbox label a few lines
-		// above also carries bg-brand-50 (via
-		// hover:bg-brand-50/has-[:checked]:bg-brand-50) and always renders, so
-		// `[class*='bg-brand-50']` silently matches that label instead and passes
-		// regardless of remote state. The hint card only renders when not remote,
-		// so "remote" (checked above to skip step 2's address validation) must be
-		// unchecked
-		// again first for this to assert against the real element.
-		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
-		await Page.Locator("#opportunity-remote").UncheckAsync();
-		var hint = Page.GetByTestId("wizard-step-2").GetByTestId("location-hint");
-		await Expect(hint).ToBeVisibleAsync();
-
-		// The form is dirty (title/description filled in) - Escape must ask
-		// for confirmation instead of silently discarding the input.
-		await Page.Keyboard.PressAsync("Escape");
-		var discardBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" });
-		await Expect(discardBtn).ToBeVisibleAsync();
-		await discardBtn.ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task DetailPage_ShowsHomeLink_AndNoShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -435,44 +356,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task SaveDraft_DisabledUntilTitled_EnablesOnceTitleFilled()
-	{
-		// Regression for #2076: submitting a completely empty form via "Save
-		// as draft" used to succeed silently and produce an unnamed,
-		// indistinguishable record. The button must stay disabled until the
-		// (German) title is filled in, mirroring the same field "Publish"
-		// already requires.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await createBtn.First.ClickAsync();
-
-		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-
-		var saveDraftBtn = Page.GetByTestId("modal-save-draft");
-		await Expect(saveDraftBtn).ToBeVisibleAsync();
-		await Expect(saveDraftBtn).ToBeDisabledAsync();
-
-		// Whitespace-only must not count as a title either.
-		await Page.Locator("#opportunity-title").FillAsync("   ");
-		await Expect(saveDraftBtn).ToBeDisabledAsync();
-
-		var uniqueTitle = $"Draft Gate Visual Test {Guid.NewGuid().ToString("N")[..8]}";
-		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
-		await Expect(saveDraftBtn).ToBeEnabledAsync();
-
-		await saveDraftBtn.ClickAsync();
-		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
-
-		var draftsSection = Page.GetByTestId("drafts-section");
-		await Expect(draftsSection).ToBeVisibleAsync();
-		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task PublishScheduledSlots_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
 	{
 		// A ScheduledSlots opportunity could be published with
@@ -698,8 +581,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters()
 	{
-		// Companion to DetailPage_TagChip_IsClickableLink_FiltersBrowseList
-		//: list cards must expose the same clickable tag chips, since
+		// Companion to the detail page's own tag-chip case, which #2148 moved
+		// down to VolunteerOpportunityDetailPage.test.tsx: list cards must
+		// expose the same clickable tag chips, since
 		// that's where most volunteers actually browse before ever opening a
 		// detail page. Also covers two edge cases: an opportunity with more
 		// than one tag renders a distinct chip per tag, and a tag containing

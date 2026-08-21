@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createRef } from "react";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import AccountControls from "./AccountControls";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import { renderWithProviders } from "../../test/render";
@@ -82,5 +83,33 @@ describe("account dropdown", () => {
 			screen.getByRole("link", { name: "My profile" }),
 		).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Account Settings" })).toBeNull();
+	});
+});
+
+/**
+ * `NavigationTests`' user-menu case, moved down in #2148 wave 13. Remaining
+ * inventory: #2159.
+ */
+describe("account dropdown after navigating", () => {
+	it("closes itself when one of its own links is followed", async () => {
+		// Every Link in the panel carries onClick={() => setDropdownOpen(false)}.
+		// Without it the panel stayed open over the page it had just navigated
+		// to, covering the top of the very content the user asked for.
+		const setDropdownOpen = vi.fn();
+		renderWithProviders(
+			<AccountControls
+				menu={{ ...menuState(), setDropdownOpen }}
+				displayName="Vera Volunteer"
+				initials="VV"
+				isAdmin={false}
+				onSignOut={() => {}}
+				onNotificationNavigate={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true, roles: ["user"] } },
+		);
+
+		await userEvent.click(screen.getByRole("link", { name: "My profile" }));
+
+		expect(setDropdownOpen).toHaveBeenCalledWith(false);
 	});
 });
