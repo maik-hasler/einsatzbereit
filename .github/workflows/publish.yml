@@ -676,7 +676,6 @@ jobs:
             chmod 600 .env
             docker compose pull
             docker compose up -d --remove-orphans
-            docker image prune --force || true
           EOF
 
       - name: Capture container logs on deploy failure
@@ -1056,7 +1055,6 @@ jobs:
             chmod 600 .env
             docker compose pull
             docker compose up -d --remove-orphans
-            docker image prune --force || true
           EOF
 
       - name: Capture container logs on deploy failure
