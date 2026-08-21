@@ -108,7 +108,9 @@ Vitest (`vitest.config.ts`, jsdom environment) covers three things, colocated ne
 - **Component and page behaviour**, as `*.test.tsx` next to the component or page (e.g. `src/pages/app/OrgSettingsPage.test.tsx`) - rendered copy, form state, which branch a component takes for a given prop or a given rejected promise.
 - **Component accessibility**, as `*.a11y.test.tsx` (e.g. `src/components/ConfirmDialog.a11y.test.tsx`) - see "Accessibility (a11y)" below.
 
-What stays in the Playwright suite in `backend/tests/VisualTests/` is what a browser is genuinely needed for: rendered layout (jsdom has no layout engine, so anything measuring a width, a computed colour or a bounding box cannot move), real keyboard and pointer input, real focus movement, a real Keycloak round trip, real offline, and page-level axe scans. #2148 moved everything else down; see root `AGENTS.md` and `docs/TDRs/2_slow_ci_pipeline.adoc`.
+What stays in the Playwright suite in `backend/tests/VisualTests/` is what a browser is genuinely needed for: rendered layout (jsdom has no layout engine, so anything measuring a width, a computed colour or a bounding box cannot move), real keyboard and pointer input, real focus movement, a real Keycloak round trip, real offline, page-level axe scans, and multi-page journeys that are not any one component's output. #2148 moved everything else down - 310 cases, leaving 232; see root `AGENTS.md` and `docs/TDRs/2_slow_ci_pipeline.adoc` for the per-category breakdown of what is left and why.
+
+Two porting hazards are worth knowing before moving anything else down, both of which produced green-but-vacuous tests during #2148: **Playwright matches accessible names by substring, RTL matches them exactly** (so a `getByRole("button", { name: "Remove" })` that worked end-to-end matches nothing here when the real name is an `aria-label` reading "Remove Vera Volunteer"), and **an `alt=""` image has no `img` role** (query it by tag, and say why in a comment).
 
 `src/test/` holds the shared harness for the component suites and is not itself a test target:
 

@@ -488,6 +488,79 @@ Extrapolating from the model, and holding the observed slowest-vs-mean spread: t
 
 *`AssemblyParallelLimit`'s `ProcessorCount - 2` is likewise unchanged.* #2148 suggested revisiting it "once the suite is much smaller". It is 28 % smaller, not much smaller, and the contention it guards against (Playwright and axe-core sessions competing with the Aspire stack they all call into) is unchanged per-shard. Raising it is a controlled experiment against real CI failure rates, not a follow-on edit.
 ====
++
+[NOTE]
+====
+*Waves 6-13 - the remaining pool cleared, and the answer to "how low does E2E go" (issue #2148, 2026-08-21).*
+
+The waves 2-5 note above closed with an estimate: ~198 cases were movable "in principle", which would land E2E at roughly 190 cases or ~7 %. That estimate has now been replaced by a measurement, and the estimate was close but arrived at from the wrong direction.
+
+*How the remaining pool was established.* Rather than reasoning per class, every one of the then-surviving cases was read in full with its helper calls resolved, classified, and then handed to a second reviewer instructed to *refute* the classification and to default to "cannot move" under any uncertainty. That refutation pass is the part worth keeping: it rejected a third of the proposed moves, and several of the rejections were cases that would have passed in Vitest while asserting nothing - a `queryByRole("button", { name: "Remove" })` that matches nothing whether or not a Remove button exists, because the accessible name is an `aria-label` reading "Remove Vera Volunteer". Playwright matches accessible names by substring and RTL matches exactly; a port that does not account for that difference is a green test with no subject.
+
+*What the pass produced.* 134 cases confirmed movable - 120 to Vitest/RTL, 14 to `IntegrationTests`. All 134 have moved, in waves 6-13. Two further cases were deleted rather than moved, because `IntegrationTests` already covered exactly what they asserted (`EngagementReadRepositoryTests`' checked-in bucket rule and `EngagementTests`' gone-opportunity reclassification).
+
+*The measured final shape.*
+
+[cols="2,1,1,1,1" options="header"]
+|===
+|Layer |Before #2148 |After |Change |#2148's target
+
+|Unit (`Application.UnitTests` + `ArchitectureTests` + frontend Vitest)
+|1766 (63.3 %)
+|*2143 (74.1 %)*
+|+377
+|~1400 (69 %)
+
+|Integration
+|483 (17.3 %)
+|*518 (17.9 %)*
+|+35
+|~570 (28 %)
+
+|E2E (`VisualTests`)
+|542 (19.4 %)
+|*232 (8.0 %)*
+|-310
+|~50 (2.5 %)
+|===
+
+Every figure counts *cases*, not `[Test]` methods: a method carrying `[Arguments]` expands to one case per argument set, which is what CI runs and what `visual-test-shard.sh` balances.
+
+*So the unit layer overshot its target and E2E stopped at 8 %, not 2.5 %.* Categorising the 232 survivors mechanically - by which browser-only API the case or its helpers actually reach, checked in order:
+
+[cols="1,3" options="header"]
+|===
+|Cases |What it reaches
+
+|119
+|Rendered layout or real input: `SetViewportSize`, `getComputedStyle`, `BoundingBox`, `ToHaveClass`, drag/resize, keyboard, focus
+
+|53
+|A real navigation or a multi-page journey - notification click-through, breadcrumb return paths, unpublish cascading to an engagement, a QR scan resolving against a live engagement. None of these is one component's output
+
+|26
+|A real Keycloak round trip - the login form, the registration endpoint, the terms-of-use gate
+
+|19
+|A page-level axe scan - landmarks, heading order, colour contrast
+
+|15
+|Network interception or real offline (`RouteAsync`, `SetOfflineAsync`)
+|===
+
+The first, third, fourth and fifth rows are the same four categories the waves 2-5 note called a floor, and they still are. What that note underestimated is the second row: cases whose subject is a *journey* rather than a rendering, which are not movable for a different reason than layout is - not "jsdom cannot measure this" but "there is nothing here for a component test to be about".
+
+*Recommendation, restated with the arithmetic behind it.* ~8 % is the reachable target for this suite as it stands. Reaching 2.5 % would mean deleting layout, theme, real-auth and journey regressions that have no lower-altitude equivalent - the exact failure #2147's mutation baseline exists to prevent, at a layer that baseline cannot see. Either adopt ~8 % and close #2148 against it, or reopen the question as *"should layout regressions be visual-diff snapshots rather than Playwright assertions"*, which is a different decision with a different cost.
+
+*What the case count does not show.* Fifteen whole classes are gone, several of which were paying a disproportionate share of the suite's fixed cost: `AvatarAndLogoDisplayTests` forced `[NotInParallel("visualtests-vera-avatar")]` on its own upload case because its DELETE made vera's avatar vanish mid-assertion, and `EngagementReactivationTests`, `EngagementTimezoneTests` and the `VisualTests` `AdminReportsTests` each booted a Chromium context and a frontend to make plain HTTP calls - `EngagementTimezoneTests` opened a page solely to scrape an OIDC token out of `sessionStorage`.
+
+*Three moved cases came out stronger than the originals*, which is worth recording because the usual risk of this work is the opposite. `SocialPreviewImageTests` booted a browser, an Aspire stack and a frontend to read two hardcoded strings out of a static `index.html` - and despite its name never opened the image, so a declaration disagreeing with the file passed; as a Vitest case both are build inputs, so it now parses the PNG's IHDR and actually compares. `OrganizationSwitcher_SelectingAnOrgRow_...` carried `Skip.When(rowCount < 2)` and silently did nothing unless the signed-in user happened to belong to two organizations; a two-org prop list removes the skip. `MiniCalendar`'s past-day guard is now asserted as behaviour (`onChange` never fires) rather than only as the `aria-disabled` attribute - which matters, because that attribute deliberately leaves the button clickable so arrow keys can cross it, so the attribute alone was never the guard.
+
+*One finding filed rather than fixed.* `UndoCheckInEngagementEndpoint` returns 409 for `Engagement.AlreadyTerminated` and `Engagement.CheckInNotActive`, both of which have user-facing translations, but declares only 400/401/403/404 - so NSwag generates no typed branch for 409 in either generated client and the rejection arrives as the non-generic `ApiException`. Not user-facing (the frontend reads `errorCode` off the body generically), but the OpenAPI document is inaccurate. Filed as einsatzbereit#2158; not fixed here because the one-line `.ProducesProblem(...)` regenerates both API clients, which does not belong in a test-rebalance change.
+
+*Shard count and `AssemblyParallelLimit`: still four and still `ProcessorCount - 2`.* The model recorded above (`shard ~= 156 s + 2.1 s * (cases / N)`) now predicts ~2 min 58 s per shard at 232 cases across four - which puts the fixed share at roughly 88 %, well past the 50 % threshold this document named as the point where folding shards starts to pay. That threshold is now crossed, so the matrix *is* worth touching - but per the same paragraph's own lesson, from a measured run of this suite at this size, not from the model. Re-read the shard timings from this change's `dotnet.yml` run before editing `dotnet.yml`.
+====
+
 - *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
 
 === Consequences of Delay
