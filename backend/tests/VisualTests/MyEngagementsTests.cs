@@ -21,8 +21,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// assertions only ran when seed data happened to be present and no
 		// other test had already polluted the card count, and it never proved
 		// anything about a card it could actually identify. Creates and owns
-		// its own organization/opportunity/engagement instead (the pattern
-		// EngagementReactivationTests.cs already uses), and scopes every
+		// its own organization/opportunity/engagement instead, and scopes every
 		// assertion to that specific card via data-engagement-id, so this is
 		// deterministic regardless of what else runs in this shared session.
 		var frontend = Fixture.GetEndpoint("frontend");

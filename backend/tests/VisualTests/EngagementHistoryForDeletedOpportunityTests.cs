@@ -18,41 +18,6 @@ namespace VisualTests;
 public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task MyEngagements_StillListsEngagement_AfterItsOpportunityIsDeleted()
-	{
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "EngHistDeleted");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		var engagementId = await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		using var olafHttp = new HttpClient { BaseAddress = backend };
-		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
-
-		var confirmResponse = await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null);
-		confirmResponse.EnsureSuccessStatusCode();
-
-		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
-		deleteResponse.EnsureSuccessStatusCode();
-
-		var myEngagementsResponse = await veraHttp.GetAsync("/v1/me/engagements?pageNumber=1&pageSize=50&upcoming=false");
-		myEngagementsResponse.EnsureSuccessStatusCode();
-		var myEngagements = await myEngagementsResponse.Content.ReadFromJsonAsync<JsonElement>();
-
-		var engagement = myEngagements.GetProperty("items").EnumerateArray()
-			.FirstOrDefault(e => e.GetProperty("id").GetString() == engagementId);
-
-		engagement.ValueKind.Should().NotBe(JsonValueKind.Undefined,
-			"the engagement must still appear in the volunteer's own history, not disappear entirely, once its opportunity is deleted");
-		engagement.GetProperty("status").GetString().Should().Be("Cancelled");
-		engagement.GetProperty("opportunityTitle").ValueKind.Should().Be(JsonValueKind.Null,
-			"the opportunity backing this engagement no longer exists, so its title can no longer be resolved");
-	}
-
-	[Test]
 	public async Task MyEngagementsPage_ShowsFallbackTitle_ForDeletedOpportunity()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -78,47 +43,6 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		// #675 split the tab into "Current & upcoming" (default) and "Past" -
 		// the opportunity's deletion cancels the engagement, so it now only
 		// shows up under "Past".
-		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
-
-		await Expect(Page.GetByText("This opportunity has been removed").First)
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-	}
-
-	/// <summary>
-	/// Regression for #703: a Pending/Confirmed-but-not-checked-in engagement
-	/// whose opportunity was removed without going through
-	/// DeleteVolunteerOpportunityCommandHandler's cancellation step (e.g. data
-	/// predating that safeguard) has no date field left to compare against and
-	/// no code path to re-evaluate it, so it stayed in "Current & upcoming"
-	/// forever. The row is deleted directly here (bypassing the DELETE
-	/// endpoint, which already cancels active engagements on the normal path)
-	/// to reproduce that stale state.
-	/// </summary>
-	[Test]
-	public async Task MyEngagementsPage_MovesToPast_ForNonTerminalEngagementWithGoneOpportunity()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "EngHistOrphanedUi");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		await Fixture.DeleteOpportunityRowDirectlyAsync(Guid.Parse(opportunityId));
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-signups");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// Default tab is "Current & upcoming" - the orphaned Pending engagement
-		// must not appear here.
-		await Expect(Page.GetByText("This opportunity has been removed"))
-			.Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
-
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 
 		await Expect(Page.GetByText("This opportunity has been removed").First)

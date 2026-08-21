@@ -122,34 +122,4 @@ public class MyEngagementsScopeToggleTests(AspireFixture fixture) : VisualTestBa
 			+ $"upcoming={upcomingWidth:F1}x{upcomingHeight:F1}px, past={pastWidth:F1}x{pastHeight:F1}px, "
 			+ $"widthDelta={widthDelta:F1}px, heightDelta={heightDelta:F1}px, both must be <2px)");
 	}
-
-	[Test]
-	public async Task ScopeToggle_AnnouncesPressedState_ForTheActiveSegment()
-	{
-		// #2072: looks and behaves exactly like a tab set for a sighted mouse
-		// user - a DOM query for role="tablist"/"tab" finds nothing anywhere in
-		// the app - but neither segment implements arrow-key navigation between
-		// them, so the honest-semantics fix (same call LanguageSelector.tsx and
-		// RowActionsMenu.tsx make for their own controls, see NavigationTests'
-		// HomePage_LanguageSelector_AnnouncesDisclosureSemantics) is aria-pressed
-		// on a labelled group of toggle buttons, not the full ARIA tabs pattern
-		// that promises keyboard behaviour this doesn't implement.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-signups");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var upcomingTab = Page.GetByTestId("engagements-scope-upcoming");
-		var pastTab = Page.GetByTestId("engagements-scope-past");
-		await Expect(upcomingTab).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(upcomingTab).ToHaveAttributeAsync("aria-pressed", "true");
-		await Expect(pastTab).ToHaveAttributeAsync("aria-pressed", "false");
-
-		await pastTab.ClickAsync();
-		await Expect(pastTab).ToHaveAttributeAsync("aria-pressed", "true");
-		await Expect(upcomingTab).ToHaveAttributeAsync("aria-pressed", "false");
-	}
 }

@@ -44,8 +44,8 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		var suffix = Guid.NewGuid().ToString("N");
 		// Scopes the homepage list to exactly the opportunities seeded below,
 		// regardless of whatever other VisualTests are concurrently seeding
-		// their own data in this shared-session database (see AvatarAndLogoDisplayTests
-		// and ListLayoutGridTests for the same tag-scoping pattern).
+		// their own data in this shared-session database (see ListLayoutGridTests
+		// for the same tag-scoping pattern).
 		var tag = $"loadmore1226-{suffix}";
 
 		var orgResponse = await PostJsonWithRetryAsync(http,

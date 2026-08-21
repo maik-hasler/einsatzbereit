@@ -34,6 +34,80 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
 	}
 
+	/// <summary>
+	/// The negative twin of the test above. Regression for #655: an
+	/// EngagementCreated notification resolves its title through a live lookup
+	/// of the opportunity, so once that opportunity is deleted the title can no
+	/// longer be resolved and the org-app deep link can no longer be built.
+	/// Both must read as absent rather than as a stale title or a link that
+	/// 404s.
+	/// </summary>
+	[Test]
+	public async Task GetMyNotifications_EngagementCreated_DropsTitleAndDeepLink_AfterOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(
+			olafClient, orgId, "Notification Deleted-Opportunity Test", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Please let me help." },
+			cancellationToken);
+
+		await olafClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var notifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = notifications.Items.Single(n => n.Kind == "EngagementCreated");
+		notification.RelatedTitle.Should().BeNull(
+			"the opportunity backing this notification no longer exists, so its title "
+			+ "can no longer be resolved");
+		notification.ActionUrl.Should().BeNull(
+			"the opportunity's organization can no longer be resolved either, so no "
+			+ "org-app deep link can be built");
+	}
+
+	/// <summary>
+	/// Regression for #2073. Unlike the
+	/// organizer-facing EngagementCreated notification above, the volunteer's
+	/// own OpportunityDeleted notification is the only way they learn which
+	/// sign-up was affected, so it must not lose its title the same way.
+	/// <c>Notification.TitleSnapshot</c> is captured when the notification is
+	/// created - before the delete removes the opportunity row - and
+	/// <c>NotificationReadRepository</c> falls back to it once the live title
+	/// join finds nothing.
+	/// </summary>
+	[Test]
+	public async Task GetMyNotifications_OpportunityDeleted_KeepsSnapshottedTitle_AfterOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		const string OpportunityTitle = "Notification Snapshot-Title Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(
+			olafClient, orgId, OpportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Please let me help." },
+			cancellationToken);
+
+		await olafClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraNotifications = await veraClient.GetMyNotificationsAsync(
+			cancellationToken: cancellationToken);
+
+		var notification = veraNotifications.Items.Single(n => n.Kind == "OpportunityDeleted");
+		notification.RelatedTitle.Should().Be(OpportunityTitle,
+			"the title was snapshotted onto the notification when it was created, "
+			+ "before the opportunity row disappeared");
+	}
+
 	[Test]
 	public async Task GetMyNotifications_EngagementConfirmed_HasRelatedTitleAndMyEngagementsUrl(
 		CancellationToken cancellationToken)

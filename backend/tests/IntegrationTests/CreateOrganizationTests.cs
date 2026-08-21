@@ -112,6 +112,61 @@ public class CreateOrganizationTests(
 		result.Should().BeEmpty();
 	}
 
+	[Test]
+	public async Task CreateOrganization_ShouldPersistEveryOptionalField_AndReturnThemFromDetails(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var created = await client.CreateOrganizationAsync(new CreateOrganizationRequest
+		{
+			Name = "Full Details Org",
+			Description = "A helpful description for volunteers.",
+			ContactEmail = "contact@example.com",
+			ContactPhone = "+49 30 1234567",
+			Website = "https://example.com",
+			Address = new CreateAddressRequest
+			{
+				Street = "Main Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+			},
+		}, cancellationToken);
+
+		var details = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
+
+		details.Name.Should().Be("Full Details Org");
+		details.Description.Should().Be("A helpful description for volunteers.");
+		details.ContactEmail.Should().Be("contact@example.com");
+		details.ContactPhone.Should().Be("+49 30 1234567");
+		details.Website.Should().Be("https://example.com");
+		details.Address.Should().NotBeNull();
+		details.Address.Street.Should().Be("Main Street");
+		details.Address.HouseNumber.Should().Be("1");
+		details.Address.ZipCode.Should().Be("12345");
+		details.Address.City.Should().Be("Berlin");
+	}
+
+	[Test]
+	public async Task CreateOrganization_ShouldLeaveOptionalFieldsNull_WhenOnlyANameWasGiven(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var created = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Name Only Org" }, cancellationToken);
+
+		var details = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
+
+		details.Name.Should().Be("Name Only Org");
+		details.Description.Should().BeNull();
+		details.ContactEmail.Should().BeNull();
+		details.ContactPhone.Should().BeNull();
+		details.Website.Should().BeNull();
+		details.Address.Should().BeNull();
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

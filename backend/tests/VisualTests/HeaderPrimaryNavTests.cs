@@ -17,44 +17,8 @@ namespace VisualTests;
 public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const int MobileWidth = 390;
+
 	private const int MobileHeight = 844;
-
-	[Test]
-	public async Task DesktopHeader_Anonymous_LinksToTheOpportunityList()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync(origin);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var link = Page.GetByTestId("nav-findOpportunities");
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await link.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
-
-		// The list itself, not just the route - the band states the page name,
-		// so the list must not restate it (showHeading={false}).
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Find opportunities");
-		await Expect(Page.GetByTestId("opportunities-keyword-input"))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-	}
-
-	[Test]
-	public async Task DesktopHeader_SignedIn_StillCarriesPrimaryDestinations()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// The regression this guards: signed in, the nav previously collapsed to
-		// the account avatar and the language selector, leaving the account
-		// dropdown as a volunteer's only route to the opportunity list.
-		await Expect(Page.GetByTestId("nav-findOpportunities")).ToBeVisibleAsync();
-		await Expect(Page.GetByTestId("nav-help")).ToBeVisibleAsync();
-	}
 
 	[Test]
 	public async Task MobileMenu_Anonymous_CarriesTheSameDestinations()
@@ -73,36 +37,6 @@ public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixtu
 
 		await link.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
-	}
-
-	[Test]
-	public async Task DesktopHeader_OnASubpage_CarriesTheWayHome_TheBandDoesNot()
-	{
-		// Every subpage used to open with its own "back to the home page" link
-		// inside PageHeaderBand's hero - the same single destination restated
-		// per page, in the one place a visitor does not look for site
-		// navigation, and next to nothing else that navigates. It is a site
-		// destination, so it is a nav entry now: one "Home" link beside the
-		// other primary ones, on screen from every page at once.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/help");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 }))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToHaveCountAsync(0);
-
-		var link = Page.GetByTestId("nav-home");
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(link).ToHaveAttributeAsync("href", "/");
-
-		await link.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("hero-keyword-input"))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]
@@ -129,24 +63,5 @@ public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixtu
 
 		await link.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
-	}
-
-	[Test]
-	public async Task HeroSearch_NavigatesToTheListCarryingItsKeyword()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync(origin);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The hero used to write URL params and scroll to an anchor on the same
-		// page; it now hands those params to the list's own route.
-		await Page.GetByTestId("hero-keyword-input").FillAsync("Tierheim");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).First.ClickAsync();
-
-		await Page.WaitForURLAsync(
-			new System.Text.RegularExpressions.Regex(@"/opportunities\?.*q=Tierheim"),
-			new() { Timeout = 15_000 });
 	}
 }

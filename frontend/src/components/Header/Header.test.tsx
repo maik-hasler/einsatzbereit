@@ -1,0 +1,181 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import Header from "./Header";
+import { renderWithProviders } from "../../test/render";
+
+const { api } = await vi.hoisted(async () => {
+	const { createApiMock } = await import("../../test/apiMock");
+	return { api: createApiMock() };
+});
+
+vi.mock("../../hooks/useApiClient", () => ({ useApiClient: () => api }));
+
+beforeEach(() => {
+	api.__reset();
+	api.getOrganizations.mockResolvedValue([]);
+	api.getNotifications.mockResolvedValue({ items: [], pageCount: 1 });
+});
+
+describe("Header for an anonymous visitor", () => {
+	it("offers a way to sign in", () => {
+		renderWithProviders(<Header />);
+
+		expect(
+			screen.getAllByRole("button", { name: "Sign in" })[0],
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "User menu" })).toBeNull();
+	});
+});
+
+const ORG = {
+	id: "77777777-7777-7777-7777-777777777777",
+	name: "Freiwillige Feuerwehr Kiel",
+};
+
+const signedIn = { isAuthenticated: true, name: "Vera Volunteer" };
+
+describe("Header primary navigation", () => {
+	it("offers the opportunity list to an anonymous visitor", () => {
+		const { container } = renderWithProviders(<Header />);
+
+		const link = container.ownerDocument.querySelector(
+			'[data-testid="nav-findOpportunities"]',
+		);
+		expect(link).toHaveAttribute("href", "/opportunities");
+	});
+
+	it("still carries the primary destinations once signed in", async () => {
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		await screen.findByRole("button", { name: "User menu" });
+		for (const key of ["findOpportunities", "help"]) {
+			expect(
+				container.ownerDocument.querySelector(`[data-testid="nav-${key}"]`),
+			).toBeInTheDocument();
+		}
+	});
+
+	it("carries the way home in the nav", () => {
+		const { container } = renderWithProviders(<Header />, {
+			route: "/opportunities",
+		});
+
+		expect(
+			container.ownerDocument.querySelector('[data-testid="nav-home"]'),
+		).toHaveAttribute("href", "/");
+	});
+});
+
+describe("Header organization entry", () => {
+	beforeEach(() => {
+		api.getOrganizations.mockResolvedValue([ORG]);
+	});
+
+	it("offers a member their organization as a top-level destination", async () => {
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		const entry = await screen.findByTestId("nav-organization");
+		expect(entry).toHaveAttribute("href", `/app/${ORG.id}/dashboard`);
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-forOrganizations"]',
+			),
+		).toBeNull();
+	});
+
+	it("keeps the pitch for a signed-in non-member", async () => {
+		api.getOrganizations.mockResolvedValue([]);
+
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		await screen.findByRole("button", { name: "User menu" });
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-forOrganizations"]',
+			),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("nav-organization")).toBeNull();
+	});
+
+	it("withholds the organization inside the org app, where the switcher names it", async () => {
+		const { container } = renderWithProviders(
+			<Header
+				orgSwitcher={{ currentOrgId: ORG.id, currentTab: "dashboard" }}
+			/>,
+			{ auth: signedIn },
+		);
+
+		expect(
+			await screen.findByTestId("org-switcher-current-name"),
+		).toHaveTextContent(/Feuerwehr/);
+		expect(screen.queryByTestId("nav-organization")).toBeNull();
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-forOrganizations"]',
+			),
+		).toBeInTheDocument();
+	});
+
+	it("keeps the account menu to personal items only", async () => {
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "User menu" }),
+		);
+
+		expect(
+			screen.getByRole("link", { name: "My profile" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Organization" })).toBeNull();
+		expect(
+			container.ownerDocument.querySelectorAll("a[href*='/dashboard/']"),
+		).toHaveLength(0);
+	});
+});
+
+describe("Header notifications", () => {
+	it("offers the bell once authenticated, and opens its panel", async () => {
+		renderWithProviders(<Header />, { auth: signedIn });
+
+		const bell = await screen.findByTestId("notification-bell");
+		expect(screen.queryByTestId("notification-panel")).toBeNull();
+
+		await userEvent.click(bell);
+
+		expect(await screen.findByTestId("notification-panel")).toBeVisible();
+	});
+});
+
+describe("Header avatar", () => {
+	it("shows an uploaded avatar in place of the initials", async () => {
+		api.getUserProfile.mockResolvedValue({
+			firstName: "Vera",
+			lastName: "Volunteer",
+			avatarUrl: "https://storage.example.test/a.png",
+		});
+
+		renderWithProviders(<Header />, { auth: signedIn });
+
+		const menu = await screen.findByRole("button", { name: "User menu" });
+		await waitFor(() => expect(menu.querySelector("img")).not.toBeNull());
+		expect(menu.querySelector("img")).toHaveAttribute(
+			"src",
+			"https://storage.example.test/a.png",
+		);
+	});
+
+	it("falls back to initials when no avatar was uploaded", async () => {
+		api.getUserProfile.mockResolvedValue({
+			firstName: "Vera",
+			lastName: "Volunteer",
+			avatarUrl: undefined,
+		});
+
+		renderWithProviders(<Header />, { auth: signedIn });
+
+		const menu = await screen.findByRole("button", { name: "User menu" });
+		expect(menu).toHaveTextContent("VV");
+		expect(menu.querySelector("img")).toBeNull();
+	});
+});

@@ -129,7 +129,7 @@ lens; it is not the review. Do not start investigating findings here.
 | CI signal | GitHub API `actions/runs?per_page=30` - failure rate, durations | ci |
 | Community signal | GitHub API open issues/PRs - age, labels, unanswered | contributor-dx, bugs |
 | Test-to-src churn | ratio of changed test files to changed src files (from churn probe) | test-gaps |
-| a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes | accessibility |
+| a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes; list `frontend/src/**/*.a11y.test.tsx`, diff against `frontend/src/components/` | accessibility |
 | Comment hedge scan | grep `careful\|hack\|workaround\|don't\|must\|NOTE\|WARNING` density across `backend/src`, `frontend/src` | complexity |
 | Comment density outliers | rough comment-line-to-code-line ratio per file (`grep -c '^\s*//\|^\s*\*\|^\s*///'` vs `wc -l`) on the churn-hotspot files from the churn probe; eyeball the 5 highest-ratio files | comment-bloat |
 | Days since last live pass | check recent closed/open issues labeled `lens` for a personas-lens finding's timestamp | personas |

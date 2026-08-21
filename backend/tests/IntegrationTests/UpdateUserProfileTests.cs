@@ -129,6 +129,29 @@ public class UpdateUserProfileTests(
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
+	// 1x1 transparent PNG.
+	private static readonly byte[] TinyPng = Convert.FromBase64String(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
+	[Test]
+	public async Task DeleteUserAvatar_ShouldClearAvatarUrl(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		using var avatar = new MemoryStream(TinyPng);
+		await client.UploadUserAvatarAsync(
+			new FileParameter(avatar, "avatar.png", "image/png"), cancellationToken);
+
+		var afterUpload = await client.GetUserProfileAsync(cancellationToken);
+		afterUpload.AvatarUrl.Should().NotBeNull();
+
+		await client.DeleteUserAvatarAsync(cancellationToken);
+
+		var afterDelete = await client.GetUserProfileAsync(cancellationToken);
+		afterDelete.AvatarUrl.Should().BeNull();
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

@@ -23,8 +23,7 @@ namespace IntegrationTests;
 // entry that expires at a fixed server-timezone midnight, never a
 // header-derived one.
 //
-// Also covers a second regression (see AchievementCopyTests in VisualTests for
-// the user-visible symptom): the middleware used to cache a bare `true`
+// Also covers a second regression: the middleware used to cache a bare `true`
 // synchronously and only await the DB write on the winning request's own path.
 // Every other concurrent request for the same user saw the flag already set
 // and fell straight through to `next` (its own handler, e.g.

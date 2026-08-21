@@ -17,7 +17,7 @@ namespace VisualTests;
 /// request rather than by <c>Context.SetOfflineAsync</c>, because this suite
 /// blocks service workers (see <see cref="VisualTestBase.ContextOptions"/>),
 /// so a genuinely offline document navigation could not load the app shell at
-/// all - the same technique <c>OrgAppLayoutErrorStatesTests</c> uses for the
+/// all - the same technique <c>OrgAppLayoutErrorStatesTests</c> used for the
 /// org shell.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]

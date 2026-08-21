@@ -496,7 +496,8 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	///
 	/// Unsharded, that cost was paid once per 542-test session and landed on
 	/// whichever test happened to run first - in practice almost always one of
-	/// AccessibilityTests' 90, which carry their own [Retry]. Sharded
+	/// AccessibilityTests' 90 (17 since einsatzbereit#2148), whose real-login
+	/// case carries its own [Retry]. Sharded
 	/// (einsatzbereit#2145) every shard boots its own Keycloak, so the cost recurs
 	/// per shard and lands on whichever classes that shard happens to start with -
 	/// and for a shard holding the real-login classes that means AuthHelper's

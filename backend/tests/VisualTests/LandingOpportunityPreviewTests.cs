@@ -18,29 +18,6 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	private const int PreviewCount = 3;
-
-	[Test]
-	public async Task LandingPage_RendersSeededOpportunitiesAsAPreview()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.GetLeftPart(UriPartial.Authority));
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var preview = Page.GetByTestId("landing-latest-opportunities");
-		await Expect(preview).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// A preview, not the list: /opportunities is what paginates. The lower
-		// bound matters as much as the upper one - the section removes itself
-		// when the fetch comes back empty, so an assertion that only capped the
-		// count would still pass against a landing page showing nothing.
-		var cardCount = await preview.Locator("li").CountAsync();
-		cardCount.Should().BeGreaterThan(0, "the seed data publishes opportunities");
-		cardCount.Should().BeLessThanOrEqualTo(PreviewCount,
-			"the landing page shows a preview, not the paginated grid");
-	}
-
 	[Test]
 	public async Task LandingPage_PlacesThePreviewAheadOfTheOrganizationBand()
 	{
@@ -59,24 +36,6 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 		orgBandBox.Should().NotBeNull();
 		previewBox!.Y.Should().BeLessThan(orgBandBox!.Y,
 			"a volunteer reaching the organization pitch before any opportunity is the ordering #1757 left behind");
-	}
-
-	[Test]
-	public async Task PreviewLink_LeadsToTheFullOpportunityList()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync(origin);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var link = Page.GetByTestId("landing-all-opportunities-link");
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(link).ToHaveTextAsync("Browse all opportunities");
-
-		await link.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/opportunities", new() { Timeout = 15_000 });
-		await Expect(Page.Locator("h1")).ToHaveTextAsync("Find opportunities");
 	}
 
 	/// <summary>

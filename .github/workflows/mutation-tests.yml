@@ -15,6 +15,17 @@ name: Mutation Testing
 #      score did not drop, the removed end-to-end coverage was redundant. That
 #      is a per-wave question, not a per-commit one.
 #
+# The frontend leg below (StrykerJS, added in #2148) is manual for the same two
+# reasons, only more so. Measured: 14 851 mutants over 182 files against a
+# suite that renders components in jsdom, where the backend's 2 690 mutants run
+# against pure functions - a full pass is hours, not the backend's ~12 minutes.
+# What it mutates is capped to the `src/lib/**` pure-logic tier for exactly that
+# reason, and even that tier takes 29 min against the backend's 12. The
+# component tier is reachable on demand with
+# `pnpm mutation --mutate "src/components/Foo.tsx"`, which is how the per-file
+# numbers in TDR-2 were taken. See the analysis in #2152 for why an incremental
+# per-PR gate was considered and rejected.
+#
 # There is deliberately NO score threshold that can block a merge - the config
 # (backend/tests/Application.UnitTests/stryker-config.json) pins
 # `thresholds.break` to 0 so Stryker always exits 0 on a low score. This job
@@ -140,5 +151,88 @@ jobs:
         with:
           name: mutation-report-${{ matrix.project }}
           path: ${{ runner.temp }}/stryker-${{ matrix.project }}/reports/**
+          if-no-files-found: warn
+          retention-days: 14
+
+  # StrykerJS over the frontend's pure-logic tier (#2148). Separate job rather
+  # than a matrix leg on the one above: the toolchains share nothing but the
+  # trigger and the report-only posture.
+  mutation-tests-frontend:
+    runs-on: ubuntu-latest
+    # Hang guard, not a target - but a wide one, because this leg is slow:
+    # measured at 28 min 59 s here (897 mutants, ignoreStatic on), against
+    # 4 min 23 s and 7 min 34 s for the two .NET legs above. It is 3x the
+    # backend's whole matrix and it is only the cheap tier. 90 leaves ~3x
+    # headroom, which is tighter than the 45 above allows its own legs.
+    # Stryker's own timeoutMS bounds a single mutant, not the run.
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: frontend/package.json
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # Version is pinned in package.json for the same reason dotnet-stryker is
+      # pinned above: the score is only comparable across runs if the mutant set
+      # is, and a new Stryker version can add or drop mutators.
+      - name: Run StrykerJS
+        run: |
+          start=$(date +%s)
+          pnpm mutation
+          echo "STRYKER_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      # Same score definition as the .NET legs above, read off StrykerJS's own
+      # JSON report - which nests mutants under .files[].mutants[] identically,
+      # so the jq is the same shape.
+      - name: Publish mutation score summary
+        if: always()
+        run: |
+          report="reports/mutation/mutation.json"
+          if [ ! -f "$report" ]; then
+            echo "### Mutation score - frontend (src/lib)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_No report produced - the Stryker run did not complete._" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          jq -r --arg seconds "${STRYKER_SECONDS:-unknown}" '
+            [.files[].mutants[].status] as $all
+            | (($all | map(select(. == "Killed" or . == "Timeout")) | length)) as $killed
+            | (($all | map(select(. == "Survived")) | length)) as $survived
+            | (($all | map(select(. == "NoCoverage")) | length)) as $uncovered
+            | ($killed + $survived + $uncovered) as $scored
+            | "### Mutation score - frontend (src/lib)",
+              "",
+              "| Metric | Value |",
+              "| --- | --- |",
+              "| Score | \(if $scored == 0 then "n/a" else ((10000 * $killed / $scored | round) / 100 | tostring) + " %" end) |",
+              "| Killed (incl. timeout) | \($killed) |",
+              "| Survived | \($survived) |",
+              "| Not covered | \($uncovered) |",
+              "| Mutants scored | \($scored) |",
+              "| Mutants generated | \($all | length) |",
+              "| Wall-clock | \($seconds) s |",
+              "",
+              "_Report-only (#2147, #2148). No threshold gates this workflow._"
+          ' "$report" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-report-frontend
+          path: frontend/reports/mutation/**
           if-no-files-found: warn
           retention-days: 14

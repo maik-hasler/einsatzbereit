@@ -63,8 +63,10 @@ public class AnonymousReportSignInTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Same locator as AccessibilityTests.OrganizationProfilePage_HasNoSeriousA11yViolations:
-		// the org link is the z-20 one, not the stretched card-cover Link.
+		// The org link is the z-20 one, not the stretched card-cover Link that
+		// covers the whole card (see frontend/AGENTS.md's clickable-card
+		// convention) - matching by testid rather than by role would pick the
+		// cover link and navigate to the opportunity instead.
 		var orgLink = Page.GetByTestId("opportunity-org-link").First;
 		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var href = await orgLink.GetAttributeAsync("href");

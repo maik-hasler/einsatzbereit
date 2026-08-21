@@ -764,6 +764,35 @@ public class OrganizationSettingsTests(
 
 	// Simulates InvitationExpiryJob's periodic tick firing well past every
 	// invitation's 14-day window, rather than waiting 14 real days in a test.
+	// 1x1 transparent PNG.
+	private static readonly byte[] TinyPng = Convert.FromBase64String(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
+	[Test]
+	public async Task DeleteOrganizationLogo_ShouldClearLogoUrl(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var created = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = $"Logo removal {Guid.NewGuid():N}" },
+			cancellationToken);
+		var organizationId = created.Id.Value;
+
+		using var logo = new MemoryStream(TinyPng);
+		await client.UploadOrganizationLogoAsync(
+			organizationId,
+			new FileParameter(logo, "logo.png", "image/png"),
+			cancellationToken);
+
+		var afterUpload = await client.GetOrganizationDetailsAsync(organizationId, cancellationToken);
+		afterUpload.LogoUrl.Should().NotBeNull();
+
+		await client.DeleteOrganizationLogoAsync(organizationId, cancellationToken);
+
+		var afterDelete = await client.GetOrganizationDetailsAsync(organizationId, cancellationToken);
+		afterDelete.LogoUrl.Should().BeNull();
+	}
+
 	private async Task ExpireAllDueInvitationsAsync(CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();

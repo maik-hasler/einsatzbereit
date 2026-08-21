@@ -548,6 +548,53 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldSplitPendingAndWithdrawn_AcrossUpcomingAndPast(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		// A real opportunity, not a fresh VolunteerOpportunityId: #703's rule
+		// reclassifies an engagement whose opportunity is gone as past, so
+		// engagements pointing at ids with no row would *both* land in past and
+		// this case would be about the wrong rule entirely.
+		var organization = DomainOrganization.Create(
+			DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var stillPending = Engagement
+			.CreateIndividualContact(opportunity.Id, volunteerId, "Still pending.")
+			.GetValueOrThrow();
+		var withdrawn = Engagement
+			.CreateIndividualContact(opportunity.Id, volunteerId, "About to withdraw.")
+			.GetValueOrThrow();
+		withdrawn.Withdraw().ThrowIfFailure();
+
+		await dbContext.Engagements.AddAsync(stillPending, cancellationToken);
+		await dbContext.Engagements.AddAsync(withdrawn, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(stillPending.Id.Value);
+		past.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(withdrawn.Id.Value);
+	}
+
 	// --- Checked-in engagement ahead of its time slot's end (#1855) ---
 
 	[Test]

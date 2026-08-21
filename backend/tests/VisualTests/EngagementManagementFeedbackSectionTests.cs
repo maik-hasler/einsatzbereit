@@ -19,23 +19,6 @@ namespace VisualTests;
 public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task EngagementManagementPage_OmitsFeedbackSection_WhenNoFeedbackSubmitted()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (organizationId, opportunityId, _) = await SeedConfirmedEngagementAsync("NoFeedback");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync(
-			$"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback", Exact = true }))
-			.Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_ShowsSubordinateFeedbackHeading_WhenFeedbackExists()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

@@ -1,0 +1,29 @@
+import { describe, expect, it } from "vitest";
+
+import indexHtml from "../../index.html?raw";
+import usePageTitleSource from "./usePageTitle.ts?raw";
+
+describe("static document title", () => {
+	const appName = () => {
+		const match = /const APP_NAME = "([^"]+)"/.exec(usePageTitleSource);
+		expect(
+			match,
+			"usePageTitle.ts must declare a string APP_NAME const",
+		).not.toBeNull();
+		return match?.[1];
+	};
+
+	const staticTitle = () => {
+		const match = /<title>(.*?)<\/title>/s.exec(indexHtml);
+		expect(match, "index.html must declare a <title> element").not.toBeNull();
+		return match?.[1];
+	};
+
+	it("is the bare app name, not a translated sentence", () => {
+		expect(staticTitle()).toBe("Einsatzbereit");
+	});
+
+	it("matches what usePageTitle resets document.title to", () => {
+		expect(staticTitle()).toBe(appName());
+	});
+});

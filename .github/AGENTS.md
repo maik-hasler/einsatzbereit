@@ -12,7 +12,7 @@
 ├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, create a GitHub Release, then deploy-staging (RC tags) or deploy-production (stable tags)
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── reset-staging.yml           Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
-├── mutation-tests.yml          Manual (workflow_dispatch): Stryker.NET over Domain + Application, report-only
+├── mutation-tests.yml          Manual (workflow_dispatch): Stryker.NET over Domain + Application and StrykerJS over frontend src/lib, report-only
 ├── lint.yml                    Ban em/en dashes + EditorConfig check
 └── pr-title.yml                Validate PR title against Conventional Commits
 ```
@@ -123,7 +123,7 @@ Rotating the staging host's SSH host key (a fresh box, a reinstall) requires upd
 
 ## Mutation Testing Workflow (manual)
 
-`mutation-tests.yml` runs Stryker.NET over the two layers that `Application.UnitTests` can drive without Docker.
+`mutation-tests.yml` runs Stryker.NET over the two layers that `Application.UnitTests` can drive without Docker, plus a separate StrykerJS job over the frontend.
 
 - **Trigger:** `workflow_dispatch` only - never on push or pull request, so it can never gate a merge
 - **Jobs:** one `mutation-tests` job, a `fail-fast: false` matrix over `project: [Domain, Application]`, so it reports as two checks. Each leg installs `dotnet-stryker` (pinned to 4.16.0) and runs it from `backend/tests/Application.UnitTests/`, mutating one source project while `Application.UnitTests` (1017 tests, no Docker) does the killing. Measured ~4 min (`Domain`) and ~8 min (`Application`)
@@ -132,6 +132,16 @@ Rotating the staging host's SSH host key (a fresh box, a reinstall) requires upd
 - **Run it from `backend/tests/Application.UnitTests/`, never from `backend/`** - from `backend/` Stryker finds `Einsatzbereit.slnx`, switches to solution mode, and builds the whole solution including `VisualTests` and its ~290 MiB Playwright download, for a run that never opens a browser
 - **`concurrency: 1` in `stryker-config.json` is load-bearing, not a performance knob (#2147).** Stryker's Microsoft.Testing.Platform runner is preview, and above concurrency 1 it reports kills that never happened: 30-73 extra kills per run, never a lost one, and a different subset every time (across four `Domain` runs the spurious sets intersected in zero mutants). That inflates the score by ~5 points and jitters it by ~1. At concurrency 1 two runs at the same commit are bit-for-bit identical. Raising it to use the runner's spare cores destroys the only property that makes the number worth recording
 - **`Application.UnitTests.csproj` references `Domain.csproj` directly** even though Application already pulls it in transitively. That reference exists only so Stryker can resolve `--project Domain.csproj`; see the comment in the csproj before removing it as redundant
+
+### The frontend leg (`mutation-tests-frontend`, #2148)
+
+A separate job rather than a matrix leg on the one above - the two toolchains share nothing but the trigger and the report-only posture. StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`, both pinned in `frontend/package.json`) mutating `frontend/src/lib/**` while the Vitest suite does the killing. Config: `frontend/stryker.config.json`; run locally with `pnpm mutation`.
+
+- **Scoped to `src/lib/**` on purpose, and that scope is the whole design decision.** Mutating all of `src/**` instruments 182 files into **14 851 mutants** - 5.5x the backend's 2 690, against a suite that renders components in jsdom rather than calling pure functions. A full pass is hours. `src/lib/**` is 37 files / 897 mutants of pure logic, which is the tier that is both cheap to mutate and directly comparable to the backend's `Domain`/`Application`
+- **The component tier is on-demand, not scheduled:** `pnpm mutation --mutate "src/components/Foo.tsx"` scores one component in minutes. That is how the per-component figures in `docs/TDRs/2_slow_ci_pipeline.adoc` were taken, and it is the right granularity - a component's score is actionable, a whole-app average is not
+- **`plugins` must list `@stryker-mutator/vitest-runner` explicitly.** Under pnpm's strict `node_modules` Stryker cannot discover it by convention and fails with "no TestRunner plugins were loaded", which reads like a missing install rather than a resolution problem
+- **`thresholds.break` is `0`**, same as the backend config, so a low score always exits 0. Do not add a break threshold
+- **Why not an incremental per-PR gate**, given StrykerJS supports `--since`: analysed and rejected in #2152. The short version is that per-diff mutation scores are noisy on small diffs, the run would add minutes to the very critical path `docs/TDRs/2_slow_ci_pipeline.adoc` exists to protect, and a score that gates merges invites killing mutants rather than testing behaviour
 
 ## Reset Workflow (manual)
 

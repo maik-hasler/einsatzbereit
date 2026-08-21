@@ -8,30 +8,6 @@ namespace VisualTests;
 public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task HomePage_HasMainHeading()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task HomePage_HasNoBreadcrumb()
-	{
-		// Pages that don't call usePageToolbar must not render a stray
-		// breadcrumb bar - the home page has no parent to link back to.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
 	{
 		// The breadcrumb is a direct "Home > {organization name}" - no
@@ -73,89 +49,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task VolunteerOpportunityDetailPage_BreadcrumbShowsOrgAndOpportunityTitle()
-	{
-		// The old back link always went to "/#opportunities" regardless of
-		// where the user came from. The revived breadcrumb must instead reflect
-		// the opportunity's actual organization and title.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		// The opportunity list lives on /opportunities, not the landing page.
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the list's
-		// opportunity fetch and could silently skip this test instead of failing.
-		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var href = await firstCard.GetAttributeAsync("href");
-		Skip.When(href is null, "opportunity link had no href");
-
-		await Page.GotoAsync($"{origin}{href!}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The breadcrumb bar is gone from this page too - the
-		// PageHeaderBand states the opportunity title as the h1 and puts the
-		// link to the owning organization in its eyebrow, which is where the
-		// middle crumb's job moved.
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
-		// No in-band "Home" link either - that destination is a header nav
-		// entry now, see HeaderPrimaryNavTests.
-		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToHaveCountAsync(0);
-		await Expect(Page.Locator("main a[href*='/organizations/']").First).ToBeVisibleAsync();
-
-		var title = await Page.Locator("h1").First.InnerTextAsync();
-		title.Should().NotBeNullOrWhiteSpace();
-	}
-
-	[Test]
-	public async Task EngagementManagementPage_BreadcrumbPersistsRegardlessOfApplicationCount()
-	{
-		// The breadcrumb must be present unconditionally, not just in the
-		// empty-application state, and must name the opportunity being managed:
-		// Home > Opportunities > {title}, with "Opportunities" a link back to the
-		// hub rather than a fixed label plus a separate in-page context line.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		// Reached through the page header's own section rail (OrgPageHeader.tsx).
-		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// "Manage sign-ups" only appears for published opportunities on the
-		// Opportunities hub.
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
-		try
-		{
-			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
-		}
-		catch (TimeoutException)
-		{
-			Skip.Test("organizer has no published opportunities in seed");
-		}
-
-		var row = Page.Locator("li").Filter(new() { Has = manageLink });
-		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
-
-		await manageLink.ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The band replaced the breadcrumb bar: the nested page's own title as
-		// the h1, and one link back up to the tab that owns it.
-		var band = Page.Locator("main");
-		await Expect(band.GetByRole(AriaRole.Heading, new() { Level = 1 }))
-			.ToHaveTextAsync(opportunityTitle, new() { Timeout = 15_000 });
-		await Expect(band.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
-			.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
 		// Engagement management is a nested org app route, so the org switcher must
@@ -192,43 +85,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await backToOpportunities.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities$"), new() { Timeout = 15_000 });
-	}
-
-	[Test]
-	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToTheSameTabInThatOrg()
-	{
-		// The switcher moved out of the global header into the /app shell,
-		// where selecting a different org must preserve whatever tab you're
-		// currently on rather than always resetting to the dashboard.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		// Via the page header's section rail, not a bare "member" name match -
-		// the Settings widget's member-count link answers to that too.
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		await switcherBtn.ClickAsync();
-
-		// Wait for the switcher panel to actually render its rows before
-		// counting them - a bare CountAsync() right after the click raced the
-		// panel's own mount, which could misreport "< 2" and skip this test even
-		// when olaf's seed data has the two orgs it needs.
-		var orgSwitchRows = Page.GetByTestId("org-switch-row");
-		await Expect(orgSwitchRows.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var rowCount = await orgSwitchRows.CountAsync();
-		Skip.When(rowCount < 2, "olaf needs at least two orgs in seed to prove navigation follows selection");
-
-		// The active org's row carries aria-current="page" - pick a different one.
-		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
-		var otherOrgName = (await otherRow.TextContentAsync() ?? "").Trim();
-		await otherRow.ClickAsync();
-
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
-		await Expect(switcherBtn).ToContainTextAsync(otherOrgName);
 	}
 
 	[Test]
@@ -299,75 +155,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.Keyboard.PressAsync("Escape");
 		await Expect(dropdown).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
-	}
-
-	[Test]
-	public async Task HomePage_LanguageSelector_AnnouncesDisclosureSemantics()
-	{
-		// The selector used to wrap each <button> in an <li role="option">
-		// under a role="listbox" <ul>, with the trigger advertising
-		// aria-haspopup="listbox" - a keyboard model (arrow keys,
-		// aria-activedescendant) the component has never implemented, since
-		// Escape via useDismissableOverlay is the only key it handles. The axe
-		// side of that defect is guarded by
-		// LanguageSelector_Open_HasNoSeriousA11yViolations in
-		// AccessibilityTests.cs; this is the DOM-shape half, so a regression
-		// names itself instead of surfacing as a generic nested-interactive
-		// scan failure.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var banner = Page.GetByRole(AriaRole.Banner);
-		var langBtn = banner.GetByTestId("language-selector-trigger");
-		await Expect(langBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		// The trigger shows only the active language's code ("EN"/"DE"); the
-		// chevron beside it is an SVG and contributes no text. Read it rather
-		// than hardcoding a language, so this doesn't depend on which locale
-		// the browser context happens to resolve to.
-		var activeCode = (await langBtn.InnerTextAsync()).Trim();
-
-		// A disclosure promises only expand/collapse - not a popup role whose
-		// keyboard model this does not implement.
-		await Expect(langBtn).Not.ToHaveAttributeAsync("aria-haspopup", new Regex(".*"));
-		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "false");
-
-		// The closed trigger's accessible name used to be just "Switch
-		// language"/"Sprache wechseln", overriding the visible "EN"/"DE" text
-		// with no indication of which language is currently active. It must
-		// now name the current language too, e.g. "..., currently English".
-		var expectedLanguageName = activeCode == "DE" ? "Deutsch" : "English";
-		await Expect(langBtn).ToHaveAttributeAsync(
-			"aria-label",
-			new Regex($".*{Regex.Escape(expectedLanguageName)}.*")
-		);
-
-		// #2072: the accessible name used to replace the visible "EN"/"DE" text
-		// outright rather than extend it - a WCAG 2.5.3 Label-in-Name violation,
-		// since it never contained the string a speech-input user would say
-		// ("Klick DE") to target this control. It must now lead with that code.
-		await Expect(langBtn).ToHaveAttributeAsync(
-			"aria-label",
-			new Regex($"^{Regex.Escape(activeCode)}\\b.*")
-		);
-
-		await langBtn.ClickAsync();
-
-		var dropdown = banner.GetByTestId("language-selector-menu");
-		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
-		await Expect(langBtn).ToHaveAttributeAsync("aria-expanded", "true");
-
-		await Expect(dropdown).Not.ToHaveAttributeAsync("role", new Regex(".*"));
-		await Expect(dropdown.Locator("[role='option']")).ToHaveCountAsync(0);
-		await Expect(dropdown.Locator("[aria-selected]")).ToHaveCountAsync(0);
-
-		// The active language is marked on the focusable element itself, so a
-		// keyboard user tabbing the list is told which one they are on.
-		await Expect(dropdown.GetByRole(AriaRole.Button)).ToHaveCountAsync(2);
-		await Expect(dropdown.Locator("button[aria-current='true']")).ToHaveCountAsync(1);
-		await Expect(dropdown.Locator("button[aria-current='true']")).ToContainTextAsync(activeCode);
 	}
 
 	[Test]
@@ -531,32 +318,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(profileLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
 		await Page.Keyboard.PressAsync("Escape");
-		await Expect(profileLink).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
-	}
-
-	[Test]
-	public async Task AccountControls_UserMenu_ClosesAfterNavigatingToOwnLink()
-	{
-		// None of the dropdown's own links (My profile, My signups,
-		// Profile settings, Administration) closed the disclosure on click -
-		// only the outside-click/Escape handling in useAccountMenu did. The
-		// stale panel stayed rendered (aria-expanded="true", panel still
-		// visible) on top of the destination page until the user clicked
-		// elsewhere.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-
-		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
-		await userMenuBtn.ClickAsync();
-
-		var profileLink = Page.GetByRole(AriaRole.Link, new() { Name = "My profile" });
-		await Expect(profileLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		await profileLink.ClickAsync();
-
-		await Page.WaitForURLAsync(new Regex(@"/profile$"), new() { Timeout = 15_000 });
-		await Expect(userMenuBtn).ToHaveAttributeAsync("aria-expanded", "false", new() { Timeout = 5_000 });
 		await Expect(profileLink).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 }

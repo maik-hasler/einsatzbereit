@@ -7,57 +7,22 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #1070/#1342 (Keycloak's realm SMTP config pointed at a
-/// mailpit host that does not exist outside local dev) and #1341 (the
-/// backend's SmtpOptions had no auth/TLS support and silently swallowed send
-/// failures). Both Keycloak and the backend now send through a configured
-/// SMTP relay - locally that is the Mailpit container Aspire already runs,
-/// so these tests prove mail actually leaves each sender by polling Mailpit's
-/// own message store, rather than only asserting the UI/API call succeeded.
+/// The one email journey that stays end-to-end: a real volunteer action in
+/// the browser has to end in a real message leaving the backend's SMTP path.
+///
+/// Regression for #1341 - the backend's SmtpOptions had no auth/TLS support
+/// and silently swallowed send failures - proved by polling Mailpit's own
+/// message store rather than by trusting the API call's 200.
+///
+/// The Keycloak realm's own SMTP config (#1070/#1342) moved to
+/// <c>IntegrationTests/Email/RealmSmtpDeliveryTests.cs</c> in
+/// einsatzbereit#2148: that case never opened a browser in the first place,
+/// so it was paying for Playwright and a frontend it never touched.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const string Realm = "einsatzbereit";
-
-	[Test]
-	public async Task SendVerifyEmail_DeliversToMailpit_ThroughRealmSmtpConfig()
-	{
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var mailpit = Fixture.GetEndpoint("mailpit", "webui");
-		var email = $"emaildelivery-{Guid.NewGuid():N}@example.test";
-
-		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
-		using var adminHttp = new HttpClient { BaseAddress = keycloak };
-		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-		var createResponse = await adminHttp.PostAsJsonAsync($"/admin/realms/{Realm}/users", new
-		{
-			username = $"emaildelivery-{Guid.NewGuid():N}",
-			email,
-			enabled = true,
-			emailVerified = false,
-			requiredActions = new[] { "VERIFY_EMAIL" },
-			credentials = new[] { new { type = "password", value = $"Test1070!{Guid.NewGuid():N}", temporary = false } },
-		});
-		createResponse.EnsureSuccessStatusCode();
-		var userId = createResponse.Headers.Location!.Segments[^1];
-
-		try
-		{
-			// Exercises the exact same realm smtpServer config that
-			// verifyEmail/resetPasswordAllowed rely on during self-registration.
-			var sendResponse = await adminHttp.PutAsync(
-				$"/admin/realms/{Realm}/users/{userId}/send-verify-email", content: null);
-			sendResponse.EnsureSuccessStatusCode();
-
-			await AssertMailpitReceivedMessageToAsync(mailpit, email);
-		}
-		finally
-		{
-			await adminHttp.DeleteAsync($"/admin/realms/{Realm}/users/{userId}");
-		}
-	}
 
 	[Test]
 	public async Task CreateEngagement_DeliversConfirmationToMailpit_ThroughBackendSmtpConfig()

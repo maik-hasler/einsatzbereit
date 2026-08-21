@@ -24,32 +24,6 @@ namespace VisualTests;
 public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task QRScannerModal_ShowsUnsupportedMessage_WhenBrowserLacksCameraSupport()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (opportunityId, organizationId, _) =
-			await CreateQrCheckInEngagementAsync(keycloak, backend, "Unsupported");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Scan QR code" }).ClickAsync();
-
-		var dialog = Page.Locator("[role='dialog']");
-		await Expect(dialog).ToBeVisibleAsync();
-		await Expect(dialog.GetByText("Scan volunteer QR code")).ToBeVisibleAsync();
-
-		await Expect(dialog.GetByText(
-			"QR scanning is not supported in this browser. Please use Chrome or Edge, or switch to a manual check-in method."))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
-	[Test]
 	public async Task QRScannerModal_ChecksInVolunteer_OnMatchingQrScan()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -187,31 +161,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(dialog).Not.ToBeVisibleAsync();
 
 		await Expect(Page.GetByText("Checked in")).ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
-	[Test]
-	public async Task QRScannerModal_ShowsCameraError_WhenCameraPermissionDenied()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (opportunityId, organizationId, _) =
-			await CreateQrCheckInEngagementAsync(keycloak, backend, "CameraDenied");
-
-		await MockQrCameraSupportAsync(Page, grantCamera: false);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Scan QR code" }).ClickAsync();
-		var dialog = Page.Locator("[role='dialog']");
-		await Expect(dialog).ToBeVisibleAsync();
-
-		await Expect(dialog.GetByText("Camera access denied. Please allow camera access and try again."))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	/// <summary>

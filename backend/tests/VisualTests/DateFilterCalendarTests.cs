@@ -40,59 +40,6 @@ public class DateFilterCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 	}
 
 	[Test]
-	public async Task DateFilter_PastDays_AreDisabledAndDoNotApplyAFilter()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await OpenDateFilterAsync(frontend);
-
-		// Stepping back a month puts the whole grid in the past regardless of which
-		// day of the month the suite happens to run on.
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Previous month" }).ClickAsync();
-
-		var dayButtons = Page.GetByRole(AriaRole.Grid).GetByRole(AriaRole.Button);
-		var dayCount = await dayButtons.CountAsync();
-		dayCount.Should().BeGreaterThan(27, "a full month of day buttons should be rendered");
-
-		for (var i = 0; i < dayCount; i++)
-		{
-			await Expect(dayButtons.Nth(i)).ToHaveAttributeAsync("aria-disabled", "true");
-		}
-
-		// Force, because Playwright's own actionability check honours aria-disabled and
-		// otherwise spends its whole timeout refusing to click - which is half of what
-		// this test is asserting, and the half a real pointer already gets for free.
-		// Dispatching the click anyway is what exercises the other half: clickDay's
-		// past-day guard, the thing that keeps the button inert rather than the styling.
-		await dayButtons.Nth(0).ClickAsync(new() { Force = true });
-
-		Page.Url.Should().NotContain("dateFrom",
-			"clicking a past day must not apply a date filter that can only ever return an empty list");
-
-		// The trigger still offers its label rather than a picked date, which is what
-		// a visitor actually sees of "nothing was applied".
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true })).ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task DateFilter_TodayAndFutureDays_StayEnabled()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await OpenDateFilterAsync(frontend);
-
-		// UTC, matching the context timezone pinned in ContextOptions above.
-		var today = DateTime.UtcNow.Date;
-		var todayCell = Page.Locator($"[data-date='{Iso(today)}']");
-		await Expect(todayCell).ToBeVisibleAsync();
-		await Expect(todayCell).Not.ToHaveAttributeAsync("aria-disabled", "true");
-
-		await todayCell.ClickAsync();
-
-		await Expect(Page).ToHaveURLAsync(new Regex($"dateFrom={Iso(today)}"));
-	}
-
-	[Test]
 	public async Task DateFilter_MarksTheDayASeededOpportunityRunsOn_AndLeavesEmptyDaysUnmarked()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

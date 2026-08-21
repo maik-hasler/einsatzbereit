@@ -704,6 +704,49 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		past.Items.Should().ContainSingle(e => e.Id == engagement.Id && e.Status == "Pending");
 	}
 
+	// ── Deleted opportunity keeps the volunteer's own history (#667) ─────────
+
+	/// <summary>
+	/// Distinct from the #703 case above, which deletes the row directly
+	/// and leaves the engagement Pending: this one goes through the normal
+	/// delete flow, which hard-deletes the opportunity while only *cancelling*
+	/// the affected engagements.
+	///
+	/// <c>GetByVolunteerAsync</c> used an inner join against
+	/// <c>VolunteerOpportunitiesQuery</c>, so once the opportunity row was gone
+	/// the volunteer's own engagement silently vanished from their history
+	/// entirely. It must still be listed, marked Cancelled, with no resolvable
+	/// title.
+	/// </summary>
+	[Test]
+	public async Task GetMyEngagements_StillListsEngagement_AfterItsOpportunityIsDeleted(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Please let me help." },
+			cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		await olafClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var past = await veraClient.GetMyEngagementsAsync(1, 50, upcoming: false, cancellationToken);
+
+		var listed = past.Items.SingleOrDefault(e => e.Id == engagement.Id);
+		listed.Should().NotBeNull(
+			"the engagement must still appear in the volunteer's own history rather than "
+			+ "disappear entirely once its opportunity is deleted");
+		listed.Status.Should().Be("Cancelled");
+		listed.OpportunityTitle.Should().BeNull(
+			"the opportunity backing this engagement no longer exists, so its title can "
+			+ "no longer be resolved");
+	}
+
 	// ── CheckInEngagement ────────────────────────────────────────────────────
 
 	[Test]
@@ -1301,6 +1344,60 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		result.Status.Should().Be("Pending");
+	}
+
+	/// <summary>
+	/// Regression for #1215: <c>Engagement.Reactivate(...)</c> used to
+	/// overwrite <c>CreatedOn</c> with the re-application time, breaking the
+	/// audit-trail invariant that <c>CreatedOn</c> records when a row was first
+	/// created.
+	///
+	/// This deliberately supersedes #648's fix, which refreshed
+	/// <c>CreatedOn</c> on reactivation so the volunteer's engagements tab and
+	/// the organizer's sign-ups page would surface the latest activity date.
+	/// #1215 accepts that those views show the original application date again
+	/// after a withdraw-and-reapply, in exchange for an immutable
+	/// <c>CreatedOn</c>.
+	/// </summary>
+	[Test]
+	public async Task CreateEngagement_ShouldKeepOriginalCreatedOn_WhenVolunteerReapliesAfterWithdrawal(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var first = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Original application." },
+			cancellationToken);
+		var firstCreatedOn = await GetCreatedOnAsync(veraClient, first.Id, cancellationToken);
+
+		await veraClient.WithdrawEngagementAsync(first.Id, cancellationToken);
+
+		// The regression sets CreatedOn to the re-application time, so the test
+		// is only meaningful if "the original time" and "now" are
+		// distinguishable. Marking the instant the second application starts
+		// establishes that separation without sleeping for it, and states the
+		// invariant more directly besides: a refreshed CreatedOn would land at
+		// or after this mark, an untouched one strictly before it.
+		var reapplyStartedAt = DateTimeOffset.UtcNow;
+
+		var second = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Re-application after withdrawal." },
+			cancellationToken);
+		second.Id.Should().Be(first.Id, "reactivation reuses the same terminal engagement row");
+
+		var secondCreatedOn = await GetCreatedOnAsync(veraClient, second.Id, cancellationToken);
+
+		secondCreatedOn.Should().Be(firstCreatedOn,
+			"Engagement.Reactivate must not change CreatedOn - it stays pinned to the "
+			+ "original application time");
+		secondCreatedOn.Should().BeBefore(reapplyStartedAt,
+			"CreatedOn must predate the re-application entirely, not merely happen to "
+			+ "match a value read earlier");
 	}
 
 	// ── ScheduledSlots capacity enforcement (#523) ─────────────────────────────────
@@ -2044,6 +2141,82 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
+
+	[Test]
+	public async Task ConfirmEngagement_ShouldNotReturn500_WhenAnXTimezoneHeaderIsSent(
+		CancellationToken cancellationToken)
+	{
+		// An IANA zone other than the server's own used to crash the handler
+		// before it reached the not-found branch.
+		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
+		using var http = fixture.CreateHttpClient();
+		http.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", token);
+		http.DefaultRequestHeaders.Add("X-Timezone", "America/New_York");
+
+		var response = await http.PostAsync(
+			$"/v1/engagements/{Guid.NewGuid()}/confirm", content: null, cancellationToken);
+
+		// 404 = the handler parsed the header and ran, then found no engagement.
+		// 403 = the authorization gate fired first, which still means middleware
+		// accepted the header. 500 is the regression.
+		((int)response.StatusCode).Should().BeOneOf(404, 403);
+	}
+
+	[Test]
+	public async Task GetMyEngagements_ShouldReturnTheReactivatedEngagement_AfterWithdrawAndReapply(
+		CancellationToken cancellationToken)
+	{
+		// #1215's reuse-the-row invariant is covered by
+		// CreateEngagement_ShouldKeepOriginalCreatedOn_... above; this is the
+		// other half - the reactivated engagement is readable again afterwards.
+		var organizerClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(organizerClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(organizerClient, orgId, cancellationToken);
+
+		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
+
+		var original = await volunteerClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Original application." },
+			cancellationToken);
+		await volunteerClient.WithdrawEngagementAsync(original.Id, cancellationToken);
+
+		// Withdrawn engagements bucket as past, so the upcoming list is empty
+		// here - which is what makes the reappearance below a real transition
+		// rather than a row that never moved.
+		var whileWithdrawn = await volunteerClient.GetMyEngagementsAsync(
+			1, 10, upcoming: true, cancellationToken);
+		whileWithdrawn.Items.Should().BeEmpty();
+
+		var reactivated = await volunteerClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Re-application after withdrawal." },
+			cancellationToken);
+
+		// Same row, reactivated - not a second engagement.
+		reactivated.Id.Should().Be(original.Id);
+
+		var afterReapply = await volunteerClient.GetMyEngagementsAsync(
+			1, 10, upcoming: true, cancellationToken);
+		afterReapply.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(original.Id);
+	}
+
+	private static async Task<DateTimeOffset> GetCreatedOnAsync(
+		EinsatzbereitApi volunteerClient, Guid engagementId, CancellationToken cancellationToken)
+	{
+		var page = await volunteerClient.GetMyEngagementsAsync(
+			1, 50, upcoming: false, cancellationToken);
+		var listed = page.Items.SingleOrDefault(e => e.Id == engagementId);
+		if (listed is not null)
+			return listed.CreatedOn;
+
+		var upcoming = await volunteerClient.GetMyEngagementsAsync(
+			1, 50, upcoming: true, cancellationToken);
+		return upcoming.Items.Single(e => e.Id == engagementId).CreatedOn;
+	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)

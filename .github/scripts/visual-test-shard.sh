@@ -2,8 +2,10 @@
 #
 # Emits the Microsoft.Testing.Platform --treenode-filter that selects one shard
 # of the VisualTests suite, so `visual-tests` can fan out across several
-# standard ubuntu-latest runners instead of running all 542 tests on one
-# (einsatzbereit#2145).
+# standard ubuntu-latest runners instead of running the whole suite on one
+# (einsatzbereit#2145). It was 542 cases when this was written and is 232
+# after #2148's rebalance; the split is computed, so the number is only ever
+# context here.
 #
 # TUnit 1.65.31 has no native sharding flag - the full flag list is
 # --list-tests/--treenode-filter/--maximum-parallel-tests/... with nothing that
@@ -14,10 +16,11 @@
 # sources on every run: every class that carries a [Test] lands in exactly one
 # shard by construction.
 #
-# Balance matters because class sizes are wildly uneven - AccessibilityTests
-# alone holds 90 of the 542 cases, while most classes hold 1-5 - so classes are
-# packed longest-first into whichever shard is currently lightest (LPT), not
-# split alphabetically.
+# Balance matters because class sizes are wildly uneven - most classes hold
+# 1-5 cases while a handful hold dozens (AccessibilityTests alone held 90 of
+# 542 until einsatzbereit#2148 moved its component-level scans down to
+# vitest-axe) - so classes are packed longest-first into whichever shard is
+# currently lightest (LPT), not split alphabetically.
 #
 # Usage: visual-test-shard.sh <shard-index> <shard-count> [tests-dir]
 #   shard-index  1-based

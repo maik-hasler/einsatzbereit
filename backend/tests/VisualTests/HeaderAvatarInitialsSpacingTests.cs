@@ -13,11 +13,11 @@ namespace VisualTests;
 /// actually applied on both, since no CI browser here can judge the result
 /// by eye.
 ///
-/// Signed in as Olaf ("OO"), not Vera: AvatarAndLogoDisplayTests.cs uploads
-/// and removes Vera's own avatar_url elsewhere in this suite (shared
-/// PerTestSession fixture), which would intermittently swap her header
-/// avatar for an &lt;img&gt; and make the initials span disappear out from
-/// under this test. Nothing in the suite ever uploads Olaf's personal
+/// Signed in as Olaf ("OO"), not Vera: Vera's avatar_url gets uploaded and
+/// removed by other cases in this shared PerTestSession fixture, which would
+/// intermittently swap her header avatar for an &lt;img&gt; and make the
+/// initials span disappear out from under this test. Nothing ever uploads
+/// Olaf's personal
 /// avatar (only organization logos), so "OO" is a deterministic two-letter
 /// case - the fix itself is unconditional on which two letters are shown.
 /// </summary>
@@ -51,7 +51,7 @@ public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTes
 		// FastSignInAsync's own "User menu" wait needs the desktop-width nav
 		// visible (DesktopHeader.tsx's "hidden md:flex") - sign in at the
 		// default (desktop-sized) viewport, then shrink down to mobile only
-		// afterward, mirroring AccountConsoleLinkTests's own viewport handling.
+		// afterward - the same viewport handling every mobile-menu test needs.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 

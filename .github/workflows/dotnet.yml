@@ -383,9 +383,10 @@ jobs:
   visual-tests:
     needs: build
     runs-on: ubuntu-latest
-    # Each shard measures ~7 min (see docs/TDRs/2_slow_ci_pipeline.adoc); this is
-    # a hang guard, deliberately far above the expected runtime rather than the
-    # near-miss the old unsharded 25 min was against a 19-25 min job.
+    # Each shard measures ~4-5 min after #2148 cut the suite to 232 cases (see
+    # docs/TDRs/2_slow_ci_pipeline.adoc); this is a hang guard, deliberately far
+    # above the expected runtime rather than the near-miss the old unsharded
+    # 25 min was against a 19-25 min job.
     timeout-minutes: 20
     strategy:
       fail-fast: false

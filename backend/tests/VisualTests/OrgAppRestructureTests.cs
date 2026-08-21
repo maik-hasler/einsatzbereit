@@ -47,24 +47,6 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	}
 
 	[Test]
-	public async Task ProfilePage_NoLongerShowsOrganizationsSection()
-	{
-		// Regression guard: the "Your organizations" card (org list + its own
-		// "Create organization" button) moved entirely into the org app shell -
-		// the profile page must not still surface it, even for a user who
-		// organizes orgs and would previously have populated it.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(Page.GetByTestId("your-organizations-link")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByTestId("create-org-btn")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task HomeCta_ZeroOrgs_CreatingOrgEntersItsDashboardDirectly()
 	{
 		// Vera organizes nothing in seed data - the home page's "Create an
@@ -104,48 +86,5 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToContainTextAsync(orgName);
-	}
-
-	[Test]
-	public async Task LegacyAppEntryUrl_NoLongerRoutes_FallsThroughToNotFound()
-	{
-		// #747: /app was removed as a distinct route (no more picker/loading
-		// intermediate) - a direct visit must now fall through to the
-		// catch-all NotFoundPage instead.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page).ToHaveURLAsync($"{origin}/app");
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
-	[Test]
-	public async Task LegacyOrganizationDashboardUrl_NoLongerRoutes_FallsThroughToNotFound()
-	{
-		// #844: the pre-restructure /organizations/{id}/dashboard redirect had
-		// no in-app link pointing at it (only /app/{id}/dashboard is ever
-		// linked) and was removed - a direct visit now falls through to the
-		// catch-all NotFoundPage, same as the /app legacy entry above.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var homeOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, homeOrgId!.Value);
-
-		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
-		match.Success.Should().BeTrue();
-		var organizationId = match.Groups[1].Value;
-
-		await Page.GotoAsync($"{origin}/organizations/{organizationId}/dashboard");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page).ToHaveURLAsync($"{origin}/organizations/{organizationId}/dashboard");
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 }

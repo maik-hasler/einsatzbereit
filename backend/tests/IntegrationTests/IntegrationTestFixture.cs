@@ -104,6 +104,26 @@ public class IntegrationTestFixture
 		return client.BaseAddress!.ToString();
 	}
 
+	/// <summary>
+	/// Mailpit's web/API endpoint. Aspire runs it as the SMTP relay both
+	/// Keycloak's realm config and the backend's SmtpOptions point at, so it
+	/// is the only place to see whether mail actually left a sender rather
+	/// than only that the send call returned 200 (#1070/#1341/#1342).
+	/// </summary>
+	public HttpClient CreateMailpitClient() => _app.CreateHttpClient("mailpit", "webui");
+
+	/// <summary>
+	/// A Keycloak admin-API client, for the handful of contracts that live in
+	/// the realm rather than in this codebase (e.g. its SMTP config).
+	/// </summary>
+	public async Task<HttpClient> CreateKeycloakAdminClientAsync()
+	{
+		var client = _app.CreateHttpClient("keycloak");
+		client.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", await GetAdminTokenAsync());
+		return client;
+	}
+
 	public async Task<string> GetAccessTokenAsync(string username, string password)
 	{
 		var content = new FormUrlEncodedContent([

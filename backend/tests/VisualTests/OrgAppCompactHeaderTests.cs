@@ -120,8 +120,7 @@ public class OrgAppCompactHeaderTests(AspireFixture fixture) : VisualTestBase(fi
 
 	/// <summary>
 	/// Creates an organization through the API with the signed-in user's own
-	/// token, so the caller organizes it - same approach as
-	/// QuickCheckInWidgetTests, and faster than driving the switcher's
+	/// token, so the caller organizes it - faster than driving the switcher's
 	/// create-organization dialog.
 	/// </summary>
 	private async Task<string> CreateOrganizationAsync(string name)

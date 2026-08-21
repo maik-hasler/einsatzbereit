@@ -42,30 +42,6 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 			"checkInMethod is \"None\", so the PIN endpoint would always 404 and must not be called");
 	}
 
-	[Test]
-	public async Task ManageApplicationsPage_RequestsCheckInPin_WhenCheckInMethodIsPINCode()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (opportunityId, organizationId) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "CheckInPinPin", "PINCode");
-
-		var pinResponseStatuses = new List<int>();
-		Page.Response += (_, response) =>
-		{
-			if (response.Url.Contains("check-in-pin", StringComparison.Ordinal))
-				pinResponseStatuses.Add(response.Status);
-		};
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		pinResponseStatuses.Should().ContainSingle().Which.Should().Be(200);
-	}
-
 	private static async Task<(string OpportunityId, string OrganizationId)> CreateIndividualContactOpportunityAsync(
 		Uri keycloak, Uri backend, string label, string checkInMethod)
 	{

@@ -113,22 +113,4 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Platform", Level = 2 }))
 			.Not.ToBeVisibleAsync();
 	}
-
-	[Test]
-	public async Task OrganizationProfilePage_FooterHeadingsStayLevel2_UnaffectedByOpportunitiesRouteDemotion()
-	{
-		// Footer's headingLevel demotion is scoped to /opportunities in
-		// AppLayout - every other route keeps the footer's headings at their
-		// default h2, unchanged by #2071's fix.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var footerHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Platform" });
-		await footerHeading.ScrollIntoViewIfNeededAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Platform", Level = 2 }))
-			.ToBeVisibleAsync();
-	}
 }
