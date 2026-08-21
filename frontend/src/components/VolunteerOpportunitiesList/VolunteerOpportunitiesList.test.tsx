@@ -234,6 +234,6 @@ describe("opportunity list filters and the URL", () => {
 	// under `BrowserRouter`, which writes through to `window.location`, but
 	// under any router that does not - `MemoryRouter` here - the second
 	// filter's write rebuilds from a URL the first never reached and silently
-	// drops it. See the PR description: worth its own issue, not a fix to
-	// smuggle into a test-rebalance change.
+	// drops it. Tracked as einsatzbereit#2157, which also moves this case
+	// down once updateFilter uses the functional form.
 });

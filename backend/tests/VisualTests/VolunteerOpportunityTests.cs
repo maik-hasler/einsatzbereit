@@ -29,7 +29,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	/// <c>setSearchParams(prev =&gt; ...)</c> form its five sibling handlers all
 	/// use, so it only survives a second filter write under a router that
 	/// writes through to <c>window.location</c>. That makes this the one
-	/// filter case a component test cannot reproduce.
+	/// filter case a component test cannot reproduce. Tracked as
+	/// einsatzbereit#2157, which moves this case down once that is fixed.
 	/// </summary>
 	[Test]
 	public async Task MultipleFilters_AllReflectedInUrl()

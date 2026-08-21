@@ -15,7 +15,24 @@ export default defineConfig({
 		setupFiles: ["./src/test/setup.ts"],
 		coverage: {
 			provider: "v8",
-			include: ["src/lib/**/*.ts"],
+			// Was `src/lib/**/*.ts`, which was right while this suite was only the
+			// pure-function tests. #2148 moved component, page and hook coverage
+			// down here, and a report scoped to `lib/` cannot see any of it - it
+			// measured 385 statements while the suite exercises thousands.
+			include: ["src/**/*.{ts,tsx}"],
+			exclude: [
+				// The tests and their harness, which would report as covering
+				// themselves.
+				"src/**/*.test.{ts,tsx}",
+				"src/test/**",
+				// NSwag-generated, never hand-edited (see frontend/AGENTS.md), and
+				// large enough to dominate the totals either way.
+				"src/client/api-client.ts",
+				// Composition roots and ambient declarations - nothing to assert.
+				"src/main.tsx",
+				"src/vite-env.d.ts",
+				"src/**/*.d.ts",
+			],
 		},
 	},
 });

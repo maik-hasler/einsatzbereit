@@ -285,3 +285,193 @@ describe("OrgMembersPage last-organizer guard", () => {
 		expect(leave).not.toHaveAttribute("aria-describedby");
 	});
 });
+
+/**
+ * The member-management cases from `OrganizationTests`, moved down in #2148
+ * wave 11.
+ *
+ * Every one of these is a client-side branch over `useApiClient()`: which
+ * dialog opens, which endpoint fires with which arguments, and what the row
+ * reads afterwards. The *persistence* each one implies is already covered at
+ * integration level - `OrganizationSettingsTests` has
+ * `ChangeMemberRole_ShouldReturn204AndPromoteThenDemote_...`,
+ * `CreateInvitation_ThenAccept_ShouldPersistMemberRole_NotSilentlyDowngrade`,
+ * and `DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsPending` -
+ * so what the browser added here was the UI wiring, not the contract.
+ *
+ * The E2E originals each signed olaf in, created a throwaway organization,
+ * added vera through the fixture's direct Keycloak escape hatch, and reloaded
+ * the page before they could click anything.
+ */
+const invitation = {
+	id: "55555555-5555-5555-5555-555555555555",
+	inviteeName: "Ingo Invitee",
+	inviteeUserId: "66666666-6666-6666-6666-666666666666",
+	role: "Member",
+	status: "Pending",
+	createdOn: new Date(Date.UTC(2026, 0, 2)),
+};
+
+const candidate = {
+	userId: invitation.inviteeUserId,
+	username: "ingo",
+	firstName: "Ingo",
+	lastName: "Invitee",
+};
+
+function renderManage(members: unknown[], invitations: unknown[] = []) {
+	api.getOrgInvitations.mockResolvedValue(invitations);
+	const orgWithMembers = {
+		...org,
+		members,
+	} as unknown as OrganizationDetailsResponse;
+	const reloadOrg = vi.fn();
+	const result = renderWithProviders(
+		<Routes>
+			<Route
+				element={
+					<Outlet
+						context={{ org: orgWithMembers, reloadOrg, isOrganizer: true }}
+					/>
+				}
+			>
+				<Route index element={<OrgMembersPage />} />
+			</Route>
+		</Routes>,
+		{ auth: { isAuthenticated: true, sub: SELF_ID } },
+	);
+	return { ...result, reloadOrg };
+}
+
+describe("OrgMembersPage member removal", () => {
+	it("routes Remove through a confirm dialog naming the member", async () => {
+		// Remove must behave like every other destructive action on this page
+		// (Leave, Delete organization): a dialog that names who is affected,
+		// where cancelling calls nothing at all.
+		api.removeMember.mockResolvedValue(undefined);
+		renderManage([olaf, vera]);
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove Vera Volunteer" }),
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		expect(within(dialog).getByText(/Vera Volunteer/)).toBeInTheDocument();
+
+		await userEvent.click(within(dialog).getByRole("button", { name: "Keep" }));
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(api.removeMember).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("button", { name: "Remove Vera Volunteer" }),
+		).toBeVisible();
+	});
+
+	it("removes the member only after the destructive confirm", async () => {
+		api.removeMember.mockResolvedValue(undefined);
+		const { reloadOrg } = renderManage([olaf, vera]);
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove Vera Volunteer" }),
+		);
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Yes, remove",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.removeMember).toHaveBeenCalledWith(org.id, OTHER_ID),
+		);
+		// The row leaving the list is the parent's job - the page asks for a
+		// refetch rather than mutating the members prop it was handed.
+		await waitFor(() => expect(reloadOrg).toHaveBeenCalled());
+	});
+});
+
+describe("OrgMembersPage role changes", () => {
+	it("promotes a plain member to organizer", async () => {
+		api.changeMemberRole.mockResolvedValue(undefined);
+		renderManage([olaf, vera]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: "Promote Vera Volunteer to organizer",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.changeMemberRole).toHaveBeenCalledWith(org.id, OTHER_ID, {
+				role: "Organizer",
+			}),
+		);
+	});
+
+	it("demotes an organizer back to member", async () => {
+		// The other direction of the same control. The E2E original had to run
+		// both halves in one case against one seeded member; here each direction
+		// is just a different starting prop.
+		api.changeMemberRole.mockResolvedValue(undefined);
+		renderManage([olaf, { ...vera, role: "Organizer", isOrganisator: true }]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: "Demote Vera Volunteer to member",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.changeMemberRole).toHaveBeenCalledWith(org.id, OTHER_ID, {
+				role: "Member",
+			}),
+		);
+	});
+});
+
+describe("OrgMembersPage invitations", () => {
+	it("sends the role picked in the selector, not a hardcoded Member", async () => {
+		// #1050: the role selector existed but the create call always sent
+		// "Member", so inviting an organizer silently produced a plain member.
+		// Invites go through candidate search rather than a free-text address,
+		// so the selector has to still be read at the moment the candidate is
+		// picked.
+		api.createInvitation.mockResolvedValue({
+			...invitation,
+			role: "Organizer",
+		});
+		api.searchMemberCandidates.mockResolvedValue([candidate]);
+		const { container } = renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+
+		const roleSelect = container.ownerDocument.getElementById("invite-role");
+		expect(roleSelect).not.toBeNull();
+		await userEvent.selectOptions(roleSelect as HTMLElement, "Organizer");
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Invite" }),
+		);
+
+		await waitFor(() =>
+			expect(api.createInvitation).toHaveBeenCalledWith(
+				org.id,
+				expect.objectContaining({ role: "Organizer" }),
+			),
+		);
+	});
+
+	it("dismisses a pending invitation before it is accepted", async () => {
+		api.dismissInvitation.mockResolvedValue(undefined);
+		renderManage([olaf], [invitation]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Dismiss invitation for ${invitation.inviteeName}`,
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.dismissInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+		);
+	});
+});

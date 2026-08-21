@@ -195,6 +195,11 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	/// asserts fall through to the generated catch-all, which throws the
 	/// non-generic <see cref="ApiException"/>. Catching only the generic form
 	/// let both 409 tests fail with the very exception they were asserting.
+	///
+	/// The undeclared 409 is a defect in the OpenAPI document rather than
+	/// something this helper should be working around - tracked as
+	/// einsatzbereit#2158, which declares it and simplifies this back to the
+	/// typed form.
 	/// </summary>
 	private static async Task<ApiException> CaptureFailureAsync(Func<Task> act)
 	{

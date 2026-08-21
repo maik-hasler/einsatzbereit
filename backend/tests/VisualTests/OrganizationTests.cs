@@ -6,18 +6,20 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-// Organizer_CanPromoteAndDemoteMember_ViaMembersPage below needs vera's
-// global Keycloak organisator role deterministically cleared - it asserts her
-// row stops reading "Organizer" after a demote, which a leftover global role
-// would falsify - so the whole class opts into fixture.ResetAsync() and a
-// keyed [NotInParallel], keyed so only classes sharing "visualtests-db", not
-// the whole assembly, are excluded while this one resets that role.
+// MembersPage_ActionButtons_MeetMinimumTouchTargetSize below needs vera's
+// global Keycloak organisator role deterministically cleared: it locates the
+// row's role control by the name "Promote ... to organizer", which reads
+// "Demote ... to member" if she is already an organisator. So the whole class
+// opts into fixture.ResetAsync() and a keyed [NotInParallel], keyed so only
+// classes sharing "visualtests-db", not the whole assembly, are excluded
+// while this one resets that role.
 //
-// einsatzbereit#2148 wave 10 moved the case this comment used to name
-// (SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave) down to
-// OrgMembersPage.test.tsx, along with the rest of the last-organizer guard.
-// The reset stays because the promote/demote case above still depends on it;
-// it is the last thing holding this class's serialisation in place.
+// einsatzbereit#2148 waves 10-11 moved the other cases that depended on the
+// reset (the last-organizer guard, then promote/demote) down to
+// OrgMembersPage.test.tsx. That touch-target case is now the only thing
+// holding this class's serialisation in place, and it measures bounding boxes
+// at a 375px viewport, so it cannot follow them.
+
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]
 public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -116,125 +118,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm()
-	{
-		// "Remove" must go through ConfirmDialog like every other destructive
-		// action on this page (Leave, Delete Organization): it opens a dialog naming
-		// the member, "Keep" cancels without removing them, and only "Yes, remove"
-		// calls the API.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual1231 RemoveConfirm", pinnedOrgId!.Value);
-
-		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
-		match.Success.Should().BeTrue();
-		var organizationId = Guid.Parse(match.Groups[1].Value);
-
-		var vera = await Fixture.SignInAsync("vera", "vera123");
-		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
-
-		// OrgAppLayout only refetches org details on organizationId change, so
-		// the dashboard we're still on would otherwise keep showing its
-		// pre-membership snapshot (olaf as sole member) - force a refetch, same
-		// as the SoleOrganizer test above.
-		await Page.ReloadAsync();
-
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		// Scope to vera's row by her stable seed email rather than her display
-		// name: other tests in this shared session (e.g. ProfileOverviewTests)
-		// rename her last name to "Sample", and that mutation isn't reset
-		// between tests, so asserting a specific full name here is order-
-		// dependent flakiness waiting to happen.
-		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
-		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var veraName = await veraRow.Locator("p").First.TextContentAsync();
-		veraName.Should().NotBeNullOrEmpty();
-
-		var removeButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Remove" });
-		await removeButton.ClickAsync();
-
-		var dialog = Page.GetByRole(AriaRole.Dialog);
-		await Expect(dialog).ToBeVisibleAsync();
-		await Expect(dialog.GetByText(veraName!)).ToBeVisibleAsync();
-
-		// "Keep" must close the dialog without removing the member.
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
-		await Expect(dialog).Not.ToBeVisibleAsync();
-		await Expect(veraRow).ToBeVisibleAsync();
-
-		// "Yes, remove" on a second attempt actually removes them.
-		await removeButton.ClickAsync();
-		await Expect(dialog).ToBeVisibleAsync();
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, remove" }).ClickAsync();
-
-		await Expect(dialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(veraRow).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task Organizer_CanPromoteAndDemoteMember_ViaMembersPage()
-	{
-		// "Promote to organizer"/"Demote to member" must round-trip through the API
-		// and survive a reload, not just update local state optimistically.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual1050 PromoteDemote", pinnedOrgId!.Value);
-
-		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
-		match.Success.Should().BeTrue();
-		var organizationId = Guid.Parse(match.Groups[1].Value);
-
-		var vera = await Fixture.SignInAsync("vera", "vera123");
-		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
-
-		// OrgAppLayout only refetches org details on organizationId change, so
-		// the dashboard we're still on would otherwise keep showing its
-		// pre-membership snapshot - force a refetch, same as other tests above.
-		await Page.ReloadAsync();
-
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		// Scope to vera's row by her stable seed email rather than her display
-		// name - see RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm
-		// above for why.
-		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
-		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		// Plain member: no Organizer badge, a "Promote" action, no "Demote".
-		// These buttons' accessible names interpolate the member's own name in the
-		// middle ("Promote {name} to organizer"), so match with a regex.
-		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync();
-		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") });
-		await Expect(promoteButton).ToBeVisibleAsync();
-
-		await promoteButton.ClickAsync();
-
-		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") });
-		await Expect(demoteButton).ToBeVisibleAsync();
-
-		// Reload to prove the promotion persisted server-side rather than being an
-		// optimistic local update. A plain reload, not a re-click: the "member" link
-		// lives on the dashboard's SettingsWidget and does not exist on this page.
-		await Page.ReloadAsync();
-		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
-
-		// Demote back to Member - olaf remains an organizer, so this is allowed.
-		await veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Demote .* to member") }).ClickAsync();
-
-		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(veraRow.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to organizer") })).ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task MembersPage_ActionButtons_MeetMinimumTouchTargetSize()
 	{
 		// The member-row actions must clear WCAG 2.2 SC 2.5.8's 24x24 CSS px
@@ -293,79 +176,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		double gap = removeBox.X - (promoteBox.X + promoteBox.Width);
 		(gap >= 8).Should().BeTrue(
 			$"Promote and Remove hit targets should stay clearly separated to avoid a mis-tap between a role change and a destructive action (measured {gap:F1}px)");
-	}
-
-	[Test]
-	public async Task Organizer_CanInviteMemberWithOrganizerRole_ViaRoleSelector()
-	{
-		// CreateInvitation carries an intended role, defaulting to Member - the
-		// selector must let an organizer invite someone as Organizer instead, shown
-		// on the pending invitation. Throwaway org: organization_invitation rows are
-		// not cleared between tests, so reusing olaf's would 409 with AlreadyInvited
-		// against whatever Organisator_InviteMemberFromDashboard_... already sent.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual1050 InviteRole", pinnedOrgId!.Value);
-
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		await Page.Locator("#member-search").FillAsync("vera");
-
-		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
-		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await Page.Locator("#invite-role").SelectOptionAsync("Organizer");
-		await inviteButton.First.ClickAsync();
-
-		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-
-		var pendingSection = Page.Locator("li", new() { HasTextString = "vera" }).First;
-		await Expect(pendingSection.GetByText("Organizer", new() { Exact = true }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-	}
-
-	[Test]
-	public async Task Organizer_CanDismissPendingInvitation_RevokingItBeforeAcceptance()
-	{
-		// An organizer who invited the wrong person must be able to revoke it
-		// before that person accepts and gains full Organizer access: the same
-		// "Dismiss" control Declined/Expired rows carry also works on a Pending
-		// one, and the removal survives a reload rather than being optimistic
-		// local state.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Throwaway org, not olaf's pinned/seeded one - other tests in this
-		// shared session already invite vera into that org, and
-		// organization_invitation rows aren't cleared between tests, so
-		// reusing it here could 409 with AlreadyInvited depending on run order.
-		await CreateOrganizationAsync("Visual1040 DismissPending", pinnedOrgId!.Value);
-
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		await Page.Locator("#member-search").FillAsync("vera");
-		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
-		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await inviteButton.First.ClickAsync();
-
-		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending invitations")).ToBeVisibleAsync();
-
-		var dismissButton = Page.GetByRole(AriaRole.Button, new() { Name = "Dismiss" });
-		await Expect(dismissButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await dismissButton.ClickAsync();
-
-		await Expect(Page.GetByText("Could not dismiss invitation.")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await Page.ReloadAsync();
-		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByText("Pending invitations")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
