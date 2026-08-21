@@ -24,32 +24,6 @@ namespace VisualTests;
 public class SignUpVocabularyTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OpportunityDetailPage_InGerman_UsesAnmeldenForAuthenticationOnly()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "VocabularyGate");
-
-		// Anonymous - the gate only renders for a signed-out visitor.
-		await Page.GotoAsync(origin);
-		await SwitchToGermanAsync();
-
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var prompt = Page.GetByTestId("login-prompt");
-		await Expect(prompt).ToContainTextAsync("Melde dich an, um mitzumachen.", new() { Timeout = 15_000 });
-
-		// The one "Anmelden" left in this flow is the authentication button,
-		// and the sentence above it no longer also means the shift sign-up.
-		await Expect(Page.GetByTestId("opportunity-signin")).ToHaveTextAsync("Anmelden");
-		await Expect(prompt.GetByText("anzumelden")).ToHaveCountAsync(0);
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_InGerman_CancelsWithAbsagenEndToEnd()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

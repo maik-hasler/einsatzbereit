@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router";
 import VolunteerOpportunityDetailPage from "./VolunteerOpportunityDetailPage";
-import { renderWithProviders } from "../test/render";
+import { renderWithProviders, type TestAuth } from "../test/render";
 
 /**
  * The bilingual-content cases from `VolunteerOpportunityTests`, moved down in
@@ -288,5 +288,376 @@ describe("opportunity detail page without coordinates", () => {
 		expect(href).toContain("google.com/maps");
 		// Addressed by text, since there are no coordinates to point at.
 		expect(decodeURIComponent(href)).toContain("Kiel");
+	});
+});
+
+/**
+ * The remaining detail-page cases from `VolunteerOpportunityTests`,
+ * `WithdrawEngagementErrorMessageTests`, `NavigationTests`,
+ * `OpportunityCardContractTests`, `PendingSignUpExplanationTests`,
+ * `SignUpVocabularyTests`, `CheckInAndSlotTests` and `SlotRowSignUpTests`,
+ * moved down in #2148 wave 13. Remaining inventory: #2159.
+ *
+ * Every one of them is a branch over the details payload plus the viewer's
+ * identity - both render arguments here. Ownership in particular is
+ * `isOrganisator && userOrgIds.includes(opportunity.organizationId)`, so it
+ * takes an `organisator` role and one mocked `getOrganizations` response
+ * rather than a seeded organization and a real membership.
+ */
+const ORGANIZER_AUTH = {
+	isAuthenticated: true,
+	roles: ["user", "organisator"],
+};
+const VOLUNTEER_AUTH = { isAuthenticated: true };
+
+/** Makes the signed-in viewer an owner of `details.organizationId`. */
+function asOwner() {
+	api.getOrganizations.mockResolvedValue([{ id: details.organizationId }]);
+}
+
+function renderAs(
+	auth: TestAuth,
+	lng: "de" | "en" = "en",
+	extra?: React.ReactNode,
+) {
+	return renderWithProviders(
+		<>
+			<Routes>
+				<Route
+					path="/volunteer-opportunities/:opportunityId"
+					element={<VolunteerOpportunityDetailPage />}
+				/>
+			</Routes>
+			{extra}
+		</>,
+		{ lng, route: `/volunteer-opportunities/${OPPORTUNITY_ID}`, auth },
+	);
+}
+
+describe("opportunity detail page for the organization that owns it", () => {
+	beforeEach(asOwner);
+
+	it("badges an unpublished draft and offers edit and publish", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			status: "Draft",
+		});
+
+		renderAs(ORGANIZER_AUTH);
+
+		expect(
+			await screen.findByTestId("opportunity-detail-draft-badge"),
+		).toHaveTextContent("Draft");
+		expect(screen.getByTestId("opportunity-detail-edit")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("opportunity-detail-publish"),
+		).toBeInTheDocument();
+	});
+
+	it("drops the draft affordances once it is published", async () => {
+		// The other half of the same branch. Without it, a page that always
+		// rendered the badge would satisfy the case above.
+		renderAs(ORGANIZER_AUTH);
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByTestId("opportunity-detail-draft-badge")).toBeNull();
+		expect(screen.queryByTestId("opportunity-detail-edit")).toBeNull();
+		expect(screen.queryByTestId("opportunity-detail-publish")).toBeNull();
+	});
+
+	it("points the owner at the management view instead of a sign-up rail", async () => {
+		// #2081: an owner qualifies for neither the sign-up box nor the sign-in
+		// prompt, so the rail rendered empty and left them with no route back
+		// into their own opportunity.
+		renderAs(ORGANIZER_AUTH);
+
+		const notice = await screen.findByTestId("opportunity-owner-notice");
+		expect(screen.queryByTestId("signup-cta")).toBeNull();
+		expect(screen.queryByTestId("login-prompt")).toBeNull();
+
+		expect(within(notice).getByRole("link")).toHaveAttribute(
+			"href",
+			`/app/${details.organizationId}/dashboard/opportunities/${OPPORTUNITY_ID}/engagements`,
+		);
+	});
+});
+
+describe("opportunity detail page tag chips", () => {
+	it("makes each tag a link into the filtered browse list", async () => {
+		// The regression was that these were inert <span>s, so no part of the UI
+		// could produce a ?tag= URL at all - which is a markup fact. The
+		// browse-side half (the list applying the filter) belongs to
+		// VolunteerOpportunitiesList and is covered there.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			tags: ["Erste Hilfe"],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const chip = await screen.findByRole("link", {
+			name: "Filter by tag: Erste Hilfe",
+		});
+		expect(chip).toHaveAttribute(
+			"href",
+			`/opportunities?tag=${encodeURIComponent("Erste Hilfe")}`,
+		);
+	});
+});
+
+describe("opportunity detail page withdraw failure", () => {
+	const pending = {
+		...details,
+		currentUserEngagement: {
+			id: "44444444-4444-4444-4444-444444444444",
+			status: "Pending",
+			isCheckedIn: false,
+			remainingReactivations: 2,
+		},
+	};
+
+	it("states the specific reason rather than the generic fallback", async () => {
+		// #1950's first half: the handler ran the rejection through
+		// `err instanceof Error`, which a ProblemDetails object is not, so every
+		// failure collapsed to "Could not withdraw". `getApiErrorMessage` looks
+		// up `apiError.Engagement.AlreadyTerminated` instead.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(pending);
+		api.withdrawEngagement.mockRejectedValue({
+			status: 409,
+			errorCode: "Engagement.AlreadyTerminated",
+			detail: "Engagement is already terminated.",
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		// Scoped to the desktop status card: the page renders a second, mobile
+		// copy of the whole rail (#1965), so an unscoped "Withdraw" is ambiguous
+		// here in a way it never was in a real viewport.
+		const card = await screen.findByTestId("application-status");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		expect(
+			await screen.findByText("Sign-up is already terminated."),
+		).toBeInTheDocument();
+	});
+
+	it("collapses to a single acknowledgement, since retrying cannot help", async () => {
+		// #1950's second half. Leaving the retry button in place invites a
+		// second attempt that is guaranteed to fail the same way.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(pending);
+		api.withdrawEngagement.mockRejectedValue({
+			status: 409,
+			errorCode: "Engagement.AlreadyTerminated",
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		await screen.findByText("Sign-up is already terminated.");
+		expect(
+			screen.getByRole("button", { name: "Understood" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Yes, withdraw" })).toBeNull();
+	});
+});
+
+describe("opportunity detail page heading structure", () => {
+	it("leads with the opportunity, not a breadcrumb trail", async () => {
+		// This page's header band carries the organization as an eyebrow link
+		// above the title, so a separate breadcrumb would state the same path
+		// twice.
+		renderAs(VOLUNTEER_AUTH);
+
+		const heading = await screen.findByRole("heading", { level: 1 });
+		expect(heading.textContent?.trim()).not.toBe("");
+
+		const main = document.querySelector("main") ?? document.body;
+		expect(within(main).queryByRole("navigation")).toBeNull();
+		expect(within(main).queryByRole("link", { name: "Home" })).toBeNull();
+		expect(
+			within(main)
+				.getAllByRole("link")
+				.filter((a) => a.getAttribute("href")?.startsWith("/organizations/")),
+		).toHaveLength(1);
+	});
+});
+
+describe("opportunity detail page capacity", () => {
+	it("keeps the interest-based type badge alongside the applicant count", async () => {
+		// #1941: the slot used to swap to the applicant count, so an
+		// interest-based offer stopped saying what it was the moment it had
+		// applicants - and only for the viewer who had applied.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			validUntil: new Date(Date.UTC(2027, 0, 31)),
+			currentParticipantCount: 1,
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		expect(await screen.findByTestId("opportunity-capacity")).toHaveTextContent(
+			"By expression of interest",
+		);
+		expect(
+			screen.getByTestId("opportunity-capacity-secondary"),
+		).toHaveTextContent("1 person has already joined");
+	});
+
+	it("never reads as full when a slot has unlimited capacity", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			timeSlots: [
+				{
+					...scheduledSlots.timeSlots[0],
+					maxParticipants: undefined,
+					bookedCount: 12,
+				},
+			],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		expect(await screen.findByTestId("opportunity-capacity")).toHaveTextContent(
+			"Unlimited spots",
+		);
+		expect(
+			screen.queryByText("This opportunity is currently full."),
+		).toBeNull();
+		expect(screen.queryByText("Full")).toBeNull();
+	});
+});
+
+describe("opportunity detail page pending explanation", () => {
+	const withStatus = (status: "Pending" | "Confirmed") => ({
+		...details,
+		currentUserEngagement: {
+			id: "44444444-4444-4444-4444-444444444444",
+			status,
+			isCheckedIn: false,
+			remainingReactivations: 2,
+		},
+	});
+	const EXPLANATION =
+		"The organization is reviewing your sign-up. You'll get a message once it's confirmed.";
+
+	it("explains what pending means, next to the chip", async () => {
+		// #2075: the amber chip alone said nothing about who resolves it or how
+		// long it takes.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(withStatus("Pending"));
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		expect(within(card).getByText("Pending")).toBeInTheDocument();
+		expect(within(card).getByText(EXPLANATION)).toBeInTheDocument();
+	});
+
+	it("drops the explanation once the sign-up is confirmed", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(
+			withStatus("Confirmed"),
+		);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		expect(within(card).getByText("Confirmed")).toBeInTheDocument();
+		expect(screen.queryByText(EXPLANATION)).toBeNull();
+	});
+});
+
+describe("opportunity detail page German sign-up vocabulary", () => {
+	it("reserves 'anmelden' for authentication, not for signing up", async () => {
+		// German uses "anmelden" for signing in, so using it for signing up to an
+		// opportunity too makes the two indistinguishable in the one place both
+		// appear - the anonymous visitor's rail.
+		renderAs({ isAuthenticated: false }, "de");
+
+		const prompt = await screen.findByTestId("login-prompt");
+		expect(prompt.textContent ?? "").not.toBe("");
+		expect(screen.getByTestId("opportunity-signin")).toBeInTheDocument();
+		// The whole rail, not just the prompt: the point is that the word does
+		// not appear anywhere the two could be confused.
+		expect(prompt.textContent).not.toMatch(/anzumelden/);
+	});
+});
+
+describe("opportunity detail page slot rows", () => {
+	/**
+	 * `showSignUpCta` is `isAuthenticated && !isOwner && !cue && !isDraft`, and
+	 * the rows are only buttons under it - so these need a signed-in volunteer
+	 * who has not already applied.
+	 */
+	beforeEach(() => {
+		api.createEngagement.mockResolvedValue({
+			id: "55555555-5555-5555-5555-555555555555",
+		});
+	});
+
+	it("signs up for the one slot directly, with no re-picking step", async () => {
+		// #2075: clicking a specific row already answered "which slot", so
+		// reopening a picker asked the same question twice.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			timeSlots: [scheduledSlots.timeSlots[0]],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const rows = await screen.findAllByTestId("opportunity-time-slot-row");
+		await userEvent.click(rows[0]);
+
+		// The confirm variant, not the picker: one stated slot and no select.
+		expect(await screen.findByTestId("sign-up-confirmed-slot")).toBeVisible();
+		expect(document.querySelector("#sign-up-time-slot")).toBeNull();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Confirm sign-up" }),
+		);
+
+		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
+		expect(api.createEngagement).toHaveBeenCalledWith(
+			OPPORTUNITY_ID,
+			expect.objectContaining({
+				type: "ScheduledSlots",
+				timeSlotId: scheduledSlots.timeSlots[0].id,
+			}),
+		);
+	});
+
+	it("preselects the row that was clicked, not the first one", async () => {
+		// The regression this guards is a preselection that silently ignored
+		// which row was clicked - invisible with one slot, wrong with two.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const rows = await screen.findAllByTestId("opportunity-time-slot-row");
+		expect(rows).toHaveLength(2);
+		await userEvent.click(rows[1]);
+
+		await screen.findByTestId("sign-up-confirmed-slot");
+		await userEvent.click(
+			screen.getByRole("button", { name: "Confirm sign-up" }),
+		);
+
+		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
+		expect(api.createEngagement).toHaveBeenCalledWith(
+			OPPORTUNITY_ID,
+			expect.objectContaining({
+				timeSlotId: scheduledSlots.timeSlots[1].id,
+			}),
+		);
 	});
 });

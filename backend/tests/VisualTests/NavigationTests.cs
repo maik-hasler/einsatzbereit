@@ -73,46 +73,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task VolunteerOpportunityDetailPage_BreadcrumbShowsOrgAndOpportunityTitle()
-	{
-		// The old back link always went to "/#opportunities" regardless of
-		// where the user came from. The revived breadcrumb must instead reflect
-		// the opportunity's actual organization and title.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		// The opportunity list lives on /opportunities, not the landing page.
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the list's
-		// opportunity fetch and could silently skip this test instead of failing.
-		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var href = await firstCard.GetAttributeAsync("href");
-		Skip.When(href is null, "opportunity link had no href");
-
-		await Page.GotoAsync($"{origin}{href!}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The breadcrumb bar is gone from this page too - the
-		// PageHeaderBand states the opportunity title as the h1 and puts the
-		// link to the owning organization in its eyebrow, which is where the
-		// middle crumb's job moved.
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
-		// No in-band "Home" link either - that destination is a header nav
-		// entry now, see HeaderPrimaryNavTests.
-		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToHaveCountAsync(0);
-		await Expect(Page.Locator("main a[href*='/organizations/']").First).ToBeVisibleAsync();
-
-		var title = await Page.Locator("h1").First.InnerTextAsync();
-		title.Should().NotBeNullOrWhiteSpace();
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_BreadcrumbPersistsRegardlessOfApplicationCount()
 	{
 		// The breadcrumb must be present unconditionally, not just in the
