@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "reporters": [
+    "json",
+    "html",
+    "clear-text"
+  ],
+  "clearTextReporter": {
+    "logTests": false,
+    "maxTestsToLog": 0
+  },
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 20000,
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 0
+  },
+  "mutate": [
+    "src/lib/**/*.ts",
+    "!src/lib/**/*.test.ts"
+  ],
+  "ignoreStatic": true
+}

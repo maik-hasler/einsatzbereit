@@ -101,6 +101,19 @@ export default tseslint.config(
 	},
 	prettier,
 	{
-		ignores: ["dist/", "node_modules/", "scripts/", "public/"],
+		// coverage/, reports/ and .stryker-tmp/ are generated: `pnpm test:coverage`
+		// and `pnpm mutation` write them, and .gitignore does not stop ESLint from
+		// walking into them. Stryker's sandbox in particular is a full copy of the
+		// project, so without this `pnpm lint` fails on its vendored coverage
+		// scripts after any local mutation run.
+		ignores: [
+			"dist/",
+			"node_modules/",
+			"scripts/",
+			"public/",
+			"coverage/",
+			"reports/",
+			".stryker-tmp/",
+		],
 	},
 );

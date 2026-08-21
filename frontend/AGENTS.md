@@ -94,6 +94,8 @@ pnpm check           # tsc --noEmit
 pnpm test            # vitest run - CI hard gate (frontend.yml's test job)
 pnpm test:watch      # vitest in watch mode, for local development
 pnpm test:coverage   # vitest run --coverage
+pnpm mutation        # StrykerJS over src/lib - report-only, minutes, never a gate
+pnpm mutation:since  # only files changed since origin/main
 pnpm lint            # eslint, zero warnings allowed
 pnpm format:write    # apply Prettier formatting - run before every commit
 pnpm format:check    # check Prettier formatting (used by CI)
@@ -128,6 +130,17 @@ Conventions used across the existing suite:
 - Prefer computing the expected value with the same underlying call (e.g. `new Date(iso).toLocaleString(...)`) over hardcoding a formatted string, when the result depends on the host timezone or locale data.
 - For module-level singletons/config computed at import time (e.g. `lib/runtimeConfig.ts`, `lib/keycloakRegistration.ts`), call `vi.resetModules()` in `beforeEach` and re-`import()` the module inside each test to get a fresh instance.
 - `vi.spyOn` on an already-spied method (e.g. `console.error` spied in a previous test) returns the *same* mock and keeps its call history - restore with `vi.restoreAllMocks()` in `afterEach` rather than only resetting the fake in `beforeEach`.
+
+## Mutation Testing
+
+`pnpm mutation` runs StrykerJS over `src/lib/**` and reports a mutation score - how many deliberate defects the suite actually catches, which is the question line coverage cannot answer. Report-only, never a gate (`thresholds.break: 0`), same posture as the backend's Stryker.NET (#2147). CI equivalent: `mutation-tests.yml`'s `mutation-tests-frontend` job, `workflow_dispatch` only.
+
+- **Scoped to `src/lib/**` deliberately.** All of `src/**` is 182 files / 14 851 mutants against a suite that renders components in jsdom - a full pass is hours, where the backend's 2 690 mutants over pure functions take ~12 minutes. `src/lib/**` (37 files, 897 mutants) is the tier that is cheap to mutate and comparable to the backend's.
+- **Score one component on demand:** `pnpm mutation --mutate "src/components/OpportunityCard.tsx"`. That is the useful granularity - a single component's survivors point at specific unasserted branches, where a whole-app average points at nothing. Measured: `OpportunityCard.tsx` 39.68 %, `NotificationItem.tsx` 57.69 %, `Footer.tsx` 4.76 %.
+- **Read the survivors, not the number.** Only 5 of `OpportunityCard`'s 76 survivors sat on a `className` line - the rest were real branches the tests never exercise (`capacity.isFull`, the `unlimited` case, the `FEW_SPOTS_THRESHOLD` tone). The score is a pointer to those, not a target to raise.
+- **`plugins` in `stryker.config.json` must name `@stryker-mutator/vitest-runner`.** pnpm's strict `node_modules` stops Stryker discovering it by convention; without it the error reads "no TestRunner plugins were loaded", which looks like a missing install.
+- **`ignoreStatic: true` is load-bearing for the runtime, and it changes the denominator.** Stryker warns that 111 static mutants (12 % of `src/lib`'s 897) were estimated to take 69 % of the run: a static mutant sits in module-level code, so killing it needs a full test-file reload rather than a re-run of the covering tests. Left on, the `src/lib` pass ran past 35 minutes without finishing and had to be killed. Off, it completes in minutes - at the cost of excluding module-scope initialisation from the score. That is the right trade for a report-only number, but it is a trade, not a free win.
+- `reports/` and `.stryker-tmp/` are gitignored.
 
 ## Key Dependencies
 
