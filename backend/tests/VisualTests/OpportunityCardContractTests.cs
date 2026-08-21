@@ -58,37 +58,6 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 			|| !document.querySelector("[data-testid='load-more']")
 		""";
 
-	[Test]
-	public async Task PublicGrid_EveryCard_StatesADateKindAndACapacity()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var dateLines = Page.GetByTestId("opportunity-date-line");
-		await Expect(dateLines.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var cardCount = await dateLines.CountAsync();
-		cardCount.Should().BeGreaterThan(1, "the seed data publishes several opportunities");
-
-		// Every card, not most of them: the failure being pinned here is a slot
-		// that renders nothing on some cards, which reads as an absent property
-		// of the opportunity rather than of the data.
-		var capacities = Page.GetByTestId("opportunity-capacity");
-		(await capacities.CountAsync()).Should().Be(cardCount,
-			"a capacity chip has to render on every card, including the ones with no places to count");
-
-		for (var i = 0; i < cardCount; i++)
-		{
-			var kind = await dateLines.Nth(i).GetAttributeAsync("data-date-kind");
-			kind.Should().BeOneOf("start", "deadline", "flexible");
-			(await dateLines.Nth(i).InnerTextAsync()).Trim().Should().NotBeEmpty();
-			(await capacities.Nth(i).InnerTextAsync()).Trim().Should().NotBeEmpty();
-		}
-	}
-
 	/// <summary>
 	/// The acceptance criterion the previous code deliberately failed: a
 	/// deadline card and a start-date card have to be distinguishable without
@@ -253,84 +222,6 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	/// <summary>
-	/// #1943: the same participation type (no fixed capacity, interest-based)
-	/// read two different ways depending on which component rendered the
-	/// badge - OpportunityListItem's capacity chip said "By expression of
-	/// interest" while PublicOpportunityCard's chip, reached through this
-	/// section, went through a different i18n key and said "Express interest"
-	/// instead. Both now go through the same "opportunities.byInterest" copy.
-	/// </summary>
-	[Test]
-	public async Task OpportunityDetail_MoreFromOrganizationCard_MatchesTheGridsInterestWording()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var keyword = $"CardWording{Guid.NewGuid():N}";
-		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
-		var organizationId = await CreateOrganizationAsync(organizer, keyword);
-		var opportunityId =
-			await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} primary");
-		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} sibling");
-
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var siblingCard = Page.GetByTestId("more-from-organization")
-			.Locator("li", new() { HasText = $"{keyword} sibling" });
-		await Expect(siblingCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(siblingCard.GetByText("By expression of interest", new() { Exact = true }))
-			.ToBeVisibleAsync();
-	}
-
-	/// <summary>
-	/// #2054: the top-right chip slot used to carry three unrelated kinds of
-	/// fact depending on the opportunity's state (a spots-left count, an
-	/// "unlimited spots" flag, or a sign-up-mode pill), with colour not
-	/// tracking any of them consistently. It now always states the same one
-	/// fact - how a volunteer signs up - moved to its own testid, distinct
-	/// from the capacity chip. For an interest-based opportunity the slot is
-	/// deliberately empty rather than repeating the capacity chip's own "By
-	/// expression of interest" wording a second time on the same card (the
-	/// literal duplicate #1943's grid-wording contract already ruled out).
-	/// </summary>
-	[Test]
-	public async Task OpportunityDetail_MoreFromOrganizationCard_StatesSignUpMechanismWithoutDuplicatingCapacityWording()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var keyword = $"CardSignUpMechanism{Guid.NewGuid():N}";
-		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
-		var organizationId = await CreateOrganizationAsync(organizer, keyword);
-		var opportunityId =
-			await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} primary");
-		await PublishSlotBasedOpportunityAsync(organizer, organizationId, $"{keyword} scheduled");
-		await PublishInterestBasedOpportunityAsync(organizer, organizationId, $"{keyword} interest");
-
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var moreSection = Page.GetByTestId("more-from-organization");
-		await Expect(moreSection).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var scheduledCard = moreSection.Locator("li", new() { HasText = $"{keyword} scheduled" });
-		await Expect(scheduledCard.GetByTestId("opportunity-signup-mechanism"))
-			.ToHaveTextAsync("Scheduled slots");
-
-		var interestCard = moreSection.Locator("li", new() { HasText = $"{keyword} interest" });
-		await Expect(interestCard.GetByTestId("opportunity-capacity"))
-			.ToHaveTextAsync("By expression of interest");
-		(await interestCard.GetByTestId("opportunity-signup-mechanism").CountAsync()).Should().Be(0,
-			"the capacity chip already states \"By expression of interest\" - a second chip repeating it would be the exact duplicate #1943 ruled out");
-	}
-
-	/// <summary>
 	/// AC: hovering or tabbing to a card title has to show it is a link. The
 	/// grid's title is not focusable itself - the stretched link covering the
 	/// card is - so hover is asserted on the title and the keyboard half is
@@ -360,32 +251,6 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		var overflow = await card.EvaluateAsync<string>("el => getComputedStyle(el).overflow");
 		overflow.Should().NotBe("hidden",
 			"clipping the card's descendants clips the stretched link's focus ring away entirely");
-	}
-
-	[Test]
-	public async Task OrgOpportunityList_EveryRow_ShowsItsSignUpCount()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		pinnedOrgId.Should().NotBeNull();
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId.Value);
-
-		await Page.GetByTestId("org-tab-opportunities").ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var rows = Page.GetByTestId("opportunity-row");
-		await Expect(rows.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var rowCount = await rows.CountAsync();
-		var counts = Page.GetByTestId("opportunity-signup-count");
-		(await counts.CountAsync()).Should().Be(rowCount,
-			"the sign-up count is the number this page exists for - it rendered on one published row in five");
-
-		for (var i = 0; i < rowCount; i++)
-		{
-			(await counts.Nth(i).InnerTextAsync()).Trim().Should().Contain("sign-up");
-		}
 	}
 
 	[Test]

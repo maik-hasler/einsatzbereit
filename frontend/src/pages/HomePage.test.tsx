@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import HomePage from "./HomePage";
+import { useLocation } from "react-router";
 import { renderWithProviders } from "../test/render";
+
+/** Reads back where a navigation landed, without a real browser URL bar. */
+function LocationProbe() {
+	const location = useLocation();
+	return (
+		<span data-testid="location-probe">{`${location.pathname}${location.search}`}</span>
+	);
+}
 
 /**
  * Was most of `HomePageOrgCtaTests` (#693, #1316) plus the landing half of
@@ -24,6 +33,7 @@ const { api } = vi.hoisted(() => ({
 		getVolunteerOpportunities: vi.fn(),
 		createOrganization: vi.fn(),
 		uploadOrganizationLogo: vi.fn(),
+		searchCities: vi.fn(),
 	},
 }));
 
@@ -119,5 +129,55 @@ describe("HomePage FAQ", () => {
 			await screen.findByText("Does using Einsatzbereit cost anything?"),
 		).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /Help/ })).toBeInTheDocument();
+	});
+});
+
+/**
+ * `NavigationTests`' landing-page markup cases and `HeaderPrimaryNavTests`'
+ * hero-search case, moved down in #2148 wave 13. Remaining inventory: #2159.
+ */
+describe("HomePage structure", () => {
+	it("leads with a main heading", async () => {
+		renderWithProviders(<HomePage />);
+
+		const heading = await screen.findByRole("heading", { level: 1 });
+		expect(heading.textContent?.trim()).not.toBe("");
+	});
+
+	it("carries no breadcrumb, being the root of every trail", async () => {
+		// The positive half first: a page that rendered nothing at all would
+		// satisfy the absence on its own.
+		renderWithProviders(<HomePage />);
+
+		await screen.findByRole("heading", { level: 1 });
+		expect(document.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
+	});
+});
+
+describe("HomePage hero search", () => {
+	it("carries its keyword into the browse list", async () => {
+		// With the location field left empty, `handleHeroSearch` skips
+		// `searchCities` entirely and builds the query from the keyword alone -
+		// which is what makes this a client-state case rather than a geocoding
+		// one. The E2E drove a real navigation to read the resulting URL.
+		renderWithProviders(
+			<>
+				<HomePage />
+				<LocationProbe />
+			</>,
+		);
+
+		await userEvent.type(
+			screen.getByTestId("hero-keyword-input"),
+			"Erste Hilfe",
+		);
+		await userEvent.click(screen.getByRole("button", { name: /Search/i }));
+
+		// URLSearchParams encodes a space as "+", not "%20" - so this is the
+		// literal string the browse route receives.
+		const probe = await screen.findByTestId("location-probe");
+		expect(probe.textContent).toBe("/opportunities?q=Erste+Hilfe");
+		// No location was typed, so nothing was geocoded.
+		expect(api.searchCities).not.toHaveBeenCalled();
 	});
 });

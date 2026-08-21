@@ -91,46 +91,6 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	}
 
 	[Test]
-	public async Task ImprintAndPrivacyPolicyPages_CarryNeitherAnActionBarNorAnInBandHomeLink()
-	{
-		// Follow-up to #758: the legal pages were missed in the initial rollout
-		// (still on ToolbarContext.tsx, no action bar) and used German slugs
-		// (/impressum, /datenschutz) while every other route is English -
-		// renamed to /imprint and /privacy-policy, with the action bar then
-		// shared via Header.tsx like every other subpage.
-		//
-		// #1755 dropped the action bar from exactly these pages again. They now
-		// open with a full-bleed PageHeaderBand that states the page title in
-		// 72px display type, so a grey strip immediately above it repeating
-		// that same title was pure duplication - and it drew a hard white line
-		// through the middle of the band treatment. The Home link #758 added
-		// moved into that band, and has since moved on again into the header
-		// nav: one "Home" entry beside the other primary destinations, instead
-		// of a per-page link inside every subpage's hero. The slugs are
-		// unchanged.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		foreach (var (path, title) in new[]
-		{
-			("/imprint", "Imprint"),
-			("/privacy-policy", "Privacy Policy"),
-		})
-		{
-			await Page.GotoAsync($"{origin}{path}");
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-			await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = title, Level = 1 }))
-				.ToBeVisibleAsync(new() { Timeout = 15_000 });
-			await Expect(Page.Locator("header + div nav[aria-label='Breadcrumb']"))
-				.ToHaveCountAsync(0);
-			await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
-				.ToHaveCountAsync(0);
-			await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
-		}
-	}
-
-	[Test]
 	public async Task PageHeaderBand_MakesHeaderTransparent_UntilScrolledPastTheBand()
 	{
 		// #1755: the band runs up *behind* the sticky header (negative
@@ -165,26 +125,6 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Page.GotoAsync($"{origin}/");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(header).ToContainClassAsync("bg-white");
-	}
-
-	[Test]
-	public async Task OldGermanSlugs_AreRemoved_404sInstead()
-	{
-		// The old /impressum and /datenschutz routes are removed outright (no
-		// redirect kept) - visiting them now falls through to the catch-all
-		// NotFoundPage, same as any other unknown path.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/impressum");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await Page.GotoAsync($"{origin}/datenschutz");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
-			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	[Test]

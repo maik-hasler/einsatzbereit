@@ -64,23 +64,4 @@ public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await link.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
 	}
-
-	[Test]
-	public async Task HeroSearch_NavigatesToTheListCarryingItsKeyword()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync(origin);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The hero used to write URL params and scroll to an anchor on the same
-		// page; it now hands those params to the list's own route.
-		await Page.GetByTestId("hero-keyword-input").FillAsync("Tierheim");
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).First.ClickAsync();
-
-		await Page.WaitForURLAsync(
-			new System.Text.RegularExpressions.Regex(@"/opportunities\?.*q=Tierheim"),
-			new() { Timeout = 15_000 });
-	}
 }

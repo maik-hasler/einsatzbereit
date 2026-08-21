@@ -8,30 +8,6 @@ namespace VisualTests;
 public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task HomePage_HasMainHeading()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task HomePage_HasNoBreadcrumb()
-	{
-		// Pages that don't call usePageToolbar must not render a stray
-		// breadcrumb bar - the home page has no parent to link back to.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
 	{
 		// The breadcrumb is a direct "Home > {organization name}" - no

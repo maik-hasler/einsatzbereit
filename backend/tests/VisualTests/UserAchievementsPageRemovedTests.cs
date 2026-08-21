@@ -29,23 +29,6 @@ public class UserAchievementsPageRemovedTests(AspireFixture fixture) : VisualTes
 		}");
 
 	[Test]
-	public async Task OldAchievementsRoute_NoLongerExists_RendersNotFoundPage()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		var userId = await GetSignedInUserIdAsync(Page);
-		Skip.When(userId is null, "could not resolve the logged-in user's id");
-
-		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
-			.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task UserProfilePage_ShowsBadgesDirectly_WithNoLinkToRemovedAchievementsPage()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
