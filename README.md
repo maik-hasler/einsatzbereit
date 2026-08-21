@@ -80,9 +80,9 @@ A live staging deployment runs at **[einsatzbereit.maik-hasler.de](https://einsa
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4, react-oidc-context, Leaflet/react-leaflet |
 | API client | NSwag-generated TypeScript client from the backend OpenAPI spec - never hand-edited |
 | Object storage | MinIO (avatars, organization logos, opportunity banners) |
-| Observability | Grafana, Prometheus, Alertmanager, Tempo (distributed tracing) |
+| Observability | Grafana, Prometheus, Alertmanager, Tempo (distributed tracing) - self-hosted in the separate `mgmt-hetzner` repo, this app's containers opt in via Docker labels |
 | Tests | TUnit + Aspire.Hosting.Testing + Respawn + NetArchTest (Application.UnitTests, IntegrationTests, ArchitectureTests), Vitest (frontend pure-logic units), Playwright + axe-core (E2E and accessibility, `backend/tests/VisualTests`) |
-| CI/CD | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push, auto-deploy to staging) |
+| CI/CD | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push; deploy to staging is a separate `mgmt-hetzner` repo, triggered by a dispatch event) |
 | Dependency updates | Renovate |
 
 ---
