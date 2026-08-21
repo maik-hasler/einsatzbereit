@@ -572,7 +572,28 @@ StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`) closes ex
 
 *The cost is why the committed scope is `src/lib/**` and not `src/**`.* Instrumenting the whole frontend produces *14 851 mutants over 182 files* - 5.5x the backend's 2 690, against a suite that renders components in jsdom rather than calling pure functions. `src/lib/**` is 37 files / 897 mutants of pure logic: the tier that is both cheap to mutate and directly comparable to `Domain`/`Application`. The component tier stays on demand (`pnpm mutation --mutate "src/components/Foo.tsx"`), which is the useful granularity anyway - a component's survivors name specific unasserted branches, a whole-app average names nothing.
 
-*Two costs that are not obvious until you run it.* Every run pays a *3 min 21 s instrumented dry run* before a single mutant is tested, against ~50 s for the same suite uninstrumented - that is fixed overhead, larger than the whole `checks / test` job (1 min 39 s). And *static mutants dominate*: Stryker measured 111 of `src/lib`'s 897 (12 %) at an estimated 69 % of the run, because a static mutant sits in module-level code and needs a full test-file reload rather than a re-run of the covering tests. Left enabled, the `src/lib` pass ran past 35 minutes without finishing and had to be killed; `ignoreStatic: true` is therefore set, at the cost of excluding module-scope initialisation from the denominator. A trade, not a free win.
+*The baseline, recorded so later waves have something to compare against.* This is the forward-looking equivalent of #2147's table: it says nothing about what this PR moved, and everything about whether the next change to `src/lib` weakens the suite covering it.
+
+.Frontend mutation-score baseline, #2148 head, StrykerJS 10.0.0, `concurrency: 2`, `ignoreStatic: true`
+[cols="2,1,1,1,1,1,1,1" options="header"]
+|===
+|Scope |Generated |Scored |Killed |Survived |No coverage |Score |Wall-clock
+
+|`src/lib/**` (37 files)
+|897
+|840
+|680
+|126
+|34
+|*80.95 %*
+|36 min 24 s
+|===
+
+The 57-mutant gap between generated and scored is entirely `ignoreStatic` exclusions; there were no compile errors. At *80.95 %* this tier scores materially better than the backend's 66.75 % / 68.49 %, which is what one would expect of pure functions with colocated unit tests rather than evidence that the frontend is better tested - the tier was chosen for being the easy one. The survivors concentrate in four files: `organizationFormSchema.ts` (37 of 107), `format.ts` (28 of 145), `imageCrop.ts` (27 of 59) and `imageUpload.ts` (18 of 68). As on the backend, string-literal mutations lead the survivor mix (45 of 126), then conditional expressions (26) and equality operators (14) - so the same caution applies: read the survivors per file, do not chase the headline.
+
+*Two costs that are not obvious until you run it, and one estimate that did not hold.* Every run pays a *3 min 21 s instrumented dry run* before a single mutant is tested, against ~50 s for the same suite uninstrumented - fixed overhead larger than the whole `checks / test` job (1 min 39 s). And the run is *slow in absolute terms*: 36 min 24 s for the cheap tier, against ~12 minutes for the backend's entire Domain + Application matrix. That gap is the whole reason the component tier stays on demand.
+
+The estimate that did not hold is worth recording, because it was the basis for a configuration choice. Stryker warns that 111 static mutants (12 % of the 897) are estimated to take *69 %* of the run, and recommends `ignoreStatic`. Taking that recommendation: the flag excluded *57* mutants rather than 111, and the run still took 36 minutes. The pass without it was killed at 35 minutes before finishing, so the saving is real but its size is unmeasured - what is measured is that it does not make the run cheap. The flag stays (module-scope initialisation is excluded from the denominator as a result, which is the trade), but nobody should plan against that 69 % as recoverable headroom.
 
 Three practical notes: under pnpm the plugin must be listed explicitly in `plugins` or Stryker reports no test runner found; `.stryker-tmp/` is a full copy of the project, so ESLint needs it in `ignores` or `pnpm lint` fails on its vendored coverage scripts after any local run; and the version is pinned for the same reason `dotnet-stryker` is - a new Stryker can add or drop mutators, and the score is only comparable across runs if the mutant set is.
 

@@ -20,8 +20,8 @@ name: Mutation Testing
 # suite that renders components in jsdom, where the backend's 2 690 mutants run
 # against pure functions - a full pass is hours, not the backend's ~12 minutes.
 # What it mutates is capped to the `src/lib/**` pure-logic tier for exactly that
-# reason, and `ignoreStatic` is on: 12 % of that tier's mutants are static and were
-# measured at 69 % of the run, which pushed it past 35 minutes without finishing; the component tier is reachable on demand with
+# reason, and even that tier takes 36 min against the backend's 12. The
+# component tier is reachable on demand with
 # `pnpm mutation --mutate "src/components/Foo.tsx"`, which is how the per-file
 # numbers in TDR-2 were taken. See the analysis in #2152 for why an incremental
 # per-PR gate was considered and rejected.
@@ -159,9 +159,13 @@ jobs:
   # trigger and the report-only posture.
   mutation-tests-frontend:
     runs-on: ubuntu-latest
-    # Hang guard, not a target - the measured leg is ~6 min for src/lib/**.
-    # Stryker's own timeoutMS bounds a single mutant, not the run.
-    timeout-minutes: 45
+    # Hang guard, not a target - but a wide one, because the measured leg is
+    # 36 min 24 s (897 mutants, ignoreStatic on, concurrency 2) on a contended
+    # 4-core sandbox. That is 3x the backend's whole matrix, and it is the
+    # cheap tier. A dedicated runner should beat it; "should" is not a
+    # measurement, hence the headroom. Stryker's own timeoutMS bounds a single
+    # mutant, not the run.
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: frontend
