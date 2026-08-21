@@ -129,6 +129,37 @@ public class UpdateUserProfileTests(
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
+	/// <summary>1x1 transparent PNG - the smallest thing the upload endpoint accepts.</summary>
+	private static readonly byte[] TinyPng = Convert.FromBase64String(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
+	[Test]
+	public async Task DeleteUserAvatar_ShouldClearAvatarUrl(
+		CancellationToken cancellationToken)
+	{
+		// #1063's delete endpoint, moved down from `AvatarAndLogoDisplayTests` in
+		// #2148 for the same reason as the organization-logo twin: the
+		// substantive assertion was a re-read of GET /v1/users/me showing
+		// avatarUrl null after the DELETE, which needs no browser and had no
+		// coverage here. Moving it also releases the
+		// [NotInParallel("visualtests-vera-avatar")] serialisation it forced on
+		// the upload test in that class - its DELETE was what made vera's
+		// uploaded avatar vanish mid-assertion.
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		using var avatar = new MemoryStream(TinyPng);
+		await client.UploadUserAvatarAsync(
+			new FileParameter(avatar, "avatar.png", "image/png"), cancellationToken);
+
+		var afterUpload = await client.GetUserProfileAsync(cancellationToken);
+		afterUpload.AvatarUrl.Should().NotBeNull();
+
+		await client.DeleteUserAvatarAsync(cancellationToken);
+
+		var afterDelete = await client.GetUserProfileAsync(cancellationToken);
+		afterDelete.AvatarUrl.Should().BeNull();
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

@@ -750,6 +750,29 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			"radius search results must be ordered by distance ascending");
 	}
 
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturn200_WhenPublishedOpportunitiesExist(
+		CancellationToken cancellationToken)
+	{
+		// Moved down from `VolunteerOpportunityTests` in #2148. The regression is
+		// an EF Core 10 query-translation failure that made both list endpoints
+		// answer 500; the browser half of the original only re-checked that no
+		// error state rendered, which is the same fact one layer up. Page size 1
+		// is what the original probed with - it forces the paging expression the
+		// translation used to choke on rather than a bare `ToListAsync`.
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Translation probe", "Description", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var page = await sut.GetVolunteerOpportunitiesAsync(1, 1, cancellationToken: cancellationToken);
+
+		page.Items.Should().ContainSingle();
+		page.TotalItems.Should().Be(1);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
 	{
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");

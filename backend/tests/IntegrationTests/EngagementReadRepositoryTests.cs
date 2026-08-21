@@ -548,6 +548,46 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
+	/// <summary>
+	/// Moved down from <c>VisualTests</c> in einsatzbereit#2148 wave 12
+	/// (#2159). The volunteer's own list splits by scope, and the split is not
+	/// "terminal vs not": a Pending engagement is still upcoming, while a
+	/// Withdrawn one belongs to the past even though its opportunity may be
+	/// months away. The E2E version seeded two opportunities and drove the
+	/// scope tabs to assert it.
+	/// </summary>
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldSplitPendingAndWithdrawn_AcrossUpcomingAndPast(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var stillPending = Engagement
+			.CreateIndividualContact(VolunteerOpportunityId.New(), volunteerId, "Still pending.")
+			.GetValueOrThrow();
+		var withdrawn = Engagement
+			.CreateIndividualContact(VolunteerOpportunityId.New(), volunteerId, "About to withdraw.")
+			.GetValueOrThrow();
+		withdrawn.Withdraw().ThrowIfFailure();
+
+		await dbContext.Engagements.AddAsync(stillPending, cancellationToken);
+		await dbContext.Engagements.AddAsync(withdrawn, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(stillPending.Id.Value);
+		past.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(withdrawn.Id.Value);
+	}
+
 	// --- Checked-in engagement ahead of its time slot's end (#1855) ---
 
 	[Test]

@@ -49,47 +49,6 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
-	/// <summary>
-	/// Regression for #703: a Pending/Confirmed-but-not-checked-in engagement
-	/// whose opportunity was removed without going through
-	/// DeleteVolunteerOpportunityCommandHandler's cancellation step (e.g. data
-	/// predating that safeguard) has no date field left to compare against and
-	/// no code path to re-evaluate it, so it stayed in "Current & upcoming"
-	/// forever. The row is deleted directly here (bypassing the DELETE
-	/// endpoint, which already cancels active engagements on the normal path)
-	/// to reproduce that stale state.
-	/// </summary>
-	[Test]
-	public async Task MyEngagementsPage_MovesToPast_ForNonTerminalEngagementWithGoneOpportunity()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "EngHistOrphanedUi");
-
-		using var veraHttp = new HttpClient { BaseAddress = backend };
-		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "vera", "vera123")}");
-		await ApplyAsync(veraHttp, opportunityId, "Please let me help.");
-
-		await Fixture.DeleteOpportunityRowDirectlyAsync(Guid.Parse(opportunityId));
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/my-signups");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// Default tab is "Current & upcoming" - the orphaned Pending engagement
-		// must not appear here.
-		await Expect(Page.GetByText("This opportunity has been removed"))
-			.Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
-
-		await Expect(Page.GetByText("This opportunity has been removed").First)
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-	}
-
 	private static async Task<string> ApplyAsync(HttpClient http, string opportunityId, string message)
 	{
 		var response = await http.PostAsJsonAsync(

@@ -328,80 +328,6 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	/// <summary>
-	/// #1912: the organization profile page's "current needs" list renders
-	/// through the same shared card the opportunity detail page's "more from
-	/// this organization" rail uses (OpportunityCard, formerly two separate
-	/// components - see #2054) - and both used to omit the category chip and
-	/// capacity badge entirely, showing only a generic sign-up-mode pill. The
-	/// org-profile surface never made #1777's list because that fix only
-	/// touched the cards backed by VolunteerOpportunitySummary; this DTO
-	/// gained the same capacity fields so the shared card could resolve them
-	/// through the identical `getOpportunityCapacity`/`capacityChip` pair
-	/// every surface uses.
-	/// </summary>
-	[Test]
-	public async Task OrganizationProfile_RelatedOpportunityCard_StatesItsCategoryAndCapacity()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var keyword = $"CardOrgProfile{Guid.NewGuid():N}";
-		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
-		var organizationId = await CreateOrganizationAsync(organizer, keyword);
-		await PublishSlotBasedOpportunityAsync(organizer, organizationId, keyword);
-
-		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var card = Page.Locator("li", new() { HasText = keyword }).First;
-		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// No category was set when the opportunity was created, so this is the
-		// fallback label - present at all is the point, where before neither the
-		// chip nor its container rendered.
-		await Expect(card.GetByText("Other").First).ToBeVisibleAsync();
-		await Expect(card.GetByTestId("opportunity-capacity"))
-			.ToHaveTextAsync($"{SlotCapacity} spots left");
-	}
-
-	/// <summary>
-	/// #2054: the organization profile and "more from this organization" cards
-	/// used to drop the date/deadline entirely, showing only "One-time"/
-	/// "Recurring" where the public grid showed a real start date or
-	/// application deadline in the same slot - because PublicOpportunitySummaryDto
-	/// (backing those two surfaces) never carried ValidUntil/NextTimeSlotStart,
-	/// even though the repository call behind it already resolved both. Same
-	/// date-line contract as PublicGrid_EveryCard_StatesADateKindAndACapacity,
-	/// now proven on the org-scoped surfaces too.
-	/// </summary>
-	[Test]
-	public async Task OrganizationProfile_RelatedOpportunityCard_StatesARealDateNotJustOccurrence()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var backend = Fixture.GetEndpoint("backend");
-		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var keyword = $"CardOrgProfileDate{Guid.NewGuid():N}";
-		using var organizer = await CreateOrganizerClientAsync(keycloak, backend);
-		var organizationId = await CreateOrganizationAsync(organizer, keyword);
-		await PublishSlotBasedOpportunityAsync(organizer, organizationId, keyword);
-
-		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var card = Page.Locator("li", new() { HasText = keyword }).First;
-		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var dateLine = card.GetByTestId("opportunity-date-line");
-		await Expect(dateLine).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(dateLine).ToHaveAttributeAsync("data-date-kind", "start");
-		await Expect(dateLine).ToContainTextAsync("Starts");
-	}
-
-	/// <summary>
 	/// #2054: the top-right chip slot used to carry three unrelated kinds of
 	/// fact depending on the opportunity's state (a spots-left count, an
 	/// "unlimited spots" flag, or a sign-up-mode pill), with colour not
@@ -739,5 +665,4 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		return body.GetProperty("id").GetString()
 			?? throw new InvalidOperationException("opportunity id missing");
 	}
-
 }

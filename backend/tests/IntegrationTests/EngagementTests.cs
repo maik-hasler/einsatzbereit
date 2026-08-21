@@ -2144,6 +2144,77 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
+	[Test]
+	public async Task ConfirmEngagement_ShouldNotReturn500_WhenAnXTimezoneHeaderIsSent(
+		CancellationToken cancellationToken)
+	{
+		// Moved down from `EngagementTimezoneTests` in #2148. That test had no UI
+		// assertion at all - it opened a page solely to scrape an OIDC access
+		// token out of sessionStorage, then drove a bare HttpClient. The header
+		// path is what is under test: an IANA zone other than the server's own
+		// used to crash the handler before it ever reached the not-found branch.
+		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
+		using var http = fixture.CreateHttpClient();
+		http.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", token);
+		http.DefaultRequestHeaders.Add("X-Timezone", "America/New_York");
+
+		var response = await http.PostAsync(
+			$"/v1/engagements/{Guid.NewGuid()}/confirm", content: null, cancellationToken);
+
+		// 404 = the handler parsed the header and ran, then found no engagement.
+		// 403 = the authorization gate fired first, which still means middleware
+		// accepted the header. 500 is the regression.
+		((int)response.StatusCode).Should().BeOneOf(404, 403);
+	}
+
+	[Test]
+	public async Task GetMyEngagements_ShouldReturnTheReactivatedEngagement_AfterWithdrawAndReapply(
+		CancellationToken cancellationToken)
+	{
+		// Moved down from `EngagementReactivationTests` in #2148. #1215's own
+		// invariant - that re-applying reuses the row and keeps its original
+		// CreatedOn - is already covered by
+		// CreateEngagement_ShouldKeepOriginalCreatedOn_WhenVolunteerReapliesAfterWithdrawal
+		// above. What the browser case added was that the reactivated engagement
+		// is readable again afterwards, which it checked as "some Withdraw button
+		// is visible" - unscoped enough that any other engagement of the same
+		// volunteer satisfied it. Asserted here against the specific engagement
+		// id instead.
+		var organizerClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(organizerClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(organizerClient, orgId, cancellationToken);
+
+		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
+
+		var original = await volunteerClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Original application." },
+			cancellationToken);
+		await volunteerClient.WithdrawEngagementAsync(original.Id, cancellationToken);
+
+		// Withdrawn engagements bucket as past, so the upcoming list is empty
+		// here - which is what makes the reappearance below a real transition
+		// rather than a row that never moved.
+		var whileWithdrawn = await volunteerClient.GetMyEngagementsAsync(
+			1, 10, upcoming: true, cancellationToken);
+		whileWithdrawn.Items.Should().BeEmpty();
+
+		var reactivated = await volunteerClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Re-application after withdrawal." },
+			cancellationToken);
+
+		// Same row, reactivated - not a second engagement.
+		reactivated.Id.Should().Be(original.Id);
+
+		var afterReapply = await volunteerClient.GetMyEngagementsAsync(
+			1, 10, upcoming: true, cancellationToken);
+		afterReapply.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(original.Id);
+	}
+
 	private static async Task<DateTimeOffset> GetCreatedOnAsync(
 		EinsatzbereitApi volunteerClient, Guid engagementId, CancellationToken cancellationToken)
 	{
