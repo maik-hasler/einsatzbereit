@@ -563,11 +563,26 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
+		// A real opportunity, not a fresh VolunteerOpportunityId: #703's rule
+		// reclassifies an engagement whose opportunity is gone as past, so
+		// engagements pointing at ids with no row would *both* land in past and
+		// this case would be about the wrong rule entirely.
+		var organization = DomainOrganization.Create(
+			DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
 		var stillPending = Engagement
-			.CreateIndividualContact(VolunteerOpportunityId.New(), volunteerId, "Still pending.")
+			.CreateIndividualContact(opportunity.Id, volunteerId, "Still pending.")
 			.GetValueOrThrow();
 		var withdrawn = Engagement
-			.CreateIndividualContact(VolunteerOpportunityId.New(), volunteerId, "About to withdraw.")
+			.CreateIndividualContact(opportunity.Id, volunteerId, "About to withdraw.")
 			.GetValueOrThrow();
 		withdrawn.Withdraw().ThrowIfFailure();
 

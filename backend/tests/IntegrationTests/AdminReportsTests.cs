@@ -66,8 +66,10 @@ public class AdminReportsTests(
 		var page = await admin.ListFlaggedTargetsAsync(1, 20, cancellationToken);
 
 		var flagged = page.Items.Should().ContainSingle(item => item.TargetTitle == title).Which;
-		// The two cells the browser original read off the row.
-		flagged.TargetType.Should().Be("Opportunity");
+		// The DTO's own value, not the cell text: the browser original read
+		// "Opportunity" off the rendered row, which is the translated label for
+		// this discriminator, not the discriminator.
+		flagged.TargetType.Should().Be("VolunteerOpportunity");
 		flagged.IsDeleted.Should().BeFalse();
 		flagged.TargetId.Should().Be(opportunity.Id);
 		flagged.OpenReportCount.Should().Be(1);

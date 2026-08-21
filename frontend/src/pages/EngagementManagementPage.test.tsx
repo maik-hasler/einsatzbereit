@@ -251,7 +251,14 @@ describe("EngagementManagementPage cancellation reason", () => {
 			},
 		);
 		mockPage([confirmed]);
-		api.cancelEngagement.mockResolvedValue(undefined);
+		// The page patches the row from this response (`updated.status`), so an
+		// undefined resolution throws during the state update rather than
+		// failing the assertion.
+		api.cancelEngagement.mockResolvedValue({
+			id: confirmed.id,
+			status: "Cancelled",
+			cancellationReason: "Shift is overstaffed.",
+		});
 
 		renderPage();
 
@@ -313,7 +320,10 @@ describe("EngagementManagementPage check-in PIN", () => {
 			...opportunityDetails,
 			checkInMethod: "PINCode",
 		});
-		api.getOpportunityCheckInPin.mockResolvedValue({ pin: "123456" });
+		// The endpoint returns the PIN as a bare string (see the generated
+		// client), and the page renders it directly - an object here is a React
+		// child error, not a failed assertion.
+		api.getOpportunityCheckInPin.mockResolvedValue("123456");
 
 		renderPage();
 
