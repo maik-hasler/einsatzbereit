@@ -87,17 +87,11 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM_ADDRESS: ${{ secrets.SMTP_FROM_ADDRESS }}
           SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
-          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
-          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-          # Where Alertmanager sends alert emails (docker-compose.yml's
-          # alertmanager-config, #1081) - required (":?" guard), so a restart
-          # without it fails rendering the compose config entirely, same as
-          # deploy-staging.
-          ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
           # Off-host mirror target for minio-backup's offsite leg
-          # (docker-compose.yml, #1087) - also required (":?" guard), so a
-          # restart without these fails the same way ALERT_NOTIFICATION_EMAIL
-          # above does. See deploy-staging's matching secrets in publish.yml.
+          # (docker-compose.yml, #1087) - required (":?" guard), so a restart
+          # without these fails rendering the compose config entirely, same
+          # as deploy-staging. See deploy-staging's matching secrets in
+          # publish.yml.
           OFFSITE_S3_ENDPOINT: ${{ secrets.OFFSITE_S3_ENDPOINT }}
           OFFSITE_S3_ACCESS_KEY: ${{ secrets.OFFSITE_S3_ACCESS_KEY }}
           OFFSITE_S3_SECRET_KEY: ${{ secrets.OFFSITE_S3_SECRET_KEY }}
@@ -136,9 +130,6 @@ jobs:
             printf 'SMTP_PASSWORD="%s"\n' "$(escape "$SMTP_PASSWORD")"
             printf 'SMTP_FROM_ADDRESS="%s"\n' "$(escape "$SMTP_FROM_ADDRESS")"
             printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
-            printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
-            printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
-            printf 'ALERT_NOTIFICATION_EMAIL="%s"\n' "$(escape "$ALERT_NOTIFICATION_EMAIL")"
             printf 'OFFSITE_S3_ENDPOINT="%s"\n' "$(escape "$OFFSITE_S3_ENDPOINT")"
             printf 'OFFSITE_S3_ACCESS_KEY="%s"\n' "$(escape "$OFFSITE_S3_ACCESS_KEY")"
             printf 'OFFSITE_S3_SECRET_KEY="%s"\n' "$(escape "$OFFSITE_S3_SECRET_KEY")"
@@ -166,15 +157,13 @@ jobs:
 
             # postgres_data holds both the "einsatzbereit" and "keycloak" databases
             # (single Postgres instance, see docker-compose.yml). minio_data holds
-            # uploaded files. grafana_data holds Grafana's own admin account -
-            # GF_SECURITY_ADMIN_USER/PASSWORD only apply on a completely empty
-            # volume, so it has to be wiped here too or a changed
-            # GRAFANA_ADMIN_PASSWORD secret silently stops matching the live
-            # account. postgres_backups and minio_backups are deliberately
-            # NOT removed - they are the safety net if this reset needs to
-            # be walked back.
-            echo "Removing data volumes (postgres_data, minio_data, grafana_data)..."
-            docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data einsatzbereit_grafana_data
+            # uploaded files. Grafana's own admin account lives in mgmt-hetzner's
+            # grafana_data volume now (maik-hasler/mgmt-hetzner#2, ADR-7) - not
+            # this repo's to reset. postgres_backups and minio_backups are
+            # deliberately NOT removed - they are the safety net if this reset
+            # needs to be walked back.
+            echo "Removing data volumes (postgres_data, minio_data)..."
+            docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data
 
             # No `docker compose pull` here on purpose: we restart with whatever
             # images are already cached locally, i.e. the exact same tags/versions
@@ -205,7 +194,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set +e
             cd /opt/einsatzbereit
-            for svc in backend keycloak postgres minio grafana; do
+            for svc in backend keycloak postgres minio; do
               echo "::group::docker inspect ${svc} (state)"
               docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
               echo "::endgroup::"

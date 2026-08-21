@@ -181,70 +181,37 @@ The mapping is 1:1 today - every Level-1 building block runs as exactly one cont
 |internal
 |Daily mirror of the einsatzbereit bucket, then mirrors its own and db-backup's local output off-host (#1087)
 
-|Grafana
-|`grafana/grafana`
-|`grafana.maik-hasler.de`
-|Dashboards; datasources are Prometheus, Loki, Tempo and Alertmanager
-
-|Prometheus
-|`prom/prometheus`
-|internal only
-|Metrics store; scrapes node-exporter, evaluates alert rules
-
-|Alertmanager
-|`prom/alertmanager`
-|internal only
-|Routes firing alerts to email over the SMTP relay
-
-|node-exporter
-|`prom/node-exporter`
-|internal only
-|Host-level CPU/memory/disk/network metrics, read-only mounts, no privileged mode
-
-|Loki
-|`grafana/loki`
-|internal only
-|Log store; receives pushes from Alloy
-
-|Alloy
-|`grafana/alloy`
-|internal only
-|Ships container logs to Loki; discovers containers via a read-only Docker socket mount
-
-|Tempo
-|`grafana/tempo`
-|internal only
-|Trace store; receives OTLP pushes directly from the backend
-
 |Traefik
 |host-level (shared)
 |`*.maik-hasler.de`
 |Reverse proxy, TLS termination via ACME / Let's Encrypt
 |===
 
+Grafana, Prometheus, Alertmanager, node-exporter, Loki, Alloy and Tempo also run on this host, but are owned and deployed by the separate `mgmt-hetzner` repository as shared, label-driven infra rather than by this repo's `docker-compose.yml` (maik-hasler/mgmt-hetzner#2, ADR-7) - see that repo's `docker-compose.yaml` and `README.md` for their building-block mapping. The backend opts into that stack over the shared `monitoring` network below: `prometheus.scrape`/`prometheus.port` labels for metrics, `logs.scrape` for logs (as do all of this repo's other containers), and a direct OTLP push to `tempo:4317` for traces.
+
 Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`) via one of two jobs - `deploy-staging` for RC tags, `deploy-production` for stable tags (#1344). Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
 
 === Infrastructure Level 2: Deployed Host
 
-The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps the unauthenticated monitoring services off the internet. Everything above runs as containers on a single Docker daemon, split across three networks:
+The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps the unauthenticated monitoring services off the internet. This repo's containers, plus `mgmt-hetzner`'s (Traefik, Blogfolio, and the shared monitoring stack), all run on the same single Docker daemon, split across networks:
 
 [cols="1,3,3" options="header"]
 |===
 |Network |Members |Reachability
 
-|`proxy` (external, shared with Blogfolio)
-|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup, Grafana
-|Attached to the host-level Traefik. Frontend, Backend API, Keycloak, MinIO and Grafana each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
+|`proxy` (external, shared with Blogfolio and `mgmt-hetzner`'s Grafana)
+|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup
+|Attached to the host-level Traefik. Frontend, Backend API, Keycloak and MinIO each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
 
 |`einsatzbereit-db`
 |PostgreSQL, Keycloak, Backend API, db-backup
 |Container-to-container only. PostgreSQL publishes no port and is reachable by name from this network alone.
 
-|`einsatzbereit-monitoring`
-|Prometheus, Alertmanager, node-exporter, Loki, Alloy, Tempo, Grafana, Backend API
-|No Traefik route except through Grafana. See <<section-concepts>> under Operations for why the rest are not exposed.
+|`monitoring` (external, owned by `mgmt-hetzner`)
+|Backend API (this repo); Prometheus, Alertmanager, node-exporter, Loki, Alloy, Tempo, Grafana (all `mgmt-hetzner`)
+|No Traefik route from this repo's own containers. See `mgmt-hetzner`'s `docker-compose.yaml` for Grafana's own route, and <<section-concepts>> under Operations for why the rest are not exposed.
 |===
 
-Three containers deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, `monitoring` to push OTLP traces to Tempo. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale. *Grafana* is on `proxy` and `monitoring` so it can be publicly reachable while reading datasources that are not.
+Two containers in this repo deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, the externally-owned `monitoring` network to push metrics and OTLP traces into `mgmt-hetzner`'s stack. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale. (`mgmt-hetzner`'s own Grafana straddles `proxy` and `monitoring` the same way, to be publicly reachable while reading non-public datasources - that is now `mgmt-hetzner`'s concern, not this repo's.)
 
-Those three are therefore where an authentication gap has the widest blast radius, which is why Grafana carries its own admin login and the Backend API validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).
+Those two are therefore where an authentication gap has the widest blast radius, which is why the Backend API validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).

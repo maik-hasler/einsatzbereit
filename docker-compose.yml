@@ -38,6 +38,10 @@ services:
       interval: 5s
       timeout: 10s
       retries: 20
+    labels:
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   keycloak:
     # Set by publish.yml's deploy jobs to the exact version tag being released,
@@ -116,6 +120,9 @@ services:
       - traefik.http.routers.keycloak.tls=true
       - traefik.http.routers.keycloak.tls.certresolver=myresolver
       - traefik.http.services.keycloak.loadbalancer.server.port=8080
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   db-backup:
     image: prodrigestivill/postgres-backup-local:18
@@ -143,6 +150,10 @@ services:
       BACKUP_KEEP_MONTHS: "6"
     volumes:
       - postgres_backups:/backups
+    labels:
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   minio:
     # Pinned, not :latest - Renovate tracks new RELEASE.* tags, so upstream
@@ -178,6 +189,9 @@ services:
       - traefik.http.routers.minio.tls=true
       - traefik.http.routers.minio.tls.certresolver=myresolver
       - traefik.http.services.minio.loadbalancer.server.port=9000
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   # One-shot bootstrap: creates the "einsatzbereit" bucket and a bucket-scoped
   # service account, so the backend never holds MinIO's root credentials - a
@@ -202,6 +216,10 @@ services:
     configs:
       - source: minio-init-script
         target: /init.sh
+    labels:
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   # Daily snapshot of the "einsatzbereit" bucket into its own volume,
   # mirroring db-backup's role for Postgres. Also mirrors both local backup
@@ -246,14 +264,18 @@ services:
     configs:
       - source: minio-backup-script
         target: /backup.sh
+    labels:
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:${IMAGE_TAG:-staging}
     # No container_name: a fixed name forbids `docker compose up --scale
     # backend=N`. Traefik merges containers sharing the same
     # traefik.http.routers.backend.* labels into one load-balanced service, and
-    # prometheus-config below resolves replicas via DNS rather than a fixed
-    # hostname.
+    # mgmt-hetzner's Prometheus discovers replicas via docker_sd_configs
+    # (one target per matching container) rather than a fixed hostname.
     #
     # Scaling is still blocked by Database__MigrateOnStartup below: two replicas
     # booting together would apply pending EF Core migrations concurrently with
@@ -351,6 +373,15 @@ services:
       - traefik.http.routers.backend.tls=true
       - traefik.http.routers.backend.tls.certresolver=myresolver
       - traefik.http.services.backend.loadbalancer.server.port=8080
+      # Opt-in, label-driven discovery for mgmt-hetzner's Prometheus
+      # (maik-hasler/mgmt-hetzner#2, ADR-7) - scraped over the "monitoring"
+      # network above, on the same port Metrics__Port configures.
+      - prometheus.scrape=true
+      - prometheus.port=8081
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy - ships
+      # this container's stdout to Loki via the Docker API, independent of
+      # network membership.
+      - logs.scrape=true
 
   frontend:
     image: ghcr.io/maik-hasler/einsatzbereit-frontend:${IMAGE_TAG:-staging}
@@ -382,173 +413,9 @@ services:
       - traefik.http.routers.frontend.tls=true
       - traefik.http.routers.frontend.tls.certresolver=myresolver
       - traefik.http.services.frontend.loadbalancer.server.port=80
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    volumes:
-      - prometheus_data:/prometheus
-    configs:
-      - source: prometheus-config
-        target: /etc/prometheus/prometheus.yml
-      - source: prometheus-rules
-        target: /etc/prometheus/alert.rules.yml
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
-
-  # Routes firing alerts (prometheus-config's `alerting:` block + the rules in
-  # prometheus-rules below) to email over the same SMTP relay the backend and
-  # Keycloak already use - no new third-party notification channel,
-  # consistent with this stack's self-hosted-over-SaaS precedent (ADR-6).
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    volumes:
-      - alertmanager_data:/alertmanager
-    configs:
-      - source: alertmanager-config
-        target: /etc/alertmanager/alertmanager.yml
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
-
-  # Host-level metrics only (CPU/memory/disk/network), read-only mounts, no
-  # privileged mode. Deliberately not pairing this with cAdvisor for
-  # per-container metrics - cAdvisor needs the Docker socket and broad host
-  # access, which is too invasive for a box shared with other projects.
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - --path.procfs=/host/proc
-      - --path.sysfs=/host/sys
-      - --path.rootfs=/rootfs
-      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    networks:
-      - proxy
-      - monitoring
-    logging: *default-logging
-    depends_on:
-      prometheus:
-        condition: service_healthy
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
-      GF_SERVER_ROOT_URL: https://grafana.maik-hasler.de
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    configs:
-      - source: grafana-datasources
-        target: /etc/grafana/provisioning/datasources/prometheus.yaml
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.grafana.rule=Host(`grafana.maik-hasler.de`)
-      - traefik.http.routers.grafana.entrypoints=websecure
-      - traefik.http.routers.grafana.tls=true
-      - traefik.http.routers.grafana.tls.certresolver=myresolver
-      - traefik.http.services.grafana.loadbalancer.server.port=3000
-
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    volumes:
-      - loki_data:/loki
-    # No Docker healthcheck: the grafana/loki image has neither wget nor a
-    # shell, so any probe reports "unhealthy" while Loki serves queries fine.
-    # Nothing depends on it (see alloy's depends_on below), so leaving it out
-    # beats a permanently misleading status.
-
-  # Ships container logs to Loki via the Docker API (read-only socket mount)
-  # rather than tailing /var/lib/docker/containers - the pattern Grafana
-  # documents. Narrower than cAdvisor's grant (list containers and read their
-  # logs, not host filesystem + cgroups), but a leaked docker.sock is still
-  # effectively host-level access.
-  alloy:
-    image: grafana/alloy:latest
-    container_name: alloy
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    # Plain depends_on (wait for container start, not health): Alloy's Loki
-    # writer retries and buffers on its own, so it doesn't need Loki to be
-    # fully ready first. Deliberately not `condition: service_healthy` -
-    # observability's own startup issues should never be able to block or
-    # roll back the application deploy the way this one did.
-    depends_on:
-      - loki
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - alloy_data:/var/lib/alloy/data
-    configs:
-      - source: alloy-config
-        target: /etc/alloy/config.alloy
-    command:
-      - run
-      - --storage.path=/var/lib/alloy/data
-      - /etc/alloy/config.alloy
-
-  # Trace store. Receives OTLP push straight from the backend (see its
-  # OTEL_EXPORTER_OTLP_ENDPOINT above), so unlike Loki it needs no shipper.
-  # Single-binary mode, mirroring Loki's monolithic setup - proportionate to
-  # this stack's trace volume.
-  tempo:
-    image: grafana/tempo:latest
-    container_name: tempo
-    restart: unless-stopped
-    networks:
-      - monitoring
-    logging: *default-logging
-    volumes:
-      - tempo_data:/var/tempo
-    configs:
-      - source: tempo-config
-        target: /etc/tempo/tempo.yaml
-    command:
-      - -config.file=/etc/tempo/tempo.yaml
-    # No Docker healthcheck, same as loki above. Nothing depends on this
-    # container via `condition: service_healthy`, so its absence gates
-    # nothing.
+      # Opt-in, label-driven discovery for mgmt-hetzner's Alloy
+      # (maik-hasler/mgmt-hetzner#2, ADR-7).
+      - logs.scrape=true
 
 networks:
   proxy:
@@ -556,20 +423,22 @@ networks:
     external: true
   db:
     name: einsatzbereit-db
+  # Owned by mgmt-hetzner's docker-compose.yaml (maik-hasler/mgmt-hetzner#2,
+  # ADR-7) - Grafana/Prometheus/Alertmanager/node-exporter/Loki/Alloy/Tempo
+  # all moved there as shared, label-driven infra. The backend joins this
+  # network the same way it joins the also-externally-owned proxy network
+  # above: to push metrics (prometheus.scrape/prometheus.port labels below)
+  # and OTLP traces (OTEL_EXPORTER_OTLP_ENDPOINT below) to services that now
+  # live in a different compose project on the same host.
   monitoring:
-    name: einsatzbereit-monitoring
+    name: monitoring
+    external: true
 
 volumes:
   postgres_data:
   postgres_backups:
   minio_data:
   minio_backups:
-  prometheus_data:
-  alertmanager_data:
-  grafana_data:
-  loki_data:
-  alloy_data:
-  tempo_data:
 
 configs:
   postgres-init:
@@ -676,179 +545,3 @@ configs:
         offsite_sync
         sleep "$$INTERVAL"
       done
-  prometheus-config:
-    content: |
-      global:
-        scrape_interval: 15s
-        evaluation_interval: 15s
-
-      alerting:
-        alertmanagers:
-          - static_configs:
-              - targets: ["alertmanager:9093"]
-
-      rule_files:
-        - /etc/prometheus/alert.rules.yml
-
-      scrape_configs:
-        - job_name: prometheus
-          static_configs:
-            - targets: ["localhost:9090"]
-
-        - job_name: node-exporter
-          static_configs:
-            - targets: ["node-exporter:9100"]
-
-        # Port 8081, not the Traefik-routed 8080 - see backend's Metrics__Port
-        # and networks above. dns_sd_configs (not static_configs) so a
-        # scaled `docker compose up --scale backend=N` gets every replica scraped:
-        # Docker's embedded DNS returns one A record per replica for the plain
-        # service name "backend" on a shared network, and Prometheus's DNS-SD
-        # re-resolves that on every refresh_interval instead of caching a single
-        # IP the way static_configs would.
-        - job_name: backend
-          dns_sd_configs:
-            - names: ["backend"]
-              type: A
-              port: 8081
-              refresh_interval: 30s
-  # One well-established signal (staleness) rather than unvalidated
-  # application metric thresholds. Fires whenever any scrape target
-  # (prometheus/node-exporter/backend) stops responding.
-  #
-  # "$$labels" (not "$labels"): this whole block is compose-interpolated
-  # before Prometheus ever sees it, so a literal "$" for Prometheus's own Go
-  # template syntax must be escaped the same way node-exporter's regex above
-  # escapes its own literal "$".
-  prometheus-rules:
-    content: |
-      groups:
-        - name: staging-availability
-          rules:
-            - alert: InstanceDown
-              expr: up == 0
-              for: 2m
-              labels:
-                severity: critical
-              annotations:
-                summary: "{{ $$labels.job }} instance {{ $$labels.instance }} is down"
-                description: "Prometheus has not been able to scrape {{ $$labels.job }} ({{ $$labels.instance }}) for more than 2 minutes."
-  alertmanager-config:
-    content: |
-      global:
-        smtp_smarthost: '${SMTP_HOST:?set SMTP_HOST in .env}:${SMTP_PORT:?set SMTP_PORT in .env}'
-        smtp_from: '${SMTP_FROM_ADDRESS:?set SMTP_FROM_ADDRESS in .env}'
-        smtp_auth_username: '${SMTP_USERNAME:?set SMTP_USERNAME in .env}'
-        smtp_auth_password: '${SMTP_PASSWORD:?set SMTP_PASSWORD in .env}'
-        smtp_require_tls: true
-
-      route:
-        receiver: default
-        group_by: ['alertname']
-        group_wait: 30s
-        group_interval: 5m
-        repeat_interval: 4h
-
-      receivers:
-        - name: default
-          email_configs:
-            - to: '${ALERT_NOTIFICATION_EMAIL:?set ALERT_NOTIFICATION_EMAIL in .env}'
-              send_resolved: true
-  grafana-datasources:
-    content: |
-      apiVersion: 1
-
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          access: proxy
-          url: http://prometheus:9090
-          isDefault: true
-          editable: false
-        - name: Loki
-          type: loki
-          access: proxy
-          url: http://loki:3100
-          editable: false
-        - name: Tempo
-          type: tempo
-          access: proxy
-          url: http://tempo:3200
-          editable: false
-        - name: Alertmanager
-          type: alertmanager
-          access: proxy
-          url: http://alertmanager:9093
-          editable: false
-          jsonData:
-            implementation: prometheus
-  alloy-config:
-    content: |
-      discovery.docker "containers" {
-        host = "unix:///var/run/docker.sock"
-      }
-
-      discovery.relabel "containers" {
-        targets = discovery.docker.containers.targets
-
-        # This host runs other projects behind the same shared Traefik
-        # (see this file's top comment) - without this filter Alloy
-        # discovers every container on the box, not just this stack's,
-        # and tries to ship their logs too. Besides leaking unrelated
-        # projects' log data into this stack's Loki, a long-running
-        # container discovered for the first time gets its full log
-        # backlog tailed, which Loki correctly rejects as "too old" and
-        # drops the whole batch over - taking this stack's own log lines
-        # down with it.
-        rule {
-          source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
-          regex         = "einsatzbereit"
-          action        = "keep"
-        }
-
-        rule {
-          source_labels = ["__meta_docker_container_name"]
-          regex         = "/(.*)"
-          target_label  = "container"
-        }
-      }
-
-      loki.source.docker "default" {
-        host          = "unix:///var/run/docker.sock"
-        targets       = discovery.docker.containers.targets
-        labels        = {"job" = "docker"}
-        relabel_rules = discovery.relabel.containers.rules
-        forward_to    = [loki.write.default.receiver]
-      }
-
-      loki.write "default" {
-        endpoint {
-          url = "http://loki:3100/loki/api/v1/push"
-        }
-      }
-  tempo-config:
-    content: |
-      server:
-        http_listen_port: 3200
-
-      distributor:
-        receivers:
-          otlp:
-            protocols:
-              grpc:
-              http:
-
-      storage:
-        trace:
-          backend: local
-          local:
-            path: /var/tempo/traces
-          wal:
-            path: /var/tempo/wal
-
-      # Bounds disk usage on a memory/disk-constrained staging VM - traces
-      # older than this are dropped, unlike Prometheus/Loki which currently
-      # have no equivalent explicit retention cap.
-      compactor:
-        compaction:
-          block_retention: 48h
