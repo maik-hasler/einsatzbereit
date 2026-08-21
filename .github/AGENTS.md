@@ -8,7 +8,7 @@
 ├── frontend.yml                Frontend: calls frontend-checks.yml (test-domain values)
 ├── frontend-checks.yml         Reusable (workflow_call): lint → test/build/container-smoke-test - shared by frontend.yml and publish.yml so the release path can't skip checks the PR gate runs (#1733)
 ├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
-├── keycloak-realm-import.yml   Verifies the committed realm still imports on the Keycloak version the released image is built from
+├── keycloak-realm-import.yml   Verifies the committed realm still imports on the Keycloak version the released image is built from, and that its ${VAR} placeholders actually resolve
 ├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, create a GitHub Release - see "Publish Workflows" below
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── mutation-tests.yml          Manual (workflow_dispatch): Stryker.NET over Domain + Application and StrykerJS over frontend src/lib, report-only

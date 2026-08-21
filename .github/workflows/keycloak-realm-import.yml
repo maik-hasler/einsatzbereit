@@ -87,6 +87,27 @@ jobs:
             sleep 2
           done
 
+          # The realm's "${VAR}" placeholders (KC_FRONTEND_URL, KC_SMTP_*,
+          # KEYCLOAK_BACKEND_SECRET) are resolved by Keycloak at import time.
+          # An unresolved one does NOT crash the import - Keycloak happily
+          # stores the literal "${KC_FRONTEND_URL}/callback" as a redirect URI
+          # and every OIDC login then fails with invalid_redirect_uri at
+          # runtime instead. So assert the substitution actually happened,
+          # rather than only that the realm came up.
+          placeholders=""
+          frontend_client=""
+          if [ "$ready" = "1" ]; then
+            token=$(curl -fsS -X POST \
+              "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+              -d 'grant_type=password' -d 'client_id=admin-cli' \
+              -d 'username=admin' -d 'password=admin' \
+              | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p') || true
+            frontend_client=$(curl -fsS \
+              -H "Authorization: Bearer $token" \
+              "http://localhost:8080/admin/realms/einsatzbereit/clients?clientId=frontend") || true
+            placeholders=$(printf '%s' "$frontend_client" | grep -o '\${[A-Z_]*}' || true)
+          fi
+
           echo "::group::Keycloak container logs"
           docker logs kc-import-check || true
           echo "::endgroup::"
@@ -97,4 +118,15 @@ jobs:
             echo "::error::Keycloak $KC_VERSION did not serve the 'einsatzbereit' realm after --import-realm (see logs above)."
             exit 1
           fi
-          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION."
+
+          if [ "$ready" = "1" ] && ! printf '%s' "$frontend_client" | grep -q '"clientId":"frontend"'; then
+            echo "::error::Could not read the imported 'frontend' client back through the admin API, so the placeholder check below proves nothing."
+            exit 1
+          fi
+
+          if [ -n "$placeholders" ]; then
+            echo "::error::The imported 'frontend' client still carries unresolved placeholders ($placeholders) - Keycloak did not substitute them, so every OIDC redirect would fail at runtime."
+            exit 1
+          fi
+
+          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all 'frontend' client placeholders resolved."
