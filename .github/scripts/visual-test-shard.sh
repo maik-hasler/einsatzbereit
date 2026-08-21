@@ -2,8 +2,10 @@
 #
 # Emits the Microsoft.Testing.Platform --treenode-filter that selects one shard
 # of the VisualTests suite, so `visual-tests` can fan out across several
-# standard ubuntu-latest runners instead of running all 542 tests on one
-# (einsatzbereit#2145).
+# standard ubuntu-latest runners instead of running the whole suite on one
+# (einsatzbereit#2145). It was 542 cases when this was written and is 232
+# after #2148's rebalance; the split is computed, so the number is only ever
+# context here.
 #
 # TUnit 1.65.31 has no native sharding flag - the full flag list is
 # --list-tests/--treenode-filter/--maximum-parallel-tests/... with nothing that

@@ -81,9 +81,8 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		// and not against a value pinned back at fixture boot
 		// (AspireFixture.GetPinnedOrganizerOrganizationId): that snapshot is only
 		// valid at the instant the fixture starts, before any other test has
-		// created a single org. AchievementsTests, for one, permanently adds two
-		// more Organizer orgs for olaf with no cleanup, sorting ahead of the
-		// seeded one alphabetically - so whether the boot-time snapshot still
+		// created a single org. Other suites permanently add Organizer orgs for
+		// olaf with no cleanup, sorting ahead of the seeded one alphabetically - so whether the boot-time snapshot still
 		// matched reality here depended on test scheduling, not on whether the
 		// resolution logic under test actually worked. Every href below is
 		// asserted against that live-resolved id.

@@ -23,7 +23,7 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// 1x1 transparent PNG - same fixture image AvatarAndLogoDisplayTests uses for banner/logo uploads.
+	// 1x1 transparent PNG, the shared fixture image for banner/logo uploads.
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
