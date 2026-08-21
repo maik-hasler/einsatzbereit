@@ -586,8 +586,12 @@ StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`) closes ex
 |126
 |34
 |*80.95 %*
-|36 min 24 s
+|28 min 59 s
 |===
+
+Wall-clock is from CI run `32479000847`, the first real execution of `mutation-tests.yml` and of the `mutation-tests-frontend` job specifically; the same commit took 36 min 24 s on a contended 4-core sandbox. That run also re-confirmed the two .NET legs on a GitHub runner rather than locally: `Domain` *66.75 %* in 4 min 23 s, `Application` *68.49 %* in 7 min 34 s, both identical to the #2147 baseline. So the frontend leg alone costs more than twice the entire backend matrix, which is the single most useful fact for deciding where to run it.
+
+*`concurrency: 2` is reproducible for StrykerJS, and this is worth stating explicitly because the backend concluded the opposite.* The 80.95 % above was produced twice - once on a contended 4-core sandbox, once on a clean `ubuntu-latest` - with a bit-for-bit identical per-file table, at `concurrency: 2` both times. Stryker.NET, by contrast, needs `concurrency: 1` because its preview MTP runner invents 30-73 kills per run at 2 (see "The concurrency trap" above). These are different runners with different defects; nobody should propagate the .NET constraint to the JS config by analogy, and nobody should assume the JS result vindicates raising the .NET one. Two agreeing runs is evidence, not proof, but it is the evidence there is.
 
 The 57-mutant gap between generated and scored is entirely `ignoreStatic` exclusions; there were no compile errors. At *80.95 %* this tier scores materially better than the backend's 66.75 % / 68.49 %, which is what one would expect of pure functions with colocated unit tests rather than evidence that the frontend is better tested - the tier was chosen for being the easy one. The survivors concentrate in four files: `organizationFormSchema.ts` (37 of 107), `format.ts` (28 of 145), `imageCrop.ts` (27 of 59) and `imageUpload.ts` (18 of 68). As on the backend, string-literal mutations lead the survivor mix (45 of 126), then conditional expressions (26) and equality operators (14) - so the same caution applies: read the survivors per file, do not chase the headline.
 
