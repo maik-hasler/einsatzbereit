@@ -6,11 +6,6 @@ import AccountControls from "./AccountControls";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import { renderWithProviders } from "../../test/render";
 
-/**
- * Was the account-dropdown half of `AdministrationNavLinkTests` (PR #768
- * review feedback), moved down in #2148 wave 2. The two direct-navigation
- * cases from that file live in `src/pages/AdministrationPage.test.tsx`.
- */
 function menuState(): AccountMenuState {
 	return {
 		avatarUrl: null,
@@ -53,8 +48,6 @@ function render(isAdmin: boolean) {
 
 describe("account dropdown", () => {
 	it("offers an admin the way into /administration", () => {
-		// Before PR #768's review feedback, admins had no way to reach
-		// /administration except by typing the URL - nothing linked to it.
 		render(true);
 
 		const link = screen.getByRole("link", { name: "Administration" });
@@ -71,12 +64,6 @@ describe("account dropdown", () => {
 	});
 
 	it("no longer links out to Keycloak's own account console", () => {
-		// #1675: the "Account Settings" entry linked to ${authority}/account -
-		// a console the realm never provisions a client for, which errors on
-		// staging. Everything it uniquely offered is either already reachable
-		// branded (password reset, /profile) or not configured in the realm at
-		// all (2FA, session management), so the entry point was removed rather
-		// than themed.
 		render(false);
 
 		expect(
@@ -86,15 +73,8 @@ describe("account dropdown", () => {
 	});
 });
 
-/**
- * `NavigationTests`' user-menu case, moved down in #2148 wave 13. Remaining
- * inventory: #2159.
- */
 describe("account dropdown after navigating", () => {
 	it("closes itself when one of its own links is followed", async () => {
-		// Every Link in the panel carries onClick={() => setDropdownOpen(false)}.
-		// Without it the panel stayed open over the page it had just navigated
-		// to, covering the top of the very content the user asked for.
 		const setDropdownOpen = vi.fn();
 		renderWithProviders(
 			<AccountControls

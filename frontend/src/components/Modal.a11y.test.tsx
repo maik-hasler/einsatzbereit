@@ -4,12 +4,6 @@ import Modal from "./Modal";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The shared dialog primitive every modal in the app is built on. Its
- * backdrop-button pattern (frontend/AGENTS.md, "Accessibility") is precisely
- * the thing axe's `aria-hidden-focus` rule exists to police, so proving it
- * here means the per-modal suites below only have to cover their own content.
- */
 describe("Modal a11y", () => {
 	function renderModal(children = <p>Body copy.</p>) {
 		return renderWithProviders(
@@ -35,9 +29,6 @@ describe("Modal a11y", () => {
 	});
 
 	it("keeps the backdrop out of the tab order while hiding it from the a11y tree", async () => {
-		// Both halves matter: aria-hidden alone on a reachable button is an
-		// axe `aria-hidden-focus` violation, and tabIndex={-1} alone would
-		// leave a nameless button announced to screen readers.
 		renderModal();
 		const backdrop = document.querySelector('button[aria-hidden="true"]');
 		expect(backdrop).not.toBeNull();

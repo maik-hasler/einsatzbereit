@@ -5,13 +5,6 @@ import DocumentSection from "./DocumentSection";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The structure behind `PrivacyPolicyPage_*`, `ImprintPage_*`,
- * `TermsOfUsePage_*`, `ContactPage_*` and `HelpPage_*` - five near-identical
- * page scans over five static documents built from the same two components.
- * One page smoke stays in Playwright to cover the layout as a whole; the
- * outline/section pairing is checked here.
- */
 const entries = [
 	{ id: "scope", label: "Scope" },
 	{ id: "data-we-collect", label: "Data we collect" },

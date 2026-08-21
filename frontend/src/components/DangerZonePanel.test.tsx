@@ -3,20 +3,8 @@ import { screen } from "@testing-library/react";
 import DangerZonePanel from "./DangerZonePanel";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was the shared half of `DangerZonePanelTests` (#1792), moved down in #2148
- * wave 2. The Playwright original signed in twice - once as vera for
- * /profile/settings and once as olaf for the org settings page - to assert
- * the same two class attributes on the same component both times. Asserting
- * them once on the component is the whole of it; the two call sites are
- * covered by their own page tests alongside this one.
- */
 describe("DangerZonePanel", () => {
 	it("confines the error colour to the heading, leaving the explanation as body copy", () => {
-		// #1792: the panel used to be headed "Danger zone" ("Gefahrenzone", a
-		// calque of GitHub's label that reads like a translation artefact) and
-		// set its whole explanation in text-red-700, spending the error colour
-		// on prose instead of the signal.
 		renderWithProviders(
 			<DangerZonePanel
 				title="Delete organization"

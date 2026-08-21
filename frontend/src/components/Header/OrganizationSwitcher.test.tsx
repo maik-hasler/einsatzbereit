@@ -5,23 +5,9 @@ import { useLocation } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { renderWithProviders } from "../../test/render";
 
-/**
- * `NavigationTests`' org-switch case, moved down in #2148 wave 13. Remaining
- * inventory: #2159.
- *
- * Switching organizations keeps you on the tab you were already reading -
- * an organizer comparing two orgs' members should not be dropped back on a
- * dashboard each time. That is `orgTabPath(org.id, currentTab)`, and both
- * arguments are props.
- *
- * The E2E carried a `Skip.When(rowCount < 2)`, because it could only switch if
- * the signed-in test user happened to belong to two organizations - so it
- * silently did nothing on most runs. A two-org prop list removes the skip.
- */
 const ORG_A = "11111111-1111-1111-1111-111111111111";
 const ORG_B = "22222222-2222-2222-2222-222222222222";
 
-/** Reads back where a navigation landed, without a real browser URL bar. */
 function LocationProbe() {
 	const location = useLocation();
 	return <span data-testid="location-probe">{location.pathname}</span>;
@@ -70,8 +56,6 @@ describe("OrganizationSwitcher", () => {
 	);
 
 	it("stays put when the current organization is picked again", async () => {
-		// A no-op navigation would remount the tab and throw away whatever the
-		// organizer had scrolled to or typed.
 		expect(await openAndPick("members", "Freiwillige Feuerwehr Kiel")).toBe(
 			`/app/${ORG_A}/dashboard/members`,
 		);

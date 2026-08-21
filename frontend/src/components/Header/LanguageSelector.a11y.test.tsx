@@ -5,7 +5,6 @@ import LanguageSelector from "./LanguageSelector";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
-/** Replaces `LanguageSelector_Open_HasNoSeriousA11yViolations`. */
 describe("LanguageSelector a11y", () => {
 	it("has no violations while collapsed, on both header backgrounds", async () => {
 		renderWithProviders(

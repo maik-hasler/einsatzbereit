@@ -4,17 +4,6 @@ import { Route, Routes } from "react-router";
 import AppLayout from "./AppLayout";
 import { renderWithProviders } from "../test/render";
 
-/**
- * `HeadingStructureTests`' footer-level case, moved down in #2148 wave 13.
- * Remaining inventory: #2159.
- *
- * #2071: /opportunities renders a grid of cards whose titles are `<h3>`s
- * directly above the footer, so the footer's own `<h2>` column headings read
- * as siblings of the page's sections rather than as the footer's. AppLayout
- * demotes them on that one route. The rule is one line - and the risk is that
- * the demotion leaks to every other route, which is what the E2E checked from
- * an organization profile.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
 	return { api: createApiMock() };
@@ -55,8 +44,6 @@ describe("AppLayout footer headings", () => {
 	});
 
 	it("leaves them at level 2 everywhere else", () => {
-		// The demotion is scoped to one route. An organization profile has its
-		// own h2 sections, so a footer that stayed demoted would nest under them.
 		renderAt("/organizations/11111111-1111-1111-1111-111111111111");
 
 		const levels = footerHeadingLevels();

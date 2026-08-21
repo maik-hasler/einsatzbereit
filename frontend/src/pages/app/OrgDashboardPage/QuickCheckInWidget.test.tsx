@@ -4,22 +4,6 @@ import userEvent from "@testing-library/user-event";
 import QuickCheckInWidget from "./QuickCheckInWidget";
 import { renderWithProviders } from "../../../test/render";
 
-/**
- * `QuickCheckInWidgetTests`, moved down in #2148 wave 13. Remaining
- * inventory: #2159.
- *
- * #1017: the widget offered every published opportunity regardless of
- * `checkInMethod`, so picking a PIN or manual one and scanning produced
- * nothing. `filterQrCheckInOpportunities` (unit-tested in
- * `lib/quickCheckIn.test.ts`) is the fix; what these add is that the widget
- * actually applies it to what `getOrganizationOpportunities` returns, and
- * that filtering everything out lands on the empty state rather than an
- * empty picker.
- *
- * End-to-end each case had to add the widget to the dashboard through the
- * customize flow first, then seed two opportunities with different check-in
- * methods. Both are one mocked response here.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../../../test/apiMock");
 	return { api: createApiMock() };
@@ -85,10 +69,8 @@ describe("QuickCheckInWidget", () => {
 
 		renderWidget();
 
-		// The Dropdown is a real combobox (see components/Dropdown.tsx) and
-		// nothing is selected yet, so the options only exist once it is opened -
-		// the closed trigger shows a placeholder either way, and asserting on
-		// that would pass no matter what the widget was offering.
+		// Opened first: nothing is selected, so the options only exist while the
+		// listbox is open and the closed trigger shows a placeholder either way.
 		await userEvent.click(await screen.findByRole("combobox"));
 
 		const options = screen.getAllByRole("option");
@@ -118,8 +100,6 @@ describe("QuickCheckInWidget", () => {
 				"No published opportunities using QR code check-in yet.",
 			),
 		).toBeInTheDocument();
-		// Not an empty picker: offering a scanner with nothing to scan for is
-		// the same dead end #1017 was about.
 		expect(screen.queryByRole("combobox")).toBeNull();
 		expect(screen.queryByTestId("quick-checkin-scan-btn")).toBeNull();
 	});

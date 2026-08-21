@@ -5,12 +5,6 @@ import CreateOrganizationModal from "./CreateOrganizationModal";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `CreateOrganizationModal_HasNoSeriousA11yViolations` and covers
- * the shape `OrganizationSettingsPage_EditModeValidationError_*` was really
- * checking: whether a react-hook-form/zod validation failure leaves the
- * rejected control described by its own message.
- */
 const { api } = vi.hoisted(() => ({
 	api: { createOrganization: vi.fn(), uploadOrganizationLogo: vi.fn() },
 }));
@@ -36,9 +30,6 @@ describe("CreateOrganizationModal a11y", () => {
 
 	it("has no violations once validation has rejected the form", async () => {
 		open();
-		// Submitting the empty form is what a user who tabbed straight to the
-		// button does, and it is the state OrganizationSettingsPage's
-		// validation-error scan reached the long way round.
 		await userEvent.click(screen.getByRole("button", { name: "Create" }));
 
 		await waitFor(() =>

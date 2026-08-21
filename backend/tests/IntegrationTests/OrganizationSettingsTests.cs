@@ -764,7 +764,7 @@ public class OrganizationSettingsTests(
 
 	// Simulates InvitationExpiryJob's periodic tick firing well past every
 	// invitation's 14-day window, rather than waiting 14 real days in a test.
-	/// <summary>1x1 transparent PNG - the smallest thing the upload endpoint accepts.</summary>
+	// 1x1 transparent PNG.
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
@@ -772,14 +772,6 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganizationLogo_ShouldClearLogoUrl(
 		CancellationToken cancellationToken)
 	{
-		// #845: the organization-logo upload had no matching delete endpoint,
-		// unlike the symmetric opportunity-banner feature. Moved down from
-		// `AvatarAndLogoDisplayTests` in #2148 - the browser was the trigger, not
-		// the subject: the load-bearing assertion was a re-read of
-		// GET /v1/organizations/{id} showing logoUrl null afterwards, and nothing
-		// in this project covered the endpoint at all. The button half (the
-		// `logo-remove` control rendering only while a logoUrl is set) is in
-		// `frontend/src/pages/app/OrgSettingsPage.test.tsx`.
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Logo removal {Guid.NewGuid():N}" },
@@ -792,7 +784,6 @@ public class OrganizationSettingsTests(
 			new FileParameter(logo, "logo.png", "image/png"),
 			cancellationToken);
 
-		// The upload has to have taken, or the delete below proves nothing.
 		var afterUpload = await client.GetOrganizationDetailsAsync(organizationId, cancellationToken);
 		afterUpload.LogoUrl.Should().NotBeNull();
 

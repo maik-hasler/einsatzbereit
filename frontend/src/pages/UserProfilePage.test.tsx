@@ -4,16 +4,6 @@ import { Route, Routes } from "react-router";
 import UserProfilePage from "./UserProfilePage";
 import { renderWithProviders } from "../test/render";
 
-/**
- * `UserAchievementsPageRemovedTests`' profile case, moved down in #2148 wave
- * 13. Remaining inventory: #2159.
- *
- * The standalone `/users/:userId/achievements` page was retired: badges are a
- * short list, so a whole route to show them cost a navigation for something
- * that fits on the profile itself. `App.test.tsx` asserts that route now 404s;
- * this is the other half - the badges really are here, and nothing still links
- * to the page that is gone.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
 	return { api: createApiMock() };

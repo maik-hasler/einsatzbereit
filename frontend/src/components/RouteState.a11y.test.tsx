@@ -3,14 +3,6 @@ import RouteState from "./RouteState";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces the per-page Playwright scans of the four route failure states
- * (`AdminOnlyRouteAsNonAdmin`, `OrgAppLayout_Forbidden`,
- * `OrgAppLayout_ServerError`, `OrgAppUnknownOrganization`, `NotFoundPage`,
- * and the three offline scans): every one of them booted the full Aspire
- * stack, drove a login, forced a failure, and then scanned the same shared
- * component. What differs between them is which props it gets.
- */
 describe("RouteState a11y", () => {
 	const variants = ["notFound", "forbidden", "offline", "error"] as const;
 

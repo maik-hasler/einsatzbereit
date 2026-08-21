@@ -116,15 +116,6 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldPersistEveryOptionalField_AndReturnThemFromDetails(
 		CancellationToken cancellationToken)
 	{
-		// Moved down from `OrganizationTests` in #2148. The modal half of that
-		// case - that every typed field is collected into one create request, and
-		// that a name-only organization omits the address object entirely rather
-		// than sending an empty one - is in
-		// `frontend/src/components/CreateOrganizationModal.test.tsx`. What no
-		// test covered is the server side of the same claim: the create endpoint
-		// has to persist all five optional fields plus the address, and
-		// GetOrganizationDetails has to read them back. The E2E original proved
-		// it by reloading the settings page and reading the values off it.
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(new CreateOrganizationRequest
@@ -161,10 +152,6 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldLeaveOptionalFieldsNull_WhenOnlyANameWasGiven(
 		CancellationToken cancellationToken)
 	{
-		// The companion to the case above: without it, an endpoint that filled
-		// every field with a default would satisfy the round trip. It is also the
-		// server half of the modal's "omits the address entirely" case - a
-		// name-only organization is a perfectly legal thing to create.
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(

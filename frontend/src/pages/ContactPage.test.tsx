@@ -5,7 +5,6 @@ import { renderWithProviders } from "../test/render";
 
 const SUPPORT_EMAIL = "hallo@einsatzbereit.maik-hasler.de";
 
-/** Was the contact case of `HelpContactImprintContentTests` (#2061). */
 describe("ContactPage", () => {
 	it("reaches support through a role address behind a mailto: link", () => {
 		renderWithProviders(<ContactPage />);

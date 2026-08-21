@@ -5,12 +5,6 @@ import CheckInModal from "./CheckInModal";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `MyEngagementsPage_CheckInModalPinCode_AsVera_*` and
- * `MyEngagementsPage_CheckInModalQrCode_AsVera_*`, each of which had to seed
- * an opportunity with the right check-in method, sign Vera up for it, check
- * her in, and navigate to /my-signups before it could open this dialog.
- */
 const { api } = vi.hoisted(() => ({
 	api: {
 		getVolunteerOpportunityDetails: vi.fn(),

@@ -6,23 +6,6 @@ import EngagementManagementPage from "./EngagementManagementPage";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { renderWithProviders } from "../test/render";
 
-/**
- * The `EngagementManagementPage` cases from `EngagementBulkActionsTests`,
- * `NavigationTests`, `NotificationForDeletedOpportunityTests`,
- * `EngagementUndoCheckInTests`, `SignUpVocabularyTests`,
- * `EngagementCancellationReasonTests`,
- * `EngagementManagementFeedbackSectionTests` and
- * `EngagementManagementCheckInPinTests`, moved down in #2148 wave 13.
- * Remaining inventory: #2159.
- *
- * All of them are conditional rendering plus local state over what
- * `getEngagements` and `getVolunteerOpportunityDetails` return. The E2E
- * originals each seeded an organization, an opportunity and one or two
- * engagements over four to six sequential HTTP calls, half of them purely to
- * produce the row shape that is a mock literal here - and in the bulk-confirm
- * case, an out-of-band confirm whose only job was to make the API answer with
- * one succeeded and one failed id.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
 	return { api: createApiMock() };
@@ -84,8 +67,7 @@ function mockPage(items: ReturnType<typeof engagement>[]) {
 beforeEach(() => {
 	api.__reset();
 	api.getVolunteerOpportunityDetails.mockResolvedValue(opportunityDetails);
-	// `items` is itself a paged list here (the hook reads result.items.items and
-	// result.items.pageCount), not a bare array.
+	// `items` is itself a paged list - the hook reads result.items.items.
 	api.getOpportunityFeedback.mockResolvedValue({
 		feedbackCount: 0,
 		averageRating: undefined,
@@ -119,8 +101,6 @@ describe("EngagementManagementPage bulk confirm", () => {
 		const first = engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera");
 		const second = engagement("aaaaaaaa-0000-0000-0000-000000000002", "Olaf");
 		mockPage([first, second]);
-		// One already confirmed out of band - the only reason the E2E original
-		// issued an extra HTTP call before touching the page at all.
 		api.bulkConfirmEngagements.mockResolvedValue({
 			succeeded: [{ id: first.id, status: "Confirmed" }],
 			failed: [{ id: second.id, errorCode: "Engagement.NotPending" }],
@@ -136,11 +116,8 @@ describe("EngagementManagementPage bulk confirm", () => {
 			screen.getByRole("button", { name: "Confirm selected" }),
 		);
 
-		// The toast states both halves - a "2 confirmed" success would be a lie
-		// the organizer has no other way to catch.
 		expect(await screen.findByText("1 confirmed, 1 failed.")).toBeVisible();
 
-		// And the succeeded row alone gains the revoke control.
 		await waitFor(() =>
 			expect(
 				screen.queryByTestId(`engagement-revoke-${first.id}`),
@@ -152,9 +129,6 @@ describe("EngagementManagementPage bulk confirm", () => {
 
 describe("EngagementManagementPage for a deleted opportunity", () => {
 	it("renders the not-found page rather than an empty management view", async () => {
-		// `getEngagements` 404s once the opportunity is gone. Without the
-		// `isApiNotFoundError` branch the page rendered its own chrome around
-		// nothing, which reads as "no sign-ups yet".
 		api.getEngagements.mockRejectedValue({ status: 404 });
 
 		renderPage();
@@ -178,8 +152,6 @@ describe("EngagementManagementPage check-in state", () => {
 			},
 		);
 		mockPage([confirmed]);
-		// `showManualCheckIn` is `isOrganizer && checkInMethod === "Manual"` -
-		// the button does not exist for any other method.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...opportunityDetails,
 			checkInMethod: "Manual",
@@ -203,8 +175,6 @@ describe("EngagementManagementPage check-in state", () => {
 			screen.getByTestId(`engagement-undo-checkin-${confirmed.id}`),
 		);
 
-		// Back to the pre-check-in shape: this is the whole regression, since
-		// an organizer who checked someone in by mistake had no way back.
 		expect(
 			await screen.findByRole("button", { name: "Mark as checked in" }),
 		).toBeVisible();
@@ -231,8 +201,6 @@ describe("EngagementManagementPage in German", () => {
 		expect(revoke).toHaveTextContent("Absagen");
 		expect(document.body.textContent).not.toMatch(/[Ss]tornieren/);
 
-		// The dialog opens on local state alone - no API call is involved until
-		// the organizer confirms.
 		await userEvent.click(revoke);
 		expect(await screen.findByRole("dialog")).toBeVisible();
 		expect(api.cancelEngagement).not.toHaveBeenCalled();
@@ -241,8 +209,6 @@ describe("EngagementManagementPage in German", () => {
 
 describe("EngagementManagementPage cancellation reason", () => {
 	it("sends the reason the organizer typed", async () => {
-		// #1051: the page called cancelEngagement with a null body, so the
-		// reason the dialog collected never reached the volunteer.
 		const confirmed = engagement(
 			"aaaaaaaa-0000-0000-0000-000000000001",
 			"Vera",
@@ -251,9 +217,8 @@ describe("EngagementManagementPage cancellation reason", () => {
 			},
 		);
 		mockPage([confirmed]);
-		// The page patches the row from this response (`updated.status`), so an
-		// undefined resolution throws during the state update rather than
-		// failing the assertion.
+		// The page patches the row from `updated.status`, so this must be a real
+		// EngagementStatusResponse.
 		api.cancelEngagement.mockResolvedValue({
 			id: confirmed.id,
 			status: "Cancelled",
@@ -285,9 +250,6 @@ describe("EngagementManagementPage cancellation reason", () => {
 
 describe("EngagementManagementPage feedback section", () => {
 	it("omits it entirely while no feedback has been submitted", async () => {
-		// #1835: a permanent "No feedback yet." placeholder competed with the
-		// sign-ups list it sits under, so the section is not rendered at all
-		// rather than rendered empty.
 		mockPage([engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera")]);
 
 		renderPage();
@@ -297,8 +259,6 @@ describe("EngagementManagementPage feedback section", () => {
 	});
 
 	it("renders it once there is feedback to show", async () => {
-		// The companion, without which a page that never rendered the section
-		// would pass.
 		mockPage([engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera")]);
 		api.getOpportunityFeedback.mockResolvedValue({
 			feedbackCount: 2,
@@ -320,9 +280,7 @@ describe("EngagementManagementPage check-in PIN", () => {
 			...opportunityDetails,
 			checkInMethod: "PINCode",
 		});
-		// The endpoint returns the PIN as a bare string (see the generated
-		// client), and the page renders it directly - an object here is a React
-		// child error, not a failed assertion.
+		// Resolves to a bare string; the page renders it directly.
 		api.getOpportunityCheckInPin.mockResolvedValue("123456");
 
 		renderPage();
@@ -330,8 +288,6 @@ describe("EngagementManagementPage check-in PIN", () => {
 		await waitFor(() =>
 			expect(api.getOpportunityCheckInPin).toHaveBeenCalledTimes(1),
 		);
-		// The gate is `isOrganizer && checkInMethod === "PINCode"`, and the
-		// effect re-runs on both - a duplicate request here is the regression.
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		expect(api.getOpportunityCheckInPin).toHaveBeenCalledTimes(1);
 	});
@@ -341,8 +297,6 @@ describe("EngagementManagementPage check-in PIN", () => {
 
 		renderPage();
 
-		// This page renders no <h1> of its own - the org shell's OrgPageHeader
-		// owns it - so a loaded row is the anchor.
 		await screen.findByText("Vera");
 		expect(api.getOpportunityCheckInPin).not.toHaveBeenCalled();
 	});

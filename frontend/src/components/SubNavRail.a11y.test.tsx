@@ -5,11 +5,6 @@ import ProfileSubNav from "./ProfileSubNav";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The account and administration areas' shared left rail, reached by
- * `ProfileSettingsPage_*`, `ProfileOverviewPage_*`, `AdministrationPage_*`
- * and `MyEngagementsPage_*` alike.
- */
 describe("SubNavRail a11y", () => {
 	const items = [
 		{ key: "overview", href: "/profile", label: "Overview" },

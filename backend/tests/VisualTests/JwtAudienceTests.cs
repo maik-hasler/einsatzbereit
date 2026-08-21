@@ -9,12 +9,6 @@ namespace VisualTests;
 /// real login through Keycloak's own form must be accepted by the backend -
 /// tokens carry <c>aud=backend</c> via a Keycloak audience mapper, and a 401
 /// here means the mapper is missing or validation is broken.
-///
-/// The admin-account half (#760's composite roles, #768's admin-wide
-/// organization listing) moved to
-/// <c>IntegrationTests/AdminTokenScopeTests.cs</c> in einsatzbereit#2148:
-/// both are assertions about the API, and the Playwright version had to page
-/// through a live, alphabetically-shifting list in the UI to make one of them.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)

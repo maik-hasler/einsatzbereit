@@ -5,11 +5,6 @@ import MobileMenu from "./MobileMenu";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
-/**
- * Replaces `MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations`, which needed a
- * login, an organization and a 390px viewport to reach a panel that is
- * entirely prop-driven.
- */
 describe("MobileMenu a11y", () => {
 	const base = {
 		isTransparent: false,
@@ -43,9 +38,6 @@ describe("MobileMenu a11y", () => {
 			/>,
 		);
 
-		// The panel is the widest state this component has - the org entry and
-		// its four sub-links only exist here - so pin that the scan below is
-		// actually looking at it.
 		expect(screen.getByRole("dialog")).toHaveAccessibleName();
 		expect(
 			screen.getByRole("link", { name: /Freiwillige Feuerwehr/ }),
@@ -64,8 +56,6 @@ describe("MobileMenu a11y", () => {
 	});
 
 	it("no longer links out to Keycloak's own account console (#1675)", () => {
-		// The mobile half of the same guard - see
-		// AccountControls.test.tsx for the desktop one and the rationale.
 		renderWithProviders(<MobileMenu {...base} isLoggedIn />);
 
 		expect(

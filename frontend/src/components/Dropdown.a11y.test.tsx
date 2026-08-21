@@ -6,12 +6,6 @@ import Dropdown, { type DropdownOption } from "./Dropdown";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Covers the open-listbox half of
- * `SignUpModal_OpenTimeSlotDropdown_HasNoSeriousA11yViolations`. This is the
- * one real listbox in the repo (frontend/AGENTS.md), so it is also the one
- * place `aria-required-children`/`nested-interactive` have something to say.
- */
 const options: DropdownOption[] = [
 	{ value: "morning", label: "27.08.2026, 09:00-13:00" },
 	{ value: "afternoon", label: "27.08.2026, 13:00-17:00" },

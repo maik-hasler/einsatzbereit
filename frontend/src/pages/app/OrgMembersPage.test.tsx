@@ -7,18 +7,6 @@ import type { OrganizationDetailsResponse } from "../../client/api-client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
-/**
- * Was `MemberSearchMinCharsHintTests` (#2069),
- * `MemberSearchEmailGuidanceTests` (#1894) and `MemberSearchErrorTests`
- * (#1942), moved down in #2148 wave 2.
- *
- * All three created a throwaway organization over the admin API, signed
- * olaf in, navigated into the org app and intercepted the search endpoint -
- * to assert which of four empty-ish states the page shows for a given query
- * and response. That is one component reading one promise.
- *
- * Each carried its own inline axe scan, so the scans come along.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../../test/apiMock");
 	return { api: createApiMock() };
@@ -84,9 +72,6 @@ afterEach(() => {
 
 describe("OrgMembersPage invite search", () => {
 	it("asks for more characters instead of rendering nothing at all", async () => {
-		// #2069: the empty-state message was gated behind length >= 4, so "ver"
-		// rendered nothing - no results, no message, no loading indicator -
-		// while a clearly invalid longer query correctly said "No users found."
 		renderPage();
 		await search("ver");
 
@@ -110,9 +95,6 @@ describe("OrgMembersPage invite search", () => {
 	});
 
 	it("points an unregistered email at signing the person up", async () => {
-		// #1894: a typo'd query and a syntactically valid but unregistered
-		// email got the same generic "No users found.", even though the
-		// field's placeholder implies email-based invites work.
 		renderPage();
 		await search("brandnewperson@example.test");
 
@@ -135,9 +117,6 @@ describe("OrgMembersPage invite search", () => {
 	});
 
 	it("says the search failed rather than that it found nobody", async () => {
-		// #1942: the request's .catch() cleared the candidate list
-		// unconditionally, so a failed search rendered identically to one that
-		// genuinely found nobody.
 		api.searchMemberCandidates.mockRejectedValue(new Error("bad request"));
 		renderPage();
 		await search("admin");
@@ -151,26 +130,6 @@ describe("OrgMembersPage invite search", () => {
 	});
 });
 
-/**
- * The leave/remove guard cases from `OrganizationTests`, moved down in #2148
- * wave 10.
- *
- * `isLastOrganizer` is `isOrganizer && organizerCount <= 1` over the members
- * array - a pure function of one prop. The E2E originals reached it by
- * signing olaf in, creating a throwaway organization, and for the two-member
- * case adding vera through the fixture's direct Keycloak escape hatch and
- * reloading the page, because accepting an invitation also grants Organizer
- * and so could not produce a plain-member-only state at all.
- *
- * That setup is also why the whole `OrganizationTests` class carries
- * `[NotInParallel("visualtests-db")]` and a `fixture.ResetAsync()`: the guard
- * reads Keycloak's *global* organisator role, so vera's copy had to be
- * cleared first, serialising this class against every other DB-touching class
- * in the suite.
- *
- * The backend half of the guard is covered by
- * `IntegrationTests.OrganizationSettingsTests`; these are the UI branches.
- */
 const SELF_ID = "22222222-2222-2222-2222-222222222222";
 const OTHER_ID = "44444444-4444-4444-4444-444444444444";
 
@@ -226,23 +185,14 @@ function renderMembers(members: unknown[]) {
 
 describe("OrgMembersPage last-organizer guard", () => {
 	it("offers the sole member a disabled Leave, never Remove", async () => {
-		// Removing the only member would orphan the organization.
 		renderMembers([olaf]);
 
 		const leave = await screen.findByRole("button", { name: "Leave" });
 		expect(leave).toBeDisabled();
-		// By accessible name, which is the aria-label ("Remove <member>"), not
-		// the visible "Remove" text - an exact "Remove" would match nothing here
-		// even when a Remove button is present, making the assertion vacuous.
 		expect(screen.queryByRole("button", { name: /^Remove / })).toBeNull();
 	});
 
 	it("associates the disabled Leave with its hint, and links on to settings", async () => {
-		// Native `disabled` takes the button out of the tab order, so a `title`
-		// tooltip would be mouse-only. The hint has to be reachable through
-		// aria-describedby, and it names the whole path out (#2074) with
-		// "settings" as a real link rather than prose telling the user to go
-		// find it.
 		const { container } = renderMembers([olaf]);
 
 		const leave = await screen.findByRole("button", { name: "Leave" });
@@ -260,24 +210,15 @@ describe("OrgMembersPage last-organizer guard", () => {
 	});
 
 	it("still disables Leave for the sole organizer of a two-member org", async () => {
-		// The guard counts organizers, not members: one Organizer plus one plain
-		// member would otherwise let the Organizer leave and orphan the org,
-		// with no path left to promote the remaining member.
 		renderMembers([olaf, vera]);
 
 		expect(await screen.findByRole("button", { name: "Leave" })).toBeDisabled();
-		// Unlike the sole-member case a second member exists to remove, which is
-		// what proves the guard is driven by organizer count rather than member
-		// count.
 		expect(
 			screen.getByRole("button", { name: "Remove Vera Volunteer" }),
 		).toBeVisible();
 	});
 
 	it("releases Leave once a second organizer exists", async () => {
-		// The negative control the E2E set never had: every case there asserted
-		// the guard holding, so a guard stuck permanently on would have passed
-		// all of them.
 		renderMembers([olaf, { ...vera, role: "Organizer", isOrganisator: true }]);
 
 		const leave = await screen.findByRole("button", { name: "Leave" });
@@ -286,23 +227,6 @@ describe("OrgMembersPage last-organizer guard", () => {
 	});
 });
 
-/**
- * The member-management cases from `OrganizationTests`, moved down in #2148
- * wave 11.
- *
- * Every one of these is a client-side branch over `useApiClient()`: which
- * dialog opens, which endpoint fires with which arguments, and what the row
- * reads afterwards. The *persistence* each one implies is already covered at
- * integration level - `OrganizationSettingsTests` has
- * `ChangeMemberRole_ShouldReturn204AndPromoteThenDemote_...`,
- * `CreateInvitation_ThenAccept_ShouldPersistMemberRole_NotSilentlyDowngrade`,
- * and `DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsPending` -
- * so what the browser added here was the UI wiring, not the contract.
- *
- * The E2E originals each signed olaf in, created a throwaway organization,
- * added vera through the fixture's direct Keycloak escape hatch, and reloaded
- * the page before they could click anything.
- */
 const invitation = {
 	id: "55555555-5555-5555-5555-555555555555",
 	inviteeName: "Ingo Invitee",
@@ -345,9 +269,6 @@ function renderManage(members: unknown[], invitations: unknown[] = []) {
 
 describe("OrgMembersPage member removal", () => {
 	it("routes Remove through a confirm dialog naming the member", async () => {
-		// Remove must behave like every other destructive action on this page
-		// (Leave, Delete organization): a dialog that names who is affected,
-		// where cancelling calls nothing at all.
 		api.removeMember.mockResolvedValue(undefined);
 		renderManage([olaf, vera]);
 
@@ -383,8 +304,6 @@ describe("OrgMembersPage member removal", () => {
 		await waitFor(() =>
 			expect(api.removeMember).toHaveBeenCalledWith(org.id, OTHER_ID),
 		);
-		// The row leaving the list is the parent's job - the page asks for a
-		// refetch rather than mutating the members prop it was handed.
 		await waitFor(() => expect(reloadOrg).toHaveBeenCalled());
 	});
 });
@@ -408,9 +327,6 @@ describe("OrgMembersPage role changes", () => {
 	});
 
 	it("demotes an organizer back to member", async () => {
-		// The other direction of the same control. The E2E original had to run
-		// both halves in one case against one seeded member; here each direction
-		// is just a different starting prop.
 		api.changeMemberRole.mockResolvedValue(undefined);
 		renderManage([olaf, { ...vera, role: "Organizer", isOrganisator: true }]);
 
@@ -430,11 +346,6 @@ describe("OrgMembersPage role changes", () => {
 
 describe("OrgMembersPage invitations", () => {
 	it("sends the role picked in the selector, not a hardcoded Member", async () => {
-		// #1050: the role selector existed but the create call always sent
-		// "Member", so inviting an organizer silently produced a plain member.
-		// Invites go through candidate search rather than a free-text address,
-		// so the selector has to still be read at the moment the candidate is
-		// picked.
 		api.createInvitation.mockResolvedValue({
 			...invitation,
 			role: "Organizer",
@@ -476,16 +387,6 @@ describe("OrgMembersPage invitations", () => {
 	});
 });
 
-/**
- * `OrganizationTests`' invite case, moved down in #2148 wave 13. Remaining
- * inventory: #2159.
- *
- * The server contract is already covered by `OrganizationSettingsTests`'
- * CreateInvitation cases. What was left end-to-end is the client wiring, and
- * that half is the whole regression: the page used to call the direct
- * add-member endpoint, which an organizer without realm-admin rights is
- * answered 403 for. Inviting is the path that works for them.
- */
 describe("OrgMembersPage inviting rather than adding", () => {
 	it("creates an invitation and lists the invitee as pending", async () => {
 		api.createInvitation.mockResolvedValue(invitation);
@@ -504,8 +405,6 @@ describe("OrgMembersPage inviting rather than adding", () => {
 			),
 		);
 
-		// The invitee has to show up as pending straight away - the E2E's own
-		// evidence that the invitation exists, without a reload.
 		const pending = await screen.findByRole("heading", {
 			name: "Pending invitations",
 		});
@@ -513,8 +412,6 @@ describe("OrgMembersPage inviting rather than adding", () => {
 		expect(list).not.toBeNull();
 		expect(list).toHaveTextContent(invitation.inviteeName);
 
-		// And nothing on the page reaches for the direct add-member endpoint,
-		// which is what produced the 403.
 		expect(api.addOrganizationMember).not.toHaveBeenCalled();
 	});
 });

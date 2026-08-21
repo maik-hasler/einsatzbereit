@@ -4,15 +4,6 @@ import OpportunityCard, { type OpportunityCardItem } from "./OpportunityCard";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The one card every surface that lists an opportunity renders (#2054), and
- * therefore the shared subject of `OpportunitiesPage_*`,
- * `LandingOpportunityPreview*`, `OrganizationProfilePage_*` and the "more
- * from this organization" rail on the detail page.
- *
- * The stretched-link pattern (frontend/AGENTS.md, "Clickable cards") is the
- * a11y-relevant part, and it is markup.
- */
 const base: OpportunityCardItem = {
 	id: "opp-1",
 	titleDe: "Strandreinigung",

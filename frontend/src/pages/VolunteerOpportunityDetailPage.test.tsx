@@ -6,22 +6,6 @@ import { Route, Routes } from "react-router";
 import VolunteerOpportunityDetailPage from "./VolunteerOpportunityDetailPage";
 import { renderWithProviders, type TestAuth } from "../test/render";
 
-/**
- * The bilingual-content cases from `VolunteerOpportunityTests`, moved down in
- * #2148 wave 9.
- *
- * German is the required variant and English is optional (#2057), so the page
- * resolves both its title and its lead through `pickLocalizedText` and falls
- * back per field - an organizer may translate one and not the other.
- * `pickLocalizedText` itself is already unit-tested in `lib/format.test.ts`;
- * what these add is that the page actually routes its title and description
- * through it, and re-derives them when the language changes rather than only
- * on load.
- *
- * The E2E originals seeded an organization and an opportunity over four
- * sequential API calls each, then drove the header's language menu, to assert
- * a string that is a prop and a locale here.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
 	return { api: createApiMock() };
@@ -52,8 +36,6 @@ const details = {
 	tags: [],
 	currentUserEngagement: undefined,
 	validUntil: undefined,
-	// The page renders a "posted ago" line, so this has to be a real date -
-	// formatDateTime throws on an undefined one rather than rendering nothing.
 	createdOn: new Date(Date.UTC(2026, 7, 1, 9, 0)),
 };
 
@@ -71,10 +53,6 @@ beforeEach(() => {
 	});
 });
 
-/**
- * Switches the language the way `Header/LanguageSelector` does - through
- * i18next - without coupling these cases to the header's own markup.
- */
 function LanguageSwitch() {
 	const { i18n } = useTranslation();
 	return (
@@ -117,9 +95,6 @@ describe("opportunity detail page content language", () => {
 	});
 
 	it("falls back to the German title when no English translation exists", async () => {
-		// English is optional. Without a fallback the header rendered an empty
-		// title and lead rather than the German content the organizer did
-		// provide.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			titleEn: undefined,
@@ -133,10 +108,6 @@ describe("opportunity detail page content language", () => {
 	});
 
 	it("falls back per field when only one of the two is translated", async () => {
-		// The two fields resolve independently, so a half-translated
-		// opportunity has to mix languages rather than fall back wholesale.
-		// The E2E pair never covered this: seeding it would have meant a third
-		// opportunity and a third page load.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			descriptionEn: undefined,
@@ -149,9 +120,6 @@ describe("opportunity detail page content language", () => {
 	});
 
 	it("follows a language switch without reloading the page", async () => {
-		// The regression guarded here is content pinned at load: the page
-		// derives both fields from `i18n.language` on every render, so a switch
-		// has to swap them in place.
 		renderDetail("en", <LanguageSwitch />);
 
 		expect(await screen.findByText("English Title")).toBeInTheDocument();
@@ -166,16 +134,6 @@ describe("opportunity detail page content language", () => {
 	});
 });
 
-/**
- * The detail-page cases from `VolunteerOpportunityTests`,
- * `MissingCoordinatesFallbackTests` and `SlotRowSignUpTests`, moved down in
- * #2148 wave 12. Remaining inventory: #2159.
- *
- * All of these are conditional rendering over the details payload plus the
- * viewer's auth state - both render arguments here, where end-to-end each
- * needed an organization and an opportunity seeded over four sequential API
- * calls first.
- */
 const scheduledSlots = {
 	...details,
 	participationType: "ScheduledSlots",
@@ -199,9 +157,6 @@ const scheduledSlots = {
 
 describe("opportunity detail page at-a-glance panel", () => {
 	it("states the next slot's real date and the slot count for scheduled slots", async () => {
-		// The WANN fact has to be the next upcoming slot's start, not a repeat
-		// of the occurrence - "One-time" told a reader nothing they could plan
-		// around.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderDetail("en");
@@ -240,19 +195,10 @@ describe("opportunity detail page anonymous visitor", () => {
 
 		const signIn = await screen.findByTestId("opportunity-signin");
 		expect(signIn).toHaveTextContent("Sign in");
-		// A className membership check, which is what the E2E asserted too
-		// (ToContainClassAsync) - not a computed style, so jsdom answers it
-		// identically.
 		expect(signIn).toHaveClass("bg-brand-700");
 	});
 
 	it("still lists the time slots, but none of them as a control", async () => {
-		// `clickable` is gated on showSignUpCta, so an anonymous viewer has no
-		// sign-up action for a row to trigger and the row renders as a plain
-		// div - the `opportunity-time-slot-row` test id exists only on the
-		// button branch. Asserting the section and its slots are present first
-		// is what keeps the absence half honest: on its own it would pass
-		// against a page that rendered no slots at all.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderDetail("en");
@@ -268,9 +214,6 @@ describe("opportunity detail page anonymous visitor", () => {
 
 describe("opportunity detail page without coordinates", () => {
 	it("collapses the map and offers directions by address instead", async () => {
-		// The map is gated on latitude and longitude both being present. Without
-		// them the section used to render an empty frame; the directions link is
-		// the escape hatch that still has to work.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			isRemote: false,
@@ -286,31 +229,16 @@ describe("opportunity detail page without coordinates", () => {
 		const directions = screen.getByTestId("opportunity-directions-link");
 		const href = directions.getAttribute("href") ?? "";
 		expect(href).toContain("google.com/maps");
-		// Addressed by text, since there are no coordinates to point at.
 		expect(decodeURIComponent(href)).toContain("Kiel");
 	});
 });
 
-/**
- * The remaining detail-page cases from `VolunteerOpportunityTests`,
- * `WithdrawEngagementErrorMessageTests`, `NavigationTests`,
- * `OpportunityCardContractTests`, `PendingSignUpExplanationTests`,
- * `SignUpVocabularyTests`, `CheckInAndSlotTests` and `SlotRowSignUpTests`,
- * moved down in #2148 wave 13. Remaining inventory: #2159.
- *
- * Every one of them is a branch over the details payload plus the viewer's
- * identity - both render arguments here. Ownership in particular is
- * `isOrganisator && userOrgIds.includes(opportunity.organizationId)`, so it
- * takes an `organisator` role and one mocked `getOrganizations` response
- * rather than a seeded organization and a real membership.
- */
 const ORGANIZER_AUTH = {
 	isAuthenticated: true,
 	roles: ["user", "organisator"],
 };
 const VOLUNTEER_AUTH = { isAuthenticated: true };
 
-/** Makes the signed-in viewer an owner of `details.organizationId`. */
 function asOwner() {
 	api.getOrganizations.mockResolvedValue([{ id: details.organizationId }]);
 }
@@ -355,8 +283,6 @@ describe("opportunity detail page for the organization that owns it", () => {
 	});
 
 	it("drops the draft affordances once it is published", async () => {
-		// The other half of the same branch. Without it, a page that always
-		// rendered the badge would satisfy the case above.
 		renderAs(ORGANIZER_AUTH);
 
 		await screen.findByTestId("opportunity-detail-when");
@@ -366,9 +292,6 @@ describe("opportunity detail page for the organization that owns it", () => {
 	});
 
 	it("points the owner at the management view instead of a sign-up rail", async () => {
-		// #2081: an owner qualifies for neither the sign-up box nor the sign-in
-		// prompt, so the rail rendered empty and left them with no route back
-		// into their own opportunity.
 		renderAs(ORGANIZER_AUTH);
 
 		const notice = await screen.findByTestId("opportunity-owner-notice");
@@ -384,10 +307,6 @@ describe("opportunity detail page for the organization that owns it", () => {
 
 describe("opportunity detail page tag chips", () => {
 	it("makes each tag a link into the filtered browse list", async () => {
-		// The regression was that these were inert <span>s, so no part of the UI
-		// could produce a ?tag= URL at all - which is a markup fact. The
-		// browse-side half (the list applying the filter) belongs to
-		// VolunteerOpportunitiesList and is covered there.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			tags: ["Erste Hilfe"],
@@ -417,10 +336,6 @@ describe("opportunity detail page withdraw failure", () => {
 	};
 
 	it("states the specific reason rather than the generic fallback", async () => {
-		// #1950's first half: the handler ran the rejection through
-		// `err instanceof Error`, which a ProblemDetails object is not, so every
-		// failure collapsed to "Could not withdraw". `getApiErrorMessage` looks
-		// up `apiError.Engagement.AlreadyTerminated` instead.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(pending);
 		api.withdrawEngagement.mockRejectedValue({
 			status: 409,
@@ -430,9 +345,6 @@ describe("opportunity detail page withdraw failure", () => {
 
 		renderAs(VOLUNTEER_AUTH);
 
-		// Scoped to the desktop status card: the page renders a second, mobile
-		// copy of the whole rail (#1965), so an unscoped "Withdraw" is ambiguous
-		// here in a way it never was in a real viewport.
 		const card = await screen.findByTestId("application-status");
 		await userEvent.click(
 			within(card).getByRole("button", { name: /Withdraw/ }),
@@ -447,8 +359,6 @@ describe("opportunity detail page withdraw failure", () => {
 	});
 
 	it("collapses to a single acknowledgement, since retrying cannot help", async () => {
-		// #1950's second half. Leaving the retry button in place invites a
-		// second attempt that is guaranteed to fail the same way.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(pending);
 		api.withdrawEngagement.mockRejectedValue({
 			status: 409,
@@ -475,9 +385,6 @@ describe("opportunity detail page withdraw failure", () => {
 
 describe("opportunity detail page heading structure", () => {
 	it("leads with the opportunity, not a breadcrumb trail", async () => {
-		// This page's header band carries the organization as an eyebrow link
-		// above the title, so a separate breadcrumb would state the same path
-		// twice.
 		renderAs(VOLUNTEER_AUTH);
 
 		const heading = await screen.findByRole("heading", { level: 1 });
@@ -496,9 +403,6 @@ describe("opportunity detail page heading structure", () => {
 
 describe("opportunity detail page capacity", () => {
 	it("keeps the interest-based type badge alongside the applicant count", async () => {
-		// #1941: the slot used to swap to the applicant count, so an
-		// interest-based offer stopped saying what it was the moment it had
-		// applicants - and only for the viewer who had applied.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			validUntil: new Date(Date.UTC(2027, 0, 31)),
@@ -553,8 +457,6 @@ describe("opportunity detail page pending explanation", () => {
 		"The organization is reviewing your sign-up. You'll get a message once it's confirmed.";
 
 	it("explains what pending means, next to the chip", async () => {
-		// #2075: the amber chip alone said nothing about who resolves it or how
-		// long it takes.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(withStatus("Pending"));
 
 		renderAs(VOLUNTEER_AUTH);
@@ -579,26 +481,16 @@ describe("opportunity detail page pending explanation", () => {
 
 describe("opportunity detail page German sign-up vocabulary", () => {
 	it("reserves 'anmelden' for authentication, not for signing up", async () => {
-		// German uses "anmelden" for signing in, so using it for signing up to an
-		// opportunity too makes the two indistinguishable in the one place both
-		// appear - the anonymous visitor's rail.
 		renderAs({ isAuthenticated: false }, "de");
 
 		const prompt = await screen.findByTestId("login-prompt");
 		expect(prompt.textContent ?? "").not.toBe("");
 		expect(screen.getByTestId("opportunity-signin")).toBeInTheDocument();
-		// The whole rail, not just the prompt: the point is that the word does
-		// not appear anywhere the two could be confused.
 		expect(prompt.textContent).not.toMatch(/anzumelden/);
 	});
 });
 
 describe("opportunity detail page slot rows", () => {
-	/**
-	 * `showSignUpCta` is `isAuthenticated && !isOwner && !cue && !isDraft`, and
-	 * the rows are only buttons under it - so these need a signed-in volunteer
-	 * who has not already applied.
-	 */
 	beforeEach(() => {
 		api.createEngagement.mockResolvedValue({
 			id: "55555555-5555-5555-5555-555555555555",
@@ -606,8 +498,6 @@ describe("opportunity detail page slot rows", () => {
 	});
 
 	it("signs up for the one slot directly, with no re-picking step", async () => {
-		// #2075: clicking a specific row already answered "which slot", so
-		// reopening a picker asked the same question twice.
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...scheduledSlots,
 			timeSlots: [scheduledSlots.timeSlots[0]],
@@ -618,7 +508,6 @@ describe("opportunity detail page slot rows", () => {
 		const rows = await screen.findAllByTestId("opportunity-time-slot-row");
 		await userEvent.click(rows[0]);
 
-		// The confirm variant, not the picker: one stated slot and no select.
 		expect(await screen.findByTestId("sign-up-confirmed-slot")).toBeVisible();
 		expect(document.querySelector("#sign-up-time-slot")).toBeNull();
 
@@ -637,8 +526,6 @@ describe("opportunity detail page slot rows", () => {
 	});
 
 	it("preselects the row that was clicked, not the first one", async () => {
-		// The regression this guards is a preselection that silently ignored
-		// which row was clicked - invisible with one slot, wrong with two.
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderAs(VOLUNTEER_AUTH);

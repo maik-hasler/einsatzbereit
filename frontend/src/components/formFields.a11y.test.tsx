@@ -9,17 +9,6 @@ import { inputClass, textareaClass } from "../lib/formClasses";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The form building blocks behind `ProfileSettingsPage_*`,
- * `OrganizationSettingsPage_EditMode*`, `RequiredFieldMarkerTests` and the
- * wizard scans: a labelled control, the shared required marker, its legend,
- * and the tag editor.
- *
- * The a11y contract here is specifically the split the marker exists for
- * (#1797): the asterisk is decorative and aria-hidden, and the *accessible*
- * half of "required" is the control's own required/aria-required. A scan
- * alone cannot see that split, so it is asserted directly.
- */
 describe("form field a11y", () => {
 	it("has no violations for a form of labelled, required and optional controls", async () => {
 		renderWithProviders(
@@ -80,9 +69,6 @@ describe("form field a11y", () => {
 		renderWithProviders(<Harness />);
 		await expectNoA11yViolations();
 
-		// Once a tag exists the <ul> holding the chips also carries the label
-		// (so the list announces what it is a list of), so target the control
-		// by role rather than by label from here on.
 		const input = screen.getByRole("textbox", { name: "Tags" });
 		await userEvent.type(input, "cleanup{Enter}");
 		await userEvent.type(input, "outdoors{Enter}");

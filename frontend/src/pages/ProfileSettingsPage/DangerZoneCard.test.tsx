@@ -7,7 +7,6 @@ vi.mock("../../hooks/useApiClient", () => ({
 	useApiClient: () => ({ deleteMyAccount: vi.fn() }),
 }));
 
-/** The /profile/settings half of `DangerZonePanelTests` (#1792). */
 describe("ProfileSettingsPage danger zone", () => {
 	it("is headed by the action it performs, not a generic 'Danger zone'", () => {
 		renderWithProviders(<DangerZoneCard />, {

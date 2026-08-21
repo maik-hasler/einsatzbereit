@@ -5,13 +5,6 @@ import SubmitFeedbackModal from "./SubmitFeedbackModal";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `MyEngagementsPage_EditableFeedback_AsVera_*` and the feedback
- * half of `EngagementManagementPage_*`. The star rating is a
- * `role="group"` of aria-pressed toggles rather than a radio group, and the
- * reason (ARIA does not allow aria-required on `group`) is a claim only a
- * scan plus a direct assertion can hold in place.
- */
 const { api } = vi.hoisted(() => ({
 	api: { submitFeedback: vi.fn(), updateFeedback: vi.fn() },
 }));

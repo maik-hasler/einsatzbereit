@@ -4,20 +4,6 @@ import userEvent from "@testing-library/user-event";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was `WizardBlockedStepJumpTests` (#1782),
- * `WizardFocusFirstInvalidFieldTests` (#2077) and
- * `WizardLiveRevalidationTests` (#1928) in the Playwright suite, moved down
- * in #2148 wave 2.
- *
- * All three are about react-hook-form behaviour inside this one component:
- * this wizard never calls `handleSubmit()` - "Next", a stepper jump and the
- * final submit all call `trigger()` directly - so neither
- * `shouldFocusError`'s focus management nor `reValidateMode`'s per-keystroke
- * revalidation comes for free, and both had to be wired by hand. Nothing in
- * any of them needs a real backend or real layout; each one used to pay a
- * login and a dashboard navigation to reach a dialog that renders from props.
- */
 const { api } = vi.hoisted(() => ({
 	api: {
 		getOrganizationDetails: vi.fn(),
@@ -111,16 +97,11 @@ describe("create-opportunity wizard: blocked stepper jumps (#1782)", () => {
 		expect(message).toHaveTextContent("Step 4 is not available yet");
 		expect(message).toHaveTextContent("step 1 (Basics)");
 
-		// Reachable from the control that was refused, not just announced once
-		// into the void. The button stays enabled on purpose - a disabled one
-		// takes itself out of the tab order and could not carry the
-		// explanation either.
 		expect(screen.getByTestId("wizard-stepper-4")).toHaveAttribute(
 			"aria-describedby",
 			"create-opportunity-step-blocked",
 		);
 
-		// And the jump really did not happen.
 		expect(screen.getByTestId("wizard-step-1")).toBeInTheDocument();
 		expect(screen.queryByTestId("wizard-step-4")).toBeNull();
 	});
@@ -148,15 +129,10 @@ describe("create-opportunity wizard: blocked stepper jumps (#1782)", () => {
 	});
 
 	it("names an intermediate step rather than the one being looked at", async () => {
-		// The case the silent bail hurt most: the field standing in the way is
-		// on a step the user is not looking at, so the red rule on that step's
-		// marker was the only clue, with nothing saying it stopped the jump.
 		openWizard();
 		await userEvent.type(title(), "Intermediate step block");
 		await userEvent.type(description(), "Regression test for #1782.");
 
-		// Step 2's address arrives pre-filled from the organization, so break
-		// it deliberately rather than depending on which fields come up empty.
 		await userEvent.click(screen.getByTestId("wizard-stepper-2"));
 		await waitFor(() =>
 			expect(screen.getByTestId("wizard-step-2")).toBeInTheDocument(),
@@ -164,8 +140,6 @@ describe("create-opportunity wizard: blocked stepper jumps (#1782)", () => {
 		const city = document.querySelector("#opportunity-city") as HTMLElement;
 		await userEvent.clear(city);
 
-		// Back to step 1 (a backwards jump is never validated), then forward
-		// past the broken step 2.
 		await userEvent.click(screen.getByTestId("wizard-stepper-1"));
 		await waitFor(() =>
 			expect(screen.getByTestId("wizard-step-1")).toBeInTheDocument(),
@@ -181,10 +155,6 @@ describe("create-opportunity wizard: blocked stepper jumps (#1782)", () => {
 
 describe("create-opportunity wizard: live revalidation (#1928)", () => {
 	it("clears a field's error as it is fixed, without a second Next click", async () => {
-		// react-hook-form only re-validates an already-errored field on every
-		// keystroke once the form has been through handleSubmit() - its
-		// reValidateMode default only takes effect after isSubmitted flips,
-		// and this wizard never calls handleSubmit at all.
 		openWizard();
 		await userEvent.click(screen.getByTestId("modal-next"));
 
@@ -199,25 +169,14 @@ describe("create-opportunity wizard: live revalidation (#1928)", () => {
 		await waitFor(() => expect(titleError()).toBeNull());
 		expect(title()).not.toHaveAttribute("aria-invalid");
 
-		// Per-field, not a blanket clear of every error on the step.
 		expect(descriptionError()).toHaveTextContent("Please fill this in.");
 	});
 });
 
 describe("create-opportunity wizard: the shared required-field marker (#1797)", () => {
 	it("marks the title field with the one aria-hidden asterisk, once explained per form", async () => {
-		// Required fields used to be marked three different ways across the
-		// product - this component's own RequiredMark, an asterisk baked into
-		// the translated string ("Name *"), and a spelled-out "(required)".
-		// The baked-in variant could not be aria-hidden, so its field
-		// announced as "Name star". OrgSettingsPage.test.tsx asserts the same
-		// convention on the other form the fix touched.
 		openWizard();
 
-		// Both content languages render a Title field; the inactive one is
-		// hidden by a Tailwind `hidden` class, which jsdom has no stylesheet
-		// to apply - so target the German field by id rather than by role and
-		// name. (`screen.getByRole` would find two.)
 		const field = document.querySelector("#opportunity-title");
 		expect(field).toHaveAccessibleName("Title");
 
@@ -236,9 +195,6 @@ describe("create-opportunity wizard: the shared required-field marker (#1797)", 
 
 describe("create-opportunity wizard: distinct control names (#1957)", () => {
 	it("names the header close button differently from the footer cancel button", () => {
-		// Both used to read their accessible name from the same
-		// createOpportunity.cancel key, so two distinct controls in one dialog
-		// were indistinguishable by name (WCAG 2.2 SC 4.1.2).
 		openWizard();
 
 		const dialog = screen.getByRole("dialog");
@@ -254,10 +210,6 @@ describe("create-opportunity wizard: distinct control names (#1957)", () => {
 	});
 });
 
-/**
- * The two wizard-shape cases from `VolunteerOpportunityTests`, moved down in
- * #2148 wave 13. Remaining inventory: #2159.
- */
 describe("create-opportunity wizard: shape and the draft gate", () => {
 	it("offers all four steps and a draft button, with no accent band", async () => {
 		openWizard();
@@ -266,21 +218,14 @@ describe("create-opportunity wizard: shape and the draft gate", () => {
 			expect(await screen.findByTestId(`wizard-stepper-${n}`)).toBeVisible();
 		}
 		expect(screen.getByTestId("modal-save-draft")).toBeInTheDocument();
-		// The gradient header band the wizard used to carry. Asserted as a class
-		// membership, which is what the E2E checked too - not a computed style,
-		// so jsdom answers it identically.
 		expect(document.querySelector(".from-brand-600")).toBeNull();
 	});
 
 	it("lets a step be reached directly, once the step before it validates", async () => {
-		// Free navigation is the point of a stepper: an organizer who knows they
-		// need to change the format should not have to walk through details
-		// first. What it must not do is skip validation - #1782.
 		openWizard();
 
 		await userEvent.click(await screen.findByTestId("wizard-stepper-2"));
 
-		// Step 1 is empty, so the jump is refused and says why.
 		await waitFor(() => expect(titleError()).not.toBeNull());
 		expect(screen.getByTestId("wizard-stepper-1")).toHaveAttribute(
 			"aria-current",
@@ -300,8 +245,6 @@ describe("create-opportunity wizard: shape and the draft gate", () => {
 	});
 
 	it("keeps Save draft disabled until a real title is typed", async () => {
-		// A draft with no title is unfindable afterwards - it lists as "Unnamed
-		// draft" and nothing distinguishes it from the next one.
 		openWizard();
 
 		const saveDraft = await screen.findByTestId("modal-save-draft");

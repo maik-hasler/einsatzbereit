@@ -3,20 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-/// <summary>
-/// The public organization directory (<c>GET /v1/organizations/directory</c>),
-/// whose only non-trivial field is <c>OpenOpportunityCount</c>: it has to count
-/// Published opportunities and nothing else, so a card reads as active on the
-/// strength of work a volunteer can actually sign up for.
-///
-/// Moved down from `OrganizationTests` in #2148. The browser original drove the
-/// four-step creation wizard to publish a single opportunity and then searched
-/// the directory page for the string "1 open opportunity" - the card only ever
-/// prints the number the API hands it through
-/// `t("organizationsPage.openOpportunities", { count })`, so the count itself is
-/// the whole subject. Nothing covered this endpoint at integration level;
-/// `ListOrganizationsFilterTests` covers the admin list endpoint instead.
-/// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class GetPublicOrganizationsTests(
@@ -34,8 +20,6 @@ public class GetPublicOrganizationsTests(
 
 		await PublishOpportunityAsync(client, organizationId, "Published one", cancellationToken);
 
-		// A draft alongside it, which is what makes the count meaningful rather
-		// than just "the number of opportunities this org has".
 		await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			TitleDe = "Draft, never published",
@@ -62,8 +46,6 @@ public class GetPublicOrganizationsTests(
 	public async Task GetPublicOrganizations_ShouldReportZeroOpenOpportunities_ForABareOrganization(
 		CancellationToken cancellationToken)
 	{
-		// The other side of the same field. Without it, a count that was always
-		// 1 would satisfy the case above.
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		await CreateOrganizationAsync(client, "BareOrg", cancellationToken);
 
@@ -85,12 +67,6 @@ public class GetPublicOrganizationsTests(
 		return organization.Id.Value;
 	}
 
-	/// <summary>
-	/// IndividualContact rather than ScheduledSlots, exactly as the browser
-	/// original chose: it is the one participation type that can publish with no
-	/// time slots, which keeps this about the directory count rather than about
-	/// the slot-creation flow.
-	/// </summary>
 	private static async Task PublishOpportunityAsync(
 		EinsatzbereitApi client, Guid organizationId, string title, CancellationToken cancellationToken)
 	{

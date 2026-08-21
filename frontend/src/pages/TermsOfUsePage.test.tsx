@@ -4,16 +4,6 @@ import TermsOfUsePage from "./TermsOfUsePage";
 import Footer from "../components/Footer";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was `TermsOfUsePageTests` in the Playwright suite (#2148 wave 2). Every
- * assertion here is about rendered copy and links on a page that makes no
- * API call and depends on no browser layout, so it cost an Aspire boot and a
- * page load to learn something a render answers.
- *
- * The one case that did not move is
- * `KeycloakRegistrationForm_RequiresAcceptingTermsOfUse` - that drives the
- * real Keycloak registration form and stays end-to-end.
- */
 describe("TermsOfUsePage", () => {
 	it("shows the core clauses in English", () => {
 		renderWithProviders(<TermsOfUsePage />);
@@ -21,10 +11,6 @@ describe("TermsOfUsePage", () => {
 		expect(
 			screen.getByRole("heading", { name: "Terms of Use", level: 1 }),
 		).toBeInTheDocument();
-		// Substring matching throughout: since #1755 each clause heading
-		// carries its own number ("2 Our role as a platform"), because legal
-		// text is cited by clause. Matching the title alone keeps these
-		// assertions from breaking when a section is inserted above one.
 		expect(
 			screen.getByRole("heading", { name: /Our role as a platform/ }),
 		).toBeInTheDocument();
@@ -47,10 +33,6 @@ describe("TermsOfUsePage", () => {
 	});
 
 	it("carries neither an action bar nor an in-band Home link", () => {
-		// #1755 replaced this page's breadcrumb action bar with a Home link in
-		// the title band; that link is gone in turn, since the header nav now
-		// carries "Home" on every page. The cross-page guard for the header
-		// side of that lives in HeaderBreadcrumbSharedImplementationTests.
 		const { container } = renderWithProviders(<TermsOfUsePage />);
 
 		expect(container.querySelector("nav[aria-label='Breadcrumb']")).toBeNull();
@@ -66,9 +48,6 @@ describe("TermsOfUsePage", () => {
 	});
 
 	it("does not describe a verification badge that does not exist", () => {
-		// #1665: section4Body claimed organizations get a badge confirming we
-		// reviewed their identity. No such feature exists anywhere in the
-		// product; pinned in both locales so it cannot come back before it does.
 		const { unmount } = renderWithProviders(<TermsOfUsePage />);
 		expect(
 			screen.getByRole("heading", {

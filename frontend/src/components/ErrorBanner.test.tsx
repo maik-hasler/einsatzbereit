@@ -4,12 +4,6 @@ import ErrorBanner from "./ErrorBanner";
 import SuccessBanner from "./SuccessBanner";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was two of `LiveRegionTests`' four cases (#972), moved down in #2148 wave 2.
- * Both reached a shared banner through a whole page - an unknown-opportunity
- * URL for the error one, a profile save for the success one - to assert the
- * component's own role/aria-live pair.
- */
 describe("inline banners as live regions", () => {
 	it("announces an error assertively", () => {
 		renderWithProviders(
@@ -22,10 +16,6 @@ describe("inline banners as live regions", () => {
 	});
 
 	it("stays mounted and empty until there is a success to announce", () => {
-		// The half of #972 that is easy to get wrong: a role="status" node
-		// inserted into the DOM already populated does not reliably announce,
-		// so callers keep this mounted across the no-success/success toggle
-		// rather than rendering it conditionally.
 		const { rerender } = renderWithProviders(<SuccessBanner message={null} />);
 
 		const banner = screen.getByRole("status");

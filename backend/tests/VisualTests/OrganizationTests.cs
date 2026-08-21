@@ -6,19 +6,11 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-// MembersPage_ActionButtons_MeetMinimumTouchTargetSize below needs vera's
-// global Keycloak organisator role deterministically cleared: it locates the
-// row's role control by the name "Promote ... to organizer", which reads
-// "Demote ... to member" if she is already an organisator. So the whole class
-// opts into fixture.ResetAsync() and a keyed [NotInParallel], keyed so only
-// classes sharing "visualtests-db", not the whole assembly, are excluded
-// while this one resets that role.
-//
-// einsatzbereit#2148 waves 10-11 moved the other cases that depended on the
-// reset (the last-organizer guard, then promote/demote) down to
-// OrgMembersPage.test.tsx. That touch-target case is now the only thing
-// holding this class's serialisation in place, and it measures bounding boxes
-// at a 375px viewport, so it cannot follow them.
+// The class-wide ResetAsync + keyed [NotInParallel] exist for one case:
+// MembersPage_ActionButtons_MeetMinimumTouchTargetSize locates the row's role
+// control by "Promote ... to organizer", which reads "Demote ... to member" if
+// vera carries a leftover global organisator role. It measures bounding boxes
+// at 375px so it cannot move down; nothing else here still needs the reset.
 
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]

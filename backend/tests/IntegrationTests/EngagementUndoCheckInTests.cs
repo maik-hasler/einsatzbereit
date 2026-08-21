@@ -4,23 +4,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-/// <summary>
-/// The API half of #1041's undo-check-in guard rails, moved down from
-/// <c>VisualTests</c> in einsatzbereit#2148: these four opened no page and
-/// asserted only status codes and the persisted <c>IsCheckedIn</c> flag, but
-/// paid for a Chromium context and a frontend to do it.
-///
-/// The organizer-facing button that drives these endpoints stays a browser
-/// test - <c>VisualTests/EngagementUndoCheckInTests.cs</c> keeps
-/// <c>ManageApplicationsPage_UndoCheckIn_RestoresManualCheckInButton</c>,
-/// which is about the row swapping its badge back for the check-in button.
-///
-/// Background: check-in had no way back. <c>IsCheckedIn</c> had exactly one
-/// writer (<c>CheckIn()</c>) and nothing cleared it short of
-/// <c>Reactivate()</c>, which requires the engagement to already be
-/// terminated - so an organizer mis-click or a wrong QR scan locked a
-/// volunteer into "attended" permanently.
-/// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
@@ -74,10 +57,6 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	public async Task UndoCheckIn_Returns409_WhenEngagementIsTerminated(
 		CancellationToken cancellationToken)
 	{
-		// A checked-in engagement that is cancelled afterwards keeps
-		// IsCheckedIn = true - Cancel() never touches it, which is the exact
-		// unlabelled state #1041 calls out. Undo must still refuse to reopen a
-		// terminated engagement rather than quietly editing it.
 		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
 
@@ -111,8 +90,6 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 
 		await olaf.CheckInEngagementAsync(engagementId, cancellationToken);
 
-		// admin is not a member of olaf's organization, so this must be
-		// rejected before it ever reaches the check-in flag.
 		var failure = await CaptureFailureAsync(
 			() => admin.UndoCheckInEngagementAsync(engagementId, cancellationToken));
 
@@ -185,22 +162,6 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 				$"Engagement '{engagementId}' not found in GetEngagements response.");
 	}
 
-	/// <summary>
-	/// Catches the base <see cref="ApiException"/>, not
-	/// <c>ApiException&lt;ProblemDetails&gt;</c>, because which of the two a
-	/// failure arrives as depends on the status code. NSwag generates a typed
-	/// branch only for the responses the OpenAPI document declares: for
-	/// <c>UndoCheckInEngagement</c> that is 401/403/404, so a 403 throws
-	/// <c>ApiException&lt;ProblemDetails&gt;</c> while the 409s this class
-	/// asserts fall through to the generated catch-all, which throws the
-	/// non-generic <see cref="ApiException"/>. Catching only the generic form
-	/// let both 409 tests fail with the very exception they were asserting.
-	///
-	/// The undeclared 409 is a defect in the OpenAPI document rather than
-	/// something this helper should be working around - tracked as
-	/// einsatzbereit#2158, which declares it and simplifies this back to the
-	/// typed form.
-	/// </summary>
 	private static async Task<ApiException> CaptureFailureAsync(Func<Task> act)
 	{
 		try
@@ -215,17 +176,6 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		throw new Exception("Expected the undo-check-in call to fail, but it succeeded.");
 	}
 
-	/// <summary>
-	/// Reads the domain error code from whichever place the generated client
-	/// actually put it, for the same reason
-	/// <see cref="CaptureFailureAsync"/> catches the base type.
-	///
-	/// <c>errorCode</c> is a ProblemDetails extension member either way, so it
-	/// never lands on a generated property. On a typed exception the body is
-	/// already deserialized onto <c>Result.AdditionalProperties</c>; on the
-	/// untyped catch-all it is only ever the raw JSON string in
-	/// <see cref="ApiException.Response"/>, so that has to be parsed here.
-	/// </summary>
 	private static string? ErrorCodeOf(ApiException ex)
 	{
 		if (ex is ApiException<ProblemDetails> typed)

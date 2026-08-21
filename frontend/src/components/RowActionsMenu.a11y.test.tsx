@@ -5,13 +5,6 @@ import RowActionsMenu from "./RowActionsMenu";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `OrgOpportunitiesPage_RowActionsMenuOpen_HasNoSeriousA11yViolations`.
- *
- * The disclosure-not-menu convention (frontend/AGENTS.md, "Accessibility")
- * is a claim about roles and names, which is exactly what axe evaluates -
- * there is nothing about it that needs a real browser.
- */
 const actions = [
 	{ key: "edit", label: "Edit", onClick: () => {} },
 	{ key: "unpublish", label: "Unpublish", onClick: () => {}, disabled: true },
@@ -43,8 +36,6 @@ describe("RowActionsMenu a11y", () => {
 	});
 
 	it("announces the open list as a disclosure, not a WAI-ARIA menu", async () => {
-		// #1772: claiming role="menu" without the arrow-key model tells a
-		// screen-reader user to press keys that do nothing.
 		renderWithProviders(
 			<RowActionsMenu
 				actions={actions}

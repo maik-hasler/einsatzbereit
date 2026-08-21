@@ -8,11 +8,6 @@ import type { NotificationSummary } from "../../client/api-client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
-/**
- * Replaces `NotificationDropdown_Open_HasNoSeriousA11yViolations`, which had
- * to sign in, create the notification-producing state, and open the bell.
- * Every state that scan could reach is a field on `AccountMenuState`.
- */
 function notification(
 	id: string,
 	isRead: boolean,
@@ -118,8 +113,6 @@ describe("NotificationDropdown a11y", () => {
 	});
 
 	it("announces the unread count rather than relying on the badge alone", async () => {
-		// The badge caps its *visible* text at "9+", so the count only reaches a
-		// screen-reader user through the bell's accessible name.
 		open(menuState({ notifOpen: false, unreadCount: 12 }));
 		expect(
 			screen.getByRole("button", { name: "Notifications, 12 unread" }),

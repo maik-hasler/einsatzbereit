@@ -9,36 +9,16 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Page-level accessibility gate.
+/// Page-level accessibility gate. Component-level scans live in
+/// <c>frontend/src/**/*.a11y.test.tsx</c> under <c>vitest-axe</c> (#2148);
+/// what stays here is what only a real browser answers - page composition
+/// (axe skips its page-level rules on a fragment), colour contrast (axe
+/// samples pixels through a canvas, which jsdom has not), and real focus and
+/// pointer behaviour.
 ///
-/// This file used to hold every automated a11y check in the project - 85 axe
-/// scans, each booting the Aspire stack and driving a browser to reach a
-/// component that could have been rendered directly. Issue #2148 moved the
-/// component-level scans down to <c>vitest-axe</c> in
-/// <c>frontend/src/**/*.a11y.test.tsx</c>, which run in-process against jsdom
-/// in seconds. What is left here is what only a real browser can answer:
-///
-/// <list type="bullet">
-/// <item><description><b>Page composition</b> - landmarks, heading order and
-/// document structure are properties of a whole page, not of any one
-/// component, and axe skips its page-level rules entirely when handed a
-/// fragment.</description></item>
-/// <item><description><b>Colour contrast</b> - axe samples rendered pixels
-/// through a canvas. jsdom has neither layout nor canvas, so the component
-/// suite can only ever report contrast "incomplete". These scans are the only
-/// place it is genuinely evaluated.</description></item>
-/// <item><description><b>Real focus and pointer behaviour</b> - the two skip
-/// links moving focus into <c>#main-content</c>, the Leaflet marker's
-/// accessible name, DOM order deciding which control a Tab reaches
-/// first.</description></item>
-/// </list>
-///
-/// One scan per distinct layout and palette (public site, signed-in volunteer,
-/// org app shell, administration, static legal page), not one per state: a
-/// state that differs only in which component is mounted is covered by that
-/// component's own suite. Add a page-level scan here when a new <i>route</i>
-/// appears; add a component suite in <c>frontend/</c> when a new component or
-/// component state does.
+/// One scan per distinct layout and palette, not one per state. Add a scan
+/// here for a new <i>route</i>; add a component suite in <c>frontend/</c> for
+/// a new component or component state.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)

@@ -3,20 +3,6 @@ import userEvent from "@testing-library/user-event";
 import MiniCalendar from "./MiniCalendar";
 import { renderWithProviders } from "../../test/render";
 
-/**
- * `DateFilterCalendarTests`, moved down in #2148 wave 13. Remaining inventory:
- * #2159.
- *
- * #1779: past days were selectable and answered with an empty list. They are
- * `aria-disabled` rather than natively `disabled` - deliberately, so arrow
- * keys can still cross them per the APG date-picker grid pattern - which
- * leaves them clickable, so a guard in `clickDay` is what actually makes them
- * inert. Both halves are asserted here.
- *
- * The E2E pinned the browser context's timezone to keep "today" stable; the
- * equivalent is vitest's fake clock, set to a fixed date well inside a month
- * so neither neighbour spills into the grid's edge rows.
- */
 const NOW = new Date("2026-08-14T12:00:00Z");
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -32,11 +18,11 @@ afterEach(() => {
 function renderCalendar() {
 	const onChange = vi.fn();
 	renderWithProviders(
-		// `availability` is a Map keyed by ISO date, not a plain object.
 		<MiniCalendar
 			fromStr=""
 			toStr=""
 			onChange={onChange}
+			// A Map keyed by ISO date, not a plain object.
 			availability={new Map()}
 		/>,
 	);
@@ -62,8 +48,8 @@ describe("MiniCalendar past days", () => {
 
 		await userEvent.click(yesterday as HTMLElement);
 
-		// aria-disabled leaves the button clickable on purpose, so the guard in
-		// `clickDay` is the thing under test - not the attribute.
+		// aria-disabled leaves the button clickable on purpose (arrow keys must
+		// cross past days), so the guard in clickDay is what is under test.
 		expect(onChange).not.toHaveBeenCalled();
 	});
 });

@@ -3,16 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-/// <summary>
-/// Moved down from <c>VisualTests</c> in einsatzbereit#2148, where its own
-/// doc comment already said "Both API-level, no browser needed" - it opened
-/// none, and paid for Playwright and a frontend regardless.
-///
-/// Regression tests for #710 (the Result-pattern migration initially mapped
-/// two engagement check-in failures to 409/403 instead of the pre-refactor
-/// 400), #806 (a non-owner guessing PINs could tell a correct guess from a
-/// wrong one through the error response), and the per-engagement lockout.
-/// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
@@ -54,8 +44,6 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		var engagementId = await SeedConfirmedPinEngagementAsync(
 			olaf, vera, "CheckInPinOwner", cancellationToken);
 
-		// olaf is also a "user" per the test-seed roles - checking in vera's
-		// engagement with the *correct* PIN must still fail: only vera owns it.
 		var act = () => olaf.CheckInWithPinAsync(
 			engagementId, new CheckInWithPinRequest { Pin = Pin }, cancellationToken);
 
@@ -69,10 +57,6 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	public async Task CheckInWithPin_ReturnsIdenticalNotOwnerError_RegardlessOfPinCorrectness_ForNonOwner(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #806: a non-owner guessing PINs must not be able to
-		// tell a correct guess from a wrong one through the error response -
-		// ownership is checked before the PIN is ever compared, which closes
-		// the validity oracle.
 		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
 
@@ -102,8 +86,6 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		var engagementId = await SeedConfirmedPinEngagementAsync(
 			olaf, vera, "CheckInPinLockout", cancellationToken);
 
-		// Five wrong guesses trip the per-engagement lockout, independently of
-		// the generic 100 req/60s rate limit.
 		for (var attempt = 0; attempt < 5; attempt++)
 		{
 			var wrong = await CaptureFailureAsync(() => vera.CheckInWithPinAsync(
@@ -157,10 +139,6 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		return opportunity.Id;
 	}
 
-	/// <summary>
-	/// Every assertion here is about a *failure* response, so the exception is
-	/// the subject rather than something to let escape.
-	/// </summary>
 	private static async Task<ApiException<ProblemDetails>> CaptureFailureAsync(Func<Task> act)
 	{
 		try
@@ -175,16 +153,6 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		throw new Exception("Expected the check-in call to fail, but it succeeded.");
 	}
 
-	/// <summary>
-	/// Reads the Result-pattern <c>errorCode</c> off a failure.
-	///
-	/// Not from <c>ApiException.Response</c>: NSwag only fills that raw string
-	/// when <c>ReadResponseAsString</c> is on, and this client deserializes
-	/// straight from the stream instead - so <c>Response</c> is <c>""</c> while
-	/// the parsed body sits on <c>Result</c>. <c>errorCode</c> is a
-	/// ProblemDetails extension member (see ResultFailureExceptionHandler), so
-	/// it lands in <c>AdditionalProperties</c> rather than on a typed property.
-	/// </summary>
 	private static string? ErrorCodeOf(ApiException<ProblemDetails> ex)
 	{
 		ex.Result.AdditionalProperties.Should().ContainKey("errorCode",

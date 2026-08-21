@@ -4,12 +4,6 @@ import ConfirmDialog from "./ConfirmDialog";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `EngagementManagementPage_CancelDialog_*`,
- * `OrgEngagementsPage_CancelDialog_*` and
- * `OrgOpportunitiesPage_CancelDialog_*`: three end-to-end journeys whose only
- * a11y-relevant difference was the copy handed to this one component.
- */
 describe("ConfirmDialog a11y", () => {
 	it("has no violations in its resting state", async () => {
 		renderWithProviders(

@@ -3,18 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-/// <summary>
-/// The platform-admin abuse-report list (<c>GET /v1/admin/reports</c>).
-///
-/// Moved down from `AdminReportsTests` in `VisualTests` in #2148. The
-/// regression it guards is entirely backend: `AdminReportReadRepository`
-/// filtered on <c>x.Id.Value</c> inside a still-queryable Where/Select, so
-/// `ListFlaggedTargets` threw at EF query-translation time and the endpoint
-/// answered 500. The browser half only observed the consequence - "Failed to
-/// load reports." not rendering, and the row's Opportunity/Active cells being
-/// the successful response printed out - which is the same fact one layer up,
-/// at the cost of a Chromium context and an admin sign-in.
-/// </summary>
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AdminReportsTests(
@@ -61,14 +49,9 @@ public class AdminReportsTests(
 
 		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
 
-		// The call itself is most of the test: before the fix this threw at
-		// query-translation time rather than returning a page at all.
 		var page = await admin.ListFlaggedTargetsAsync(1, 20, cancellationToken);
 
 		var flagged = page.Items.Should().ContainSingle(item => item.TargetTitle == title).Which;
-		// The DTO's own value, not the cell text: the browser original read
-		// "Opportunity" off the rendered row, which is the translated label for
-		// this discriminator, not the discriminator.
 		flagged.TargetType.Should().Be("VolunteerOpportunity");
 		flagged.IsDeleted.Should().BeFalse();
 		flagged.TargetId.Should().Be(opportunity.Id);

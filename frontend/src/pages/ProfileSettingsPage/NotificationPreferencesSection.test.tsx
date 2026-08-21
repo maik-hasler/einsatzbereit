@@ -3,19 +3,6 @@ import { screen, within } from "@testing-library/react";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import { renderWithProviders } from "../../test/render";
 
-/**
- * `NotificationPreferencesOrganizerRowsTests`, moved down in #2148 wave 12.
- * Remaining inventory: #2159.
- *
- * The whole class is one branch: `organizerRowsVisible = orgs.length > 0 ||
- * orgsFailed`. Two of the five preferences are labelled "... opportunities you
- * organize", so for a volunteer who organizes nothing they describe email that
- * can never fire - they are hidden, and with them the group headings that only
- * make sense when both audiences are present.
- *
- * End-to-end each case signed a user in and loaded /profile/settings to read
- * which rows rendered. Here the org list is a mocked hook return.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../../test/apiMock");
 	return { api: createApiMock() };
@@ -80,8 +67,6 @@ describe("notification preferences for an organization member", () => {
 	it("groups them by audience", async () => {
 		renderSection();
 
-		// The groups are <h3> headings over their own block, not ARIA groups -
-		// scope by each heading's own container.
 		const groupOf = (heading: HTMLElement) => {
 			const block = heading.parentElement;
 			expect(block).not.toBeNull();
@@ -107,8 +92,6 @@ describe("notification preferences for a volunteer without an organization", () 
 	it("hides the two organizer-only preferences", async () => {
 		renderSection();
 
-		// The positive half first, so the absence assertions cannot pass against
-		// a section that rendered nothing at all.
 		for (const label of VOLUNTEER_ROWS) {
 			expect(await screen.findByLabelText(label)).toBeInTheDocument();
 		}
@@ -130,9 +113,6 @@ describe("notification preferences for a volunteer without an organization", () 
 	});
 
 	it("keeps the organizer rows when the organization lookup failed", async () => {
-		// `orgsFailed` deliberately falls open: hiding a real organizer's own
-		// settings is worse than showing two rows to someone who organizes
-		// nothing.
 		useMyOrganizations.mockReturnValue({
 			orgs: [],
 			loading: false,

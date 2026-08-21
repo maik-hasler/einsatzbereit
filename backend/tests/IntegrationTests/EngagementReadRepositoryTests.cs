@@ -548,14 +548,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
-	/// <summary>
-	/// Moved down from <c>VisualTests</c> in einsatzbereit#2148 wave 12
-	/// (#2159). The volunteer's own list splits by scope, and the split is not
-	/// "terminal vs not": a Pending engagement is still upcoming, while a
-	/// Withdrawn one belongs to the past even though its opportunity may be
-	/// months away. The E2E version seeded two opportunities and drove the
-	/// scope tabs to assert it.
-	/// </summary>
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldSplitPendingAndWithdrawn_AcrossUpcomingAndPast(
 		CancellationToken cancellationToken)

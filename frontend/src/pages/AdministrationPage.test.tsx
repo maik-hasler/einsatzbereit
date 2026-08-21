@@ -10,16 +10,6 @@ import AdministrationPage, {
 import ProtectedRoute from "../layouts/ProtectedRoute";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was `AdministrationPageTitleTests` (#2052) and the two direct-navigation
- * cases of `AdministrationNavLinkTests` (#1026, #1774), moved down in #2148
- * wave 2. The account-dropdown half of `AdministrationNavLinkTests` lives in
- * `src/components/Header/AccountControls.test.tsx`.
- *
- * The route tree below mirrors App.tsx's `/administration` block, because the
- * behaviour under test *is* the routing: which component a section URL
- * resolves to, and what a non-admin gets instead.
- */
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
 	return { api: createApiMock() };
@@ -68,9 +58,6 @@ beforeEach(() => {
 });
 
 describe("administration sections", () => {
-	// #2052: all four routes rendered the same document title and h1
-	// ("Administration"), with the section name only appearing as an h2
-	// further down.
 	const sections = [
 		["organizations", "Organizations"],
 		["users", "Users"],
@@ -109,12 +96,6 @@ describe("administration sections", () => {
 
 describe("administration access for a non-admin", () => {
 	it("keeps the page from mounting, stays on the URL, and says why", async () => {
-		// #1026: /administration had no role check at all, so a non-admin who
-		// typed the URL got the page shell with every section failing its API
-		// call. #1774: keeping them out used to mean <Navigate to="/" />, which
-		// silently dumped anyone following a shared admin link on the landing
-		// page, with nothing distinguishing "you may not go there" from "that
-		// link is dead".
 		renderAdministration("/administration", ["user"]);
 
 		expect(
@@ -124,16 +105,10 @@ describe("administration access for a non-admin", () => {
 			screen.getByText(/Your account does not have admin rights/),
 		).toBeInTheDocument();
 
-		// The page itself never mounts - the point of #1026 stands.
 		expect(screen.queryByRole("heading", { name: "Organizations" })).toBeNull();
 
-		// ...and the URL is still the one that was asked for, rather than "/".
 		expect(screen.getByTestId("location")).toHaveTextContent("/administration");
 
-		// AdministrationPage is what would normally set the tab title, and it
-		// is precisely the component being kept from mounting - so the state
-		// has to set one itself, or the address bar says /administration while
-		// the tab says nothing at all.
 		await waitFor(() =>
 			expect(document.title).toBe("Admin rights required | Einsatzbereit"),
 		);
@@ -145,9 +120,6 @@ describe("administration access for a non-admin", () => {
 
 describe("administration loading state", () => {
 	it("shows a labelled pulsing skeleton while the organizations page loads", async () => {
-		// #765: several pages rendered bare, unstyled "Loading..." text while
-		// fetching. The Playwright original delayed the real API call to make
-		// the state observable; here the promise stays pending until resolved.
 		let resolvePage: (value: unknown) => void = () => {};
 		api.listOrganizations.mockReturnValue(
 			new Promise((resolve) => {

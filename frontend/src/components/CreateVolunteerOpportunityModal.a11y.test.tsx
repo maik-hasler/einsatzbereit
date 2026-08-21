@@ -5,12 +5,6 @@ import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations` and
- * `CreateOpportunityModalViewportTests`' a11y half. The scan it replaces only
- * ever saw step 1, because reaching the later steps end-to-end means filling
- * the form through a real browser; here each step is one `Next` away.
- */
 const { api } = vi.hoisted(() => ({
 	api: {
 		createVolunteerOpportunity: vi.fn(),
@@ -19,7 +13,6 @@ const { api } = vi.hoisted(() => ({
 		publishVolunteerOpportunity: vi.fn(),
 		uploadOpportunityBanner: vi.fn(),
 		getVolunteerOpportunityDetails: vi.fn(),
-		// Prefills the location step from the organization's own address.
 		getOrganizationDetails: vi.fn(),
 	},
 }));
@@ -71,8 +64,6 @@ describe("CreateVolunteerOpportunityModal a11y", () => {
 	it("has no violations on every step of the wizard", async () => {
 		open();
 
-		// Step 1 - Basics. Both content languages render a Title/Description
-		// pair; only the German one is required, and it comes first.
 		await userEvent.type(
 			screen.getAllByRole("textbox", { name: /title/i })[0],
 			"Strandreinigung",

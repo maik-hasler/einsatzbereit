@@ -5,18 +5,8 @@ import { renderWithProviders } from "../test/render";
 
 const SUPPORT_EMAIL = "hallo@einsatzbereit.maik-hasler.de";
 
-/**
- * Was `ImprintLegalComplianceTests` (#1339) and the imprint case of
- * `HelpContactImprintContentTests` (#2061) in the Playwright suite, moved
- * down in #2148 wave 2. Both were pinning published copy on a page that
- * fetches nothing.
- */
 describe("ImprintPage", () => {
 	it("publishes a real postal address under the current statutory references", () => {
-		// #1339: the Impressum published "Adresse auf Anfrage" instead of a
-		// permanently available postal address, which German law requires
-		// (former § 5 TMG, now § 5 DDG; former § 55 Abs. 2 RStV, now
-		// § 18 Abs. 2 MStV).
 		renderWithProviders(<ImprintPage />);
 
 		expect(
@@ -27,8 +17,6 @@ describe("ImprintPage", () => {
 				name: "Responsible for content according to § 18 para. 2 MStV",
 			}),
 		).toBeInTheDocument();
-		// Twice: DDG and MStV each require their own statement, so the same
-		// name and address appear in two cards on purpose.
 		expect(screen.getAllByText(/Ammerländer Heerstraße 76/)).toHaveLength(2);
 		expect(screen.getAllByText(/26129 Oldenburg, Germany/)).toHaveLength(2);
 
@@ -57,8 +45,6 @@ describe("ImprintPage", () => {
 	});
 
 	it("reaches support through a role address behind mailto:, with no SLA promise", () => {
-		// #2061: a personal Gmail address shown as unclickable text, carrying a
-		// public 24-hour reply promise one maintainer cannot reliably hold.
 		renderWithProviders(<ImprintPage />);
 
 		expect(screen.getByRole("link", { name: SUPPORT_EMAIL })).toHaveAttribute(

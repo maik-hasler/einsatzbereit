@@ -3,19 +3,8 @@ import { screen } from "@testing-library/react";
 import PrivacyPolicyPage from "./PrivacyPolicyPage";
 import { renderWithProviders } from "../test/render";
 
-/**
- * Was `PrivacyPolicyDisclosureTests` (#1340) plus the privacy-policy case of
- * `ImprintLegalComplianceTests` (#1339), moved down in #2148 wave 2.
- *
- * The page's own axe scan stays in `AccessibilityTests.cs` - it is the
- * surviving smoke for the static-legal-page layout, where contrast and
- * landmark structure are actually evaluable.
- */
 describe("PrivacyPolicyPage", () => {
 	it("discloses the OpenStreetMap and Nominatim transfers", () => {
-		// #1340: the policy claimed "no data is passed on to third parties"
-		// while the app sends every visitor's IP to OSM's tile servers and the
-		// typed city filter to the public Nominatim geocoder.
 		renderWithProviders(<PrivacyPolicyPage />);
 
 		expect(
@@ -46,8 +35,6 @@ describe("PrivacyPolicyPage", () => {
 			"https://operations.osmfoundation.org/policies/nominatim/",
 		);
 
-		// The contradiction itself: the data-sharing section must no longer
-		// make an unqualified "not passed on to third parties" claim.
 		expect(
 			screen.queryByText(
 				/Your personal data will not be passed on to third parties unless/,

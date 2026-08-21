@@ -7,12 +7,6 @@ import type {
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Covers the achievements block scanned end-to-end by
- * `ProfileOverviewPage_*` and `UserProfilePage_*`. Both scans needed a login
- * and a seeded achievement history to reach it; the interesting states here
- * are earned vs. not-earned vs. loading, which are props.
- */
 const catalog: BadgeCatalogEntry[] = [
 	{
 		key: "first-engagement",

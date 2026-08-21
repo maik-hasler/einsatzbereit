@@ -17,15 +17,6 @@ import WarningBanner from "./WarningBanner";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * The design-system primitives listed in frontend/AGENTS.md's "Design System"
- * table. Every page-level Playwright scan that was really checking "does the
- * loading / empty / error / success state of this page have a defect"
- * (`LoadingStateTests`, the three offline scans, the two dashboard
- * load-failure scans, `OpportunityListOffline`) was scanning one of these
- * through several minutes of stack boot and navigation. Covering the
- * primitive once covers every surface that renders it.
- */
 describe("shared primitives a11y", () => {
 	it("Button has no violations across every variant, as a button and as a link", async () => {
 		const variants = [
@@ -197,10 +188,6 @@ describe("shared primitives a11y", () => {
 	});
 
 	it("SkipLink is the bypass mechanism both layouts rely on", async () => {
-		// The Playwright suite keeps the two *focus-movement* assertions
-		// (AppLayout and OrgAppLayout), which need a real browser. What can be
-		// checked here is the half that is pure markup: a real link, named,
-		// pointing at #main-content.
 		renderWithProviders(<SkipLink />);
 		const link = screen.getByRole("link", { name: "Skip to content" });
 		expect(link).toHaveAttribute("href", "#main-content");

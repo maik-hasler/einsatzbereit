@@ -2,16 +2,6 @@ import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { expectNoA11yViolations } from "./a11y";
 
-/**
- * The harness's own negative control.
- *
- * Every other `*.a11y.test.tsx` in this repo asserts that axe found nothing.
- * A suite of those is indistinguishable from a suite where the scanner is
- * quietly broken - a jsdom API axe needs going missing, a rule list widened
- * one entry too far, `axe()` handed a detached node. This file is the check
- * that the gate can still fail, and it is the first thing to look at if the
- * a11y suite ever goes green through a change that should have broken it.
- */
 describe("expectNoA11yViolations", () => {
 	it("passes on markup with nothing wrong", async () => {
 		render(
@@ -35,9 +25,6 @@ describe("expectNoA11yViolations", () => {
 	});
 
 	it("catches an aria-hidden element that is still in the tab order", async () => {
-		// The failure mode the backdrop-button modal pattern exists to avoid,
-		// and the reason setup.ts stubs document.elementsFromPoint - without
-		// that stub axe downgrades this rule to "incomplete" and this passes.
 		render(
 			<button type="button" aria-hidden="true">
 				Close
@@ -47,8 +34,6 @@ describe("expectNoA11yViolations", () => {
 	});
 
 	it("catches a listbox option that wraps an interactive control", async () => {
-		// frontend/AGENTS.md's dropdown convention, in its #1772 failure shape:
-		// role="option" on an <li> that wraps a <button>.
 		render(
 			<ul role="listbox" aria-label="Time slots">
 				<li role="option" aria-selected="false">

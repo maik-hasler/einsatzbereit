@@ -6,11 +6,6 @@ import type { TimeSlotDetail } from "../client/api-client";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 
-/**
- * Replaces `SignUpModal_OpenTimeSlotDropdown_*` and
- * `SignUpModal_ConfirmedTimeSlot_*`, plus the modal half of
- * `VolunteerOpportunityDetailPage_ClickableTimeSlotRows_AsVera_*`.
- */
 const { api } = vi.hoisted(() => ({
 	api: { createEngagement: vi.fn() },
 }));
@@ -85,9 +80,6 @@ describe("SignUpModal a11y", () => {
 			screen.getByRole("button", { name: "Express interest" }),
 		);
 
-		// #1908 replaced the browser's native constraint validation with a
-		// translated inline message - which means the field's aria-invalid /
-		// aria-describedby wiring is now the app's job, not the browser's.
 		const field = screen.getByRole("textbox");
 		expect(field).toHaveAttribute("aria-invalid", "true");
 		expect(field).toHaveAccessibleDescription(

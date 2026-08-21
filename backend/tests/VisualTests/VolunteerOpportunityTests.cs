@@ -21,16 +21,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	/// <summary>
-	/// The single-filter halves of this case moved to
-	/// <c>VolunteerOpportunitiesList.test.tsx</c> in einsatzbereit#2148 wave 8.
-	/// This one stays, and for a reason worth keeping in view:
-	/// <c>updateFilter</c> rebuilds its params from
+	/// Stays end-to-end: <c>updateFilter</c> rebuilds its params from
 	/// <c>window.location.search</c> rather than the functional
-	/// <c>setSearchParams(prev =&gt; ...)</c> form its five sibling handlers all
-	/// use, so it only survives a second filter write under a router that
-	/// writes through to <c>window.location</c>. That makes this the one
-	/// filter case a component test cannot reproduce. Tracked as
-	/// einsatzbereit#2157, which moves this case down once that is fixed.
+	/// <c>setSearchParams(prev =&gt; ...)</c> its siblings use, so a second
+	/// filter write only survives under a router that writes through to
+	/// <c>window.location</c>. Tracked as einsatzbereit#2157.
 	/// </summary>
 	[Test]
 	public async Task MultipleFilters_AllReflectedInUrl()

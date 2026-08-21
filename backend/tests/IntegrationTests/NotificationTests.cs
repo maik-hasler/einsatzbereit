@@ -35,8 +35,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	/// <summary>
-	/// The negative twin of the test above, moved down from <c>VisualTests</c>
-	/// in einsatzbereit#2148 (it opened no page). Regression for #655: an
+	/// The negative twin of the test above. Regression for #655: an
 	/// EngagementCreated notification resolves its title through a live lookup
 	/// of the opportunity, so once that opportunity is deleted the title can no
 	/// longer be resolved and the org-app deep link can no longer be built.
@@ -72,7 +71,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	/// <summary>
-	/// Regression for #2073, also moved down in einsatzbereit#2148. Unlike the
+	/// Regression for #2073. Unlike the
 	/// organizer-facing EngagementCreated notification above, the volunteer's
 	/// own OpportunityDeleted notification is the only way they learn which
 	/// sign-up was affected, so it must not lose its title the same way.

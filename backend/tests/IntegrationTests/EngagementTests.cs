@@ -707,8 +707,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	// ── Deleted opportunity keeps the volunteer's own history (#667) ─────────
 
 	/// <summary>
-	/// Moved down from <c>VisualTests</c> in einsatzbereit#2148 (it opened no
-	/// page). Distinct from the #703 case above, which deletes the row directly
+	/// Distinct from the #703 case above, which deletes the row directly
 	/// and leaves the engagement Pending: this one goes through the normal
 	/// delete flow, which hard-deletes the opportunity while only *cancelling*
 	/// the affected engagements.
@@ -1348,8 +1347,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	/// <summary>
-	/// Moved down from <c>VisualTests</c> in einsatzbereit#2148 (it opened no
-	/// page). Regression for #1215: <c>Engagement.Reactivate(...)</c> used to
+	/// Regression for #1215: <c>Engagement.Reactivate(...)</c> used to
 	/// overwrite <c>CreatedOn</c> with the re-application time, breaking the
 	/// audit-trail invariant that <c>CreatedOn</c> records when a row was first
 	/// created.
@@ -2148,11 +2146,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task ConfirmEngagement_ShouldNotReturn500_WhenAnXTimezoneHeaderIsSent(
 		CancellationToken cancellationToken)
 	{
-		// Moved down from `EngagementTimezoneTests` in #2148. That test had no UI
-		// assertion at all - it opened a page solely to scrape an OIDC access
-		// token out of sessionStorage, then drove a bare HttpClient. The header
-		// path is what is under test: an IANA zone other than the server's own
-		// used to crash the handler before it ever reached the not-found branch.
+		// An IANA zone other than the server's own used to crash the handler
+		// before it reached the not-found branch.
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
 		using var http = fixture.CreateHttpClient();
 		http.DefaultRequestHeaders.Authorization =
@@ -2172,15 +2167,9 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetMyEngagements_ShouldReturnTheReactivatedEngagement_AfterWithdrawAndReapply(
 		CancellationToken cancellationToken)
 	{
-		// Moved down from `EngagementReactivationTests` in #2148. #1215's own
-		// invariant - that re-applying reuses the row and keeps its original
-		// CreatedOn - is already covered by
-		// CreateEngagement_ShouldKeepOriginalCreatedOn_WhenVolunteerReapliesAfterWithdrawal
-		// above. What the browser case added was that the reactivated engagement
-		// is readable again afterwards, which it checked as "some Withdraw button
-		// is visible" - unscoped enough that any other engagement of the same
-		// volunteer satisfied it. Asserted here against the specific engagement
-		// id instead.
+		// #1215's reuse-the-row invariant is covered by
+		// CreateEngagement_ShouldKeepOriginalCreatedOn_... above; this is the
+		// other half - the reactivated engagement is readable again afterwards.
 		var organizerClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(organizerClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(organizerClient, orgId, cancellationToken);

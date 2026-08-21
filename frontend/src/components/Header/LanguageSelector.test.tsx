@@ -4,22 +4,6 @@ import userEvent from "@testing-library/user-event";
 import LanguageSelector from "./LanguageSelector";
 import { renderWithProviders } from "../../test/render";
 
-/**
- * `NavigationTests`' disclosure-semantics case, moved down in #2148 wave 13.
- * Remaining inventory: #2159.
- *
- * #1772: this used to advertise `aria-haspopup="listbox"` and wrap each button
- * in an `<li role="option">` - an axe `nested-interactive` violation on every
- * page (the header carries it everywhere), promising a keyboard model the
- * component never implemented. It is a disclosure: a trigger with
- * `aria-expanded` opening a labelled list of plain buttons, the active one
- * marked with `aria-current`.
- *
- * The existing `.a11y.test.tsx` beside this file scans the same component with
- * axe. What that cannot say is *which* attributes are present - a component
- * that dropped `aria-expanded` entirely is perfectly valid ARIA and still
- * broken. These are the named assertions.
- */
 const renderSelector = (lng: "de" | "en" = "en") =>
 	renderWithProviders(<LanguageSelector />, { lng });
 
@@ -38,7 +22,6 @@ describe("LanguageSelector disclosure semantics", () => {
 		const menu = screen.getByTestId("language-selector-menu");
 		expect(menu.tagName).toBe("UL");
 		expect(menu).toHaveAccessibleName("Switch language");
-		// Neither of the roles the old markup claimed.
 		expect(menu).not.toHaveAttribute("role");
 		expect(menu.querySelectorAll('[role="option"]')).toHaveLength(0);
 		expect(menu.querySelectorAll("[aria-selected]")).toHaveLength(0);
@@ -58,9 +41,6 @@ describe("LanguageSelector disclosure semantics", () => {
 	});
 
 	it("leads its accessible name with the code it visibly shows", () => {
-		// #2072, a WCAG 2.5.3 Label-in-Name fix: the name used to replace the
-		// visible "EN"/"DE" rather than extend it, so a speech-input user saying
-		// "click DE" matched nothing.
 		renderSelector("de");
 
 		const trigger = screen.getByTestId("language-selector-trigger");
