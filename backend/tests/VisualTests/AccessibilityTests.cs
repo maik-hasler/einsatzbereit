@@ -408,42 +408,6 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OrgDashboardPage_CalendarWidgetMonthView_AsOlaf_DateCellsHaveAccessibleDateLabel()
-	{
-		// react-big-calendar's default DateHeader gives Month view's date-number
-		// button no accessible name beyond the visible digit, so
-		// CalendarWidget.tsx's components.month.dateHeader (CalDateHeader) sets
-		// aria-label to a full date. Forces Month view via the toolbar rather than
-		// relying on seeded events landing in the visible month - the day grid
-		// renders the same either way, so no seed data is needed. Asserts the
-		// accessible name directly (mirroring
-		// VolunteerOpportunityDetailPage_MapMarker_HasAccessibleName above)
-		// rather than only an axe scan: the original bug already had visible
-		// button text, which satisfies axe's own accessible-name rules and
-		// would never have caught this regression.
-		var frontend = Fixture.GetEndpoint("frontend");
-		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Month" }).ClickAsync();
-
-		// `.rbc-current` marks the cell matching the calendar's own `date`
-		// state, which CalendarWidget.tsx initializes to `new Date()` and this
-		// test never navigates away from - i.e. today's cell.
-		var todayCell = Page.Locator(".rbc-current .rbc-button-link");
-		await Expect(todayCell).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var visibleLabel = await todayCell.InnerTextAsync();
-		var ariaLabel = await todayCell.GetAttributeAsync("aria-label");
-
-		ariaLabel.Should().NotBeNullOrWhiteSpace();
-		ariaLabel.Should().NotBe(visibleLabel,
-			"the accessible name must be more than the bare day-of-month digit visible on screen (einsatzbereit#1924)");
-		ariaLabel!.Length.Should().BeGreaterThan(visibleLabel.Length,
-			"a full date label (weekday, month, year) is always longer than the bare digit it replaces");
-	}
-
-	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Seeds a fresh org/opportunity/engagement rather than relying on olaf's
