@@ -6,11 +6,18 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-// SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave below needs
-// vera's global Keycloak organisator role deterministically cleared, so the
-// whole class opts into fixture.ResetAsync() and a keyed [NotInParallel] -
-// keyed so only classes sharing "visualtests-db", not the whole assembly,
-// are excluded while this one resets that role.
+// Organizer_CanPromoteAndDemoteMember_ViaMembersPage below needs vera's
+// global Keycloak organisator role deterministically cleared - it asserts her
+// row stops reading "Organizer" after a demote, which a leftover global role
+// would falsify - so the whole class opts into fixture.ResetAsync() and a
+// keyed [NotInParallel], keyed so only classes sharing "visualtests-db", not
+// the whole assembly, are excluded while this one resets that role.
+//
+// einsatzbereit#2148 wave 10 moved the case this comment used to name
+// (SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave) down to
+// OrgMembersPage.test.tsx, along with the rest of the last-organizer guard.
+// The reset stays because the promote/demote case above still depends on it;
+// it is the last thing holding this class's serialisation in place.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]
 public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -106,112 +113,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Expect(Page.GetByText("vera@example.com")).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task SoleMember_MembersPage_ShowsDisabledLeaveInsteadOfRemove()
-	{
-		// The org's sole member must see a disabled "Leave" action on
-		// their own row, never "Remove" - removing them would orphan the org.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual580 Leave", pinnedOrgId!.Value);
-
-		// Via the page header's section rail, not a bare "member" name match -
-		// the Settings widget's member-count link answers to that too.
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
-		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(leaveButton).ToBeDisabledAsync();
-
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).Not.ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task SoleOrganizer_MembersPage_LeaveButtonHintIsProgrammaticallyAssociated()
-	{
-		// Native `disabled` removes the button from the tab order, so a `title`
-		// tooltip would be mouse-only. The visible hint must be wired to the button
-		// via aria-describedby, not just placed nearby, so a screen reader's
-		// virtual cursor reaches it too.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual1926 LeaveHint", pinnedOrgId!.Value);
-
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
-		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(leaveButton).ToBeDisabledAsync();
-
-		var describedBy = await leaveButton.GetAttributeAsync("aria-describedby");
-		describedBy.Should().NotBeNullOrEmpty();
-
-		var hint = Page.Locator($"#{describedBy}");
-		await Expect(hint).ToBeVisibleAsync();
-		await Expect(hint).ToContainTextAsync(
-			"Remove the other members first, then you can delete the organization in settings.");
-
-		// The hint states the full leave-org-to-delete-org path (#2074): the
-		// "settings" word is a live link straight to this org's settings tab,
-		// not just prose telling the user to go find it themselves. Read the
-		// active org's id from the URL, not pinnedOrgId - CreateOrganizationAsync
-		// switched into a brand-new org with its own id.
-		var organizationId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
-		await Expect(hint.GetByRole(AriaRole.Link, new() { Name = "settings" })).ToHaveAttributeAsync(
-			"href",
-			$"/app/{organizationId}/dashboard/settings");
-	}
-
-	[Test]
-	public async Task SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave()
-	{
-		// The "last organizer" guard must count organizers, not members: one
-		// Organizer plus one plain member would otherwise let the Organizer leave and
-		// orphan the org, with no path left to promote the remaining member.
-		// isOrganisator comes from Keycloak's *global* role, so this is deterministic
-		// only because fixture.ResetAsync() clears vera's copy first. The backend
-		// guard is covered in IntegrationTests.OrganizationSettingsTests.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual825 TwoMember", pinnedOrgId!.Value);
-
-		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
-		match.Success.Should().BeTrue();
-		var organizationId = Guid.Parse(match.Groups[1].Value);
-
-		// Accepting an invitation also grants Organizer, so that flow cannot
-		// produce a plain-member-only state - use the fixture's direct Keycloak
-		// escape hatch, same as IntegrationTestFixture.AddPlainMemberDirectlyAsync.
-		var vera = await Fixture.SignInAsync("vera", "vera123");
-		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
-
-		// OrgAppLayout only refetches org details on organizationId change, so
-		// the dashboard we're still on would otherwise keep showing its
-		// pre-membership snapshot (olaf as sole member) - force a refetch.
-		await Page.ReloadAsync();
-
-		// Via the page header's section rail, not a bare "member" name match -
-		// the Settings widget's member-count link answers to that too.
-		await Page.GetByTestId("org-tab-members").ClickAsync();
-
-		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
-		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(leaveButton).ToBeDisabledAsync();
-
-		// Unlike the sole-member case, a second member exists to remove -
-		// proving the guard is driven by organizer count, not member count.
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -619,78 +520,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "https://visual712.example.com" }))
 			.ToBeVisibleAsync();
 		await Expect(Page.GetByText("Main Street 1, 12345 Berlin")).ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task CreateOrganizationModal_NameRequired_BlocksSubmitWithInlineError()
-	{
-		// The create-organization form uses the same react-hook-form + zod approach
-		// as the volunteer-opportunity wizard, so submitting blank must block
-		// client-side with a styled inline error rather than a native tooltip or a
-		// server round-trip.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-
-		var createDialog = Page.GetByRole(AriaRole.Dialog);
-		await Expect(createDialog).ToBeVisibleAsync();
-
-		await createDialog.GetByTestId("modal-submit").ClickAsync();
-
-		await Expect(createDialog.Locator("#create-org-name-error")).ToBeVisibleAsync(
-			new() { Timeout = 5_000 });
-		await Expect(createDialog.Locator("#create-org-name")).ToHaveAttributeAsync(
-			"aria-invalid", "true");
-
-		// Blocked client-side - the dialog is still open, nothing was created.
-		await Expect(createDialog).ToBeVisibleAsync();
-
-		await createDialog.GetByTestId("modal-cancel").ClickAsync();
-	}
-
-	[Test]
-	public async Task CreateOrganizationModal_PartialAddress_ShowsInlineErrorsForMissingFields()
-	{
-		// Address.Create requires street/houseNumber/zipCode/city together, and the
-		// shared zod schema (organizationFormSchema.ts) mirrors that
-		// conditional-required rule client-side, so a partial address must not
-		// round-trip to the server to fail.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var orgName = $"Visual851 PartialAddress {Guid.NewGuid():N}";
-
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-
-		var createDialog = Page.GetByRole(AriaRole.Dialog);
-		await Expect(createDialog).ToBeVisibleAsync();
-
-		await createDialog.Locator("#create-org-name").FillAsync(orgName);
-		await createDialog.Locator("#create-org-street").FillAsync("Main Street");
-
-		await createDialog.GetByTestId("modal-submit").ClickAsync();
-
-		await Expect(createDialog.Locator("#create-org-house-number-error")).ToBeVisibleAsync(
-			new() { Timeout = 5_000 });
-		await Expect(createDialog.Locator("#create-org-zip-error")).ToBeVisibleAsync();
-		await Expect(createDialog.Locator("#create-org-city-error")).ToBeVisibleAsync();
-
-		// Blocked client-side - the dialog is still open, nothing was created.
-		await Expect(createDialog).ToBeVisibleAsync();
-
-		// Name/street were filled in above, so Cancel must ask for confirmation
-		// rather than silently discarding them.
-		await createDialog.GetByTestId("modal-cancel").ClickAsync();
-		var discardBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" });
-		await Expect(discardBtn).ToBeVisibleAsync();
-		await discardBtn.ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
