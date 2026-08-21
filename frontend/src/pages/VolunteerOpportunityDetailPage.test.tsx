@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router";
@@ -163,5 +163,130 @@ describe("opportunity detail page content language", () => {
 		expect(await screen.findByText("Deutscher Titel")).toBeInTheDocument();
 		expect(screen.getByText("Deutsche Beschreibung.")).toBeInTheDocument();
 		expect(screen.queryByText("English Title")).toBeNull();
+	});
+});
+
+/**
+ * The detail-page cases from `VolunteerOpportunityTests`,
+ * `MissingCoordinatesFallbackTests` and `SlotRowSignUpTests`, moved down in
+ * #2148 wave 12. Remaining inventory: #2159.
+ *
+ * All of these are conditional rendering over the details payload plus the
+ * viewer's auth state - both render arguments here, where end-to-end each
+ * needed an organization and an opportunity seeded over four sequential API
+ * calls first.
+ */
+const scheduledSlots = {
+	...details,
+	participationType: "ScheduledSlots",
+	timeSlots: [
+		{
+			id: "aaaaaaaa-0000-0000-0000-000000000001",
+			startDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+			endDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+			maxParticipants: 5,
+			bookedCount: 0,
+		},
+		{
+			id: "aaaaaaaa-0000-0000-0000-000000000002",
+			startDateTime: new Date(Date.UTC(2027, 0, 21, 9, 0)),
+			endDateTime: new Date(Date.UTC(2027, 0, 21, 12, 0)),
+			maxParticipants: 5,
+			bookedCount: 0,
+		},
+	],
+};
+
+describe("opportunity detail page at-a-glance panel", () => {
+	it("states the next slot's real date and the slot count for scheduled slots", async () => {
+		// The WANN fact has to be the next upcoming slot's start, not a repeat
+		// of the occurrence - "One-time" told a reader nothing they could plan
+		// around.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		const when = await screen.findByTestId("opportunity-detail-when");
+		expect(when.textContent).toMatch(/\d/);
+		expect(when).not.toHaveTextContent(/^One-time$/);
+		expect(screen.getByTestId("opportunity-detail-how")).toHaveTextContent(
+			"2 time slots",
+		);
+	});
+
+	it("states the application deadline for an interest-based opportunity", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),
+		});
+
+		renderDetail("en");
+
+		expect(
+			await screen.findByTestId("opportunity-detail-when"),
+		).toHaveTextContent("Express interest by");
+		expect(screen.getByTestId("opportunity-detail-how")).toHaveTextContent(
+			"By expression of interest",
+		);
+		expect(screen.getByTestId("opportunity-occurrence")).toHaveTextContent(
+			"One-time",
+		);
+	});
+});
+
+describe("opportunity detail page anonymous visitor", () => {
+	it("offers a primary sign-in call to action", async () => {
+		renderDetail("en");
+
+		const signIn = await screen.findByTestId("opportunity-signin");
+		expect(signIn).toHaveTextContent("Sign in");
+		// A className membership check, which is what the E2E asserted too
+		// (ToContainClassAsync) - not a computed style, so jsdom answers it
+		// identically.
+		expect(signIn).toHaveClass("bg-brand-700");
+	});
+
+	it("still lists the time slots, but none of them as a control", async () => {
+		// `clickable` is gated on showSignUpCta, so an anonymous viewer has no
+		// sign-up action for a row to trigger and the row renders as a plain
+		// div - the `opportunity-time-slot-row` test id exists only on the
+		// button branch. Asserting the section and its slots are present first
+		// is what keeps the absence half honest: on its own it would pass
+		// against a page that rendered no slots at all.
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		const section = await screen.findByTestId("opportunity-time-slots");
+		expect(within(section).getAllByRole("listitem")).toHaveLength(2);
+		expect(within(section).queryAllByRole("button")).toHaveLength(0);
+		expect(screen.queryAllByTestId("opportunity-time-slot-row")).toHaveLength(
+			0,
+		);
+	});
+});
+
+describe("opportunity detail page without coordinates", () => {
+	it("collapses the map and offers directions by address instead", async () => {
+		// The map is gated on latitude and longitude both being present. Without
+		// them the section used to render an empty frame; the directions link is
+		// the escape hatch that still has to work.
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			isRemote: false,
+			latitude: undefined,
+			longitude: undefined,
+		});
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByTestId("opportunity-map")).toBeNull();
+
+		const directions = screen.getByTestId("opportunity-directions-link");
+		const href = directions.getAttribute("href") ?? "";
+		expect(href).toContain("google.com/maps");
+		// Addressed by text, since there are no coordinates to point at.
+		expect(decodeURIComponent(href)).toContain("Kiel");
 	});
 });

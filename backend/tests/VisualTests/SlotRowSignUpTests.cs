@@ -99,25 +99,6 @@ public class SlotRowSignUpTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(statusCard.GetByText($"Scheduled: {clickedRangeText}")).ToBeVisibleAsync();
 	}
 
-	[Test]
-	public async Task SlotRow_IsNotClickable_ToAnonymousVisitor()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var opportunityId = await CreateScheduledSlotsOpportunityAsync("AnonSlotRow", slotCount: 1);
-		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
-
-		await Page.GotoAsync(detailUrl);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// The time-slot list itself must still render for an anonymous visitor -
-		// there is just nothing for them to sign up with yet (no sign-up action
-		// exists for a signed-out visitor), so the row carries no button role.
-		await Expect(Page.GetByTestId("opportunity-time-slots")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("opportunity-time-slot-row")).ToHaveCountAsync(0);
-	}
-
 	private async Task<string> CreateScheduledSlotsOpportunityAsync(string label, int slotCount)
 	{
 		var backend = Fixture.GetEndpoint("backend");
