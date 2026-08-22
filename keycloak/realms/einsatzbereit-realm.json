@@ -85,13 +85,13 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "redirectUris": [
-        "https://einsatzbereit.maik-hasler.de/callback"
+        "${KC_FRONTEND_URL}/callback"
       ],
       "webOrigins": [
-        "https://einsatzbereit.maik-hasler.de"
+        "${KC_FRONTEND_URL}"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "https://einsatzbereit.maik-hasler.de",
+        "post.logout.redirect.uris": "${KC_FRONTEND_URL}",
         "pkce.code.challenge.method": "S256"
       },
       "protocol": "openid-connect",

@@ -46,9 +46,9 @@ server {
 	# The privacy policy (privacyPolicy.section2Body4) states visitor IP addresses
 	# are never stored - true for the backend's in-memory rate limiter and scoped
 	# HttpLogging, but nginx's base image (nginx:1.31-alpine) otherwise applies its
-	# default access-log format, which includes the client IP, and every container's
-	# stdout is forwarded to Loki (einsatzbereit#1730). Disabled here to keep that
-	# claim accurate.
+	# default access-log format, which includes the client IP, and container stdout
+	# is routinely collected (einsatzbereit#1730). Disabled here to keep that claim
+	# accurate.
 	access_log off;
 
 	add_header X-Content-Type-Options "nosniff" always;
@@ -118,7 +118,7 @@ server {
 	# without both, the browser refuses to render it in that iframe regardless
 	# of frame-src on the parent. Cache-Control matches /index.html above for
 	# the same reason: this HTML references a content-hashed JS filename that
-	# changes on every deploy, so it must never be served stale from cache.
+	# changes on every release, so it must never be served stale from cache.
 	location = /silent-renew.html {
 		add_header Cache-Control "no-store" always;
 		add_header X-Content-Type-Options "nosniff" always;
@@ -157,11 +157,11 @@ server {
 	}
 
 	# A sitemap must be served from the same host as the URLs it lists, or crawlers
-	# reject its entries - but the backend (api.maik-hasler.de) and this frontend
-	# (einsatzbereit.maik-hasler.de) are different subdomains in production, and the
-	# sitemap's content is DB-backed (published opportunities/organizations), so it
-	# can't be a static file here either (einsatzbereit#1092). Proxied instead, over
-	# the "proxy" Docker network both containers already share.
+	# reject its entries - but the backend and this frontend are reached under
+	# different hostnames, and the sitemap's content is DB-backed (published
+	# opportunities/organizations), so it can't be a static file here either
+	# (einsatzbereit#1092). Proxied instead, over the container network both
+	# already share.
 	#
 	# proxy_pass's target is a variable ($backend_upstream), not the literal
 	# "http://backend:8080" - with a literal, nginx resolves "backend" once at

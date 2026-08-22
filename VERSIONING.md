@@ -58,6 +58,8 @@ See the Tag Format table and Examples above for the `-rc.<n>` suffix. Unlike sta
 3. Push tag: `git push origin v1.0.0`
 4. GitHub Actions builds and pushes all three Docker images automatically
 
+Publishing the images is where this repository's release process ends. What runs a published tag, and where, lives outside this repository.
+
 ## Release Notes
 
 Every tag (stable and `-rc.N`) gets a [GitHub Release](https://github.com/maik-hasler/einsatzbereit/releases)

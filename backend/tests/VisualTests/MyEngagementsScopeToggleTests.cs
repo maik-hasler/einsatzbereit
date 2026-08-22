@@ -7,7 +7,7 @@ namespace VisualTests;
 /// "Past") is a hand-rolled segmented control whose two segments sized to their
 /// own label content only (no width-equalizing utility), so the longer
 /// "Current &amp; upcoming" segment rendered visibly wider than "Past" - nearly
-/// 2:1 on live staging (162px vs. 87px in a 259px track). Fixed by making the
+/// 2:1 as rendered (162px vs. 87px in a 259px track). Fixed by making the
 /// track a CSS Grid with two minmax(0,1fr) columns, so it renders both segments
 /// at the width of the wider one regardless of label length. An equal-width
 /// flex-1 track (the original #1836 fix) has the same shrink-to-fit total

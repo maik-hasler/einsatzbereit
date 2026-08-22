@@ -6,7 +6,7 @@ namespace IntegrationTests;
 
 // Regression coverage for #1332: GetClientIp used to read X-Forwarded-For directly,
 // trusting it unconditionally with no verification that the immediate caller was
-// actually the deployment's own reverse proxy - any client could set a different
+// actually the runtime's own reverse proxy - any client could set a different
 // value per request and get a fresh anonymous rate-limit bucket every time.
 //
 // The real defense now lives in ForwardedHeadersMiddleware (Program.cs +

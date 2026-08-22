@@ -68,7 +68,7 @@ include::../images/technical-context.puml[]
 
 |Backend → SMTP mail server
 |Outbound
-|The backend sends notification and reminder emails via SMTP (Mailpit locally, a real SMTP relay on staging).
+|The backend sends notification and reminder emails via SMTP (Mailpit locally, a real SMTP relay otherwise).
 
 |Backend → Object storage (MinIO / S3)
 |Outbound
@@ -76,7 +76,7 @@ include::../images/technical-context.puml[]
 
 |GitHub Actions → GHCR
 |Outbound
-|On a version tag (`vX.Y.Z` or `vX.Y.Z-rc.N`), CI builds Docker images and publishes them to GitHub Container Registry; RC tags additionally deploy to staging.
+|On a version tag (`vX.Y.Z` or `vX.Y.Z-rc.N`), CI builds Docker images and publishes them to GitHub Container Registry.
 |===
 
 .Mapping: Business Interface → Technical Interface

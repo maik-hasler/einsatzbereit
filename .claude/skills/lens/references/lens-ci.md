@@ -13,8 +13,8 @@ the point.
    which workflow enforces it, on which trigger? Build the matrix.
    Holes = things a PR can break silently.
 2. **Trigger & path-filter correctness:** do `paths:` filters match the
-   actual layout? A filter like `backend/**` that misses
-   `docker-compose.yml` or the realm JSON lets relevant changes skip CI.
+   actual layout? A filter like `backend/**` that misses the realm JSON
+   lets relevant changes skip CI.
    Conversely: workflows running on changes they cannot be affected by.
 3. **Cross-workflow duplication:** same steps re-implemented in several
    workflows (checkout+setup blocks are fine; duplicated *logic* like

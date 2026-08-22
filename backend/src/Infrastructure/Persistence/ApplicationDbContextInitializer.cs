@@ -58,19 +58,18 @@ internal sealed class ApplicationDbContextInitializer(
 	{
 		// Skipping is still the right behavior - re-seeding a populated database
 		// would have to delete rows that are no longer demo data - but it is no
-		// longer silent (#1776). Staging kept serving an English demo data set for
-		// months after the seed set was translated to German, because this guard
-		// trips on every restart of a long-lived environment and nothing anywhere
-		// said the seed set had not been applied. The only way to pick up a changed
-		// seed set is to wipe the database (staging: reset-staging.yml), so the one
-		// signal that makes that decidable is this log line.
+		// longer silent (#1776). A long-lived environment kept serving an English demo
+		// data set for months after the seed set was translated to German, because this
+		// guard trips on every restart and nothing anywhere said the seed set had not
+		// been applied. The only way to pick up a changed seed set is to wipe the
+		// database, so the one signal that makes that decidable is this log line.
 		var existingOrganizations = await dbContext.Set<Organization>().CountAsync(cancellationToken);
 		if (existingOrganizations > 0)
 		{
 			logger.LogWarning(
 				"Seeding skipped: {OrganizationCount} organization(s) already exist, so the current seed set has NOT "
 				+ "been applied and this environment is serving whatever it was first seeded with. Wipe the database "
-				+ "to pick up a changed seed set (staging: .github/workflows/reset-staging.yml).",
+				+ "to pick up a changed seed set.",
 				existingOrganizations);
 			return;
 		}
@@ -100,7 +99,7 @@ internal sealed class ApplicationDbContextInitializer(
 		// ApplyPubliclyListedFilters), so this is added alongside the future slot above
 		// rather than instead of it. Lets Vera's second sign-up below land as a genuinely
 		// reachable "past, checked-in, awaiting feedback" engagement instead of leaving
-		// that state only reachable as staging test debris. AddTimeSlot/TimeSlot.Create
+		// that state only reachable as accumulated test debris. AddTimeSlot/TimeSlot.Create
 		// validates startDateTime against the "now" it is given, not DateTimeOffset.UtcNow,
 		// so an artificial anchor before the slot's own start satisfies that check while the
 		// persisted dates stay genuinely in the past.
@@ -277,8 +276,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 	// Slot times are pinned to a fixed hour of day instead of inheriting
 	// DateTimeOffset.UtcNow's time-of-day. Otherwise every seeded shift starts at
-	// whatever o'clock the seeder happened to run - staging ended up advertising
-	// 23:05-03:05 "shifts" across the whole demo data set, which reads as a bug
+	// whatever o'clock the seeder happened to run - a seeded environment ended up
+	// advertising 23:05-03:05 "shifts" across the whole demo data set, which reads as a bug
 	// rather than as sample content.
 	private static DateTimeOffset DayAt(DateTimeOffset from, int daysAhead, int hourUtc) =>
 		new DateTimeOffset(from.UtcDateTime.Date, TimeSpan.Zero)

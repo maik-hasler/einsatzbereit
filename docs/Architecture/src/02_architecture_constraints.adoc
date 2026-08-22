@@ -11,13 +11,13 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Constraint |Rationale
 
 |Docker required for local development
-|The .NET Aspire AppHost provisions the local service containers (see <<section-concepts>> under Development and Build for the one-command orchestration), which requires Docker on every contributor machine. Docker Compose is the deployment mechanism (see chapter 7), not the local-development one.
+|The .NET Aspire AppHost provisions the local service containers (see <<section-concepts>> under Development and Build for the one-command orchestration), which requires Docker on every contributor machine.
 
 |GNU AGPL v3.0 license
-|All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform - including modifications - must be released under the same license.
+|All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any modification of the platform offered over a network must be released under the same license.
 
 |Self-hosted runtime - no US cloud dependencies for user data
-|Keycloak, PostgreSQL, and object storage run self-hosted; no US-based cloud provider (AWS, Azure, Google Cloud) handles user data, ensuring data sovereignty and GDPR compliance. Source hosting, CI/CD, and container image distribution use GitHub and GHCR.
+|Keycloak, PostgreSQL, and object storage run self-hosted; no US-based cloud provider (AWS, Azure, Google Cloud) handles user data, ensuring data sovereignty and GDPR compliance. Source hosting, CI, and container image distribution use GitHub and GHCR.
 
 |PlantUML for architecture diagrams
 |All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.

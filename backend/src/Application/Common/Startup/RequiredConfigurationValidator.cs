@@ -3,8 +3,8 @@ namespace Application.Common.Startup;
 // appsettings.json ships dev-friendly fallbacks (a working Postgres
 // superuser connection string, a plain-http Keycloak authority) so local
 // dev works with zero configuration. Those same fallbacks also ship inside
-// the production Docker image - if a deployment's env var override is ever
-// dropped or misspelled, the app would otherwise start up fine and connect
+// the released Docker image - if an env var override is ever dropped or
+// misspelled, the app would otherwise start up fine and connect
 // with dev credentials/plain http instead of failing loudly. Only
 // Development is allowed to fall back silently.
 public static class RequiredConfigurationValidator

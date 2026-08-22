@@ -9,7 +9,7 @@ import {
 // that is what the generated client actually hands callers at runtime (it
 // parses responses with a plain JSON.parse and no reviver), even though it
 // types these fields as Date. Constructing the fixtures the way the DTO's
-// TypeScript type suggests would test a shape production never sees.
+// TypeScript type suggests would test a shape the app never sees.
 function makeOpportunity(
 	overrides: Partial<VolunteerOpportunitySummary>,
 ): VolunteerOpportunitySummary {

@@ -3,7 +3,7 @@
 // worker precached the entire build as one unit (globPatterns: "**/*.js"
 // etc.), so a one-line change to any single page rehashed the whole ~1.3 MB
 // bundle and forced every returning visitor to re-download all of it on the
-// next deploy. The fix is route-based code splitting (src/App.tsx lazy()
+// next release. The fix is route-based code splitting (src/App.tsx lazy()
 // imports) plus scoping the precache manifest to only the entry chunk and
 // the stable vendor chunks, with route chunks served via a runtime
 // StaleWhileRevalidate cache instead. Purely static checks - no build
@@ -100,7 +100,7 @@ if (!workboxMatch) {
 
 // 3. manualChunks must isolate react/react-dom and react-router into their
 // own stably-named chunks, or vendor code stays entangled with page code
-// and every deploy invalidates far more than the changed page.
+// and every release invalidates far more than the changed page.
 const buildMatch = viteConfig.match(/build:\s*\{[\s\S]*?manualChunks\s*\([\s\S]*?\n\t\t\t\t\},/);
 if (!buildMatch) {
 	fail(

@@ -5,13 +5,13 @@ namespace Api.Common.Network;
 // RFC1918 private range - safe in every environment this backend actually runs in,
 // since a genuine off-host attacker can never make a real network connection whose
 // source address falls in these ranges (see einsatzbereit#1332):
-//   - Staging/production: Traefik is the only thing that can reach the backend
-//     container at all (no host port is published - see docker-compose.yml), and
-//     it always connects from the shared "proxy" Docker network, a private range.
+//   - Behind a reverse proxy: the proxy is the only thing that can reach the
+//     backend container at all (it publishes no host port), and it always connects
+//     from a container network in a private range.
 //   - Local dev / IntegrationTests / VisualTests (Aspire AppHost): the backend is
 //     only ever reached over loopback.
 // Anything arriving from outside these ranges is, by construction, not the
-// deployment's own reverse proxy - its X-Forwarded-For is ignored entirely rather
+// runtime's own reverse proxy - its X-Forwarded-For is ignored entirely rather
 // than trusted, closing the anonymous-rate-limit bypass this header enabled.
 internal sealed class TrustedNetworksOptions
 {

@@ -45,10 +45,10 @@ Keep the request client-side but rewrite the host via a CDN or edge function so 
 ** Avoids adding load to the application backend
 * Cons
 ** The visitor's IP address is still what the CDN/edge forwards upstream unless the edge itself proxies with its own IP, which most CDN rewrite features do not do by default - so this does not reliably solve the actual privacy problem
-** Introduces a second infrastructure component and deployment dependency (the CDN/edge config) for a project that otherwise has no CDN
+** Introduces a second infrastructure component (the CDN/edge config) for a project that otherwise has no CDN
 
 === Consequences
 * Map tiles and city search now depend on the backend being reachable; if the backend is down, the map and city autocomplete degrade along with the rest of the app instead of failing independently.
-* The in-memory tile cache is per-instance and cleared on restart or redeploy - acceptable at current scale, but if the backend is ever scaled to multiple instances without a shared cache, cache hit rates (and OpenStreetMap's usage-policy compliance) would need revisiting with a distributed cache.
+* The in-memory tile cache is per-instance and cleared on restart - acceptable at current scale, but if the backend is ever scaled to multiple instances without a shared cache, cache hit rates (and OpenStreetMap's usage-policy compliance) would need revisiting with a distributed cache.
 * The privacy policy's OpenStreetMap/Nominatim disclosure subsection (added by PR #1409) now describes the pre-proxy architecture and should be revisited separately to reflect that visitor IP addresses are no longer transmitted to these third parties directly.
 * Adding a third external service integration (alongside Keycloak and Nominatim geocoding) to the same typed-HttpClient pattern keeps `Infrastructure/ServiceCollectionExtensions.cs` consistent, at the cost of one more outbound dependency the backend must handle failures for gracefully (both new services return null/empty on failure rather than throwing, matching `NominatimGeocodingService.GeocodeAsync`).

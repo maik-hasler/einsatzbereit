@@ -26,12 +26,4 @@ The following table lists the relevant risks and technical debts. Each risk or t
 |2026-07-18
 |link:TDRs/2_slow_ci_pipeline.html[Slow CI Pipeline]
 
-|3
-|Shared Staging/Production Host
-|Only one deployed host exists; `deploy-staging` and `deploy-production` both target it, so there is no isolation between release-candidate testing and real production traffic once one exists.
-|Medium
-|Identified
-|2026-08-03
-|link:TDRs/3_shared_staging_production_host.html[Shared Staging/Production Host]
-
 |===

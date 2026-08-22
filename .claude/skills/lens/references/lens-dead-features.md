@@ -20,9 +20,8 @@ a *capability*, not a symbol.
 3. **Write-only data:** entity properties that are set but never read in
    any handler, projection, or frontend display. Trace both directions.
 4. **Toggles and config:** feature flags, config switches, or env vars
-   that are read but constant in every environment (`.env.example`,
-   docker-compose, AppHost, workflow env) - the disabled arm is a dead
-   feature.
+   that are read but constant in every environment (AppHost, workflow
+   env, appsettings) - the disabled arm is a dead feature.
 5. **Half-features:** UI elements that render but lead nowhere (buttons
    without handlers, modals never opened - search each modal component
    for its open-trigger), i18n strings for flows that don't exist.

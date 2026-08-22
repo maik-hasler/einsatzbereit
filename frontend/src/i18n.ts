@@ -41,7 +41,7 @@ void i18next
 		// this, `document.documentElement.lang = i18next.language` below
 		// runs before the language is resolved at all, briefly setting
 		// lang="undefined" on every page load until the languageChanged
-		// listener corrects it - a real, deterministic race, not staging
+		// listener corrects it - a real, deterministic race, not test
 		// noise.
 		initAsync: false,
 		detection: {

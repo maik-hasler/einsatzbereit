@@ -36,7 +36,7 @@ PostgreSQL extension for proper spatial types and indexes.
 ** True geodesic accuracy and GiST/SP-GiST spatial indexes
 ** First-class spatial operators directly in EF Core via NetTopologySuite
 * Cons
-** Requires a Postgres extension to be enabled in every environment (production, dev via Aspire, Testcontainers in CI)
+** Requires a Postgres extension to be enabled in every environment (dev via Aspire, Testcontainers in CI, and any other runtime)
 ** Additional EF Core package (`Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite`)
 ** Operational complexity and migration noise not justified at current scale
 

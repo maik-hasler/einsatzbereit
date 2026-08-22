@@ -12,7 +12,7 @@ namespace VisualTests;
 /// through the API (the established convention in this file's siblings), but the
 /// state transition itself under test is a real button click, so a frontend
 /// regression in the confirm button's payload, its optimistic update, or its
-/// error handling would actually fail a test instead of reaching production
+/// error handling would actually fail a test instead of reaching a release
 /// unnoticed. Signing up itself already has E2E coverage elsewhere
 /// (OpportunityApplicationStateTests.cs), so it isn't repeated here.
 /// </summary>

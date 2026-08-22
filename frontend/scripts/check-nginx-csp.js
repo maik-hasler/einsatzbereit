@@ -57,7 +57,7 @@ if (!mapMatch) {
 	// Regression for #2042: frame-src without 'self' blocks the hidden iframe
 	// automaticSilentRenew/signinSilent() load for silent_redirect_uri
 	// (src/main.tsx, same-origin - see src/silentRenew.ts), breaking silent SSO
-	// and automatic token renewal in production while looking fine locally
+	// and automatic token renewal in the released image while looking fine locally
 	// (the dev server sends no CSP header at all).
 	const frameSrcMatch = policy.match(/frame-src ([^;]+);/);
 	if (!frameSrcMatch || !frameSrcMatch[1].split(" ").includes("'self'")) {
@@ -103,7 +103,7 @@ for (const line of cspHeaderLines) {
 
 // 3. Every ${CSP_*} variable referenced in the template must actually be
 // passed to the envsubst call that renders it - otherwise it's left as a
-// literal, unexpanded "${CSP_...}" placeholder in production.
+// literal, unexpanded "${CSP_...}" placeholder in the running container.
 const templateVars = [...new Set(template.match(/\$\{CSP_[A-Z_]+\}/g) ?? [])];
 
 const envsubstMatch = entrypoint.match(
@@ -119,7 +119,7 @@ if (!envsubstMatch) {
 		if (!envsubstVars.has(templateVar)) {
 			fail(
 				`nginx.conf.template references ${templateVar} but 99-runtime-config.sh's envsubst call ` +
-					"does not include it in its variable list, so it will be left unexpanded in production.",
+					"does not include it in its variable list, so it will be left unexpanded at container start.",
 			);
 		}
 	}

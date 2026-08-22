@@ -1,8 +1,8 @@
 # Keycloak Docker Image
 
-## Production (`Dockerfile`)
+## Released image (`Dockerfile`)
 
-Optimized multi-stage image. The values actually used on staging/production are set in `docker-compose.yml`'s `keycloak` service and sourced from `.env` - both now live in the separate `mgmt-hetzner` repo (`apps/einsatzbereit/docker-compose.yml`, `apps/einsatzbereit/.env.example`), not here. This table documents what each variable is for, it is not a second source of truth.
+Optimized multi-stage image, configured entirely through environment variables at container start. This table documents what each variable is for; whoever runs the image supplies the values.
 
 | Variable | Purpose | Example |
 |---|---|---|
@@ -12,6 +12,7 @@ Optimized multi-stage image. The values actually used on staging/production are 
 | `KC_DB_PASSWORD` | Database password | `secret` |
 | `KC_BOOTSTRAP_ADMIN_USERNAME` | Master-realm admin username | `admin` |
 | `KC_BOOTSTRAP_ADMIN_PASSWORD` | Master-realm admin password | - |
+| `KC_FRONTEND_URL` | Resolves the `${KC_FRONTEND_URL}` placeholders in the imported realm (the `frontend` client's redirect URI, web origin and post-logout redirect URI) | `https://app.example.com` |
 | `KEYCLOAK_BACKEND_SECRET` | Resolves the `${KEYCLOAK_BACKEND_SECRET}` placeholder in the imported realm (the `backend` client's secret) | - |
 | `KC_SMTP_HOST` | Resolves the realm's `smtpServer` host placeholder so `verifyEmail`/`resetPasswordAllowed` can send mail | `smtp.example.com` |
 | `KC_SMTP_PORT` | SMTP port | `587` |
@@ -20,7 +21,7 @@ Optimized multi-stage image. The values actually used on staging/production are 
 | `KC_SMTP_PASSWORD` | SMTP auth password | - |
 | `KC_PROXY_HEADERS` | Trust `X-Forwarded-*` from the reverse proxy in front of Keycloak | `xforwarded` |
 
-`KEYCLOAK_BACKEND_SECRET` and the `KC_SMTP_*` values share the same underlying secrets as the backend's own `Keycloak__ClientSecret` and `Smtp__*` settings - see mgmt-hetzner's `apps/einsatzbereit/docker-compose.yml` and `keycloak/AGENTS.md` for how the realm resolves them at import time.
+`KEYCLOAK_BACKEND_SECRET` and the `KC_SMTP_*` values must match the backend's own `Keycloak__ClientSecret` and `Smtp__*` settings - see `keycloak/AGENTS.md` for how the realm resolves `${VAR}` placeholders at import time.
 
 ## Local development
 

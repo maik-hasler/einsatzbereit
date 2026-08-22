@@ -309,7 +309,6 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
-            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -321,23 +320,26 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   # Runs the exact same lint/format/i18n/nginx-header/type-check/unit-test/
-  # production-container-smoke-test gate as frontend.yml's PR/push gate,
-  # against the real maik-hasler.de origins this release will actually be
-  # deployed with - see #1733: before this, publish-frontend below ran only
-  # pnpm lint/check/test/build inline and never built or smoke-tested the
-  # production nginx image at all, so the release path skipped the nginx
-  # CSP/HSTS/Permissions-Policy checks and the image build guarding the
-  # artifact actually being pushed and deployed.
+  # container smoke-test gate as frontend.yml's PR/push gate - see #1733:
+  # before this, publish-frontend below ran only pnpm lint/check/test/build
+  # inline and never built or smoke-tested the nginx image at all, so the
+  # release path skipped the nginx CSP/HSTS/Permissions-Policy checks and the
+  # image build guarding the artifact actually being pushed.
+  #
+  # The origins below are placeholders, not a target: the released image
+  # resolves its real API/Keycloak/storage origins from environment variables
+  # at container start (docker-entrypoint.d/99-runtime-config.sh), so what
+  # this gate builds with only has to be well-formed, not real.
   frontend-checks:
     name: Frontend Checks
     needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
     uses: ./.github/workflows/frontend-checks.yml
     with:
-      vite_keycloak_authority_url: https://login.maik-hasler.de/realms/einsatzbereit
+      vite_keycloak_authority_url: https://login.example.test/realms/einsatzbereit
       vite_keycloak_client_id: frontend
-      keycloak_origin: https://login.maik-hasler.de
-      vite_api_url: https://api.maik-hasler.de
-      storage_public_url: https://storage.maik-hasler.de
+      keycloak_origin: https://login.example.test
+      vite_api_url: https://api.example.test
+      storage_public_url: https://storage.example.test
 
   publish-frontend:
     name: Publish Frontend
@@ -375,7 +377,6 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
-            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -384,16 +385,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Vite bakes VITE_* into the JS bundle at build time - these are only
-          # ever used as a fallback if the runtime config (config.js, envsubst'd
-          # at container start per docker-compose.yml/frontend/AGENTS.md) is
-          # somehow unavailable. Without these, that fallback is the Dockerfile's
-          # own ARG defaults (http://localhost:...), which is what a returning
-          # user's browser would silently point at instead - see #1345.
-          build-args: |
-            VITE_KEYCLOAK_AUTHORITY_URL=https://login.maik-hasler.de/realms/einsatzbereit
-            VITE_KEYCLOAK_CLIENT_ID=frontend
-            VITE_API_URL=https://api.maik-hasler.de
+          # No VITE_* build args on purpose: the image is environment-agnostic
+          # and resolves its origins at container start from config.js
+          # (docker-entrypoint.d/99-runtime-config.sh, see frontend/AGENTS.md).
+          # Whoever runs the image supplies those environment variables; baking
+          # any origin in here would tie one build to one target.
 
   publish-keycloak:
     name: Publish Keycloak
@@ -437,7 +433,6 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
-            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
           labels: |
             org.opencontainers.image.base.version=${{ steps.keycloak.outputs.upstream_version }}
 
@@ -452,13 +447,9 @@ jobs:
   github-release:
     name: GitHub Release
     # This is where publish.yml stops - it builds and pushes images, then
-    # records the release. It does not deploy, and does not tell anything
-    # else to deploy either: no repository_dispatch, no cross-repo secret.
-    # The actual docker-compose.yml/deploy logic (SSH to the host, render
-    # .env, docker compose pull && up, health gate, rollback) lives in the
-    # mgmt-hetzner repo as a workflow_dispatch-only job, run by hand once a
-    # tag's images are confirmed published - see that repo's
-    # deploy-einsatzbereit.yaml and README.md.
+    # records the release. What consumes a published tag, and where, is
+    # outside this repository: no repository_dispatch, no cross-repo secret,
+    # nothing here reaches into a running environment.
     needs: [publish-backend, publish-frontend, publish-keycloak]
     runs-on: ubuntu-latest
     timeout-minutes: 10

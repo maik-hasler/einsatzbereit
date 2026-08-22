@@ -22,7 +22,7 @@ import "@fontsource-variable/source-sans-3";
 // --font-display in global.css) - Barlow Condensed's tall, tight letterforms
 // come from California DMV road-signage lettering, which reads as
 // operational/dispatch-board rather than "warm startup serif," matching what
-// "Einsatzbereit" (readiness/deployment) already means in German. Only the
+// "Einsatzbereit" (readiness) already means in German. Only the
 // 700 (bold) cut is loaded - every heading that uses it sets font-bold.
 import "@fontsource/barlow-condensed/700.css";
 import "./styles/global.css";

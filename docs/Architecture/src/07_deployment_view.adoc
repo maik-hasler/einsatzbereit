@@ -3,9 +3,9 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-deployment-view]]
 == Deployment View
 
-Einsatzbereit runs in three environments: the local developer stack (orchestrated by .NET Aspire), the CI/CD pipeline (GitHub Actions), and the deployed staging/production host.
+Einsatzbereit runs in two shapes: the local developer stack, orchestrated by .NET Aspire from source, and the deployed runtime, where the same building blocks run as released container images.
 
-This chapter describes the infrastructure and which building blocks run where. The operational decisions behind that infrastructure - what the backup strategy guards against - are cross-cutting and live in <<section-concepts>> under Operations.
+This chapter describes both and which building blocks run where. How and where the deployed runtime is actually hosted, provisioned and operated is out of scope for this repository - this repository builds and publishes the images, and nothing more (see "Image Publishing" below).
 
 === Infrastructure Level 1
 
@@ -21,7 +21,7 @@ Motivation::
 The entire stack runs locally via the .NET Aspire AppHost - see <<section-concepts>> under Development and Build for the one-command orchestration this relies on. Running everything from one command ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
 
 Quality and Performance Characteristics::
-Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak runs the upstream image with a dev-file database and a relaxed, auto-imported realm; the backend and frontend run from source with hot reload.
+Local development is optimized for fast iteration. All services run on `localhost` with no TLS. Keycloak runs the upstream image with a dev-file database and a relaxed, auto-imported realm; the backend and frontend run from source with hot reload.
 
 .Building Block to Node Mapping
 [cols="2,2,2" options="header"]
@@ -45,7 +45,7 @@ Local development is optimized for fast iteration, not production performance. A
 |`postgres:18`, port 5432
 |===
 
-`backend/src/Aspire/AppHost` is the orchestrator itself and is the one project that exists only here - it is never part of a deployed artifact.
+`backend/src/Aspire/AppHost` is the orchestrator itself and is the one project that exists only here - it is never part of a released artifact.
 
 .Supporting Services
 [cols="2,2,1,2" options="header"]
@@ -68,6 +68,57 @@ Local development is optimized for fast iteration, not production performance. A
 |S3-compatible object storage (API on 9000, console on 9001)
 |===
 
+==== Deployed Runtime
+
+.Deployment View - Deployed Runtime
+[plantuml, "deployment-server", png]
+....
+include::../images/deployment-server.puml[]
+....
+
+Motivation::
+Away from a developer machine, the three building blocks this repository builds run as the release images described under "Image Publishing" below, against the same service types the local stack fakes: a PostgreSQL server, S3-compatible object storage, and an SMTP relay. Each image is configured entirely through environment variables at container start, so one build runs anywhere without a rebuild - the frontend image in particular resolves its API, Keycloak and storage origins at startup rather than at build time (see `frontend/AGENTS.md`).
+
+Quality and Performance Characteristics::
+Container images are the release artifacts, pulled by tag from GHCR. The backend applies EF Core migrations on startup when `Database:MigrateOnStartup` is enabled. The Application Database publishes no public route and is reachable only from within the runtime's own internal network; the Backend API is the only building block that talks to every other one, which is why an authentication gap there has the widest blast radius and why it validates every JWT against Keycloak's JWKS.
+
+.Building Block to Node Mapping
+[cols="2,2,3" options="header"]
+|===
+|Building block (Level 1) |Artifact |Notes
+
+|Single Page Application
+|`einsatzbereit-frontend` image
+|Static SPA assets served by nginx; origins substituted at container start
+
+|Backend API
+|`einsatzbereit-backend` image
+|Migrates on startup when enabled
+
+|Identity Provider
+|`einsatzbereit-keycloak` image
+|Custom image with the committed realm and theme; PostgreSQL-backed
+
+|Application Database
+|`postgres:18`
+|Two databases: `einsatzbereit` and `keycloak`
+|===
+
+.Consumed Services
+[cols="2,3" options="header"]
+|===
+|Service |Notes
+
+|Object storage
+|S3-compatible; holds organization logos, user avatars and opportunity banners. The backend authenticates with a bucket-scoped service account rather than root credentials (#1353)
+
+|SMTP relay
+|Outbound notification and reminder email
+
+|OpenStreetMap Nominatim
+|Address geocoding, called from both the backend and the frontend (ADR-4)
+|===
+
 ==== CI/CD Pipeline
 
 .Deployment View - CI/CD (GitHub Actions)
@@ -76,7 +127,7 @@ Local development is optimized for fast iteration, not production performance. A
 include::../images/deployment-cicd.puml[]
 ....
 
-The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gates on every change, docs deployment, and release-time image publishing plus staging deployment. This environment builds and verifies the building blocks rather than serving them, so there is no building-block-to-node mapping for it; the artifacts it produces are the ones deployed in the next section.
+The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gates on every change, docs publishing, and release-time image publishing. This environment builds and verifies the building blocks rather than serving them, so there is no building-block-to-node mapping for it; the artifacts it produces are the images described above.
 
 ===== Quality Gate (on every push / PR to `main`)
 
@@ -88,11 +139,11 @@ The backend workflow (`dotnet.yml`) runs a `build` job (`dotnet restore` + `dotn
 
 The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. `dotnet.yml`'s critical path is kept bounded and is actively tracked as the test suite grows - see TDR-2 for current timing data.
 
-The architecture docs build (`docs.yml`) also builds on every pull request touching `docs/**`, as a build-only check - GitHub Pages deployment stays gated to pushes on `main`, so a docs PR can never publish a preview.
+The architecture docs build (`docs.yml`) also builds on every pull request touching `docs/**`, as a build-only check - GitHub Pages publishing stays gated to pushes on `main`, so a docs PR can never publish a preview.
 
 ===== Image Publishing (on tag push)
 
-Images are published to GitHub Container Registry (GHCR) on version tag pushes. A single Git tag triggers the release of all components at the same version:
+Images are published to GitHub Container Registry (GHCR) on version tag pushes. A single Git tag releases all components at the same version:
 
 .Published Images
 [cols="1,2,2" options="header"]
@@ -112,104 +163,4 @@ Images are published to GitHub Container Registry (GHCR) on version tag pushes. 
 |`v1.0.0`
 |===
 
-Release candidate tags (`v{semver}-rc.N`) publish images without moving the `latest` tag; stable tags (no `-rc` suffix) publish images and move `latest`. Either way, `publish.yml` stops there - it does not deploy, and does not trigger anything to deploy. Deploying a published tag is a deliberate, separate, manual step against a different, private infrastructure repository (`mgmt-hetzner`), which owns `docker-compose.yml` and the actual deploy for this host (see "Staging and Production" below). See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
-
-==== Staging and Production
-
-.Deployment View - Staging / Production
-[plantuml, "deployment-staging", png]
-....
-include::../images/deployment-staging.puml[]
-....
-
-Motivation::
-The deployed environment serves real users at `*.maik-hasler.de`. It runs on a single host (a Hetzner `cx43`: 8 vCPU / 16 GB RAM / 40 GB disk), provisioned via Terraform and deployed via `docker-compose.yml` from a separate, private infrastructure repository (`mgmt-hetzner`) - this repo only builds and publishes the images that compose file references, it does not deploy them (see "Image Publishing" above). The host runs behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt), which mgmt-hetzner also owns, alongside a shared Prometheus/Grafana/Loki/Tempo monitoring stack this app's containers opt into via Docker labels. The same host also runs Blogfolio, an unrelated personal site - the app stacks share the machine but are otherwise fully independent (separate repos, separate `docker compose` projects, no shared services beyond Traefik/monitoring). This is the environment every release candidate is verified against before a change is considered done.
-
-Quality and Performance Characteristics::
-All public traffic is HTTPS via Traefik. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`). Backup and retention behaviour is described in <<section-concepts>> under Operations.
-
-.Building Block to Node Mapping
-[cols="2,2,2,2" options="header"]
-|===
-|Building block (Level 1) |Image |Hostname |Notes
-
-|Single Page Application
-|`einsatzbereit-frontend:staging`
-|`einsatzbereit.maik-hasler.de`
-|Static SPA assets
-
-|Backend API
-|`einsatzbereit-backend:staging`
-|`api.maik-hasler.de`
-|`ASPNETCORE_ENVIRONMENT=Staging`; migrates on startup
-
-|Identity Provider
-|`einsatzbereit-keycloak:staging`
-|`login.maik-hasler.de`
-|Custom image with committed realm; PostgreSQL-backed
-
-|Application Database
-|`postgres:18`
-|internal
-|Two databases: `einsatzbereit` and `keycloak`
-|===
-
-The mapping is 1:1 today - every Level-1 building block runs as exactly one container on one host. There is no horizontal scaling and no second host, which is what makes the single-host risk in TDR-3 a real one rather than a theoretical one.
-
-.Supporting Services
-[cols="2,2,2,2" options="header"]
-|===
-|Service |Image |Hostname |Notes
-
-|db-backup
-|`prodrigestivill/postgres-backup-local:18`
-|internal
-|Daily backups, retention 7 days / 4 weeks / 6 months
-
-|MinIO
-|`quay.io/minio/minio`
-|`storage.maik-hasler.de`
-|S3-compatible object storage
-
-|minio-init
-|`minio/mc`
-|internal, one-shot
-|Bootstraps the bucket and a bucket-scoped app service account for the backend on first deploy (#1353)
-
-|minio-backup
-|`minio/mc`
-|internal
-|Daily mirror of the einsatzbereit bucket, then mirrors its own and db-backup's local output off-host (#1087)
-
-|Traefik
-|host-level (shared)
-|`*.maik-hasler.de`
-|Reverse proxy, TLS termination via ACME / Let's Encrypt
-|===
-
-Deployment is manually triggered and split across two repositories. A version tag pushed here triggers this repo's `publish.yml`, which builds and pushes the images to GHCR and stops - it does not deploy them or notify anything to. Deploying a published tag is a separate `workflow_dispatch` run of `mgmt-hetzner`'s `deploy-einsatzbereit.yaml` (version + target environment as inputs), which does the actual deploy to the host over SSH (`docker compose pull` + `up`) via one of two jobs - staging or production (#1344), mirroring the split this repo used before the move. Both jobs deploy to the exact same host and `/opt/einsatzbereit` directory described in the table above - there is only one live host today, and it is deliberately staging/demo infrastructure rather than a hardened production box (see root `AGENTS.md`'s Test Users note). See TDR-3 for why the two-job split exists despite both jobs targeting the same host today.
-
-=== Infrastructure Level 2: Deployed Host
-
-The deployed host is the one infrastructure element whose internal structure matters, because network segmentation is what keeps PostgreSQL unreachable from outside this stack. Everything above runs as containers on a single Docker daemon, split across networks:
-
-[cols="1,3,3" options="header"]
-|===
-|Network |Members |Reachability
-
-|`proxy` (external, shared with Blogfolio)
-|Frontend, Backend API, Keycloak, MinIO, minio-init, minio-backup
-|Attached to the host-level Traefik. Frontend, Backend API, Keycloak and MinIO each have a route and a public hostname under `*.maik-hasler.de`; the two `mc` sidecars join only to reach MinIO.
-
-|`einsatzbereit-db`
-|PostgreSQL, Keycloak, Backend API, db-backup
-|Container-to-container only. PostgreSQL publishes no port and is reachable by name from this network alone.
-
-|`monitoring` (external)
-|Backend API
-|No Traefik route from this repo's own containers.
-|===
-
-Two containers deliberately straddle networks. The *Backend API* is on all three: `proxy` to serve public traffic, `db` to reach PostgreSQL, `monitoring` to export metrics and traces. *Keycloak* is on `proxy` and `db` for the same reason at a smaller scale.
-
-The Backend API is therefore where an authentication gap has the widest blast radius, which is why it validates every JWT against Keycloak's JWKS. MinIO is the one supporting service with a public route of its own; it is reached over `proxy` rather than the database network, and the backend authenticates to it with a bucket-scoped service account rather than root credentials (#1353).
+Release candidate tags (`v{semver}-rc.N`) publish images without moving the `latest` tag; stable tags (no `-rc` suffix) publish images and move `latest`. `publish.yml` stops there - what consumes a published tag, and where, is outside this repository. See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.

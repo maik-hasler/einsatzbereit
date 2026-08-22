@@ -182,7 +182,7 @@ var app = builder.Build();
 
 // appsettings.json's ConnectionStrings/Keycloak:ClientSecret/Authentication:Authority
 // defaults are dev-only fallbacks (see the comments in that file) that also ship in
-// the production image - fail fast outside Development instead of silently running
+// the released image - fail fast outside Development instead of silently running
 // with a working Postgres superuser connection string or a plain-http authority if
 // an environment's override is ever dropped or misspelled. Skipped for the
 // design-time tool invocation (see isDesignTimeToolInvocation above), which never

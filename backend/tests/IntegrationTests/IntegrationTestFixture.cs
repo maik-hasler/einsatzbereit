@@ -43,7 +43,7 @@ public class IntegrationTestFixture
 		// AppHost.cs bumps RateLimiting__Read__AnonymousPermitLimit to 10000 by
 		// default so VisualTests' concurrent browser sessions don't 429 each
 		// other - but this fixture's own RateLimitingTests.cs deliberately
-		// exercises the real production default (60/60s) to prove it actually
+		// exercises the real default (60/60s) to prove it actually
 		// rejects excess anonymous requests, so restore that default here.
 		var appHost = await DistributedApplicationTestingBuilder
 			.CreateAsync<AppHost>([

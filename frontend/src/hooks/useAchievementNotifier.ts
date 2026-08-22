@@ -48,7 +48,7 @@ export function useAchievementNotifier() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	// Scoped per user id (#1236) - a global key leaked between accounts on any
-	// shared browser (a kiosk, or the seeded vera/olaf/admin staging accounts).
+	// shared browser (a kiosk, or the seeded vera/olaf/admin demo accounts).
 	const userId = auth.user?.profile?.sub;
 
 	// Pauses while the tab is hidden and catches up with an immediate fetch

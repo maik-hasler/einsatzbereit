@@ -82,7 +82,7 @@ These are the terms the domain model in <<section-concepts>> is built from. They
 |A cluster of domain objects treated as one consistency boundary, with a single root entity as its only entry point. `VolunteerOpportunity` with its `TimeSlot` children is the clearest example; a handler loads and saves the root, never a child directly.
 
 |AGPL
-|GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works - including those deployed as network services - must be released under the same license.
+|GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works - including those offered as network services - must be released under the same license.
 
 |arc42
 |A template for documenting software and system architectures, structured into 12 chapters. Widely used in German-speaking countries. See https://arc42.org.
@@ -127,7 +127,7 @@ These are the terms the domain model in <<section-concepts>> is built from. They
 |OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.
 
 |OTLP
-|OpenTelemetry Protocol. The wire format the backend exports logs, metrics and traces in - collected by the Aspire dashboard locally and by Grafana Tempo in staging (ADR-6).
+|OpenTelemetry Protocol. The wire format the backend exports logs, metrics and traces in - collected by the Aspire dashboard locally, and by whatever collector `OTEL_EXPORTER_OTLP_ENDPOINT` names elsewhere.
 
 |Outbox
 |A database table domain events are written to inside the same transaction as the state change that raised them, then dispatched by a background job. Guarantees an event is never lost or emitted for a rolled-back change.

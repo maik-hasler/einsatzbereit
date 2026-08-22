@@ -35,7 +35,7 @@ export const runtimeConfig = {
 	// Toasts (ToastContext.tsx) auto-dismiss after this many ms; 0 disables
 	// auto-dismiss entirely. AppHost sets VITE_TOAST_LIFETIME_MS=0 for
 	// Aspire-orchestrated test runs so assertions never race the dismiss
-	// timer - production is unaffected, since neither this nor a runtime
+	// timer - a normal run is unaffected, since neither this nor a runtime
 	// __APP_CONFIG__ override is ever set there.
 	toastLifetimeMs: Number(
 		resolve(

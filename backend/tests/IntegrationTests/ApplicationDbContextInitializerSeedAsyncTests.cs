@@ -117,7 +117,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			"nothing should have been persisted - SaveChangesAsync never had a chance to run");
 	}
 
-	// #1776: staging served "First Aid Course" / "Fairview Animal Welfare Association" /
+	// #1776: a long-lived environment served "First Aid Course" / "Fairview Animal Welfare Association" /
 	// "+1 555 0100" under German chrome for months. The seed set itself had already been
 	// translated by then - what nothing checked was that it *stays* translated, so this
 	// pins the property the issue actually asserts: the default locale's demo content
@@ -179,12 +179,12 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			"a German contact block showing a +1 555 number is the same half-translated seam as English copy");
 	}
 
-	// The other half of the same finding: staging advertised the one-day
+	// The other half of the same finding: a seeded environment advertised the one-day
 	// "Erste-Hilfe-Kurs" as running 23:05-07:05 across two dates, because slot times
 	// used to inherit DateTimeOffset.UtcNow's time-of-day - whatever o'clock the seeder
 	// happened to boot at. ApplicationDbContextInitializer.DayAt pins them instead;
-	// this is what keeps it pinned, since the bug only ever showed up on a deployment
-	// that restarted at an unlucky hour and never in a local run.
+	// this is what keeps it pinned, since the bug only ever showed up where the app
+	// restarted at an unlucky hour and never in a local run.
 	[Test]
 	public async Task SeedAsync_SeedsDaytimeSlotsThatDoNotRunOvernight(CancellationToken cancellationToken)
 	{
@@ -220,12 +220,13 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		}
 	}
 
-	// #1909: staging's "Erste-Hilfe-Kurs" sign-up was found already showing "checked in"
+	// #1909: an "Erste-Hilfe-Kurs" sign-up was found already showing "checked in"
 	// and "feedback given" while its time slot was still 13 days out - internally
 	// inconsistent, and leaving no way to reach a genuine "past, completed, awaiting
 	// feedback" example to test the rating flow against (Engagement.CheckIn() has no
-	// time-based guard, so that combination was most likely staging test debris rather
-	// than the seed set itself, but the seed set never offered a clean example either).
+	// time-based guard, so that combination was most likely accumulated test debris
+	// rather than the seed set itself, but the seed set never offered a clean example
+	// either).
 	// The seed set now provides that example directly instead of relying on it existing
 	// by accident.
 	[Test]
@@ -310,8 +311,8 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var logger = new FakeLogger<ApplicationDbContextInitializer>();
 		var keycloak = new FakeKeycloakOrganizationService();
 
-		// A second boot of an environment that is already seeded - what every staging
-		// restart since the seed set was translated has actually been doing.
+		// A second boot of an environment that is already seeded - what every restart
+		// of a long-lived environment does.
 		await new ApplicationDbContextInitializer(
 			dbContext, keycloak, new RandomPinGenerator(), logger).SeedAsync(cancellationToken);
 
@@ -322,7 +323,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var record = logger.Collector.GetSnapshot().Should().ContainSingle(r => r.Level == LogLevel.Warning).Subject;
 		record.Message.Should().Contain("NOT",
 			"the warning has to say the seed set was not applied, not just that seeding was skipped");
-		record.Message.Should().Contain("reset-staging.yml",
+		record.Message.Should().Contain("Wipe the database",
 			"an operator reading this line needs to be told what to do about it");
 	}
 

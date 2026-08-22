@@ -3,5 +3,5 @@
 # Claude Code agent worktrees (transient, per-session)
 .claude/worktrees/
 
-# Deployment secrets (server-side only, see .env.example)
+# Local secrets - never committed
 .env

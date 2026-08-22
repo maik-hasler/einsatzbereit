@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Vite SPA. React Router v8 for routing. Client-side OIDC via `react-oidc-context`. Static files served by nginx in production.
+Vite SPA. React Router v8 for routing. Client-side OIDC via `react-oidc-context`. Static files served by nginx in the released image.
 
 ```
 src/
@@ -253,7 +253,7 @@ Two consequences worth knowing before adding a test:
 
 So: a new component or component state gets a colocated `*.a11y.test.tsx`; a new page/route additionally gets a scan in `AccessibilityTests.cs`. `a11y-check` flags a missing one of either. `src/test/a11y.test.tsx` is the harness's own negative control - it asserts the scanner can still *fail*, and is the first place to look if the a11y suite goes green through a change that should have broken it.
 
-## Production
+## Released image
 
 Static files in `dist/` served by nginx. `nginx.conf.template` handles SPA routing via `try_files $uri /index.html`; `docker-entrypoint.d/99-runtime-config.sh` renders it (and `config.js`) into their final form at container start via `envsubst`, filling in the Content-Security-Policy's `connect-src`/`frame-src` origins from the same `VITE_API_URL`/`VITE_KEYCLOAK_AUTHORITY_URL` env vars used for runtime config, plus `img-src`'s MinIO storage origin from a separate `STORAGE_PUBLIC_URL` env var (matching the backend's `Storage__PublicEndpoint` - uploaded org logos/opportunity banners/avatars are served from there, not the API origin), so one image works across environments. `img-src` also allows the `blob:` scheme unconditionally (no env var needed) since avatar/org-logo/opportunity-banner pickers preview the selected file via `URL.createObjectURL()` before it's ever uploaded. The CSP string itself is defined once via an nginx `map` (`$csp_header`) and referenced from all four location blocks - `frontend/scripts/check-nginx-csp.js` (`pnpm check:nginx-csp`, wired into CI) guards against a location block silently falling out of sync with that definition.
 

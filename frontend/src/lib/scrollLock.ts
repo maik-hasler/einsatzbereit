@@ -5,8 +5,8 @@
 // overflow to the viewport while the *root* element's own overflow computes to
 // `visible`, and `global.css` sets `html { overflow-x: clip }`. That clip stops
 // the propagation, so `document.body.style.overflow = "hidden"` merely clips
-// the body box while the viewport keeps scrolling underneath it. Measured on
-// live staging with the mobile menu open and its body lock applied: the page
+// the body box while the viewport keeps scrolling underneath it. Measured in a
+// real browser with the mobile menu open and its body lock applied: the page
 // still scrolled 0 -> 1896 under a mouse wheel. Locking the root element is
 // what actually holds, and it leaves the current scroll offset untouched, so
 // the position is still there when the overlay closes.

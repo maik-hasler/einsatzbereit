@@ -1,12 +1,12 @@
 name: Keycloak Realm Import Check
 
-# Imports the committed realm on the SAME Keycloak version that ships to
-# production (read from keycloak/Dockerfile) and fails if the realm is not
+# Imports the committed realm on the SAME Keycloak version the released image
+# is built from (read from keycloak/Dockerfile) and fails if the realm is not
 # served afterwards. The backend's readiness probe and the integration-test
 # fixture both depend on GET /realms/einsatzbereit/.well-known/openid-configuration
-# being reachable; if a realm change is rejected by the production Keycloak
-# version, Keycloak crashes on `--import-realm` and every staging deploy rolls
-# back. This guard catches that before it reaches staging, and prints the full
+# being reachable; if a realm change is rejected by that Keycloak version,
+# Keycloak crashes on `--import-realm` and the container never comes up. This
+# guard catches that before the image is ever built, and prints the full
 # Keycloak logs (the exact ModelValidationException / rejected element) on
 # failure.
 
@@ -32,13 +32,13 @@ concurrency:
 
 jobs:
   import-check:
-    name: Import realm on production Keycloak version
+    name: Import realm on the released Keycloak version
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Resolve production Keycloak version
+      - name: Resolve Keycloak version
         id: kc
         run: |
           KC_VERSION=$(grep -m1 'FROM quay.io/keycloak/keycloak:' keycloak/Dockerfile \
@@ -56,12 +56,15 @@ jobs:
           cp keycloak/realms/*-realm.json "$IMPORT_DIR/"
 
           # Dummy values, not real credentials - just enough for Keycloak to
-          # resolve the realm's "${KC_SMTP_*}" placeholders into well-formed
-          # config (it validates smtpServer.from as a real address shape at
-          # import time even though this check never actually sends mail).
+          # resolve the realm's "${KC_SMTP_*}"/"${KC_FRONTEND_URL}" placeholders
+          # into well-formed config (it validates smtpServer.from as a real
+          # address shape at import time even though this check never actually
+          # sends mail).
           docker run -d --name kc-import-check -p 8080:8080 \
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+            -e KC_FRONTEND_URL=https://app.example.test \
+            -e KEYCLOAK_BACKEND_SECRET=dummy-not-a-real-secret \
             -e KC_SMTP_HOST=localhost \
             -e KC_SMTP_PORT=1025 \
             -e KC_SMTP_FROM=noreply@example.test \
@@ -85,6 +88,27 @@ jobs:
             sleep 2
           done
 
+          # The realm's "${VAR}" placeholders (KC_FRONTEND_URL, KC_SMTP_*,
+          # KEYCLOAK_BACKEND_SECRET) are resolved by Keycloak at import time.
+          # An unresolved one does NOT crash the import - Keycloak happily
+          # stores the literal "${KC_FRONTEND_URL}/callback" as a redirect URI
+          # and every OIDC login then fails with invalid_redirect_uri at
+          # runtime instead. So assert the substitution actually happened,
+          # rather than only that the realm came up.
+          placeholders=""
+          clients=""
+          if [ "$ready" = "1" ]; then
+            token=$(curl -fsS -X POST \
+              "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+              -d 'grant_type=password' -d 'client_id=admin-cli' \
+              -d 'username=admin' -d 'password=admin' \
+              | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p') || true
+            clients=$(curl -fsS \
+              -H "Authorization: Bearer $token" \
+              "http://localhost:8080/admin/realms/einsatzbereit/clients") || true
+            placeholders=$(printf '%s' "$clients" | grep -o '\${[A-Z_]*}' || true)
+          fi
+
           echo "::group::Keycloak container logs"
           docker logs kc-import-check || true
           echo "::endgroup::"
@@ -95,4 +119,15 @@ jobs:
             echo "::error::Keycloak $KC_VERSION did not serve the 'einsatzbereit' realm after --import-realm (see logs above)."
             exit 1
           fi
-          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION."
+
+          if [ "$ready" = "1" ] && ! printf '%s' "$clients" | grep -q '"clientId":"frontend"'; then
+            echo "::error::Could not read the imported clients back through the admin API, so the placeholder check below proves nothing."
+            exit 1
+          fi
+
+          if [ -n "$placeholders" ]; then
+            echo "::error::The imported clients still carry unresolved placeholders ($placeholders) - Keycloak did not substitute them, so OIDC redirects (or the backend's client secret) would fail at runtime."
+            exit 1
+          fi
+
+          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all client placeholders resolved."

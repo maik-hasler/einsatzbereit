@@ -34,7 +34,7 @@ Rel(keycloak, db, "Stores realm data", "TCP / SQL")
 
 note as ThirdParty
 	Greyed-out containers are third-party software the project
-	deploys and configures but does not develop (arc42 tip 5-20).
+	runs and configures but does not develop (arc42 tip 5-20).
 	Only the SPA and the Backend API contain code written here.
 end note
 

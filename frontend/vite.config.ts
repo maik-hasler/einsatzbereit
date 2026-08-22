@@ -309,7 +309,7 @@ export default defineConfig({
 				// small static assets are precached - route chunks are excluded
 				// here and instead runtime-cached below, so a one-line change to a
 				// single page rehashes and re-downloads only that page's small
-				// chunk on the next deploy, not the whole app. CSS is a separate
+				// chunk on the next release, not the whole app. CSS is a separate
 				// glob from JS: build.cssCodeSplit is off (see the comment on
 				// `build` below), so there is always exactly one "style-<hash>.css"
 				// covering the whole app - unlike JS it isn't named "index-"/
@@ -325,7 +325,7 @@ export default defineConfig({
 				],
 				// config.js is runtime config (docker-entrypoint.d/99-runtime-config.sh
 				// envsubst's it at container start, see frontend/AGENTS.md) - it can
-				// change between deployments with no build-time hash to bust a stale
+				// change between releases with no build-time hash to bust a stale
 				// precache entry, unlike everything above. None of the globPatterns
 				// above would currently match a root-level "config.js" file anyway,
 				// but excluding it explicitly guards against a future globPatterns
@@ -372,7 +372,7 @@ export default defineConfig({
 	],
 	// react/react-dom and react-router are shared by (almost) every lazy
 	// route chunk - splitting them into their own stably-named vendor
-	// chunks means a deploy that only touches page code invalidates just
+	// chunks means a release that only touches page code invalidates just
 	// that page's small chunk, not a framework bundle that every route
 	// depends on. Named explicitly (rather than left to automatic shared-
 	// chunk inference) so the PWA precache globs above can target them.

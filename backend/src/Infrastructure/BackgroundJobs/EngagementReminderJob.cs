@@ -63,8 +63,8 @@ internal sealed class EngagementReminderJob(
 		if (_timer is null) return;
 
 		// PeriodicTimer.WaitForNextTickAsync only completes after a full
-		// PollIntervalHours - without an eager first run, every restart (deploy,
-		// crash, rolling update) opens an hourly window where no engagement is
+		// PollIntervalHours - without an eager first run, every restart (upgrade,
+		// crash, rolling restart) opens an hourly window where no engagement is
 		// ever checked for a due reminder (#1097). Ticking once up front closes
 		// that gap; the 23-25h scan window still covers a single missed hour, but
 		// not several restarts in quick succession.

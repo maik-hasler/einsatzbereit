@@ -2,7 +2,7 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-// einsatzbereit#997: the 2026-07-25 live-staging audit swept 16 page loads
+// einsatzbereit#997: the 2026-07-25 audit swept 16 page loads
 // across anonymous/vera/olaf/admin sessions and found zero console errors
 // and zero failed (>= 400) network responses - a positive finding worth
 // locking in as a regression guard, since nothing else in this suite watches

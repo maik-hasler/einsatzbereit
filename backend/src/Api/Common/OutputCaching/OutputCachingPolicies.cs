@@ -12,9 +12,9 @@ public static class OutputCachingPolicies
 	// language to a caller requesting another (#1731).
 	public const string LongPublicReadByLanguage = "output-cache-long-public-read-by-language";
 
-	// A few seconds only, not ShortPublicReadSeconds - /health backs the deploy gate's
-	// and docker-compose's readiness probes, both of which need to observe a real
-	// dependency outage within a handful of seconds, not up to a full minute (#1172).
+	// A few seconds only, not ShortPublicReadSeconds - /health backs a container
+	// runtime's readiness probe, which needs to observe a real dependency outage
+	// within a handful of seconds, not up to a full minute (#1172).
 	public const string HealthCheck = "output-cache-health-check";
 
 	// Same expiry as ShortPublicRead, but tagged separately so a write that changes

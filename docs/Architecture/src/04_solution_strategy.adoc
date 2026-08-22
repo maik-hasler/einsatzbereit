@@ -35,7 +35,7 @@ The following table summarizes the key architectural decisions and how they addr
 |One command starts the entire local stack, so contributors need no manual setup of databases, Keycloak realms, or service dependencies - see <<section-concepts>> under Development and Build.
 
 |Maintainability
-|GitHub Actions CI/CD → GHCR
+|GitHub Actions CI → GHCR
 |Builds and tests run automatically on every push and pull request to `main`; container images are built and published to GHCR on version tags. No manual release steps.
 
 |Usability
@@ -84,7 +84,7 @@ The following table summarizes the key architectural decisions and how they addr
 |Local orchestration
 |.NET Aspire AppHost (Docker for service containers)
 
-|CI/CD
+|CI
 |GitHub Actions → GitHub Container Registry (GHCR)
 
 |Architecture documentation

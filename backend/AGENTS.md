@@ -169,7 +169,6 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - Still the slowest suite, and the one to think twice before adding to: #2148 moved 310 cases out of it into Vitest/RTL and `IntegrationTests`, and the 232 that remain are there because they genuinely need a browser (rendered layout, real input, a real Keycloak round trip, a page-level axe scan, or a multi-page journey that is not any one component's output). Before writing a new case here, check whether the assertion needs any of those - see `docs/TDRs/2_slow_ci_pipeline.adoc` for the per-case breakdown. Sharded across four jobs in `dotnet.yml`
 - `AccessibilityTests.cs` - the **page-level** axe-core gate: one scan per distinct layout/palette plus the handful of assertions that need a real browser (skip-link focus, the Leaflet marker's accessible name, tab order). Component-level scans live in `frontend/src/**/*.a11y.test.tsx` under `vitest-axe` (#2148) - add a case *here* for a new route, and a component suite *there* for a new component or component state. See the class summary for the full division of labour
 - `AuthHelper.cs` - `LoginAsync` drives the real Keycloak login UI; `FastSignInAsync` seeds a minted token straight into `localStorage` to skip the redirect round trip for tests that only need an authenticated session as a precondition
-- Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 6
 
 ### Mutation testing (`Stryker.NET`, manual)
 

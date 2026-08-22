@@ -134,9 +134,8 @@ public class OrgAppCompactHeaderTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	/// <summary>
-	/// Live staging accumulates test debris from the shared accounts (see the
-	/// root AGENTS.md note) - the same courtesy applies to the Aspire stack
-	/// this suite shares across its whole session.
+	/// The shared accounts accumulate test debris, so clean up after this
+	/// suite - the Aspire stack is shared across its whole session.
 	/// </summary>
 	private async Task DeleteOrganizationAsync(Uri backend, string organizationId)
 	{

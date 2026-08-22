@@ -12,17 +12,14 @@ namespace Infrastructure.Persistence.Migrations
 	// classic pair was [old Withdrawn, new Confirmed] - meaning this could have
 	// deleted a live Confirmed engagement and kept a dead Withdrawn one on any
 	// database that still had such a pair when it ran. Left as-is rather than
-	// rewritten: this migration already ran (including on staging), and EF
-	// Core migrations are not meant to be edited after being applied - editing
+	// rewritten: this migration has already been applied, and EF Core
+	// migrations are not meant to be edited after being applied - editing
 	// the file wouldn't undo whatever it already did, only make the on-disk
 	// history misleading about what actually executed. Nothing before or since
 	// has needed a second run: the unique index this migration adds now stops
-	// duplicate pairs like this from being created in the first place, and
-	// this project has no real deployment to have inherited pre-existing
-	// duplicates into (see root AGENTS.md's Test Users note - staging is
-	// disposable demo/QA infrastructure, not a production database that was
-	// ever migrated through this). A real deployment upgrading through this
-	// migration with genuine pre-existing duplicates would need a status-aware
+	// duplicate pairs like this from being created in the first place. An
+	// environment upgrading through this migration with genuine pre-existing
+	// duplicates would need a status-aware
 	// dedupe instead (ORDER BY status priority, id DESC) plus an archive of the
 	// losing rows rather than an unconditional delete.
 	public partial class AddUniqueEngagementConstraint : Migration
