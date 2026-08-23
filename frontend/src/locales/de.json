@@ -1252,7 +1252,10 @@
       "engagementCount": "{{count}} bestätigte Einsätze",
       "engagementCount_other": "{{count}} bestätigte Einsätze",
       "reportUser": "Nutzer:in melden",
-      "engagementCount_one": "{{count}} bestätigter Einsatz"
+      "engagementCount_one": "{{count}} bestätigter Einsatz",
+      "emptyStateTitle": "Dieses Profil ist noch leer",
+      "emptyStateMessage": "Diese:r Nutzer:in hat noch keine Bio, Fähigkeiten oder Sprachen hinzugefügt.",
+      "eyebrow": "Profil"
     },
     "administration": {
       "title": "Administration",

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useParams, Link, useOutletContext } from "react-router";
+import { useParams, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -736,12 +736,7 @@ export default function EngagementManagementPage() {
 									<div className="min-w-0">
 										<p className="text-sm font-medium text-gray-800">
 											{e.volunteerName ? (
-												<Link
-													to={`/users/${e.volunteerId}`}
-													className="hover:underline"
-												>
-													{e.volunteerName}
-												</Link>
+												e.volunteerName
 											) : e.volunteerId ? (
 												<span className="font-mono text-xs text-gray-500">
 													{t("engagementManagement.volunteer", {

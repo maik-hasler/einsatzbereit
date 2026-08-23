@@ -7,6 +7,8 @@ import type {
 	PublicUserProfileResponse,
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
+import EmptyState from "../components/EmptyState";
+import PageHeaderBand from "../components/PageHeaderBand";
 import ProfileFieldsView from "../components/ProfileFieldsView";
 import ReportFlagButton from "../components/ReportFlagButton";
 import SectionHeading from "../components/SectionHeading";
@@ -14,8 +16,8 @@ import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { pageTitleClass } from "../lib/headingClasses";
 import { getApiErrorMessage } from "../lib/apiError";
+import { getInitials } from "../lib/initials";
 
 export default function UserProfilePage() {
 	const { userId } = useParams<{ userId: string }>();
@@ -84,64 +86,78 @@ export default function UserProfilePage() {
 	if (!profile)
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 
+	const isProfileEmpty =
+		!profile.bio &&
+		profile.skills.length === 0 &&
+		profile.languages.length === 0;
+
 	return (
-		<div className="max-w-5xl">
-			<div className="mb-8 flex items-center gap-4 rounded-card bg-brand-100 p-5 sm:p-6">
-				{profile.avatarUrl ? (
-					<img
-						src={profile.avatarUrl}
-						alt={profile.displayName}
-						width={72}
-						height={72}
-						className="h-18 w-18 rounded-full object-cover ring-3 ring-white"
-					/>
-				) : (
-					<div className="flex h-18 w-18 items-center justify-center rounded-full bg-white text-2xl font-bold text-brand-700 ring-3 ring-white">
-						{profile.displayName.charAt(0).toUpperCase()}
-					</div>
-				)}
-				<div>
-					<h1 className={`text-gray-900 ${pageTitleClass}`}>
-						{profile.displayName}
-					</h1>
-					<p className="mt-0.5 text-sm text-brand-800">
+		<>
+			<PageHeaderBand
+				eyebrow={t("userProfile.eyebrow")}
+				title={profile.displayName}
+			/>
+
+			<div className="max-w-5xl">
+				<div className="mb-8 flex items-center gap-4">
+					{profile.avatarUrl ? (
+						<img
+							src={profile.avatarUrl}
+							alt=""
+							width={64}
+							height={64}
+							className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brand-100"
+						/>
+					) : (
+						<span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+							{getInitials(profile.displayName)}
+						</span>
+					)}
+					<p className="text-sm text-gray-600">
 						{t("userProfile.engagementCount", {
 							count: profile.engagementCount,
 						})}
 					</p>
+					{auth.isAuthenticated && auth.user?.profile.sub !== userId && (
+						<ReportFlagButton
+							targetLabel={profile.displayName}
+							ariaLabel={t("userProfile.reportUser")}
+							onReport={async (reason, details) => {
+								if (!userId) return;
+								await api.reportUser(userId, {
+									reason,
+									details: details || undefined,
+								});
+							}}
+							className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+						/>
+					)}
 				</div>
-				{auth.isAuthenticated && auth.user?.profile.sub !== userId && (
-					<ReportFlagButton
-						targetLabel={profile.displayName}
-						ariaLabel={t("userProfile.reportUser")}
-						onReport={async (reason, details) => {
-							if (!userId) return;
-							await api.reportUser(userId, {
-								reason,
-								details: details || undefined,
-							});
-						}}
-						className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
-					/>
-				)}
-			</div>
 
-			{(profile.bio ||
-				profile.skills.length > 0 ||
-				profile.languages.length > 0) && (
 				<div data-content-wrapper className="mb-8 max-w-2xl">
-					<ProfileFieldsView
-						bio={profile.bio}
-						skills={profile.skills}
-						languages={profile.languages}
-					/>
+					{isProfileEmpty ? (
+						<EmptyState
+							title={t("userProfile.emptyStateTitle")}
+							message={t("userProfile.emptyStateMessage")}
+						/>
+					) : (
+						<ProfileFieldsView
+							bio={profile.bio}
+							skills={profile.skills}
+							languages={profile.languages}
+						/>
+					)}
 				</div>
-			)}
 
-			<section>
-				<SectionHeading>{t("achievements.badgesTitle")}</SectionHeading>
-				<BadgeGrid earned={profile.badges} catalog={catalog} loading={false} />
-			</section>
-		</div>
+				<section>
+					<SectionHeading>{t("achievements.badgesTitle")}</SectionHeading>
+					<BadgeGrid
+						earned={profile.badges}
+						catalog={catalog}
+						loading={false}
+					/>
+				</section>
+			</div>
+		</>
 	);
 }
