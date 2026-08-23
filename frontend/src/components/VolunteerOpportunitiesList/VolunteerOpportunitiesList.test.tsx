@@ -176,6 +176,21 @@ describe("opportunity list filters and the URL", () => {
 			"ScheduledSlots",
 		);
 	});
+
+	it("keeps both filters in the query string when applied one after another", async () => {
+		renderList();
+
+		await userEvent.click(await screen.findByTestId("filter-frequency"));
+		await userEvent.click(screen.getByRole("button", { name: "One-time" }));
+		await userEvent.click(await screen.findByTestId("filter-type"));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Scheduled slots" }),
+		);
+
+		const params = new URLSearchParams(search());
+		expect(params.get("occurrence")).toBe("OneTime");
+		expect(params.get("participationType")).toBe("ScheduledSlots");
+	});
 });
 
 describe("opportunity list with a city-only deep link", () => {
