@@ -8,12 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Nothing else ever deletes a processed outbox_message row, so the table grew
-// without bound - this periodically prunes rows once they are both processed and
-// past RetentionDays old (#1144). Deliberately leaves dead-lettered rows (MaxAttempts
-// exhausted in OutboxProcessorJob - ProcessedOnUtc stamped like a success, but Error
-// stays populated to distinguish it) untouched - those are the only record that
-// something went wrong and stay available for inspection.
 internal sealed class OutboxRetentionJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<OutboxRetentionJob> logger,
@@ -67,8 +61,6 @@ internal sealed class OutboxRetentionJob(
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
-				// A transient failure here just means the same rows are still there to
-				// prune on the next tick - never worth crashing the whole process over.
 				logger.LogError(ex, "Outbox retention tick failed; will retry on the next poll interval");
 			}
 		}
@@ -86,8 +78,6 @@ internal sealed class OutboxRetentionJob(
 			logger.LogInformation("Pruned {Count} processed outbox message(s)", deleted);
 	}
 
-	// Exposed so IntegrationTests can exercise the deletion directly against a real
-	// Postgres without waiting on the real RetentionCheckIntervalHours.
 	internal static async Task<int> DeleteExpiredProcessedMessagesAsync(
 		ApplicationDbContext dbContext,
 		DateTime cutoffUtc,

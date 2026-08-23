@@ -102,14 +102,6 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 				request.ZipCode ?? string.Empty,
 				request.City ?? string.Empty).GetValueOrThrow();
 
-		// Resolved synchronously, before the create command ever dispatches -
-		// a bad address is rejected here with a 400 instead of the opportunity
-		// being created anyway and silently sitting with null coordinates until
-		// an organizer notices it missing from "near me" searches (#1963). A
-		// TransientFailure (Nominatim itself unreachable, not the address's
-		// fault) still lets creation through - VolunteerOpportunity.Create
-		// raises the geocoding-requested event for that case, so the existing
-		// outbox/retry job resolves it out of band, same as before.
 		if (address is not null)
 		{
 			var geocodingResult = await sender.Send(new GeocodeAddressQuery(address), cancellationToken);
@@ -148,8 +140,6 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 
 		var opportunity = await sender.Send(command, cancellationToken);
 
-		// A non-draft create is immediately visible on the public listing (see
-		// "status" above), so the cache must be invalidated regardless of IsDraft.
 		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var response = new CreateVolunteerOpportunityResponse(

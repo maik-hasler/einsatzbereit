@@ -59,6 +59,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldReturnTrue_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -66,8 +67,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		// Act
 		var result = await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 	}
 
@@ -75,6 +78,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldCallDelete_OnRepository(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -82,8 +86,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		_opportunityRepo.Received(1).Delete(opportunity);
 	}
 
@@ -91,6 +97,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyActiveVolunteers_WhenOpportunityDeleted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var pendingVolunteer = Guid.NewGuid();
@@ -104,12 +111,11 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
 			.Returns([pendingVolunteer, confirmedVolunteer]);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
-		// TitleSnapshot must be captured here since the opportunity row is hard-deleted
-		// right after, so a later live lookup by relatedEntityId would find nothing to
-		// interpolate {{title}} with (einsatzbereit#2073).
+		// Assert
+
 		await _notifRepo.Received(2).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityDeleted
 				&& n.RelatedEntityId == opportunityId
@@ -121,6 +127,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldCancelActiveEngagements_WhenOpportunityDeleted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -138,9 +145,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetActiveEngagementsForOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns([pendingEngagement, confirmedEngagement]);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert - active engagements are cancelled, not left dangling after the opportunity is gone.
+		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
 		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
@@ -151,12 +159,8 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a deletion must in-app-notify+cancel the volunteer the same way
-		// an organizer-triggered single-engagement cancel does (einsatzbereit#1057),
-		// not just via the opportunity-level "was removed" notification. The email
-		// itself now happens post-commit via EngagementCancelledNotificationHandler
-		// (#1150), so this only proves each engagement is cancelled and carries the
-		// right title on its event.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -173,8 +177,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetActiveEngagementsForOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns([pendingEngagement, confirmedEngagement]);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == pendingEngagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
@@ -197,6 +203,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotNotify_WhenNoActiveEngagements(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -208,8 +215,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
 			.Returns([]);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
 
@@ -217,6 +226,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldMarkOpenReportsActioned_WhenOpportunityDeleted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var report = Report.Create(ReportTargetType.VolunteerOpportunity, opportunityId, UserId.New(), ReportReason.Spam, null).Value;
@@ -229,8 +239,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetOpenReportsForTargetAsync(ReportTargetType.VolunteerOpportunity, opportunityId, cancellationToken)
 			.Returns([report]);
 
+		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		report.Status.Should().Be(ReportStatus.Actioned);
 		report.ResolvedByUserId.Should().Be(DefaultRequestingUserId);
 	}
@@ -239,14 +251,17 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{opportunityId}*");
 	}
@@ -255,15 +270,18 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotCallDelete_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
+		// Act
 		try { await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken); }
 		catch (ResultFailureException) { }
 
+		// Assert
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
 	}
 
@@ -271,6 +289,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -281,8 +300,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());

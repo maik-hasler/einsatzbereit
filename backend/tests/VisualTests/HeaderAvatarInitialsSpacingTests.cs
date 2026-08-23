@@ -3,24 +3,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// #1915: at the header user-menu avatar's 36px/bold size, two identical
-/// adjacent initials (e.g. Vera Volunteer's "VV") visually fuse into an
-/// unrelated glyph even though the underlying text is still correct - a
-/// kerning/rendering issue no text-content assertion alone would catch.
-/// AccountControls (desktop) and MobileMenu (mobile) both add letter-spacing
-/// to that avatar's span to keep it legible; this asserts the fix is
-/// actually applied on both, since no CI browser here can judge the result
-/// by eye.
-///
-/// Signed in as Olaf ("OO"), not Vera: Vera's avatar_url gets uploaded and
-/// removed by other cases in this shared PerTestSession fixture, which would
-/// intermittently swap her header avatar for an &lt;img&gt; and make the
-/// initials span disappear out from under this test. Nothing ever uploads
-/// Olaf's personal
-/// avatar (only organization logos), so "OO" is a deterministic two-letter
-/// case - the fix itself is unconditional on which two letters are shown.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -48,10 +30,6 @@ public class HeaderAvatarInitialsSpacingTests(AspireFixture fixture) : VisualTes
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		// FastSignInAsync's own "User menu" wait needs the desktop-width nav
-		// visible (DesktopHeader.tsx's "hidden md:flex") - sign in at the
-		// default (desktop-sized) viewport, then shrink down to mobile only
-		// afterward - the same viewport handling every mobile-menu test needs.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 

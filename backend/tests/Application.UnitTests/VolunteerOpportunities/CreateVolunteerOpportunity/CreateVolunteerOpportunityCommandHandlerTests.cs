@@ -35,6 +35,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldCreateAndPersistOpportunity_WithCorrectData(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Helpers needed",
 			null,
@@ -51,8 +52,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.TitleDe.Should().Be("Helpers needed");
 		result.DescriptionDe.Should().Be("For moving");
 		result.OrganizationId.Should().Be(TestOrganizationId);
@@ -67,6 +70,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldPersistEnglishTitleAndDescription_WhenProvided(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Helfer gesucht",
 			"Helpers needed",
@@ -83,8 +87,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.TitleDe.Should().Be("Helfer gesucht");
 		result.TitleEn.Should().Be("Helpers needed");
 		result.DescriptionDe.Should().Be("Zum Umzug");
@@ -95,6 +101,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldPersistEmptyTitle_WhenDraftAndTitleOmitted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			string.Empty,
 			null,
@@ -111,8 +118,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.TitleDe.Should().Be(string.Empty);
 	}
 
@@ -120,6 +129,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldUseGivenCheckInPin(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Helpers needed",
 			null,
@@ -137,8 +147,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			DefaultRequestingUserId,
 			CheckInPin: "13579");
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.CheckInPin.Should().Be("13579");
 	}
 
@@ -146,6 +158,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldCallRepositoryAndUnitOfWork(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
 			null,
@@ -163,8 +176,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			DefaultRequestingUserId,
 			ValidUntil: DateTimeOffset.UtcNow.AddDays(30));
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await _dbContext
 			.VolunteerOpportunities
 			.Received(1)
@@ -175,6 +190,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenPublishingScheduledSlotsDirectlyWithNoTimeSlots(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
 			null,
@@ -191,8 +207,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Published,
 			DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Scheduled slots opportunity*");
 		await _dbContext
@@ -205,6 +223,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldPersistValidUntil_ForIndividualContact(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var validUntil = DateTimeOffset.UtcNow.AddDays(14);
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
@@ -223,8 +242,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			DefaultRequestingUserId,
 			ValidUntil: validUntil);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.ValidUntil.Should().Be(validUntil);
 	}
 
@@ -232,6 +253,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenPublishingIndividualContactDirectlyWithNoValidUntil(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
 			null,
@@ -248,8 +270,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Published,
 			DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Individual contact opportunity must have a deadline*");
 		await _dbContext
@@ -262,6 +286,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTooManyTags(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var tooManyTags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
@@ -279,8 +304,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*cannot have more than*");
 		await _dbContext
@@ -293,6 +320,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenValidUntilGiven_ForScheduledSlots(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title",
 			null,
@@ -310,8 +338,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			DefaultRequestingUserId,
 			ValidUntil: DateTimeOffset.UtcNow.AddDays(14));
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*deadline can only be set for Individual contact*");
 	}
@@ -320,17 +350,15 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldSaveWithNullCoordinates_AndRaiseGeocodingRequestedEvent_ForUncoordinatedNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: TestAddress carries no coordinates, as if
-		// CreateVolunteerOpportunityEndpoint's synchronous geocoding attempt
-		// came back as a TransientFailure (Nominatim unreachable, not a bad
-		// address) - Create persists with null coordinates and raises the
-		// event that triggers GeocodeVolunteerOpportunityAddressHandler's
-		// out-of-band retry.
+		// Arrange
+
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", null, "Description", null, TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Address!.Latitude.Should().BeNull();
 		result.Address!.Longitude.Should().BeNull();
 		result.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>()
@@ -342,15 +370,16 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_ForAlreadyCoordinatedNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the happy path - CreateVolunteerOpportunityEndpoint already
-		// resolved the address synchronously (GeocodeAddressQuery) before
-		// dispatching this command, so no out-of-band retry is needed (#1963).
+		// Arrange
+
 		var coordinatedAddress = TestAddress.WithCoordinates(52.52, 13.405).Value;
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", null, "Description", null, TestOrganizationId, false, coordinatedAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Address!.Latitude.Should().Be(52.52);
 		result.Address!.Longitude.Should().Be(13.405);
 		result.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
@@ -360,11 +389,14 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_WhenRemote(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", null, "Description", null, TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
 	}
 
@@ -372,6 +404,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
@@ -392,8 +425,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _dbContext

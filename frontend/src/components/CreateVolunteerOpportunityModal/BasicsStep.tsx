@@ -14,10 +14,7 @@ interface Props {
 	titleEnError?: string;
 	descriptionDeError?: string;
 	descriptionEnError?: string;
-	/** Bumped on every "Next"/stepper-jump/submit validation attempt for this
-	 * step, even when it produces the same error message as last time - see
-	 * the tab-switch effect below for why the message strings alone aren't
-	 * enough (einsatzbereit#2077). */
+
 	revalidationAttempt: number;
 	bannerPreview: string | null;
 	bannerError: string | null;
@@ -52,36 +49,12 @@ export default function BasicsStep({
 		en: Boolean(titleEnError || descriptionEnError),
 	};
 
-	// German is required, so an error there always blocks moving on. Without
-	// this, an error raised while the English tab is active (e.g. clicking
-	// Next with the German title still blank) left the German fields - and
-	// their inline role="alert" text - hidden behind display:none, with
-	// nothing else surfacing the failure: the button just appeared to do
-	// nothing, for sighted and screen-reader users alike. Switching the tab
-	// back un-hides the existing FloatingField error text, the same way it
-	// already surfaces for every other step in this wizard - no separate
-	// live-region banner needed on top of that.
-	//
-	// `revalidationAttempt` is in the dependency list alongside the error
-	// messages themselves, not instead of them: a user can switch to the
-	// English tab *while* a German error is still outstanding (nothing stops
-	// that), and a second failed attempt then produces the exact same message
-	// string as the first - message-only deps would see no change and skip
-	// the switch, leaving the newly-focused German field hidden behind
-	// display:none (einsatzbereit#2077).
 	useEffect(() => {
 		if (titleDeError || descriptionDeError) setActiveLanguage("de");
 	}, [titleDeError, descriptionDeError, revalidationAttempt]);
 
 	return (
 		<div className="space-y-4" data-testid="wizard-step-1">
-			{/* Plain toggle buttons, not an ARIA tablist - this repo's convention
-			(see LanguageSelector.tsx, Stepper in ./shared.tsx) is to only claim a
-			widget role when the matching keyboard model (arrow keys) is actually
-			implemented; a labelled pair of buttons with aria-current for the
-			active one needs none of that. Both languages' values stay in the form
-			regardless of which is showing - switching tabs never loses data,
-			since only German is required to publish (einsatzbereit#1946). */}
 			<div
 				role="group"
 				aria-label={t("createOpportunity.contentLanguageGroup")}
@@ -93,10 +66,7 @@ export default function BasicsStep({
 						type="button"
 						aria-current={activeLanguage === lang ? "true" : undefined}
 						data-testid={`opportunity-content-language-${lang}`}
-						// Sits before the title field in the DOM but must not steal the
-						// modal's initial focus from it (see Modal.tsx) - a keyboard user
-						// opening this dialog wants to start typing the title, not land
-						// on a language toggle first.
+
 						data-skip-initial-focus
 						onClick={() => setActiveLanguage(lang)}
 						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -117,10 +87,6 @@ export default function BasicsStep({
 			</div>
 
 			<div className={activeLanguage === "de" ? "space-y-4" : "hidden"}>
-				{/* Keeps the original "opportunity-title"/"opportunity-description"
-				ids (no "-de" suffix) - this is the direct successor of the single
-				title/description field that existed before #1946, and a wide range
-				of VisualTests locators already target these exact ids. */}
 				<FloatingField
 					id="opportunity-title"
 					label={t("createOpportunity.fieldTitle")}

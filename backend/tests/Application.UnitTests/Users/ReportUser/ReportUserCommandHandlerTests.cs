@@ -36,6 +36,7 @@ public class ReportUserCommandHandlerTests
 	public async Task Handle_ShouldAddReport_WhenUserExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserGuid = Guid.CreateVersion7();
 		var targetUser = CreateUser(targetUserGuid);
 		_userRepo
@@ -44,8 +45,10 @@ public class ReportUserCommandHandlerTests
 
 		var command = new ReportUserCommand(targetUserGuid, DefaultReporterId, ReportReason.Harassment, "rude messages");
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _reportRepo.Received(1).AddAsync(
 			Arg.Is<Report>(r => r!.TargetType == ReportTargetType.User
@@ -60,10 +63,13 @@ public class ReportUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReportingSelf(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new ReportUserCommand(DefaultReporterId.Value, DefaultReporterId, ReportReason.Spam, null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _userRepo.DidNotReceive().FindAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
@@ -74,6 +80,7 @@ public class ReportUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenUserNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserGuid = Guid.CreateVersion7();
 		_userRepo
 			.FindAsync(UserId.Create(targetUserGuid).GetValueOrThrow(), cancellationToken)
@@ -81,8 +88,10 @@ public class ReportUserCommandHandlerTests
 
 		var command = new ReportUserCommand(targetUserGuid, DefaultReporterId, ReportReason.Spam, null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());
@@ -92,6 +101,7 @@ public class ReportUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReporterAlreadyHasOpenReport(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserGuid = Guid.CreateVersion7();
 		var targetUser = CreateUser(targetUserGuid);
 		_userRepo
@@ -103,8 +113,10 @@ public class ReportUserCommandHandlerTests
 
 		var command = new ReportUserCommand(targetUserGuid, DefaultReporterId, ReportReason.Spam, null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());
@@ -114,6 +126,7 @@ public class ReportUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenDetailsTooLong(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserGuid = Guid.CreateVersion7();
 		var targetUser = CreateUser(targetUserGuid);
 		_userRepo
@@ -123,8 +136,10 @@ public class ReportUserCommandHandlerTests
 		var tooLong = new string('a', Report.MaxDetailsLength + 1);
 		var command = new ReportUserCommand(targetUserGuid, DefaultReporterId, ReportReason.Other, tooLong);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());

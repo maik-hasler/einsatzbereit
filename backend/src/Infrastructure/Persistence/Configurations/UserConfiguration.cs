@@ -58,9 +58,6 @@ internal sealed class UserConfiguration
 		builder.Property(u => u.PreferredLanguage)
 			.HasMaxLength(5);
 
-		// gen_random_uuid() backfills existing rows when this column is added by
-		// migration; every new User.Create() supplies its own value explicitly
-		// (see User's constructor), so the DB default never fires for inserts.
 		builder.Property(u => u.UnsubscribeToken)
 			.HasDefaultValueSql("gen_random_uuid()");
 
@@ -84,10 +81,6 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.DeletedOn);
 
-		// now() backfills existing rows when this column is added by migration;
-		// the AuditableEntityInterceptor supplies an explicit value on every
-		// insert, so the DB default never fires for new rows (same pattern as
-		// UnsubscribeToken above).
 		builder.Property(u => u.CreatedOn)
 			.HasDefaultValueSql("now()");
 

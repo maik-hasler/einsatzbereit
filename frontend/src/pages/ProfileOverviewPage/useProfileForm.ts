@@ -115,11 +115,6 @@ function reducer(state: FormState, action: FormAction): FormState {
 	}
 }
 
-// Consolidates the profile edit form's draft fields (name/bio/skills/
-// languages/preferred contact) into one reducer instead of eight separate
-// useState calls - see #872. reset() re-seeds from the loaded profile, both
-// on initial load and on Cancel; Save deliberately does not reset, so the
-// draft keeps showing the just-saved values without waiting on a refetch.
 export function useProfileForm(profile: MyProfileResponse | null) {
 	const [state, dispatch] = useReducer(reducer, profile, fromProfile);
 	const skillInputRef = useRef<HTMLInputElement>(null);

@@ -1,19 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// lockScroll keeps its reference count in module scope, so every test needs a
-// fresh copy of the module - the repo's convention for module-level state
-// (see frontend/AGENTS.md, "Unit Tests").
 async function freshLockScroll() {
 	const mod = await import("./scrollLock");
 	return mod.lockScroll;
 }
 
-/**
- * jsdom does no layout, so `documentElement.clientWidth` is always 0 and the
- * scrollbar-width calculation would otherwise see the entire window width as
- * "scrollbar". Pin both sides explicitly instead, which is also the only way
- * to exercise the gap-vs-no-gap branches deterministically.
- */
 function setViewport(innerWidth: number, clientWidth: number) {
 	window.innerWidth = innerWidth;
 	Object.defineProperty(document.documentElement, "clientWidth", {
@@ -39,9 +30,6 @@ describe("lockScroll", () => {
 		const lockScroll = await freshLockScroll();
 		lockScroll();
 
-		// The body is deliberately left alone: this app's
-		// `html { overflow-x: clip }` stops the body's overflow from ever
-		// reaching the viewport, which is what made the old body lock a no-op.
 		expect(document.documentElement.style.overflow).toBe("hidden");
 		expect(document.body.style.overflow).toBe("");
 	});
@@ -81,8 +69,6 @@ describe("lockScroll", () => {
 		const releaseOuter = lockScroll();
 		const releaseInner = lockScroll();
 
-		// React tears parents down before children, so the outer dialog's
-		// release can land first when both close in the same commit.
 		releaseOuter();
 		expect(document.documentElement.style.overflow).toBe("hidden");
 
@@ -97,8 +83,7 @@ describe("lockScroll", () => {
 
 		releaseFirst();
 		releaseFirst();
-		// Without the guard the double release would have zeroed the count and
-		// handed the page back while the second holder is still open.
+
 		expect(document.documentElement.style.overflow).toBe("hidden");
 
 		releaseSecond();

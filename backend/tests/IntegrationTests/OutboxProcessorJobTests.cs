@@ -11,18 +11,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging.Abstractions;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares a
-// "DomainEvent" DTO type, which would otherwise shadow Domain.Primitives.DomainEvent.
+
 using CoreDomainEvent = Domain.Primitives.DomainEvent;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.OutboxProcessorJob.ProcessBatchAsync directly
-// (InternalsVisibleTo, see Infrastructure.csproj) against the real integration Postgres.
-// The interesting behavior here (#1392) is the FOR UPDATE SKIP LOCKED row-claiming that
-// stops two replicas' timers from both dispatching the same pending message - only
-// provable by holding one call's transaction open (via a gated fake dispatcher) while a
-// second concurrent call proves it skips the locked row instead of double-dispatching.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
@@ -78,11 +71,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	public async Task ProcessBatchAsync_PoisonMessage_StillDispatchesTheOtherMessagesInTheBatch(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1317: before the attempt cap, a message whose Type can't be
-		// resolved (a renamed/removed domain event) would throw on every single poll
-		// forever - but critically it was never the *only* thing that mattered here,
-		// since ORDER BY occurred_on_utc means a poison row at the head of the batch
-		// must not prevent healthy rows behind it from being dispatched.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		await SeedPoisonOutboxMessageAsync(dbContext, cancellationToken);
 		var healthyEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
@@ -120,13 +108,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		const int maxAttempts = 3;
 
-		// The fixture boots the real app, whose own OutboxProcessorJob hosted service
-		// is concurrently polling this same table on its 5s timer (unfiltered - it
-		// claims any unprocessed row, including this one). Its FOR UPDATE SKIP LOCKED
-		// query can occasionally win the race against one of the calls below, which
-		// then silently claims zero rows that round instead of incrementing. Retry a
-		// round that claimed nothing rather than assuming exactly `maxAttempts` calls
-		// always means `maxAttempts` real attempts.
 		var realAttempts = 0;
 		for (var round = 0; round < maxAttempts * 5 && realAttempts < maxAttempts; round++)
 		{
@@ -146,7 +127,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		message.Error.Should().NotBeNullOrEmpty(
 			"the populated Error distinguishes a dead-lettered message from a genuinely successful dispatch");
 
-		// One more poll cycle must not re-select the now-terminal poison row.
 		var processedOnNextPoll = await OutboxProcessorJob.ProcessBatchAsync(
 			dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
 			batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
@@ -158,13 +138,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	public async Task ProcessBatchAsync_RoundTripsGuidBackedValueObjectIds_NotAsGuidEmpty(
 		CancellationToken cancellationToken)
 	{
-		// Regression test: these Guid-backed value-object IDs have a private constructor and
-		// a get-only Value property, so System.Text.Json's default reflection-based
-		// deserializer has no way to populate them - it was silently producing a
-		// Guid.Empty-backed instance instead of throwing (see
-		// ValueObjectIdJsonConverterFactory), which einsatzbereit#1038's cascade-cancel tests
-		// caught: the first outbox-dispatched handler to actually look an entity up by the
-		// deserialized id rather than just logging it.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
@@ -186,12 +159,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	public async Task ProcessBatchAsync_TwoConcurrentCalls_SecondCallDoesNotReclaimAMessageBeingDispatchedByTheFirst(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1729: dispatch now happens with no open transaction/row
-		// lock held (see OutboxProcessorJob.ClaimBatchAsync) so it no longer blocks
-		// on a synchronous SMTP send per organizer for the whole batch. What now
-		// stops a second replica from re-selecting the same message while A is
-		// still dispatching it is ClaimedOnUtc, stamped and committed by A's short
-		// claim transaction before dispatch even starts.
 		await using var seedContext = fixture.CreateApplicationDbContext();
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(seedContext, domainEvent, cancellationToken);
@@ -208,10 +175,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var taskA = OutboxProcessorJob.ProcessBatchAsync(
 			contextA, gatedDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
-		// Wait until A has claimed the message (ClaimedOnUtc committed) and reached
-		// the dispatcher - A's claim transaction has already committed by this
-		// point, so nothing is locked anymore; only the ClaimedOnUtc stamp
-		// protects the row now.
 		await started.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
 
 		var recordingDispatcher = new RecordingDispatcher();
@@ -236,10 +199,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	public async Task ProcessBatchAsync_MessageClaimedPastTheTimeout_IsReclaimedAndDispatched(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1729: a process that claims a batch and then crashes
-		// before dispatch completes must not leave those messages stuck forever -
-		// once ClaimedOnUtc is older than claimTimeoutSeconds, a later poll treats
-		// the claim as abandoned and reclaims the message.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
@@ -287,9 +246,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		dispatcher.DispatchedEvents.Should().BeEmpty();
 	}
 
-	// #1008: OutboxMessage.Error was persisted but never surfaced anywhere an operator
-	// could see it - these prove the outbox.dispatch/outbox.pending metrics (recorded in
-	// OutboxProcessorJob.ProcessBatchAsync) give that visibility instead.
 	[Test]
 	public async Task ProcessBatchAsync_DispatchSucceeds_RecordsDispatchedMetricAndClearsPendingBacklog(
 		CancellationToken cancellationToken)
@@ -351,8 +307,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 0);
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private const string PoisonMessageType = "Domain.NoLongerExists.RenamedOrRemovedDomainEvent";
 
 	private static List<(string Instrument, string? Status, long Value)> RecordOutboxMeasurements(IMeterFactory meterFactory)
@@ -402,9 +356,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
-	// Simulates the poison-message scenario from #1317 - a Type that OutboxMessage.ToDomainEvent()
-	// can never resolve (e.g. a domain event class that was since renamed or removed) - without
-	// needing an actual removed type to reference.
 	private static async Task SeedPoisonOutboxMessageAsync(
 		ApplicationDbContext dbContext, CancellationToken cancellationToken)
 	{
@@ -434,10 +385,6 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		}
 	}
 
-	// Signals `started` the instant DispatchAsync is entered (i.e. after ProcessBatchAsync's
-	// SELECT ... FOR UPDATE SKIP LOCKED has already run and committed its row lock), then
-	// blocks until the test releases it - simulating a slow dispatch so a concurrent
-	// second call's SKIP LOCKED query has a genuinely still-locked row to skip.
 	private sealed class GatedDispatcher(TaskCompletionSource started, Task releaseGate) : IDomainEventDispatcher
 	{
 		public async ValueTask DispatchAsync(IEnumerable<CoreDomainEvent> events, CancellationToken cancellationToken = default)

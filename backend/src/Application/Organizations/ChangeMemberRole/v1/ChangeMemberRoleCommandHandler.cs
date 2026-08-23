@@ -50,9 +50,6 @@ internal sealed class ChangeMemberRoleCommandHandler(
 		}
 		else if (demoting)
 		{
-			// The role is realm-wide, not per-organization (see #1386), so it can
-			// only be revoked once the user organizes no other organization -
-			// otherwise this demotion would also lock them out of that other org.
 			var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(
 				request.TargetUserId, cancellationToken);
 			var stillOrganizerElsewhere = remainingOrganizerOrgs.Any(o => o.Id != request.OrganizationId);

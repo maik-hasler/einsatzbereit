@@ -55,6 +55,7 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldConfirmEngagement_WhenEngagementIsPending(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -65,8 +66,10 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Status.Should().Be(EngagementStatus.Confirmed);
 	}
 
@@ -74,6 +77,7 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldReturnEngagement_WithCorrectId(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -84,8 +88,10 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeSameAs(engagement);
 	}
 
@@ -93,13 +99,16 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
@@ -108,6 +117,7 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsAlreadyConfirmed(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -119,8 +129,10 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 
@@ -128,6 +140,7 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsCancelled(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -139,8 +152,10 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 
@@ -157,7 +172,6 @@ public class ConfirmEngagementCommandHandlerTests
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
-		// Streak at 3 consecutive weeks; next activity takes it to 4
 		var streak = BuildActivityStreakOf(volunteerId, 3);
 		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
@@ -181,7 +195,6 @@ public class ConfirmEngagementCommandHandlerTests
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
-		// Streak at 1; next activity takes it to 2 - no badge yet
 		var streak = BuildActivityStreakOf(volunteerId, 1);
 		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
@@ -217,10 +230,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardDedicatedBadge_WhenLifetimeConfirmationsReach5_EvenIfLiveConfirmedCountIsLower(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #668: a volunteer's live "currently confirmed" count can be
-		// pulled back down by an unrelated opportunity deletion/cancellation elsewhere.
-		// Milestone eligibility must key off the monotonic lifetime counter on the
-		// volunteer's UserStreak, not that live count.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(
@@ -290,8 +299,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldRaiseConfirmedEvent_ForThePostCommitEmailHandler(
 		CancellationToken cancellationToken)
 	{
-		// #1150: the volunteer's confirmation email moved to
-		// EngagementConfirmedNotificationHandler, dispatched post-commit.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
@@ -316,7 +323,7 @@ public class ConfirmEngagementCommandHandlerTests
 	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
 	{
 		var streak = UserStreak.Create(userId);
-		// Use Europe/Berlin (matches the handler) so week boundaries agree at runtime.
+
 		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
 		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlin).DateTime;
 		var currentYear = System.Globalization.ISOWeek.GetYear(now);

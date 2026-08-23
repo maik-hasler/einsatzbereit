@@ -58,6 +58,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldRemoveTimeSlot_WhenNoActiveEngagements(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlot);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo
@@ -66,8 +67,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunityId, timeSlot.Id.Value, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.DeletedTimeSlotIds.Should().ContainSingle().Which.Should().Be(timeSlot.Id.Value);
 		opportunity.TimeSlots.Should().BeEmpty();
 	}
@@ -76,6 +79,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlot);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo
@@ -87,8 +91,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunityId, timeSlot.Id.Value, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.TimeSlots.Should().ContainSingle();
@@ -116,6 +122,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldDeleteTargetAndFollowingSlots_WhenScopeIsThisAndFollowing(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunityWithSeries(out var slot1, out var slot2, out var slot3);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo
@@ -124,8 +131,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunityId, slot2.Id.Value, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.DeletedTimeSlotIds.Should().BeEquivalentTo([slot2.Id.Value, slot3.Id.Value]);
 		opportunity.TimeSlots.Should().ContainSingle().Which.Id.Should().Be(slot1.Id);
 	}
@@ -134,17 +143,19 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldDeleteEveryOccurrence_WhenScopeIsEntireSeries(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunityWithSeries(out var slot1, out var slot2, out var slot3);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// Target the last occurrence - EntireSeries must still reach back to the earlier ones.
 		var command = new DeleteTimeSlotCommand(opportunityId, slot3.Id.Value, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.DeletedTimeSlotIds.Should().BeEquivalentTo([slot1.Id.Value, slot2.Id.Value, slot3.Id.Value]);
 		opportunity.TimeSlots.Should().BeEmpty();
 	}
@@ -153,6 +164,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldForceCancelActiveEngagements_AndNotifyVolunteers_ForBulkDelete(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunityWithSeries(out var slot1, out var slot2, out _);
 		var opportunityId = VolunteerOpportunityId.Create(opportunity.Id.Value).GetValueOrThrow();
 		_opportunityRepo
@@ -169,9 +181,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunity.Id.Value, slot1.Id.Value, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - engagements are cancelled rather than blocking the delete, and each affected volunteer is notified.
+		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("The recurring time slot series was cancelled.");
 		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
@@ -188,8 +201,8 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldExcludePastOccurrences_FromBulkDelete(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: slot1 is a past occurrence (created as valid-at-the-time via an
-		// artificially-past `now`), slot2 is still upcoming.
+		// Arrange
+
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", null, "Beschreibung", null, false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
@@ -207,8 +220,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunityId, slot2.Id.Value, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.DeletedTimeSlotIds.Should().BeEquivalentTo([slot2.Id.Value]);
 		opportunity.TimeSlots.Should().ContainSingle().Which.Id.Should().Be(slot1.Id);
 	}
@@ -217,7 +232,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenBulkScopeAndTimeSlotNotPartOfSeries(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a standalone slot with no SeriesId.
+		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlot);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo
@@ -226,8 +241,10 @@ public class DeleteTimeSlotCommandHandlerTests
 
 		var command = new DeleteTimeSlotCommand(opportunityId, timeSlot.Id.Value, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not part of a recurring series*");
 		opportunity.TimeSlots.Should().ContainSingle();
 	}

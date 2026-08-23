@@ -5,21 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #2071: /organizations rendered every card's name in a plain
-/// &lt;strong&gt;, with no heading anywhere in its main content, while
-/// /opportunities gave every result card a fixed &lt;h2&gt; with nothing above it
-/// naming the region - on a page that pages in ~9 cards at once, that read as a
-/// run of indistinguishable level-2 headings once the footer's own CTA and
-/// three link-column headings (also fixed &lt;h2&gt;s) followed right after.
-///
-/// The fix: both directories get a visually-hidden results-region &lt;h2&gt;, with
-/// every card heading underneath it dropped to &lt;h3&gt; so it nests correctly
-/// instead of sitting as another same-level sibling. The footer additionally
-/// demotes its own headings to &lt;h3&gt; specifically on /opportunities (see
-/// Footer's headingLevel prop and AppLayout) so they read as subordinate to
-/// the grid instead of more of the same level-2 run.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -45,9 +30,6 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = orgName, Level = 3 }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// The card heading's parent: sr-only, so it costs sighted users nothing
-		// (the visible result count above already states this in prose), but it
-		// gives the run of per-card headings below a name in the outline.
 		var resultsHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Search results", Level = 2 });
 		await Expect(resultsHeading).ToHaveCountAsync(1);
 		var box = await resultsHeading.BoundingBoxAsync();
@@ -101,11 +83,6 @@ public class HeadingStructureTests(AspireFixture fixture) : VisualTestBase(fixtu
 		box.Should().NotBeNull();
 		box!.Height.Should().BeLessThan(4, "the results-region heading must stay sr-only");
 
-		// The footer's own headings sit right below the result grid on this
-		// specific route - demoted to h3 so they read as subordinate to it
-		// instead of continuing the same level-2 run the (now level-3) cards
-		// broke out of. Scrolled into view first: the footer sits well below
-		// the fold behind a tall result grid.
 		var footerHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Platform" });
 		await footerHeading.ScrollIntoViewIfNeededAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Platform", Level = 3 }))

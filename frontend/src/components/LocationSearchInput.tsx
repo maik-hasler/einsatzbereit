@@ -7,12 +7,6 @@ import {
 } from "./VolunteerOpportunitiesList/useCitySuggestions";
 import { MapPinIcon } from "./icons";
 
-// Shared city-name combobox (debounced suggestions, keyboard nav, ARIA
-// listbox) - factored out once a second caller needed it (HomePage's hero
-// search, alongside VolunteerOpportunitiesList's location filter) rather
-// than hand-rolling the same input+listbox+keyboard-nav block twice, per
-// this repo's own precedent for extracting a repeated pattern (see
-// Button.tsx / ErrorBanner.tsx's rationale comments).
 export default function LocationSearchInput({
 	id,
 	value,
@@ -50,10 +44,6 @@ export default function LocationSearchInput({
 				? t("opportunities.cityNoMatch")
 				: "";
 
-	// Keeps the roving highlight in bounds (and cleared) whenever the
-	// suggestion list itself changes - a stale index from the previous
-	// keystroke's results would otherwise point at the wrong (or a
-	// no-longer-existing) option.
 	useEffect(() => {
 		setActiveSuggestionIndex(-1);
 	}, [suggestions]);
@@ -135,14 +125,6 @@ export default function LocationSearchInput({
 					className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-modal"
 				>
 					{suggestions.map((s, i) => {
-						// A result whose label is character-for-character what was just
-						// typed (e.g. a real but obscure village literally named "Leip")
-						// renders identically to an unambiguous result like "Lindenwalde"
-						// otherwise - nothing marks it as different from every other
-						// option, so it reads as the raw query having been echoed back
-						// as a fake, selectable "place" (#1930). Selecting it still
-						// geocodes to that place's real coordinates same as any other
-						// option; this only adds a caption clarifying what it is.
 						const isExactTypedMatch =
 							s.label.trim().toLowerCase() === value.trim().toLowerCase();
 						return (
@@ -154,11 +136,7 @@ export default function LocationSearchInput({
 								onMouseDown={(e) => e.preventDefault()}
 								onMouseEnter={() => setActiveSuggestionIndex(i)}
 								onClick={() => select(s)}
-								// Keyboard selection normally goes through the input's own
-								// onKeyDown (aria-activedescendant combobox pattern - this
-								// option is never itself focused), but
-								// jsx-a11y/click-events-have-key-events still requires a
-								// click element to carry its own key handler too.
+
 								onKeyDown={(e) => {
 									if (e.key === "Enter") select(s);
 								}}

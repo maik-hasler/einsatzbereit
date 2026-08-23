@@ -4,10 +4,6 @@ namespace ArchitectureTests;
 
 internal static class TypeDiscovery
 {
-	/// <summary>
-	/// Finds concrete types implementing any of the given generic interface definitions
-	/// and pairs each with the first generic argument of that interface.
-	/// </summary>
 	public static IEnumerable<(Type Implementation, Type FirstTypeArg)> GetImplementationPairs(
 		Assembly assembly,
 		params Type[] genericInterfaceDefinitions)
@@ -19,9 +15,6 @@ internal static class TypeDiscovery
 				.Select(i => (Implementation: t, FirstTypeArg: i.GetGenericArguments()[0])));
 	}
 
-	/// <summary>
-	/// Finds concrete types implementing the given interface and pairs each with the expected naming suffix.
-	/// </summary>
 	public static IEnumerable<(Type Type, string ExpectedSuffix)> GetImplementationsWithExpectedSuffix(
 		Assembly assembly,
 		Type interfaceType,

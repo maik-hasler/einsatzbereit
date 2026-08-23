@@ -20,11 +20,14 @@ public class OrganizationDeletedDomainEventHandlerTests
 	public async Task Handle_ShouldDeleteTheKeycloakOrganization_ForTheEventsOrganizationId(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var organizationId = OrganizationId.New();
 		var domainEvent = new OrganizationDeletedDomainEvent(organizationId);
 
+		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
+		// Assert
 		await _keycloakOrganizationService.Received(1).DeleteOrganizationAsync(organizationId.Value, cancellationToken);
 	}
 }

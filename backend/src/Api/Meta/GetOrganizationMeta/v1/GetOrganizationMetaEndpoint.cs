@@ -8,10 +8,6 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Meta.GetOrganizationMeta.v1;
 
-// AllowAnonymous is deliberate: only reached via frontend/nginx.conf.template's
-// bot-User-Agent rewrite for /organizations/{id} (einsatzbereit#1680), which carries no
-// Bearer token to attach - same rationale as GetSitemapEndpoint / the sibling
-// GetVolunteerOpportunityMetaEndpoint.
 internal sealed class GetOrganizationMetaEndpoint : IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

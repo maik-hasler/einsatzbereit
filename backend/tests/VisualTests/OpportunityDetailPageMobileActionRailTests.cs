@@ -6,44 +6,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1965: on the 375px reflow, the opportunity detail page's
-/// sticky rail (deadline / application status / sign-up CTA / login prompt)
-/// dropped to single-column and landed after the at-a-glance summary, the
-/// category tags, the full-width Leaflet map (~250px tall) and the
-/// organisation contact card - roughly 700px of scrolling before the page's
-/// one conversion point was reachable, even though the same content sits at
-/// the very top of the page on desktop next to the reading column.
-///
-/// Fixed by rendering the rail's content a second time (VolunteerOpportunity
-/// DetailPage.tsx's `renderActionRail`, testid-suffixed "-mobile") right
-/// after the at-a-glance meta row and before the map, visible only below
-/// `lg`; the original sticky `<aside>` now hides below `lg` in turn so the
-/// two copies are never both visible at the same viewport.
-///
-/// #1948 filed the same underlying gap independently, from the specific
-/// perspective of a volunteer who already signed up: their "Deine Anmeldung /
-/// Bestätigt / Zurückziehen" status card sat below the map, time-slot list
-/// and organisation contact block on narrow viewports. The #1965 fix above
-/// already covers that block too - it is one of the four the shared rail
-/// renders - but no test exercised the already-applied state specifically,
-/// only the anonymous and not-yet-applied ones. See
-/// <see cref="ActionRail_ForVolunteerWithExistingEngagement_RendersAboveMapOnNarrowViewport"/>.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const int NarrowViewportWidth = 375;
 	private const int NarrowViewportHeight = 812;
 
-	/// <summary>
-	/// Seeds a published, non-remote, IndividualContact opportunity (so both
-	/// the deadline-carrying blocks and the map are eligible to render), then
-	/// patches coordinates into the detail fetch - VisualTests always runs
-	/// against FakeGeocodingService (AppHost.cs), which never returns real
-	/// coordinates for a seeded address, so the map would never render
-	/// otherwise (same technique as SingleMarkerMapStaticTests.cs).
-	/// </summary>
 	private async Task<string> SeedOpportunityWithMapAsync(string label)
 	{
 		var backend = Fixture.GetEndpoint("backend");
@@ -102,13 +70,6 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 		return opportunityId;
 	}
 
-	/// <summary>
-	/// Asserts <paramref name="railBlock"/> is visible, sits above the map
-	/// (smaller y than the map's top edge) and that the desktop-only copy
-	/// with testid <paramref name="desktopTestId"/> is not visible at the
-	/// current (narrow) viewport - the two copies must never both be on
-	/// screen at once.
-	/// </summary>
 	private async Task AssertRailAboveMapAndNoDesktopDuplicateAsync(ILocator railBlock, string desktopTestId)
 	{
 		var map = Page.Locator(".leaflet-container");
@@ -159,14 +120,6 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 			Page.GetByTestId("signup-cta-mobile"), "signup-cta");
 	}
 
-	/// <summary>
-	/// Regression for #1948: a volunteer who already signed up sees their
-	/// status card (the <c>showApplicationStatus</c> block - status chip and
-	/// "Zurückziehen"/withdraw button) rather than the sign-up CTA covered by
-	/// <see cref="ActionRail_ForAuthenticatedNonOwner_RendersAboveMapOnNarrowViewport"/>
-	/// above; that block needs its own narrow-viewport coverage since the two
-	/// are mutually exclusive.
-	/// </summary>
 	[Test]
 	public async Task ActionRail_ForVolunteerWithExistingEngagement_RendersAboveMapOnNarrowViewport()
 	{

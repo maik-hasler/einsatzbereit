@@ -4,25 +4,9 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1226: a failed "load more" request used to feed the same
-/// `error` state as an initial-load failure, and every list page hid its
-/// already-rendered rows whenever that state was set - so one failed page-2+
-/// fetch wiped every row the user had already scrolled through, with no
-/// recovery short of a full reload. `useLoadMore` now tracks a load-more
-/// failure separately (`loadMoreError`) from the initial-load failure
-/// (`error`), and callers render it as an inline retry affordance next to the
-/// still-visible list instead of replacing that list with a full-page error
-/// banner.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// The opportunities grid's page size is viewport-responsive (see
-	// useVolunteerOpportunitiesData.ts's computePageSize: xl >= 1280px is 3
-	// cols x 3 rows = 9, so a fully-loaded page is always a whole number of
-	// rows). Viewport is pinned explicitly below rather than relying on
-	// PageTest's default so this stays correct if that default ever changes.
 	private const int WideViewportWidth = 1440;
 	private const int WideViewportHeight = 900;
 	private const int PageSize = 9;
@@ -42,10 +26,7 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olaf.AccessToken}");
 
 		var suffix = Guid.NewGuid().ToString("N");
-		// Scopes the homepage list to exactly the opportunities seeded below,
-		// regardless of whatever other VisualTests are concurrently seeding
-		// their own data in this shared-session database (see ListLayoutGridTests
-		// for the same tag-scoping pattern).
+
 		var tag = $"loadmore1226-{suffix}";
 
 		var orgResponse = await PostJsonWithRetryAsync(http,
@@ -54,8 +35,6 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
-		// One more than a single page, so page 1 (10 items) renders fully and
-		// "load more" is available to fetch the 11th on page 2.
 		for (var i = 0; i < SeedCount; i++)
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
@@ -83,10 +62,6 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 				return;
 			}
 
-			// Cross-origin in this test environment - a fulfilled response still
-			// needs CORS headers or fetch() rejects before the app's own
-			// error-handling code (and thus loadMoreError) ever runs, same as
-			// NotificationTests/SessionExpiryTests.
 			await route.FulfillAsync(new()
 			{
 				Status = 500,
@@ -111,8 +86,6 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		await Expect(retryButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(opportunitiesSection.GetByRole(AriaRole.Alert)).ToBeVisibleAsync();
 
-		// The whole point of #1226: the already-rendered first page must still
-		// be there after the load-more failure, not replaced by the error.
 		await Expect(items).ToHaveCountAsync(PageSize);
 
 		shouldFail = false;

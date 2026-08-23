@@ -11,10 +11,6 @@ async function handleErrorResponse(
 	if (response.ok) return;
 
 	if (response.status === 401) {
-		// A 401 without a token just means "not logged in" (e.g. anonymous
-		// browsing) - expected, not a session expiring. Only a 401 on a
-		// request that *did* carry a bearer token means the Keycloak session
-		// backing it is no longer valid.
 		if (hadAccessToken) {
 			notifySessionExpired();
 		}

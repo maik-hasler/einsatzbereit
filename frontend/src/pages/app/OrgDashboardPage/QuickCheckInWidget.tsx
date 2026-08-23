@@ -19,8 +19,6 @@ import type { WidgetSizeClass } from "./widgetCatalog";
 
 const OPPORTUNITY_PAGE_SIZE = 100;
 
-// Lazy-loaded: the camera/barcode-scanning code is only needed once an
-// organizer actually opens the scanner, not on every dashboard visit - #971.
 const QRScannerModal = lazy(() => import("../../../components/QRScannerModal"));
 
 interface Props {
@@ -30,9 +28,6 @@ interface Props {
 	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
-// Lets an organizer jump straight to the QR scanner for any of their
-// published opportunities that use QR code check-in, instead of navigating
-// to that opportunity's engagement management page first.
 function QuickCheckInWidget({
 	organizationId,
 	refreshKey,
@@ -42,8 +37,6 @@ function QuickCheckInWidget({
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
-	// Shared with UpcomingOpportunitiesWidget, which fetches the same
-	// organization-wide published opportunities - see useSharedOrgFetch.
 	const [opportunities, , error] = useSharedOrgFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
@@ -56,9 +49,7 @@ function QuickCheckInWidget({
 			)
 			.then((page) => page.items),
 	);
-	// The scanner only understands QR check-in - #1017: opportunities using
-	// PIN codes, manual check-ins, or no check-in method never worked here
-	// despite being offered, contradicting this widget's own description.
+
 	const qrOpportunities = useMemo(
 		() =>
 			opportunities === null
@@ -113,12 +104,6 @@ function QuickCheckInWidget({
 				/>
 			)}
 			{qrOpportunities !== null && !error && qrOpportunities.length > 0 && (
-				// Side by side once there's enough width for both to stay
-				// readable - the select grows to fill whatever room it's
-				// given via flex-1, so this already scales continuously with
-				// the organizer's own placement instead of needing a
-				// separate "full" treatment; stacked at compact - #771
-				// follow-up review feedback (adaptive layouts per size).
 				<div
 					className={
 						size !== "compact" ? "flex items-center gap-3" : "space-y-3"

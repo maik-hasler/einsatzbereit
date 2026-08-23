@@ -155,19 +155,34 @@ dotnet build
 - No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
 
-A comment earns its place by recording something the code cannot state itself:
-a race it guards against, an issue it regresses, a browser or library quirk it
-works around, or a rejected alternative. Structural narration does not qualify -
-that includes bare `// Arrange` / `// Act` / `// Assert` markers in tests, whose
-phases are already delimited by the blank lines between them and named by the
-test method itself. Label a phase only when you have something to say about it
-(`// Arrange - the row is gone but its engagement remains, see #1176`).
+The code speaks for itself. A comment is the exception, not the habit, and it
+has to earn its place by warning about something the code cannot show: a trap
+where the obvious edit silently breaks correctness or security. Ordering that
+must hold, a guard whose removal opens a race or an authorization hole, a
+literal that looks redundant but is load-bearing, two files that must change
+together. If a reader would be safe not knowing it, leave it out.
+
+Everything else goes in the name, the type, or the test. Design rationale,
+history, issue archaeology and restatements of the line below are not comments,
+they are noise - the issue tracker and `git log` already hold them, and unlike a
+comment they cannot drift out of date in place.
+
+The same bar applies everywhere: production code, tests, CI workflows, shell
+scripts and themes. Tests get no narration at all - no explanation above a class
+or a method, none inside a phase. `// Arrange` / `// Act` / `// Assert` stay as
+bare markers, and carry nothing else; what a test proves belongs in its method
+name and its assertions.
+
+Two kinds of comment look like prose but are not, and must survive: directives
+the toolchain reads (`eslint-disable-*`, `/// <reference ... />`, `# v1.2.3` on
+a pinned action SHA), and a comment that is a block's only content, which is
+what stops ESLint's `no-empty` firing on a deliberately empty `catch`.
 
 `scripts/comment-density.py` reports the ratio of comment lines to non-blank
 lines across hand-written sources - code, CI workflows, shell scripts, themes
 and docs alike (`--top N` ranks the densest files). It is a diagnostic, not a
-gate: a high ratio flags a file worth reading, since the densest files are
-usually either genuinely subtle or quietly narrating themselves.
+gate: at this bar a file drifting upward is usually one that started explaining
+itself again.
 
 ## Dependency Management
 

@@ -8,24 +8,10 @@ import Skeleton from "./Skeleton";
 import { formatDate } from "../lib/format";
 import { achievementTypeLabel } from "../lib/achievementType";
 
-// Mirrors FilterDropdown.tsx's edge margin - keeps a clamped tooltip from
-// touching the viewport edge exactly, not just staying inside it.
 const EDGE_MARGIN = 8;
-// Matches the tooltip's own w-48 - fixed, so unlike FilterDropdown's
-// dynamically-sized panel this doesn't need to be measured (and can't be:
-// the tooltip is display:none via the `hidden` class until hovered/focused,
-// so getBoundingClientRect/offsetWidth would read 0 anyway).
+
 const TOOLTIP_WIDTH = 192;
 
-// The catalog (BadgeCatalogEntry) carries no threshold number - only the
-// static name/description text does ("Verdient nach 5 bestaetigten
-// Einsaetzen"). The counters that satisfy each threshold already render
-// elsewhere on /profile (engagement count, login streak, activity streak),
-// so this mirrors AchievementTypeIcon's per-key approach below: keyed on
-// `catalog.key`, has to be kept in sync with appsettings.json's
-// BadgeCatalog:Badges by hand. early-adopter has no counter to show
-// progress against ("one of the first volunteers") and is intentionally
-// absent here.
 export type BadgeProgressMetric =
 	"engagements" | "loginStreak" | "activityStreak";
 
@@ -46,12 +32,6 @@ export interface BadgeProgressSummary {
 	activityStreak: number;
 }
 
-// Milestone (first-step/dedicated-5/centurion-100) and Streak (on-a-roll-7/
-// weekly-hero-4) each group two-to-three badges under one AchievementType,
-// so keying the icon on `type` alone gave every badge in a group the same
-// glyph (#1964). These per-key overrides give each real badge its own
-// shape; `type` remains the fallback for any badge key this switch doesn't
-// know about yet (e.g. a future catalog entry added only in appsettings.json).
 function AchievementTypeIcon({
 	badgeKey,
 	type,
@@ -152,9 +132,7 @@ function AchievementTypeIcon({
 interface BadgeCardProps {
 	catalog: BadgeCatalogEntry;
 	earned?: AchievementSummary;
-	// Optional: UserProfilePage (someone else's public profile) has no access
-	// to another user's streak/engagement counters, so it renders badges with
-	// no progress indicator rather than fetching or faking one.
+
 	progress?: BadgeProgressSummary;
 }
 
@@ -168,10 +146,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 	const progressTarget = progress
 		? BADGE_PROGRESS_TARGETS[catalog.key]
 		: undefined;
-	// Capped at the target: a badge can lag its counter by a beat (the award
-	// runs as a follow-up domain-event handler, not inline with the action
-	// that pushed the counter past the threshold), so briefly showing "6 von
-	// 5" instead of "5 von 5" would read as a bug.
+
 	const currentProgress =
 		progressTarget && progress
 			? Math.min(progress[progressTarget.metric], progressTarget.target)
@@ -179,10 +154,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 	const tooltipId = `badge-tooltip-${catalog.key}`;
 	const nameId = `badge-name-${catalog.key}`;
 	const cardRef = useRef<HTMLDivElement>(null);
-	// Centered on the badge by default (see the tooltip's left-1/2 below) -
-	// shifted only far enough to keep it on-screen for badges near the edge
-	// of the grid's outer columns (#1672). Recomputed on resize since which
-	// columns are "outer" depends on the grid's current column count.
+
 	const [tooltipShift, setTooltipShift] = useState(0);
 
 	useLayoutEffect(() => {
@@ -208,11 +180,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 	return (
 		<div
 			ref={cardRef}
-			// Locked badges recede to a dashed outline instead of a solid gray-50
-			// fill (#1755). With five of six locked, the filled version made the
-			// unearned ones the heaviest thing on the profile page and the single
-			// earned badge the quietest - exactly backwards. Text colours are
-			// unchanged, so the gray-500 label still clears the 4.5:1 floor.
+
 			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
 				isEarned
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"

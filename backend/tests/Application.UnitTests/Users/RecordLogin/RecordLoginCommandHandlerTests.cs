@@ -99,11 +99,9 @@ public class RecordLoginCommandHandlerTests
 		var streak = BuildStreakWithLoginCount(userId, 5);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
-		// Calling on day 6 (one after the streak's last day)
 		var nextDay = streak.LastLoginDate!.Value.AddDays(1);
 		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
 
-		// LoginStreak is now 6 - no badge yet
 		await _sender.DidNotReceive().Send(
 			Arg.Any<AwardAchievementCommand>(),
 			Arg.Any<CancellationToken>());
@@ -131,7 +129,6 @@ public class RecordLoginCommandHandlerTests
 		var streak = BuildStreakWithLoginCount(userId, 8);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
-		// Day 9 - streak becomes 9, not 7
 		var nextDay = streak.LastLoginDate!.Value.AddDays(1);
 		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
 
@@ -147,7 +144,6 @@ public class RecordLoginCommandHandlerTests
 		var streak = BuildStreakWithLoginCount(userId, 7);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
-		// Same day as last login - RecordLogin is a no-op, streak stays 7
 		await _sut.Handle(new RecordLoginCommand(userId, streak.LastLoginDate!.Value), cancellationToken);
 
 		await _sender.DidNotReceive().Send(

@@ -61,8 +61,6 @@ public class UpdateUserProfileCommandHandlerTests
 	public async Task Handle_ShouldSetPhone_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
-		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync -
-		// the handler doesn't know or care whether the returned row was just created.
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
@@ -79,12 +77,15 @@ public class UpdateUserProfileCommandHandlerTests
 	public async Task Handle_ShouldSetPreferredLanguage_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = CreateCommand("en");
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		user.PreferredLanguage.Should().Be("en");
 	}
 
@@ -92,15 +93,17 @@ public class UpdateUserProfileCommandHandlerTests
 	public async Task Handle_ShouldOverwritePreferredLanguage_OnAnExistingUserRow(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - explicit profile save always wins, unlike the passive
-		// creation-time seed in GetUserProfileQueryHandler.
+		// Arrange
+
 		var existingUser = User.Create(DefaultUserId);
 		existingUser.SetPreferredLanguage("de");
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(existingUser);
 		var command = CreateCommand("en");
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		existingUser.PreferredLanguage.Should().Be("en");
 	}
 }

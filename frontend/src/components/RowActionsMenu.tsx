@@ -7,23 +7,17 @@ export interface RowAction {
 	label: string;
 	onClick: () => void;
 	disabled?: boolean;
-	/** Renders the item in the destructive tone. */
+
 	destructive?: boolean;
 	testId?: string;
 }
 
-// Overflow menu for a row's secondary actions. The org app's opportunity
-// cards used to render every action as its own button - up to five per card
-// (Edit, Delete, Unpublish, Cancel, Manage sign-ups), three of them reading
-// as destructive and two of those in the same red outline - so the row's
-// actual primary action had no more weight than "Delete", and telling
-// Unpublish from Cancel from Delete meant reading all three every time.
 export default function RowActionsMenu({
 	actions,
 	label,
 }: {
 	actions: RowAction[];
-	/** Accessible name for the trigger, e.g. "More actions for {title}". */
+
 	label: string;
 }) {
 	const [open, setOpen] = useState(false);
@@ -35,13 +29,6 @@ export default function RowActionsMenu({
 
 	return (
 		<div ref={rootRef} className="relative">
-			{/* A disclosure, not a WAI-ARIA menu. An earlier version claimed
-			aria-haspopup="menu" + role="menu"/"menuitem", which is structurally
-			valid and passes axe but promises keyboard behaviour this does not
-			implement: focus is never moved into the list on open and there is no
-			Arrow/Home/End roving tabindex, so a screen-reader user told "menu"
-			reaches for arrow keys and gets nothing. Tab through a labelled list
-			of buttons is what it actually does, so that is what it announces. */}
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}

@@ -4,9 +4,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Cross-org coverage for OwnershipGuard.EnsureIsOrganizerAsync on the volunteer-opportunity
-// management endpoints (#1309) - each unit test suite already flips the guard to false, but
-// these prove the same rejection happens end-to-end against a real second organization.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
@@ -18,12 +15,10 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 	public async Task GetOpportunityCheckInPin_ShouldReturn403_WhenOrganizerAccessesOtherOrgsOpportunity(
 		CancellationToken cancellationToken)
 	{
-		// olaf creates org1 with a PIN-protected opportunity
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken, checkInPin: "13579");
 
-		// vera creates her own org - this grants her the organisator role, but not membership in org1
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
@@ -49,7 +44,6 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
 
-		// The opportunity must still exist for its own org - deletion was rejected, not silently skipped.
 		var stillExists = await olafClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
 		stillExists.Should().NotBeNull();
 	}
@@ -89,8 +83,6 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
 	}
-
-	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)

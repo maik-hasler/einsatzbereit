@@ -9,10 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.SubmitFeedback.v1;
 
-// Consumer of EngagementFeedbackSubmittedDomainEvent (#1047): SubmitFeedbackCommandHandler only
-// records the rating/comment on the engagement and raises the event; letting the opportunity's
-// organizers know feedback came in happens here, dispatched by OutboxProcessorJob like every
-// other domain event.
 internal sealed class EngagementFeedbackSubmittedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

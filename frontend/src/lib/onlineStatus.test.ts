@@ -2,8 +2,6 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { getOnlineStatus, subscribeOnlineStatus } from "./onlineStatus";
 
 function setNavigatorOnLine(value: boolean) {
-	// navigator.onLine is a read-only getter in jsdom, so it has to be
-	// redefined rather than assigned.
 	Object.defineProperty(navigator, "onLine", {
 		configurable: true,
 		get: () => value,

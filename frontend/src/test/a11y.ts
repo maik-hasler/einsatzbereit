@@ -2,35 +2,8 @@ import { expect } from "vitest";
 import { axe } from "vitest-axe";
 import type { RunOptions } from "axe-core";
 
-/**
- * Component-level axe-core scanning, the counterpart to
- * `backend/tests/VisualTests/AccessibilityTests.cs`'s `AssertNoViolations`.
- *
- * The two gates deliberately apply the *same* impact filter (serious,
- * critical, and a short list of escalated moderate rules), so moving a scan
- * down from Playwright to here is a change of altitude, not of standard. What differs is scope, and it
- * differs in both directions:
- *
- * - Rules about whole-document structure (one <main>, a page <h1>, a lang
- *   attribute, a bypass link) cannot be judged from a fragment, so they stay
- *   in the Playwright page smokes.
- * - `color-contrast` needs real layout and a canvas to sample rendered pixels.
- *   jsdom has neither, so axe can only ever report it "incomplete" here. The
- *   Playwright smokes remain the only place contrast is actually evaluated -
- *   do not read a green run of this suite as a contrast check.
- */
-
-// Axe reports "page has no h1" and most landmark-structure defects at
-// "moderate" impact, which the serious/critical filter would let through.
-// Only the two that are meaningful inside a single component are escalated
-// here - the rest are page-scoped and disabled below. Kept in step with
-// AccessibilityTests.cs's EscalatedModerateRuleIds.
 const ESCALATED_MODERATE_RULE_IDS = ["heading-order", "landmark-unique"];
 
-// Turned off rather than filtered out: a rule that can only ever be
-// inconclusive (color-contrast) or is being asked a question the fragment
-// cannot answer (everything else) produces noise that reads like a real
-// finding on the next person to open a failure.
 const PAGE_SCOPED_RULES = [
 	"color-contrast",
 	"color-contrast-enhanced",
@@ -66,21 +39,12 @@ interface AxeViolation {
 	nodes: AxeViolationNode[];
 }
 
-/**
- * Scans `target` (default: the whole rendered body, so portalled dialogs and
- * their backdrops are included) and fails on any serious/critical violation.
- */
 export async function expectNoA11yViolations(
 	target: Element | Document = document.body,
 	options: RunOptions = {},
 ): Promise<void> {
 	const element = target instanceof Document ? target.body : target;
 
-	// vitest-axe scans an element in place only while it is attached; handed a
-	// detached node it falls back to writing the node's outerHTML into
-	// document.body, scanning that copy, and restoring afterwards - which
-	// scans markup React no longer owns and silently invalidates every node
-	// reference the test is holding. Refuse rather than scan a copy.
 	if (!element.isConnected) {
 		throw new Error(
 			"expectNoA11yViolations was given a detached element - render it (or pass its container) so axe scans the live tree.",

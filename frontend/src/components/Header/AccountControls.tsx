@@ -10,11 +10,6 @@ import {
 	UserCircleIcon,
 } from "../icons";
 
-// This dropdown carries personal items only. It used to also hide the whole
-// org app behind a second disclosure inside it ("Organisation" -> a tab list),
-// which put an organizer's main workspace two clicks deep in a personal-account
-// menu and left it invisible until both were open; the organization is a
-// top-level nav destination now instead (#1785, see lib/headerNav).
 export default function AccountControls({
 	transparent = false,
 	menu,
@@ -62,9 +57,6 @@ export default function AccountControls({
 							className="h-9 w-9 rounded-full object-cover"
 						/>
 					) : (
-						// tracking-widest: at this size/weight, two identical adjacent
-						// letters (e.g. "VV") can visually fuse into an unrelated glyph
-						// without the extra spacing - #1915.
 						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold tracking-widest text-white">
 							{initials}
 						</span>

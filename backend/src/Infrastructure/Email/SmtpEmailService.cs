@@ -47,10 +47,6 @@ internal sealed class SmtpEmailService(
 		}
 		catch (Exception ex)
 		{
-			// Deliberately not {To}/{Subject} - both can carry a real user's email
-			// address or another user's name (einsatzbereit#1189). The correlation
-			// id (an engagement/invitation/user GUID) is enough to trace the failure
-			// back to its source without writing PII into logs or the OTLP sink.
 			logger.LogError(ex, "Failed to send email (correlationId: {CorrelationId})", correlationId);
 			metrics.RecordFailed();
 		}

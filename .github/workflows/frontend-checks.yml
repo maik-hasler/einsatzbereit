@@ -1,15 +1,5 @@
 name: Frontend Checks
 
-# Reusable workflow shared by frontend.yml (PR/push gate) and publish.yml's
-# release path - see #1733: before this, publish.yml's publish-frontend job
-# ran only `pnpm lint`/`pnpm check`/`pnpm test`/`pnpm build` inline and never
-# built the nginx runtime image at all, so the release path skipped the
-# format/i18n/nginx-CSP/HSTS/Permissions-Policy/config-defer/gzip-static
-# checks and the container smoke test below - exactly the checks
-# guarding the artifact actually being released. Both callers now run these
-# identical jobs (parameterized only by which VITE_*/STORAGE_PUBLIC_URL
-# values the smoke test boots the container with), so the two gates cannot
-# drift apart again.
 on:
   workflow_call:
     inputs:
@@ -142,13 +132,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-  # None of dotnet.yml's VisualTests exercise this - they all drive the plain
-  # Vite dev server via Aspire's AddViteApp, which has no CSP, no runtime
-  # envsubst, no service worker, and no gzip_static. This is the only place
-  # frontend/Dockerfile is ever actually built and run in CI, so a defect only
-  # the nginx runtime image has (a CSP header nginx.conf.template renders
-  # wrong, config.js left with an unsubstituted "${...}" placeholder, a
-  # cross-origin image blocked) can otherwise merge with an all-green pipeline.
   docker-image:
     name: Container smoke test
     runs-on: ubuntu-latest
@@ -210,11 +193,6 @@ jobs:
           echo "$csp" | grep -qE "frame-src[^;]*'self'" || { echo "::error::CSP frame-src does not allow 'self' - automaticSilentRenew/signinSilent()'s same-origin hidden iframe (silent_redirect_uri) would be blocked in the released image (#2042)"; exit 1; }
           echo "$csp" | grep -q "${{ inputs.storage_public_url }}" || { echo "::error::CSP does not allow the runtime storage origin (img-src) - cross-origin images would be blocked"; exit 1; }
 
-      # frame-src 'self' above only controls what the *parent* page may embed -
-      # whether the browser actually renders silent-renew.html inside that
-      # hidden iframe is a separate check against this response's *own*
-      # X-Frame-Options/frame-ancestors (#2042). Both must be verified, or a
-      # regression in either one silently re-breaks automaticSilentRenew.
       - name: silent-renew.html allows same-origin framing
         run: |
           headers=$(curl -fsSI http://localhost:8081/silent-renew.html | tr -d '\r')
@@ -230,14 +208,6 @@ jobs:
           echo "$encoding"
           echo "$encoding" | grep -qi "gzip" || { echo "::error::${asset} was not served with Content-Encoding: gzip"; exit 1; }
 
-      # Regression for #1966: nginx had no explicit MIME type mapping for
-      # .webmanifest, so it fell back to default_type (application/octet-stream)
-      # instead of the application/manifest+json the W3C Web App Manifest spec
-      # requires - a strict installability check (some Lighthouse
-      # configurations, some non-Chromium engines) can refuse to treat a
-      # non-application/manifest+json response as a valid manifest. Checked
-      # for both locale manifests (#1923) since either can be the one
-      # index.html's <link rel="manifest"> currently points at.
       - name: manifest.<locale>.webmanifest is served with the correct Content-Type
         run: |
           for locale in de en; do
@@ -247,13 +217,6 @@ jobs:
               || { echo "::error::manifest.${locale}.webmanifest was not served as application/manifest+json"; exit 1; }
           done
 
-      # The lint job's check:pwa-manifest validates what vite.config.ts
-      # declares against the PNGs in public/; this validates what the built
-      # image actually serves. Between the two sits the build - an asset that
-      # never made it into dist/, or a manifest field vite-plugin-pwa dropped,
-      # only shows up here (#1799). Both locale manifests are checked (#1923)
-      # so an English-speaking visitor gets the same richer install UI as the
-      # German default.
       - name: Web app manifest is served with a complete install listing
         run: |
           for locale in de en; do

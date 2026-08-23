@@ -5,23 +5,9 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression tests for #977: five list surfaces (homepage opportunities,
-/// organizations directory, organizer opportunities, profile engagements,
-/// "more from organization") rendered as full-width single-column rows with
-/// content confined to roughly the left third of each row at wide viewports,
-/// leaving 60%+ of every row empty. Fixed by switching each of these
-/// &lt;ul&gt;s from a single-column `space-y-*` stack to a responsive CSS
-/// grid. These tests assert the grid is actually applied - not just
-/// narrower padding - and, wherever at least two items can be deterministically
-/// seeded, that consecutive items land side by side in the same row rather
-/// than stacking, which is the concrete symptom the issue reported.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// The issue was reported at 1440px - wide enough to trigger every
-	// breakpoint (sm/xl) used by the grids under test.
 	private const int WideViewportWidth = 1440;
 	private const int WideViewportHeight = 900;
 
@@ -67,19 +53,10 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		});
 		response.EnsureSuccessStatusCode();
 		var created = await response.Content.ReadFromJsonAsync<JsonElement>();
-		// Unlike CreateOrganization (returns the Organization aggregate, whose Id
-		// serializes as {"value": "guid"}), CreateVolunteerOpportunity returns a
-		// bespoke response DTO with a raw Guid id (opportunity.Id.Value) - already
-		// a plain string, no nested "value" property.
+
 		return created.GetProperty("id").GetString()!;
 	}
 
-	/// <summary>
-	/// Asserts the list container itself uses CSS grid (the core fix) and,
-	/// when at least two items are present, that the first two sit in the
-	/// same row (same top Y) rather than stacking - proof it is genuinely a
-	/// multi-column grid and not just a narrower single column.
-	/// </summary>
 	private async Task AssertGridWithSideBySideItemsAsync(ILocator list, string label)
 	{
 		await Expect(list).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -90,7 +67,7 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		var items = list.Locator("> li");
 		var count = await items.CountAsync();
 		if (count < 2)
-			return; // grid display already asserted above; not enough items to also prove multi-column placement
+			return;
 
 		var firstBox = await items.Nth(0).BoundingBoxAsync();
 		var secondBox = await items.Nth(1).BoundingBoxAsync();
@@ -116,9 +93,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-		// At least 2 published opportunities must exist for the side-by-side
-		// check below - seed our own rather than depending on however much
-		// pre-existing seed data happens to be around.
 		var organizationId = await CreateOrganizationAsync(http, "Visual977 HomeGrid");
 		await CreateOpportunityAsync(http, organizationId, "Grid Card A", isDraft: false);
 		await CreateOpportunityAsync(http, organizationId, "Grid Card B", isDraft: false);
@@ -145,8 +119,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-		// At least 2 organizations must exist for the side-by-side check
-		// below - seed our own rather than depending on pre-existing seed data.
 		await CreateOrganizationAsync(http, "Visual977 OrgGrid A");
 		await CreateOrganizationAsync(http, "Visual977 OrgGrid B");
 
@@ -172,8 +144,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-		// A fresh organization has no other opportunities, so seeding exactly
-		// 2 drafts here deterministically gives the Drafts section exactly 2 items.
 		var organizationId = await CreateOrganizationAsync(http, "Visual977 OrgOppGrid");
 		await CreateOpportunityAsync(http, organizationId, "Draft Card A", isDraft: true);
 		await CreateOpportunityAsync(http, organizationId, "Draft Card B", isDraft: true);
@@ -188,11 +158,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 	[Test]
 	public async Task OrganizerOpportunitiesList_SingleDraft_CardDoesNotStretchFullRowWidth()
 	{
-		// Edge case: a lone item must not stretch to fill the whole row the way
-		// the pre-fix single-column list did (that full-width-with-empty-space
-		// look is exactly what #977 reported) - a CSS grid item spans exactly
-		// one column by default, so it should occupy roughly a third of the
-		// section's width at this viewport, not the whole thing.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -244,8 +209,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var organizationId = await CreateOrganizationAsync(http, "Visual977 EngagementGrid");
 
-		// Olaf applies to his own organization's opportunities so his profile
-		// engagement list has at least 2 confirmed rows to check.
 		foreach (var title in new[] { "Engage Card A", "Engage Card B" })
 		{
 			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
@@ -308,9 +271,6 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-		// 3 published opportunities in one fresh organization: opening the
-		// first one's detail page leaves exactly the other 2 as "more from
-		// this organization" - enough to prove the side-by-side grid.
 		var organizationId = await CreateOrganizationAsync(http, "Visual977 MoreFromOrg");
 		var firstId = await CreateOpportunityAsync(http, organizationId, "Primary Opportunity", isDraft: false);
 		await CreateOpportunityAsync(http, organizationId, "Other Opportunity A", isDraft: false);

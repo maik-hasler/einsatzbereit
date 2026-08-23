@@ -9,8 +9,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.OutboxRetentionJob.DeleteExpiredProcessedMessagesAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration Postgres.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class OutboxRetentionJobTests(IntegrationTestFixture fixture)
@@ -73,11 +71,6 @@ public class OutboxRetentionJobTests(IntegrationTestFixture fixture)
 	public async Task DeleteExpiredProcessedMessagesAsync_ShouldKeepDeadLetteredMessage_EvenIfOldEnough(
 		CancellationToken cancellationToken)
 	{
-		// A dead-lettered message (OutboxProcessorJob.MaxAttempts exhausted) has
-		// ProcessedOnUtc stamped just like a success - so it's only distinguishable by
-		// Error staying populated (see OutboxProcessorJob.ProcessBatchAsync) - and must
-		// never be swept up by retention regardless of age, since it's the only record
-		// that something went wrong (#1144).
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var message = SeedMessage(processedOnUtc: DateTime.UtcNow.AddDays(-31), error: "Simulated permanent dispatch failure");
 		dbContext.Set<OutboxMessage>().Add(message);

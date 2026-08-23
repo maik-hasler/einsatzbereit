@@ -45,10 +45,6 @@ public class GetUserProfileQueryHandlerTests
 	public async Task Handle_ShouldDelegateLazyRowCreation_ToTheIdempotentGetOrCreate(
 		CancellationToken cancellationToken)
 	{
-		// #1148: this handler must not lazily Add+SaveChanges itself (no ambient
-		// transaction to protect it) - it delegates to the atomic, idempotent
-		// GetOrCreateUserAsync instead, passing along the resolved request language
-		// so a genuinely new row is seeded with it.
 		var user = User.Create(DefaultUserId);
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, "en", cancellationToken).Returns(user);
 		var query = new GetUserProfileQuery(DefaultUserId, "en");
@@ -62,12 +58,15 @@ public class GetUserProfileQueryHandlerTests
 	public async Task Handle_ShouldDefaultPreferredLanguageToGerman_WhenRequestLanguageIsUnsupported(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, "de", cancellationToken).Returns(user);
 		var query = new GetUserProfileQuery(DefaultUserId, "fr");
 
+		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
+		// Assert
 		result.PreferredLanguage.Should().Be("de");
 	}
 
@@ -75,18 +74,17 @@ public class GetUserProfileQueryHandlerTests
 	public async Task Handle_ShouldReturnExistingPreferredLanguage_WhenUserRowAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a returning user whose stored preference must survive even
-		// though this request's language header says something different (e.g.
-		// a different browser/session); GetOrCreateUserAsync itself is what
-		// guarantees an existing row's PreferredLanguage is never overwritten,
-		// this just asserts the handler returns whatever it gets back verbatim.
+		// Arrange
+
 		var existingUser = User.Create(DefaultUserId);
 		existingUser.SetPreferredLanguage("de");
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, "en", cancellationToken).Returns(existingUser);
 		var query = new GetUserProfileQuery(DefaultUserId, "en");
 
+		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
+		// Assert
 		result.PreferredLanguage.Should().Be("de");
 	}
 }

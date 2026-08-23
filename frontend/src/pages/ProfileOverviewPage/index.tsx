@@ -32,21 +32,10 @@ import {
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
 
-// Legacy ?tab=achievements deep link - from the pre-#794 two-tab scheme
-// (profile/activity) and the older four-tab scheme still used by the
-// /achievements redirect in App.tsx - scrolls to the Badges section, which
-// still lives here, instead of switching tabs. "profile" has no entry: that
-// content is already the top of the page.
 const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
 };
 
-// Legacy ?tab= values for content that #1684 split off this page entirely -
-// "activity"/"engagements" are the older aliases the /my-signups redirect
-// used to produce; "invitations" is what backend-generated notification
-// action URLs still send (NotificationReadRepository.cs). All three now
-// redirect to the dedicated page instead of scrolling to a section that no
-// longer exists on /profile.
 const LEGACY_REDIRECT_TABS = new Set([
 	"activity",
 	"engagements",
@@ -147,9 +136,7 @@ export default function ProfileOverviewPage() {
 	const [profileLoading, setProfileLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [profileError, setProfileError] = useState<string | null>(null);
-	// Manual retry after the mount effect's own automatic backoff (below) is
-	// exhausted - distinct from profileLoading so retrying doesn't flip the
-	// page back to the full-page skeleton (see LoadMoreError.tsx's rationale).
+
 	const [retryingProfileLoad, setRetryingProfileLoad] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -157,24 +144,12 @@ export default function ProfileOverviewPage() {
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const [engagementCount, setEngagementCount] = useState<number | null>(null);
 	const formRef = useRef<HTMLFormElement>(null);
-	// Guards state updates from a stale in-flight request (initial load or a
-	// later manual retry) after the component has unmounted.
+
 	const profileLoadCancelledRef = useRef(false);
 
 	const form = useProfileForm(profile);
 	const avatarUpload = useAvatarUpload(setAvatarUrl);
 
-	// Load profile data (always load on mount with retry). Depends on
-	// auth.isAuthenticated, not on the access token itself - react-oidc-context's
-	// automaticSilentRenew mints a fresh access token every ~4 minutes, and this
-	// effect previously kept re-running on that token's identity (#1221),
-	// re-triggering form.reset() and discarding whatever the user was mid-typing.
-	// ProtectedRoute only ever mounts this page while isAuthenticated is already
-	// true, so in practice this now runs once per mount.
-	// Retries with backoff (attempt starts fresh at 0 on every call, so a
-	// manual retry - see handleRetryProfileLoad below - re-runs the full
-	// backoff sequence from attempt 1 same as the initial mount fetch) before
-	// giving up and setting profileError.
 	async function loadProfile() {
 		const retryDelaysMs = [500, 1000, 2000];
 		for (let attempt = 0; ; attempt++) {
@@ -212,24 +187,11 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.isAuthenticated]);
 
-	// Manual retry once the automatic backoff above has given up and
-	// profileError is set - re-runs the whole load sequence from attempt 1.
 	function handleRetryProfileLoad() {
 		setRetryingProfileLoad(true);
 		loadProfile().finally(() => setRetryingProfileLoad(false));
 	}
 
-	// Stat chips in the identity hero - a lightweight, non-critical display,
-	// so a failed fetch is silently ignored rather than surfaced.
-	//
-	// The headline stat is confirmed opportunities, not the login streak this
-	// used to lead with: a volunteering platform that puts "days in a row you
-	// opened the app" first is rewarding the wrong thing, and on a new account
-	// it opened with a 0. The activity streak stays as an equal-weight chip
-	// (it counts weeks with real activity); the login streak is back too, but
-	// only as a small secondary line below the chips (#1848) - just enough for
-	// the "On a Roll" badge to have a visible progress metric, without
-	// re-promoting it to a headline stat.
 	useEffect(() => {
 		api
 			.getMyStreaks()
@@ -248,10 +210,6 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [userId]);
 
-	// Legacy ?tab= deep links that #1684 moved off this page entirely
-	// (invitations/sign-ups now live at /my-signups) redirect there
-	// immediately rather than waiting on profileLoading - there's no section
-	// left on this page to scroll to.
 	useEffect(() => {
 		if (LEGACY_REDIRECT_TABS.has(searchParams.get("tab") ?? "")) {
 			navigate("/my-signups", { replace: true });
@@ -259,13 +217,6 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams]);
 
-	// Legacy ?tab=achievements deep link (App.tsx's /achievements redirect
-	// still lands here with it) scrolls to the section that now contains that
-	// content instead of switching tabs. Gated on profileLoading/streaks
-	// rather than firing once on mount ([]): the identity hero and "Profile
-	// details" section below it only render their full height once those
-	// finish loading, so scrolling before then targets a layout that's about
-	// to shift and never re-fires afterward.
 	useEffect(() => {
 		if (profileLoading) return;
 		const sectionId = LEGACY_SCROLL_SECTIONS[searchParams.get("tab") ?? ""];
@@ -300,9 +251,7 @@ export default function ProfileOverviewPage() {
 		};
 		try {
 			await api.updateUserProfile(savedValues);
-			// Keeps `profile` (the source handleCancel's form.reset(profile) reads
-			// from) in sync with what was just saved - otherwise re-entering edit
-			// mode and cancelling would silently restore the pre-save values (#1247).
+
 			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
@@ -319,24 +268,6 @@ export default function ProfileOverviewPage() {
 		setEditing(false);
 	}
 
-	// Edit/Save/Cancel live in this section's own header, not in the page
-	// chrome. They used to be published through QuickActionsContext so the
-	// header band could render them, which meant the account area ran two
-	// different editing paradigms side by side: /profile toggled a page-wide
-	// mode from a button in the hero, while /profile/settings saved inline
-	// from a button next to the fields it saves. This page now does what
-	// Settings does - the controls sit with the content they act on.
-
-	// ProfileFieldsView renders nothing at all once every field below is
-	// empty (a fresh account has none of them set) - previously that left the
-	// "Profile details" heading sitting over a blank gap on every new user's
-	// very first view of this page (#985).
-	//
-	// preferredLanguage is deliberately not part of this check: it always has
-	// a value (it defaults), so counting it meant a profile with nothing else
-	// filled in still rendered a full card wrapping one row - "Email language:
-	// English" - instead of the empty state that invites you to fill the
-	// profile in.
 	const isProfileFieldsEmpty =
 		!form.state.bio &&
 		form.state.skills.length === 0 &&
@@ -344,21 +275,12 @@ export default function ProfileOverviewPage() {
 		!form.state.preferredContact &&
 		!form.state.phone;
 
-	// Same name shown in the header account button, so its initials must be
-	// derived the same way - this used to fall back to a bare `charAt(0)`,
-	// which showed a one-letter avatar here against the header's two-letter
-	// "VV" for the same user (#1896).
 	const displayName =
 		form.state.firstName || form.state.lastName
 			? `${form.state.firstName} ${form.state.lastName}`.trim()
 			: (profile?.username ?? "");
 
 	return (
-		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
-		// stretched the identity band to ~1376x130 around two lines of text and
-		// pulled the six badges out to 160px-wide slivers. The content is a
-		// person, a couple of stats and six badges - it needs a column, not the
-		// full page.
 		<>
 			<PageHeaderBand
 				eyebrow={t("profile.eyebrow")}
@@ -395,20 +317,9 @@ export default function ProfileOverviewPage() {
 									onRetry={handleRetryProfileLoad}
 								/>
 							)}
-							{/* Always mounted (not conditional on `successMessage`) so the live
-					region is registered before it ever gets content - see
-					CheckInModal.tsx's identical pattern for why. SuccessBanner itself
-					collapses to sr-only when `message` is empty, so this stays mounted
-					across the toggle. */}
+
 							<SuccessBanner message={successMessage} className="mb-4" />
 
-							{/* Identity + momentum hero. Was a gray-50 panel (#1755): the
-					person is the subject of this page, and rendering their own
-					name, handle and avatar as a grey utility strip - the largest
-					flat surface on the page - was most of why it read as dead.
-					Pale-mint brand stage instead, the same tier the landing page's
-					founder band uses, with the avatar ringed in white so it reads
-					as a portrait rather than another tile. */}
 							{!editing && (
 								<div className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
 									<div className="flex items-center gap-4">
@@ -459,11 +370,7 @@ export default function ProfileOverviewPage() {
 												</div>
 											</div>
 										)}
-										{/* Each streak gets its own tile, the same shape as the
-									engagement chip above (#2066) - a login-streak day count
-									used to hang below the activity-streak tile as a bare
-									caption line, reading as a layout accident rather than a
-									third stat. All three now wrap as equal siblings. */}
+
 										{streaks && streaks.activityStreak > 0 && (
 											<div
 												data-testid="profile-stat-streak"
@@ -532,10 +439,7 @@ export default function ProfileOverviewPage() {
 												size="sm"
 												disabled={saving}
 												data-testid="profile-save"
-												// Goes through the form's native submit (not
-												// handleSave() directly) so the browser still runs
-												// constraint validation and focuses/announces the
-												// offending field, same as pressing Enter in the form.
+
 												onClick={() => formRef.current?.requestSubmit()}
 											>
 												<CheckIcon className="h-4 w-4" />
@@ -543,11 +447,6 @@ export default function ProfileOverviewPage() {
 											</Button>
 										</div>
 									) : (
-										// Dropped while the panel is empty (#2066): EmptyState's own
-										// CTA below already starts editing, and a bare "Bearbeiten"
-										// with nothing to edit yet was a second control for the same
-										// job. Reuses this button's own testid ("profile-edit") on
-										// that CTA instead, so there is always exactly one way in.
 										!isProfileFieldsEmpty && (
 											<Button
 												type="button"
@@ -576,9 +475,6 @@ export default function ProfileOverviewPage() {
 											}}
 										/>
 									) : (
-										// Boxed, like the identity band above and the badges
-										// below: as bare label/value pairs on white this was the
-										// one section on the page with no surface of its own.
 										<div className={`${cardClass} sm:p-6`}>
 											<ProfileFieldsView
 												bio={form.state.bio}
@@ -591,14 +487,6 @@ export default function ProfileOverviewPage() {
 										</div>
 									))}
 
-								{/* Small print under the fields, not a lead paragraph above
-						them (#1755): as the first thing in the section it made a
-						privacy footnote look like the section's actual content, on a
-						page where the section otherwise holds very little.
-						Suppressed over the empty state too: the notice names the
-						picture, bio, skills and languages that will be public, and
-						reading that over a card saying you have not filled any of
-						them in described fields that were not on screen. */}
 								{!editing && !isProfileFieldsEmpty && (
 									<p className="mt-4 text-xs text-gray-500">
 										<Trans
@@ -873,10 +761,6 @@ export default function ProfileOverviewPage() {
 						</>
 					)}
 
-					{/* Mounted unconditionally (not gated behind profileLoading) so its own
-			independent data fetch starts immediately, and so its section id
-			exists right away for the legacy ?tab=achievements scroll-to-section
-			effect above regardless of how long the profile fetch takes. */}
 					<AchievementsSection
 						engagementCount={engagementCount}
 						streaks={streaks}

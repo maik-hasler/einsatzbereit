@@ -38,11 +38,14 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldPromoteAndAssignKeycloakRole_WhenChangingMemberToOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		SetMembership(OrganizationMemberRole.Member);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Organizer, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(TargetUserId.Value, cancellationToken);
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -52,13 +55,16 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldDemoteAndRevokeKeycloakRole_WhenTargetOrganizesNoOtherOrganization(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		SetMembership(OrganizationMemberRole.Organizer);
 		_dbContext.CountOrganizersAsync(OrgId, Arg.Any<CancellationToken>()).Returns(2);
 		_dbContext.GetOrganizerOrganizationsAsync(TargetUserId, Arg.Any<CancellationToken>()).Returns([]);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Member, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RevokeOrganizerRoleAsync(TargetUserId.Value, cancellationToken);
 	}
@@ -67,16 +73,18 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldDemoteButNotRevokeKeycloakRole_WhenTargetStillOrganizesAnotherOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the realm role is shared across every org the user organizes (#1386),
-		// so it must stay assigned while they still organize a different one.
+		// Arrange
+
 		SetMembership(OrganizationMemberRole.Organizer);
 		_dbContext.CountOrganizersAsync(OrgId, Arg.Any<CancellationToken>()).Returns(2);
 		var otherOrg = Organization.Create(OrganizationId.New(), "Other Org").GetValueOrThrow();
 		_dbContext.GetOrganizerOrganizationsAsync(TargetUserId, Arg.Any<CancellationToken>()).Returns([otherOrg]);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Member, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
@@ -85,12 +93,15 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenDemotingTheOnlyOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		SetMembership(OrganizationMemberRole.Organizer);
 		_dbContext.CountOrganizersAsync(OrgId, Arg.Any<CancellationToken>()).Returns(1);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Member, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -100,11 +111,14 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenRoleIsUnchanged(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		SetMembership(OrganizationMemberRole.Organizer);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Organizer, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}
@@ -113,11 +127,14 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenMembershipDoesNotExist(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext.GetMembershipAsync(OrgId, TargetUserId, Arg.Any<CancellationToken>()).Returns((OrganizationMembership?)null);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Organizer, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}
@@ -126,13 +143,16 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldThrowForbidden_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(OrgId, DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(false);
 		var command = new ChangeMemberRoleCommand(OrgId, TargetUserId, OrganizationMemberRole.Organizer, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _dbContext.DidNotReceive().GetMembershipAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>());

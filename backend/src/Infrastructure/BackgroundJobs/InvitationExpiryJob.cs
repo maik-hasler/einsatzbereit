@@ -9,12 +9,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Flips Pending organization invitations whose 14-day window has elapsed to
-// Expired (#1053), so they stop cluttering the invitee's "open invitations"
-// list and become eligible for an organizer's Resend action. No outbox/domain
-// event involved: unlike EngagementReminderJob this has no side effect to
-// dedupe across replicas (expiring twice is a harmless no-op, not a duplicate
-// email), so a plain read -> Expire(now) -> SaveChanges per tick is enough.
 internal sealed class InvitationExpiryJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<InvitationExpiryJob> logger,
@@ -68,9 +62,6 @@ internal sealed class InvitationExpiryJob(
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
-				// A due invitation is only marked Expired once this succeeds, so a
-				// transient failure here (e.g. a DB blip) just means it is picked up
-				// again on the next tick instead of being lost.
 				logger.LogError(ex, "Invitation expiry tick failed; will retry on the next poll interval");
 			}
 		}
@@ -87,8 +78,6 @@ internal sealed class InvitationExpiryJob(
 			logger.LogInformation("Expired {Count} invitation(s)", expired);
 	}
 
-	// Exposed so IntegrationTests can exercise expiry directly against a real
-	// ApplicationDbContext instead of waiting for a real tick.
 	internal static async Task<int> ExpireDueInvitationsAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset now,
@@ -105,11 +94,6 @@ internal sealed class InvitationExpiryJob(
 		{
 			invitation.Expire(now).ThrowIfFailure();
 
-			// #1919: an expired invitation is just as resolved as an
-			// accepted/declined one - without this, its InvitationReceived
-			// notification stuck around indefinitely (it's never marked read
-			// automatically), pointing the invitee at a /my-signups page with
-			// nothing left to show for it.
 			await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 		}
 

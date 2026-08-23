@@ -12,22 +12,6 @@ export interface DashboardKpisState {
 	failed: boolean;
 }
 
-// Shared by ToDoWidget (the pending-sign-up action queue) and
-// VolunteerStatsWidget (the neutral signed-up total) - #1780 split those two
-// numbers into separate tiles, and both read them off the same
-// GET .../dashboard response.
-//
-// Each widget still calls this hook for itself rather than the dashboard page
-// fetching once and passing counts down: every widget in this folder owns its
-// own data (see CalendarWidget/UpcomingOpportunitiesWidget), which is what
-// makes removing a widget from the layout actually stop its request. Two
-// tiles placed at once therefore issue two GETs of an endpoint that is two
-// COUNTs - cheap enough that keeping the removal semantics is the better
-// trade.
-//
-// `failed` is a flag, not a message: the two widgets label the same failure
-// differently ("summary"/"volunteer count"), so the copy stays at the call
-// site.
 export function useOrganizationDashboardKpis(
 	organizationId: string,
 	refreshKey: number,

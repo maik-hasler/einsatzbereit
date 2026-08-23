@@ -1,11 +1,5 @@
 #!/usr/bin/env node
-// Guards against the regression class behind issue #1370: the
-// Strict-Transport-Security header was missing includeSubDomains, so only the
-// exact host was protected against protocol downgrade and every subdomain
-// stayed open to it. The value is duplicated across four nginx location
-// blocks (no $host-keyed map like $csp_header, since it never varies by
-// host), so a future edit could silently fix it in one block and miss the
-// other three. Purely static checks - no Docker/nginx required.
+
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";

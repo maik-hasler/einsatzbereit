@@ -4,15 +4,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1938: on a multi-slot offer, the detail page's sidebar
-/// status card (data-testid="application-status") showed only the "Your
-/// sign-up" label and a status Chip - no date/time for the registered slot,
-/// even though the same signup's slot date/time was already shown correctly
-/// on /my-signups. Fixed by resolving the current user's engagement to its
-/// matching entry in the opportunity's own timeSlots and rendering that
-/// slot's date/time next to the status Chip.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailStatusCardTimeSlotTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -49,9 +40,6 @@ public class OpportunityDetailStatusCardTimeSlotTests(AspireFixture fixture) : V
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// Two time slots - the bug only reproduces on an offer with more than one,
-		// where the sidebar card can no longer show "the" slot without knowing
-		// which one the volunteer actually registered for.
 		var firstStart = DateTimeOffset.UtcNow.AddDays(5);
 		(await organizerHttp.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
 		{
@@ -76,8 +64,6 @@ public class OpportunityDetailStatusCardTimeSlotTests(AspireFixture fixture) : V
 		(await organizerHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
 			.EnsureSuccessStatusCode();
 
-		// vera signs up for the *second* slot specifically, so the status card
-		// must show that slot's own date/time, not just any/the first one.
 		var veraToken = (await Fixture.SignInAsync("vera", "vera123")).AccessToken;
 		using var volunteerHttp = new HttpClient { BaseAddress = backend };
 		volunteerHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraToken}");
@@ -100,8 +86,7 @@ public class OpportunityDetailStatusCardTimeSlotTests(AspireFixture fixture) : V
 		await Expect(statusCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(statusCard.GetByText("Your sign-up")).ToBeVisibleAsync();
 		await Expect(statusCard.GetByText("Confirmed")).ToBeVisibleAsync();
-		// The registered slot's own date/time next to the status Chip - previously
-		// missing entirely (#1938), matching what /my-signups already showed.
+
 		await Expect(statusCard.GetByText("Scheduled:")).ToBeVisibleAsync();
 	}
 }

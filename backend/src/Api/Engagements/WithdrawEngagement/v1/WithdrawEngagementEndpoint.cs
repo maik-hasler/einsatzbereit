@@ -45,7 +45,6 @@ internal sealed class WithdrawEngagementEndpoint
 		var command = new WithdrawEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
 		var engagement = await sender.Send(command, cancellationToken);
 
-		// A withdrawn engagement changes CurrentParticipantCount on the public listing.
 		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));

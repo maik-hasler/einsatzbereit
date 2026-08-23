@@ -44,12 +44,15 @@ public class OrganizationInvitationAcceptedDomainEventHandlerTests
 	public async Task Handle_ShouldCreateInAppNotification_ForTheInvitingOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitation = CreateAcceptedInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var domainEvent = new OrganizationInvitationAcceptedDomainEvent(invitation.Id, OrgId, InviteeId);
 
+		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
+		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == InviterId
 				&& n.Kind == NotificationKind.InvitationAccepted
@@ -61,12 +64,15 @@ public class OrganizationInvitationAcceptedDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterNotifying(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitation = CreateAcceptedInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var domainEvent = new OrganizationInvitationAcceptedDomainEvent(invitation.Id, OrgId, InviteeId);
 
+		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
+		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -74,12 +80,15 @@ public class OrganizationInvitationAcceptedDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenInvitationNoLongerExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitationId = OrganizationInvitationId.New();
 		_invitationRepo.FindAsync(invitationId, cancellationToken).Returns((OrganizationInvitation?)null);
 		var domainEvent = new OrganizationInvitationAcceptedDomainEvent(invitationId, OrgId, InviteeId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
+		// Assert
 		await act.Should().NotThrowAsync();
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}

@@ -20,7 +20,6 @@
 		init();
 	}
 
-	// Catch browser autofill that fires after DOMContentLoaded
 	setTimeout(function () {
 		document.querySelectorAll('.form-input').forEach(checkValue);
 	}, 300);

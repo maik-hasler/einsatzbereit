@@ -7,13 +7,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.RateLimiting.CheckInAttemptLimiter's static core
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real
-// integration Postgres - the persisted replacement for the old in-memory
-// ConcurrentDictionary-backed lockout (#1176). CheckInWithPinCommandHandlerTests
-// (Application.UnitTests) covers the handler's orchestration against a mocked
-// ICheckInAttemptLimiter; this covers the lockout arithmetic and persistence
-// itself.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
@@ -105,13 +98,6 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	public async Task RegisterFailedAttemptAsync_ShouldStartAFreshAttemptBudget_OnceAPreviousLockoutHasExpired(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1159: FailedAttempts only ever grew, so once it first hit
-		// MaxFailedAttempts the very next wrong guess re-locked for another full
-		// LockoutDuration forever, with no way to ever earn a fresh attempt budget -
-		// even long after the original lockout had actually expired. This bug was
-		// originally fixed in the in-memory ConcurrentDictionary-backed limiter this
-		// class replaced (#1176), and had to be re-ported here since the DB-persisted
-		// rewrite reintroduced it independently.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var engagementId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
@@ -127,9 +113,6 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 
 		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken);
 
-		// A single wrong guess after expiry must not immediately re-lock - the old
-		// (buggy) behavior would have jumped straight back to "locked" here, since
-		// FailedAttempts had never been reset and was already >= MaxFailedAttempts.
 		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken))
 			.Should().BeFalse();
 	}
@@ -138,11 +121,6 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	public async Task RegisterFailedAttemptAsync_PersistsAcrossIndependentDbContexts(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1176: the old ConcurrentDictionary-backed limiter lost
-		// all state on a process restart. Using two independent
-		// ApplicationDbContexts (separate connections, like CheckInAttemptLimiter's
-		// own per-call scope) proves the state actually round-trips through
-		// Postgres rather than surviving only in a shared in-process dictionary.
 		var engagementId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
@@ -162,13 +140,6 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	public async Task RegisterFailedAttemptAsync_TwoConcurrentFirstAttemptsForTheSameEngagement_BothCount(
 		CancellationToken cancellationToken)
 	{
-		// Two independent ApplicationDbContexts (separate connections), like two
-		// near-simultaneous wrong PIN guesses for the same engagement (a
-		// double-click, or an attacker racing the lockout) would each get from
-		// CheckInAttemptLimiter's own per-call scope. Both find no existing row
-		// and race to insert one; the loser must recover from the primary key
-		// conflict and still record its attempt instead of throwing or being
-		// silently dropped.
 		var engagementId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 

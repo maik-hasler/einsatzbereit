@@ -39,19 +39,19 @@ public class SetOpportunityColorCommandHandlerTests
 	public async Task Handle_ShouldSetColor_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// #c10007, not #ff0000: pure red's best text contrast falls short of
-		// the 4.5:1 floor added for einsatzbereit#1726 - see
-		// VolunteerOpportunityTests.SetColor_ShouldFail_WhenTextContrastIsBelowMinimum.
 		var command = new SetOpportunityColorCommand(opportunityId, "#c10007", DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		opportunity.Color.Should().Be("#c10007");
 	}
@@ -60,7 +60,7 @@ public class SetOpportunityColorCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -72,8 +72,10 @@ public class SetOpportunityColorCommandHandlerTests
 
 		var command = new SetOpportunityColorCommand(opportunityId, "#ff0000", DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.Color.Should().BeNull();

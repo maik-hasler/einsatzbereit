@@ -3,10 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1323: AuthorizationConventionTests only proved an
-// admin route carries *some* authorization decision, never that it is
-// specifically EinsatzbereitAdminPolicy. These prove the four previously
-// uncovered admin endpoints actually reject a non-admin (organizer) caller.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AdminEndpointAuthorizationTests(
@@ -80,9 +76,6 @@ public class AdminEndpointAuthorizationTests(
 	public async Task SetUserAdminStatus_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		// The single highest-consequence privilege boundary in the product: a
-		// plain organizer must never be able to grant themselves (or anyone
-		// else) platform-admin by calling this endpoint directly.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);

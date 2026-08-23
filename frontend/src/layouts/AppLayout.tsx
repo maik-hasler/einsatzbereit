@@ -28,11 +28,6 @@ function AppLayoutInner() {
 				tabIndex={-1}
 				className="mx-auto w-full max-w-page flex-1 scroll-mt-24 px-4 pt-[var(--main-top-padding)] pb-16 focus:outline-none sm:px-6 lg:px-8"
 			>
-				{/* Scoped to this route (remounts, clearing any caught error, whenever
-				the location changes) so a render crash in a single page replaces
-				just the content below Header/Footer instead of the whole app - see
-				the top-level ErrorBoundary in main.tsx for the last-resort fallback
-				this can't catch (e.g. a crash in Header itself). */}
 				<ErrorBoundary key={location.pathname}>
 					<Suspense
 						fallback={
@@ -45,15 +40,10 @@ function AppLayoutInner() {
 					</Suspense>
 				</ErrorBoundary>
 			</main>
-			{/* Account/admin pages get the org console's slim link-row footer
-			instead of the public marketing one - its acquisition CTA has no
-			business framing a settings form or an operational admin list
-			(#2060). */}
+
 			{isAuthenticatedRoute(location.pathname) ? (
 				<Footer compact />
 			) : (
-				// /opportunities renders a grid of identically-styled cards right
-				// above this footer - see Footer's headingLevel doc comment (#2071).
 				<Footer headingLevel={location.pathname === "/opportunities" ? 3 : 2} />
 			)}
 		</div>

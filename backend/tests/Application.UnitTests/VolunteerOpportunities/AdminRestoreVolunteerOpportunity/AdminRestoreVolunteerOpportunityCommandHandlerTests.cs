@@ -37,6 +37,7 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldRestoreOpportunity_AndWriteAuditLog(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
@@ -44,8 +45,10 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		// Act
 		var result = await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		opportunity.IsDeleted.Should().BeFalse();
 		await _auditLogRepo.Received(1).AddAsync(
@@ -60,13 +63,16 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		_dbContext
 			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}
@@ -75,14 +81,17 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotShadowDeleted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_dbContext
 			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not shadow-deleted*");
 		await _auditLogRepo.DidNotReceive().AddAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
 	}

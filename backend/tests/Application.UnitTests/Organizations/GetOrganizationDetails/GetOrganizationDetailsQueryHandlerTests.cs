@@ -37,12 +37,15 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldReturnNull_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Should().BeNull();
 		await _keycloakService.DidNotReceive().GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
@@ -51,6 +54,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldReturnOrganizationDetails_WithMembers(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var userId = Guid.NewGuid();
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Sample Fire Department").Value;
@@ -60,8 +64,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 			new KeycloakOrganizationMember(userId, "olaf", "Olaf", "Miller", "olaf@test.de", true)
 		]);
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Should().NotBeNull();
 		result!.Id.Should().Be(orgId);
 		result.Name.Should().Be("Sample Fire Department");
@@ -79,10 +85,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 		string expectedRole,
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the requesting user's own role must come from
-		// organization_membership, not from scanning the Keycloak-sourced Members
-		// roster below - the org app shell needs it even when that roster can't be
-		// loaded (#1709).
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -92,8 +96,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, cancellationToken)
 			.Returns(isOrganizer);
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result!.RequestingUserRole.Should().Be(expectedRole);
 	}
 
@@ -101,10 +107,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldFallBackToLocalRoster_WhenKeycloakMemberLookupFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: any transient Keycloak failure on the members lookup used to
-		// throw and take down the whole org app shell along with it (#1709) - it
-		// should degrade to what organization_membership already knows locally
-		// instead.
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 		var organizerId = Guid.NewGuid();
@@ -124,8 +128,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 				[memberId] = OrganizationMemberRole.Member,
 			});
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Should().NotBeNull();
 		result!.MembersUnavailable.Should().BeTrue();
 		result.Members.Should().HaveCount(2);
@@ -137,6 +143,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldMapAddress_WhenAddressIsPresent(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 		org.Relocate(Address.Create("Main Street", "1", "12345", "Berlin").Value);
@@ -144,8 +151,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result!.Address.Should().NotBeNull();
 		result.Address!.Street.Should().Be("Main Street");
 		result.Address.City.Should().Be("Berlin");
@@ -155,14 +164,17 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldReturnNullAddress_WhenNoAddressSet(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
+		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result!.Address.Should().BeNull();
 	}
 
@@ -170,8 +182,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller has no membership at all in the target organization (any
-		// member - Organizer or plain Member - may view organization details).
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -180,8 +192,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _keycloakService.DidNotReceive().GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());

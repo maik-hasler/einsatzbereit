@@ -22,9 +22,6 @@ internal sealed class AdminReportReadRepository(
 		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
-		// Grouped, counted, ordered, and paged in a single SQL query (#1729) rather
-		// than pulling every report row into memory and doing all of that
-		// client-side - cost no longer grows linearly with total reports filed.
 		var groupedReports = dbContext.ReportsQuery
 			.GroupBy(r => new { r.TargetType, r.TargetId });
 

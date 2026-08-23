@@ -73,6 +73,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldUpdateTimeSlot_WhenValid(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -86,8 +87,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, newStart, newEnd, 20, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(1);
 		result.SkippedTimeSlotIds.Should().BeEmpty();
 		timeSlot.StartDateTime.Should().Be(newStart);
@@ -99,6 +102,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -107,8 +111,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, Guid.CreateVersion7(), BaseStart, BaseEnd, 10, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage($"*{opportunityId}*");
 	}
 
@@ -116,6 +122,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTimeSlotNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var opportunityId = opportunity.Id.Value;
 
@@ -126,8 +133,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, Guid.CreateVersion7(), BaseStart, BaseEnd, 10, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
 	}
 
@@ -135,6 +144,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCapacityReducedBelowActiveEngagements(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -150,8 +160,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, BaseStart, BaseEnd, 3, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*5*");
 		timeSlot.MaxParticipants.Should().Be(10);
 	}
@@ -160,6 +172,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldAllowChangingToUnlimitedCapacity_RegardlessOfActiveEngagementCount(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -175,8 +188,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, BaseStart, BaseEnd, MaxParticipants: null, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(1);
 		timeSlot.MaxParticipants.Should().BeNull();
 	}
@@ -185,6 +200,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReducingFromUnlimitedToFixedCapacityBelowActiveEngagements(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, null, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -200,8 +216,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, BaseStart, BaseEnd, MaxParticipants: 3, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*5*");
 		timeSlot.MaxParticipants.Should().BeNull();
 	}
@@ -210,6 +228,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldNotifyOnlyVolunteersOnTheEditedSlot(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var editedSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var otherSlot = opportunity.AddTimeSlot(BaseStart.AddDays(2), BaseEnd.AddDays(2), 10, DateTimeOffset.UtcNow).Value;
@@ -228,8 +247,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, editedSlot.Id.Value, BaseStart.AddHours(1), BaseEnd.AddHours(1), 10, DefaultRequestingUserId);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == editedSlotVolunteer),
 			cancellationToken);
@@ -245,6 +266,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldNotEmail_WhenNoActiveVolunteersOnEditedSlot(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var editedSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -256,8 +278,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, editedSlot.Id.Value, BaseStart.AddHours(1), BaseEnd.AddHours(1), 10, DefaultRequestingUserId);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await _emailService.DidNotReceive().SendBatchAsync(
 			Arg.Any<IReadOnlyList<EmailMessage>>(),
 			Arg.Any<CancellationToken>());
@@ -267,7 +291,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -282,8 +306,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, BaseStart.AddDays(1), BaseEnd.AddDays(1), 20, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		timeSlot.StartDateTime.Should().Be(BaseStart);
@@ -309,8 +335,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot2.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(2);
 		result.SkippedTimeSlotIds.Should().BeEmpty();
 		slot1.MaxParticipants.Should().Be(10);
@@ -322,7 +350,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldUpdateCapacityOnEveryOccurrence_WhenScopeIsEntireSeries(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a 3-occurrence weekly series.
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var seriesId = Guid.CreateVersion7();
 		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
@@ -334,12 +362,13 @@ public class UpdateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// Target the last occurrence - EntireSeries must still reach back to the earlier ones.
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot3.Id.Value, null, null, 25, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(3);
 		slot1.MaxParticipants.Should().Be(25);
 		slot2.MaxParticipants.Should().Be(25);
@@ -350,6 +379,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldNotChangeDates_ForBulkScope(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var seriesId = Guid.CreateVersion7();
 		var slot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 1).Value;
@@ -362,9 +392,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert: only capacity moves, dates are untouched by bulk scope.
+		// Assert
 		slot.StartDateTime.Should().Be(BaseStart);
 		slot.EndDateTime.Should().Be(BaseEnd);
 		slot.MaxParticipants.Should().Be(20);
@@ -374,7 +405,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldSkipSlot_WhenCapacityBelowActiveEngagementsInBulkScope(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: slot2 already has more active sign-ups than the requested capacity.
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var seriesId = Guid.CreateVersion7();
 		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 2).Value;
@@ -391,8 +422,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot1.Id.Value, null, null, 3, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(1);
 		result.SkippedTimeSlotIds.Should().ContainSingle().Which.Should().Be(slot2.Id.Value);
 		slot1.MaxParticipants.Should().Be(3);
@@ -403,8 +436,8 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldExcludePastOccurrences_FromBulkScope(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: slot1 is a past occurrence (created as valid-at-the-time via an
-		// artificially-past `now`), slot2 is still upcoming.
+		// Arrange
+
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var seriesId = Guid.CreateVersion7();
 		var pastStart = DateTimeOffset.UtcNow.AddDays(-9);
@@ -420,8 +453,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot2.Id.Value, null, null, 30, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.UpdatedCount.Should().Be(1);
 		slot1.MaxParticipants.Should().Be(10);
 		slot2.MaxParticipants.Should().Be(30);
@@ -431,7 +466,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenBulkScopeAndTimeSlotNotPartOfSeries(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a standalone slot with no SeriesId.
+		// Arrange
 		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -443,8 +478,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlot.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not part of a recurring series*");
 		timeSlot.MaxParticipants.Should().Be(10);
 	}

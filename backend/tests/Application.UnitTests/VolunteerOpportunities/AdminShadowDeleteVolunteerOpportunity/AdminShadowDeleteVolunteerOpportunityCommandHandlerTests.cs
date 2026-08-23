@@ -63,17 +63,18 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldShadowDeleteOpportunity_WithoutCheckingOwnership(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: no IsOrganizerAsync stub configured at all - if the handler
-		// called OwnershipGuard, NSubstitute's default (false) would make this fail.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		// Act
 		var result = await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
-		// Assert: shadow-deleted, not removed - the takedown must be restorable.
+		// Assert
 		result.Should().BeTrue();
 		opportunity.IsDeleted.Should().BeTrue();
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
@@ -89,6 +90,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldMarkOpenReportsActioned_WhenOpportunityShadowDeleted(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -99,8 +101,10 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 			.GetOpenReportsForTargetAsync(ReportTargetType.VolunteerOpportunity, opportunityId, cancellationToken)
 			.Returns([report]);
 
+		// Act
 		await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		report.Status.Should().Be(ReportStatus.Actioned);
 		report.ResolvedByUserId.Should().Be(DefaultAdminUserId);
 	}
@@ -109,10 +113,8 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - same guarantee as the organizer-triggered delete (#1057): a
-		// shadow-delete's auto-cancelled engagements must in-app-notify the
-		// volunteer, and raise an event carrying the opportunity's title for
-		// EngagementCancelledNotificationHandler's post-commit email (#1150).
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -127,12 +129,11 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 			.GetActiveEngagementsForOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns([engagement]);
 
+		// Act
 		await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
-		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073): a
-		// shadow-deleted opportunity is filtered out of every query by
-		// VolunteerOpportunityConfiguration's IsDeleted filter, so a later live
-		// lookup by relatedEntityId would find nothing to interpolate {{title}} with.
+		// Assert
+
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
@@ -149,13 +150,16 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}

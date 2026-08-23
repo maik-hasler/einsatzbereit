@@ -20,13 +20,16 @@ public class DeleteReadNotificationsCommandHandlerTests
 	public async Task Handle_ShouldReturnTheDeletedCount_FromTheDbContext(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		_dbContext.DeleteReadNotificationsForRecipientAsync(recipientId, cancellationToken).Returns(3);
 
 		var command = new DeleteReadNotificationsCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(3);
 	}
 
@@ -34,13 +37,16 @@ public class DeleteReadNotificationsCommandHandlerTests
 	public async Task Handle_ShouldReturnZero_WhenCallerHasNoReadNotifications(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		_dbContext.DeleteReadNotificationsForRecipientAsync(recipientId, cancellationToken).Returns(0);
 
 		var command = new DeleteReadNotificationsCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(0);
 	}
 
@@ -48,6 +54,7 @@ public class DeleteReadNotificationsCommandHandlerTests
 	public async Task Handle_ShouldOnlyAffectTheRequestingUsersOwnNotifications(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		var otherUsersId = UserId.New();
 		_dbContext.DeleteReadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>())
@@ -57,8 +64,10 @@ public class DeleteReadNotificationsCommandHandlerTests
 
 		var command = new DeleteReadNotificationsCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(0);
 		await _dbContext.DidNotReceive().DeleteReadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>());
 	}

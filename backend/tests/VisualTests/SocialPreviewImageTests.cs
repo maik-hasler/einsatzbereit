@@ -3,14 +3,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1089: <c>index.html</c>'s <c>og:image</c>/<c>twitter:image</c>
-/// meta tags pointed at <c>/og-image.png</c>, but no such file existed in
-/// <c>frontend/public/</c> - every shared link (WhatsApp, Signal, Mastodon,
-/// Facebook, ...) rendered a broken image in its link preview. Asserts the
-/// referenced file actually exists and is served as an image, not just that
-/// the meta tag is present.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SocialPreviewImageTests(AspireFixture fixture) : VisualTestBase(fixture)
 {

@@ -18,7 +18,6 @@ internal sealed class CheckInAttemptConfiguration
 
 		builder.Property(a => a.LastAttemptOn).IsRequired();
 
-		// CheckInAttemptPruneJob queries and deletes by this column.
 		builder.HasIndex(a => a.LastAttemptOn);
 	}
 }

@@ -9,8 +9,7 @@ export default function Field({
 }: {
 	label: string;
 	id?: string;
-	/** Renders the shared asterisk. The control itself still needs its own
-	 * `required`/`aria-required` - that is the accessible half. */
+
 	required?: boolean;
 	children: React.ReactNode;
 }) {

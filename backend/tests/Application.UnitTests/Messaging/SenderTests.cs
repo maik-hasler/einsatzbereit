@@ -2,6 +2,7 @@ using Application.Common.Messaging;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Application.UnitTests.Messaging;
 
 public class SenderTests
@@ -10,6 +11,7 @@ public class SenderTests
 	public async Task Send_ShouldReturnResponse_WhenHandlerExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var services = new ServiceCollection();
 		services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
 		services.AddScoped<ISender, Sender>();
@@ -19,8 +21,10 @@ public class SenderTests
 
 		var request = new TestRequest("Hello");
 
+		// Act
 		var result = await sender.Send(request, cancellationToken);
 
+		// Assert
 		result.Should().Be("Handled: Hello");
 	}
 
@@ -28,6 +32,7 @@ public class SenderTests
 	public async Task Send_ShouldThrowException_WhenHandlerIsMissing(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var services = new ServiceCollection();
 		services.AddScoped<ISender, Sender>();
 
@@ -36,8 +41,10 @@ public class SenderTests
 
 		var request = new TestRequest("Hello");
 
+		// Act
 		Func<Task> act = async () => await sender.Send(request, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
 			.WithMessage("*No service for type 'Application.Common.Messaging.IRequestHandler*");
 	}
@@ -46,6 +53,7 @@ public class SenderTests
 	public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var log = new List<string>();
 
 		var services = new ServiceCollection();
@@ -60,8 +68,10 @@ public class SenderTests
 
 		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
+		// Act
 		await sender.Send(new TestRequest("Hello"), cancellationToken);
 
+		// Assert
 		log.Should().ContainInOrder("Before", "After");
 	}
 
@@ -69,6 +79,7 @@ public class SenderTests
 	public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var log = new List<string>();
 
 		var services = new ServiceCollection();
@@ -86,8 +97,10 @@ public class SenderTests
 
 		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
+		// Act
 		await sender.Send(new TestRequest("Hello"), cancellationToken);
 
+		// Assert
 		log.Should().Equal(
 			"A:Before",
 			"B:Before",
@@ -99,6 +112,7 @@ public class SenderTests
 	public async Task Send_ShouldReuseCallingScope_WhenInvokedFromWithinAnotherHandler(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var services = new ServiceCollection();
 		services.AddScoped<ScopedMarker>();
 
@@ -109,8 +123,10 @@ public class SenderTests
 
 		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
+		// Act
 		var (outerMarkerId, innerMarkerId) = await sender.Send(new OuterRequest(), cancellationToken);
 
+		// Assert
 		innerMarkerId.Should().Be(outerMarkerId);
 	}
 

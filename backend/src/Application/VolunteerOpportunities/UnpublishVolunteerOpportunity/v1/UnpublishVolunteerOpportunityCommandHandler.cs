@@ -25,9 +25,6 @@ internal sealed class UnpublishVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Cascade-cancelling active engagements + notifying volunteers happens
-		// asynchronously via the outbox (VolunteerOpportunityUnpublishedDomainEventHandler),
-		// not inline here - see Unpublish()'s doc comment on OpportunityStatus.
 		opportunity.Unpublish().ThrowIfFailure();
 
 		return true;

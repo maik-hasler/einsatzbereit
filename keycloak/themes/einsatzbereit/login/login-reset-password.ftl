@@ -54,9 +54,7 @@
 		</form>
 
 	<#elseif section = "info">
-		<#-- Chevron, matching the app's own back links (PageHeaderBand uses a
-		ChevronLeftIcon). A literal &larr; is a different glyph in a different
-		weight from anything else in the product. -->
+
 		<a href="${url.loginUrl}" class="back-link">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 				stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

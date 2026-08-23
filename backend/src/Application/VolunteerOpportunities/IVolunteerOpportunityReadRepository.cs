@@ -17,11 +17,6 @@ public interface IVolunteerOpportunityReadRepository
 		VolunteerOpportunityFilter filter,
 		CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Which calendar days inside the filter's window have at least one time slot
-	/// starting on them, across the same publicly listed opportunities
-	/// <see cref="GetPagedSummariesAsync"/> would return for the same filters.
-	/// </summary>
 	ValueTask<IReadOnlyList<VolunteerOpportunityAvailableDate>> GetDateAvailabilityAsync(
 		VolunteerOpportunityDateAvailabilityFilter filter,
 		CancellationToken cancellationToken = default);

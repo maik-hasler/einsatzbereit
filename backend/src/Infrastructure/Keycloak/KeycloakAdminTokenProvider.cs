@@ -44,8 +44,7 @@ internal sealed class KeycloakAdminTokenProvider(
 			var token = await RequestTokenAsync(cancellationToken);
 
 			_token = token.AccessToken;
-			// Refresh slightly before the real expiry so a cached token never
-			// expires mid-request.
+
 			var safetySeconds = Math.Min(30, token.ExpiresIn / 2);
 			_expiresAt = DateTimeOffset.UtcNow.AddSeconds(token.ExpiresIn - safetySeconds);
 
@@ -74,9 +73,6 @@ internal sealed class KeycloakAdminTokenProvider(
 
 		if (!response.IsSuccessStatusCode)
 		{
-			// The response body is never logged here, even at Debug level - unlike the
-			// admin API, this is a client-credentials token exchange and its response
-			// carries no data useful for diagnostics.
 			logger.LogWarning(
 				"Keycloak token request failed with {StatusCode}",
 				(int)response.StatusCode);

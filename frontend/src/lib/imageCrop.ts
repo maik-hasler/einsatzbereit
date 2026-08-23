@@ -10,10 +10,6 @@ export interface SourceRect {
 	sh: number;
 }
 
-// The scale at which an image of (naturalWidth, naturalHeight) fully covers a
-// frame of (frameWidth, frameHeight) with no empty gaps at any edge - the
-// same "cover" behavior CSS object-fit: cover gives, but computed explicitly
-// so it can be combined with an adjustable zoom on top.
 export function coverScale(
 	naturalWidth: number,
 	naturalHeight: number,
@@ -23,9 +19,6 @@ export function coverScale(
 	return Math.max(frameWidth / naturalWidth, frameHeight / naturalHeight);
 }
 
-// Clamps the image's top-left offset (relative to the frame's top-left) so
-// the scaled image always fully covers the frame - dragging or zooming can
-// never open a gap at an edge.
 export function clampOffset(
 	offset: Offset,
 	scaledWidth: number,
@@ -41,9 +34,6 @@ export function clampOffset(
 	};
 }
 
-// Recomputes the offset when the scale changes (zoom slider) so the point
-// currently at the frame's center stays fixed, rather than the image
-// jumping to a new position. Caller still needs to clamp the result.
 export function recenterOffsetForScale(
 	offset: Offset,
 	oldScale: number,
@@ -59,9 +49,6 @@ export function recenterOffsetForScale(
 	};
 }
 
-// The natural-pixel-space rectangle of the source image currently visible
-// inside the frame, given the image is rendered at `scale` and positioned at
-// `offset` (top-left, relative to the frame's top-left).
 export function computeSourceRect(
 	offset: Offset,
 	scale: number,
@@ -78,10 +65,7 @@ export function computeSourceRect(
 
 export interface LoadedImage {
 	image: HTMLImageElement;
-	// Caller owns this and must URL.revokeObjectURL it once the image is no
-	// longer displayed - `image.src` is reused as the crop preview's <img>
-	// src, so revoking too early (e.g. right after decode) can break that
-	// second consumer of the same URL.
+
 	objectUrl: string;
 }
 
@@ -98,9 +82,6 @@ export function loadImage(file: File): Promise<LoadedImage> {
 	});
 }
 
-// Draws the given source rect from `img` onto an offscreen canvas sized
-// (outputWidth, outputHeight) and re-encodes it as WebP - this is what turns
-// a multi-MB original into a small, appropriately-sized upload (einsatzbereit#1380).
 export function cropImageToBlob(
 	img: HTMLImageElement,
 	source: SourceRect,

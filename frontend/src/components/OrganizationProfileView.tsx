@@ -23,35 +23,13 @@ interface OrganizationProfileViewProps {
 	actions?: ReactNode;
 	beforeContent?: ReactNode;
 	children?: ReactNode;
-	/**
-	 * "h1" for a standalone page whose primary heading this name is (the
-	 * public profile page); "p" (default) for the org app's own Settings tab,
-	 * which deliberately has no page-level heading - the org switcher in the
-	 * header already shows the org name.
-	 */
+
 	nameAs?: "h1" | "p";
-	/**
-	 * "sidebar" (default) floats the contact details beside the main content -
-	 * right for the public profile, whose children are a long opportunity list
-	 * that fills the wider column. "stacked" keeps one column: the org app's
-	 * Settings tab has only a short description and the danger-zone panel as
-	 * children, and splitting those into a 1fr/18rem grid squeezed the panel to
-	 * half width beside a mostly empty sidebar.
-	 */
+
 	layout?: "sidebar" | "stacked";
-	/**
-	 * The public profile page states the org name in a PageHeaderBand instead,
-	 * so it suppresses this component's own logo/name row rather than showing
-	 * the same identity twice. The org app's Settings tab keeps it - there the
-	 * band does not exist.
-	 */
+
 	showHeader?: boolean;
-	/**
-	 * Centres the content column. Only the public profile does this, because a
-	 * PageHeaderBand sits above it and centres its own title at the same
-	 * max-w-5xl - left-flush content under a centred band puts the two ~175px
-	 * apart. The org app Settings tab has no band and stays flush left per #766.
-	 */
+
 	centered?: boolean;
 }
 
@@ -76,10 +54,6 @@ export default function OrganizationProfileView({
 	const hasContactInfo = !!(contactEmail || contactPhone || website || address);
 	const useSidebar = layout === "sidebar" && hasContactInfo;
 
-	// White card, not the gray-50 cardSubtleClass it used before: a grey block
-	// was the single largest surface on these pages and set the flat tone the
-	// whole redesign is undoing (#1755). Built once and placed by whichever
-	// branch below runs, so the two layouts can't drift apart.
 	const contactCard = (
 		<div className={`space-y-2.5 text-sm text-gray-700 ${cardClass}`}>
 			{contactEmail && (
@@ -164,12 +138,6 @@ export default function OrganizationProfileView({
 				</div>
 			)}
 
-			{/* max-w-5xl, was max-w-2xl: a 672px column inside <main>'s 90rem left
-			~700px of empty page beside it on desktop, which is the "dead column"
-			#766 was originally about - #766 fixed the alignment (flush left, not
-			centred) but left the width. Still flush left, per that issue; the
-			contact details now sit in a sidebar beside the prose instead of
-			below it, so the extra width carries content rather than air. */}
 			<div
 				data-content-wrapper
 				className={centered ? "mx-auto max-w-5xl" : "max-w-5xl"}

@@ -11,13 +11,6 @@ interface ReportFlagButtonProps {
 	className?: string;
 }
 
-/**
- * Small icon-only flag trigger for list/card contexts where the full-text
- * "Report" button used on detail pages (OrganizationProfilePage,
- * VolunteerOpportunityDetailPage) doesn't fit. Cards it's dropped into
- * usually have an absolutely-positioned overlay <Link> for click-to-navigate,
- * so the button stops propagation and sits above it via z-20.
- */
 export default function ReportFlagButton({
 	targetLabel,
 	ariaLabel,

@@ -17,10 +17,6 @@ internal sealed class GetEngagementsQueryHandler(
 {
 	private const int MaxPageSize = 100;
 
-	// Realm-wide search, not scoped to this opportunity's organization - Keycloak
-	// has no per-opportunity user index. A generous max keeps a common first/last
-	// name from silently missing volunteers signed up for this opportunity; the
-	// repository still scopes the actual engagement rows down to this opportunity.
 	private const int SearchMaxResults = 200;
 
 	public async ValueTask<PagedList<EngagementSummary>> Handle(

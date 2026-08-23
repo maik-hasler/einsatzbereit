@@ -30,10 +30,6 @@ import {
 } from "../components/icons";
 import type { Organization } from "../client/api-client";
 
-// Lazy-loaded: HomePage is eager (App.tsx keeps it out of the lazy route
-// map, see the comment there), so a static import here would pull
-// react-hook-form + zod into the entry chunk for every page - same reasoning
-// as OrganizationSwitcher's own lazy import of this same component (#1728).
 const CreateOrganizationModal = lazy(
 	() => import("../components/CreateOrganizationModal"),
 );
@@ -53,13 +49,6 @@ export default function HomePage() {
 	const [showOrgModal, setShowOrgModal] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	// Shared with Header, which independently needs the same organization list
-	// on the same mount (#1396) - see useMyOrganizations/useSharedOrgFetch.
-	// Loading and failed are deliberately distinct there: without
-	// distinguishing them, a signed-in organizer could see the "create an
-	// organization" CTA (and, if clicked, create a duplicate org) while their
-	// real org list was still loading or had failed to load (see
-	// HomePageOrgCtaTests.cs's regression test).
 	const {
 		orgs,
 		loading: orgsLoading,
@@ -67,9 +56,6 @@ export default function HomePage() {
 	} = useMyOrganizations();
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
-	// Hero search - initialized from the URL so a back-navigation (or a
-	// shared link with ?q=/&city=... already set) shows the search that
-	// produced the results below instead of a blank-looking form.
 	const [heroKeyword, setHeroKeyword] = useState(
 		() => searchParams.get("q") ?? "",
 	);
@@ -79,11 +65,6 @@ export default function HomePage() {
 	const [heroLocation, setHeroLocation] = useState<CitySuggestion | null>(null);
 	const [resolvingHeroLocation, setResolvingHeroLocation] = useState(false);
 
-	// Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint sends
-	// signed-out visitors through Keycloak's registration flow with
-	// ?createOrg=1 baked into the post-login returnTo - once they land back
-	// here authenticated, open the modal they originally asked for instead of
-	// making them find and click the CTA a second time.
 	useEffect(() => {
 		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
 			setShowOrgModal(true);
@@ -93,15 +74,6 @@ export default function HomePage() {
 		}
 	}, [searchParams, auth.isAuthenticated, setSearchParams]);
 
-	// Keep the hero's own copies of q/city/lat/lng in sync with the URL after
-	// mount, not just on first paint - the filter bar below owns the same
-	// params (its own Location dropdown, the keyword pill's clear button) and
-	// previously had no way to push a change back up into the hero fields,
-	// leaving them showing stale text once the filter bar moved the URL out
-	// from under them. Deps are the individual param strings, not the
-	// searchParams object itself, so an unrelated change (e.g. toggling a
-	// category filter) doesn't re-run this and clobber a location the visitor
-	// is still mid-typing into the hero box, unconfirmed by a suggestion pick.
 	const urlKeyword = searchParams.get("q") ?? "";
 	const urlCity = searchParams.get("city") ?? "";
 	const urlLat = searchParams.get("lat") ?? "";
@@ -116,18 +88,6 @@ export default function HomePage() {
 		);
 	}, [urlKeyword, urlCity, urlLat, urlLng]);
 
-	// Search from the hero (vostel.de pattern). The results list is its own
-	// route now, so this hands the same URL params VolunteerOpportunitiesList
-	// reads straight to /opportunities instead of scrolling to an anchor on
-	// this page. A location the visitor typed but never confirmed via a
-	// suggestion click (heroLocation still null) previously got silently
-	// dropped instead of sent as a filter - now it's resolved through the
-	// same /v1/maps/cities lookup the autocomplete itself uses, right before
-	// navigating, so pressing "Suchen" without picking a suggestion still
-	// searches near the typed city. A toast (survives the navigation - see
-	// ToastProvider, mounted at the app root) tells the visitor when their
-	// text didn't resolve to any city at all, rather than silently searching
-	// unfiltered (#2046).
 	async function handleHeroSearch(e: FormEvent) {
 		e.preventDefault();
 		let location = heroLocation;
@@ -168,15 +128,6 @@ export default function HomePage() {
 		navigate(query ? `/opportunities?${query}` : "/opportunities");
 	}
 
-	// Org CTA - the landing page's only pitch to the other side of the
-	// marketplace (everything else here is volunteer-facing). Signed-in users
-	// with no org yet go straight into CreateOrganizationModal (the same one
-	// Header's OrganizationSwitcher opens); signed-out visitors go through
-	// Keycloak's registration flow rather than plain login, since this is a
-	// first-touch CTA for people who don't have an account yet. Users who
-	// already organize an org never reach this function - see the render
-	// branch below, which swaps the button for an "Organization overview"
-	// link instead so this can't create a duplicate org.
 	function handleOrgCta() {
 		if (auth.isAuthenticated) {
 			setShowOrgModal(true);
@@ -211,9 +162,6 @@ export default function HomePage() {
 		},
 	];
 
-	// Sourced from help.general* rather than a separate landing.faq* copy -
-	// /help is the single FAQ source, and this is its genuine subset (#2061),
-	// not a disjoint set of questions the Help Center doesn't actually answer.
 	const faqItems = [
 		{ q: t("help.generalQ1"), a: t("help.generalA1") },
 		{ q: t("help.generalQ2"), a: t("help.generalA2") },
@@ -223,14 +171,8 @@ export default function HomePage() {
 
 	return (
 		<>
-			{/* Hero - otter.com-inspired: a headline plus an in-hero search
-			(vostel.de pattern: city + keyword, "Suchen" submits straight into
-			the results below), framed by otter's own 5 organic "stone" shapes
-			(3 photos, 2 flat brand-color fills - see the clip-path defs and
-			the /images/hero/*.jpg photos below). */}
 			<section aria-labelledby={heroTitleId} className="mb-20">
 				<div className="animate-fade-up relative isolate overflow-hidden rounded-card bg-brand-800 shadow-resting">
-					{/* Decorative glow blobs */}
 					<div
 						aria-hidden="true"
 						className="pointer-events-none absolute -top-40 -left-40 h-120 w-120 rounded-full bg-brand-700 opacity-60 blur-3xl"
@@ -244,14 +186,6 @@ export default function HomePage() {
 						className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-125 -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
 					/>
 
-					{/* Organic "stone" shapes, ported 1:1 from otter.com's own hero
-					(same 5 SVG clip-path outlines, objectBoundingBox units so they
-					scale to whatever box each is applied to) - 3 carry photos, 2 are
-					flat brand-color fills, matching otter's exact photo:color split.
-					otter keeps 4 of its 5 shapes at every viewport, just smaller and
-					corner-anchored on phones (only the smallest, solid-color one
-					drops out) - mirrored here rather than hiding all 5 below lg,
-					which otter itself doesn't do either. */}
 					<svg width="0" height="0" aria-hidden="true" className="absolute">
 						<defs>
 							<clipPath id="hero-stone-1" clipPathUnits="objectBoundingBox">
@@ -272,11 +206,6 @@ export default function HomePage() {
 						</defs>
 					</svg>
 
-					{/* The three photo stones are hidden below `sm`. At 80px, clipped
-					to an organic shape, a photo of a crowd of volunteers is not
-					legible as anything - on a phone they read as stray fragments in
-					the corners rather than as imagery. The two flat colour stones
-					stay: a shape works at any size. */}
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-1)" }}
@@ -332,13 +261,6 @@ export default function HomePage() {
 							{t("landing.heroSubtitle")}
 						</p>
 
-						{/* Search - the hero's actual job now: search right here
-						instead of only linking down to the (unfiltered) list below
-						(vostel.de pattern). See handleHeroSearch. Each field gets its
-						own bordered/tinted box (same resting/focus treatment as the
-						filter bar's LocationSearchInput usage below) so the bar reads
-						as three distinct controls - location, keyword, submit - rather
-						than one continuous white surface with a button stuck on. */}
 						<form
 							onSubmit={handleHeroSearch}
 							className="animate-fade-up-d3 mx-auto mt-8 max-w-2xl sm:mt-10"
@@ -390,44 +312,8 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* Newest opportunities - the hero's promise, answered. See
-			LatestOpportunitiesSection for why it is three cards and not the
-			grid, and why it disappears rather than rendering an empty state. It
-			sits here, between the hero and the org pitch, so the page stays
-			volunteer-facing right up to the point where it changes audience. */}
 			<LatestOpportunitiesSection />
 
-			{/* Org CTA - the landing page's other half, placed after the
-			opportunity preview and ahead of the founder band. Everything else
-			on this page pitches a volunteer; this is the one section that
-			pitches an organization instead. A full-bleed wavy band now, not
-			a plain white section - breaks out of <main>'s max-w-page column
-			the same way the Founder/Mission band below does (relative
-			left-1/2 w-screen -translate-x-1/2). Two wave caps of its own:
-			a top one fading in from white, and a bottom one (see the
-			comment further down) that fades this band's own color into
-			brand-100 before the Founder band even starts, so the two greens
-			meet inside a single continuous wave with no page-white gap
-			between them - Founder's own top cap was removed to match, see
-			its comment. An earlier version gave Founder the only cap and
-			just zeroed the margin between them, which left a thin white
-			sliver at the seam (Founder's notches reveal the page background,
-			not whatever tint precedes it, since they're separate boxes).
-			Background is brand-700 - Button.tsx's own primary color, already
-			proven to carry white text everywhere else on the site. Two
-			lighter attempts before this - a translucent color-mix tint,
-			then a solid brand-800 stage - either sat too close to the
-			Founder band's own brand-100 to read as a deliberate second tone
-			(brand-800 was the opposite problem: too dark) once judged
-			against it directly rather than in isolation. Light-on-dark text
-			now, matching the hero's own palette (brand-200 label, white
-			heading/icons, white/70-80 body) since this is a dark stage
-			again; Button's `onDark` variant for the CTA so it doesn't
-			disappear into the same brand-700 it's sitting on. Cards dropped
-			from the three features - icon directly on the band in a
-			frosted white/15 circle (hero's own search-bar treatment), not
-			a bordered box. Glow blobs mirror the hero's, scaled down - a
-			flat brand-700 rectangle alone read as an unstyled block. */}
 			<section
 				id="for-organizations"
 				aria-labelledby={orgCtaTitleId}
@@ -442,17 +328,8 @@ export default function HomePage() {
 					<path d={WAVE_PATH} fill="currentColor" />
 				</svg>
 
-				{/* brand-800, not brand-700. brand-700 was the only surface in the
-				whole product using that step: the hero above and every subpage's
-				PageHeaderBand are brand-800, so a near-miss of that green read as
-				an inconsistency rather than as a deliberate second tone. The
-				earlier attempt at brand-800 here was judged against a brand-100
-				Mission band below and came out too dark - that band is brand-50
-				now, which is what makes this work. */}
 				<div className="bg-brand-800">
 					<div className="relative isolate overflow-hidden">
-						{/* Same soft glow-blob treatment as the hero and
-						PageHeaderBand - a flat fill alone reads as a plain rectangle. */}
 						<div
 							aria-hidden="true"
 							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
@@ -530,16 +407,6 @@ export default function HomePage() {
 						</div>
 					</div>
 
-					{/* Bottom cap fades this box's own background into brand-50
-					(not another currentColor tint) - the transparent notches
-					above the fill reveal this div's own background since the
-					svg is nested inside it, not a sibling after it (a sibling's
-					notches would reveal the page's white instead - the bug an
-					earlier version of this had, see the git history on this
-					section). Founder's own top cap is removed below since this
-					already provides the full transition; its flat top edge
-					continues in the exact same brand-50 this ends in, so there
-					is no seam left to see. */}
 					<svg
 						aria-hidden="true"
 						viewBox="0 0 1440 60"
@@ -551,24 +418,6 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* Founder / Mission band - vostel.de's "Die Mission von vostel.de"
-			module (portrait photo backed by an organic blob, paired with the
-			founder's own words), replacing the old plain-text Mission intro so
-			the page states its "why" as a real person's claim rather than a
-			marketing paragraph. Breaks out of <main>'s max-w-page column
-			(relative left-1/2 w-screen -translate-x-1/2 - safe because
-			global.css already sets html { overflow-x: clip }) so the brand-100
-			stage runs edge-to-edge like the hero and footer bands do, just in a
-			lighter tier of the same palette. Only a bottom cap now (rotated
-			180deg) - no top cap of its own. The Org CTA band above already
-			ends in its own brand-100 bottom cap (see its comment), so this
-			section's flat top edge continues in the exact same color with no
-			seam to cap; adding a second cap here on top of that would just
-			carve a redundant notch out of solid brand-100. No mt-20 either,
-			for the same reason - the two bands are flush, not gapped. mb-20
-			(toward the FAQ below) is still this band's own, unchanged - the
-			FAQ carries no margin on the side that touches it either, so
-			there's exactly one owner for that gap. */}
 			<section
 				aria-labelledby={missionTitleId}
 				className="relative left-1/2 mb-20 w-screen -translate-x-1/2"
@@ -623,25 +472,6 @@ export default function HomePage() {
 				</svg>
 			</section>
 
-			{/* FAQ - closes the page on objection-handling rather than a third
-			pitch: cost, account requirement, org onboarding speed, and
-			license, in that order (volunteer concerns first, since the page
-			is volunteer-facing until the org CTA above). Content is the same
-			help.general* copy HelpPage's own General section renders, not a
-			separately maintained set of questions - the two had drifted into
-			entirely disjoint FAQs, so the "More questions? See Help" link
-			below used to lead to a page that answered none of these four
-			(#2061). The accordion itself is shared with HelpPage
-			(FaqAccordion) - the two used to be visibly different pieces of
-			markup, so following that link left the design system (#1755).
-			mb-20 (not mt-20) since this is the last content section before
-			Footer - matches how the org CTA used to own this same trailing
-			gap before it moved above the founder band. Trimmed to mb-10: the
-			footer opens with its own pale band and generous padding, so a full
-			mb-20 on top of that left ~200px of nothing between the last
-			question and the first footer heading. The accordion column widens
-			to max-w-3xl for the same reason it exists at all - at max-w-2xl it
-			was a 670px card marooned in a 1440px viewport. */}
 			<section aria-labelledby={faqTitleId} className="mb-10">
 				<div className="animate-fade-up mx-auto max-w-3xl text-center">
 					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-700 uppercase">

@@ -31,8 +31,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 				);
 				return isDuplicate ? prev : [...prev, event];
 			});
-			// 0 (test builds only - see runtimeConfig.ts) disables auto-dismiss
-			// entirely, leaving the toast up until manually closed.
+
 			if (runtimeConfig.toastLifetimeMs > 0) {
 				setTimeout(() => {
 					setToasts((prev) => prev.filter((t) => t.id !== event.id));
@@ -49,13 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<ToastContext.Provider value={{ toasts, dismiss }}>
 			{children}
-			{/* Always-mounted empty live region so a screen reader has an aria-live */}
-			{/* region on page load, before the first toast's own role="alert" exists. */}
-			{/* No role="status" here - that role is already used app-wide for actual */}
-			{/* loading/status indicators, and several tests locate those by a bare */}
-			{/* [role='status'] query; a global always-present one would shadow them. */}
-			{/* Kept as a sibling (not a wrapper) of the toasts below - nesting a */}
-			{/* "polite" region around each toast's own "assertive" alert is unreliable. */}
+
 			<div
 				aria-live="polite"
 				className="sr-only"
@@ -71,13 +64,6 @@ function ToastList() {
 	const { t } = useTranslation();
 
 	return (
-		// role="region": ToastProvider mounts this at the app root (main.tsx),
-		// as a sibling of the routed page rather than inside AppLayout's <main>
-		// - without an explicit landmark here, a visible toast's text sits
-		// outside every landmark on the page, which is exactly what axe's
-		// "region" rule (escalated to CI-blocking, see AccessibilityTests.cs)
-		// flags. aria-label since a generic "region" needs one to be exposed
-		// as a distinct landmark rather than an anonymous one.
 		<div
 			role="region"
 			aria-label={t("error.toastRegionLabel")}

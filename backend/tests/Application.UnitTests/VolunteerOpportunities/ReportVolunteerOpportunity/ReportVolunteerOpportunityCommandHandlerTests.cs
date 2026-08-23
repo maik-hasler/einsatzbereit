@@ -42,6 +42,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldAddReport_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -50,8 +51,10 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 
 		var command = new ReportVolunteerOpportunityCommand(opportunityId, DefaultReporterId, ReportReason.Spam, "looks fake");
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _reportRepo.Received(1).AddAsync(
 			Arg.Is<Report>(r => r!.TargetType == ReportTargetType.VolunteerOpportunity
@@ -66,6 +69,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -73,8 +77,10 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 
 		var command = new ReportVolunteerOpportunityCommand(opportunityId, DefaultReporterId, ReportReason.Spam, null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());
@@ -84,6 +90,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReporterAlreadyHasOpenReport(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -95,8 +102,10 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 
 		var command = new ReportVolunteerOpportunityCommand(opportunityId, DefaultReporterId, ReportReason.Spam, null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());
@@ -106,6 +115,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenDetailsTooLong(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -115,8 +125,10 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 		var tooLong = new string('a', Domain.Reports.Report.MaxDetailsLength + 1);
 		var command = new ReportVolunteerOpportunityCommand(opportunityId, DefaultReporterId, ReportReason.Other, tooLong);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());

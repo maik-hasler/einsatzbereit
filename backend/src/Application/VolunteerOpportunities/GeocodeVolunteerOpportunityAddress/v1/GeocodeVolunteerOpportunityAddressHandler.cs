@@ -8,13 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.GeocodeVolunteerOpportunityAddress.v1;
 
-// Reacts to VolunteerOpportunityGeocodingRequestedDomainEvent (raised by
-// VolunteerOpportunity.Create/Relocate) via the transactional-outbox pipeline
-// (see backend/AGENTS.md's "Domain events" section) - dispatch happens in its
-// own scope well after the triggering command's transaction has committed, so
-// the Nominatim call (and its up-to-1.1s process-wide throttle, see
-// NominatimGeocodingService) no longer runs while a DB transaction is open
-// (#1388).
 internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
@@ -23,9 +16,6 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 	ILogger<GeocodeVolunteerOpportunityAddressHandler> logger)
 	: INotificationHandler<VolunteerOpportunityGeocodingRequestedDomainEvent>
 {
-	// Repeated identical addresses (e.g. several opportunities at the same
-	// venue) resolve from cache instead of each waiting out Nominatim's shared
-	// one-request-per-second throttle (mirrors SearchCitiesQueryHandler).
 	private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
 	public async Task Handle(
@@ -35,10 +25,6 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			notification.OpportunityId, cancellationToken);
 
-		// By the time this dispatches, the opportunity may have been deleted,
-		// gone remote, had its address changed again (a newer event supersedes
-		// this one), or already been resolved by an earlier attempt - nothing to
-		// do in any of those cases.
 		if (opportunity is null ||
 			opportunity.IsRemote ||
 			opportunity.Address is null ||
@@ -65,9 +51,6 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 				return;
 			}
 
-			// Don't cache a TransientFailure - a temporary Nominatim hiccup would
-			// otherwise become a day-long false negative for every other
-			// opportunity sharing this address (mirrors SearchCitiesQueryHandler).
 			if (result.Outcome != GeocodingOutcome.TransientFailure)
 				cache.Set(cacheKey, result, CacheDuration);
 		}
@@ -90,10 +73,7 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 				break;
 
 			default:
-				// Leave coordinates null - GeocodingRetryJob backstops transient
-				// failures hourly. Deliberately not throwing here: OutboxProcessorJob
-				// retries a message whose handler threw on its very next 5s poll,
-				// which would hammer Nominatim far harder than the hourly job does.
+
 				break;
 		}
 	}

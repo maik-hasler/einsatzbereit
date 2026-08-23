@@ -4,13 +4,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-// Regression coverage for einsatzbereit#1680: a shared or crawled deep link to a
-// specific opportunity previously got the site-wide metadata baked into
-// frontend/index.html - GetVolunteerOpportunityMetaEndpoint (proxied to by
-// frontend/nginx.conf.template for recognized bot User-Agents) must return that
-// opportunity's own title/description/image instead. Hits the versioned API route
-// directly, the same way GetSitemapTests does for its own nginx-proxied endpoint -
-// the bot-User-Agent rewrite itself lives in nginx, which this suite doesn't run.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
@@ -63,8 +56,7 @@ public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
 		html.Should().Contain("Strandreinigung Musterstadt");
 		html.Should().Contain("Gemeinsam sammeln wir Müll am Strand ein.");
 		html.Should().Contain($"/volunteer-opportunities/{opportunity.Id}");
-		// No banner uploaded - falls back to the site's own share image rather
-		// than omitting og:image entirely.
+
 		html.Should().Contain("/og-image.png");
 	}
 

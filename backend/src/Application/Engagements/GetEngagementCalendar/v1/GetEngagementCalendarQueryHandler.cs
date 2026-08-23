@@ -55,16 +55,11 @@ internal sealed class GetEngagementCalendarQueryHandler(
 	private static string FormatDateTime(DateTimeOffset dt) =>
 		dt.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'");
 
-	// RFC 5545 requires every line to end in CRLF. StringBuilder.AppendLine
-	// uses Environment.NewLine, which is "\n" (not "\r\n") on Linux - where
-	// this runs - so the file ended up mixing LF from here with the CRLF
-	// AppendICalText's line-folding below already used explicitly (#1729).
 	private static void AppendLine(StringBuilder sb, string line) =>
 		sb.Append(line).Append("\r\n");
 
 	private static void AppendICalText(StringBuilder sb, string property, string value)
 	{
-		// Escape special characters per RFC 5545
 		var escaped = value
 			.Replace("\\", "\\\\")
 			.Replace(";", "\\;")
@@ -73,7 +68,6 @@ internal sealed class GetEngagementCalendarQueryHandler(
 			.Replace("\n", "\\n")
 			.Replace("\r", "\\n");
 
-		// Fold lines longer than 75 octets (RFC 5545 Section 3.1)
 		var line = $"{property}:{escaped}";
 		if (line.Length <= 75)
 		{

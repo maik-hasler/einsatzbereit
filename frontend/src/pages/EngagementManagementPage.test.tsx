@@ -67,7 +67,7 @@ function mockPage(items: ReturnType<typeof engagement>[]) {
 beforeEach(() => {
 	api.__reset();
 	api.getVolunteerOpportunityDetails.mockResolvedValue(opportunityDetails);
-	// `items` is itself a paged list - the hook reads result.items.items.
+
 	api.getOpportunityFeedback.mockResolvedValue({
 		feedbackCount: 0,
 		averageRating: undefined,
@@ -217,8 +217,7 @@ describe("EngagementManagementPage cancellation reason", () => {
 			},
 		);
 		mockPage([confirmed]);
-		// The page patches the row from `updated.status`, so this must be a real
-		// EngagementStatusResponse.
+
 		api.cancelEngagement.mockResolvedValue({
 			id: confirmed.id,
 			status: "Cancelled",
@@ -280,7 +279,7 @@ describe("EngagementManagementPage check-in PIN", () => {
 			...opportunityDetails,
 			checkInMethod: "PINCode",
 		});
-		// Resolves to a bare string; the page renders it directly.
+
 		api.getOpportunityCheckInPin.mockResolvedValue("123456");
 
 		renderPage();

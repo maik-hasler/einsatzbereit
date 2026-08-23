@@ -48,12 +48,6 @@ internal sealed class KeycloakOrganizationService(
 		}
 		catch (ExecutionRejectedException ex)
 		{
-			// Same normalization as GetMembersAsync above: this is the single
-			// most-called Keycloak write in the app (every organization creation
-			// goes through it), so it is also the most likely to observe
-			// AddStandardResilienceHandler's circuit breaker/timeout/rate limiter
-			// rejecting the call outright under sustained load, before it ever
-			// reaches EnsureSuccessAsync below.
 			throw new HttpRequestException(
 				$"Keycloak organization creation for '{name}' was rejected by the resilience pipeline: {ex.Message}",
 				ex);
@@ -172,13 +166,6 @@ internal sealed class KeycloakOrganizationService(
 		}
 		catch (ExecutionRejectedException ex)
 		{
-			// AddStandardResilienceHandler's circuit breaker/timeout/rate limiter can
-			// reject the call outright under sustained failure - exactly the "sustained
-			// concurrent admin-API load" scenario #1709 traces the original 400 back
-			// to - before it ever reaches EnsureSuccessAsync below. Normalize to the
-			// same HttpRequestException that path throws, so
-			// GetOrganizationDetailsQueryHandler has a single exception type to catch
-			// regardless of which stage failed.
 			throw new HttpRequestException(
 				$"Keycloak organization members lookup for {organizationId} was rejected by the resilience pipeline: {ex.Message}",
 				ex);
@@ -189,11 +176,6 @@ internal sealed class KeycloakOrganizationService(
 		var members = await membersResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
 			JsonOptions, cancellationToken) ?? [];
 
-		// Organizer status is answered from the local organization_membership table
-		// (scoped to this organization) instead of Keycloak's realm-wide organisator
-		// role - see #1386. That also makes it correctly per-organization, where the
-		// old Keycloak-role-based check was global across every organization a user
-		// ever organized.
 		var organizerIds = await dbContext.GetOrganizerUserIdsAsync(
 			OrganizationId.Create(organizationId).GetValueOrThrow(), cancellationToken);
 
@@ -288,8 +270,6 @@ internal sealed class KeycloakOrganizationService(
 
 	internal static string GenerateAlias(string name)
 	{
-		// Normalize to decomposed form so we can strip diacritics,
-		// but first handle common German replacements explicitly.
 		var sb = new StringBuilder(name.Length);
 
 		foreach (var c in name)
@@ -322,7 +302,7 @@ internal sealed class KeycloakOrganizationService(
 		var alias = sb.ToString().ToLowerInvariant();
 
 		sb.Clear();
-		var prevHyphen = true; // treat start as hyphen to trim leading
+		var prevHyphen = true;
 		foreach (var c in alias)
 		{
 			if (char.IsLetterOrDigit(c))
@@ -352,13 +332,9 @@ internal sealed class KeycloakOrganizationService(
 		}
 
 		var method = response.RequestMessage?.Method;
-		// Strip the query string - it can carry PII such as search terms - before it
-		// ever reaches the Error-level exception message that gets logged/exported.
+
 		var path = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path);
 
-		// Logged unconditionally rather than gated behind Debug - a non-2xx here is
-		// always unexpected, and Debug logging being off in every environment that
-		// hit it is exactly what made #1709's unexplained 400 undiagnosable.
 		var body = await response.Content.ReadAsStringAsync(cancellationToken);
 		logger.LogWarning(
 			"Keycloak responded with {StatusCode} for {Method} {Path}. Response body: {Body}",

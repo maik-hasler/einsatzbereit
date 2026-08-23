@@ -19,9 +19,9 @@ const KEYBOARD_PAN_STEP = 12;
 
 interface ImageCropModalProps {
 	file: File;
-	/** width / height of both the crop frame and the final output. */
+
 	aspectRatio: number;
-	/** Purely a visual guide - the raster output is always the full frame rect. */
+
 	shape: "circle" | "rect";
 	outputWidth: number;
 	outputHeight: number;
@@ -42,10 +42,7 @@ export default function ImageCropModal({
 }: ImageCropModalProps) {
 	const { t } = useTranslation();
 	const frameRef = useRef<HTMLButtonElement>(null);
-	// FRAME_MAX_WIDTH is only the upper bound now - the frame's actual CSS box
-	// (`w-full max-w-80`) shrinks to whatever the dialog has room for on narrow
-	// viewports, and this state tracks the real measured size so the drag/zoom
-	// math below stays pixel-accurate to what's rendered (#1663).
+
 	const [frameWidth, setFrameWidth] = useState(FRAME_MAX_WIDTH);
 	const frameHeight = frameWidth / aspectRatio;
 
@@ -60,12 +57,6 @@ export default function ImageCropModal({
 		offset: Offset;
 	} | null>(null);
 
-	// Layout effect (not a regular one) so the measurement is committed before
-	// the image-load effect below ever reads `frameWidth` - that effect only
-	// depends on `[file]`, so whatever `frameWidth` is by the time it runs
-	// becomes the crop's initial centering. `[image]` re-runs this once the
-	// frame button actually mounts (it doesn't exist yet during the loading
-	// state) and again for a freshly picked file.
 	useLayoutEffect(() => {
 		const el = frameRef.current;
 		if (!el) return;
@@ -79,11 +70,6 @@ export default function ImageCropModal({
 		return () => observer.disconnect();
 	}, [image]);
 
-	// Re-clamps (without recentering) whenever the measured frame size itself
-	// changes after the image has already loaded - e.g. a viewport
-	// resize/orientation change while the modal is open. Drag/zoom already
-	// clamp on every change of their own, so this intentionally doesn't
-	// depend on `image`/`zoom` too - it would otherwise fight them.
 	useEffect(() => {
 		if (!image) return;
 		setOffset((prev) => {

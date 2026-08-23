@@ -8,17 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Notification.RelatedEntityId is an untyped uuid pointing at an engagement, an
-// opportunity, or an invitation with no FK - a deleted target just leaves the
-// notification pointing at nothing (NotificationReadRepository already
-// tolerates this, falling back to a placeholder). Nothing else ever deletes a
-// notification row (aside from DeleteMyAccountCommandHandler wiping a whole
-// recipient's rows), so the table grew without bound - this periodically
-// prunes read rows past ReadRetentionDays *since they were read* (Notification.ReadOn,
-// #1725 - not since they were created), and unread rows (which could
-// otherwise keep pointing at a long-deleted target indefinitely until the
-// recipient happens to open them) past the longer UnreadRetentionDays,
-// counted from CreatedOn since they have no ReadOn (#1209).
 internal sealed class NotificationRetentionJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<NotificationRetentionJob> logger,
@@ -72,8 +61,6 @@ internal sealed class NotificationRetentionJob(
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
-				// A row that should have been pruned this tick just gets picked up
-				// again on the next one - no data is lost by skipping a tick.
 				logger.LogError(ex, "Notification retention tick failed; will retry on the next poll interval");
 			}
 		}
@@ -95,8 +82,6 @@ internal sealed class NotificationRetentionJob(
 			logger.LogInformation("Pruned {Count} expired notification(s)", deleted);
 	}
 
-	// Exposed so IntegrationTests can exercise the deletion directly against a real
-	// Postgres without waiting on the real RetentionCheckIntervalHours.
 	internal static async Task<int> DeleteExpiredNotificationsAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset readCutoff,

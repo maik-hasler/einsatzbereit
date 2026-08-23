@@ -3,11 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-// Regression coverage for einsatzbereit#1088 (no persisted audit trail for
-// privileged actions). Exercises the full write path end to end - the API
-// endpoint, the command handler's dbContext.AuditLogs.AddAsync write, and the
-// ListAuditLogs read side - rather than only the write or only the read side
-// in isolation, since those are covered separately by unit tests.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AuditLogTests(
@@ -62,9 +57,6 @@ public class AuditLogTests(
 			.Which.ActorUserId.Should().Be(admin.Id);
 	}
 
-	// Regression coverage for einsatzbereit#1837 - an Engagement subject has no
-	// name of its own, so its audit-log entry should resolve the opportunity it
-	// was a sign-up for instead of leaving the display name blank.
 	[Test]
 	public async Task ListAuditLogs_ShouldResolveSubjectDisplayName_ForEngagementSubject_ToItsOpportunityTitle(
 		CancellationToken cancellationToken)

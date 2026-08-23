@@ -28,9 +28,6 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldReturnProfile_WhenAuthenticatedAsAdmin(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #760: the "admin" realm role was not composite over
-		// "user"/"organisator", so an admin-only token failed the DefaultUser
-		// policy that GetUserProfile (and every other baseline endpoint) requires.
 		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var result = await client.GetUserProfileAsync(cancellationToken);
@@ -43,11 +40,6 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldNotFail_WhenTwoConcurrentRequestsRaceTheFirstEverLoad(
 		CancellationToken cancellationToken)
 	{
-		// Issue #1148: GetUserProfileQueryHandler lazily creates the local `user`
-		// row on the very first load - a query handler has no ambient transaction
-		// (TransactionPipelineBehavior only wraps commands), so two concurrent
-		// first-time requests used to race a primary-key violation into an
-		// unhandled 500 for whichever request lost.
 		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var first = client.GetUserProfileAsync(cancellationToken);

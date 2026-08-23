@@ -27,7 +27,7 @@ describe("isAuthenticatedRoute", () => {
 		"/terms-of-use",
 		"/contact",
 		"/help",
-		// Prefix-only lookalikes must not match.
+
 		"/profiles",
 		"/administrations",
 	])("treats %s as a public route", (pathname) => {

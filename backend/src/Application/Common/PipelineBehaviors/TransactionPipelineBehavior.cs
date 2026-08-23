@@ -13,11 +13,6 @@ internal sealed class TransactionPipelineBehavior<TCommand, TResponse>(
 		Func<ValueTask<TResponse>> next,
 		CancellationToken cancellationToken = default)
 	{
-		// A nested Send() call (see Sender.AmbientScope) shares the caller's
-		// IUnitOfWork/DbContext and therefore its transaction. Let the
-		// outermost command own the single begin/save/commit-or-rollback so
-		// nested writes commit or roll back atomically with it, instead of
-		// each nested command opening (and prematurely committing) its own.
 		if (unitOfWork.HasActiveTransaction)
 		{
 			return await next();

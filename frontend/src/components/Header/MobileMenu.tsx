@@ -12,8 +12,6 @@ import { buildPrimaryNav } from "../../lib/headerNav";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { lockScroll } from "../../lib/scrollLock";
 
-// Mobile menu overlay (absolute-positioned so it doesn't push content down),
-// toggled open by MobileHeader's burger button.
 export default function MobileMenu({
 	isTransparent,
 	isLoggedIn,
@@ -34,14 +32,9 @@ export default function MobileMenu({
 	initials: string;
 	displayName: string;
 	isAdmin: boolean;
-	// The viewer's organization, when it should be offered as a primary
-	// destination here - withheld by Header inside the org app, where the
-	// switcher in the header bar already names it (#1785).
+
 	activeOrg: OrganizationSummaryDto | null | undefined;
-	// The hamburger button that toggles this menu open/closed - rendered as a
-	// sibling in MobileHeader, not a descendant here. Without treating it as
-	// "inside", the outside-click check below would see the very click that
-	// opens this menu as an outside click and immediately close it again.
+
 	triggerRef: RefObject<HTMLButtonElement | null>;
 	onClose: () => void;
 	onSignIn: () => void;
@@ -49,48 +42,23 @@ export default function MobileMenu({
 	onSignOut: () => void;
 }) {
 	const { t } = useTranslation();
-	// Shared by the primary destinations, the profile link and the admin link -
-	// the only exact repeat of this variant in the file (other isTransparent
-	// ternaries here use their own one-off colors).
-	//
-	// On the opaque side: hover:text-brand-700, not the lighter brand-600 -
-	// brand-600 on brand-50 measures ~4.0:1, under axe-core's WCAG AA 4.5:1
-	// floor (caught by AccessibilityTests.cs's
-	// MobileMenu_Open_AsOlaf_HasNoSeriousA11yViolations, which leaves a menu
-	// row in a real :hover state via Playwright's HoverAsync before scanning),
-	// while brand-700 clears it.
+
 	const menuItemVariant = isTransparent
 		? "text-white/90 hover:bg-white/10 hover:text-white"
 		: "text-gray-700 hover:bg-brand-50 hover:text-brand-700";
-	// Only ever mounted while open (see Header.tsx), so dismissal listeners
-	// attach for this component's entire lifetime.
+
 	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
 		triggerRef,
 	]);
-	// Scoped to the panel itself (not the scrim below) - both the initial
-	// focus and the Tab trap need to search only the real dialog content.
+
 	const panelRef = useRef<HTMLDivElement>(null);
 
-	// Move focus into the panel on open, mirroring Modal.tsx's initial-focus
-	// behavior - without this, a keyboard user who opens the menu stays
-	// focused on the (now expanded) hamburger button and has to Tab past it
-	// again to reach the first item.
 	useEffect(() => {
 		panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
 	}, []);
 
-	// Background scroll lock - without this, the page behind the scrim (#1672)
-	// keeps scrolling under a touch drag, which both feels broken and can
-	// scroll the open menu itself out of view since it's positioned in flow,
-	// not fixed. Shared with Modal.tsx since #1787: the local
-	// `document.body.style.overflow = "hidden"` this used to run was a no-op
-	// against this app's `html { overflow-x: clip }` - see lib/scrollLock.ts.
 	useEffect(() => lockScroll(), []);
 
-	// Tab focus trap, mirroring Modal.tsx's - Escape is already handled by
-	// useDismissableOverlay above, so this only needs to own Tab. Without it,
-	// Tab/Shift+Tab walks straight past the panel into whatever's behind the
-	// scrim (#1672 - "71 focusables remain reachable behind the open menu").
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Tab" || !panelRef.current) return;
@@ -114,13 +82,6 @@ export default function MobileMenu({
 
 	return (
 		<div ref={rootRef}>
-			{/* Scrim: dims and blocks interaction with whatever's behind the panel
-			(the hero on the homepage, in particular) - separates the backdrop-
-			button from the dialog container per the repo's modal a11y convention
-			(see Modal.tsx), even though this dialog isn't portaled like Modal is.
-			Starts below --header-height rather than the full viewport, so the
-			header bar itself (its burger/bell buttons included) stays undimmed
-			and directly clickable instead of hiding under the scrim. */}
 			<button
 				type="button"
 				onClick={onClose}
@@ -133,17 +94,9 @@ export default function MobileMenu({
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				// max-h + overflow-y-auto so the scroll lock above doesn't strand
-				// content taller than the viewport with no way to reach it (e.g. a
-				// member, whose panel also lists their organization's sections, on
-				// a short landscape-phone viewport) - overscroll-contain keeps a
-				// drag past this panel's own scroll bounds from rubber-banding the
-				// (locked) body underneath.
+
 				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
-				{/* Blur-blob lighting, matching the band the transparent header
-				sits over - a flat brand-900 panel dropping out of a lit band
-				read as a different surface entirely. */}
 				{isTransparent && (
 					<div
 						className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -154,11 +107,6 @@ export default function MobileMenu({
 					</div>
 				)}
 				<div className="relative space-y-2 px-4 py-4">
-					{/* Primary destinations, the same list DesktopHeader renders (see
-					lib/headerNav). Shown in both signed-in and signed-out states:
-					this panel used to jump straight from the language selector to
-					account items (or to a bare sign-in/register pair), so the menu
-					offered no way to reach the opportunity list either. */}
 					<div
 						className={`space-y-1 border-b pb-3 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
 					>
@@ -181,13 +129,7 @@ export default function MobileMenu({
 											/>
 											<span className="truncate">{link.org.name}</span>
 										</Link>
-										{/* The organization's remaining sections, indented
-										under it - they were the payload of the account
-										menu's old org disclosure (#775, #1680) and stay
-										directly reachable here, just no longer behind two
-										disclosures. ORG_TABS minus "dashboard": the entry
-										above already leads there, and two adjacent links to
-										one destination read as a mistake. */}
+
 										<div
 											className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
 										>
@@ -208,8 +150,6 @@ export default function MobileMenu({
 								);
 							}
 
-							// Plain <a> for the hash destination so the browser does the
-							// fragment scroll - see DesktopHeader's render branch for why.
 							return link.hash ? (
 								<a
 									key={link.key}
@@ -249,9 +189,6 @@ export default function MobileMenu({
 										className="h-9 w-9 rounded-full object-cover"
 									/>
 								) : (
-									// Same tracking-widest fix as AccountControls's desktop
-									// avatar, and for the same reason (#1915) - both render the
-									// same initials at the same 36px size.
 									<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold tracking-widest text-white">
 										{initials}
 									</div>

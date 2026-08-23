@@ -9,22 +9,12 @@ using Infrastructure.Persistence.StartupTasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "Organization"/"OrganizationId" DTO types, which would otherwise shadow the domain
-// types of the same name pulled in via the "Domain.Organizations" using above.
+
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.OrganizationMembershipBackfillJob.BackfillAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres. The job only ever runs once, automatically, at app boot - the "backend"
-// Aspire resource already completed its one real run against the seeded organizations
-// long before any test executes, and there's no API to make it run again. Driving
-// BackfillAsync directly is the only way to reproduce "a pre-existing organization that
-// predates the organization_membership table" and prove the one-shot marker actually
-// prevents the every-boot-forever Keycloak calls described in #1393.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixture)
@@ -46,12 +36,9 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 			MembersToReturn =
 			[
 				new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "O.", "olaf@example.com", IsOrganisator: true),
-				// Same organizer reported twice (e.g. multiple Keycloak group mappings) - must
-				// not produce two rows and violate the unique (organization_id, user_id) index.
+
 				new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "O.", "olaf@example.com", IsOrganisator: true),
-				// Plain member, not an organizer - must still get a membership row (#1895: a
-				// skipped plain member undercounts this organization everywhere that reads
-				// organization_membership instead of Keycloak directly).
+
 				new KeycloakOrganizationMember(memberId, "vera", "Vera", "V.", "vera@example.com", IsOrganisator: false),
 			],
 		};
@@ -81,11 +68,6 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 	public async Task BackfillAsync_MultiplePreExistingOrganizations_FetchesRealmOrganizerSetOnlyOnce(
 		CancellationToken cancellationToken)
 	{
-		// #1386: the realm-wide organizer set must be fetched once per run, not
-		// once per organization - GetMembersAsync itself no longer makes that
-		// realm-wide call at all (it now reads local organization_membership rows),
-		// so this job is the only remaining caller and must not reintroduce an
-		// O(organizations) Keycloak round trip.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
 		await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
@@ -114,9 +96,6 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var organizationId = await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
 
-		// No organizers at all - a legitimate state (e.g. every organizer since left), not
-		// "not backfilled yet". Before #1393 this looked identical to "needs backfilling" and
-		// triggered a Keycloak call on every single boot forever.
 		var keycloak = new FakeKeycloakOrganizationService { MembersToReturn = [] };
 
 		await OrganizationMembershipBackfillJob.BackfillAsync(
@@ -186,8 +165,6 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 			.Should().BeTrue();
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private static async Task<DomainOrganizationId> SeedOrganizationWithoutMembershipRowsAsync(
 		ApplicationDbContext dbContext, CancellationToken cancellationToken)
 	{
@@ -218,10 +195,6 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 			return Task.FromResult(MembersToReturn);
 		}
 
-		// Derived from MembersToReturn's IsOrganisator flags rather than tracked
-		// separately - BackfillAsync now sources the organizer set from here instead
-		// of from each member's IsOrganisator (see #1386), and every existing test in
-		// this class already expresses "who is an organizer" that way.
 		public Task<IReadOnlySet<Guid>> GetRealmOrganisatorUserIdsAsync(CancellationToken cancellationToken = default)
 		{
 			GetRealmOrganisatorCallCount++;

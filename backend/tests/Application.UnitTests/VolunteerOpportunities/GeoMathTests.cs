@@ -14,7 +14,6 @@ public class GeoMathTests
 	[Test]
 	public void DistanceKm_ShouldApproximateKnownDistance_BerlinToMunich()
 	{
-		// Berlin ~ (52.52, 13.405), Munich ~ (48.137, 11.575) -> ~504 km great-circle
 		var distance = GeoMath.DistanceKm(52.52, 13.405, 48.137, 11.575);
 
 		distance.Should().BeInRange(495, 515);

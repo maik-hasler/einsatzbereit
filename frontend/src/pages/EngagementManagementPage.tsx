@@ -48,7 +48,6 @@ const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
 const FEEDBACK_PAGE_SIZE = 10;
 
-// Lazy-loaded: only needed once an organizer actually opens the scanner - #971.
 const QRScannerModal = lazy(() => import("../components/QRScannerModal"));
 
 export default function EngagementManagementPage() {
@@ -69,8 +68,7 @@ export default function EngagementManagementPage() {
 			? `${t("engagementManagement.title")} - ${opportunityTitle}`
 			: t("engagementManagement.title"),
 	);
-	// Carries the title's actual language through to OrgPageHeader's <h1> - see
-	// useSetOrgBreadcrumbExtra's own doc comment (einsatzbereit#2057).
+
 	useSetOrgBreadcrumbExtra(opportunityTitle, resolvedOpportunityTitle?.lang);
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -159,9 +157,6 @@ export default function EngagementManagementPage() {
 		setAppliedSearch(search);
 	}
 
-	// Selection is scoped to the currently-loaded page(s) of the (possibly
-	// filtered) list - a filter change restarts pagination from page 1, so any
-	// prior selection would otherwise reference rows no longer in view.
 	useEffect(() => {
 		setSelectedIds(new Set());
 	}, [statusFilter, timeSlotFilter, appliedSearch]);
@@ -360,8 +355,6 @@ export default function EngagementManagementPage() {
 	}
 
 	function loadCheckInPin() {
-		// The check-in PIN is an organizer tool for admitting volunteers - a
-		// plain Member would just get a 403 here, so skip the doomed request.
 		if (
 			!opportunityId ||
 			!isOrganizer ||
@@ -394,22 +387,12 @@ export default function EngagementManagementPage() {
 		loadCheckInPin().finally(() => setRetryingCheckInPin(false));
 	}
 
-	// Confirming/checking a volunteer in swaps the row's button pair for a
-	// different one (Pending's Confirm/Cancel -> Confirmed's Revoke, or
-	// Confirmed's "Mark as checked in" -> "Undo check-in") - the pressed
-	// button unmounts on success, so focus needs somewhere deliberate to land
-	// instead of dropping to <body>. Both a success toast (previously only
-	// the error path was announced) and the refocus below run one frame after
-	// the state update so the replacement button already exists in the DOM.
 	function focusEngagementRowControl(testId: string) {
 		requestAnimationFrame(() => {
 			document.querySelector<HTMLElement>(`[data-testid="${testId}"]`)?.focus();
 		});
 	}
 
-	// Repeated per row ("Confirm"/"Cancel"/"Revoke") with nothing distinguishing
-	// which applicant a given button acts on - mirrors the visible name shown
-	// in the row itself so the aria-label stays in sync with what's rendered.
 	function volunteerDisplayName(e: EngagementSummary): string {
 		if (e.volunteerName) return e.volunteerName;
 		if (e.volunteerId)
@@ -566,10 +549,6 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 
-			{/* The filters and the bulk-select row are one toolbar for the list
-			below, boxed like the Sign-ups and Members toolbars (#1755). They
-			were separate bare rows - two form fields on the page background,
-			then a full-width card holding a single checkbox. */}
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
 				<div className="flex flex-wrap items-end gap-3">
 					<div>
@@ -1023,13 +1002,6 @@ export default function EngagementManagementPage() {
 
 			{feedbackStats !== null && feedbackStats.feedbackCount > 0 ? (
 				<section className="mt-8">
-					{/* Deliberately not PageSectionHeading (#1835): that's the
-					font-display text-2xl family shared with OrgPageHeader's own H1,
-					so a "Feedback" section read as a second page title rather than a
-					subordinate part of sign-up management. Also omitted entirely
-					(see the outer condition) once there is nothing to show, instead
-					of a permanent "No feedback yet." placeholder competing with the
-					sign-ups list above it. */}
 					<h2 className="mb-4 text-lg font-semibold text-gray-900">
 						{t("feedback.organizerTab")}
 					</h2>

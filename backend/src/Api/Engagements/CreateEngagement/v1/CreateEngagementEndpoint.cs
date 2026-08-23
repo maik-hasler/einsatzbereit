@@ -57,7 +57,6 @@ internal sealed class CreateEngagementEndpoint
 
 		var engagement = await sender.Send(command, cancellationToken);
 
-		// A new engagement changes CurrentParticipantCount on the public listing.
 		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var response = new CreateEngagementResponse(

@@ -25,18 +25,6 @@ import {
 } from "./icons";
 import { CategoryGlyph } from "./VolunteerOpportunitiesList/CategoryGlyph";
 
-// The one opportunity card, shared by every surface that shows one (#2054):
-// /opportunities and the landing page preview (both backed by the full
-// VolunteerOpportunitySummary), and the organization profile's "current
-// needs" list plus the opportunity detail page's "more from this
-// organization" rail (both backed by the leaner PublicOpportunitySummaryDto,
-// which carries no organization identity, tags or banner - those two blocks
-// below are gated on the fields actually being present rather than picking
-// between two different card components). Before this, the same opportunity
-// rendered as two visually and informationally different cards depending on
-// which page it was reached from - most visibly, the org-scoped surfaces
-// dropped the date/deadline entirely and showed only "Einmalig"/"Regelmaessig"
-// where the other surfaces showed a real date.
 export interface OpportunityCardItem {
 	id: string;
 	titleDe: string;
@@ -55,13 +43,7 @@ export interface OpportunityCardItem {
 	currentParticipantCount: number;
 	validUntil: Date | undefined;
 	nextTimeSlotStart: Date | undefined;
-	/**
-	 * Present only on the richer VolunteerOpportunitySummary DTO - gates the
-	 * banner and organization footer below. Absent on PublicOpportunitySummaryDto,
-	 * whose surfaces (org profile, "more from this organization") already sit on
-	 * that one organization's own page, so a footer repeating its identity would
-	 * be redundant; those cards fall back to a plain address line instead.
-	 */
+
 	organizationId?: string;
 	organizationName?: string;
 	organizationLogoUrl?: string;
@@ -69,12 +51,6 @@ export interface OpportunityCardItem {
 	bannerImageUrl?: string;
 }
 
-/**
- * The capacity chip always renders, in every one of the contract's states -
- * including the "no places to count" one, which used to render nothing at all
- * and made the chip's presence look like a property of the opportunity rather
- * than of the data (#1777).
- */
 export function capacityChip(
 	capacity: OpportunityCapacity,
 	t: TFunction,
@@ -101,26 +77,6 @@ export function capacityChip(
 	}
 }
 
-/**
- * The date line's three kinds, each with its own glyph and tone.
- *
- * They used to share one icon and one tone, differing only in their label
- * text, on the reasoning that a shared tone made two cards comparable - and
- * it did fix the older bug where a bare unlabelled datetime in brand green sat
- * in the same slot as a grey "Express interest by" line. But identical styling traded one
- * failure for another: a start date and an application deadline are not the
- * same kind of fact, and reading which one a card states required reading the
- * label on every card in the grid. Keeping both labels *and* giving each kind
- * its own glyph and tone (calendar/neutral for a date that is set,
- * clock/amber for a deadline running down, arrows/muted for no fixed date)
- * makes the kind legible at a glance without going back to an unlabelled
- * slot. Deliberate reversal of the previous decision, per #1777.
- *
- * The deadline's amber only applies within isDeadlineImminent's window - a
- * deadline months out used the same warning tone as one closing tomorrow,
- * which drowned out the actually-urgent ones (#2088). Outside that window it
- * falls back to the same neutral tone as a set start date.
- */
 function dateLine(
 	item: OpportunityCardItem,
 	t: TFunction,
@@ -170,11 +126,7 @@ export default function OpportunityCard({
 	headingLevel = 2,
 }: {
 	item: OpportunityCardItem;
-	/**
-	 * Level for the card's title. Defaults to 2 for a card that is the only
-	 * heading above a grid; every current call site sits under its own visible
-	 * or sr-only section heading and passes 3.
-	 */
+
 	headingLevel?: 2 | 3;
 }) {
 	const { t, i18n } = useTranslation();
@@ -188,32 +140,14 @@ export default function OpportunityCard({
 		item.descriptionEn,
 		i18n.language,
 	);
-	// Only ever true for the English UI falling back to German content - the
-	// German variant is required, so the reverse never happens (#2057). Checked
-	// on both fields independently since an organizer may translate one but
-	// not the other.
+
 	const isGermanFallback =
 		title.lang !== i18n.language ||
 		(description !== undefined && description.lang !== i18n.language);
 	const hasOrganization = !!item.organizationId && !!item.organizationName;
 
-	// ScheduledSlots is the only participation type that ever carries a real
-	// time-slot capacity - IndividualContact opportunities can never have time
-	// slots (see VolunteerOpportunity.AddTimeSlot), so their capacity chip
-	// below already says "By expression of interest" on its own. A second chip
-	// repeating that exact wording here would be the literal duplicate #1943's
-	// grid-wording contract ruled out, so this slot only ever states the one
-	// fact it can state without repeating the capacity chip.
 	const showSignUpMechanismChip = item.participationType === "ScheduledSlots";
 
-	// No overflow-hidden on the card any more. The stretched link below is what
-	// a keyboard user actually lands on (the title is inside it, not focusable
-	// itself), and global.css's shared :focus-visible ring draws at
-	// outline-offset 2px - i.e. entirely outside the link's box, which is the
-	// card's box, so clipping descendants clipped the whole ring away and
-	// tabbing through the grid moved an invisible focus (#1777). The banner
-	// below carries the top rounding itself now, which is all the clipping was
-	// for.
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
 			<Link
@@ -223,10 +157,6 @@ export default function OpportunityCard({
 				lang={title.lang}
 			/>
 			<div className="flex h-full flex-col">
-				{/* Banner, only when the organization actually uploaded a photo -
-				never present on the leaner PublicOpportunitySummaryDto (see
-				OpportunityCardItem's doc comment). A photo-less card is a text
-				card, not a tinted placeholder tile. */}
 				{item.bannerImageUrl && (
 					<div className="relative h-32 w-full shrink-0 overflow-hidden rounded-t-card bg-gradient-to-br from-brand-50 to-brand-100">
 						<img
@@ -251,12 +181,7 @@ export default function OpportunityCard({
 						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>
-						{/* The top-right slot used to be the capacity chip, which for a
-						capped/unlimited/not-yet-published opportunity said three
-						unrelated kinds of thing in the same spot with no consistent
-						colour telling them apart (#2054). It now always states the
-						same one fact - how a volunteer signs up - and the capacity
-						count moves down next to the date line below. */}
+
 						{showSignUpMechanismChip && (
 							<Chip
 								data-testid="opportunity-signup-mechanism"
@@ -268,8 +193,7 @@ export default function OpportunityCard({
 							</Chip>
 						)}
 					</div>
-					{/* h2 by default, h3 when a section heading sits above the grid -
-					see the headingLevel prop. */}
+
 					<Heading
 						lang={title.lang}
 						className="text-base leading-snug font-semibold text-gray-900 underline-offset-2 transition-colors group-hover:text-brand-700 group-hover:underline sm:text-lg"
@@ -281,10 +205,7 @@ export default function OpportunityCard({
 							{t("opportunities.germanOnlyNotice")}
 						</p>
 					)}
-					{/* Date/deadline and capacity, side by side: the two facts that
-					used to compete for the top-right slot now sit together instead,
-					next to each other rather than one replacing the other. See
-					dateLine() above for the three kinds this slot can state. */}
+
 					<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
 						<p
 							data-testid="opportunity-date-line"
@@ -371,10 +292,6 @@ export default function OpportunityCard({
 							)}
 						</div>
 					) : (
-						// No organization footer to repeat: this card already sits on
-						// that organization's own page (org profile, or the detail
-						// page's "more from this organization" rail), so the full
-						// address stands in for it instead of a city-only badge.
 						<div className="mt-auto flex items-start gap-2 pt-2 text-sm text-gray-600">
 							{item.isRemote ? (
 								<>

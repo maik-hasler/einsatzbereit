@@ -101,9 +101,6 @@ export default function FilterDropdown({
 		const containerRect = container.getBoundingClientRect();
 		const panelWidth = panel.getBoundingClientRect().width;
 
-		// Prefer aligning the panel's left edge with the trigger's left edge,
-		// flipping to the trigger's right edge only if that would overflow the
-		// viewport - then clamp so neither edge can end up off-screen.
 		const leftAligned = 0;
 		const rightAligned = containerRect.width - panelWidth;
 		const overflowsRight =
@@ -168,10 +165,7 @@ export default function FilterDropdown({
 					role="group"
 					aria-label={label}
 					style={{ left: panelLeft }}
-					// Below Header.tsx's sticky z-40 - this panel's ancestors (the
-					// filter bar, <main>) are all unpositioned, so its z-index
-					// competes with the header directly at the document root instead
-					// of nesting inside it (#1119).
+
 					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-500 bg-white shadow-modal"
 				>
 					{children}

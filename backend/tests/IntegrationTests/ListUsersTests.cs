@@ -15,14 +15,6 @@ public class ListUsersTests(
 	public async Task ListUsers_ShouldReturnEachUsersOwnRoles_WhenFetchedConcurrently(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1387: KeycloakUserService.ListUsersAsync now fetches
-		// per-user composite realm roles concurrently (bounded Task.WhenAll)
-		// instead of one sequential HTTP call per user. The baseline seed users
-		// have distinct composite role sets - vera ("user"), olaf ("user",
-		// "organisator"), admin ("admin", "user", "organisator" via the
-		// composite "admin" role) - so if concurrent requests ever mixed up
-		// which HTTP response belonged to which user, roles would bleed
-		// between them here.
 		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var result = await client.ListUsersAsync(

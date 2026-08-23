@@ -4,14 +4,6 @@ import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import NotificationDropdown from "./NotificationDropdown";
 import { MenuToggleIcon } from "../icons";
 
-// Mobile-width-only strip (notification bell + burger button), grouped so
-// they stay flush-right of <header>. Rendered alongside MobileMenu, which
-// owns the overlay the burger button toggles.
-//
-// `lg:hidden` here, `lg:flex` on DesktopHeader and `lg:hidden` on MobileMenu's
-// two elements are one breakpoint, not four - the three components have to
-// swap on the same width or a viewport gets both bars or neither (issue
-// #1793). See DesktopHeader for why that width is `lg` and not `md`.
 export default function MobileHeader({
 	isLoggedIn,
 	isTransparent,

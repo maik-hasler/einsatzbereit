@@ -33,9 +33,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Ban unescaped apostrophes in Keycloak English messages
-        # Keycloak resolves these values through java.text.MessageFormat, which
-        # treats a bare ' as the start of a quoted-literal escape and silently
-        # drops it - a literal apostrophe has to be written as '' (#1854).
         run: |
           FILE=keycloak/themes/einsatzbereit/login/messages/messages_en.properties
           if grep -nE '^[^#[:space:]].*=' "$FILE" | grep -P "(?<!')'(?!')"; then
@@ -49,10 +46,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check EditorConfig conformance
-        # editorconfig-checker downloads its binary from GitHub releases on first
-        # run; without a token the unauthenticated GitHub API rate limit (shared
-        # across the runner's IP) intermittently returns 403 and fails the job.
-        # GITHUB_TOKEN authenticates the download and raises the limit.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx --yes editorconfig-checker@6.1.1 -config .editorconfig-checker.json

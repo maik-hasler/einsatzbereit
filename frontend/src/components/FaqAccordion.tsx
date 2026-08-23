@@ -10,17 +10,6 @@ interface Props {
 	className?: string;
 }
 
-// The landing page's FAQ block and the Help page answer the same kind of
-// question and even link to each other ("More questions? See Help"), but were
-// two unrelated pieces of markup - a boxed accordion on one, a flat run of
-// h3/p pairs on the other, so following that link visibly left the design
-// system (issue #1755). One component now backs both.
-//
-// Native <details>/<summary> rather than a hand-rolled accordion: no open/close
-// state to wire up, and it is keyboard- and screen-reader-operable for free.
-// group-open:rotate-180 reads the element's own [open] attribute through
-// Tailwind's group variant, so the chevron animates without any JS tracking
-// which item is expanded.
 export default function FaqAccordion({ items, className = "" }: Props) {
 	return (
 		<div

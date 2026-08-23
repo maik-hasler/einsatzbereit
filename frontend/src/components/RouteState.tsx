@@ -10,14 +10,6 @@ import {
 	SignalSlashIcon,
 } from "./icons";
 
-/**
- * The four ways a route can fail to show what the user asked for. Before
- * #1774 three of them collapsed into the fourth: an unknown organization id,
- * a missing admin role and a dropped connection all ended on the same
- * "something went wrong / try again" screen, which told the user nothing true
- * about their situation and, in two of the three cases, offered a retry that
- * could not possibly succeed.
- */
 export type RouteStateVariant = "notFound" | "forbidden" | "offline" | "error";
 
 const VARIANT_ICONS = {
@@ -27,11 +19,6 @@ const VARIANT_ICONS = {
 	error: ExclamationTriangleIcon,
 } as const;
 
-// Tinted disc behind the glyph, one tone per situation so the four states are
-// distinguishable before a word of copy is read. Only `error` is red - being
-// offline or lacking a role is a fact about the situation, not a fault, and
-// painting all four red is how they read as interchangeable in the first
-// place.
 const VARIANT_TONES = {
 	notFound: "bg-gray-100 text-gray-600",
 	forbidden: "bg-amber-50 text-amber-700",
@@ -43,24 +30,11 @@ interface Props {
 	variant: RouteStateVariant;
 	title: string;
 	message: string;
-	/**
-	 * Honoured for `error` and `offline` - not `notFound`/`forbidden`, which
-	 * name a permanent fact about the request that retrying cannot change.
-	 * `offline` already recovers on its own via the `online`-event refetches
-	 * in OrgAppLayout and useLoadMore, but that path depends on the browser
-	 * actually firing the event - which some captive portals and mobile
-	 * networks never do even once the connection is genuinely back (#2065).
-	 * This is the manual fallback for exactly that case, so callers should
-	 * still pass it for `offline` rather than relying on the event alone.
-	 */
+
 	onRetry?: () => void;
-	/** Escape hatch out of a dead end - rendered as a real link, not a button. */
+
 	action?: { label: string; to: string };
-	/**
-	 * Renders in flow, without the page-level <h1>, for a state that replaces
-	 * one section of a page rather than the whole route (e.g. the opportunity
-	 * results area, which sits under a page that already owns the <h1>).
-	 */
+
 	inline?: boolean;
 	"data-testid"?: string;
 }
@@ -77,12 +51,7 @@ export default function RouteState({
 	const { t } = useTranslation();
 	const Icon = VARIANT_ICONS[variant];
 	const canRetry = (variant === "error" || variant === "offline") && !!onRetry;
-	// A route-level state is the page, so it owns the tab title - the
-	// unknown-organization branch used to get this for free from NotFoundPage,
-	// and /administration as a non-admin never had it at all (the page whose
-	// usePageTitle would have run is exactly the one being kept from mounting).
-	// `null`, not undefined, for `inline`: that mode replaces one block of a
-	// page whose own title still applies.
+
 	usePageTitle(inline ? null : title);
 
 	return (
@@ -106,19 +75,6 @@ export default function RouteState({
 				<h1 className={`text-gray-900 ${statusTitleClass}`}>{title}</h1>
 			)}
 
-			{/* The error variant keeps ErrorBanner's role="alert"/aria-live: a
-			retry that fails again re-renders this same branch with no navigation,
-			which a screen reader would otherwise never hear (#1224).
-
-			The other three carry no live region of their own, deliberately. This
-			whole component is mounted by its callers only once the state it
-			describes is already true, so any region here would be inserted into
-			the DOM already populated - which this repo has three times found
-			does not reliably announce (see OpportunityResultsList's own sr-only
-			region, CheckInModal and ToastContext). Announcing a transition into
-			one of these states is therefore the caller's job, through a region
-			that was already mounted and empty before the transition -
-			OpportunityResultsList does exactly that for the offline case. */}
 			{variant === "error" ? (
 				<ErrorBanner message={message} className="mt-4 max-w-md" />
 			) : (

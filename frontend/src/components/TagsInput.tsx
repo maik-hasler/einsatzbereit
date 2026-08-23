@@ -4,9 +4,6 @@ import { useTranslation } from "react-i18next";
 import Chip from "./Chip";
 import { labelClass } from "../lib/formClasses";
 
-// Mirrors VolunteerOpportunity.MaxTagsCount/MaxTagLength (#1678) - keeping the
-// same bounds here means the backend's VolunteerOpportunity.TooManyTags/
-// TagTooLong validation errors are not reachable in normal use (#1731).
 const MAX_TAGS = 20;
 const MAX_TAG_LENGTH = 50;
 
@@ -73,8 +70,7 @@ export default function TagsInput({
 	function removeTag(tag: string) {
 		onChange(value.filter((existing) => existing !== tag));
 		setStatusMessage(t("createOpportunity.tagRemoved", { tag }));
-		// The clicked remove button unmounts along with its chip - without this,
-		// focus would fall to <body> mid-form instead of somewhere deliberate.
+
 		inputRef.current?.focus();
 	}
 
@@ -87,10 +83,6 @@ export default function TagsInput({
 			</label>
 			<div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-brand-400">
 				{value.length > 0 && (
-					// display:contents so this list wrapper (needed for a labelled
-					// list rather than a bare run of <span> chips) doesn't
-					// participate in the flex-wrap layout itself - its <li> children
-					// do instead, same as before.
 					<ul className="contents" aria-label={label}>
 						{value.map((tag) => (
 							<li key={tag} className="contents">
@@ -105,10 +97,7 @@ export default function TagsInput({
 						))}
 					</ul>
 				)}
-				{/* The pill wrapper above shows the focus-within border; suppress
-				the browser's own default focus box on this borderless, transparent
-				input so it doesn't double up. The global :focus-visible ring
-				(global.css, issue #992) still outlines the pill on keyboard focus. */}
+
 				<input
 					ref={inputRef}
 					id={id}
@@ -123,9 +112,7 @@ export default function TagsInput({
 					className="min-w-32 flex-1 border-none bg-transparent py-0.5 text-sm text-gray-900 focus:ring-0 focus:outline-none"
 				/>
 			</div>
-			{/* Always mounted (not conditional on `statusMessage`) so the live
-			region is registered before it ever gets content - see
-			CheckInModal.tsx's identical pattern for why. */}
+
 			<p role="status" className="sr-only">
 				{statusMessage}
 			</p>

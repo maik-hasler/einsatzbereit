@@ -52,11 +52,6 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasMaxLength(VolunteerOpportunity.MaxTitleLength)
 			.IsRequired();
 
-		// Organizer-supplied English translation (einsatzbereit#1946) - unlike
-		// TitleDe, left unrequired at every layer (domain's EnsurePublishable,
-		// here, and the API request DTO) so an opportunity can still be published
-		// without one; viewers fall back to TitleDe (see frontend's
-		// pickLocalizedText) instead of getting stuck mid-translation.
 		builder.Property(vo => vo.TitleEn)
 			.HasMaxLength(VolunteerOpportunity.MaxTitleLength)
 			.IsRequired(false);
@@ -74,9 +69,6 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.OwnsOne(vo => vo.Address, address =>
 		{
-			// Matches the [MaxLength] already declared on Create/UpdateVolunteerOpportunityRequest's
-			// address fields (#1146) - previously only inert on the request DTO, since
-			// nothing evaluated it server-side and the DB column was unbounded text.
 			address.Property(a => a.Street).HasMaxLength(200).IsRequired();
 			address.Property(a => a.HouseNumber).HasMaxLength(20).IsRequired();
 			address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
@@ -84,9 +76,6 @@ internal sealed class VolunteerOpportunityConfiguration
 			address.Property(a => a.Latitude);
 			address.Property(a => a.Longitude);
 
-			// Supports the bounding-box WHERE clause the radius/box search filters
-			// run before falling back to an in-memory Haversine pass (#1199) -
-			// without it that predicate was always a sequential scan.
 			address.HasIndex(a => new { a.Latitude, a.Longitude });
 		});
 
@@ -113,19 +102,12 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
-		// Unconstrained at the DB level, matching Engagement.CancellationReason -
-		// the 500-char cap is enforced at the API layer (CancelVolunteerOpportunityRequest).
 		builder.Property(vo => vo.CancellationReason);
 
 		builder.Property(vo => vo.BannerImageUrl);
 
 		builder.Property(vo => vo.Color);
 
-		// Per-element length capped via ElementType (#1678) so the store type
-		// becomes character varying(MaxTagLength)[] instead of unbounded text[] -
-		// EF's collection facets have no equivalent for capping the array's
-		// cardinality, so that cap is the raw CHECK constraint below
-		// (ck_volunteer_opportunity_tags_count).
 		builder.PrimitiveCollection(vo => vo.Tags)
 			.ElementType(e => e.HasMaxLength(VolunteerOpportunity.MaxTagLength));
 
@@ -151,31 +133,16 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.HasIndex(vo => vo.OrganizationId);
 
-		// Was an unconstrained uuid (#1191) - only 2 FKs existed in the entire
-		// schema. DeleteOrganizationCommandHandler already deletes every
-		// opportunity for an organization (via VolunteerOpportunityDeletionHelper)
-		// before deleting the organization row itself, so this is a
-		// defense-in-depth backstop for any other deletion path, not a behavior
-		// change in the normal flow. engagement.opportunity_id deliberately gets
-		// no equivalent FK - see EngagementConfiguration.
 		builder.HasOne<Organization>()
 			.WithMany()
 			.HasForeignKey(vo => vo.OrganizationId)
 			.OnDelete(DeleteBehavior.Cascade);
 
-		// Covers GetPagedSummariesAsync's landing-page query: filters on Status,
-		// sorts by CreatedOn (#1385).
 		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
 
-		// Supports the Tags.Contains(filter.Tag) array-containment filter (#1385).
 		builder.HasIndex(vo => vo.Tags)
 			.HasMethod("gin");
 
-		// Two organizers editing the same opportunity at once currently
-		// last-write-wins with no error, one organizer's changes silently vanish
-		// (#1196). See EngagementConfiguration for why this is a plain
-		// IsRowVersion() uint rather than the removed UseXminAsConcurrencyToken()
-		// helper.
 		builder.Property<uint>("Version").IsRowVersion();
 
 		builder.Ignore(vo => vo.Events);

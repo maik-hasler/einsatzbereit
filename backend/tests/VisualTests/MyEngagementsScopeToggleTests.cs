@@ -2,31 +2,11 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1836: the /my-signups scope toggle ("Current &amp; upcoming" /
-/// "Past") is a hand-rolled segmented control whose two segments sized to their
-/// own label content only (no width-equalizing utility), so the longer
-/// "Current &amp; upcoming" segment rendered visibly wider than "Past" - nearly
-/// 2:1 as rendered (162px vs. 87px in a 259px track). Fixed by making the
-/// track a CSS Grid with two minmax(0,1fr) columns, so it renders both segments
-/// at the width of the wider one regardless of label length. An equal-width
-/// flex-1 track (the original #1836 fix) has the same shrink-to-fit total
-/// width, so it instead squeezes both segments to half that width - which can
-/// compress the longer label below its own single-line width and wrap it, so
-/// grid is the fix that keeps both goals (equal width, no forced wrap) at once
-/// in a longer locale like German's "Aktuell &amp; Bevorstehend" / "Vergangen".
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class MyEngagementsScopeToggleTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// Both segments share the same grid track width, so their rendered widths
-	// should match modulo getBoundingClientRect's sub-pixel rounding - far
-	// below the ~75px gap the unequal-width bug produced.
 	private const double MaxWidthDeltaPx = 2;
 
-	// A wrapped-to-two-lines segment renders roughly twice as tall as its
-	// single-line sibling - far above sub-pixel rounding - so an equal-height
-	// check across the pair is a direct proxy for "neither one wrapped".
 	private const double MaxHeightDeltaPx = 2;
 
 	[Test]
@@ -44,10 +24,6 @@ public class MyEngagementsScopeToggleTests(AspireFixture fixture) : VisualTestBa
 		await Expect(upcomingTab).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(pastTab).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Both widths read in a single EvaluateAsync call rather than two
-		// separate BoundingBoxAsync round trips, so nothing can reflow between
-		// the two reads (see VisualTestBase.AssertMaxWidthContentCenteredAsync
-		// for the same pattern).
 		var widthDelta = 0d;
 		var upcomingWidth = 0d;
 		var pastWidth = 0d;
@@ -76,8 +52,6 @@ public class MyEngagementsScopeToggleTests(AspireFixture fixture) : VisualTestBa
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		// FastSignInAsync itself waits on the English "User menu" aria-label
-		// (see OrgDashboardWidgetsTests), so switch language only afterwards.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -90,10 +64,6 @@ public class MyEngagementsScopeToggleTests(AspireFixture fixture) : VisualTestBa
 		await Expect(upcomingTab).ToContainTextAsync("Aktuell & Bevorstehend", new() { Timeout = 15_000 });
 		await Expect(pastTab).ToContainTextAsync("Vergangen", new() { Timeout = 15_000 });
 
-		// Widths and heights read in a single EvaluateAsync call rather than
-		// separate BoundingBoxAsync round trips, so nothing can reflow between
-		// the reads (see VisualTestBase.AssertMaxWidthContentCenteredAsync for
-		// the same pattern).
 		var widthDelta = 0d;
 		var heightDelta = 0d;
 		var upcomingWidth = 0d;

@@ -55,20 +55,11 @@ public class OutboxTests(IntegrationTestFixture fixture)
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
-		// OutboxProcessorJob polls every 5s (PollInterval in OutboxProcessorJob.cs); a
-		// 45s budget gives it several cycles to run so a slow/loaded CI runner delaying
-		// one tick doesn't flake the test, while still failing fast if dispatch is
-		// actually broken.
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
 			EngagementCheckedInDomainEventType, TimeSpan.FromSeconds(45));
 
 		processed.Should().BeTrue("OutboxProcessorJob should dispatch the message to EngagementCheckedInAuditLogHandler within a few poll cycles");
 
-		// Regression for #1336: the message reaching ProcessedOnUtc only proves the
-		// outbox pipeline ran, not that the payload it dispatched was intact - a
-		// silent Guid.Empty round-trip of EngagementId would pass the assertion
-		// above just as easily. Deserialize the actual dispatched message and
-		// assert it carries the engagement this test created.
 		await using var context = fixture.CreateApplicationDbContext();
 		var message = await context.Set<OutboxMessage>()
 			.SingleAsync(m => m.Type == EngagementCheckedInDomainEventType, cancellationToken);
@@ -76,8 +67,6 @@ public class OutboxTests(IntegrationTestFixture fixture)
 
 		dispatchedEvent.EngagementId.Value.Should().Be(engagement.Id);
 	}
-
-	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)

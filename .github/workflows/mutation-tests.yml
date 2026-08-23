@@ -1,38 +1,5 @@
 name: Mutation Testing
 
-# Report-only, and deliberately not wired into the PR gate (#2147).
-#
-# Two reasons it is manual rather than automatic:
-#
-#   1. Cost. A full pass over Domain + Application takes ~12 minutes against a
-#      test suite that runs in 3 seconds - every mutant re-runs the tests that
-#      cover it, one mutant at a time (see the concurrency note below). The
-#      measured numbers live in docs/TDRs/2_slow_ci_pipeline.adoc; they are far
-#      outside what belongs on the critical path #773/#2145 spent their effort
-#      cutting.
-#   2. Purpose. This number exists as the guardrail for the E2E rebalance
-#      (#2148): record it before a migration wave, re-run it after, and if the
-#      score did not drop, the removed end-to-end coverage was redundant. That
-#      is a per-wave question, not a per-commit one.
-#
-# The frontend leg below (StrykerJS, added in #2148) is manual for the same two
-# reasons, only more so. Measured: 14 851 mutants over 182 files against a
-# suite that renders components in jsdom, where the backend's 2 690 mutants run
-# against pure functions - a full pass is hours, not the backend's ~12 minutes.
-# What it mutates is capped to the `src/lib/**` pure-logic tier for exactly that
-# reason, and even that tier takes 29 min against the backend's 12. The
-# component tier is reachable on demand with
-# `pnpm mutation --mutate "src/components/Foo.tsx"`, which is how the per-file
-# numbers in TDR-2 were taken. See the analysis in #2152 for why an incremental
-# per-PR gate was considered and rejected.
-#
-# There is deliberately NO score threshold that can block a merge - the config
-# (backend/tests/Application.UnitTests/stryker-config.json) pins
-# `thresholds.break` to 0 so Stryker always exits 0 on a low score. This job
-# only fails if Stryker itself fails, which is a tooling break worth seeing.
-# Same posture as the coverage summary in `fast-tests` (#1327): visibility is
-# the point, gating is not.
-
 on:
   workflow_dispatch:
 
@@ -44,10 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # One runner per mutated project, because they are independent runs against
-  # the same test project and the wall-clock is dominated by the larger one.
-  # fail-fast: false - a Stryker failure on one project says nothing about the
-  # other, and losing the half that would have completed wastes the whole run.
   mutation-tests:
     runs-on: ubuntu-latest
     # Hang guard, not a target: the measured legs are ~4 min (Domain) and ~8 min
@@ -73,10 +36,6 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Pinned for the same reason dotnet-ef is pinned in dotnet.yml: the score
-      # is only comparable across runs if the mutant set is, and a new Stryker
-      # version can add or drop mutators. Bumping this is a deliberate act that
-      # invalidates the recorded baseline - re-record it in the TDR when you do.
       - name: Install Stryker.NET
         run: dotnet tool install --global dotnet-stryker --version 4.16.0
 
@@ -107,12 +66,6 @@ jobs:
           dotnet-stryker --project ${{ matrix.project }}.csproj --output "$RUNNER_TEMP/stryker-${{ matrix.project }}"
           echo "STRYKER_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
 
-      # Report-only summary, written straight to the job's step summary rather
-      # than via a third-party action - same reasoning as the coverage summary
-      # in dotnet.yml's fast-tests job. Killed + Timeout over
-      # Killed + Timeout + Survived + NoCoverage is Stryker's own score
-      # definition: CompileError and Ignored mutants are excluded from the
-      # denominator, so they neither help nor hurt the number.
       - name: Publish mutation score summary
         if: always()
         run: |
@@ -154,17 +107,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # StrykerJS over the frontend's pure-logic tier (#2148). Separate job rather
-  # than a matrix leg on the one above: the toolchains share nothing but the
-  # trigger and the report-only posture.
   mutation-tests-frontend:
     runs-on: ubuntu-latest
-    # Hang guard, not a target - but a wide one, because this leg is slow:
-    # measured at 28 min 59 s here (897 mutants, ignoreStatic on), against
-    # 4 min 23 s and 7 min 34 s for the two .NET legs above. It is 3x the
-    # backend's whole matrix and it is only the cheap tier. 90 leaves ~3x
-    # headroom, which is tighter than the 45 above allows its own legs.
-    # Stryker's own timeoutMS bounds a single mutant, not the run.
     timeout-minutes: 90
     defaults:
       run:
@@ -184,18 +128,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Version is pinned in package.json for the same reason dotnet-stryker is
-      # pinned above: the score is only comparable across runs if the mutant set
-      # is, and a new Stryker version can add or drop mutators.
       - name: Run StrykerJS
         run: |
           start=$(date +%s)
           pnpm mutation
           echo "STRYKER_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
 
-      # Same score definition as the .NET legs above, read off StrykerJS's own
-      # JSON report - which nests mutants under .files[].mutants[] identically,
-      # so the jq is the same shape.
       - name: Publish mutation score summary
         if: always()
         run: |

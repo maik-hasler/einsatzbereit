@@ -1,17 +1,5 @@
 <#import "template.ftl" as layout>
-<#--
-	The most-visited page in this theme after sign-in itself, and the one that
-	was worst off unstyled. Two ways in, both unavoidable: registration (with
-	verifyEmail on, Keycloak leaves the password off the registration form and
-	sets UPDATE_PASSWORD once the address is confirmed - see
-	RegistrationPassword.buildPage - so this is where every new account
-	actually gets its password), and the "forgot password" mail.
 
-	Base's version puts the <label> in a wrapper div *above* the input rather
-	than as its sibling, which this theme's floating-label rules cannot match -
-	so the absolutely-positioned label detached from the field entirely. The
-	markup below is the same field structure as login.ftl instead.
--->
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError('password','password-confirm')
 	pageTitle="updatePasswordTitle"
@@ -103,8 +91,7 @@
 			</div>
 
 			<div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-				<#-- "Save password", not Keycloak's generic "Submit": the label on
-				the control should be what happens when you press it. -->
+
 				<input
 					name="login"
 					class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"

@@ -11,19 +11,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_ShowsOrganizationNameLinks_ForVerasEngagements()
 	{
-		// Regression: org name and org link were missing from engagement cards
-		// before PR #475 added OrganizationId/OrganizationName to EngagementSummary.
-		//
-		// #1334: this used to assert against vera's *ambient* engagement cards
-		// (seed data, plus whatever throwaway engagements other concurrently
-		// running test classes happened to have created for her in this shared
-		// session), guarded by two stacked "return if empty" checks - so its
-		// assertions only ran when seed data happened to be present and no
-		// other test had already polluted the card count, and it never proved
-		// anything about a card it could actually identify. Creates and owns
-		// its own organization/opportunity/engagement instead, and scopes every
-		// assertion to that specific card via data-engagement-id, so this is
-		// deterministic regardless of what else runs in this shared session.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var suffix = Guid.NewGuid().ToString("N")[..8];
@@ -36,9 +23,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp, "/v1/organizations", new { name = orgName });
 		orgResponse.EnsureSuccessStatusCode();
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
-		// CreateOrganizationEndpoint returns the raw domain Organization
-		// aggregate, whose strongly-typed OrganizationId record struct
-		// serializes as a nested { "value": "<guid>" } object.
+
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
 		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
@@ -75,21 +60,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
 
-		// IndividualContact engagements have no time slot, and
-		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// upcoming" scope by time-slot start (entries with none sort last) - so on
-		// a shared session where other concurrently-running tests have already
-		// given vera their own time-slotted upcoming engagements, this card can
-		// land past the first (10-item) page instead of being visible immediately,
-		// so page through to it. A fixed iteration count isn't reliable here - how
-		// many other no-time-slot engagements vera has accumulated by this point
-		// varies with test scheduling/parallelism across the ~50 VisualTests
-		// classes sharing this session, so LoadMoreUntilVisibleAsync bounds by
-		// wall-clock time instead of a click count.
-		//
-		// Wait for the first page before starting: the WaitForLoadStateAsync above
-		// can settle before the engagements fetch is even issued, since
-		// useLoadMore only requests from an effect after React commits.
 		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await LoadMoreUntilVisibleAsync(card);
@@ -100,7 +70,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(orgLink).ToBeVisibleAsync();
 		await Expect(orgLink).ToHaveTextAsync(orgName);
 
-		// Leave vera's account clean for the rest of this shared Aspire session.
 		var withdrawResponse = await veraHttp.PostAsync($"/v1/engagements/{engagementId}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
 	}
@@ -108,19 +77,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MyEngagementsPage_StatesItsTitleOnce_WithADistinctSrOnlyInContentHeading()
 	{
-		// #1796: /my-signups printed its own title twice - once as the header
-		// band's <h1> ("My sign-ups", myEngagementsPage.title) and again
-		// roughly 200px below it as a SectionHeading eyebrow rendering a second
-		// key with the same string ("My sign-ups", myEngagements.title), where
-		// every other page's eyebrow carries a *category* the title does not
-		// repeat. That second one went sr-only in #1796 - still marking where
-		// the invitations block ends and the sign-ups list begins for a screen
-		// reader - but kept the <h1>'s exact wording, so a screen reader still
-		// announced "My sign-ups" twice back to back with no visible change a
-		// sighted user could point to as the reason. #2071 gives it its own
-		// string ("Sign-ups list", myEngagements.listHeading) instead of
-		// dropping it, since removing it entirely would lose the one thing it
-		// was doing: marking the sign-ups list's start in the heading outline.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
@@ -130,8 +86,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My sign-ups", Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		// No heading anywhere in the sign-ups section repeats the <h1>'s exact
-		// wording - the duplicate-announcement bug #2071 reported.
 		await Expect(Page.Locator("#activity").GetByRole(AriaRole.Heading, new() { Name = "My sign-ups" }))
 			.ToHaveCountAsync(0);
 
@@ -139,18 +93,11 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.GetByRole(AriaRole.Heading, new() { Name = "Sign-ups list" });
 		await Expect(inContentTitle).ToHaveCountAsync(1);
 
-		// sr-only clips it to a 1px box: still in the accessibility tree, gone
-		// from the page. The eyebrow this replaced rendered ~16px tall, so a
-		// regression would blow well past this bound. Playwright counts an
-		// sr-only element as visible (it has a non-empty box), which is why
-		// this asserts geometry rather than Not.ToBeVisibleAsync().
 		var box = await inContentTitle.BoundingBoxAsync();
 		box.Should().NotBeNull();
 		box!.Height.Should().BeLessThan(4,
 			"the in-content heading must stay sr-only - a second visible copy of the <h1> is what #1796 removed");
 
-		// What sits where that eyebrow did: the scope switcher, which now
-		// carries the group name the heading above it used to imply.
 		await Expect(Page.GetByRole(AriaRole.Group, new() { Name = "Time range" }))
 			.ToBeVisibleAsync();
 	}

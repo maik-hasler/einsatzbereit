@@ -19,12 +19,6 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
-// OpenApiGenerateDocumentsOnBuild/NSwag regenerate the OpenAPI document on every
-// build by launching this Main via Microsoft.Extensions.Hosting.HostFactoryResolver
-// (dotnet-getdocument), which runs the whole app - including the config check below
-// - for real, with no ASPNETCORE_ENVIRONMENT set. That design-time invocation is
-// recognizable by the synthetic "--applicationName=" argument it passes, which a real
-// run (dotnet run/dotnet Api.dll/the published container) never does.
 var isDesignTimeToolInvocation = args.Any(a => a.StartsWith("--applicationName=", StringComparison.Ordinal));
 
 var builder = WebApplication.CreateBuilder(args);
@@ -99,9 +93,6 @@ builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
 builder.Services.AddOutputCachingPolicies(builder.Configuration);
 
-// EnableForHttps is safe here: this API is a pure JSON/token (Bearer, not cookie) API,
-// so there's no session secret reflected back into a compressible response body that a
-// BREACH-style attack could exploit (#1391).
 builder.Services.AddResponseCompression(options =>
 {
 	options.EnableForHttps = true;
@@ -146,8 +137,6 @@ apiVersioning.AddOpenApi(versioned =>
 			Description = "API for the Einsatzbereit application"
 		};
 
-		// Inline the IFormFile binary schema instead of a $ref so NSwag emits
-		// its FileParameter helper class in the generated clients.
 		foreach (var pathItem in document.Paths.Values)
 		{
 			if (pathItem.Operations is null)
@@ -180,13 +169,6 @@ apiVersioning.AddOpenApi(versioned =>
 
 var app = builder.Build();
 
-// appsettings.json's ConnectionStrings/Keycloak:ClientSecret/Authentication:Authority
-// defaults are dev-only fallbacks (see the comments in that file) that also ship in
-// the released image - fail fast outside Development instead of silently running
-// with a working Postgres superuser connection string or a plain-http authority if
-// an environment's override is ever dropped or misspelled. Skipped for the
-// design-time tool invocation (see isDesignTimeToolInvocation above), which never
-// has any of this configured and never actually serves traffic either.
 if (!isDesignTimeToolInvocation)
 {
 	var missingConfiguration = RequiredConfigurationValidator.FindMissing(
@@ -215,12 +197,6 @@ if (app.Environment.IsDevelopment())
 	}
 	catch (Exception ex)
 	{
-		// Dev-only convenience (#1212): don't fail local startup over a seed hiccup
-		// (e.g. a transient Keycloak call). ApplicationDbContextInitializer.SeedAsync's
-		// Keycloak-dependent seeding is idempotent by organization name, so the next
-		// restart's retry reuses whatever was already created instead of piling up
-		// duplicates - unlike the SeedOnStartup path below, which lets the same
-		// exception crash startup instead of logging it.
 		app.Logger.LogError(ex, "An exception occurred while seeding the database");
 	}
 
@@ -234,29 +210,16 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 
 	await initializer.MigrateAsync();
 
-	// Unlike the Development branch above, a seed failure here is left to propagate
-	// and crash startup (#1212) - this only runs outside Development when explicitly
-	// opted into via config, so a broken seed should be surfaced immediately rather
-	// than leaving the environment half-seeded with nothing logging it as broken.
 	if (app.Configuration.GetValue<bool>("Database:SeedOnStartup"))
 		await initializer.SeedAsync();
 }
 
-// Both anonymous and previously exempt from every rate limiting/caching policy -
-// /health additionally ran a DB connect + an outbound Keycloak HTTP call on every
-// single hit, so a trivial unauthenticated flood could exhaust the Npgsql pool and
-// starve Keycloak (#1172). RequireRateLimiting caps the request rate itself;
-// CacheOutput on /health also bounds how often the underlying dependency checks run
-// at all, independent of how many distinct callers/IPs are behind a flood.
 app.MapDefaultEndpoints(
 	health => health
 		.RequireRateLimiting(RateLimitingPolicies.Read)
 		.CacheOutput(OutputCachingPolicies.HealthCheck),
 	alive => alive.RequireRateLimiting(RateLimitingPolicies.Read));
 
-// Must run before anything that reads Connection.RemoteIpAddress (HTTP logging,
-// the rate limiter's anonymous partition key) - see TrustedNetworksOptions for why
-// only these known networks are trusted to set X-Forwarded-For (#1332).
 app.UseForwardedHeaders();
 
 // Bridges RequestSizeLimitAttribute metadata (set per-endpoint via .WithMetadata()) to
@@ -272,13 +235,6 @@ app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
 
-// Registered after UseAuthentication (Cache-Control needs context.User) and via
-// Response.OnStarting rather than set directly - ExceptionHandlerMiddleware calls
-// Response.Clear() before writing a caught exception's ProblemDetails body, which
-// wipes any header set directly before next() regardless of where in the pipeline
-// this middleware sits. OnStarting callbacks run right before the response is
-// actually sent, after that Clear(), so these headers decorate error responses too
-// (#1180).
 app.Use(async (context, next) =>
 {
 	context.Response.OnStarting(() =>

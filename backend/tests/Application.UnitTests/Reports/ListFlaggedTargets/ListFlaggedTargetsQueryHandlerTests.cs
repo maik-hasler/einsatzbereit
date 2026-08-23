@@ -24,14 +24,17 @@ public class ListFlaggedTargetsQueryHandlerTests
 	public async Task Handle_ShouldReturnFlaggedTargets_FromReadRepository(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var item = new FlaggedTargetSummary("VolunteerOpportunity", Guid.NewGuid(), "Titel", 1, 2, DateTimeOffset.UtcNow, false);
 
 		_readRepo
 			.GetFlaggedTargetsPagedAsync(1, 10, cancellationToken)
 			.Returns(new PagedList<FlaggedTargetSummary>([item], 1, 1, 10));
 
+		// Act
 		var result = await _sut.Handle(new ListFlaggedTargetsQuery(1, 10), cancellationToken);
 
+		// Assert
 		result.Items.Should().ContainSingle().Which.Should().Be(item);
 	}
 

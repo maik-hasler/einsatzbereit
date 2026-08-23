@@ -7,11 +7,6 @@ namespace IntegrationTests;
 [NotInParallel("IntegrationDb")]
 public class RateLimitingTests(IntegrationTestFixture fixture)
 {
-	// Unique IP so this test's quota is isolated from other test classes. Still
-	// honored after #1332: the real backend process in this fixture is only ever
-	// reached over loopback, which TrustedNetworksOptions deliberately keeps
-	// trusted (see its own comment) - only a caller connecting from *outside*
-	// that trusted set now has X-Forwarded-For ignored.
 	private const string TestIp = "10.0.0.99";
 
 	[Test]
@@ -33,10 +28,6 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 		statusCodes.Should().Contain(HttpStatusCode.TooManyRequests);
 	}
 
-	// Regression coverage for #1172: /health used to be exempt from every rate
-	// limiting policy while running a DB connect + an outbound Keycloak HTTP call on
-	// every hit - a trivial unauthenticated flood could exhaust the Npgsql pool and
-	// starve Keycloak. Own test IP so this quota is isolated from the test above.
 	[Test]
 	public async Task GetHealth_ShouldReturn429_WhenAnonymousRateLimitExceeded(
 		CancellationToken cancellationToken)

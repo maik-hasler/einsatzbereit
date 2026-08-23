@@ -30,6 +30,7 @@ public class ListOrganizationsQueryHandlerTests
 	public async Task Handle_ShouldReturnOrganizations_FromReadRepository(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var item = new AdminOrganizationSummary(
 			Guid.NewGuid(), "Fire Department", null, false, 0, 3, DateTimeOffset.UtcNow);
 
@@ -37,8 +38,10 @@ public class ListOrganizationsQueryHandlerTests
 			.GetPagedAsync(1, 10, null, null, null, cancellationToken)
 			.Returns(new PagedList<AdminOrganizationSummary>([item], 1, 1, 10));
 
+		// Act
 		var result = await _sut.Handle(new ListOrganizationsQuery(1, 10), cancellationToken);
 
+		// Assert
 		result.Items.Should().ContainSingle().Which.Should().Be(item);
 	}
 

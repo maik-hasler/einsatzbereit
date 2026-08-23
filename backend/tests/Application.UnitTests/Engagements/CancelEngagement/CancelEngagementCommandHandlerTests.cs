@@ -60,12 +60,15 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldCancelEngagement_WhenEngagementIsPending(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Status.Should().Be(EngagementStatus.Cancelled);
 	}
 
@@ -73,13 +76,16 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldCancelEngagement_WhenEngagementIsConfirmed(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Status.Should().Be(EngagementStatus.Cancelled);
 	}
 
@@ -87,11 +93,14 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
@@ -100,13 +109,16 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsAlreadyCancelled(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Cancel();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
@@ -114,13 +126,16 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsWithdrawn(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Withdraw();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
@@ -128,12 +143,15 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldReturnSameEngagement_Instance(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
+		// Assert
 		result.Should().BeSameAs(engagement);
 	}
 
@@ -141,12 +159,15 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldNotifyVolunteer_WhenEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId, "No longer needed."), cancellationToken);
 
+		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
@@ -158,12 +179,15 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldWriteAuditLog_WhenEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
+		// Act
 		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId, "No longer needed."), cancellationToken);
 
+		// Assert
 		await _auditLogRepo.Received(1).AddAsync(
 			Arg.Is<AuditLog>(a => a!.ActorUserId == DefaultRequestingUserId
 				&& a.ActionType == AuditActionType.EngagementCancelled
@@ -177,10 +201,6 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldRaiseCancelledEventCarryingTheOpportunityTitle_ForThePostCommitNotificationHandler(
 		CancellationToken cancellationToken)
 	{
-		// #1150: the email itself moved to EngagementCancelledNotificationHandler,
-		// dispatched post-commit - the title is denormalized onto the event here
-		// since some other callers cancel as part of deleting the opportunity in
-		// the same transaction (nothing left to look up by the time it dispatches).
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);

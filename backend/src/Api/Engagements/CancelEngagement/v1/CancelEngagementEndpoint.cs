@@ -47,7 +47,6 @@ internal sealed class CancelEngagementEndpoint
 		var command = new CancelEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId, body?.Reason);
 		var engagement = await sender.Send(command, cancellationToken);
 
-		// A cancelled engagement changes CurrentParticipantCount on the public listing.
 		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.CancellationReason));

@@ -94,9 +94,7 @@ describe("OpportunityCard sign-up mechanism chip", () => {
 	it("omits the chip for an interest-based one, whose capacity already says it", () => {
 		renderCard({
 			...base,
-			// totalMaxParticipants 0 is the tri-state's "no time slots" (see
-			// lib/opportunityCapacity.ts) - what resolves the chip to "By expression
-			// of interest" rather than a spots-left count.
+
 			participationType: "IndividualContact",
 			nextTimeSlotStart: undefined,
 			validUntil: new Date(Date.UTC(2027, 0, 31)),
@@ -118,7 +116,6 @@ describe("OpportunityCard organization badge", () => {
 			organizationLogoUrl: "https://storage.example.test/logos/kiel.png",
 		});
 
-		// By tag, not by role: the logo is alt="" (the link is already named).
 		const link = screen.getByTestId("opportunity-org-link");
 		const img = link.querySelector("img");
 		expect(img).not.toBeNull();

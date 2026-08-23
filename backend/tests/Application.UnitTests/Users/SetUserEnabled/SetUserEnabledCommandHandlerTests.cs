@@ -26,13 +26,16 @@ public class SetUserEnabledCommandHandlerTests
 	public async Task Handle_ShouldDisableTargetUser_WhenNotSelf(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserId = Guid.NewGuid();
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(targetUserId, cancellationToken).Returns(false);
 		var command = new SetUserEnabledCommand(targetUserId, actingUserId, Enabled: false);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).SetUserEnabledAsync(targetUserId, false, cancellationToken);
 		await _auditLogRepo.Received(1).AddAsync(
@@ -47,12 +50,15 @@ public class SetUserEnabledCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenActorDisablesTheirOwnAccount(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(actingUserId, cancellationToken).Returns(false);
 		var command = new SetUserEnabledCommand(actingUserId, actingUserId, Enabled: false);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*own account*");
 		await _keycloakService.DidNotReceive().SetUserEnabledAsync(
@@ -63,13 +69,15 @@ public class SetUserEnabledCommandHandlerTests
 	public async Task Handle_ShouldAllowEnablingSelf_BecauseGuardOnlyBlocksDisabling(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - re-enabling your own (already-active) account isn't the footgun the guard exists for.
+		// Arrange
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(actingUserId, cancellationToken).Returns(false);
 		var command = new SetUserEnabledCommand(actingUserId, actingUserId, Enabled: true);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).SetUserEnabledAsync(actingUserId, true, cancellationToken);
 		await _auditLogRepo.Received(1).AddAsync(
@@ -81,13 +89,16 @@ public class SetUserEnabledCommandHandlerTests
 	public async Task Handle_ShouldThrowForbidden_WhenTargetIsAServiceAccount(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var targetUserId = Guid.NewGuid();
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(targetUserId, cancellationToken).Returns(true);
 		var command = new SetUserEnabledCommand(targetUserId, actingUserId, Enabled: false);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*service account*");
 		await _keycloakService.DidNotReceive().SetUserEnabledAsync(

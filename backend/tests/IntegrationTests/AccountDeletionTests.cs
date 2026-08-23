@@ -14,18 +14,10 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	public async Task DeleteMyAccount_ShouldRemoveAccountAcrossAllSubsystems_AndAnonymizeButNotDeleteEngagementHistory(
 		CancellationToken cancellationToken)
 	{
-		// #829: DeleteMyAccount is irreversible and spans four subsystems with no
-		// rollback on partial failure, so this runs against a throwaway per-test
-		// Keycloak user (never vera/olaf/admin - those are the shared seed
-		// accounts for the whole PerTestSession) since deleting it destroys the
-		// account for good.
 		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
-		// #1192: a second throwaway user the ephemeral user invites into an
-		// organization once they're an organizer themselves, giving an
-		// organization_invitation row on the *inviter* (invited_by_id) side.
 		var (thirdPartyUserId, _, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -53,17 +45,8 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// Fires an EngagementConfirmed notification whose recipient is the
-		// ephemeral user, giving it a notification row to prove gets hard-deleted.
-		// Confirming also creates/updates a user_streak row and awards the
-		// "first-step" achievement for the ephemeral user - #1192 coverage for
-		// both, alongside the notification.
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		// #1192: olaf invites the ephemeral user into a second organization and
-		// the ephemeral user accepts, becoming its second organizer alongside
-		// olaf - giving the ephemeral user an organization_membership row and
-		// an accepted organization_invitation row (invitee_id side).
 		var sharedOrg = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Shared Membership Test Org" }, cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
@@ -72,15 +55,8 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await ephemeralClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
-		// #826: SaveDashboardLayout/CreateInvitation below are gated by the
-		// Organisator policy, a role claim baked into the JWT at mint time -
-		// ephemeralClient's original token predates the "organisator" role
-		// grant that just happened as a side effect of accepting, so a fresh
-		// token is needed (same pattern as OrganizationSettingsTests).
 		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
-		// #1192: the ephemeral user (now an organizer of sharedOrg) saves a
-		// dashboard layout for it, giving an organization_dashboard_layout row.
 		await ephemeralClient.SaveDashboardLayoutAsync(
 			sharedOrg.Id.Value,
 			new SaveDashboardLayoutRequest
@@ -92,15 +68,11 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 
-		// #1192: the ephemeral user, now an organizer, invites the third-party
-		// user - an organization_invitation row on the inviter (invited_by_id) side.
 		await ephemeralClient.CreateInvitationAsync(
 			sharedOrg.Id.Value,
 			new CreateInvitationRequest { InviteeId = thirdPartyUserId, Role = "Member" },
 			cancellationToken);
 
-		// #1676: a report the ephemeral user filed (as reporter) against the
-		// third-party user - proves reports the deleted user filed are cleaned up.
 		await ephemeralClient.ReportUserAsync(
 			thirdPartyUserId,
 			new ReportUserRequest { Reason = "Spam" },
@@ -108,11 +80,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
-		// Keycloak subsystem: the account can no longer authenticate at all. The
-		// Keycloak deletion itself is no longer part of DeleteMyAccount's own
-		// transaction - UserAccountDeletedDomainEventHandler does it post-commit
-		// via the outbox (#1141), so it must be awaited before re-login is
-		// expected to fail.
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
 			"Domain.Users.UserAccountDeletedDomainEvent", TimeSpan.FromSeconds(45));
 		processed.Should().BeTrue("UserAccountDeletedDomainEventHandler should have deleted the Keycloak user by now");
@@ -120,45 +87,30 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var reLogin = () => fixture.GetAccessTokenAsync(ephemeralUsername, ephemeralPassword);
 		await reLogin.Should().ThrowAsync<Exception>();
 
-		// Notifications subsystem: hard-deleted, not just marked read/orphaned.
 		(await fixture.CountRowsWhereAsync("notification", "recipient_id", ephemeralUserId))
 			.Should().Be(0);
 
-		// Users subsystem: the local user row is hard-deleted.
 		(await fixture.CountRowsWhereAsync("user", "id", ephemeralUserId))
 			.Should().Be(0);
 
-		// Engagements subsystem: deliberately anonymized, not deleted - the
-		// history survives for the organizer, but no longer identifies the
-		// deleted volunteer.
 		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 		engagements.Items.Should().ContainSingle(e => e.Id == engagement.Id && e.VolunteerId == null);
 
-		// #1192: user_streak and achievement rows created for the ephemeral
-		// user while confirming their engagement above are hard-deleted.
 		(await fixture.CountRowsWhereAsync("user_streak", "user_id", ephemeralUserId))
 			.Should().Be(0);
 		(await fixture.CountRowsWhereAsync("achievement", "user_id", ephemeralUserId))
 			.Should().Be(0);
 
-		// #1192: the ephemeral user's own organization_membership and
-		// organization_dashboard_layout rows are hard-deleted (olaf's own
-		// membership in sharedOrg is untouched by construction, since the
-		// cleanup is scoped to the deleted user's rows only).
 		(await fixture.CountRowsWhereAsync("organization_membership", "user_id", ephemeralUserId))
 			.Should().Be(0);
 		(await fixture.CountRowsWhereAsync("organization_dashboard_layout", "user_id", ephemeralUserId))
 			.Should().Be(0);
 
-		// #1192: organization_invitation rows are hard-deleted on both the
-		// invitee side (accepted invitation from olaf) and the inviter side
-		// (pending invitation the ephemeral user sent as an organizer).
 		(await fixture.CountRowsWhereAsync("organization_invitation", "invitee_id", ephemeralUserId))
 			.Should().Be(0);
 		(await fixture.CountRowsWhereAsync("organization_invitation", "invited_by_id", ephemeralUserId))
 			.Should().Be(0);
 
-		// #1676: the report the ephemeral user filed as reporter is hard-deleted.
 		(await fixture.CountRowsWhereAsync("report", "reporter_id", ephemeralUserId))
 			.Should().Be(0);
 	}
@@ -167,25 +119,15 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	public async Task DeleteMyAccount_ShouldRemoveAccountAcrossAllSubsystems_WhenCallerWasPreviouslyShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		// #1725: DeleteMyAccount used to resolve the local user row through the
-		// filtered dbContext.Users.FindAsync, which respects the global
-		// !IsDeleted query filter - so a user an admin had already shadow-deleted
-		// (login deliberately left intact, AdminShadowDeleteUserCommandHandler)
-		// got a 204 back with the entire identity-erasing block silently
-		// skipped: no MarkAccountDeleted (the only thing that raises
-		// UserAccountDeletedDomainEvent), so Keycloak was never told either.
 		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
-		// Lazily creates the local `user` row before it gets shadow-deleted below.
 		await ephemeralClient.GetUserProfileAsync(cancellationToken);
 
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 		await adminClient.AdminShadowDeleteUserAsync(ephemeralUserId, cancellationToken);
 
-		// Shadow-delete deliberately leaves login intact, so the same account can
-		// still reach DeleteMyAccount itself.
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
@@ -204,15 +146,10 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	public async Task DeleteMyAccount_ShouldReturn404_WhenLocalUserRowDoesNotExistAtAll(
 		CancellationToken cancellationToken)
 	{
-		// #1725: a missing row (as opposed to a shadow-deleted-but-present one)
-		// must now surface as an error rather than being reported as a
-		// successful erasure - a silent no-op for a legally mandated right is
-		// materially worse than an error.
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
-		// Deliberately skip GetUserProfileAsync - no local `user` row is ever created.
 		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
 		var ex = await deleteAccount.Should().ThrowAsync<ApiException>();
@@ -230,11 +167,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var org = await ephemeralClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
 
-		// #826: GetOrganizationDetails below is gated by the Organisator
-		// policy, a role claim baked into the JWT at mint time -
-		// ephemeralClient's original token predates the "organisator" role
-		// grant that just happened as a side effect of creating the
-		// organization, so a fresh token is needed.
 		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
@@ -242,8 +174,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var ex = await deleteAccount.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
 
-		// Nothing was deleted: the account can still authenticate, and the
-		// organization it solely organizes still exists.
 		var token = await fixture.GetAccessTokenAsync(ephemeralUsername, ephemeralPassword);
 		token.Should().NotBeNullOrEmpty();
 		var stillThere = await ephemeralClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
@@ -254,23 +184,10 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	public async Task DeleteVolunteerOpportunity_ShouldSucceed_WhenAnAnonymizedEngagementIsCheckedIn(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1724: DeleteMyAccount deliberately leaves a checked-in
-		// engagement non-terminal (Withdraw() refuses a checked-in engagement,
-		// Engagement.cs) while anonymizing it (VolunteerId set to null). The
-		// opportunity-deletion cascade used to select active engagements without
-		// excluding anonymized ones, so this single row made
-		// DeleteVolunteerOpportunity 409 forever with no way to clear it - not
-		// even by cancelling the engagement directly, since Engagement.Cancel()
-		// refuses an anonymized aggregate too.
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
-		// #1725: CreateEngagementCommandHandler only does a nullable lookup on the
-		// local `user` row, it doesn't lazily create it (unlike GetUserProfile) - and
-		// DeleteMyAccount now 404s instead of silently no-op'ing when that row is
-		// missing entirely, so it must exist before this test's own DeleteMyAccount
-		// call below.
 		await ephemeralClient.GetUserProfileAsync(cancellationToken);
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -307,9 +224,6 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id))
 			.Should().Be(0);
 
-		// The anonymized engagement itself survives as history - deletion cancels
-		// active engagements but never deletes them, and this one was skipped by
-		// the cascade (not cancelled) rather than tripping it.
 		(await fixture.CountRowsWhereAsync("engagement", "id", engagement.Id))
 			.Should().Be(1);
 	}

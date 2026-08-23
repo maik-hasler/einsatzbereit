@@ -21,6 +21,7 @@ public class MarkAllNotificationsReadCommandHandlerTests
 	public async Task Handle_ShouldMarkEveryUnreadNotificationAsRead_AndReturnTheCount(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		var unread = new List<Notification>
 		{
@@ -32,8 +33,10 @@ public class MarkAllNotificationsReadCommandHandlerTests
 
 		var command = new MarkAllNotificationsReadCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(3);
 		unread.Should().OnlyContain(n => n.IsRead);
 		unread.Should().OnlyContain(n => n.ReadOn != null);
@@ -43,14 +46,17 @@ public class MarkAllNotificationsReadCommandHandlerTests
 	public async Task Handle_ShouldReturnZero_WhenCallerHasNoUnreadNotifications(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		_dbContext.GetUnreadNotificationsForRecipientAsync(recipientId, cancellationToken)
 			.Returns([]);
 
 		var command = new MarkAllNotificationsReadCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(0);
 	}
 
@@ -58,6 +64,7 @@ public class MarkAllNotificationsReadCommandHandlerTests
 	public async Task Handle_ShouldOnlyAffectTheRequestingUsersOwnNotifications(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientId = UserId.New();
 		var otherUsersId = UserId.New();
 		_dbContext.GetUnreadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>())
@@ -67,8 +74,10 @@ public class MarkAllNotificationsReadCommandHandlerTests
 
 		var command = new MarkAllNotificationsReadCommand(recipientId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().Be(0);
 		await _dbContext.DidNotReceive().GetUnreadNotificationsForRecipientAsync(otherUsersId, Arg.Any<CancellationToken>());
 	}

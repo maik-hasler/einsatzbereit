@@ -9,14 +9,17 @@ public class OrganizationTests
 	[Test]
 	public void Update_ShouldSetAllFields()
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Original").Value;
 		var address = Address.Create("Sample Street", "1", "12345", "Berlin").Value;
 
+		// Act
 		org.Rename("Updated");
 		org.ChangeDescription("Description");
 		org.ChangeContactInfo("mail@test.de", "+49 30 123", "https://test.de");
 		org.Relocate(address);
 
+		// Assert
 		org.Name.Should().Be("Updated");
 		org.Description.Should().Be("Description");
 		org.ContactEmail.Should().Be("mail@test.de");
@@ -28,11 +31,14 @@ public class OrganizationTests
 	[Test]
 	public void Relocate_ShouldClearAddress_WhenNullPassed()
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 		org.Relocate(Address.Create("St", "1", "12345", "City").Value);
 
+		// Act
 		org.Relocate(null);
 
+		// Assert
 		org.Address.Should().BeNull();
 	}
 
@@ -42,10 +48,13 @@ public class OrganizationTests
 	[Arguments(null)]
 	public void Rename_ShouldFail_WhenNameIsEmpty(string? name)
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 
+		// Act
 		var result = org.Rename(name!);
 
+		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Name must not be empty.");
 	}
@@ -57,10 +66,6 @@ public class OrganizationTests
 
 		result.IsFailure.Should().BeTrue();
 	}
-
-	// --- Name length cap (#1158) ---
-	// Create already enforced this in CreateOrganizationCommandHandler (before its
-	// Keycloak call), but Rename had no cap at all - both now share the same rule.
 
 	[Test]
 	public void Create_ShouldFail_WhenNameExceedsMaxLength()
@@ -109,10 +114,13 @@ public class OrganizationTests
 	[Arguments("   ")]
 	public void ChangeContactInfo_ShouldSucceed_WhenWebsiteIsNotProvided(string? website)
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 
+		// Act
 		var result = org.ChangeContactInfo("mail@test.de", "+49 30 123", website);
 
+		// Assert
 		result.IsSuccess.Should().BeTrue();
 		org.Website.Should().Be(website);
 	}
@@ -124,10 +132,13 @@ public class OrganizationTests
 	[Arguments("//test.de")]
 	public void ChangeContactInfo_ShouldFail_WhenWebsiteIsNotAnHttpOrHttpsUrl(string website)
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 
+		// Act
 		var result = org.ChangeContactInfo(null, null, website);
 
+		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Website must be a valid http or https URL.");
 		org.Website.Should().BeNull();
@@ -136,11 +147,14 @@ public class OrganizationTests
 	[Test]
 	public void ChangeContactInfo_ShouldFail_WhenWebsiteExceedsMaxLength()
 	{
+		// Arrange
 		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 		var website = "https://test.de/" + new string('a', 500);
 
+		// Act
 		var result = org.ChangeContactInfo(null, null, website);
 
+		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Website must not exceed 500 characters.");
 		org.Website.Should().BeNull();

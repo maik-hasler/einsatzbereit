@@ -24,6 +24,7 @@ public class UpdateNotificationPreferencesCommandHandlerTests
 	public async Task Handle_ShouldApplyAllFiveFlags_WhenUserRowAlreadyExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
@@ -36,8 +37,10 @@ public class UpdateNotificationPreferencesCommandHandlerTests
 			NotifyOnEngagementCancelled: true,
 			NotifyOnEngagementReminder: false);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		user.NotifyOnNewSignUp.Should().BeFalse();
 		user.NotifyOnWithdrawal.Should().BeFalse();
 		user.NotifyOnEngagementConfirmed.Should().BeTrue();
@@ -50,6 +53,7 @@ public class UpdateNotificationPreferencesCommandHandlerTests
 	public async Task Handle_ShouldLazilyCreateAUser_WhenNoRowExistsYet(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var userId = UserId.New();
 		_userRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
 
@@ -61,8 +65,10 @@ public class UpdateNotificationPreferencesCommandHandlerTests
 			NotifyOnEngagementCancelled: true,
 			NotifyOnEngagementReminder: true);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await _userRepo.Received(1).AddAsync(
 			Arg.Is<User>(u => u!.Id == userId && !u.NotifyOnNewSignUp),
 			cancellationToken);

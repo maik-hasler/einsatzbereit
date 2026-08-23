@@ -34,13 +34,6 @@ export interface AccountMenuState {
 	deletingAllRead: boolean;
 }
 
-/**
- * Owns the avatar + notification bell state (fetching, polling, outside-click
- * handling) shared by the account controls rendered in both the main site
- * Header and the org app shell. `extraNotifContainers` lets a caller that
- * renders a second, visually-hidden copy of the bell (Header's mobile menu)
- * keep clicks inside it from being treated as "outside".
- */
 export function useAccountMenu(
 	extraNotifContainers: RefObject<HTMLElement | null>[] = [],
 ): AccountMenuState {
@@ -68,10 +61,6 @@ export function useAccountMenu(
 		extraNotifContainers,
 	);
 
-	// Only the unread count is polled (a single cheap indexed COUNT query) -
-	// the full notification list is fetched on-demand when the dropdown opens
-	// instead, see einsatzbereit#1384. Polling pauses while the tab is hidden
-	// and catches up with an immediate fetch when it becomes visible again.
 	useEffect(() => {
 		if (!isLoggedIn) return;
 		const controller = new AbortController();
@@ -136,9 +125,6 @@ export function useAccountMenu(
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 
-	// ProfileOverviewPage's avatar upload has no direct reference to this
-	// hook's own copy of avatarUrl, fetched independently above - without this,
-	// the header kept showing the pre-upload image until a full reload (#1245).
 	useEffect(() => {
 		if (!isLoggedIn) return;
 		return subscribeAvatarChanged(() => {
@@ -150,9 +136,6 @@ export function useAccountMenu(
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 
-	// Guards against a stale request (e.g. the dropdown was closed and
-	// reopened while the first fetch was still in flight) overwriting a
-	// fresher one that resolved first.
 	const notifRequestRef = useRef(0);
 
 	async function loadNotifications() {
@@ -167,14 +150,7 @@ export function useAccountMenu(
 			setNotifError(null);
 		} catch (err) {
 			if (requestId !== notifRequestRef.current) return;
-			// loadNotifications only ever runs while isLoggedIn (see the effect
-			// below), so a 401 here always means the session the UI still
-			// believes is live has died - never the "anonymous browsing" case
-			// createApiClient's own handleErrorResponse guards against. Route it
-			// through the same bus useSessionExpiryHandler listens on instead of
-			// the generic ErrorBanner, so it gets one consistent toast + redirect
-			// instead of a small in-panel banner a user only sees if they happen
-			// to have the dropdown open (einsatzbereit#1850).
+
 			if (getApiErrorStatus(err) === 401) {
 				notifySessionExpired();
 				return;

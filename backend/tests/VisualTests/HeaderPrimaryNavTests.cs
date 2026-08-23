@@ -2,17 +2,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// The header's primary-navigation landmark used to contain no destinations at
-/// all - only sign-in/register or the account controls - because the
-/// opportunity list lived inside the landing page behind an "#opportunities"
-/// fragment. These pin the destinations, on both breakpoints, signed out and
-/// signed in.
-///
-/// "Home" is one of those destinations now: it used to be a link inside every
-/// subpage's own PageHeaderBand hero instead, which put site navigation in a
-/// per-page surface and repeated it once per page.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -42,10 +31,6 @@ public class HeaderPrimaryNavTests(AspireFixture fixture) : VisualTestBase(fixtu
 	[Test]
 	public async Task MobileMenu_OnASubpage_CarriesTheSameWayHome()
 	{
-		// The two breakpoints render the same primary destinations from two
-		// separate arrays (DesktopHeader's LINKS, MobileMenu's PRIMARY_LINKS),
-		// so "home" being added to one and not the other is a live failure
-		// mode - and the band link this replaces was visible on both.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 

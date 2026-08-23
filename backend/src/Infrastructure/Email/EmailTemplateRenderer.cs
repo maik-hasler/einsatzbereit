@@ -6,11 +6,6 @@ using Application.Common.Localization;
 
 namespace Infrastructure.Email;
 
-// Templates are embedded JSON resources (Email/Templates/{language}.json,
-// one file per supported language, keyed by EmailTemplateKind) rather than
-// .resx - mirrors the frontend's own en.json/de.json convention so the same
-// mental model applies on both sides. Parsed once at startup; this class is
-// registered as a singleton.
 internal sealed class EmailTemplateRenderer
 	: IEmailTemplateRenderer
 {

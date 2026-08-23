@@ -69,8 +69,6 @@ internal sealed class CheckInAttemptPruneJob(
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
-				// A row that should have been pruned this tick just gets picked up
-				// again on the next one - no data is lost by skipping a tick.
 				logger.LogError(ex, "Check-in attempt prune tick failed; will retry on the next poll interval");
 			}
 		}
@@ -87,8 +85,6 @@ internal sealed class CheckInAttemptPruneJob(
 			logger.LogInformation("Pruned {Count} expired check-in attempt record(s)", pruned);
 	}
 
-	// Exposed so IntegrationTests can exercise pruning directly against a real
-	// ApplicationDbContext instead of waiting for a real tick.
 	internal static async Task<int> PruneExpiredAttemptsAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset now,

@@ -39,11 +39,6 @@ internal sealed class WithdrawEngagementCommandHandler(
 
 			foreach (var organizer in members.Where(m => m.IsOrganisator))
 			{
-				// The organizer withdrawal email is NOT sent here (#1174): it moves
-				// off this request's DB transaction onto the outbox, delivered by
-				// EngagementWithdrawnDomainEventHandler once
-				// EngagementWithdrawnDomainEvent (raised above by Engagement.Withdraw)
-				// is dispatched - see EngagementOrganizerNotificationHelper.
 				var notification = Notification.Create(
 					UserId.Create(organizer.UserId).GetValueOrThrow(),
 					NotificationKind.EngagementWithdrawn,

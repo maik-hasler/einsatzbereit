@@ -17,26 +17,9 @@ import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
-// Eager, not lazy: this is the wildcard route's element, so it belongs in the
-// entry chunk regardless, and EngagementManagementPage statically imports it
-// too - a lazy() wrapper here just contradicted that and tripped Vite's
-// INEFFECTIVE_DYNAMIC_IMPORT warning on every build. (OrgAppLayout used to be
-// a third static importer; since #1774 its unknown-organization branch renders
-// the shared RouteState with org-specific copy instead of this page.)
+
 import NotFoundPage from "./pages/NotFoundPage";
 
-// Route pages are lazy-loaded so each one becomes its own build chunk instead
-// of all being bundled (and precached by the PWA service worker) as a single
-// monolithic entry chunk - see vite.config.ts's manualChunks/workbox comments
-// for the other half of this. AppLayout/OrgAppLayout stay eager since they
-// render on (almost) every route as the app chrome. HomePage ("/") also
-// stays eager (imported above, not lazy): it's the app's default landing
-// route anyway (small - not the precache-size problem #1403 targets), and
-// it shares an in-flight-request dedup with Header for GET /v1/organizations
-// (useSharedOrgFetch, #1396) that depends on both mounting in the same
-// synchronous commit - a lazy HomePage's chunk-load delay pushes its mount
-// past Header's request already having settled, so the "shared" fetch
-// fires twice instead of once.
 const OpportunitiesPage = lazy(() => import("./pages/OpportunitiesPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
@@ -82,12 +65,6 @@ const OrgEngagementsPage = lazy(() => import("./pages/app/OrgEngagementsPage"));
 const OrgMembersPage = lazy(() => import("./pages/app/OrgMembersPage"));
 const OrgSettingsPage = lazy(() => import("./pages/app/OrgSettingsPage"));
 
-// A bare <Outlet /> element (no `context` prop) starts a brand new outlet
-// context of its own - it does NOT transparently forward whatever an
-// ancestor <Outlet context={...}> (OrgAppLayout's) already provided. Without
-// this relay, every route nested under the pathless "dashboard" parent below
-// would have useOutletContext<OrgAppContext>() resolve to undefined instead
-// of OrgAppLayout's {org, reloadOrg}, crashing on the very first destructure.
 function OrgAppOutletRelay() {
 	const context = useOutletContext<OrgAppContext>();
 	return <Outlet context={context} />;
@@ -96,10 +73,7 @@ function OrgAppOutletRelay() {
 function CallbackPage() {
 	const auth = useAuth();
 	const { t } = useTranslation();
-	// /callback is a bare top-level route (see below) with no AppLayout
-	// wrapper, so unlike every other page it has to supply its own <main>/
-	// <h1> rather than relying on a shared layout for them - previously had
-	// neither.
+
 	if (auth.error) {
 		return (
 			<main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
@@ -143,13 +117,7 @@ export default function App() {
 				}
 			>
 				<Route index element={<Navigate to="dashboard" replace />} />
-				{/* Pathless parent (#9): opportunities/members/settings are now
-				nested under /dashboard/... in the URL - see OrgAppLayout's
-				orgTabPath - while staying siblings in the render tree (this
-				Route's own element renders no extra chrome, just relays
-				OrgAppLayout's outlet context - see OrgAppOutletRelay), so
-				OrgAppLayout's single Outlet keeps rendering whichever page
-				unchanged. */}
+
 				<Route path="dashboard" element={<OrgAppOutletRelay />}>
 					<Route index element={<OrgDashboardPage />} />
 					<Route path="opportunities" element={<OrgOpportunitiesPage />} />
@@ -164,9 +132,7 @@ export default function App() {
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
-				{/* The browse/search list, previously an "#opportunities" anchor
-				inside HomePage. A real route is what lets the header carry a
-				"Find opportunities" nav item at all. */}
+
 				<Route path="/opportunities" element={<OpportunitiesPage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
@@ -184,12 +150,7 @@ export default function App() {
 					path="/organizations/:organizationId"
 					element={<OrganizationProfilePage />}
 				/>
-				{/* #1684: previously just redirected into /profile?tab=engagements -
-				now the real destination for sign-up notifications and the
-				header's notification-bell fallback, which already pointed here.
-				Renamed off /my-signups so the URL matches the one word the
-				UI now uses for this ("Anmeldungen" / "sign-ups"); no redirect
-				from the old path, there are no users with saved links yet. */}
+
 				<Route
 					path="/my-signups"
 					element={
@@ -215,8 +176,7 @@ export default function App() {
 					}
 				/>
 				<Route path="/users/:userId" element={<UserProfilePage />} />
-				{/* One section per route behind a shared left rail, rather than
-				all four stacked on a single ~2000px scroll. */}
+
 				<Route
 					path="/administration"
 					element={

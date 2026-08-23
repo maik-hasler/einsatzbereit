@@ -5,10 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Common.ExceptionHandlers;
 
-// Maps a lost optimistic-concurrency race (xmin token mismatch - see
-// Property<uint>("Version").IsRowVersion() in the entity Configurations,
-// #1196) to a clean 409 the caller can retry, instead of it falling through
-// to UnhandledExceptionHandler as a raw 500.
 internal sealed class ConcurrencyExceptionHandler(
 	ILogger<ConcurrencyExceptionHandler> logger)
 	: IExceptionHandler

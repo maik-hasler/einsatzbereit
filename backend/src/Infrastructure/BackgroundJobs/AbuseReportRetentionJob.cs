@@ -8,12 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Reports where the deleted user is the *target* survive DeleteMyAccountCommandHandler
-// as moderation history (only reports the deleted user *filed*, as reporter, are
-// hard-deleted immediately - DeleteReportsForReporterAsync) and had no retention limit
-// at all, outliving the account they concern indefinitely with no disclosure in the
-// privacy policy. This periodically prunes them, measured from Report.TargetDeletedOn
-// (stamped once, when the target account is deleted), not from CreatedOn (#1725).
 internal sealed class AbuseReportRetentionJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<AbuseReportRetentionJob> logger,
@@ -67,8 +61,6 @@ internal sealed class AbuseReportRetentionJob(
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
-				// A row that should have been pruned this tick just gets picked up
-				// again on the next one - no data is lost by skipping a tick.
 				logger.LogError(ex, "Abuse report retention tick failed; will retry on the next poll interval");
 			}
 		}
@@ -89,8 +81,6 @@ internal sealed class AbuseReportRetentionJob(
 			logger.LogInformation("Pruned {Count} expired abuse report(s)", deleted);
 	}
 
-	// Exposed so IntegrationTests can exercise the deletion directly against a real
-	// Postgres without waiting on the real RetentionCheckIntervalHours.
 	internal static async Task<int> DeleteExpiredReportsAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset targetDeletedCutoff,

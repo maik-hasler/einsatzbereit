@@ -10,14 +10,6 @@ import ConfirmDialog from "../ConfirmDialog";
 import NotificationItem from "./NotificationItem";
 import { BellIcon } from "../icons";
 
-// Single notification bell + dropdown panel, rendered twice: once inside
-// AccountControls (desktop nav) and once inside Header/MobileHeader (mobile
-// burger-row). `containerRef` is handed to useAccountMenu's
-// `extraNotifContainers` by whichever ancestor owns the ref, so a click
-// inside either copy's panel isn't treated as an outside click that closes
-// it. `mobile` only changes the data-testid suffix (VisualTests target each
-// copy independently) and whether `onClose` also fires on navigate (mobile
-// additionally collapses the burger menu).
 export default function NotificationDropdown({
 	menu,
 	transparent = false,
@@ -54,17 +46,11 @@ export default function NotificationDropdown({
 	} = menu;
 	const [showClearReadConfirm, setShowClearReadConfirm] = useState(false);
 	const panelId = mobile ? "notification-panel-mobile" : "notification-panel";
-	// #2062: the list scrolls (overflow-y-auto below) but on a 1440px viewport
-	// with overlay scrollbars there was nothing on screen to say so - the
-	// fourth item's timestamp was cut through mid-row with no fade, shadow or
-	// chevron. Same useScrollFade device as OrgPageHeader's tab-strip fades,
-	// tracking the vertical axis instead of the horizontal one.
+
 	const listRef = useRef<HTMLUListElement>(null);
 	const { canScrollStart: canScrollUp, canScrollEnd: canScrollDown } =
 		useScrollFade(listRef, "y");
-	// useId (not a fixed string) - this component renders twice at once
-	// (desktop nav copy + mobile burger-menu copy), which would otherwise
-	// collide (same reasoning as LoadMoreError's own errorId).
+
 	const notifErrorId = useId();
 	const bellLabel =
 		unreadCount > 0
@@ -77,9 +63,6 @@ export default function NotificationDropdown({
 	}
 
 	async function handleSelect(n: NotificationSummary) {
-		// Marking as read is a side effect, not a prerequisite for navigation -
-		// fire it and move on so a failed mark-as-read (network error, etc.)
-		// can never block opening the notification's target (einsatzbereit#1222).
 		if (!n.isRead) {
 			void markOneRead(n.id);
 		}
@@ -90,10 +73,6 @@ export default function NotificationDropdown({
 
 	return (
 		<div className="relative" ref={containerRef}>
-			{/* Always-mounted (not conditional on unreadCount) so a change from
-			e.g. 0 to 1 while the page is open, with focus elsewhere, is itself
-			the mutation a screen reader announces - the bell's own aria-label
-			is only read when the bell itself is focused/hovered. */}
 			<span aria-live="polite" className="sr-only">
 				{unreadCount > 0
 					? t("notifications.bellLabelWithCount", { count: unreadCount })
@@ -169,9 +148,7 @@ export default function NotificationDropdown({
 							) : notifError ? (
 								<li className="px-4 py-3">
 									<ErrorBanner id={notifErrorId} message={notifError} />
-									{/* aria-describedby ties this to the error text above - its own
-								accessible name ("Retry") says nothing about what it's
-								retrying (same reasoning as LoadMoreError's retry button). */}
+
 									<button
 										type="button"
 										data-testid={

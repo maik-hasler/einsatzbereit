@@ -9,6 +9,7 @@ using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
 
+
 namespace Application.UnitTests.Organizations.ResendInvitation;
 
 public class ResendInvitationCommandHandlerTests
@@ -66,14 +67,17 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, cancellationToken)
 			.Returns(false);
 		var invitation = CreateExpiredInvitation(DefaultOrgId);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _invitationRepo.DidNotReceive().FindAsync(Arg.Any<OrganizationInvitationId>(), Arg.Any<CancellationToken>());
@@ -83,12 +87,15 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldResetToPendingAndSendEmail_WhenInvitationIsExpired(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitation = CreateExpiredInvitation(DefaultOrgId);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		invitation.Status.Should().Be(InvitationStatus.Pending);
 		invitation.ExpiresOn.Should().BeAfter(DateTimeOffset.UtcNow.AddDays(OrganizationInvitation.ExpiryWindowDays - 1));
@@ -101,12 +108,15 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenInvitationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitationId = OrganizationInvitationId.New();
 		_invitationRepo.FindAsync(invitationId, cancellationToken).Returns((OrganizationInvitation?)null);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitationId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -116,13 +126,16 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenInvitationBelongsToADifferentOrganization(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var otherOrgId = OrganizationId.New();
 		var invitation = CreateExpiredInvitation(otherOrgId);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -132,12 +145,15 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenInvitationIsStillPending(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitation = CreatePendingInvitation(DefaultOrgId);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -149,6 +165,7 @@ public class ResendInvitationCommandHandlerTests
 	public async Task Handle_ShouldRenderInvitationEmail_InInviteesPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitation = CreateExpiredInvitation(DefaultOrgId);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var invitee = User.Create(DefaultInviteeId);
@@ -157,8 +174,10 @@ public class ResendInvitationCommandHandlerTests
 			.Returns([invitee]);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.InvitationReceived,
 			"en",

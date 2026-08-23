@@ -18,8 +18,6 @@ namespace Api.Engagements.BulkCancelEngagements.v1;
 internal sealed class BulkCancelEngagementsEndpoint
 	: IEndpoint
 {
-	// A 60-person shift is the motivating case (einsatzbereit#1044) - 200 gives
-	// generous headroom above that while still bounding a single request's cost.
 	private const int MaxBatchSize = 200;
 
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
@@ -63,7 +61,6 @@ internal sealed class BulkCancelEngagementsEndpoint
 
 		var result = await sender.Send(command, cancellationToken);
 
-		// A cancelled engagement changes CurrentParticipantCount on the public listing.
 		if (result.Succeeded.Count > 0)
 			await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 

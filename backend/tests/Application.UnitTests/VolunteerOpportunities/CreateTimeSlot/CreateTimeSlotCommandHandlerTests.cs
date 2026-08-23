@@ -99,14 +99,6 @@ public class CreateTimeSlotCommandHandlerTests
 		result.Should().OnlyContain(ts => ts.RecurrenceFrequency == "Weekly" && ts.RecurrenceCount == 8);
 	}
 
-	// BaseStart/BaseEnd are pinned to "now" and drift day by day, so a recurrence
-	// window that happens to straddle the Europe/Berlin DST transition (last
-	// Sunday of March/October) makes Advance()'s DST-safe local-time
-	// re-resolution (see CreateTimeSlotCommandHandler.Advance, #1160) disagree
-	// with a naive AddDays/AddMonths on the origin's fixed UTC offset by an hour.
-	// These two tests aren't exercising DST behaviour (Handle_ShouldKeepLocalWallClockTime_AcrossADstTransition
-	// already does), so they use a fixed start deep in a DST-transition-free
-	// window instead of the shared, "now"-derived BaseStart/BaseEnd.
 	private static readonly DateTimeOffset FixedRecurrenceStart = new(2027, 1, 5, 9, 0, 0, TimeSpan.Zero);
 
 	[Test]
@@ -236,17 +228,10 @@ public class CreateTimeSlotCommandHandlerTests
 		result[0].MaxParticipants.Should().BeNull();
 	}
 
-	// --- DST-aware recurrence (#1160) ---
-
 	[Test]
 	public async Task Handle_ShouldKeepLocalWallClockTime_AcrossADstTransition(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1160: a weekly Saturday 10:00 Europe/Berlin shift created
-		// in September must still read 10:00 local after the Oct 25, 2026 CEST->CET
-		// transition - naive UTC AddDays() carried the *original* +02:00 offset
-		// forward unchanged, silently shifting every post-transition occurrence an
-		// hour early. This mirrors the issue's own repro dates exactly.
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
@@ -262,10 +247,9 @@ public class CreateTimeSlotCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		result.Should().HaveCount(9);
-		// Pre-transition occurrence keeps +02:00 (CEST).
+
 		result[3].StartDateTime.Should().Be(new DateTimeOffset(2026, 9, 26, 10, 0, 0, TimeSpan.FromHours(2)));
-		// Post-transition occurrence (the 9th slot, per the issue's own repro) moves
-		// to +01:00 (CET) - still 10:00 local, not the naive +02:00 (which would be 11:00 CET).
+
 		result[8].StartDateTime.Should().Be(new DateTimeOffset(2026, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
 	}
 
@@ -310,6 +294,7 @@ public class CreateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
@@ -321,8 +306,10 @@ public class CreateTimeSlotCommandHandlerTests
 
 		var command = new CreateTimeSlotCommand(opportunityId, BaseStart, BaseEnd, 10, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.TimeSlots.Should().BeEmpty();

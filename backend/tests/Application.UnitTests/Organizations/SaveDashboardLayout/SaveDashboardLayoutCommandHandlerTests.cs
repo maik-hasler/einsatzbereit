@@ -98,11 +98,11 @@ public class SaveDashboardLayoutCommandHandlerTests
 	}
 
 	[Test]
-	[Arguments(0, 1, 4, 2)] // X below 1
-	[Arguments(1, 0, 4, 2)] // Y below 1
-	[Arguments(1, 1, 0, 2)] // Width below 1
-	[Arguments(1, 1, 4, 0)] // Height below 1
-	[Arguments(6, 1, 4, 2)] // X + Width - 1 exceeds the 8-column grid
+	[Arguments(0, 1, 4, 2)]
+	[Arguments(1, 0, 4, 2)]
+	[Arguments(1, 1, 0, 2)]
+	[Arguments(1, 1, 4, 0)]
+	[Arguments(6, 1, 4, 2)]
 	public async Task Handle_ShouldThrow_WhenPlacementIsOutOfBounds(
 		int x, int y, int width, int height, CancellationToken cancellationToken)
 	{
@@ -123,7 +123,7 @@ public class SaveDashboardLayoutCommandHandlerTests
 		var command = new SaveDashboardLayoutCommand(
 			DefaultOrgId,
 			DefaultRequestingUserId,
-			// Y + Height - 1 = MaxRows + 1, one past the ceiling.
+
 			[new DashboardWidgetPlacementInput("ToDo", 1, DashboardGrid.MaxRows, 4, 2)]);
 
 		var act = async () => await _sut.Handle(command, cancellationToken);
@@ -135,11 +135,6 @@ public class SaveDashboardLayoutCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenXAndWidthWouldOverflowInt32InTheBoundsCheck(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard: X + Width - 1 computed in plain int arithmetic
-		// wraps around for a large enough X (int.MaxValue + a positive width
-		// overflows past int.MaxValue back into negative territory), which
-		// would wrongly pass a "> DashboardGrid.Columns" check done entirely
-		// in int - the handler must widen to long before adding.
 		var command = new SaveDashboardLayoutCommand(
 			DefaultOrgId,
 			DefaultRequestingUserId,
@@ -171,9 +166,6 @@ public class SaveDashboardLayoutCommandHandlerTests
 	public async Task Handle_ShouldSucceed_WhenWidgetsShareAnEdgeButDoNotOverlap(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard for an off-by-one in the overlap check: two widgets
-		// placed edge-to-edge (one starting exactly where the other ends) must
-		// be accepted, not rejected as overlapping.
 		var command = new SaveDashboardLayoutCommand(
 			DefaultOrgId,
 			DefaultRequestingUserId,
@@ -208,11 +200,6 @@ public class SaveDashboardLayoutCommandHandlerTests
 	public async Task Handle_ShouldCreateEmptyLayout_WhenWidgetsListIsEmpty(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard for #771 review feedback (see the mirrored test on
-		// the Get side, GetDashboardLayoutQueryHandlerTests): saving a
-		// deliberately emptied layout must persist a real (empty) layout row,
-		// not be silently skipped - that's what lets HasCustomLayout later
-		// distinguish "never customized" from "customized to empty".
 		var command = new SaveDashboardLayoutCommand(DefaultOrgId, DefaultRequestingUserId, []);
 
 		var result = await _sut.Handle(command, cancellationToken);

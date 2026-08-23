@@ -1,8 +1,3 @@
-// Fixed palette of Tailwind bg/text pairs (same 100/700 shade combo the
-// initial-avatar already used, just varied by hue) - deterministic per seed
-// so the same organization always gets the same color, and same-initial
-// organizations (e.g. two names both starting with "F") are no longer
-// visually indistinguishable in the directory (#993).
 const AVATAR_COLOR_PALETTE = [
 	{ bg: "bg-brand-100", text: "text-brand-700" },
 	{ bg: "bg-blue-100", text: "text-blue-700" },
@@ -17,8 +12,6 @@ export interface AvatarColorClasses {
 	text: string;
 }
 
-/** Deterministically picks a color pair from a fixed palette based on `seed`
- * (e.g. an organization id) - same seed always maps to the same pair. */
 export function avatarColorClasses(seed: string): AvatarColorClasses {
 	let hash = 0;
 	for (let i = 0; i < seed.length; i++) {

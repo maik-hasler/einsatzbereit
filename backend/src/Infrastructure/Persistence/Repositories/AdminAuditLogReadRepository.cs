@@ -29,10 +29,6 @@ internal sealed class AdminAuditLogReadRepository(
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
 
-		// An Engagement subject has no name of its own (#1837) - the closest
-		// recognizable label for an admin is the opportunity it was a sign-up
-		// for, so its opportunity id is resolved here and folded into the
-		// VolunteerOpportunity lookup below.
 		var engagementIds = page
 			.Where(a => a.SubjectType == AuditSubjectType.Engagement)
 			.Select(a => a.SubjectId)
@@ -53,8 +49,7 @@ internal sealed class AdminAuditLogReadRepository(
 			.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow())
 			.ToList();
 		var opportunityTitles = opportunityIds.Count > 0
-			// IgnoreQueryFilters: a shadow-deleted opportunity's audit trail
-			// (e.g. its own AdminShadowDeleted entry) should still resolve a name.
+
 			? await dbContext.VolunteerOpportunitiesQuery
 				.IgnoreQueryFilters()
 				.Where(vo => opportunityIds.Contains(vo.Id))
@@ -74,8 +69,6 @@ internal sealed class AdminAuditLogReadRepository(
 				.ToDictionaryAsync(o => o.Id.Value, o => o.Name, cancellationToken)
 			: new Dictionary<Guid, string>();
 
-		// Actor and User-subject ids share one Keycloak lookup - the two sets
-		// often overlap (e.g. paging through several actions by the same admin).
 		var userIds = page
 			.Select(a => a.ActorUserId.Value)
 			.Concat(page.Where(a => a.SubjectType == AuditSubjectType.User).Select(a => a.SubjectId))

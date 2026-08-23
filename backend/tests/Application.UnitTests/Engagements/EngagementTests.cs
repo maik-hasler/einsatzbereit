@@ -15,8 +15,6 @@ public class EngagementTests
 	private static TimeSlotId AnyTimeSlotId() =>
 		TimeSlotId.New();
 
-	// --- CreateSlotSignUp ---
-
 	[Test]
 	public void CreateSlotSignUp_ShouldCreateEngagement_WithPendingStatus()
 	{
@@ -42,8 +40,6 @@ public class EngagementTests
 
 		engagement.Message.Should().BeNull();
 	}
-
-	// --- CreateIndividualContact ---
 
 	[Test]
 	public void CreateIndividualContact_ShouldCreateEngagement_WithPendingStatus()
@@ -85,8 +81,6 @@ public class EngagementTests
 
 		result.IsFailure.Should().BeTrue();
 	}
-
-	// --- Confirm ---
 
 	[Test]
 	public void Confirm_ShouldSetStatus_ToConfirmed()
@@ -134,8 +128,6 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*Only pending*");
 	}
 
-	// --- Cancel ---
-
 	[Test]
 	public void Cancel_ShouldSetStatus_ToCancelled_WhenPending()
 	{
@@ -180,8 +172,6 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*already terminated*");
 	}
-
-	// --- Withdraw ---
 
 	[Test]
 	public void Withdraw_ShouldSetStatus_ToWithdrawn_WhenPending()
@@ -241,8 +231,6 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*checked-in*");
 	}
 
-	// --- Reactivate ---
-
 	[Test]
 	public void Reactivate_ShouldSetStatus_ToPending()
 	{
@@ -288,14 +276,6 @@ public class EngagementTests
 		engagement.ReactivationCount.Should().Be(1);
 	}
 
-	// --- Reactivate: reactivation cap (#1174) ---
-	//
-	// Engagement.Reactivate lets a withdrawn/cancelled row be reused instead of
-	// inserting a new one, which is what lets a volunteer loop create/withdraw
-	// against the same opportunity - and every cycle mails the volunteer plus
-	// every organizer of the org. This caps how many times any single
-	// engagement can be recycled.
-
 	[Test]
 	public void Reactivate_ShouldFail_WhenReactivationLimitReached()
 	{
@@ -331,8 +311,6 @@ public class EngagementTests
 		engagement.ReactivationCount.Should().Be(5);
 	}
 
-	// --- CheckIn ---
-
 	[Test]
 	public void CheckIn_ShouldSetIsCheckedIn_WhenConfirmed()
 	{
@@ -358,8 +336,6 @@ public class EngagementTests
 	[Test]
 	public void CheckIn_ShouldFail_WhenAlreadyCheckedIn()
 	{
-		// Issue #1162: a repeated CheckIn() call used to re-raise EngagementCheckedInDomainEvent
-		// every time, corrupting the audit trail and any future once-only consumer.
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 		engagement.CheckIn();
@@ -369,8 +345,6 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*already checked in*");
 	}
-
-	// --- Anonymize ---
 
 	[Test]
 	public void Anonymize_ShouldSetVolunteerIdToNull()
@@ -397,11 +371,6 @@ public class EngagementTests
 		engagement.FeedbackRating.Should().BeNull();
 		engagement.FeedbackSubmittedAt.Should().BeNull();
 	}
-
-	// --- Anonymized guard (#1140) ---
-	// DeleteMyAccountCommandHandler anonymizes an engagement (VolunteerId = null) when its
-	// volunteer deletes their account. Every subsequent state transition must refuse to run
-	// rather than dereference the now-null VolunteerId.
 
 	[Test]
 	public void Confirm_ShouldFail_WhenAnonymized()
@@ -493,8 +462,6 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*deleted their account*");
 	}
 
-	// --- UpdateFeedback (#1069) ---
-
 	private static Engagement CreateCheckedInEngagementWithFeedback(int rating, string? comment, DateTimeOffset submittedAt)
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
@@ -525,8 +492,6 @@ public class EngagementTests
 
 		engagement.UpdateFeedback(5, "Actually, great!", submittedAt.AddHours(1));
 
-		// The edit window is anchored to the original submission (#1069) - editing
-		// must not reset it, or repeated edits could keep feedback editable forever.
 		engagement.FeedbackSubmittedAt.Should().Be(submittedAt);
 	}
 
@@ -609,8 +574,6 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*deleted their account*");
 	}
-
-	// --- DeleteFeedback (#1069) ---
 
 	[Test]
 	public void DeleteFeedback_ShouldClearFeedbackFields_WhenWithinEditWindow()

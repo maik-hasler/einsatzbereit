@@ -10,20 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "Organization"/"OrganizationId" DTO types, which would otherwise shadow the domain
-// types of the same name pulled in via the "Domain.Organizations" using above.
+
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.EngagementReminderJob.ClaimAndQueueRemindersAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres - the job's own PeriodicTimer only fires hourly, and the interesting behavior
-// here (#1392) is the atomic per-row claim that prevents two replicas' ticks from both
-// queuing a reminder for the same engagement, which is only provable by calling it twice
-// concurrently against two independent ApplicationDbContexts/connections.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class EngagementReminderJobTests(IntegrationTestFixture fixture)
@@ -98,11 +90,6 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 	public async Task ClaimAndQueueRemindersAsync_TwoConcurrentCallsAgainstTheSameEngagement_OnlyOneClaimsIt(
 		CancellationToken cancellationToken)
 	{
-		// Simulates two replicas' EngagementReminderJob ticks racing over the same due
-		// engagement - the bug #1392 describes for the real job (duplicate 24h reminder
-		// emails). Two independent ApplicationDbContexts (separate connections) so the
-		// atomic per-row claim is genuinely exercised at the database level, not just
-		// serialized by sharing one DbContext/connection.
 		await using var seedContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
 		var (engagementId, _, _) = await SeedConfirmedEngagementAsync(
@@ -132,12 +119,6 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 	public async Task StartAsync_EngagementDueForReminder_QueuesItWithoutWaitingForFirstHourlyTick(
 		CancellationToken cancellationToken)
 	{
-		// Regression test for #1097: RunLoopAsync used to only ever tick after
-		// PeriodicTimer.WaitForNextTickAsync completed, i.e. a full
-		// PollIntervalHours after StartAsync - leaving an hour-long gap right
-		// after every restart where a due engagement's reminder went unqueued.
-		// PollIntervalHours is set far longer than this test's timeout below, so
-		// this only passes if the eager tick on StartAsync actually runs.
 		await using var seedContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
 		var (engagementId, _, _) = await SeedConfirmedEngagementAsync(
@@ -174,8 +155,6 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 		}
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private static async Task<(EngagementId EngagementId, VolunteerOpportunityId OpportunityId, TimeSlotId TimeSlotId)> SeedConfirmedEngagementAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset timeSlotStart,
@@ -185,9 +164,6 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"ReminderTestOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
 
-		// ScheduledSlots opportunities can't be created directly as Published (they must have
-		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
-		// here since nothing in this test path depends on the opportunity being published.
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id, "Beach Cleanup", null, "Help clean the beach", null, true, null,
 			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
@@ -218,11 +194,6 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 		public string GeneratePin() => "0000";
 	}
 
-	// Minimal IServiceScopeFactory so EngagementReminderJob's real StartAsync/
-	// RunLoopAsync lifecycle can be exercised directly against a real
-	// ApplicationDbContext, without pulling in the full Aspire-hosted DI
-	// container (which already has its own EngagementReminderJob running on an
-	// hourly timer against the same database).
 	private sealed class SingleContextScopeFactory(Func<ApplicationDbContext> contextFactory)
 		: IServiceScopeFactory, IDisposable
 	{

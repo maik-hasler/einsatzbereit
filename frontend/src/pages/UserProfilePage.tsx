@@ -31,10 +31,6 @@ export default function UserProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [retrying, setRetrying] = useState(false);
 
-	// No usePageToolbar: this was the last page still publishing a breadcrumb
-	// trail, and the bar restated a name the identity block below already
-	// renders at display size. The header's primary navigation is the way out
-	// now, same as on every other page.
 	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
 
 	function load() {
@@ -89,11 +85,6 @@ export default function UserProfilePage() {
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 
 	return (
-		// max-w-5xl (#1755): unconstrained this inherited <main>'s 90rem, which
-		// pulled the three badge columns out to ~450px each around cards holding
-		// an icon and two short lines. The identity block is boxed on the same
-		// brand-100 stage /profile uses, so a visitor's own profile and someone
-		// else's read as the same object rather than two unrelated pages.
 		<div className="max-w-5xl">
 			<div className="mb-8 flex items-center gap-4 rounded-card bg-brand-100 p-5 sm:p-6">
 				{profile.avatarUrl ? (

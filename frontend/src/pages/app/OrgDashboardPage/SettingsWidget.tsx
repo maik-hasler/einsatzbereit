@@ -42,10 +42,6 @@ function SettingsWidget({ org, size }: Props) {
 				</Link>
 			}
 		>
-			{/* Stacked (logo above text, no creation date) when the widget only
-			got a narrow slice of the grid, instead of cramming a row layout
-			into it - #771 follow-up review feedback (adaptive layouts per
-			size). */}
 			<div
 				className={
 					compact

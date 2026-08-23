@@ -5,11 +5,7 @@ import { useApiClient } from "./useApiClient";
 import { dispatchToast } from "../lib/toastBus";
 
 const SEEN_KEY_PREFIX = "einsatzbereit:seen-achievements";
-// Stored inside the same per-user seen-set rather than a second localStorage
-// key - marks that the first-poll seeding below has already run for this
-// user, so it can be told apart from "seen.size === 0 because this account
-// genuinely has zero achievements yet" (which used to re-seed - and thus
-// silently swallow - every poll until the user's first badge existed, #1236).
+
 const SEEDED_MARKER = "__seeded__";
 
 function seenKeyFor(userId: string | undefined): string {
@@ -47,16 +43,9 @@ export function useAchievementNotifier() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
-	// Scoped per user id (#1236) - a global key leaked between accounts on any
-	// shared browser (a kiosk, or the seeded vera/olaf/admin demo accounts).
+
 	const userId = auth.user?.profile?.sub;
 
-	// Pauses while the tab is hidden and catches up with an immediate fetch
-	// when it becomes visible again (mirrors useAccountMenu's unread-count
-	// poll) - without this, this hook is mounted on every route (AppLayout,
-	// OrgAppLayout) with a plain setInterval, so a backend outage became a
-	// recurring error toast every 60s on every page, in every open tab,
-	// including backgrounded ones.
 	useEffect(() => {
 		if (!auth.isAuthenticated) return;
 		const key = seenKeyFor(userId);
@@ -67,10 +56,7 @@ export function useAchievementNotifier() {
 			try {
 				const achievements = await api.getMyAchievements(controller.signal);
 				const seen = getSeenIds(key);
-				// First successful poll for this user/device: seed their existing
-				// achievements as already-seen (writing the marker unconditionally,
-				// even with zero achievements) instead of announcing all of them as
-				// newly unlocked.
+
 				if (!seen.has(SEEDED_MARKER)) {
 					markSeen(key, [...achievements.map((a) => a.id), SEEDED_MARKER]);
 					return;

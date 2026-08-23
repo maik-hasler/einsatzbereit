@@ -4,17 +4,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Coverage for einsatzbereit#1038: a published opportunity previously had no
-/// exit besides hard delete, which silently mass-cancelled every active
-/// engagement with no audit trail and no volunteer notification. Unpublish()
-/// and Cancel(reason) give the organizer a reversible take-down and a
-/// terminal cancellation respectively - both cascade-cancel active
-/// engagements, but asynchronously via the outbox (see
-/// VolunteerOpportunityUnpublishedDomainEventHandler /
-/// VolunteerOpportunityCancelledDomainEventHandler), so these tests poll
-/// rather than assert immediately after the UI action returns.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -49,14 +38,11 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		await Expect(unpublishedRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(unpublishedRow.GetByTestId("opportunity-status-badge")).ToHaveTextAsync("Unpublished");
 
-		// The outbox job polls every 5s (appsettings.json Outbox:PollIntervalSeconds) -
-		// give it real headroom rather than asserting immediately.
 		await PollUntilAsync(
 			async () => await GetEngagementStatusAsync(olafHttp, opportunityId, engagementId) == "Cancelled",
 			() => $"Expected engagement {engagementId} to be cascade-cancelled after unpublishing opportunity {opportunityId}.",
 			timeoutMs: 20_000);
 
-		// Unpublished is reversible - Publish() works again from this state.
 		await unpublishedRow.GetByTestId("opportunity-publish").ClickAsync();
 		await Expect(publishedSection.Locator("li", new() { HasText = title })).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
@@ -93,10 +79,6 @@ public class OpportunityUnpublishCancelTests(AspireFixture fixture) : VisualTest
 		await Expect(cancelledRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(cancelledRow.GetByTestId("opportunity-status-badge")).ToHaveTextAsync("Cancelled");
 
-		// Terminal - Cancelled offers no Edit/Publish/Unpublish/Cancel, only
-		// Delete. Publish is the one primary action rendered on the card
-		// itself; the rest live in the row's overflow menu, so open it before
-		// asserting on what it does and does not contain.
 		await Expect(cancelledRow.GetByTestId("opportunity-publish")).Not.ToBeVisibleAsync();
 		await OpportunityRowHelper.OpenActionsAsync(cancelledRow);
 		await Expect(cancelledRow.GetByTestId("opportunity-delete")).ToBeVisibleAsync();

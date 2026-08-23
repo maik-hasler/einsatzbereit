@@ -11,9 +11,6 @@ declare global {
 	}
 }
 
-// Reads a value injected at container start (window.__APP_CONFIG__, populated by
-// envsubst on config.js). Unsubstituted placeholders (e.g. local dev, where the
-// raw "${VITE_...}" template is served) fall back to Vite's build-time env.
 function resolve(key: keyof AppConfig, fallback: string): string {
 	const value = window.__APP_CONFIG__?.[key];
 	if (value && !value.startsWith("${")) {
@@ -32,11 +29,7 @@ export const runtimeConfig = {
 		import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
 	),
 	apiUrl: resolve("API_URL", import.meta.env.VITE_API_URL),
-	// Toasts (ToastContext.tsx) auto-dismiss after this many ms; 0 disables
-	// auto-dismiss entirely. AppHost sets VITE_TOAST_LIFETIME_MS=0 for
-	// Aspire-orchestrated test runs so assertions never race the dismiss
-	// timer - a normal run is unaffected, since neither this nor a runtime
-	// __APP_CONFIG__ override is ever set there.
+
 	toastLifetimeMs: Number(
 		resolve(
 			"TOAST_LIFETIME_MS",

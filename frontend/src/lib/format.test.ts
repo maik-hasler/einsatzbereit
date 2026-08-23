@@ -205,8 +205,6 @@ describe("resolveDateLocale", () => {
 });
 
 describe("formatDateTime", () => {
-	// Compares against the identical Intl call rather than a hardcoded string
-	// so the assertion doesn't depend on the host's local timezone offset.
 	it("formats using en-GB style for en", () => {
 		const iso = "2024-03-15T14:30:00Z";
 		const expected = new Date(iso).toLocaleString("en-GB", {
@@ -232,8 +230,6 @@ describe("formatDateTime", () => {
 });
 
 describe("formatDate", () => {
-	// Compares against the identical Intl call rather than a hardcoded string
-	// so the assertion doesn't depend on the host's local timezone offset.
 	it("formats using en-GB style for en, with no time-of-day", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString("en-GB", {
@@ -260,9 +256,6 @@ describe("formatDate", () => {
 });
 
 describe("formatDateTimeRange", () => {
-	// Local Date constructors (not ISO "Z" strings) so same-day/cross-day
-	// boundaries are exact regardless of the test runner's local timezone -
-	// same reasoning as calendarRange.test.ts.
 	it("collapses a same-day range to one date with a hyphen-joined time range", () => {
 		const start = new Date(2026, 7, 27, 9, 0);
 		const end = new Date(2026, 7, 27, 17, 0);

@@ -9,10 +9,6 @@ import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 
-// Self-contained account-deletion card, split out of ProfileOverviewPage -
-// see #872, relocated to ProfileSettingsPage - see #1684. Needs no props: it
-// owns its own dialog/loading/error state and drives navigation itself on
-// success.
 export default function DangerZoneCard() {
 	const auth = useAuth();
 	const api = useApiClient();
@@ -28,9 +24,7 @@ export default function DangerZoneCard() {
 		setDeleteError(null);
 		try {
 			await api.deleteMyAccount();
-			// #1676: this account no longer exists, so browser storage tied to it
-			// (captured before removeUser() clears auth.user) has nothing left to
-			// point at - clear it the same way a plain sign-out does.
+
 			clearActiveOrgId();
 			clearSeenAchievements(auth.user?.profile?.sub);
 			localStorage.removeItem("i18nextLng");
@@ -46,9 +40,6 @@ export default function DangerZoneCard() {
 	return (
 		<>
 			<DangerZonePanel
-				// Capped to the same measure as the notification card above, so
-				// the two panels on this page share an edge instead of the red
-				// one running 600px wider than the white one (#1755).
 				className="max-w-3xl"
 				title={t("account.dangerZoneTitle")}
 				description={t("account.dangerZoneDescription")}

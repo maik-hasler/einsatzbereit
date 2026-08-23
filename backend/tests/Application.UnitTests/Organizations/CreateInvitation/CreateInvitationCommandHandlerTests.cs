@@ -56,13 +56,16 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, cancellationToken)
 			.Returns(false);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Organizer, DefaultInvitedById);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _keycloakUserService.DidNotReceive().GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -73,10 +76,13 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldCreateInvitation_WhenRequestingUserIsOrgMember(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().NotBeNull();
 		await _dbContext.Received(1).TryCreateInvitationAsync(
 			Arg.Is<OrganizationInvitation>(i => i != null && i.IntendedRole == OrganizationMemberRole.Member),
@@ -90,17 +96,15 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenAPendingInvitationAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1202: TryCreateInvitationAsync returning false (the
-		// partial unique index rejected the insert) must surface as the same
-		// Conflict error the old non-atomic pre-check used to throw, not a raw
-		// unhandled failure.
 		_dbContext
 			.TryCreateInvitationAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*pending invitation*");
 		await _emailService.DidNotReceive().SendAsync(
@@ -111,14 +115,17 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldRenderInvitationEmail_InInviteesPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var invitee = User.Create(DefaultInviteeId);
 		invitee.SetPreferredLanguage("en");
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns([invitee]);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.InvitationReceived,
 			"en",
@@ -130,10 +137,13 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldDefaultToGerman_WhenInviteeHasNoPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.InvitationReceived,
 			"de",

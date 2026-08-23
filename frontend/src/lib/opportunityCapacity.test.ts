@@ -23,8 +23,6 @@ describe("getOpportunityCapacity", () => {
 		).toEqual({ kind: "unlimited", booked: 0 });
 	});
 
-	// The hole this module exists to close (#1777): 0 used to fall through both
-	// branches of every card's inline check and render nothing at all.
 	it("reads 0 on an interest-based opportunity as not applicable, keeping the sign-up count", () => {
 		expect(
 			getOpportunityCapacity({
@@ -84,8 +82,6 @@ describe("getOpportunityCapacity", () => {
 		});
 	});
 
-	// An over-booked opportunity is possible (a cap lowered after sign-ups);
-	// "-2 spots left" is not something a card should ever say.
 	it("never reports negative remaining places when a cap is over-subscribed", () => {
 		expect(
 			getOpportunityCapacity({
@@ -142,8 +138,6 @@ describe("getCapacityFromTimeSlots", () => {
 		});
 	});
 
-	// The detail page's equivalent of the summary's 0 - and the reason the
-	// detail page and the card that linked to it now agree.
 	it("reads an empty slot list as not applicable", () => {
 		expect(getCapacityFromTimeSlots([], 0, "IndividualContact")).toEqual({
 			kind: "notApplicable",
@@ -152,8 +146,6 @@ describe("getCapacityFromTimeSlots", () => {
 		});
 	});
 
-	// An interest-based opportunity's sign-ups carry no time slot, so summing
-	// slot bookings would report a busy opportunity as having nobody.
 	it("keeps the opportunity's own sign-up count when there are no slots to sum", () => {
 		expect(getCapacityFromTimeSlots([], 5, "IndividualContact")).toEqual({
 			kind: "notApplicable",

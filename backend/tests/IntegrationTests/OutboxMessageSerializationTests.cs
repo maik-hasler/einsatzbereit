@@ -4,26 +4,12 @@ using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Outbox;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "DomainEvent" and "OrganizationId" DTO types, which would otherwise shadow
-// their Domain counterparts.
+
 using CoreDomainEvent = Domain.Primitives.DomainEvent;
 using CoreOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Pure (de)serialization round-trip - no database needed - but OutboxMessage is
-// internal to Infrastructure (InternalsVisibleTo only grants IntegrationTests, see
-// Infrastructure.csproj), so this has to live here rather than in a project that
-// can't see it.
-//
-// Regression coverage for #1336: every ID a DomainEvent carries is a Guid-backed
-// value-object struct with a private constructor, which System.Text.Json's
-// default reflection serializer cannot bind on deserialize - it silently produces
-// Guid.Empty instead of throwing (fixed by ValueObjectIdJsonConverterFactory, see
-// its own comment for the #1038 story). Parameterised across every DomainEvent
-// subclass so a newly added one is covered by construction, not by remembering to
-// add it here.
 public class OutboxMessageSerializationTests
 {
 	[Test]
@@ -41,8 +27,6 @@ public class OutboxMessageSerializationTests
 	[Test]
 	public void AllDomainEvents_ShouldCoverEveryDomainEventSubclass()
 	{
-		// Guards against the exact failure mode this issue describes: a new
-		// DomainEvent subclass silently never getting a round-trip test.
 		var allSubclassNames = typeof(CoreDomainEvent).Assembly
 			.GetTypes()
 			.Where(t => t is { IsClass: true, IsAbstract: false } && typeof(CoreDomainEvent).IsAssignableFrom(t))

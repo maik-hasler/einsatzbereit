@@ -18,14 +18,8 @@ export default function Header({
 	orgSwitcher,
 	overlaysBand = false,
 }: {
-	// When set, this header is rendered inside the org app shell: it grows an
-	// extra middle slot for the active organization's switcher between the
-	// brand logo and the account controls. Omitted entirely on the public site.
 	orgSwitcher?: { currentOrgId: string; currentTab: string };
-	// Set by AppLayout when the page below renders a dark band that runs up
-	// underneath this header (PageHeaderBand). The header then drops its own
-	// background and switches its controls to their on-dark variants until the
-	// reader scrolls past the band. See HeaderOverlayContext.
+
 	overlaysBand?: boolean;
 } = {}) {
 	const auth = useAuth();
@@ -42,22 +36,14 @@ export default function Header({
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isAdmin = roles.includes("admin");
-	// Shared with HomePage and the profile settings page, which independently
-	// need the same organization list on the same mount (#1396) - the request
-	// itself is deduplicated, see useMyOrganizations/useSharedOrgFetch.
+
 	const {
 		orgs,
 		activeOrg,
 		loading: orgsLoading,
 		error: orgsError,
 	} = useMyOrganizations();
-	// #1785: a member's organization is a top-level nav destination - except
-	// inside the org app itself, where the switcher rendered below already
-	// names the same organization, and a second copy of the name in the nav
-	// would only repeat it (and cost the row width it has little of at the
-	// desktop nav's own breakpoint - see lib/headerNav). Both breakpoints are
-	// gated together so the desktop nav and the burger menu never disagree
-	// about what exists.
+
 	const navOrg = orgSwitcher ? null : activeOrg;
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -72,16 +58,6 @@ export default function Header({
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
 
-	// The menu and its scrim are md:hidden, but nothing unmounted them when the
-	// viewport crossed that breakpoint - an open menu just went invisible while
-	// staying mounted. Since #1787 that also means it keeps holding the
-	// background scroll lock, freezing the page with no visible dialog to
-	// explain why. Both a phone rotated into landscape and a desktop user
-	// adjusting zoom at 300%+ (the low-vision reflow workflow WCAG 1.4.10 is
-	// about) cross 768px this way. Closing here also restores the Tab trap,
-	// which goes dormant in that state: MobileMenu's focusable filter drops
-	// every display:none element, finds none, and bails out - letting focus
-	// walk into the page behind a dialog that is still nominally open.
 	useEffect(() => {
 		const desktop = window.matchMedia("(min-width: 768px)");
 		const closeIfDesktop = () => {
@@ -91,9 +67,6 @@ export default function Header({
 		return () => desktop.removeEventListener("change", closeIfDesktop);
 	}, []);
 
-	// Only while the band is actually behind the header - once scrolled past
-	// it there's white page underneath, so the header has to take its own
-	// background back or its white-on-dark controls would sit on white.
 	const isTransparent = overlaysBand && !scrolled;
 
 	function handleNotificationNavigate(actionUrl: string | null | undefined) {
@@ -115,14 +88,6 @@ export default function Header({
 	}
 
 	function handleSignOut() {
-		// #1676: none of this is needed for authentication itself (Keycloak's
-		// own session cookie is cleared by signoutRedirect below) - it's
-		// browser-stored data tied to this account that has no reason to
-		// outlive the session, per the privacy policy's cookies/storage section.
-		// The UI language choice is a device preference rather than account
-		// data, so it isn't cleared here (#1838) - only the full
-		// account-deletion flow in DangerZoneCard still clears it, where "no
-		// trace of the account left" is the actual intent.
 		clearActiveOrgId();
 		clearSeenAchievements(user?.sub);
 		auth.signoutRedirect();
@@ -145,11 +110,6 @@ export default function Header({
 					<div
 						className={`flex h-16 items-center justify-between ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
-						{/* Brand. When the org switcher is present, the wordmark is
-						cropped to just its icon mark below the `sm` breakpoint - the
-						full wordmark plus the switcher plus the mobile bell/hamburger
-						don't fit a phone-width viewport with enough room left for the
-						org name to stay legible (#809). */}
 						<Link
 							to="/"
 							className={`flex shrink-0 items-center ${orgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}

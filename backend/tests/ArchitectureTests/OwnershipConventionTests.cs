@@ -6,23 +6,14 @@ namespace ArchitectureTests;
 
 public sealed class OwnershipConventionTests
 {
-	// Handlers that carry RequestingUserId but are a deliberate exception to the
-	// rule below - they check ownership of a per-user resource (a notification,
-	// an engagement) rather than organization membership, so OwnershipGuard does
-	// not apply. Add to this list only with a comment explaining why.
 	private static readonly HashSet<string> AllowListedExceptions = new()
 	{
-		// Public read - RequestingUserId is optional and only personalizes the
-		// response (e.g. whether the caller already applied); the opportunity
-		// itself is publicly readable.
 		"Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1.GetVolunteerOpportunityDetailsQueryHandler",
-		// Ownership is checked against notification.RecipientId - a per-user
-		// resource, not an organization.
+
 		"Application.Notifications.MarkNotificationRead.v1.MarkNotificationReadCommandHandler",
 		"Application.Notifications.MarkNotificationUnread.v1.MarkNotificationUnreadCommandHandler",
 		"Application.Notifications.DeleteNotification.v1.DeleteNotificationCommandHandler",
-		// Ownership is checked against engagement.VolunteerId - a per-user
-		// resource, not an organization.
+
 		"Application.Engagements.SubmitFeedback.v1.SubmitFeedbackCommandHandler",
 		"Application.Engagements.UpdateFeedback.v1.UpdateFeedbackCommandHandler",
 		"Application.Engagements.DeleteFeedback.v1.DeleteFeedbackCommandHandler",

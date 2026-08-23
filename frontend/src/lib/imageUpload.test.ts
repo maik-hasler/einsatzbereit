@@ -16,8 +16,6 @@ function fakeT(): TFunction {
 	) as unknown as TFunction;
 }
 
-/** Only `name`, `type` and `size` are ever read, so a stub beats allocating a
- * multi-megabyte Blob just to exercise the size branch. */
 function fakeFile(name: string, type: string, size: number): File {
 	return { name, type, size } as File;
 }
@@ -122,9 +120,6 @@ describe("validateImageUpload", () => {
 		expect(message).not.toContain("a".repeat(80));
 	});
 
-	// The bug this module exists for (#1781): both failure paths used to
-	// return t("...Hint") - the identical sentence already rendered in grey
-	// directly above the red error.
 	it("never answers with the hint the picker already shows", () => {
 		const t = fakeT();
 		const hint = getImageUploadHint(t, "de");

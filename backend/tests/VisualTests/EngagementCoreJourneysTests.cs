@@ -5,17 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1326: the volunteer's and organizer's two most common state
-/// transitions - confirming an application, withdrawing from one - were only ever
-/// exercised at the API layer in this suite. Every setup step here still goes
-/// through the API (the established convention in this file's siblings), but the
-/// state transition itself under test is a real button click, so a frontend
-/// regression in the confirm button's payload, its optimistic update, or its
-/// error handling would actually fail a test instead of reaching a release
-/// unnoticed. Signing up itself already has E2E coverage elsewhere
-/// (OpportunityApplicationStateTests.cs), so it isn't repeated here.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementCoreJourneysTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -71,16 +60,6 @@ public class EngagementCoreJourneysTests(AspireFixture fixture) : VisualTestBase
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
 
-		// This engagement has no time slot (IndividualContact), and
-		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
-		// upcoming" scope by time-slot start (entries with none sort last) - so on
-		// a shared session where other concurrently-running tests have already
-		// given vera their own time-slotted upcoming engagements, this card can
-		// land past the first (10-item) page, so page through to it.
-		//
-		// Wait for the first page before starting: the WaitForLoadStateAsync
-		// above can settle before the engagements fetch is even issued, since
-		// useLoadMore only requests from an effect after React commits.
 		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await LoadMoreUntilVisibleAsync(card);
@@ -91,9 +70,6 @@ public class EngagementCoreJourneysTests(AspireFixture fixture) : VisualTestBase
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Yes, withdraw" }).ClickAsync();
 
-		// The card must disappear from Upcoming - a withdrawn engagement is no
-		// longer Pending/Confirmed, so the button vanishing alone would already
-		// be true here whether or not the row actually moved anywhere.
 		await Expect(card).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
@@ -121,9 +97,6 @@ public class EngagementCoreJourneysTests(AspireFixture fixture) : VisualTestBase
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		// Create a fresh organization rather than reusing olaf's shared seed
-		// org - other VisualTests running concurrently in this shared Aspire
-		// session can mutate/delete shared orgs.
 		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });

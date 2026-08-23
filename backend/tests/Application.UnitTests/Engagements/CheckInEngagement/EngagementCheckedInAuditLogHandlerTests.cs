@@ -22,13 +22,16 @@ public class EngagementCheckedInAuditLogHandlerTests
 	public async Task Handle_ShouldWriteAuditLogEntry_WithEngagementVolunteerAndOpportunityIds(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var domainEvent = new EngagementCheckedInDomainEvent(
 			EngagementId.New(),
 			UserId.New(),
 			VolunteerOpportunityId.New());
 
+		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
+		// Assert
 		var record = _logger.Collector.GetSnapshot().Should().ContainSingle().Subject;
 
 		record.Level.Should().Be(LogLevel.Information);

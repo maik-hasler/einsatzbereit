@@ -102,8 +102,7 @@ describe("buildOrganizationFormSchema", () => {
 		const result = schema.safeParse(values({ name: "a".repeat(101) }));
 		expect(result.success).toBe(false);
 		expect(issuePaths(result)).toContain("name");
-		// Regression guard for #1731: zod's built-in message must not leak
-		// through untranslated for any bare .max() field.
+
 		const nameIssue = result.error?.issues.find(
 			(issue) => issue.path[0] === "name",
 		);

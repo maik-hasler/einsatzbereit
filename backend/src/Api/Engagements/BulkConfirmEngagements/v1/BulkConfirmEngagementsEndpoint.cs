@@ -16,8 +16,6 @@ namespace Api.Engagements.BulkConfirmEngagements.v1;
 internal sealed class BulkConfirmEngagementsEndpoint
 	: IEndpoint
 {
-	// A 60-person shift is the motivating case (einsatzbereit#1044) - 200 gives
-	// generous headroom above that while still bounding a single request's cost.
 	private const int MaxBatchSize = 200;
 
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

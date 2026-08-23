@@ -5,12 +5,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1213 - GetBlockingOpportunitiesForOrganizationAsync
-// filters opportunities by whether they have a time slot with a future
-// StartDateTime, now pushed into SQL rather than evaluated client-side after
-// loading every opportunity's full time-slot collection. Asserts the index
-// actually exists in Postgres rather than just that the EF Core model
-// declares it, since a migration can drift from the model snapshot.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class TimeSlotIndexTests(IntegrationTestFixture fixture)

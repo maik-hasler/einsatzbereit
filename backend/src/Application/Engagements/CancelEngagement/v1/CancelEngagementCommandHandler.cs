@@ -36,22 +36,13 @@ internal sealed class CancelEngagementCommandHandler(
 			engagement,
 			request.Reason,
 			opportunity.TitleDe,
-			// The volunteer hears about this only here - no opportunity-level
-			// notification accompanies a single engagement cancellation.
+
 			notifyVolunteer: true,
 			logger,
 			cancellationToken);
 
-		// Only when a cancellation actually happened - CancelAsync leaves an
-		// already-anonymized engagement (its volunteer deleted their account) untouched
-		// rather than throwing (einsatzbereit#1724), and an audit entry claiming
-		// "EngagementCancelled" for a no-op would be misleading.
 		if (cancelled)
 		{
-			// Audited here (not via EngagementCancelledDomainEvent) since that event is
-			// also raised for cascade cancellations from an opportunity/organization
-			// shadow-delete - those are already audited as their own action and would
-			// otherwise double up with a per-engagement entry (#1088).
 			var auditLog = AuditLog.Create(
 				request.RequestingUserId,
 				AuditActionType.EngagementCancelled,

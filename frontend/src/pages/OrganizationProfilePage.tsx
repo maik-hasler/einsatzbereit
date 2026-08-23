@@ -101,11 +101,6 @@ export default function OrganizationProfilePage() {
 
 	return (
 		<>
-			{/* The band's action slot leads with the organization's own website
-				when it has one. Reporting used to be the only thing in here, which
-				made "report this organization" the single most prominent action on
-				every organization's page; it moves down to the contact panel with
-				the rest of the administrative links. */}
 			<PageHeaderBand
 				eyebrow={t("orgProfile.eyebrow")}
 				title={profile.name}
@@ -148,12 +143,6 @@ export default function OrganizationProfilePage() {
 					</ul>
 				)}
 
-				{/* Moved out of the header band: a moderation action belongs with
-				the administrative footnotes, not as the page's primary control.
-				Shown to anonymous visitors too - they're the ones most likely to
-				encounter spam - with the click routed through sign-in first
-				instead of hiding the control entirely (#2061), since reporting
-				itself requires an authenticated account on the backend. */}
 				<div className="mt-10 border-t border-gray-100 pt-6">
 					<button
 						type="button"

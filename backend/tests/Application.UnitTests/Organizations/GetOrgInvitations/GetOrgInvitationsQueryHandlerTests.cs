@@ -7,6 +7,7 @@ using Domain.Organizations;
 using Domain.Users;
 using NSubstitute;
 
+
 namespace Application.UnitTests.Organizations.GetOrgInvitations;
 
 public class GetOrgInvitationsQueryHandlerTests
@@ -30,13 +31,16 @@ public class GetOrgInvitationsQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, cancellationToken)
 			.Returns(false);
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _dbContext.DidNotReceive().GetInvitationsForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>());
@@ -46,6 +50,7 @@ public class GetOrgInvitationsQueryHandlerTests
 	public async Task Handle_ShouldReturnInvitations_WhenRequestingUserIsOrgMember(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var inviteeId = UserId.New();
 		var invitation = OrganizationInvitation.Create(
 			DefaultOrgId, inviteeId, UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
@@ -56,8 +61,10 @@ public class GetOrgInvitationsQueryHandlerTests
 			.Returns(new Dictionary<Guid, string> { [inviteeId.Value] = "Vera" });
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
+		// Assert
 		result.Should().HaveCount(1);
 		result[0].Id.Should().Be(invitation.Id.Value);
 		result[0].InviteeName.Should().Be("Vera");

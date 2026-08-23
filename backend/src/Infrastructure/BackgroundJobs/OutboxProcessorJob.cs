@@ -9,12 +9,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Runs after the interceptor (Persistence/Interceptors/ConvertDomainEventsToOutboxMessagesInterceptor.cs)
-// has durably captured domain events as outbox rows in the same transaction as the
-// triggering command. Dispatching here - in its own scope, well after the triggering
-// command's transaction has committed - is what lets an INotificationHandler<T> safely
-// call ISender or write to the database (see the "Domain events" section of
-// backend/AGENTS.md for the timing problem this replaces).
 internal sealed class OutboxProcessorJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<OutboxProcessorJob> logger,
@@ -91,9 +85,6 @@ internal sealed class OutboxProcessorJob(
 			dbContext, dispatcher, logger, metrics, _options.BatchSize, _options.MaxAttempts, _options.ClaimTimeoutSeconds, ct);
 	}
 
-	// Exposed so IntegrationTests can exercise the row-claiming behavior directly
-	// against a real Postgres - e.g. two concurrent calls racing over the same pending
-	// batch - without waiting on the real 5s PollInterval from two replicas.
 	internal static async Task<int> ProcessBatchAsync(
 		ApplicationDbContext dbContext,
 		IDomainEventDispatcher dispatcher,
@@ -106,14 +97,6 @@ internal sealed class OutboxProcessorJob(
 	{
 		var messages = await ClaimBatchAsync(dbContext, batchSize, claimTimeoutSeconds, cancellationToken);
 
-		// Dispatch happens with no open transaction/connection held (#1729): each
-		// message's handler(s) can synchronously send one or more emails over SMTP
-		// (e.g. EngagementOrganizerNotificationHelper, one per subscribed
-		// organizer), and holding the FOR UPDATE SKIP LOCKED row lock - and the DB
-		// connection backing it - for that whole duration was the actual problem.
-		// ClaimBatchAsync's ClaimedOnUtc stamp (committed before this loop starts)
-		// is what now stops a concurrent replica from re-selecting the same
-		// messages while dispatch is in flight.
 		foreach (var message in messages)
 		{
 			try
@@ -131,13 +114,6 @@ internal sealed class OutboxProcessorJob(
 				message.AttemptCount++;
 				metrics.RecordFailed();
 
-				// Release the claim on a failed (but not yet dead-lettered) attempt so
-				// the very next poll tick can immediately reclaim and retry it - the
-				// pre-existing retry contract this job has always had. Leaving
-				// ClaimedOnUtc stamped would otherwise gate the retry behind
-				// ClaimTimeoutSeconds (a stuck-worker recovery timeout, not a normal
-				// per-attempt backoff), turning "retry next tick" into "retry every few
-				// minutes at best" (#1729).
 				message.ClaimedOnUtc = null;
 
 				logger.LogError(
@@ -150,14 +126,6 @@ internal sealed class OutboxProcessorJob(
 
 				if (message.AttemptCount >= maxAttempts)
 				{
-					// Dead-letter: stamping ProcessedOnUtc stops the WHERE processed_on_utc IS
-					// NULL query in ClaimBatchAsync from ever re-selecting this row again, so
-					// one poison message can no longer stall every message behind it in the
-					// batch forever. Error stays populated so this is distinguishable from a
-					// genuinely successful dispatch (which clears it). Recorded as its own
-					// metric status (not just another "failed") since a dead letter is a
-					// terminal give-up an operator should alert on differently than a
-					// transient failure that will simply retry next tick (#1008).
 					message.ProcessedOnUtc = DateTime.UtcNow;
 					metrics.RecordDeadLettered();
 
@@ -170,18 +138,9 @@ internal sealed class OutboxProcessorJob(
 			}
 		}
 
-		// A single SaveChangesAsync for the whole batch instead of one per message.
-		// No manual transaction here - EF Core's own execution strategy already
-		// wraps a single SaveChangesAsync call as one retryable unit, and nothing
-		// in this call needs FOR UPDATE semantics anymore (that's ClaimBatchAsync's
-		// concern, already committed by this point).
 		if (messages.Count > 0)
 			await dbContext.SaveChangesAsync(cancellationToken);
 
-		// Total backlog remaining after this tick's batch, not just what this tick
-		// claimed - lets an operator alert on "outbox.pending" growing unbounded
-		// (dispatch is falling behind or stuck) independently of outbox.dispatch's
-		// per-attempt succeeded/failed counts (#1008).
 		var pendingCount = await dbContext.Set<OutboxMessage>()
 			.AsNoTracking()
 			.LongCountAsync(m => m.ProcessedOnUtc == null, cancellationToken);
@@ -190,22 +149,12 @@ internal sealed class OutboxProcessorJob(
 		return messages.Count;
 	}
 
-	// Claims a batch of pending messages and stamps ClaimedOnUtc on them, all
-	// within one short transaction - this is the only part of outbox processing
-	// that still needs FOR UPDATE SKIP LOCKED row locks (#1729).
 	private static async Task<List<OutboxMessage>> ClaimBatchAsync(
 		ApplicationDbContext dbContext,
 		int batchSize,
 		int claimTimeoutSeconds,
 		CancellationToken cancellationToken)
 	{
-		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
-		// manually-began transaction to run as one retryable unit via
-		// CreateExecutionStrategy() - see
-		// ApplicationDbContext.ExecuteInTransactionAsync's comment. A retried
-		// attempt re-runs this whole delegate, including re-claiming messages -
-		// harmless, since claiming is idempotent (it only ever moves
-		// ClaimedOnUtc forward).
 		var strategy = dbContext.Database.CreateExecutionStrategy();
 
 		return await strategy.ExecuteAsync(async _ =>

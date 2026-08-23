@@ -36,24 +36,6 @@ export default function OpportunityResultsList({
 }) {
 	const { t } = useTranslation();
 
-	// This sr-only, always-mounted live region exists solely to announce going
-	// offline (#1774) - it used to also carry a visible "N opportunities
-	// found"/"N loaded, more available" count, removed per #2059 (the product
-	// owner: "I would rather remove the total result line. I don't know
-	// what's the benefit of it"). The offline notice further down is mounted
-	// only once the failure has already happened, so a live region inside it
-	// would be inserted already populated - which does not reliably announce
-	// (see CheckInModal.tsx's identical pattern for why). This one is mounted
-	// and empty long before the connection drops, so writing into it does. An
-	// *online* failure stays silent here: it renders LoadMoreError, whose
-	// ErrorBanner is already role="alert".
-	//
-	// Prefixed with routeState.offline.title rather than just
-	// opportunities.offline (#2065 trimmed that string's own "You are
-	// offline." lead-in, since the visible RouteState notice already carries
-	// it as its own heading) - this node has no heading next to it, so the
-	// announcement needs to say so itself or a screen reader hears only "we
-	// will load the opportunities..." with no indication why.
 	const liveMessage =
 		error && errorIsOffline
 			? `${t("routeState.offline.title")}. ${t("opportunities.offline")}`
@@ -61,9 +43,6 @@ export default function OpportunityResultsList({
 
 	return (
 		<>
-			{/* Always mounted (not conditional on the message) so the live region
-			is registered before it ever gets content - see CheckInModal.tsx's
-			identical pattern for why. */}
 			<p
 				role="status"
 				data-testid="opportunities-live-region"
@@ -71,16 +50,7 @@ export default function OpportunityResultsList({
 			>
 				{liveMessage}
 			</p>
-			{/* Visually hidden: PageHeaderBand's <h1> already names the page. Its
-			job is structural - giving this whole section a name in the outline
-			regardless of which of the four states below (loading/error/empty/
-			results) is currently mounted, so /opportunities's Footer (headingLevel
-			3 on this route only, see AppLayout) always lands under a real <h2>
-			instead of skipping straight from the <h1> to the footer's <h3>s
-			whenever the results grid itself isn't rendered - axe's heading-order
-			rule catches exactly that skip (#2071). Unconditional for the same
-			reason: an offline/error/empty state that unmounted it would reopen
-			the same gap. */}
+
 			<h2 className="sr-only">{t("opportunities.resultsHeading")}</h2>
 			{loading && items.length === 0 && (
 				<div
@@ -104,14 +74,7 @@ export default function OpportunityResultsList({
 					))}
 				</div>
 			)}
-			{/* #1774: the service worker precaches the app shell, so a reload with
-			no connection brings back the header, hero, filter chips and footer
-			and then used to throw all of that away by reporting "an unexpected
-			error occurred" here, next to a retry button that could not succeed
-			while the connection was down. useLoadMore refetches on its own once
-			the connection returns, so this state needs no action - the retry
-			button below is only a fallback for a connection that came back
-			without the browser ever firing an `online` event (#2065). */}
+
 			{error &&
 				(errorIsOffline ? (
 					<RouteState
@@ -149,11 +112,6 @@ export default function OpportunityResultsList({
 							}
 						/>
 					) : (
-						// The sr-only "Search results" <h2> above already gives this
-						// region its name; the cards below just need to nest under it,
-						// hence headingLevel 3 - the same demotion OpportunityCard
-						// already does for LatestOpportunitiesSection's cards under its
-						// own "Current opportunities" <h2> (#2071).
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<OpportunityCard key={item.id} item={item} headingLevel={3} />
@@ -164,8 +122,6 @@ export default function OpportunityResultsList({
 					{items.length > 0 &&
 						hasMore &&
 						(loadMoreError ? (
-							// Same offline split as the initial-load branch above, with
-							// wording for the case where rows are already on screen.
 							loadMoreErrorIsOffline ? (
 								<RouteState
 									inline

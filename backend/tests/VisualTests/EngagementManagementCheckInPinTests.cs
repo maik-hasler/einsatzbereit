@@ -5,15 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #665: EngagementManagementPage ("Manage sign-ups")
-/// unconditionally called GET .../check-in-pin on every load, regardless of
-/// the opportunity's checkInMethod. The backend returns 404 whenever the PIN
-/// is null, i.e. for every checkInMethod other than "PINCode" - so the
-/// request was a guaranteed, silently-swallowed 404 for 3 of the 4 possible
-/// values. The fix gates the fetch on checkInMethod === "PINCode", the same
-/// condition already used to render the PIN block.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementManagementCheckInPinTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -50,19 +41,12 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		// Create a fresh organization rather than reusing olaf's shared seed
-		// org - other VisualTests running concurrently in this shared Aspire
-		// session can mutate/delete shared orgs, which made GET
-		// /v1/organizations intermittently race to an empty list here.
 		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"CheckInPin Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();
 		var org = await createOrgResponse.Content.ReadFromJsonAsync<JsonElement>();
-		// CreateOrganizationEndpoint returns the raw domain Organization
-		// aggregate (unlike GetOrganizations, which projects to a DTO), so
-		// its strongly-typed OrganizationId record struct serializes as a
-		// nested { "value": "<guid>" } object rather than a plain string.
+
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new

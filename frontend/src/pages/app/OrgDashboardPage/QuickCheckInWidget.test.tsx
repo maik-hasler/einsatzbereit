@@ -69,8 +69,6 @@ describe("QuickCheckInWidget", () => {
 
 		renderWidget();
 
-		// Opened first: nothing is selected, so the options only exist while the
-		// listbox is open and the closed trigger shows a placeholder either way.
 		await userEvent.click(await screen.findByRole("combobox"));
 
 		const options = screen.getAllByRole("option");

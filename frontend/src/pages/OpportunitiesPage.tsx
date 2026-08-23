@@ -8,16 +8,6 @@ import Button from "../components/Button";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { MagnifyingGlassIcon } from "../components/icons";
 
-// The browse/search page. Until #1755's follow-up this list lived inside
-// HomePage behind an "#opportunities" anchor, which is why the header had no
-// primary navigation: there was no destination to navigate *to*, only a
-// fragment on the landing page. Giving the list its own route is what makes
-// "Find opportunities" a real nav item.
-//
-// Only the keyword box lives up here. Location deliberately does not: the
-// filter bar below already owns a Location dropdown, and having both a hero
-// "city" field and a "Standort" filter on one page meant two controls writing
-// the same URL params with no indication of which one was in effect.
 export default function OpportunitiesPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("opportunitiesPage.title"));
@@ -26,8 +16,6 @@ export default function OpportunitiesPage() {
 	const urlKeyword = searchParams.get("q") ?? "";
 	const [keyword, setKeyword] = useState(urlKeyword);
 
-	// The list's own keyword pill can clear `q` out from under this box, so
-	// follow the URL rather than owning the value outright.
 	useEffect(() => {
 		setKeyword(urlKeyword);
 	}, [urlKeyword]);

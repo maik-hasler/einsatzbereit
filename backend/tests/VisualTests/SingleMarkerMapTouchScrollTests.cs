@@ -29,21 +29,6 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 	[Test]
 	public async Task SingleMarkerMap_OnMobile_DisablesTouchDragSoPageStillScrolls()
 	{
-		// Regression for #1664, since folded into making the map fully
-		// static: SingleMarkerMap.tsx disables every interaction Leaflet
-		// offers (dragging, touchZoom included), not just scrollWheelZoom -
-		// leaving any of them enabled would claim touch gestures starting on
-		// the map (`touch-action: none`/`pinch-zoom`) and block the page's
-		// own vertical swipe-to-scroll. A real device's native touch-scroll
-		// suppression can't be reproduced by dispatching synthetic touch
-		// events in a test (untrusted events never trigger it), so this
-		// asserts the actual mechanism instead: with both the
-		// `leaflet-touch-drag` and `leaflet-touch-zoom` classes absent (see
-		// leaflet.css), no touch-action rule targets the container at all,
-		// so it resolves to the browser default `auto` - a swipe starting on
-		// the map is then free to scroll the page, exactly like the
-		// "computed touch-action: none" bug evidence on the issue describes,
-		// inverted.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -79,12 +64,6 @@ public class SingleMarkerMapTouchScrollTests(AspireFixture fixture) : VisualTest
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// VisualTests always runs against FakeGeocodingService (AppHost.cs's
-		// Geocoding__UseFakeService override), which reports TransientFailure
-		// so no seeded opportunity here ever gets real coordinates - the map
-		// would never render otherwise. Patch coordinates into the one
-		// response this page actually reads (the detail fetch) instead of
-		// depending on the unreachable real geocoding path.
 		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
 		{
 			if (route.Request.Method != "GET")

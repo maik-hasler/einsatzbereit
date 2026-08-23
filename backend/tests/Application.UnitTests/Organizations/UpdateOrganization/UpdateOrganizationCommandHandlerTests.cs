@@ -6,6 +6,7 @@ using Domain.Organizations;
 using Domain.Users;
 using NSubstitute;
 
+
 namespace Application.UnitTests.Organizations.UpdateOrganization;
 
 public class UpdateOrganizationCommandHandlerTests
@@ -31,6 +32,7 @@ public class UpdateOrganizationCommandHandlerTests
 	public async Task Handle_ShouldUpdateOrganization_WithAllFields(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Old Name").Value;
 
@@ -46,8 +48,10 @@ public class UpdateOrganizationCommandHandlerTests
 			new UpdateAddressCommand("Main Street", "1", "12345", "Berlin"),
 			DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		org.Name.Should().Be("New Name");
 		org.Description.Should().Be("A Description");
@@ -63,6 +67,7 @@ public class UpdateOrganizationCommandHandlerTests
 	public async Task Handle_ShouldClearOptionalFields_WhenNullProvided(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -71,8 +76,10 @@ public class UpdateOrganizationCommandHandlerTests
 		var command = new UpdateOrganizationCommand(
 			orgId, "Org", null, null, null, null, null, DefaultRequestingUserId);
 
+		// Act
 		await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		org.Description.Should().BeNull();
 		org.ContactEmail.Should().BeNull();
 		org.Address.Should().BeNull();
@@ -82,6 +89,7 @@ public class UpdateOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
@@ -89,8 +97,10 @@ public class UpdateOrganizationCommandHandlerTests
 		var command = new UpdateOrganizationCommand(
 			orgId, "Name", null, null, null, null, null, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 	}
 
@@ -98,6 +108,7 @@ public class UpdateOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenNameIsEmpty(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -106,8 +117,10 @@ public class UpdateOrganizationCommandHandlerTests
 		var command = new UpdateOrganizationCommand(
 			orgId, "   ", null, null, null, null, null, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Name must not be empty*");
 	}
@@ -116,6 +129,7 @@ public class UpdateOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenWebsiteIsInvalid(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -124,8 +138,10 @@ public class UpdateOrganizationCommandHandlerTests
 		var command = new UpdateOrganizationCommand(
 			orgId, "Org", null, null, null, "javascript:alert(1)", null, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Website must be a valid http or https URL*");
 	}

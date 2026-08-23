@@ -31,9 +31,6 @@ internal sealed class OutboxMetrics
 
 	public void RecordFailed() => Record("failed");
 
-	// A dead letter (OutboxOptions.MaxAttempts exhausted, #1317) is a distinct, terminal
-	// give-up - worth its own status so it doesn't blend into the same "failed" bucket
-	// as a transient error that will simply retry next tick.
 	public void RecordDeadLettered() => Record("dead_lettered");
 
 	public void RecordPending(long count) => _pendingGauge.Record(count);

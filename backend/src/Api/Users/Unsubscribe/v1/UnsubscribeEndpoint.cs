@@ -8,17 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Users.Unsubscribe.v1;
 
-// The actual state-changing step behind one-click unsubscribe (#1055) - must
-// work for a recipient who never signed in, so this is intentionally
-// unauthenticated and identifies the target solely via the opaque per-user
-// UnsubscribeToken. No longer embedded directly in transactional emails
-// (#1725) - the email link now points at a frontend confirmation page
-// (UnsubscribeLinkBuilder) that only reaches this endpoint once a person
-// deliberately clicks "Confirm", so a mail scanner or link prefetcher that
-// follows the email link itself can no longer trigger this GET as a side
-// effect. Left as a GET (RFC 8058's own List-Unsubscribe-Post header was not
-// adopted) since the confirmation step already closes the vulnerability
-// without a mail-header change.
 internal sealed class UnsubscribeEndpoint
 	: IEndpoint
 {
@@ -34,12 +23,6 @@ internal sealed class UnsubscribeEndpoint
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 
-	// Redirects into a branded, localized frontend route rather than returning raw
-	// HTML directly (#1675) - this endpoint has no locale of its own to render in,
-	// so the frontend's own i18n (German-default) takes over from here. Reuses the
-	// same Cors:Origins-derived frontend base URL as GetSitemapEndpoint/
-	// GetEngagementCalendarEndpoint, since there's no dedicated "frontend base URL"
-	// setting in this codebase.
 	private static async Task<IResult> UnsubscribeAsync(
 		[FromRoute] Guid userId,
 		[FromQuery] string type,

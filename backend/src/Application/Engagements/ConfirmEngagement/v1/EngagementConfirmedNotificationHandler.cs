@@ -9,11 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.ConfirmEngagement.v1;
 
-// Consumer of EngagementConfirmedDomainEvent (#1150): ConfirmEngagementCommandHandler
-// only flips Status and raises the event; the volunteer's confirmation email happens
-// here, dispatched by OutboxProcessorJob like every other domain event, so a transient
-// email failure is retried on the next poll cycle instead of having already been sent
-// before the triggering command's transaction could even commit.
 internal sealed class EngagementConfirmedNotificationHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,

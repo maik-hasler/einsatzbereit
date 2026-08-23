@@ -29,10 +29,6 @@ public sealed class User
 
 	public DateTimeOffset? DeletedOn { get; private set; }
 
-	// Opaque, unguessable key embedded in one-click unsubscribe links (#1055) so
-	// an email recipient can opt out without authenticating first. Generated
-	// once at creation and never rotated - rotating it would silently break
-	// unsubscribe links already sitting in a recipient's inbox.
 	public Guid UnsubscribeToken { get; private set; }
 
 	public bool NotifyOnNewSignUp { get; private set; } = true;
@@ -142,10 +138,7 @@ public sealed class User
 				NotifyOnEngagementReminder = false;
 				break;
 			default:
-				// #1725: an unrecognized type used to fall through every case and
-				// still return Result.Success() - a future EmailNotificationType
-				// member added here without a matching case would report a
-				// successful opt-out that silently did nothing.
+
 				return Result.Failure(Error.Validation(
 					"User.UnknownEmailNotificationType", $"Unknown email notification type '{type}'."));
 		}
@@ -153,10 +146,6 @@ public sealed class User
 		return Result.Success();
 	}
 
-	// The Keycloak identity is deleted post-commit by a domain-event handler
-	// (see UserAccountDeletedDomainEvent), not inline in the deletion command -
-	// that call is irreversible, so it must only fire once the local deletion
-	// has actually committed (#1141).
 	public void MarkAccountDeleted()
 	{
 		AddEvent(new UserAccountDeletedDomainEvent(Id));

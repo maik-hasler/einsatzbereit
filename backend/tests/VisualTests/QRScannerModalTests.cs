@@ -5,21 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression coverage for #859: QRScannerModal (organizer's camera-based
-/// check-in flow, frontend/src/components/QRScannerModal.tsx) had zero
-/// automated test coverage prior to this class.
-///
-/// The BarcodeDetector Shape Detection API is not enabled by default in the
-/// Chromium build Playwright drives here (confirmed: `typeof BarcodeDetector`
-/// is "undefined" on a stock page), so:
-///   - the "unsupported browser" fallback is exercised for real, with no mocking.
-///   - the scan/detect flow is exercised by stubbing `window.BarcodeDetector`
-///     and `navigator.mediaDevices.getUserMedia` via an init script (a fake
-///     canvas-backed MediaStream stands in for the camera), which lets the
-///     component's own polling loop drive a real end-to-end check-in through
-///     the actual backend API.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -51,8 +36,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		var dialog = Page.Locator("[role='dialog']");
 		await Expect(dialog).ToBeVisibleAsync();
 
-		// The mocked camera stream must be flowing (no unsupported/camera-error
-		// branch) before the QR code is "presented" to the detector.
 		await Expect(dialog.Locator("video")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.EvaluateAsync(
@@ -84,9 +67,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		await MockQrCameraSupportAsync(Page, grantCamera: true);
 
-		// A well-formed UUID that does not match any engagement at all - the
-		// scanner has no client-side list to pre-filter against (#1401), so
-		// this must reach the real check-in endpoint and surface its 404.
 		var unknownId = Guid.NewGuid().ToString();
 		var checkInStatuses = new List<int>();
 		Page.Response += (_, response) =>
@@ -137,11 +117,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(dialog).ToBeVisibleAsync();
 		await Expect(dialog.Locator("video")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// Regression for #1228: a failed check-in (404 here) used to leave the
-		// scan loop permanently dead - the camera stayed live but the timer
-		// that reschedules the next detect() call never fired again. Presenting
-		// a valid QR code afterwards must still succeed, proving the loop kept
-		// polling instead of silently doing nothing.
 		var unknownId = Guid.NewGuid().ToString();
 		await Page.EvaluateAsync(
 			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
@@ -163,21 +138,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(Page.GetByText("Checked in")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
-	/// <summary>
-	/// Stubs the two browser APIs QRScannerModal depends on but that a headless
-	/// Playwright-driven Chromium doesn't provide out of the box:
-	///   - <c>window.BarcodeDetector</c>: the real Shape Detection API is not
-	///     enabled by default even on recent Chromium; the stub's `detect()`
-	///     returns whatever the test writes to `window.__qrTestBarcodes`, so a
-	///     test can "present" a QR code by setting that array.
-	///   - <c>navigator.mediaDevices.getUserMedia</c>: replaced with a fake,
-	///     continuously-updating <c>MediaStream</c> from a canvas'
-	///     `captureStream()` (or a rejected promise, to simulate a denied
-	///     camera permission) rather than requesting a real camera.
-	/// Must be added before the frontend's own bundle runs, i.e. before the
-	/// navigation that loads it - see <see cref="AuthHelper.FastSignInAsync"/>'s
-	/// own use of <c>AddInitScriptAsync</c> for the same reason.
-	/// </summary>
 	private static async Task MockQrCameraSupportAsync(IPage page, bool grantCamera)
 	{
 		var getUserMedia = grantCamera
@@ -209,14 +169,6 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 			""");
 	}
 
-	/// <summary>
-	/// Creates a fresh organization + QRCode-check-in opportunity, has vera
-	/// apply, and has olaf confirm the application - the precondition for a
-	/// scan of the resulting engagement id to be accepted by the real
-	/// check-in endpoint, which the scanner now calls directly for any
-	/// well-formed UUID rather than pre-matching against a client-side list
-	/// (#1401).
-	/// </summary>
 	private static async Task<(string OpportunityId, string OrganizationId, string EngagementId)>
 		CreateQrCheckInEngagementAsync(Uri keycloak, Uri backend, string label)
 	{

@@ -66,22 +66,10 @@ export const ADMIN_TABS = [
 	},
 ] as const;
 
-// Shell for the administration area. The four sections used to be stacked on
-// one ~2000px scroll behind the last BreadcrumbBar left in the volunteer app,
-// in a full-bleed container while every other page centres a ~1030px column -
-// so this was the one page that looked like a different product. It now uses
-// PageHeaderBand and the same left rail as the account area, with one section
-// per route: two of the four are permanently empty on a healthy instance, and
-// the audit log grows without bound, so stacking them meant the useful ones
-// kept moving down the page.
 export default function AdministrationPage() {
 	const { t } = useTranslation();
 	const { pathname } = useLocation();
 
-	// The active tab drives the page title/h1 below, not just the rail's
-	// highlighted item - each of the four routes needs its own distinct pair
-	// (#2052), where the shell used to render the fixed "Administration" for
-	// all of them and left the section name in an h2 further down.
 	const activeTab =
 		ADMIN_TABS.find((tab) => pathname.startsWith(tab.href)) ?? ADMIN_TABS[0];
 	const sectionTitle = t(activeTab.labelKey);
@@ -131,9 +119,6 @@ export function AdminAuditLogPage() {
 	const { t } = useTranslation();
 	return (
 		<>
-			{/* No repeated "Audit log" heading here - the band's h1 above already
-			says that (#2052). Only the scope note, which the old h2 pairing used
-			to carry as PageSectionHeading's description, still earns its keep. */}
 			<p className="mb-4 text-sm text-gray-500">
 				{t("administration.auditLog.scopeDescription")}
 			</p>
@@ -237,9 +222,6 @@ function OrganizationsSection() {
 
 	return (
 		<>
-			{/* Search plus the two scope toggles are one filter control, boxed
-			like the Members/Sign-ups toolbars (#1755) rather than three bare
-			rows stacked on the page background. */}
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
 				<form
 					onSubmit={handleSearchSubmit}
@@ -470,10 +452,6 @@ function OrganizationsSection() {
 	);
 }
 
-// The four per-user actions and the copy each one confirms with. Every key is
-// spelled out in full rather than interpolated from the action name so they
-// stay greppable - and so scripts/check-i18n-keys.js sees each leaf key
-// referenced instead of reporting the whole subtree as dead.
 const USER_ACTION_COPY = {
 	block: {
 		title: "confirmDialog.adminBlockUser.title",
@@ -521,12 +499,7 @@ function UsersSection() {
 
 	const [search, setSearch] = useState("");
 	const [appliedSearch, setAppliedSearch] = useState("");
-	// Blocking an account and granting platform admin used to fire straight
-	// from onClick, while the lower-stakes organization shadow-delete one tab
-	// over already confirmed - so one slip on a dense row of two adjacent
-	// buttons handed a stranger full platform administration, or locked a
-	// volunteer out, with no undo (#1773). All four now go through the same
-	// ConfirmDialog the other two admin sections use.
+
 	const [confirmAction, setConfirmAction] = useState<{
 		row: AdminUserListItem;
 		kind: UserActionKind;
@@ -557,9 +530,6 @@ function UsersSection() {
 		reset();
 	}
 
-	// Errors land in the dialog's own ErrorBanner rather than a toast, matching
-	// OrganizationsSection/ReportsSection: the dialog stays open so the action
-	// can be retried in place instead of the row silently not changing.
 	async function confirmActionSubmit() {
 		if (!confirmAction) return;
 		const { row, kind } = confirmAction;
@@ -600,8 +570,6 @@ function UsersSection() {
 
 	return (
 		<>
-			{/* Boxed like the organizations filter above - the staleness note
-			belongs with the search that produces the list it qualifies. */}
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
 				<form onSubmit={handleSearchSubmit} className="flex items-end gap-3">
 					<div className="flex-1">

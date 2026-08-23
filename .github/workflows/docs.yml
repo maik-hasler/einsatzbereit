@@ -32,11 +32,6 @@ jobs:
           echo "revremark=$(git log -1 --format=%s)" >> "$GITHUB_OUTPUT"
           echo "revdate=$(date +%d.%m.%Y)" >> "$GITHUB_OUTPUT"
 
-      # revremark in particular comes from a commit subject an outside
-      # contributor controls (the PR title, on a squash-merge push to main).
-      # Passing it through env: instead of splicing "${{ }}" into the
-      # program text below means a backtick or "$( )" in that text is just
-      # an env var value, never re-parsed as shell syntax.
       - name: Build AsciiDoc
         uses: tonynv/asciidoctor-action@755dc03a42aee715c3705fc31d2ca106b7ee90fd # v2
         env:

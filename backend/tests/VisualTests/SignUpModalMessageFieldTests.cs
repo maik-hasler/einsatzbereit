@@ -6,17 +6,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #679: the "Message" textarea on a non-ScheduledSlots (Express
-/// interest) sign-up was silently HTML-required with no visible/accessible
-/// indication, so its markup had never been exercised by AccessibilityTests.
-///
-/// Regression for #1908: that same HTML `required` attribute made an empty
-/// submit fall back to the browser's own native constraint-validation
-/// tooltip, which follows the browser/OS UI language rather than the page's
-/// chosen language. The field is validated in script now, surfacing a
-/// translated inline message instead.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBase(fixture)
 {

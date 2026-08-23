@@ -10,15 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.Common;
 
-/// <summary>
-/// Emails every subscribed organizer of an opportunity about a volunteer's sign-up,
-/// reactivation, or withdrawal - shared by EngagementCreatedDomainEventHandler,
-/// EngagementReactivatedDomainEventHandler, and EngagementWithdrawnDomainEventHandler
-/// (einsatzbereit#1174). Runs off the transactional outbox rather than inline in the
-/// triggering create/withdraw request, so a rapid sign-up/withdraw loop - a withdrawn
-/// or cancelled engagement can be reused via Engagement.Reactivate - no longer holds
-/// the request's DB transaction open across one synchronous SMTP send per organizer.
-/// </summary>
 internal static class EngagementOrganizerNotificationHelper
 {
 	public static async Task NotifyAsync(
@@ -39,23 +30,12 @@ internal static class EngagementOrganizerNotificationHelper
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(opportunityId, cancellationToken);
 		if (opportunity is null)
 		{
-			// Deleted between the triggering command committing and the outbox
-			// dispatching this event - nothing left to notify about, and retrying
-			// would never resolve.
 			logger.LogWarning(
 				"Skipping organizer notification for opportunity {OpportunityId}: it no longer exists",
 				opportunityId.Value);
 			return;
 		}
 
-		// DeleteMyAccountCommandHandler withdraws non-terminal engagements and raises
-		// UserAccountDeletedDomainEvent in the same commit (#1140/#1141) - both are
-		// dispatched from the same outbox batch with no ordering guarantee between
-		// them, so this can legitimately run after the volunteer's Keycloak identity
-		// is already deleted (most reachable via EngagementWithdrawnDomainEventHandler,
-		// but the same race applies to a sign-up/reactivation followed by an
-		// immediate account deletion). Retrying would never resolve that, so skip
-		// the notification rather than dead-lettering forever.
 		KeycloakUserProfile volunteer;
 		try
 		{
@@ -86,12 +66,6 @@ internal static class EngagementOrganizerNotificationHelper
 		var organizerUsersById = (await dbContext.GetOrCreateUsersAsync(organizerIds, cancellationToken))
 			.ToDictionary(u => u.Id);
 
-		// Built up and sent as a single SendBatchAsync call after the loop (#1729,
-		// mirrors OpportunityNotificationHelper.NotifyActiveVolunteersAsync) instead
-		// of one SendAsync per organizer - this runs from the outbox, outside any
-		// open DB transaction, but a batch of 10+ subscribed organizers still meant
-		// 10+ sequential SMTP connect/authenticate/disconnect round trips per
-		// dispatched message.
 		var messages = new List<EmailMessage>(members.Count);
 
 		foreach (var organizer in members.Where(m => m.IsOrganisator))

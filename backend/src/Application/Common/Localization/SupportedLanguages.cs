@@ -1,9 +1,5 @@
 namespace Application.Common.Localization;
 
-// The only two languages the product ships translations for (frontend
-// en.json/de.json). A recipient's language always resolves to one of these -
-// never null - so every email-sending handler can render a template without
-// its own null-handling branch.
 public static class SupportedLanguages
 {
 	public const string Default = "de";

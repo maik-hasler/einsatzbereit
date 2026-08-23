@@ -51,10 +51,6 @@ internal sealed class GetPublicUserProfileQueryHandler(
 			request.UserId,
 			cancellationToken);
 
-		// PreferredContact/Phone are deliberately not surfaced here (#1028) - this
-		// endpoint is AllowAnonymous(), so contact info only ever reaches an
-		// organizer through an actual engagement (EngagementSummary), never a
-		// cold-view of the public profile by an anonymous visitor.
 		return new PublicUserProfileResponse(
 			displayName,
 			engagementCount,

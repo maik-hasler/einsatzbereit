@@ -5,30 +5,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1798: the /opportunities filter chips were centred
-/// (`justify-center`) inside a full-width row sitting directly above a
-/// full-width results grid, so at 1440px the first chip started at x=375
-/// while the cards below it started at x=32 - one page with two competing
-/// left edges. Fixed by dropping `justify-center`, letting flex's default
-/// `flex-start` line the row up with the grid.
-///
-/// The row is `flex-wrap`, so these tests check the alignment holds for
-/// *every* wrapped line, not just the first one, and at the three viewports
-/// the issue called out (1440 / 768 / 375).
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// The viewport the finding was reported at: `max-w-page` is 90rem, so
-	// <main> spans the full width here and its `lg:px-8` puts both the filter
-	// row and the grid at x=32 - the widest gap the centred row could produce.
 	private const int WideViewportWidth = 1440;
 	private const int WideViewportHeight = 900;
 
-	// A left edge is either shared or it is not; 2px of slack only absorbs
-	// sub-pixel rounding in getBoundingClientRect, and is far below the ~343px
-	// offset the centred row produced at 1440.
 	private const double MaxLeftEdgeDeltaPx = 2;
 
 	private static async Task<string> GetAccessTokenAsync(IPage page)
@@ -47,11 +29,6 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		return token!;
 	}
 
-	/// <summary>
-	/// Seeds one organization with two published opportunities, so the results
-	/// grid below the filter row is guaranteed to render cards rather than the
-	/// empty state - whatever else the shared test session has left behind.
-	/// </summary>
 	private static async Task SeedPublishedOpportunitiesAsync(HttpClient http)
 	{
 		var suffix = Guid.NewGuid().ToString("N")[..8];
@@ -78,14 +55,6 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		}
 	}
 
-	/// <summary>
-	/// Groups the filter row's chips into visual lines by their top edge and
-	/// returns, per line, how far that line's leftmost chip sits from the
-	/// results grid's left edge. Chip boxes and the grid box are read in a
-	/// single EvaluateAsync call so nothing can reflow between the two reads
-	/// (see VisualTestBase.AssertMaxWidthContentCenteredAsync for the same
-	/// pattern).
-	/// </summary>
 	private async Task<double[]> GetPerLineLeftEdgeDeltasAsync()
 	{
 		var filterBar = Page.GetByTestId("opportunities-filter-bar");
@@ -127,14 +96,6 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
-		// Sign in at the default (desktop) viewport - FastSignInAsync's own
-		// success check waits for the "User menu" button, which only exists in
-		// the header's desktop nav (`hidden md:flex`); at mobile width it stays
-		// hidden behind the hamburger, so signing in at 375px times out (see
-		// OrgAppMobileResponsiveTests for the same ordering). Resize only after
-		// landing in the app - the alignment under test is decided by the
-		// filter row's own layout at the final viewport, not by which width the
-		// session was established at.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -163,12 +124,6 @@ public class OpportunityFilterRowAlignmentTests(AspireFixture fixture) : VisualT
 	public async Task FilterRow_AtNarrowViewports_EveryLineSharesLeftEdgeWithResultsGrid(
 		int width, int height, bool expectWrapping)
 	{
-		// Narrow viewports are where a wrapped row matters: `justify-center`
-		// centred each wrapped line independently, so a short trailing line was
-		// offset by a different amount than the first. Wrapping is only asserted
-		// at 375, where the six chips cannot possibly fit on one line; at 768 it
-		// depends on the translated label widths, which is not this test's
-		// subject.
 		await GoToOpportunitiesAsync(width, height);
 
 		var deltas = await GetPerLineLeftEdgeDeltasAsync();

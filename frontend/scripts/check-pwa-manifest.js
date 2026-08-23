@@ -1,25 +1,5 @@
 #!/usr/bin/env node
-// Guards the web app manifests declared in vite.config.ts (issue #1799,
-// localized per-locale in #1923). The manifest used to be the bare minimum -
-// name, description, three icons - with no `id`, no `screenshots` and no
-// `shortcuts`, so Chrome on Android fell back to its plain install prompt
-// (name + icon only) instead of the "richer install UI" listing, and the
-// installed app's identity was derived from `start_url`, meaning a future
-// entry-point move would have installed a second copy next to the first
-// rather than updating it. #1923 then split the single manifest into one
-// per supported i18next language (`deManifest`/`enManifest` in
-// vite.config.ts, served as manifest.de.webmanifest/manifest.en.webmanifest)
-// so an English-speaking visitor doesn't get German OS-level app metadata -
-// everything below runs once per locale.
-//
-// Screenshots are the fragile half: Chrome silently drops the richer install
-// UI - no console warning, no visible failure - if any single screenshot
-// violates its constraints, and the failure mode is invisible from the repo
-// (a `sizes` typo, a re-cropped PNG whose real dimensions no longer match
-// what the manifest claims, a screenshot deleted from public/ while its
-// manifest entry stays). Everything below is therefore checked against the
-// bytes on disk, not just against what the config says. Purely static - no
-// build required.
+
 import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
@@ -37,15 +17,10 @@ function fail(message) {
 	ok = false;
 }
 
-// Chrome's documented constraints for screenshots to qualify for the richer
-// install UI. Violating any of them costs the listing silently.
 const MIN_DIMENSION = 320;
 const MAX_DIMENSION = 3840;
 const MAX_ASPECT_RATIO = 2.3;
 
-// Reads a PNG's real pixel dimensions straight out of the IHDR chunk (bytes
-// 16-23, big-endian), so the `sizes` string in the manifest is checked
-// against the actual image rather than trusted.
 function pngDimensions(file) {
 	const buf = readFileSync(file);
 	if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) return null;
@@ -53,10 +28,6 @@ function pngDimensions(file) {
 	return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-// Returns the substring starting at `open` and ending at its matching
-// closing delimiter, both included. Brace/bracket counting rather than a
-// regex: the manifest nests objects inside arrays inside objects, which a
-// flat regex can't follow without over-matching into the next block.
 function sliceBalanced(source, startIndex, open, close) {
 	const from = source.indexOf(open, startIndex);
 	if (from === -1) return null;
@@ -71,8 +42,6 @@ function sliceBalanced(source, startIndex, open, close) {
 	return null;
 }
 
-// The `{ ... }` entries at the top level of an array block, i.e. skipping
-// objects nested inside them (a shortcut's own `icons: [{ ... }]`).
 function topLevelObjects(arrayBlock) {
 	const objects = [];
 	let depth = 0;
@@ -115,9 +84,6 @@ for (const { lang, varName } of LOCALES) {
 		continue;
 	}
 
-	// 1. An explicit id, decoupled from start_url. Without it the browser
-	// derives the app identity from start_url, so moving the entry point later
-	// reads as a different app to every already-installed client.
 	if (!/\bid:\s*"\/"/.test(manifest)) {
 		fail(
 			`${varName} in vite.config.ts has no \`id: "/"\` - without an explicit id the installed ` +
@@ -126,9 +92,6 @@ for (const { lang, varName } of LOCALES) {
 		);
 	}
 
-	// 2. lang must be declared and match this manifest's own locale - a
-	// mismatch (e.g. enManifest declaring lang: "de") would silently serve the
-	// wrong language declaration alongside correctly-translated content.
 	if (!new RegExp(`\\blang:\\s*"${lang}"`).test(manifest)) {
 		fail(
 			`${varName} in vite.config.ts has no \`lang: "${lang}"\` - each locale manifest must ` +
@@ -137,8 +100,6 @@ for (const { lang, varName } of LOCALES) {
 		);
 	}
 
-	// 3. Screenshots: present, on disk, and within every constraint Chrome
-	// enforces for the richer install UI.
 	const screenshotsIndex = manifest.indexOf("screenshots:");
 	const screenshotsBlock =
 		screenshotsIndex === -1
@@ -172,10 +133,6 @@ for (const { lang, varName } of LOCALES) {
 				continue;
 			}
 
-			// Screenshots are install-time artwork the browser fetches once, on
-			// demand - keeping them out of the directories workbox.globPatterns
-			// sweeps ("icons/*.png") is what stops half a megabyte of them being
-			// precached by the service worker for every visitor, installing or not.
 			if (!src.startsWith("/screenshots/")) {
 				fail(
 					`${varName} screenshot "${src}" is not under /screenshots/ - keep screenshots there so ` +
@@ -238,8 +195,6 @@ for (const { lang, varName } of LOCALES) {
 				);
 			}
 
-			// All screenshots of one form factor must share a single aspect ratio,
-			// or Chrome shows none of them.
 			const aspect = actual.width / actual.height;
 			const seen = aspectByFormFactor.get(formFactor);
 			if (seen === undefined) {
@@ -253,8 +208,6 @@ for (const { lang, varName } of LOCALES) {
 			}
 		}
 
-		// Chrome only qualifies for the richer install UI on Android when a narrow
-		// (mobile) screenshot exists, and only shows wide ones on desktop.
 		if (!aspectByFormFactor.has("narrow")) {
 			fail(
 				`No ${varName} screenshot has form_factor "narrow" - Chrome on Android requires at least ` +
@@ -269,10 +222,6 @@ for (const { lang, varName } of LOCALES) {
 		}
 	}
 
-	// 4. Shortcuts: present, and every one of them points at a route that
-	// actually exists. A renamed route would otherwise leave a long-press
-	// shortcut on installed devices landing on NotFoundPage, with nothing in CI
-	// noticing.
 	const shortcutsIndex = manifest.indexOf("shortcuts:");
 	const shortcutsBlock =
 		shortcutsIndex === -1
@@ -352,11 +301,6 @@ for (const { lang, varName } of LOCALES) {
 	}
 }
 
-// 5. VitePWA must actually build/serve one of these locale manifests as its
-// default (manifest.de.webmanifest, matching the German default everything
-// else end-user-facing serves) - and the other must be emitted somewhere in
-// the same config, or manifest.en.webmanifest is just dead code above that
-// nothing ever writes to dist/.
 if (!/manifestFilename:\s*"manifest\.de\.webmanifest"/.test(viteConfig)) {
 	fail(
 		'vite.config.ts does not set manifestFilename: "manifest.de.webmanifest" on the VitePWA ' +

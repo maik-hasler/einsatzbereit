@@ -37,11 +37,7 @@ export default function EditableWidgetTile({
 	isPlacing: boolean;
 	hasAnchor: boolean;
 	placingDisabled: boolean;
-	// Whether the click-click-click/keyboard corner flow specifically (not a
-	// real pointer drag, #16) is what's active for this widget - `isPlacing`
-	// alone can't tell the two apart (a drag sets it too, for the ring
-	// highlight below), and `hasAnchor`/hasAnchor's "pick a corner" wording
-	// would be actively wrong read out mid-drag if used for that.
+
 	isCornerFlowActive: boolean;
 	onAdvance: () => void;
 	onArrowKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
@@ -114,13 +110,6 @@ export default function EditableWidgetTile({
 					editing && showPlacementControls ? "pt-10" : ""
 				}`}
 			>
-				{/* A crash inside a single widget shouldn't blank the whole dashboard
-				(#1243) - the default full-page ErrorBoundary fallback would break
-				this tile's grid layout, so a small inline one is used instead. It
-				keeps the same landmark-region-plus-heading shape WidgetCard renders
-				in the non-error case (see WidgetCard.tsx) so a screen-reader user
-				navigating by region/heading still finds this widget - by name - and
-				isn't left with just an anonymous error paragraph. */}
 				<ErrorBoundary
 					fallback={
 						<section
@@ -145,36 +134,6 @@ export default function EditableWidgetTile({
 			{editing && (
 				<>
 					{showPlacementControls && (
-						// Still the entry point into the click-click-click
-						// corner-to-corner flow (onClick) and its accessible
-						// keyboard path (onKeyDown's arrow keys/Enter, #17) - the
-						// whole tile above now also starts a real pointer drag
-						// (#16) on its own, so this button's own onPointerDown
-						// would otherwise fire a second, redundant drag-start for
-						// the exact same press; stopPropagation keeps it to one.
-						//
-						// Mouse hit-testing only (#830 follow-up), not pointer-
-						// events-none outright: while the click-click-click corner
-						// flow is active for this widget with no anchor picked yet,
-						// its tile has collapsed to a 1x1 preview box at its own
-						// current top-left cell (see previewRect/normalizeRect
-						// (cursor, cursor, ...) below), putting this centered
-						// button almost exactly on top of the very backdrop cell
-						// the next click needs to land on - so it stops claiming
-						// mouse clicks for that one narrow window. Gated on
-						// isCornerFlowActive specifically, not the broader
-						// isPlacing (which a fresh press's own onPointerDown/
-						// startDrag call above already flips true, transiently,
-						// before the browser has even dispatched this SAME click's
-						// "click" event) - isCornerFlowActive only reflects
-						// placingKey, set by onAdvance below, which only runs once
-						// the click event actually fires - so a fresh press can
-						// never self-disable its own click via this class.
-						// Keyboard Enter/Space activation is untouched regardless
-						// (pointer-events doesn't gate that), so the accessible
-						// path this button exists for - not requiring pointer
-						// precision on a tiny backdrop cell - still works exactly
-						// the same via a focused Enter press.
 						<button
 							type="button"
 							onClick={onAdvance}
@@ -191,35 +150,6 @@ export default function EditableWidgetTile({
 						</button>
 					)}
 					{showPlacementControls && !isPlacing && (
-						// Pure mouse/touch drag-to-resize affordance (#16) - the
-						// existing grip button + arrow keys already cover resizing
-						// accessibly via the two-corner flow, so this one is taken out
-						// of the tab order and hidden from assistive tech (#17) rather
-						// than exposing a second, keyboard-inert control for the same
-						// capability. stopPropagation is required here, not just an
-						// optimization - without it, the tile's own move-drag handler
-						// (above) would also see this same press and immediately
-						// overwrite the resize session with a move session.
-						//
-						// Hidden entirely while THIS widget is being placed (#830
-						// follow-up): starting a placement collapses the tile to a
-						// 1x1 preview box at its own current top-left cell (see
-						// previewRect/normalizeRect(cursor, cursor, ...) below) until
-						// a first corner is picked - with the tile that small, this
-						// handle would otherwise sit almost exactly on top of the
-						// very backdrop cell the corner-to-corner flow needs the
-						// next click to land on. Resizing mid-placement isn't a
-						// meaningful action anyway.
-						//
-						// A dedicated right-edge (width-only) and bottom-edge
-						// (height-only) handle pair briefly existed alongside this
-						// one (#830) but got reverted (#783 review) - on top of the
-						// existing grip/corner-resize/remove trio, two more
-						// permanently-visible controls left too little bare tile
-						// surface to grab-and-drag on the smaller widget sizes,
-						// which the organizer's feedback described as "you added
-						// more buttons, I can't move anything else - it's just not
-						// working" rather than as an improvement.
 						<button
 							type="button"
 							data-testid="widget-resize-handle-corner"

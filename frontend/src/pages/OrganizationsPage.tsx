@@ -22,12 +22,6 @@ import { MagnifyingGlassIcon } from "../components/icons";
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 
-// The public organization directory - restored per #1852 after it was
-// silently dropped as unreviewed collateral damage from #1751's footer
-// redesign (it had originally shipped in #772/#763). Rebuilt against the
-// PageHeaderBand + offline-aware list conventions #1755/#1774 established
-// after the original page was written, rather than reintroducing the old
-// usePageToolbar breadcrumb bar those retired.
 export default function OrganizationsPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
@@ -38,10 +32,6 @@ export default function OrganizationsPage() {
 	const [searchInput, setSearchInput] = useState(search);
 	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// Without this, typing then navigating away within the debounce window
-	// (SEARCH_DEBOUNCE_MS) still fires commitSearch after the route change,
-	// rewriting whatever page the user navigated to with a stray ?search=
-	// param (#1239).
 	useEffect(() => {
 		return () => {
 			if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -105,9 +95,6 @@ export default function OrganizationsPage() {
 				: t("organizationsPage.resultCount", { count: items.length })
 			: "";
 
-	// Same online-vs-offline split as OpportunityResultsList (#1774/#1901):
-	// while offline, this one live region carries the offline announcement
-	// instead of a result count.
 	const liveMessage =
 		error && errorIsOffline ? t("organizationsPage.offline") : countMessage;
 
@@ -137,11 +124,6 @@ export default function OrganizationsPage() {
 				</div>
 			</PageHeaderBand>
 
-			{/* Always mounted (not conditional on the message) so the live region
-			is registered before it ever gets content - see CheckInModal.tsx's
-			identical pattern for why. Silent during the initial loading
-			skeleton and on error; otherwise announces the settled result count
-			whenever the debounced search rewrites the directory. */}
 			<p
 				role="status"
 				data-testid="organizations-result-count"
@@ -217,13 +199,6 @@ export default function OrganizationsPage() {
 						/>
 					) : (
 						<>
-							{/* Visually hidden: PageHeaderBand's <h1> already names the
-							page, and a visible line here would just repeat the result
-							count above. Its job is structural - giving the per-card
-							<h3>s below a parent, so the outline reads as one results
-							region instead of a flat run of identically-styled headings
-							with nothing distinguishing them from each other or from the
-							page title (#2071). */}
 							<h2 className="sr-only">
 								{t("organizationsPage.resultsHeading")}
 							</h2>

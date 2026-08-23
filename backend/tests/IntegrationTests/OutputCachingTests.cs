@@ -11,13 +11,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	[Before(Test)]
 	public Task ResetAsync() => fixture.ResetAsync();
 
-	// Every anonymous request in this class gets its own X-Forwarded-For, same isolation
-	// technique RateLimitingTests.cs already uses. Without it, all of these share one
-	// anonymous-IP rate-limit bucket (60 req/60s, see IntegrationTestFixture) with the rest
-	// of the ~400-test suite - as the suite grows, cumulative anonymous traffic from
-	// unrelated tests can exhaust that shared bucket mid-run and 429 one of this class's two
-	// requests, which output caching then correctly never caches, so the "Age" header
-	// assertion fails even though caching itself works fine.
 	private static HttpClient WithForwardedFor(HttpClient client, string ip)
 	{
 		client.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
@@ -63,11 +56,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		second.Headers.TryGetValues("Age", out _).Should().BeTrue();
 	}
 
-	// Regression coverage for #1543: without this, a newly created/published opportunity
-	// (or any other write affecting the listing) would stay invisible on the public
-	// listing for up to ShortPublicReadSeconds, since nothing evicted the cached response -
-	// this also caused GetVolunteerOpportunitiesTests.cs to fail non-deterministically,
-	// since every test hitting this exact route/query-string shared one cached response.
 	[Test]
 	public async Task GetVolunteerOpportunities_ShouldReflectNewOpportunity_ImmediatelyAfterCreate(
 		CancellationToken cancellationToken)
@@ -82,7 +70,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(authenticatedClient, "Cache Eviction Org", cancellationToken);
 
-		// No IsDraft flag - published immediately, so it must appear on the very next read.
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			TitleDe = "Freshly published opportunity",
@@ -103,10 +90,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 			"instead of leaving the previous (stale) response cached for ShortPublicReadSeconds");
 	}
 
-	// Regression coverage for #1172: /health ran a DB connect + an outbound Keycloak
-	// HTTP call on every single hit with no result caching, so a flood of requests
-	// (even one spread across many IPs, which per-IP rate limiting alone wouldn't
-	// bound) could exhaust the Npgsql pool and starve Keycloak.
 	[Test]
 	public async Task GetHealth_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
@@ -119,9 +102,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		second.Headers.TryGetValues("Age", out _).Should().BeTrue();
 	}
 
-	// The default output cache key is method + path + query string with no per-route-parameter
-	// awareness beyond that, so this also proves two different organizations don't collide on
-	// (or get served) each other's cached profile response.
 	[Test]
 	public async Task GetPublicOrganizationProfile_ShouldCacheEachOrganizationSeparately(
 		CancellationToken cancellationToken)
@@ -148,11 +128,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		secondBody.Should().Contain("Org Two").And.NotContain("Org One");
 	}
 
-	// Regression coverage for #1731: SearchCities' response varies by the caller's
-	// X-Language header (Nominatim returns different exonyms per language), so unlike
-	// LongPublicRead's plain path+query cache key, its policy must also vary by that
-	// header - otherwise a request in one language could be served a response cached
-	// for another.
 	[Test]
 	public async Task SearchCities_ShouldCacheEachLanguageSeparately(
 		CancellationToken cancellationToken)
@@ -174,9 +149,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 			"a different X-Language must be a cache miss, not reuse the German response cached above");
 	}
 
-	// GetOrganizationOpportunities is authenticated and organizer-scoped - its response is not
-	// the same for every caller, so it must be excluded from output caching. Caching it under
-	// the default (caller-agnostic) cache key would risk serving one organizer's data to another.
 	[Test]
 	public async Task GetOrganizationOpportunities_ShouldNotBeOutputCached(
 		CancellationToken cancellationToken)

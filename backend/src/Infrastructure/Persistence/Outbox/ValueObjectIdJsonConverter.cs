@@ -5,14 +5,6 @@ using Domain.Primitives;
 
 namespace Infrastructure.Persistence.Outbox;
 
-// Domain events carry Guid-backed value-object IDs (VolunteerOpportunityId, UserId, ...) -
-// readonly record structs with a private constructor and a get-only Value property (see e.g.
-// Domain.VolunteerOpportunities.VolunteerOpportunityId). System.Text.Json's default
-// reflection-based (de)serializer has no public constructor or settable member to populate on
-// deserialize, so OutboxMessage.ToDomainEvent() was silently producing a Guid.Empty-backed
-// instance instead of throwing - only surfaced by einsatzbereit#1038's cascade-cancel tests,
-// the first outbox-dispatched handler to actually look an entity up by the deserialized id
-// rather than just logging it. This converter round-trips them as a plain JSON Guid string.
 internal sealed class ValueObjectIdJsonConverterFactory : JsonConverterFactory
 {
 	public override bool CanConvert(Type typeToConvert) =>

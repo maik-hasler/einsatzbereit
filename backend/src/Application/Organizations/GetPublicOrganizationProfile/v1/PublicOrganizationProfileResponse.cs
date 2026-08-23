@@ -31,10 +31,7 @@ public sealed record PublicOpportunitySummaryDto(
 	string Occurrence,
 	string ParticipationType,
 	DateTimeOffset CreatedOn,
-	// Added for #2054: without these, the org-profile and "more from this
-	// organization" cards had no date/deadline to show at all, unlike every
-	// card backed by VolunteerOpportunitySummary - the repository call below
-	// already resolves both, they were just never carried onto this DTO.
+
 	DateTimeOffset? ValidUntil,
 	DateTimeOffset? NextTimeSlotStart,
 	string? Category,

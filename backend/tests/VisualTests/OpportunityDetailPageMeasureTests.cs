@@ -5,39 +5,14 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1794: the opportunity detail page's main column presented
-/// two competing right edges at wide viewports. Every block in the reading
-/// column sat inside a `max-w-2xl` wrapper (672px) except the time-slot list,
-/// which was a direct child of the 792px grid column and so ran 120px further
-/// right than the at-a-glance band above it and the about-organization block
-/// below it. #1727 had made that deliberate - date/spot rows aren't prose - but
-/// the result read as misaligned blocks rather than one document, so the list
-/// is now held to the same measure.
-///
-/// The closing "more from organization" band deliberately keeps the full
-/// `max-w-6xl` wrapper as an end-of-page section break, so this asserts the
-/// main column's shared edge rather than a single edge for the whole page.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// The issue was reported at 1440px - the only width at which max-w-2xl is
-	// actually the constraining width for all three blocks (below lg the grid
-	// collapses to one column and the viewport constrains them instead).
 	private const int WideViewportWidth = 1440;
 	private const int WideViewportHeight = 900;
 
-	// Sub-pixel differences are expected from fractional layout rounding; a
-	// regression to the old markup reopens a 120px gap, so this tolerance
-	// cannot mask one.
 	private const double MaxEdgeDeltaPx = 2;
 
-	/// <summary>
-	/// Reads the right edge of all three main-column blocks in a single
-	/// EvaluateAsync call - as in OpportunityDetailPageSpacingTests, so nothing
-	/// can shift layout between reads - and asserts they agree.
-	/// </summary>
 	private async Task AssertMainColumnBlocksShareRightEdgeAsync(string label)
 	{
 		var atAGlance = Page.GetByTestId("opportunity-at-a-glance");
@@ -85,8 +60,6 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
-		// "About this organization" only renders when the profile carries at
-		// least one of these fields - it is one of the three edges under test.
 		var updateResponse = await http.PutAsJsonAsync($"/v1/organizations/{organizationId}", new
 		{
 			name = orgName,
@@ -98,10 +71,6 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		});
 		updateResponse.EnsureSuccessStatusCode();
 
-		// Draft first, then slots, then publish - time slots are seeded against
-		// the draft the same way MyEngagementsTimeSlotTests does it. No
-		// `validUntil`: VolunteerOpportunity.EnsureValidValidUntil rejects a
-		// deadline on anything but IndividualContact, so sending one here 400s.
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
 			titleDe = $"Measure1794 {suffix}",
@@ -144,13 +113,6 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 		await AssertMainColumnBlocksShareRightEdgeAsync($"{WideViewportWidth}px");
 	}
 
-	/// <summary>
-	/// The narrow viewports the fix had to leave alone. Below `lg` the two-column
-	/// grid collapses to one column, so whichever of the viewport or `max-w-2xl`
-	/// is narrower decides the width - at 375px that is the viewport, at 768px
-	/// still `max-w-2xl`. Either way all three blocks must land on the same edge,
-	/// with the time-slot list no narrower than its neighbours.
-	/// </summary>
 	[Test]
 	[Arguments(768, 1024)]
 	[Arguments(375, 812)]

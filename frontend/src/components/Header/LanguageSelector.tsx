@@ -26,25 +26,11 @@ export default function LanguageSelector({
 
 	return (
 		<div className="relative" ref={ref}>
-			{/* #1772: a disclosure, not a listbox - same call RowActionsMenu.tsx
-			documents. This used to advertise aria-haspopup="listbox" and wrap each
-			<button> in an <li role="option">, which axe flags as nested-interactive
-			(serious, on every page since this sits in the header) and which promised
-			arrow-key/aria-activedescendant navigation the component never
-			implemented - Escape, via useDismissableOverlay, is the only key it
-			handles. Tab through a labelled list of buttons is what it actually does,
-			so that is what it announces; the active language is marked with
-			aria-current instead of aria-selected. Dropdown.tsx is the real
-			listbox in this repo, for picking a form value. */}
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
-				// #2072: the accessible name used to replace the visible "EN"/"DE"
-				// text outright instead of extending it, a WCAG 2.5.3 Label-in-Name
-				// violation - "Klick DE" (speech input) wouldn't have matched an
-				// accessible name that never contains "DE". Leading with the same
-				// code the button displays keeps the two in sync.
+
 				aria-label={t("language.switchLanguageCurrent", {
 					code: current.short,
 					language: t(`language.${currentCode}`),
@@ -52,11 +38,6 @@ export default function LanguageSelector({
 				data-testid="language-selector-trigger"
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
-				{/* Code only in the header. This used to show a bordered "DE"
-				badge *and* the word "Deutsch" - the same fact twice, in the
-				widest control in the bar, sitting where the primary navigation
-				belongs. The full language name is still spelled out in the open
-				menu below, which is where someone changing it is looking. */}
 				<span className="font-semibold tracking-wide">{current.short}</span>
 				<ChevronDownIcon
 					open={open}

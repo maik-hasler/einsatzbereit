@@ -11,13 +11,6 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task PublishScheduledSlots_TimeSlotFailureMidPublish_RetryUpdatesSameDraftInsteadOfDuplicating()
 	{
-		// Regression for #1227: the create-then-publish flow is create draft ->
-		// upload banner -> create N time slots -> publish. If a time slot
-		// creation fails partway through, the draft opportunity is already
-		// persisted, incomplete. Retrying used to call createVolunteerOpportunity
-		// again, producing a second, duplicate draft opportunity. The retry must
-		// now reuse the first attempt's opportunity id (updating it instead of
-		// re-creating it) and only create the time slots still missing.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var uniqueTitle = $"Retry Dedup Test {Guid.NewGuid().ToString("N")[..8]}";
@@ -36,18 +29,12 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 		await Page.Locator("#opportunity-description").FillAsync(
 			"Regression test for the #1227 retry-duplicate-draft bug.");
 
-		// Step 2: remote, to skip address fields.
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: Scheduled slots, so publishing requires time slots and goes
-		// through the create-draft-then-publish path this bug lives in.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
 		await Page.Locator("label:has(input[name='participationType'][value='ScheduledSlots'])").ClickAsync();
 
-		// Step 4: add two time slots up front - the first CreateTimeSlot call
-		// is made to fail below, and the second must still end up created
-		// after the retry succeeds.
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
 		var step4 = Page.GetByTestId("wizard-step-4");
 
@@ -64,10 +51,6 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 		await AddSlotAsync(14);
 		await Expect(step4.Locator("ul li")).ToHaveCountAsync(2);
 
-		// Fail exactly the first CreateTimeSlot call (whichever slot the
-		// frontend happens to send first) with a plain 500 - everything else,
-		// including the earlier CreateVolunteerOpportunity call and every
-		// later request, passes through untouched.
 		var timeSlotCallCount = 0;
 		await Page.RouteAsync("**/volunteer-opportunities/*/time-slots", async route =>
 		{
@@ -84,10 +67,6 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 				return;
 			}
 
-			// Cross-origin in this test environment (see NotificationTests for the
-			// same note)
-			// - a fulfilled response still needs CORS headers or the browser
-			// rejects it before the app's own error handling runs.
 			await route.FulfillAsync(new()
 			{
 				Status = 500,
@@ -99,8 +78,6 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
-		// The mocked failure surfaces as the generic fallback error (no
-		// errorCode on the mocked body) and the dialog stays open for retry.
 		var errorBanner = Page.GetByRole(AriaRole.Alert)
 			.Filter(new() { HasTextString = "Unknown error" });
 		await Expect(errorBanner).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -121,16 +98,11 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 				.ToList();
 		}
 
-		// Exactly one draft exists after the failed attempt - the create call
-		// itself succeeded before the mocked time-slot failure, but no second
-		// draft was created by that failure.
 		var draftsAfterFailure = await GetOpportunitiesByTitleAsync("Draft");
 		draftsAfterFailure.Should().HaveCount(1,
 			"the failed time-slot creation must leave exactly the one draft created before it failed");
 		var opportunityId = draftsAfterFailure[0].GetProperty("id").GetString();
 
-		// Retry: same button, same form state. All requests now succeed,
-		// including the previously-failing time slot.
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 

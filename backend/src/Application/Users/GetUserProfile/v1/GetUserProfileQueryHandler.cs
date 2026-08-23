@@ -18,9 +18,6 @@ internal sealed class GetUserProfileQueryHandler(
 			request.UserId.Value,
 			cancellationToken);
 
-		// A query handler runs with no ambient transaction (TransactionPipelineBehavior
-		// only wraps ICommand<T>), so lazily seeding this user's row must be atomic and
-		// idempotent on its own rather than relying on a rollback that will never happen (#1148).
 		var user = await dbContext.GetOrCreateUserAsync(
 			request.UserId, SupportedLanguages.Resolve(request.RequestLanguage), cancellationToken);
 

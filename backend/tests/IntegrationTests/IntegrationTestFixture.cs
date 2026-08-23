@@ -35,16 +35,6 @@ public class IntegrationTestFixture
 
 	public async Task InitializeAsync()
 	{
-		// DistributedApplicationTestingBuilder.CreateAsync<AppHost>() defaults the
-		// AppHost's own hosting environment to "Development", not "Testing" -
-		// passing --environment explicitly is required for AppHost.cs's isTestEnv
-		// gate (skipping the Postgres data volume, pointing Geocoding__BaseUrl at
-		// an unroutable address for #975) to actually activate during test runs.
-		// AppHost.cs bumps RateLimiting__Read__AnonymousPermitLimit to 10000 by
-		// default so VisualTests' concurrent browser sessions don't 429 each
-		// other - but this fixture's own RateLimitingTests.cs deliberately
-		// exercises the real default (60/60s) to prove it actually
-		// rejects excess anonymous requests, so restore that default here.
 		var appHost = await DistributedApplicationTestingBuilder
 			.CreateAsync<AppHost>([
 				"--environment", "Testing",
@@ -95,27 +85,14 @@ public class IntegrationTestFixture
 	public HttpClient CreateHttpClient() =>
 		_app.CreateHttpClient("backend", "http");
 
-	// Resolves the real (Aspire-assigned) base address of the test MinIO
-	// container, for tests that construct a MinioFileStorageService directly
-	// against it (StorageHealthCheckTests.cs) rather than through the backend.
 	public string GetMinioEndpoint()
 	{
 		using var client = _app.CreateHttpClient("minio", "api");
 		return client.BaseAddress!.ToString();
 	}
 
-	/// <summary>
-	/// Mailpit's web/API endpoint. Aspire runs it as the SMTP relay both
-	/// Keycloak's realm config and the backend's SmtpOptions point at, so it
-	/// is the only place to see whether mail actually left a sender rather
-	/// than only that the send call returned 200 (#1070/#1341/#1342).
-	/// </summary>
 	public HttpClient CreateMailpitClient() => _app.CreateHttpClient("mailpit", "webui");
 
-	/// <summary>
-	/// A Keycloak admin-API client, for the handful of contracts that live in
-	/// the realm rather than in this codebase (e.g. its SMTP config).
-	/// </summary>
 	public async Task<HttpClient> CreateKeycloakAdminClientAsync()
 	{
 		var client = _app.CreateHttpClient("keycloak");
@@ -160,21 +137,11 @@ public class IntegrationTestFixture
 			}
 			catch (NpgsqlException) when (attempt < maxAttempts)
 			{
-				// Respawn.ResetAsync occasionally hits a transient read timeout under
-				// CI resource contention (runner under load, a background job briefly
-				// touching a table it's resetting) - a fresh connection and a short
-				// backoff clears it. The app's real ApplicationDbContext already
-				// retries transient Postgres errors via EnableRetryOnFailure; this
-				// fixture talks to Postgres over a raw NpgsqlConnection instead, so
-				// that execution strategy doesn't cover it.
 				await Task.Delay(TimeSpan.FromSeconds(attempt));
 			}
 		}
 	}
 
-	// Test-only escape hatch to simulate an opportunity row removed without
-	// going through the command handler that cancels its engagements first -
-	// e.g. data predating that cancellation safeguard (#703).
 	public async Task DeleteOpportunityRowDirectlyAsync(Guid opportunityId)
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);
@@ -185,11 +152,6 @@ public class IntegrationTestFixture
 		await cmd.ExecuteNonQueryAsync();
 	}
 
-	// Test-only helper for asserting hard-deletes/anonymization at the DB level,
-	// e.g. proving a notification or user row no longer exists after an account
-	// deletion (#829) - there's no API to observe another user's rows directly.
-	// Column names are trusted call-site literals, not user input, so building
-	// the SQL string is fine here even though it wouldn't be for production code.
 	public async Task<int> CountRowsWhereAsync(string table, string column, Guid value)
 	{
 		await using var conn = new NpgsqlConnection(_connectionString);
@@ -201,9 +163,6 @@ public class IntegrationTestFixture
 		return Convert.ToInt32(count);
 	}
 
-	// Test-only escape hatch for asserting that a domain event was captured as an
-	// outbox row transactionally, alongside the triggering command's own writes -
-	// there's no API surface for the outbox itself (#828).
 	public async Task<int> CountOutboxMessagesOfTypeAsync(string domainEventTypeFullName)
 	{
 		await using var context = CreateApplicationDbContext();
@@ -211,9 +170,6 @@ public class IntegrationTestFixture
 			.CountAsync(m => m.Type == domainEventTypeFullName);
 	}
 
-	// Polls for OutboxProcessorJob (Infrastructure/BackgroundJobs/OutboxProcessorJob.cs)
-	// to have picked up and dispatched a message - proving the full write -> background
-	// dispatch -> INotificationHandler<T> round trip, not just the transactional write.
 	public async Task<bool> WaitForOutboxMessageProcessedAsync(
 		string domainEventTypeFullName, TimeSpan timeout)
 	{
@@ -233,10 +189,6 @@ public class IntegrationTestFixture
 		return false;
 	}
 
-	// Test-only escape hatch for driving Infrastructure-internal logic (InternalsVisibleTo,
-	// see Infrastructure.csproj) directly against the real integration Postgres - e.g.
-	// OrganizationMembershipBackfillJob.BackfillAsync, which otherwise only ever runs once
-	// per app boot and can't be re-triggered through the API (#1393).
 	internal ApplicationDbContext CreateApplicationDbContext()
 	{
 		var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -278,23 +230,6 @@ public class IntegrationTestFixture
 		}
 	}
 
-	// Some tests grant a user the realm-level "organisator" role by creating an
-	// organization (CreateOrganization assigns it to the creator). That role is
-	// global and survives ResetKeycloakOrganizationsAsync, which only deletes
-	// organizations - so it leaks into later tests in the shared session and
-	// breaks assumptions that, for example, vera is not an organisator. Revoke it
-	// from every non-baseline user between tests to restore the imported baseline.
-	//
-	// #1677 made the role revocable mid-test too (RemoveMember/DeleteOrganization
-	// now call RevokeOrganizerRoleAsync once a user organizes nothing else). The
-	// local Postgres test DB - reset to empty by ResetDatabaseAsync before every
-	// test - carries no persistent baseline OrganizationMembership row for olaf
-	// the way the real seeded app database does, so any test that has olaf
-	// create-then-delete a throwaway sole organization now legitimately strips
-	// his Keycloak role via that same production code path. Nothing used to need
-	// to restore it, since revocation never happened before #1677. Re-grant it
-	// here if missing, so the baseline invariant "olaf is always an organisator"
-	// holds at the start of every test regardless of what the previous test did.
 	public async Task ResetKeycloakOrganisatorRolesAsync()
 	{
 		var adminToken = await GetAdminTokenAsync();
@@ -363,10 +298,6 @@ public class IntegrationTestFixture
 		}
 	}
 
-	// Test-only escape hatch for asserting a user's realm-level role state
-	// directly against Keycloak (#1677): there's no EinsatzbereitApi surface that
-	// exposes another user's realm roles, so this mirrors
-	// ResetKeycloakOrganisatorRolesAsync's own GET call above.
 	public async Task<bool> UserHasOrganisatorRoleAsync(Guid userId, CancellationToken cancellationToken = default)
 	{
 		var adminToken = await GetAdminTokenAsync();
@@ -383,15 +314,6 @@ public class IntegrationTestFixture
 		return users.Any(u => Guid.Parse(u.Id) == userId);
 	}
 
-	// Test-only escape hatch replicating what the now-removed admin-only
-	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
-	// plain member, without granting the Organizer role. Accepting an
-	// invitation grants Organizer too (#826), so it's the only way left to
-	// reconstruct a plain-member-only state for regression tests (#691, #825).
-	// Also seeds the matching local organization_membership row (Role: Member)
-	// - ChangeMemberRoleCommandHandler (#1050) resolves membership from that
-	// local table, not Keycloak, so callers exercising promote/demote need it
-	// to exist alongside the Keycloak-side membership.
 	public async Task AddPlainMemberDirectlyAsync(
 		Guid organizationId, Guid userId, CancellationToken cancellationToken = default)
 	{
@@ -416,14 +338,6 @@ public class IntegrationTestFixture
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
-	// Creates a brand-new, disposable Keycloak user with the realm's baseline
-	// "user" role. This fixture is shared PerTestSession, so tests that need to
-	// destructively mutate an account (e.g. deleting it, #829) must never touch
-	// the shared vera/olaf/admin seed users - they should operate on a
-	// throwaway account like this one instead. No cleanup is needed even if a
-	// test fails mid-way: unlike the shared seed accounts, a leftover ephemeral
-	// user cannot affect other tests' assumptions since nothing else
-	// references it by name.
 	public async Task<(Guid UserId, string Username, string Password)> CreateEphemeralUserAsync(
 		CancellationToken cancellationToken = default)
 	{

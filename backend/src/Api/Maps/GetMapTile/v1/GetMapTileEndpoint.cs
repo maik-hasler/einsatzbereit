@@ -6,12 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Maps.GetMapTile.v1;
 
-// AllowAnonymous is deliberate: map tiles are rendered on public pages (e.g. an
-// opportunity's location map) before/without a login, and Leaflet's TileLayer
-// has no way to attach a Bearer token to its own tile requests. Proxying tiles
-// through the backend (rather than the frontend calling tile.openstreetmap.org
-// directly) keeps visitor IP addresses from reaching the OpenStreetMap
-// Foundation's tile servers - see docs/ADRs/5_map_and_geocoding_request_proxying.adoc.
 internal sealed class GetMapTileEndpoint : IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

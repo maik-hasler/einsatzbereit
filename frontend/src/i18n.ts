@@ -4,8 +4,6 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 type LocaleModule = typeof import("./locales/en.json");
 
-// Dynamic imports so each language's translation JSON is its own chunk,
-// fetched only for the language actually in use instead of both upfront.
 const localeLoaders: Record<string, () => Promise<LocaleModule>> = {
 	de: () => import("./locales/de.json"),
 	en: () => import("./locales/en.json"),
@@ -33,16 +31,7 @@ void i18next
 	.init({
 		fallbackLng: "de",
 		supportedLngs: ["de", "en"],
-		// i18next defers changeLanguage() (and therefore setting
-		// i18next.language) into a setTimeout by default (#1934) - this
-		// module's custom backend is async regardless (dynamic import), but
-		// language *detection* itself (localStorage/navigator, below) is
-		// synchronous, so there's no need to pay that extra tick. Without
-		// this, `document.documentElement.lang = i18next.language` below
-		// runs before the language is resolved at all, briefly setting
-		// lang="undefined" on every page load until the languageChanged
-		// listener corrects it - a real, deterministic race, not test
-		// noise.
+
 		initAsync: false,
 		detection: {
 			order: ["localStorage", "navigator"],
@@ -55,13 +44,6 @@ void i18next
 		returnNull: false,
 	});
 
-// The web app manifest is built per-locale (vite.config.ts's deManifest/
-// enManifest, #1923) since it's a static file with no per-request negotiation
-// - swapping this link's href is the only lever an SPA has over which one the
-// browser reads for the install prompt/OS app listing. Only "de"/"en" exist;
-// anything else (a future supportedLngs addition without a matching
-// manifest.<lng>.webmanifest) falls back to the German default rather than
-// pointing at a file that doesn't exist.
 function updateManifestLink(lang: string) {
 	const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
 	if (!link) return;

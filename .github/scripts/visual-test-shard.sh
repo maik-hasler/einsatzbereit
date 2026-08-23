@@ -1,36 +1,4 @@
 #!/usr/bin/env bash
-#
-# Emits the Microsoft.Testing.Platform --treenode-filter that selects one shard
-# of the VisualTests suite, so `visual-tests` can fan out across several
-# standard ubuntu-latest runners instead of running the whole suite on one
-# (einsatzbereit#2145). It was 542 cases when this was written and is 232
-# after #2148's rebalance; the split is computed, so the number is only ever
-# context here.
-#
-# TUnit 1.65.31 has no native sharding flag - the full flag list is
-# --list-tests/--treenode-filter/--maximum-parallel-tests/... with nothing that
-# splits a run across machines - so the shard is expressed as a class-name
-# filter, the fallback #2145 called for. Rather than checking a hand-written
-# split into the workflow (where a newly added test class would silently belong
-# to no shard and stop running at all), the split is computed here from the test
-# sources on every run: every class that carries a [Test] lands in exactly one
-# shard by construction.
-#
-# Balance matters because class sizes are wildly uneven - most classes hold
-# 1-5 cases while a handful hold dozens (AccessibilityTests alone held 90 of
-# 542 until einsatzbereit#2148 moved its component-level scans down to
-# vitest-axe) - so classes are packed longest-first into whichever shard is
-# currently lightest (LPT), not split alphabetically.
-#
-# Usage: visual-test-shard.sh <shard-index> <shard-count> [tests-dir]
-#   shard-index  1-based
-#   tests-dir    defaults to backend/tests/VisualTests
-#
-# Writes `key=value` lines on stdout, ready to append to "$GITHUB_OUTPUT":
-#   filter          the --treenode-filter argument for this shard
-#   expected-tests  test cases this shard should run
-#   min-tests       floor to pass to --minimum-expected-tests
-#   classes         test classes in this shard
 set -euo pipefail
 
 if [ "$#" -lt 2 ]; then
@@ -57,16 +25,6 @@ if [ ! -d "$tests_dir" ]; then
 	exit 2
 fi
 
-# Per class: how many test *cases* it contributes, which is not the same as how
-# many [Test] methods it declares - a method carrying [Arguments] expands to one
-# case per [Arguments]. Counting cases rather than methods is what keeps the
-# packing honest (AccountPageHeaderScaleTests declares 2 methods but runs 5).
-#
-# The filter this feeds is written in terms of class names, so a file whose
-# class name does not match its file name would produce a filter clause that
-# matches nothing and silently drop those tests. The whole suite satisfies
-# file-name == class-name today; the check below keeps that a hard requirement
-# rather than an assumption, and fails the run if it ever stops holding.
 discover() {
 	awk '
 		function flush() {
@@ -103,9 +61,6 @@ discover() {
 	' "$tests_dir"/*.cs
 }
 
-# -k1,1nr then -k2,2 so equal-sized classes keep a stable, name-ordered
-# position: the same tree must always produce the same split, or a shard's
-# contents would drift between the two workflows that call this.
 packed=$(discover | sort -k1,1nr -k2,2 | awk -v shard="$shard_index" -v shards="$shard_count" '
 	{ cases[NR] = $1; name[NR] = $2 }
 	END {
@@ -126,11 +81,6 @@ packed=$(discover | sort -k1,1nr -k2,2 | awk -v shard="$shard_index" -v shards="
 			printf("::error::shard %d of %d got no classes - use fewer shards than the %d test classes\n", shard, shards, NR) > "/dev/stderr"
 			exit 1
 		}
-		# The partition is exhaustive by construction, so --minimum-expected-tests
-		# is a gross-breakage tripwire (filter matched nothing, or a fraction of
-		# what it should) rather than an exact-count assertion - it stays below
-		# the expected count so a test that skips itself at runtime does not fail
-		# an otherwise healthy shard.
 		floor = int(load[shard] * 3 / 4)
 		if (floor < 1) floor = 1
 		printf("filter=/*/*/%s/*\n", members[shard])

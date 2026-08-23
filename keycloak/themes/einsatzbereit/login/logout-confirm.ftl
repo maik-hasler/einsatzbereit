@@ -1,18 +1,5 @@
 <#import "template.ftl" as layout>
-<#--
-	The confirmation the app sends people to when it signs them out without an
-	id_token_hint.
 
-	Base pairs the "Sign out" button with a cancel link that only renders when
-	${client.baseUrl} is set - empty for this realm's frontend client - so the
-	page offered exactly one action, and it was the irreversible one. A
-	confirmation dialog with no way to say no is not a confirmation.
--->
-<#-- Computed ahead of the macro call (rather than inside the "form" section
-below) so it can also decide showBackLink=false: when this page renders its
-own Cancel link, template.ftl's generic "Back to Einsatzbereit" safety net
-would just be a second, differently-worded control for the exact same
-destination and effect (#1931). -->
 <#if logoutConfirm.skipLink>
 	<#assign cancelUrl = "">
 <#elseif (client.baseUrl)?has_content>

@@ -25,9 +25,6 @@ internal sealed class DeleteMyAccountCommandHandler(
 
 		foreach (var engagement in engagements)
 		{
-			// Terminate non-terminal engagements before anonymizing so they
-			// stop occupying time-slot capacity and organizers can act on
-			// them, instead of leaving a permanently-stuck nameless row (#1140).
 			if (!engagement.IsCheckedIn && engagement.Status is EngagementStatus.Pending or EngagementStatus.Confirmed)
 				engagement.Withdraw().ThrowIfFailure();
 
@@ -42,25 +39,14 @@ internal sealed class DeleteMyAccountCommandHandler(
 		await dbContext.DeleteInvitationsForUserAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteReportsForReporterAsync(request.UserId, cancellationToken);
 
-		// Reports where this user is the *target* (not the reporter) are
-		// moderation history and intentionally survive - but they need a
-		// deletion timestamp of their own so AbuseReportRetentionJob has
-		// something to measure retention from (#1725).
 		var reportsAgainstUser = await dbContext.GetReportHistoryForTargetAsync(
 			ReportTargetType.User, request.UserId.Value, cancellationToken);
 		foreach (var report in reportsAgainstUser)
 			report.MarkTargetDeleted(DateTimeOffset.UtcNow);
 
-		// Must use FindUserIncludingDeletedAsync (IgnoreQueryFilters), not
-		// dbContext.Users.FindAsync - a shadow-deleted user's row is hidden by
-		// the global !IsDeleted filter and would otherwise silently skip avatar
-		// deletion, MarkAccountDeleted, and the Keycloak deletion it triggers (#1725).
 		var user = await dbContext.FindUserIncludingDeletedAsync(request.UserId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("User.NotFound", "User not found."));
 
-		// The avatar's random object key (issue #1175) can't be reconstructed
-		// from the user id, so it has to come from the stored AvatarUrl instead
-		// of a guessed extension.
 		var avatarObjectKey = user.AvatarUrl is not null
 			? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
 			: null;
@@ -83,12 +69,6 @@ internal sealed class DeleteMyAccountCommandHandler(
 		return true;
 	}
 
-	// Wiping this user's organization_membership row for an organization
-	// where they are the sole organizer would leave it with no one who can
-	// manage it - the same situation RemoveMemberCommandHandler already
-	// refuses to create when an organizer tries to leave. Checked first,
-	// before any destructive step below, so a blocked deletion has no
-	// side effects at all.
 	private async Task EnsureNotSoleOrganizerOfAnyOrganizationAsync(
 		UserId userId,
 		CancellationToken cancellationToken)

@@ -32,9 +32,6 @@ internal sealed class SearchMemberCandidatesEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		// A longer minimum query length raises the cost of using this endpoint
-		// to enumerate the realm-wide user directory rather than find a
-		// specific invite candidate.
 		if (string.IsNullOrWhiteSpace(q) || q.Length < 4)
 			return Results.Ok(Array.Empty<MemberCandidateDto>());
 

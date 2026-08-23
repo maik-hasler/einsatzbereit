@@ -6,21 +6,13 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { fetchVolunteerOpportunities } from "../../lib/volunteerOpportunities";
 
-// Matches the results grid's own breakpoints (grid-cols-1 sm:grid-cols-2
-// xl:grid-cols-3 in OpportunityResultsList.tsx) so a fully-loaded page is
-// always a whole number of rows - the opportunities-fade-tail rule in
-// global.css fades exactly the last row on whichever tier is active, which
-// only lines up if the page size itself is a multiple of that tier's column
-// count. 1280px/640px are hardcoded to match Tailwind's xl/sm defaults, the
-// same approach OrgDashboardPage's useIsLargeViewport takes for its own
-// breakpoint.
 const XL_QUERY = "(min-width: 1280px)";
 const SM_QUERY = "(min-width: 640px)";
 
 function computePageSize(): number {
-	if (window.matchMedia(XL_QUERY).matches) return 9; // 3 cols x 3 rows
-	if (window.matchMedia(SM_QUERY).matches) return 8; // 2 cols x 4 rows
-	return 5; // 1 col
+	if (window.matchMedia(XL_QUERY).matches) return 9;
+	if (window.matchMedia(SM_QUERY).matches) return 8;
+	return 5;
 }
 
 function useOpportunitiesPageSize(): number {
@@ -87,12 +79,7 @@ export function useVolunteerOpportunitiesData(
 					: isRemoteParam === "false"
 						? false
 						: undefined;
-			// Both ends pinned to the visitor's own day boundaries. A bare
-			// `new Date("2026-08-15")` is UTC midnight, so east of Greenwich the
-			// range used to start two hours into its first day and stop the instant
-			// its last day began - dropping everything actually happening on the day
-			// the visitor clicked last, and contradicting the availability marks the
-			// calendar now draws (#1779). Same parse as MiniCalendar's own parseIso.
+
 			const dateFromParsed = dateFrom
 				? new Date(`${dateFrom}T00:00:00`)
 				: undefined;

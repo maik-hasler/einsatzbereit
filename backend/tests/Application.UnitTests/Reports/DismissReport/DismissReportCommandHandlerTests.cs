@@ -28,14 +28,17 @@ public class DismissReportCommandHandlerTests
 	public async Task Handle_ShouldDismissReport_WhenOpen(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var reportId = Guid.CreateVersion7();
 		var report = Report.Create(ReportTargetType.VolunteerOpportunity, Guid.NewGuid(), UserId.New(), ReportReason.Spam, null).Value;
 		_reportRepo
 			.FindAsync(ReportId.Create(reportId).GetValueOrThrow(), cancellationToken)
 			.Returns(report);
 
+		// Act
 		var result = await _sut.Handle(new DismissReportCommand(reportId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		report.Status.Should().Be(ReportStatus.Dismissed);
 		report.ResolvedByUserId.Should().Be(DefaultAdminUserId);
@@ -45,13 +48,16 @@ public class DismissReportCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReportNotFound(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var reportId = Guid.CreateVersion7();
 		_reportRepo
 			.FindAsync(ReportId.Create(reportId).GetValueOrThrow(), cancellationToken)
 			.Returns((Report?)null);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new DismissReportCommand(reportId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}
@@ -60,6 +66,7 @@ public class DismissReportCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReportAlreadyResolved(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var reportId = Guid.CreateVersion7();
 		var report = Report.Create(ReportTargetType.VolunteerOpportunity, Guid.NewGuid(), UserId.New(), ReportReason.Spam, null).Value;
 		report.Dismiss(UserId.New(), DateTimeOffset.UtcNow);
@@ -67,8 +74,10 @@ public class DismissReportCommandHandlerTests
 			.FindAsync(ReportId.Create(reportId).GetValueOrThrow(), cancellationToken)
 			.Returns(report);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(new DismissReportCommand(reportId, DefaultAdminUserId), cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}

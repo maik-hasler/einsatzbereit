@@ -70,10 +70,6 @@ public sealed class Organization
 		return Result.Success();
 	}
 
-	// #1158: Create enforced this length cap only in CreateOrganizationCommandHandler
-	// (deliberately, so the check runs before that handler's Keycloak call), but
-	// Rename had no equivalent cap at all - shared here so both go through the
-	// same rule regardless of caller.
 	private static Result EnsureValidName(string name)
 	{
 		if (string.IsNullOrWhiteSpace(name))
@@ -133,8 +129,5 @@ public sealed class Organization
 		return Result.Success();
 	}
 
-	// Raises OrganizationDeletedDomainEvent (#1218) so the Keycloak organization
-	// deletion - irreversible and external - runs only after the local hard-delete
-	// commits, via the outbox, instead of racing an early return from this handler call.
 	public void Delete() => AddEvent(new OrganizationDeletedDomainEvent(Id));
 }

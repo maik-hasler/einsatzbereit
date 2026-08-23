@@ -76,10 +76,7 @@ internal sealed class NominatimGeocodingService(
 				async () =>
 				{
 					using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-					// Built from the caller's active UI language instead of a
-					// hardcoded "de" first, so an English-speaking volunteer typing
-					// "Munich" gets "Munich" back rather than the German exonym
-					// "Munchen" (#1277).
+
 					var primary = language == "de" ? "de" : "en";
 					var secondary = language == "de" ? "en" : "de";
 					request.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue(primary));
@@ -103,10 +100,6 @@ internal sealed class NominatimGeocodingService(
 		}
 	}
 
-	// Nominatim's usage policy caps combined traffic from this app at one request
-	// per second, regardless of which method triggers the call - the throttle and
-	// _lastRequest timestamp are shared (static) across GeocodeAsync and
-	// SearchCitiesAsync so both stay under that single limit together.
 	private async Task<T> ThrottledAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken)
 	{
 		await Throttle.WaitAsync(cancellationToken);
@@ -130,15 +123,6 @@ internal sealed class NominatimGeocodingService(
 		}
 	}
 
-	// Nominatim's own `addresstype` for the *matched* result - not to be confused
-	// with which fields are present in its address breakdown (every result, even
-	// a street or lake, carries the containing city/town in `address`). Gating on
-	// this instead is what actually restricts suggestions to places, since
-	// `featuretype=city` turned out to be a no-op for free-text `q=` searches
-	// (verified against the live API while investigating #1900) - it let a
-	// street or POI that merely happens to be named after the query (e.g.
-	// "Hans-Leip-Straße") through, which then got mislabeled with its
-	// containing city ("Hamburg") as if that were the actual match.
 	private static readonly HashSet<string> PlaceAddressTypes =
 		new(StringComparer.OrdinalIgnoreCase) { "city", "town", "village", "municipality", "postcode" };
 

@@ -47,9 +47,6 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserHasNoRelationToTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// #1024: GetOrganizationDetails is readable by any org member, not just
-		// organizers - vera has no relation to the org at all here, to prove
-		// the true "stranger" 403 case.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
@@ -73,7 +70,6 @@ public class OrganizationSettingsTests(
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Details Membership Gate Test Org" }, cancellationToken);
 
-		// olaf's org gains vera as a plain member - never promoted to Organizer.
 		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
@@ -93,8 +89,6 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(404);
 	}
-
-	// ── UpdateOrganization ──────────────────────────────────────────────────
 
 	[Test]
 	public async Task UpdateOrganization_ShouldReturn204_WithValidData(
@@ -135,9 +129,6 @@ public class OrganizationSettingsTests(
 	public async Task UpdateOrganization_ShouldReturn400_WhenContactEmailExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1173: [MaxLength] attributes on request records were
-		// never enforced (no validation was registered), so an oversized value
-		// here used to reach the DB unbounded instead of being rejected.
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
@@ -215,9 +206,6 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// vera creates her own organization and becomes its sole member/organizer. Her original
-		// access token predates that role grant, so a fresh token is needed to call organizer-only
-		// endpoints against her own org afterwards.
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraOrg = await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Unrelated Org" }, cancellationToken);
@@ -225,7 +213,6 @@ public class OrganizationSettingsTests(
 		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
 		var veraUserId = veraOrgDetails.Members.Single().UserId;
 
-		// olaf is an organizer of other organizations, but not a member of vera's.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.RemoveMemberAsync(veraOrg.Id.Value, veraUserId, cancellationToken);
@@ -237,21 +224,14 @@ public class OrganizationSettingsTests(
 		stillThere.Members.Should().ContainSingle(m => m.UserId == veraUserId);
 	}
 
-	// ── Per-organization organizer role (#691) ────────────────────────────────
-
 	[Test]
 	public async Task UpdateOrganization_ShouldReturn403_WhenRequestingUserIsAPlainMemberHoldingOrganizerRoleFromAnUnrelatedOrg(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #691: being an organizer of one org (which grants the
-		// platform-wide Keycloak "organisator" role) must not grant authority
-		// over a different org the same user is merely a plain member of.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
-		// vera becomes an organizer of her own, unrelated org - she now holds
-		// the platform-wide "organisator" role.
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 4" }, cancellationToken);
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
@@ -259,8 +239,6 @@ public class OrganizationSettingsTests(
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
 
-		// olaf's org gains vera as a plain member - never promoted to Organizer
-		// of this specific org.
 		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var act = () => veraClient.UpdateOrganizationAsync(
@@ -279,25 +257,17 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldNotFlagMemberAsOrganisator_WhenTheyOnlyOrganizeAnUnrelatedOrg(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1386: GetMembersAsync used to derive each member's
-		// IsOrganisator from Keycloak's platform-wide "organisator" role, so a
-		// plain member here who happens to organize a different org would
-		// incorrectly show as an organizer of this one too. It now answers
-		// per-organization from the local organization_membership table instead.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
-		// vera organizes her own, unrelated org - she holds the platform-wide
-		// Keycloak "organisator" role.
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 5" }, cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Cross-Org Organizer Display Test Org" }, cancellationToken);
 
-		// olaf's org gains vera as a plain member only, never promoted here.
 		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var details = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
@@ -305,8 +275,6 @@ public class OrganizationSettingsTests(
 		details.Members.Should().Contain(m => m.UserId == olaf.Id && m.IsOrganisator);
 		details.Members.Should().Contain(m => m.UserId == vera.Id && !m.IsOrganisator);
 	}
-
-	// ── Invitations ─────────────────────────────────────────────────────────
 
 	[Test]
 	public async Task CreateInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
@@ -318,13 +286,9 @@ public class OrganizationSettingsTests(
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Invite 403 Test Org" }, cancellationToken);
 
-		// vera creates her own, unrelated organization, which grants her the
-		// platform-wide organisator role without making her a member of org.
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org" }, cancellationToken);
 
-		// The ownership check runs before any invitee lookup, so a fabricated
-		// invitee id is enough to prove the 403 fires first.
 		var act = () => veraClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = Guid.NewGuid(), Role = "Organizer" }, cancellationToken);
 
@@ -356,16 +320,6 @@ public class OrganizationSettingsTests(
 	public async Task CreateInvitation_ThenAccept_ShouldPersistMemberRole_NotSilentlyCoerceToOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// #1050: OrganizationInvitationConfiguration.IntendedRole originally had
-		// HasDefaultValue(Organizer) alongside HasConversion<string>() - since
-		// OrganizationMemberRole.Member is the enum's CLR default (0), EF Core
-		// treats any explicitly-set Member value as "unset" and silently
-		// substitutes the database default instead. That bug is invisible to
-		// mocked handler tests (no real SaveChanges/round trip) - only a real
-		// Postgres save-and-reread, as this integration test does, would have
-		// caught it: an invitation created with Role=Member would come back
-		// as Organizer, and the invitee would wrongly become an organizer on
-		// accept. Fixed by dropping the HasDefaultValue from the model.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -389,12 +343,6 @@ public class OrganizationSettingsTests(
 	public async Task AcceptInvitation_ShouldGrantOrganizerCapability_NotJustKeycloakMembership(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #826: accepting an invitation used to only add the
-		// user to Keycloak's org group, never to the local organization_membership
-		// table - so the org never showed up in the invitee's own organization
-		// list, and every org-scoped endpoint (all gated by a per-org Organizer
-		// check) stayed a 403 for them. Accepting now grants full Organizer
-		// capability, so both must work immediately afterwards.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -409,10 +357,6 @@ public class OrganizationSettingsTests(
 		var veraOrganizations = await veraClient.GetOrganizationsAsync(cancellationToken);
 		veraOrganizations.Should().Contain(o => o.Id == org.Id.Value);
 
-		// #1024: GetOrganizationDetails is readable by any member now, so a fresh
-		// token isn't required for the read itself - IsOrganisator per member is
-		// answered from the local organization_membership table (#1386), which
-		// Accept already wrote to synchronously, not from a JWT role claim.
 		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		details.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator);
 	}
@@ -421,8 +365,6 @@ public class OrganizationSettingsTests(
 	public async Task DeclineInvitation_ShouldReturn204AndMarkDeclined_WhenRequestingUserIsTheInvitee(
 		CancellationToken cancellationToken)
 	{
-		// Direct positive-path coverage for #829: Decline had zero tests of any
-		// kind before this, unlike Accept.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -453,7 +395,6 @@ public class OrganizationSettingsTests(
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
-		// admin is neither the inviter nor the invitee - guaranteed not to be vera.
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var act = () => adminClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
@@ -512,7 +453,6 @@ public class OrganizationSettingsTests(
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
-		// admin is neither the inviter nor the invitee - guaranteed not to be vera.
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var act = () => adminClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
@@ -573,8 +513,6 @@ public class OrganizationSettingsTests(
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 3" }, cancellationToken);
 
-		// vera is now an organizer, but not of `org` - dismissing its (now
-		// declined) invitation must still be rejected.
 		var act = () => veraClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
@@ -606,10 +544,6 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsPending(
 		CancellationToken cancellationToken)
 	{
-		// #1040: a pending invitation must be revocable by the organizer before
-		// the invitee acts on it - previously only Declined/Expired invitations
-		// could be dismissed, so an organizer who invited the wrong person had
-		// no way to undo it before they accepted and gained Organizer access.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -625,7 +559,6 @@ public class OrganizationSettingsTests(
 		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
 		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
 
-		// The revoked invitation can no longer be accepted.
 		var act = () => veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(404);
@@ -651,8 +584,6 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
 	}
-
-	// ── Invitation expiry + resend (#1053) ───────────────────────────────────
 
 	[Test]
 	public async Task ResendInvitation_ShouldReturn409_WhenInvitationIsStillPending(
@@ -697,8 +628,6 @@ public class OrganizationSettingsTests(
 		var invitationsAfterResend = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
 		invitationsAfterResend.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.Status == "Pending");
 
-		// Resend must re-surface it in the invitee's own pending list too, not
-		// just flip the status the organizer sees.
 		var veraInvitations = await veraClient.GetMyInvitationsAsync(cancellationToken);
 		veraInvitations.Should().ContainSingle(i => i.Id == invitation.InvitationId);
 	}
@@ -762,9 +691,6 @@ public class OrganizationSettingsTests(
 		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
 	}
 
-	// Simulates InvitationExpiryJob's periodic tick firing well past every
-	// invitation's 14-day window, rather than waiting 14 real days in a test.
-	// 1x1 transparent PNG.
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
@@ -800,8 +726,6 @@ public class OrganizationSettingsTests(
 		await InvitationExpiryJob.ExpireDueInvitationsAsync(dbContext, future, cancellationToken);
 	}
 
-	// ── ChangeMemberRole (promote/demote, #1050) ──────────────────────────────
-
 	[Test]
 	public async Task ChangeMemberRole_ShouldReturn204AndPromoteThenDemote_WhenRequestingUserIsOrganizer(
 		CancellationToken cancellationToken)
@@ -821,7 +745,6 @@ public class OrganizationSettingsTests(
 		var afterPromote = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		afterPromote.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator && m.Role == "Organizer");
 
-		// olaf remains an organizer, so demoting vera back is allowed.
 		await olafClient.ChangeMemberRoleAsync(
 			org.Id.Value, vera.Id, new ChangeMemberRoleRequest { Role = "Member" }, cancellationToken);
 
@@ -859,8 +782,6 @@ public class OrganizationSettingsTests(
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "ChangeMemberRole 403 Test Org" }, cancellationToken);
 
-		// vera creates her own, unrelated organization, which grants her the
-		// platform-wide organisator role without making her a member of org.
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 6" }, cancellationToken);
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
@@ -876,8 +797,6 @@ public class OrganizationSettingsTests(
 		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id && m.IsOrganisator);
 	}
-
-	// ── RemoveMember (last-member protection, #580) ──────────────────────────
 
 	[Test]
 	public async Task RemoveMember_ShouldReturn409_WhenRemovingTheLastRemainingMember(
@@ -901,11 +820,6 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #825: the org has *two* members overall, but only one
-		// Organizer. The old guard only blocked removal when the org had
-		// exactly one member in total, so the organizer here could leave and
-		// permanently orphan the org, since no path exists to promote the
-		// remaining member.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -929,9 +843,6 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldSucceed_WhenAPlainMemberLeavesTheirOwnMembership(
 		CancellationToken cancellationToken)
 	{
-		// #1024: leaving is a self-service action available to any tier - a plain
-		// Member removing themselves used to 403 (the endpoint required the
-		// platform-wide "organisator" role, which a plain Member never holds).
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -951,8 +862,6 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn403_WhenAPlainMemberTriesToRemoveSomeoneElse(
 		CancellationToken cancellationToken)
 	{
-		// Removing another member is still org management and requires Organizer,
-		// even though the requester is a genuine Member of the organization.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -971,8 +880,6 @@ public class OrganizationSettingsTests(
 		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id);
 	}
-
-	// ── DeleteOrganization (#580) ─────────────────────────────────────────────
 
 	[Test]
 	public async Task DeleteOrganization_ShouldReturn401_WhenNotAuthenticated(
@@ -1070,12 +977,6 @@ public class OrganizationSettingsTests(
 		stillThere.Id.Should().Be(org.Id.Value);
 	}
 
-	// Regression for #1213: GetBlockingOpportunitiesForOrganizationAsync used to
-	// materialise every opportunity of the organization with its full time-slot
-	// collection and filter the future-time-slot predicate client-side. Pushing
-	// that filter into SQL must not turn it into an "any time slot at all"
-	// check - an opportunity whose only time slot has already ended, with no
-	// active engagement, must still allow the organization to be deleted.
 	[Test]
 	public async Task DeleteOrganization_ShouldReturn204_WhenOpportunityHasOnlyPastTimeSlotAndNoActiveEngagement(
 		CancellationToken cancellationToken)
@@ -1165,11 +1066,6 @@ public class OrganizationSettingsTests(
 
 		await AddExpiredTimeSlotDirectlyAsync(nonBlockingOpportunity.Id, cancellationToken);
 
-		// The generated client streams the response body straight into the typed
-		// result by default (ReadResponseAsString = false), which always leaves
-		// ApiException.Response empty regardless of what the server sent - opt
-		// into buffering it as a string so the error detail is actually asserted
-		// on below rather than always comparing against "".
 		olafClient.ReadResponseAsString = true;
 
 		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
@@ -1183,12 +1079,6 @@ public class OrganizationSettingsTests(
 		stillThere.Id.Should().Be(org.Id.Value);
 	}
 
-	// CreateTimeSlotAsync's domain validation rejects a past StartDateTime (see
-	// TimeSlot.Validate's "TimeSlot.StartMustBeFuture" rule), so there is no API
-	// path to create an already-expired slot. Seeding one directly through the
-	// aggregate - with an artificially past "now" older than the slot itself -
-	// reproduces what happens for real once enough wall-clock time passes after a
-	// legitimately-created future slot.
 	private async Task AddExpiredTimeSlotDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();

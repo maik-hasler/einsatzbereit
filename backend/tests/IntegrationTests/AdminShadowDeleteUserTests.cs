@@ -3,12 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1666: ApplicationDbContext.GetOrCreateUserAsync and
-// GetOrCreateUsersAsync used to query the User set without IgnoreQueryFilters(),
-// so a shadow-deleted user's row (physically present, hidden by the global
-// !IsDeleted query filter) was treated as missing and re-inserted, 500ing both
-// the shadow-deleted user's own profile load and any organizer's edit of an
-// opportunity that user was signed up to.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
@@ -23,9 +17,6 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 		var (userId, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
 
-		// The very first profile load lazily creates the local `user` row -
-		// GetOrCreateUserAsync must run once before the shadow-delete below has
-		// anything to hide.
 		await volunteerClient.GetUserProfileAsync(cancellationToken);
 
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
@@ -49,11 +40,6 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var volunteerClient = await CreateAuthenticatedClientAsync(volunteerUsername, volunteerPassword);
 
-		// AdminShadowDeleteUserCommandHandler looks up the local `user` row via
-		// a filtered Users.FindAsync and 404s if it's missing -
-		// CreateEngagementCommandHandler only does a nullable lookup on it, it
-		// doesn't lazily create it, so force the same first-load path GetUserProfile
-		// uses before the admin shadow-deletes below.
 		await volunteerClient.GetUserProfileAsync(cancellationToken);
 		await volunteerClient.CreateEngagementAsync(
 			opportunity.Id,
@@ -63,11 +49,6 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 		await adminClient.AdminShadowDeleteUserAsync(volunteerUserId, cancellationToken);
 
-		// City change is a material edit (UpdateVolunteerOpportunityCommandHandler's
-		// AddressTextChanged check), which routes through
-		// OpportunityNotificationHelper.NotifyActiveVolunteersAsync ->
-		// dbContext.GetOrCreateUsersAsync for every actively engaged volunteer -
-		// including the now shadow-deleted one.
 		var act = () => olafClient.UpdateVolunteerOpportunityAsync(
 			opportunity.Id,
 			new UpdateVolunteerOpportunityRequest

@@ -261,9 +261,6 @@ internal sealed class ApplicationDbContext(
 		UserId userId,
 		CancellationToken cancellationToken = default)
 	{
-		// Role.ToString() can't be pushed into the SQL projection below (Npgsql has
-		// no translation for enum-to-string conversion mid-query) - project the raw
-		// enum value instead and stringify it client-side after materializing.
 		var raw = await Set<OrganizationMembership>()
 			.AsNoTracking()
 			.Where(m => m.UserId == userId)
@@ -422,13 +419,6 @@ internal sealed class ApplicationDbContext(
 				FOR UPDATE")
 			.ToListAsync(cancellationToken);
 
-	// VolunteerId != null excludes an anonymized-but-active engagement (a checked-in
-	// engagement left non-terminal on purpose when its volunteer deleted their account,
-	// see DeleteMyAccountCommandHandler) - Engagement.Cancel() refuses to act on an
-	// anonymized aggregate, so an unfiltered read here would hand one to
-	// EngagementCancellationHelper.CancelAsync and permanently 409 the whole
-	// deletion cascade (einsatzbereit#1724). Mirrors the same predicate already used by
-	// EngagementReadRepository.GetActiveVolunteerIdsByOpportunityAsync.
 	public async Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default) =>
@@ -442,14 +432,8 @@ internal sealed class ApplicationDbContext(
 		IReadOnlyCollection<TimeSlotId> timeSlotIds,
 		CancellationToken cancellationToken = default)
 	{
-		// Contains against a List<TimeSlotId?> (nullable-wrapped) translates
-		// fine - unwrapping the nullable value object inside the query (e.g.
-		// e.TimeSlotId!.Value) does not, see the same GroupBy/.Value gotcha in
-		// VolunteerOpportunityReadRepository.GetCalendarEventsAsync.
 		var nullableIds = timeSlotIds.Select(id => (TimeSlotId?)id).ToList();
 
-		// VolunteerId != null - see GetActiveEngagementsForOpportunityAsync above
-		// (einsatzbereit#1724).
 		return await Set<Engagement>()
 			.Where(e => nullableIds.Contains(e.TimeSlotId)
 				&& e.VolunteerId != null
@@ -471,11 +455,6 @@ internal sealed class ApplicationDbContext(
 
 		var now = DateTimeOffset.UtcNow;
 
-		// VolunteerId != null - same reasoning as GetActiveEngagementsForOpportunityAsync
-		// above: without it, an anonymized-but-active engagement (checked-in, volunteer
-		// account deleted) permanently trips this guard and the organization can never be
-		// deleted, since the deletion this guard gates for is what would otherwise resolve
-		// it (einsatzbereit#1724).
 		var opportunityIdsWithActiveEngagements = await Set<Engagement>()
 			.Where(e => opportunityIds.Contains(e.OpportunityId)
 				&& e.VolunteerId != null
@@ -555,9 +534,6 @@ internal sealed class ApplicationDbContext(
 		IReadOnlyCollection<UserId> userIds,
 		CancellationToken cancellationToken = default)
 	{
-		// IgnoreQueryFilters() - a shadow-deleted user's row physically exists
-		// and must count as "existing", or this queues a duplicate-key INSERT
-		// against a row the global !IsDeleted filter merely hid (einsatzbereit#1666).
 		var existing = await Set<User>()
 			.IgnoreQueryFilters()
 			.Where(u => userIds.Contains(u.Id))
@@ -577,9 +553,6 @@ internal sealed class ApplicationDbContext(
 		string? preferredLanguage,
 		CancellationToken cancellationToken = default)
 	{
-		// IgnoreQueryFilters() - same reasoning as GetOrCreateUsersAsync above:
-		// a shadow-deleted user's row must be found here, not re-inserted into
-		// (einsatzbereit#1666).
 		var existing = await Set<User>()
 			.IgnoreQueryFilters()
 			.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
@@ -666,13 +639,6 @@ internal sealed class ApplicationDbContext(
 	public bool HasActiveTransaction =>
 		Database.CurrentTransaction != null;
 
-	// CreateExecutionStrategy() + strategy.ExecuteAsync(...) is required here,
-	// not just Database.BeginTransactionAsync(...) directly - with
-	// EnableRetryOnFailure configured (ServiceCollectionExtensions.cs), EF
-	// Core throws on a manually-began transaction unless the begin/operation/
-	// commit-or-rollback all run as a single retryable unit. A transient
-	// failure re-runs this whole delegate from scratch against a fresh
-	// transaction, so `operation` must be safe to invoke again in that case.
 	public async Task<TResult> ExecuteInTransactionAsync<TResult>(
 		Func<CancellationToken, Task<TResult>> operation,
 		CancellationToken cancellationToken = default)

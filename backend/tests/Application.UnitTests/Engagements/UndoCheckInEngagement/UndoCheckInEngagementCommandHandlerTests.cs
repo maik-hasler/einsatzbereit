@@ -51,6 +51,7 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldUndoCheckIn_WhenEngagementIsCheckedIn(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateCheckedInEngagement(opportunity.Id);
 		var engagementId = engagement.Id;
@@ -60,8 +61,10 @@ public class UndoCheckInEngagementCommandHandlerTests
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.IsCheckedIn.Should().BeFalse();
 		result.Status.Should().Be(EngagementStatus.Confirmed);
 	}
@@ -70,7 +73,7 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsNotCheckedIn(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: Confirmed but never checked in.
+		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), TimeSlotId.New());
 		engagement.Confirm();
@@ -81,8 +84,10 @@ public class UndoCheckInEngagementCommandHandlerTests
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Code.Should().Be("Engagement.CheckInNotActive");
 	}
@@ -91,9 +96,8 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsTerminated(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a checked-in engagement that was subsequently cancelled - Cancel()
-		// never clears IsCheckedIn, so this state is reachable and must still be
-		// rejected rather than silently re-opening a terminated engagement.
+		// Arrange
+
 		var opportunity = CreateOpportunity();
 		var engagement = CreateCheckedInEngagement(opportunity.Id);
 		engagement.Cancel();
@@ -104,8 +108,10 @@ public class UndoCheckInEngagementCommandHandlerTests
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Code.Should().Be("Engagement.AlreadyTerminated");
 		engagement.IsCheckedIn.Should().BeTrue();
@@ -115,7 +121,7 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateCheckedInEngagement(opportunity.Id);
 		var engagementId = engagement.Id;
@@ -128,8 +134,10 @@ public class UndoCheckInEngagementCommandHandlerTests
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		engagement.IsCheckedIn.Should().BeTrue();
@@ -139,13 +147,16 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenEngagementIsGone(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}
@@ -154,9 +165,8 @@ public class UndoCheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenOpportunityIsGone(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: opportunity row is gone (e.g. hard-deleted) but its engagement
-		// survived as a non-terminal row. The ownership guard must not be silently
-		// skipped in this case - it must reject before ever reaching UndoCheckIn.
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var engagement = CreateCheckedInEngagement(opportunityId);
 		var engagementId = engagement.Id;
@@ -166,8 +176,10 @@ public class UndoCheckInEngagementCommandHandlerTests
 
 		var command = new UndoCheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		engagement.IsCheckedIn.Should().BeTrue();

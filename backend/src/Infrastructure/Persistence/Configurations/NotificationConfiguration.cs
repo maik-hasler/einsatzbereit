@@ -60,10 +60,6 @@ internal sealed class NotificationConfiguration
 
 		builder.HasIndex(n => new { n.RecipientId, n.CreatedOn });
 
-		// Supports NotificationRetentionJob's global prune scan (not scoped to a
-		// single recipient like the indexes above) - see einsatzbereit#1209.
-		// Unread rows still prune on CreatedOn (they have no ReadOn); read rows
-		// prune on ReadOn instead (#1725), hence the separate index below.
 		builder.HasIndex(n => new { n.IsRead, n.CreatedOn });
 
 		builder.HasIndex(n => new { n.IsRead, n.ReadOn });

@@ -5,11 +5,6 @@ import {
 	selectUpcomingOpportunities,
 } from "./upcomingOpportunities";
 
-// Every date field is built from an ISO *string*, not a Date, on purpose:
-// that is what the generated client actually hands callers at runtime (it
-// parses responses with a plain JSON.parse and no reviver), even though it
-// types these fields as Date. Constructing the fixtures the way the DTO's
-// TypeScript type suggests would test a shape the app never sees.
 function makeOpportunity(
 	overrides: Partial<VolunteerOpportunitySummary>,
 ): VolunteerOpportunitySummary {
@@ -160,9 +155,6 @@ describe("selectUpcomingOpportunities", () => {
 		]);
 	});
 
-	// The widget resolves its sign-up count through the shared capacity
-	// contract, which needs the participation type to word the "no places to
-	// count" state (#1777).
 	it("carries the participation type through", () => {
 		const items = selectUpcomingOpportunities(
 			[

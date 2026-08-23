@@ -7,10 +7,6 @@ public static class ImageUploadValidator
 {
 	public const long MaxFileSizeBytes = 2 * 1024 * 1024;
 
-	// Multipart form-data adds a boundary marker and per-part headers on top of the raw file
-	// bytes; this small allowance is for the Kestrel-level request body limit (see
-	// RequestSizeLimitMiddleware) so well-formed uploads at the cap don't get rejected by
-	// Kestrel before EnsureValid gets a chance to return its own, more specific error (#1177).
 	public const long MaxRequestBodySizeBytes = MaxFileSizeBytes + 4096;
 
 	public static readonly string[] AllowedContentTypes =
@@ -46,8 +42,6 @@ public static class ImageUploadValidator
 				$"{subject} image must be a JPEG, PNG or WebP image."));
 	}
 
-	// Returns the content-type detected from the actual bytes (magic-byte check), not the
-	// client-declared header, so callers store/serve the file under its real, verified type.
 	public static string EnsureValid(byte[] content, string contentType, string subject)
 	{
 		EnsureValid(content.Length, contentType, subject);

@@ -63,9 +63,6 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 		};
 	}, [logoPreview]);
 
-	// react-hook-form's isDirty alone would miss a picked (but not yet
-	// uploaded) logo - without this, a fully filled form was discarded with no
-	// prompt on Escape, a backdrop click, or Cancel (#1238).
 	function requestClose() {
 		if (isDirty || logoFile !== null) setShowDiscardConfirm(true);
 		else onClose();
@@ -124,8 +121,6 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						fileName: logoFile.name,
 					});
 				} catch {
-					// Non-fatal: the organization was created successfully - the
-					// logo can still be added later from the Settings tab.
 					dispatchToast("warning", t("organization.logoUploadFailedWarning"));
 				}
 			}

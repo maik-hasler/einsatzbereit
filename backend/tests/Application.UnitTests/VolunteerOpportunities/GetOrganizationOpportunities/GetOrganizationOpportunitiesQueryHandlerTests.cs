@@ -99,15 +99,17 @@ public class GetOrganizationOpportunitiesQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller has no membership at all in the target organization.
+		// Arrange
 		_dbContext
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetOrganizationOpportunitiesQuery(DefaultOrgId, DefaultRequestingUserId, OpportunityStatus.Published, 1, 10);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _readRepository.DidNotReceive().GetPagedSummariesByOrganizationAsync(

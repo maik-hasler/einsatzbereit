@@ -9,12 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.Common;
 
-/// <summary>
-/// Notifies affected volunteers, cancels active engagements, and resolves any
-/// open abuse reports against the opportunity - shared by the organizer-triggered
-/// hard delete and the admin-triggered shadow delete flows so a takedown resolves
-/// as completely as a self-service delete (see einsatzbereit#1075, einsatzbereit#1423).
-/// </summary>
 internal static class VolunteerOpportunityDeletionHelper
 {
 	public static async Task DeleteAsync(
@@ -33,13 +27,6 @@ internal static class VolunteerOpportunityDeletionHelper
 		dbContext.VolunteerOpportunities.Delete(opportunity);
 	}
 
-	/// <summary>
-	/// Admin takedown counterpart to <see cref="DeleteAsync"/>: marks the
-	/// opportunity <see cref="Domain.Primitives.ISoftDeletableEntity.IsDeleted"/>
-	/// instead of removing the row, so it disappears from every listing (the
-	/// query filter in VolunteerOpportunityConfiguration) while staying
-	/// restorable.
-	/// </summary>
 	public static async Task ShadowDeleteAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
@@ -73,9 +60,7 @@ internal static class VolunteerOpportunityDeletionHelper
 			opportunity.TitleDe,
 			NotificationKind.OpportunityDeleted,
 			"Opportunity was deleted.",
-			// Kept on: the OpportunityDeleted text says the opportunity was removed
-			// but not that the sign-up went with it, so the volunteer would otherwise
-			// never be told their engagement is cancelled (contrast #1790's cancel flow).
+
 			notifyPerEngagement: true,
 			logger,
 			cancellationToken);

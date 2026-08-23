@@ -1,27 +1,9 @@
-/* Leaflet's own base stylesheet and our brand overrides below it are kept
-in one file, colocated with SingleMarkerMap (this component's sole consumer)
-instead of living in styles/global.css - see #1383. Note this does NOT
-currently split Leaflet's CSS out of the app's single stylesheet into a
-separate on-demand chunk: vite.config.ts sets build.cssCodeSplit: false
-(see the comment there) precisely so CSS always bundles into one file
-regardless of which module - lazy-loaded or not - imports it, after a
-per-chunk-split react-big-calendar stylesheet once raced global.css's
-overrides for the same classes and lost. This file is colocation only
-(so Leaflet's markup and its styling live next to each other, and the two
-rule sets below stay in a fixed, safe relative order - base then override -
-wherever the bundler places this module's output within that single file);
-it ships to every visitor either way. Actually splitting it out would need
-either flipping cssCodeSplit back on (reopening the calendar-CSS ordering
-bug for a fix) or a manual runtime <style> injection, both judged not worth
-it for ~5 kB gzip. */
 @import "leaflet/dist/leaflet.css";
 
-/* ── Leaflet tile filter: desaturate OSM tiles for a clean modern look ───── */
 .leaflet-tile-pane {
 	filter: grayscale(1) brightness(1.05) contrast(0.9);
 }
 
-/* ── Leaflet popup overrides ─────────────────────────────────────────────── */
 .leaflet-popup-content-wrapper {
 	border-radius: 0.75rem;
 	box-shadow:
@@ -54,16 +36,6 @@ it for ~5 kB gzip. */
 	background: none;
 }
 
-/* ── Leaflet attribution link color ──────────────────────────────────────── */
-/* Leaflet ships no color for its attribution links, so they rendered in its
-own default blue instead of the brand green used everywhere else in the app,
-including the manifest theme color (#2058). brand-700 (not a lighter shade)
-keeps this at least as readable as the old color against the semi-transparent
-bar here: #226947 computes to ~6.6:1 against plain white (WCAG
-relative-luminance formula) versus the old #006086's ~7.0:1, both comfortably
-above the 4.5:1 AA floor that made darkening the link color necessary in the
-first place (einsatzbereit#1671); the ODbL-required attribution text itself
-stays untouched. */
 .leaflet-control-attribution a {
 	color: var(--color-brand-700);
 }

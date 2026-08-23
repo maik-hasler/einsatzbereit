@@ -40,14 +40,17 @@ public class DeleteOrganizationLogoCommandHandlerTests
 	public async Task Handle_ShouldClearLogoUrl_WhenOrganizationExists(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganizationWithLogo(orgId);
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 
 		var command = new DeleteOrganizationLogoCommand(orgId, DefaultRequestingUserId);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		organization.LogoUrl.Should().BeNull();
 	}
@@ -56,6 +59,7 @@ public class DeleteOrganizationLogoCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganizationWithLogo(orgId);
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
@@ -65,8 +69,10 @@ public class DeleteOrganizationLogoCommandHandlerTests
 
 		var command = new DeleteOrganizationLogoCommand(orgId, DefaultRequestingUserId);
 
+		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		organization.LogoUrl.Should().NotBeNull();

@@ -5,90 +5,22 @@ import { useQuickActionsList } from "../contexts/QuickActionsContext";
 import Button from "./Button";
 
 interface Props {
-	/**
-	 * Small uppercase kicker above the title - names the page's category.
-	 * ReactNode, not string: the opportunity page puts a link to the owning
-	 * organization here, which is the one piece of chrome that used to live in
-	 * the breadcrumb and has nowhere else to go once the bar is gone.
-	 */
 	eyebrow: ReactNode;
 	title: string;
-	/**
-	 * Overrides the title's `lang` attribute when it's known to differ from
-	 * the active UI language - e.g. a German-only opportunity title shown
-	 * under the English UI (einsatzbereit#2057). Omit when the title is
-	 * always in the UI language (most pages).
-	 */
+
 	titleLang?: string;
-	/** Optional one-line standfirst under the title. */
+
 	lead?: string;
-	/** Same as `titleLang`, for `lead`. */
+
 	leadLang?: string;
-	/** Optional trailing row (a "last updated" chip, a CTA). */
+
 	children?: ReactNode;
-	/**
-	 * Drop the inner max-w-5xl measure so the band's text starts on the same
-	 * left edge as a page whose content fills the full max-w-page column. The
-	 * org app's pages do; the account and legal pages centre a 5xl column and
-	 * want the default.
-	 */
+
 	fullWidth?: boolean;
-	/**
-	 * Use a content-page type scale (text-3xl/sm:text-4xl) for the <h1>
-	 * instead of the marketing-hero scale (text-5xl/sm:text-6xl/lg:text-7xl).
-	 * For pages in the band's account-page family whose content is a short
-	 * form or a thin list, not an introduction - see #1841. The band's brand
-	 * surface (colour, glow blobs, wave cap) is unchanged; only the title
-	 * shrinks.
-	 */
+
 	compactTitle?: boolean;
 }
 
-// Shared title band for the standalone public pages (help, contact, imprint,
-// legal texts). Those pages previously opened with a text-2xl <h1> on plain
-// white, so a visitor arriving from the landing page's footer landed on
-// something that shared none of its visual language - no display face, no
-// brand surface, no wave motif (see issue #1755).
-//
-// The band deliberately reuses what the landing page already established
-// rather than inventing a second system for subpages: brand-800 stage and
-// blur-blob lighting from the hero, WAVE_PATH bottom cap from the org-CTA and
-// founder bands, uppercase brand-200 eyebrow from every section heading there.
-//
-// Layout escapes, because AppLayout's <main> is a padded, max-w-page column
-// and this has to sit edge-to-edge and run *behind* the header:
-//
-//   - `left-1/2 w-screen -translate-x-1/2` breaks out horizontally, the same
-//     pattern HomePage's bands use (safe because global.css sets
-//     html { overflow-x: clip }).
-//   - The negative top margin cancels both <main>'s own top padding and the
-//     flow space the sticky header occupies, sliding the band up underneath
-//     it. The header keeps its z-40, so it paints over the band rather than
-//     being covered by it, and useOverlaysHeader below tells it to go
-//     transparent while that's true. --header-height is added back as top
-//     padding so the eyebrow doesn't start underneath the header bar.
-//
-// The account pages (ProfileOverviewPage, ProfileSettingsPage,
-// MyEngagementsPage) opt into `compactTitle` (#1841): they keep this band's
-// brand surface for the same continuity reason, but their content is a form
-// or a thin list, not an introduction, so the 72px marketing-hero title read
-// as disproportionate. The legal/help/contact pages this band was built for
-// keep the full hero scale - #1841 narrows the type scale for that one page
-// family, it does not revisit the brand-surface decision below.
-//
-// These pages carry no BreadcrumbBar (the pages using this band stopped
-// calling usePageToolbar in #1755): a separate grey bar restating the page
-// title directly above a band that states it in 72px display type was pure
-// duplication, and it drove a hard white line straight through the middle of
-// the treatment.
-//
-// They carry no "back to the home page" link either, and no back link of any
-// kind. Every subpage repeating the same one destination inside its hero was
-// the wrong place for it: a link home is not a property of any individual
-// page, it belongs in the site nav that is on screen everywhere - which is
-// where it lives now (see DesktopHeader's LINKS and MobileMenu's
-// PRIMARY_LINKS). The one surface that does need a genuine one-level-up link,
-// the org app shell, has its own header component (OrgPageHeader) since #1767.
 export default function PageHeaderBand({
 	eyebrow,
 	title,
@@ -100,11 +32,7 @@ export default function PageHeaderBand({
 	compactTitle = false,
 }: Props) {
 	useOverlaysHeader();
-	// Same QuickActionsContext the BreadcrumbBar reads. A page using this band
-	// renders no action bar (see the note above), so without this its
-	// usePageToolbar-published actions - the profile page's Edit/Save/Cancel -
-	// would have nowhere to go. Same keys and data-testids as BreadcrumbBar's
-	// buttons, on-dark variants because this sits on brand-800.
+
 	const actions = useQuickActionsList();
 
 	return (
@@ -119,20 +47,7 @@ export default function PageHeaderBand({
 					className="pointer-events-none absolute -right-20 -bottom-32 h-72 w-72 rounded-full bg-accent-400 opacity-10 blur-3xl"
 				/>
 
-				{/* Two nested constraints, mirroring exactly what the band sits
-				inside: AppLayout's <main> (max-w-page + its responsive px-*),
-				then the max-w-5xl column each consuming page centres within
-				that. Reproducing both is what puts the title on the same left
-				edge as the text it heads - collapsing them into a single
-				max-w-5xl + px-8 lands 32px off, and dropping to max-w-page
-				alone lands ~175px off. The band's *background* still runs edge
-				to edge; only its text is brought into the document measure. */}
 				<div className="relative mx-auto max-w-page px-4 sm:px-6 lg:px-8">
-					{/* Vertical padding tightened from pt+3rem/pb-20. At the old
-					values the band ran ~420px tall to hold an eyebrow, a title and
-					at most two lines of lead - so on /help, /contact and the account
-					pages roughly 60% of the tallest, darkest surface on the page was
-					empty. The type scale is unchanged; only the air around it is. */}
 					<div
 						className={`pt-[calc(var(--header-height)+1.5rem)] pb-10 sm:pt-[calc(var(--header-height)+2rem)] sm:pb-14 ${fullWidth ? "" : "mx-auto max-w-5xl"}`}
 					>
@@ -186,9 +101,6 @@ export default function PageHeaderBand({
 				</div>
 			</div>
 
-			{/* Bottom cap - rotated so the fill sits above the wavy edge, fading
-			this band's own brand-800 into the white page below (same direction
-			the founder band's closing cap uses on HomePage). */}
 			<svg
 				aria-hidden="true"
 				viewBox="0 0 1440 60"

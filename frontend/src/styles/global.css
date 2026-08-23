@@ -1,13 +1,5 @@
 @import "tailwindcss";
 
-/* ── Document color-scheme guard (issue #1120) ────────────────────────────
-No dark theme exists yet - every surface is hard-coded light (bg-white,
-text-gray-900, etc.). Without an explicit color-scheme, browsers/OSes that
-auto-invert unstyled pages (e.g. Chromium's opt-in Android "force dark")
-treat this as fair game and algorithmically invert brand colors and
-overlays into something broken. Declaring light here (mirrored by the
-<meta name="color-scheme"> tag in index.html) tells the browser this page
-is intentionally light-only, so it renders as authored instead of guessing. */
 :root {
 	color-scheme: light;
 }
@@ -49,7 +41,6 @@ html {
 	}
 }
 
-/* ── datetime-local / date / time input normalization ────────────────────── */
 input[type="datetime-local"],
 input[type="date"],
 input[type="time"] {
@@ -70,15 +61,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 	opacity: 1;
 }
 
-/* ── number input: hide spin buttons on non-focus for cleaner look ────────── */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
 	opacity: 0.5;
 }
 
-/* ── react-big-calendar brand overrides ──────────────────────────────────── */
-
-/* Toolbar layout */
 .rbc-toolbar {
 	display: flex;
 	align-items: center;
@@ -96,7 +83,6 @@ input[type="number"]::-webkit-outer-spin-button {
 	text-align: center;
 }
 
-/* Button group base */
 .rbc-btn-group {
 	display: inline-flex;
 }
@@ -157,7 +143,6 @@ input[type="number"]::-webkit-outer-spin-button {
 	background: var(--color-brand-800);
 }
 
-/* Grid borders */
 .rbc-month-view,
 .rbc-time-view {
 	border: 1px solid rgb(229 231 235);
@@ -165,12 +150,6 @@ input[type="number"]::-webkit-outer-spin-button {
 	overflow: hidden;
 }
 
-/* Agenda view scrolls horizontally rather than squeezing its fixed-width
-date/time columns down to nothing - table.rbc-agenda-table below gets a
-min-width so the browser has something to scroll to instead of just
-shrinking the flexible EVENT column to a few characters. overflow-y stays
-hidden (matching the month/time views above) since WidgetCard's own
-overflow-y-auto already handles vertical scrolling. */
 .rbc-agenda-view {
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
@@ -200,12 +179,10 @@ overflow-y-auto already handles vertical scrolling. */
 	border-left: 1px solid rgb(229 231 235);
 }
 
-/* Today highlight */
 .rbc-today {
 	background: rgb(240 250 245);
 }
 
-/* Events */
 .rbc-event {
 	border-radius: 0.25rem;
 	padding: 0.125rem 0.375rem;
@@ -265,10 +242,7 @@ overflow-y-auto already handles vertical scrolling. */
 .rbc-agenda-view table.rbc-agenda-table {
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
-	/* Forces the table (and its fixed-width date/time columns) to keep a
-	readable layout instead of the browser's table auto-layout shrinking the
-	only flexible column (EVENT) down to a couple of characters on a narrow
-	widget - the wrapping .rbc-agenda-view above scrolls horizontally to it. */
+
 	min-width: 30rem;
 }
 
@@ -314,7 +288,6 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 	color: var(--color-brand-800);
 }
 
-/* Mobile: stack toolbar vertically */
 @media (max-width: 640px) {
 	.rbc-toolbar {
 		flex-direction: column;
@@ -325,12 +298,6 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 		text-align: center;
 	}
 
-	/* Even stacked onto its own row, a group of 5 view buttons (or 3 nav
-	buttons in a longer locale) can still be wider than a narrow widget -
-	scroll that one row horizontally instead of letting it overflow into
-	html's page-wide overflow-x: clip, where it'd be unreachable. Anchored
-	to flex-start (not the centered default) so the first button - not just
-	the ones nearer the middle - is always reachable at scrollLeft: 0. */
 	.rbc-btn-group {
 		justify-content: flex-start;
 		overflow-x: auto;
@@ -343,39 +310,6 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 	}
 }
 
-/* ── Dashboard widget grid: row height tracks column width ───────────────
- * A widget's stored width/height (OrgDashboardPage/widgetCatalog.ts) are
- * grid-cell counts meant to describe one consistent on-screen shape -
- * that only holds if a cell is the same shape on every screen. grid-cols-8
- * already makes column width a fraction of the container (so it scales
- * with the viewport); rows need the same treatment, or a widget's
- * proportions warp between a wide monitor and a narrower one even though
- * its cell counts never changed. Container query units key off this
- * element's own measured width rather than the viewport, matching exactly
- * what a column's 1fr track resolves to (100cqw minus the N-1 inter-column
- * gaps, split across N columns). Floored at 64px so rows stay usable on
- * the narrowest qualifying (`lg`, 1024px) viewport.
- *
- * --dashboard-grid-columns defaults to the full GRID_COLUMNS (8) - a row
- * band capped to fewer than that (#1932, see groupIntoRowBands in
- * widgetCatalog.ts and OrgDashboardPage/index.tsx) overrides it inline so
- * its own row height still tracks its own (narrower) rendered width the
- * same way the full-width grid already does, instead of assuming 8
- * columns' worth of gaps that aren't actually there.
- *
- * The uniform square row height only actually matters while editing (see
- * the --editing modifier below) - that's what keeps the placement backdrop's
- * guide cells and the drag/resize affordance predictable. Outside edit mode
- * there's no backdrop to keep in sync, so rows are left at their initial
- * (content-sized) height and align-items: start stops a short widget from
- * being stretched to match a taller sibling in the same row - a card with
- * one line of real content no longer claims a full square cell of empty
- * white space (#2045). EditableWidgetTile/WidgetCard still opt into h-full
- * while editing so the uniform cell continues to render as one full tile.
- * align-items is scoped to :not(--editing) specifically because the
- * placement backdrop's own guide cells (OrgDashboardPage's guideCells) have
- * no explicit height of their own and depend on the default stretch to fill
- * their cell while editing - align-items: start would collapse them. */
 .dashboard-widget-grid {
 	container-type: inline-size;
 	--dashboard-grid-columns: 8;
@@ -397,13 +331,6 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 	}
 }
 
-/* ── Header offset tokens (issue #1130) ───────────────────────────────────
-Header.tsx's header is `sticky`, not `fixed`, so it already occupies flow
-space above AppLayout's <main> - --main-top-padding is just <main>'s own
-breathing room below it. --header-height is MobileMenu's own reference
-point for its below-the-header scrim/panel. Both tokens are defined once
-here so AppLayout and Header can no longer drift out of sync with each
-other or with Header's actual height. */
 :root {
 	--header-height: 4rem;
 	--main-top-padding: 1.5rem;
@@ -421,15 +348,6 @@ other or with Header's actual height. */
 	}
 }
 
-/* ── Global focus-visible ring (issue #992) ──────────────────────────────
-A single shared token instead of the browser's inconsistent default outline
-or ad-hoc per-component ring utilities. Dual-tone (brand outline + white
-halo) so it stays visible whether the focused element sits on a light
-surface or the dark hero section - no single flat color has enough
-contrast against both. Written outside any @layer so it takes priority
-over Tailwind's layered focus-visible:outline-none/ring-* utilities
-regardless of specificity (see .rbc-btn-group/.rbc-event above for the
-same unlayered-override pattern already used in this file). */
 :root {
 	--focus-ring-color: var(--color-brand-700);
 }
@@ -443,25 +361,8 @@ same unlayered-override pattern already used in this file). */
 }
 
 @theme {
-	/* Source Sans 3 (self-hosted via @fontsource-variable/source-sans-3,
-	imported once in main.tsx) replaces Tailwind's default OS-UI-font stack
-	everywhere - Preflight derives html's font-family from --font-sans (see
-	tailwindcss/preflight.css), so this one override is enough. Adobe's
-	first open-source type family, purpose-built for legibility at small UI
-	sizes rather than display use - a deliberate fit for a form/table/modal-
-	dense app over a flashier display face. Its glyph widths track close to
-	(if anything, slightly narrower than) the OS-UI stack it replaces, which
-	matters here: several fixed-size surfaces (toasts, modals) sit close
-	enough to each other at common viewport sizes that a visibly wider
-	typeface can shift a toast's fitted width enough to newly overlap a
-	nearby control. Variable weight axis covers 200-900 in one file,
-	matching every font-weight utility already in use (font-medium through
-	font-black) without extra @font-face declarations. */
 	--font-sans: "Source Sans 3 Variable", ui-sans-serif, system-ui, sans-serif;
 
-	/* Display face - hero h1 and major section h2s only (font-display
-	utility), see main.tsx's font import comment. Everything else (body,
-	labels, UI chrome) stays on --font-sans above. */
 	--font-display: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
 
 	--color-brand-50: #f0faf5;
@@ -474,27 +375,13 @@ same unlayered-override pattern already used in this file). */
 	--color-brand-700: #226947;
 	--color-brand-800: #1a3c2b;
 	--color-brand-900: #0e251a;
-	/* Was #5ac48a - a near-duplicate of --color-brand-400 (#5bbf8c), so every
-	spot meant to read as a deliberate second tone (the footer CTA card, the
-	hero's third glow blob and its flat "stone-4" fill) instead just blended
-	back into the same green ramp. Warm gold gives those spots real hue
-	separation from the all-green rest of the page rather than another shade
-	of it - kept off Tailwind's stock amber-500 (#f59e0b) and clear of the
-	warning chip's amber-700 (#b45309, browner/darker) so it doesn't read as
-	a caution color by association. */
+
 	--color-accent-400: #f0b23a;
 
-	/* Card/container radius - buttons and inputs keep their own rounded-xl (12px), see Button.tsx / lib/formClasses.ts */
 	--radius-card: 1rem;
 
-	/* Site content column (max-w-page) - Header, Footer, AppLayout and
-	OrgAppLayout all share this single width so the nav bar, page content
-	and boxed sections (e.g. HomePage's hero) line up edge-to-edge instead
-	of drifting out of sync. Wider than Tailwind's default 7xl (80rem) to
-	match the otter.com reference used for the marketing redesign. */
 	--container-page: 90rem;
 
-	/* Elevation scale: resting cards, raised/hover state, and true overlays (modals/popovers) */
 	--shadow-resting:
 		0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.06);
 	--shadow-raised:

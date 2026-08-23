@@ -24,14 +24,17 @@ public class DeleteNotificationCommandHandlerTests
 	public async Task Handle_ShouldDeleteNotificationAndReturnTrue_WhenRequestingUserIsTheRecipient(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new DeleteNotificationCommand(notification.Id, recipientUserId.Value);
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeTrue();
 		_notificationRepo.Received(1).Delete(notification);
 	}
@@ -40,12 +43,15 @@ public class DeleteNotificationCommandHandlerTests
 	public async Task Handle_ShouldReturnFalse_WhenNotificationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var notificationId = NotificationId.New();
 		_notificationRepo.FindAsync(notificationId, cancellationToken).Returns((Notification?)null);
 		var command = new DeleteNotificationCommand(notificationId, Guid.NewGuid());
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
+		// Assert
 		result.Should().BeFalse();
 		_notificationRepo.DidNotReceiveWithAnyArgs().Delete(default!);
 	}
@@ -54,17 +60,18 @@ public class DeleteNotificationCommandHandlerTests
 	public async Task Handle_ShouldReturnFalseAndNotDelete_WhenRequestingUserIsNotTheRecipient(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new DeleteNotificationCommand(notification.Id, Guid.NewGuid());
 
+		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Same ownership-check shape as MarkNotificationRead/MarkNotificationUnread
-		// (einsatzbereit#829): a cross-user attempt collapses into the same
-		// "false" result as a nonexistent id, and never touches the row.
+		// Assert
+
 		result.Should().BeFalse();
 		_notificationRepo.DidNotReceiveWithAnyArgs().Delete(default!);
 	}

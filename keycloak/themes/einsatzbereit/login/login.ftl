@@ -10,11 +10,7 @@
 
 	<#elseif section = "form">
 		<#if realm.password>
-			<#-- No positive tabindex values anywhere in this theme. They used to
-			run 2,3,5,6,7,8 here, which puts every one of these controls ahead of
-			every element without a tabindex - including the language switcher and
-			the logo above them - regardless of where they sit in the document. DOM
-			order is already the order a person reads the form in. -->
+
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
 				<div class="form-group">
@@ -42,11 +38,7 @@
 							</#if>
 						</label>
 					</div>
-					<#-- One combined message for both fields, deliberately: naming
-					which of the two was wrong tells an attacker whether the account
-					exists. The `required` attributes above are what stop an empty
-					password from reaching the server and coming back as this
-					message pointed at the username field. -->
+
 					<#if messagesPerField.existsError('username','password')>
 						<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 							${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}

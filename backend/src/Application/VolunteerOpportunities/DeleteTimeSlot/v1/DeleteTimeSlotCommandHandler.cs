@@ -47,14 +47,6 @@ internal sealed class DeleteTimeSlotCommandHandler(
 		return await DeleteSeriesAsync(opportunity, targetSlot, request.Scope, cancellationToken);
 	}
 
-	/// <summary>
-	/// "This and following"/"entire series": unlike the single-slot delete
-	/// above, active engagements don't block the delete - they're force-
-	/// cancelled and their volunteers notified instead, so cancelling a whole
-	/// recurring series doesn't require the organizer to first hunt down and
-	/// individually cancel every affected sign-up (einsatzbereit#1058). Past
-	/// occurrences are left alone regardless of scope, preserving history.
-	/// </summary>
 	private async ValueTask<DeleteTimeSlotResult> DeleteSeriesAsync(
 		VolunteerOpportunity opportunity,
 		TimeSlot targetSlot,
@@ -83,8 +75,7 @@ internal sealed class DeleteTimeSlotCommandHandler(
 				engagement,
 				"The recurring time slot series was cancelled.",
 				opportunity.TitleDe,
-				// Deleting slots out of a series raises no opportunity-level
-				// notification, so this is the volunteer's only in-app signal.
+
 				notifyVolunteer: true,
 				logger,
 				cancellationToken);

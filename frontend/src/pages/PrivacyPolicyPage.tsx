@@ -12,9 +12,6 @@ export default function PrivacyPolicyPage() {
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
-	// Ids are stable slugs rather than the section numbers, so an anchor a
-	// visitor bookmarked still points at the same clause if a section is ever
-	// inserted above it.
 	const sections = [
 		{ id: "controller", label: t("privacyPolicy.section1Title") },
 		{ id: "data-collected", label: t("privacyPolicy.section2Title") },
