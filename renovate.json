@@ -89,8 +89,8 @@
         "/^\\.github/workflows/publish\\.yml$/"
       ],
       "matchStrings": [
-        "quay\\.io/minio/minio:(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z)",
-        "quay\\.io/minio/minio\",\\s*\"(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z)"
+        "quay\\.io/minio/minio:(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z(?:\\.hotfix\\.[0-9a-f]+)?)",
+        "quay\\.io/minio/minio\",\\s*\"(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z(?:\\.hotfix\\.[0-9a-f]+)?)"
       ],
       "datasourceTemplate": "docker",
       "depNameTemplate": "quay.io/minio/minio"

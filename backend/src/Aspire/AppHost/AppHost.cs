@@ -14,7 +14,7 @@ var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "v1.31.
 	.WithHttpEndpoint(port: 1080, targetPort: 8025, name: "webui", isProxied: false)
 	.WithEndpoint(port: 1025, targetPort: 1025, name: "smtp", scheme: "tcp", isProxied: false);
 
-var minio = builder.AddContainer("minio", "quay.io/minio/minio", "RELEASE.2025-10-15T17-29-55Z")
+var minio = builder.AddContainer("minio", "quay.io/minio/minio", "RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772")
 	.WithArgs("server", "/data", "--console-address", ":9001")
 	.WithEnvironment("MINIO_ROOT_USER", "minio")
 	.WithEnvironment("MINIO_ROOT_PASSWORD", "minio123")
