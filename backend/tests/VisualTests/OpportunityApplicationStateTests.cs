@@ -5,38 +5,21 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// Two of this class's three cases moved (#2162): the hard-navigation
+// already-applied case became an absence assertion paired with the existing
+// positive "Confirmed"/"Pending" render in
+// F/pages/VolunteerOpportunityDetailPage.test.tsx, and the duplicate-signup
+// case's frontend half (the 409 -> "already signed up" mapping, not
+// "Unknown error") moved to F/components/SignUpModal.test.tsx - its backend
+// half was already covered by IntegrationTests'
+// CreateEngagement_ShouldReturn409_WhenVolunteerAlreadySignedUp. This one
+// case stays: it drives two independent browser tabs racing an anonymous and
+// an authenticated GET against the real backend, which is exactly the kind
+// of transient auth-hydration timing the RTL test harness resolves
+// synchronously and so cannot reproduce.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	[Test]
-	public async Task DetailPage_KeepsAlreadyAppliedStatus_AfterHardNavigation()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync("HardNav");
-		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.GotoAsync(detailUrl);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		await Page.Locator("textarea").FillAsync("Applying via VisualTests regression check.");
-
-		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.GotoAsync(detailUrl);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Expect(Page.GetByTestId("application-status").GetByText("Your sign-up", new() { Exact = true }))
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
-			.Not.ToBeVisibleAsync();
-	}
-
 	[Test]
 	public async Task DetailPage_KeepsAlreadyAppliedStatus_WhenEarlierUnauthenticatedResponseResolvesLast()
 	{
@@ -80,46 +63,6 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Expect(signUpStatus).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
-	}
-
-	[Test]
-	public async Task SignUpModal_ShowsBackendConflictMessage_OnDuplicateSignUp()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		var opportunityId = await CreateIndividualContactOpportunityAsync("DuplicateError");
-		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.GotoAsync(detailUrl);
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		await Page.Locator("textarea").FillAsync("First sign-up attempt.");
-
-		var page2 = await Context.NewPageAsync();
-		await AuthHelper.FastSignInAsync(page2, Fixture, frontend, "vera", "vera123", pinActiveOrg: false);
-		await page2.GotoAsync(detailUrl);
-		await page2.WaitForLoadStateAsync(LoadState.NetworkIdle);
-		await page2.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		await page2.Locator("textarea").FillAsync("Second (duplicate) sign-up attempt.");
-
-		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var secondSignUpResponseTask = page2.WaitForResponseAsync(r =>
-			r.Url.Contains($"/volunteer-opportunities/{opportunityId}/engagements") &&
-			r.Request.Method == "POST");
-		await page2.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
-		var secondSignUpResponse = await secondSignUpResponseTask;
-		secondSignUpResponse.Status.Should().Be(409);
-
-		var errorText = await page2.GetByRole(AriaRole.Alert).First.TextContentAsync();
-		errorText.Should().NotBeNullOrEmpty();
-		errorText.Should().NotContain("Unknown error");
-		errorText.Should().Contain("already signed up");
 	}
 
 	private async Task<string> CreateIndividualContactOpportunityAsync(string label)

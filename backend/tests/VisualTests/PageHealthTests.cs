@@ -2,6 +2,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// Stays E2E (#2162, reconciling #2159's classification): this boots the real
+// frontend against the real backend and fails on any console error or failed
+// request - a real-stack integration smoke check that a mocked-API RTL test
+// cannot reproduce, since a mocked call never fails the way a real
+// misconfiguration (a broken script tag, a CORS error, a 404 static asset)
+// does. Cheap (one page load) for what it catches.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class PageHealthTests(AspireFixture fixture) : VisualTestBase(fixture)
 {

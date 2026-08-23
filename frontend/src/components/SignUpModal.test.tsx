@@ -118,6 +118,30 @@ describe("SignUpModal message field", () => {
 	});
 });
 
+describe("SignUpModal duplicate sign-up conflict", () => {
+	it("states the specific reason rather than a generic unknown error", async () => {
+		open([], "en", "IndividualContact");
+		api.createEngagement.mockRejectedValue({
+			status: 409,
+			errorCode: "Engagement.AlreadySignedUp",
+		});
+
+		await userEvent.type(
+			screen.getByLabelText(/Message/),
+			"Please let me help.",
+		);
+		await userEvent.click(
+			screen.getByRole("button", { name: "Express interest" }),
+		);
+
+		const error = await screen.findByRole("alert");
+		expect(error).toHaveTextContent(
+			"You are already signed up for this opportunity.",
+		);
+		expect(error).not.toHaveTextContent("Unknown error");
+	});
+});
+
 describe("SignUpModal slot picker", () => {
 	it("states how full each slot already is", async () => {
 		open([slot("slot-a", 9, 0), slot("slot-b", 14, 3)]);

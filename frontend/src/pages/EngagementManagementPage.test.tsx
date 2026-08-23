@@ -182,6 +182,80 @@ describe("EngagementManagementPage check-in state", () => {
 	});
 });
 
+describe("EngagementManagementPage status filter", () => {
+	it("re-fetches by status and shows the empty state when nothing matches", async () => {
+		const pending = engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera", {
+			status: "Pending",
+		});
+		const confirmed = engagement(
+			"aaaaaaaa-0000-0000-0000-000000000002",
+			"Vera",
+			{ status: "Confirmed" },
+		);
+		api.getEngagements.mockImplementation((_id, _page, _size, status) => {
+			const items =
+				status === "Pending"
+					? [pending]
+					: status === "Confirmed"
+						? [confirmed]
+						: [pending, confirmed];
+			return Promise.resolve({
+				items,
+				pageCount: 1,
+				totalCount: items.length,
+				currentPage: 1,
+			});
+		});
+
+		renderPage();
+
+		await screen.findAllByText("Vera");
+
+		await userEvent.selectOptions(screen.getByLabelText("Status"), "Pending");
+		expect(await screen.findAllByText("Vera")).toHaveLength(1);
+
+		await userEvent.selectOptions(screen.getByLabelText("Status"), "Confirmed");
+		await waitFor(() =>
+			expect(api.getEngagements).toHaveBeenLastCalledWith(
+				OPPORTUNITY_ID,
+				1,
+				10,
+				"Confirmed",
+				undefined,
+				undefined,
+			),
+		);
+		expect(await screen.findAllByText("Vera")).toHaveLength(1);
+	});
+});
+
+describe("EngagementManagementPage confirm button (#2148 core journey)", () => {
+	it("moves a pending application to confirmed", async () => {
+		const pending = engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera", {
+			status: "Pending",
+		});
+		mockPage([pending]);
+		api.confirmEngagement.mockResolvedValue({
+			...pending,
+			status: "Confirmed",
+		});
+
+		renderPage();
+
+		const row = (await screen.findByText("Vera")).closest("li") as HTMLElement;
+		expect(within(row).getByText("Pending")).toBeInTheDocument();
+
+		await userEvent.click(
+			within(row).getByRole("button", { name: /^Confirm/ }),
+		);
+
+		await waitFor(() =>
+			expect(within(row).getByText("Confirmed")).toBeInTheDocument(),
+		);
+		expect(within(row).queryByText("Pending")).toBeNull();
+	});
+});
+
 describe("EngagementManagementPage in German", () => {
 	it("cancels with 'absagen', never 'stornieren'", async () => {
 		const confirmed = engagement(

@@ -628,6 +628,113 @@ So folding to three costs ~40 s of critical path and saves one runner; folding t
 ====
 
 - *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
++
+[NOTE]
+====
+*The #2159 residue, reconciled (issue #2162, 2026-08-23).* #2152 closed #2159 against its headline number - 134 confirmed-movable cases - but #2159's own summary table and its per-case detail section disagreed on the count: the table budgeted "25 further classes | 1 each", the detail section named roughly 44 distinct single-case classes. #2152 executed against the table and left **16 classes / 23 `[Test]` methods** never moved and never re-refuted in writing. This note is that refutation pass, run the same way #2159's own method describes: each class read in full with helpers resolved, then classified adversarially rather than trusted at face value.
+
+*The result is not "move all 16".* Nine of the sixteen classes turned out to need the same adversarial second look #2152 gave everything else - some were correctly movable, some were wrongly classified as movable by #2159's rushed detail pass, and two classes each split into a case that moves and a case that cannot.
+
+[cols="2,1,3" options="header"]
+|===
+|Class |Cases |Disposition
+
+|`EngagementCalendarTests`
+|1
+|Split. Calendar-link rendering (Google/Outlook/Apple/download hrefs) -> `F/components/AddToCalendarMenu.test.tsx` (new). ICS content, headers and filename -> `IntegrationTests/EngagementTests.cs` (new case), hitting the real `/v1/engagements/{id}/calendar` endpoint - the string-building itself was already unit-tested, this closes the Api-layer wiring gap.
+
+|`MyEngagementsTests`
+|2
+|Split. The org-name-link case -> `ActivitySection.test.tsx`. The sr-only-heading case *stays*: it measures a rendered box height (`BoundingBoxAsync`), which jsdom cannot do.
+
+|`EngagementManagementFiltersTests`
+|1
+|Moved -> `EngagementManagementPage.test.tsx`. The status filter drives a new API call per selection; nothing here needs a browser.
+
+|`MyEngagementsTimeSlotTests`
+|1
+|Moved -> `ActivitySection.test.tsx`. Pure rendering of an already-fetched engagement's time slot.
+
+|`OpportunityApplicationStateTests`
+|3
+|Split, and the one case #2159 never separately counted turns out to be the interesting one. The hard-navigation case -> an absence assertion added next to the existing positive "Confirmed"/"Pending" renders in `VolunteerOpportunityDetailPage.test.tsx` (#2159's own hazard 1: pair every absence with a positive proving the branch was reached). The duplicate-sign-up case's frontend half (409 maps to "already signed up", not "Unknown error") -> `SignUpModal.test.tsx`; its backend half was already covered by `IntegrationTests`' `CreateEngagement_ShouldReturn409_WhenVolunteerAlreadySignedUp`, so nothing new was needed there. The race-condition case *stays*: it depends on a real anonymous-then-authenticated fetch ordering during OIDC hydration that the RTL harness's synchronous `auth` prop cannot reproduce - `renderWithProviders` never models a transient anonymous phase.
+
+|`OpportunityUnpublishCancelTests`
+|2
+|Split, both cases the same way. The UI section-transition and action-menu-visibility half -> `OrgOpportunitiesPage.test.tsx`. The cascade-cancel half (does unpublishing/cancelling really flip a confirmed engagement to `Cancelled`, with the organizer's reason on cancel) -> two new `IntegrationTests/EngagementTests.cs` cases using the real outbox pipeline (`fixture.WaitForOutboxMessageProcessedAsync`, the same pattern `NotificationTests.cs` already uses) - previously *only* this E2E class exercised that cascade through a real HTTP call; the handlers were unit-tested with mocks but the wiring was not.
+
+|`OpportunityDetailStatusCardTimeSlotTests`
+|1
+|Moved -> `VolunteerOpportunityDetailPage.test.tsx`. Pure rendering, same shape as the existing pending/confirmed status-card tests.
+
+|`PageHealthTests`
+|1
+|*Stays, correcting #2159.* Boots the real frontend against the real backend and fails on any console error or failed request. No mocked-API RTL test can reproduce what this catches - a mocked call never fails the way a real misconfiguration does.
+
+|`SmokeTests`
+|2
+|*Deleted as redundant* - see below, this is the SmokeTests/EngagementCoreJourneysTests contradiction the issue asked to resolve explicitly.
+
+|`SignInAccountLocaleTests`
+|1
+|*Stays, correcting #2159.* Real Keycloak login for a throwaway user, asserting a real post-login locale-sync side effect. This is exactly #2152's own "26 cases: a real Keycloak round trip -> No" row; #2159's detail-pass classified it movable in evident tension with the table its own PR published.
+
+|`InitialLocaleResolutionTests`
+|1
+|*Stays, correcting #2159.* Asserts locale determinism across repeated real hard navigations (full page loads). The risk is a fresh-boot i18next detection race that only exists across a real reload cycle - `renderWithProviders` builds one already-initialized i18n instance per render and never re-runs that boot sequence.
+
+|`CheckInModalDeletedOpportunityTests`
+|1
+|Moved -> `CheckInModal.test.tsx`. The component already renders the same generic `loadError` message on any failed detail fetch; the "opportunity deleted after the list loaded" framing was one way to *produce* a 404, not something the assertion depends on.
+
+|`LocalizedCheckInPinErrorTests`
+|1
+|Moved -> `CheckInModal.test.tsx`. Pure i18n-mapping of a check-in rejection to localized copy.
+
+|`CheckInPinOrganizerSetTests`
+|2
+|Moved (UI half only) -> `CreateVolunteerOpportunityModal.test.tsx`, asserting the wizard sends the typed/generated PIN exactly. The "backend persists it exactly, doesn't regenerate" half was already covered by `Application.UnitTests`' `Handle_ShouldUseGivenCheckInPin`.
+
+|`EngagementCoreJourneysTests`
+|2
+|Moved, both cases - see below, this is the other half of the contradiction.
+
+|`OrgDashboardSettingsIconWidgetTests`
+|1
+|Moved -> `SettingsIconWidget.test.tsx` (new, colocated the way `CalendarWidget.test.tsx`/`QuickCheckInWidget.test.tsx` already are). Pure rendering: the label span renders unconditionally regardless of widget size.
+|===
+
+*The part that actually needed a decision, not just re-classification.* #2159 flagged both `SmokeTests.Login_AsVera_CompletesAndReturnsToHome` and all of `EngagementCoreJourneysTests` as movable; the issue that carried this residue forward (#2162) pointed out that both read, by name, like exactly the critical journeys #2148 says must stay E2E - and that #2148 and #2159 had never been reconciled on this point. Reading the bodies rather than the names resolves it in both directions, not by splitting the difference:
+
+* *`SmokeTests.Login_AsVera_CompletesAndReturnsToHome` does not test a login journey at all.* It calls `AuthHelper.FastSignInAsync`, which mints a token directly into `sessionStorage` to *skip* the Keycloak round trip - the same shortcut every other precondition-only test in this suite uses. The only thing it asserts is that the post-"login" URL is `/`. `AuthGuardTests.SignIn_WithValidCredentials_ReachesAuthenticatedHomePage` already drives the real Keycloak form and reaches the same authenticated home page, so this case is redundant with a case that actually exercises the journey it claims to. `SmokeTests.HomePage_LoadsForAnonymousUser` is redundant the same way, against two survivors instead of one: `PageHealthTests` (above) for "does the real stack boot cleanly", and the already-moved `NavigationTests.HomePage_HasMainHeading` (#2148 wave) for "does the heading render". Both `SmokeTests` cases are deleted, not moved - there was nothing left for either to uniquely cover.
+* *`EngagementCoreJourneysTests` names journeys but tests single-page state transitions.* `ConfirmButton_MovesApplicationToConfirmed` and `WithdrawButton_MovesEngagementFromUpcomingToPastScope` are both one authenticated user, one page, one click, seeded via API the way most of this suite's survivors are *not*. Neither crosses a real page boundary or a real Keycloak round trip - the two things #2148's "stay E2E" rule actually protects. Both moved cleanly to RTL (`EngagementManagementPage.test.tsx`, `ActivitySection.test.tsx`), each ported with a positive assertion pairing (visible status text before *and* after the click) per #2159's absence-assertion hazard.
+
+*#2148's outstanding acceptance criterion - "critical user journeys explicitly listed and kept as real E2E" - is met by this list, not by the class name `EngagementCoreJourneysTests` that turned out not to be one.* Grepping this repository for that phrase before #2162 returned nothing; these are the E2E cases actually carrying that weight, by what their bodies do rather than what their classes are called:
+
+[cols="2,3" options="header"]
+|===
+|Journey |Real E2E coverage
+
+|Sign-in (real Keycloak round trip)
+|`AuthGuardTests.SignIn_WithValidCredentials_ReachesAuthenticatedHomePage`, `.Header_SignIn_FromNonHomePage_ReturnsToOriginatingPage`, `.MyEngagements_Anonymous_RedirectsToKeycloak`
+
+|Self-registration (real Keycloak round trip)
+|`SelfRegistrationDefaultRoleTests.Register_CompletesForm_GrantsUserRoleForAuthenticatedApiCalls`
+
+|Account-locale-aware sign-in
+|`SignInAccountLocaleTests.SignIn_AccountLocaleDiffersFromSessionLanguage_ShowsToastAndSwitchesLanguage`
+
+|Organizer creates and publishes an opportunity
+|`CreateOpportunityRetryTests.PublishScheduledSlots_TimeSlotFailureMidPublish_RetryUpdatesSameDraftInsteadOfDuplicating` - the retry/failure-recovery edge is what keeps this one E2E rather than the happy path alone
+
+|Real-browser check-in (QR scan / camera)
+|`QRScannerModalTests.QRScannerModal_ResumesScanning_AfterFailedCheckIn` and siblings - a real scan resolving against a live engagement, #2152's own "cannot move" row 2
+|===
+
+*Read this table narrowly, the same way the mutation-score readings above ask to be read.* "Search -> apply -> check in" as one continuous, named E2E case does not exist in this suite, and this list does not pretend otherwise - what exists instead is each step protected independently (apply via the real modal in the surviving `OpportunityApplicationStateTests` race-condition case; check-in via the real scanner above), each seeded through the API rather than clicked through from scratch. That is a deliberate cost-minimization already established by #2148/#2152 for every other survivor, not a gap this note is introducing.
+
+*The final shape.* 328 cases have now moved out of `VisualTests` in total (310 from #2148/#2152, 18 more from this reconciliation), 2 were deleted outright as redundant (`SmokeTests`), leaving **214**. `visual-test-shard.sh` repacked cleanly across all four shards with no orphaned class (54/54/53/53 cases, 18/19/18/18 classes) - confirming the "a class stops matching its file name" failure mode #2148 warned about did not happen here.
+====
 
 === Consequences of Delay
 

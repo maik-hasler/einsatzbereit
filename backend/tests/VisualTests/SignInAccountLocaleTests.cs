@@ -2,6 +2,11 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// Stays E2E (#2162, correcting #2159's classification): drives the real
+// Keycloak login form for a throwaway user and asserts a real post-login
+// locale-sync side effect (the toast, the switched header label) - a real
+// Keycloak round trip, the same category #2148 says to keep and #2152's own
+// table puts at 26 cases with "No" for movability.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SignInAccountLocaleTests(AspireFixture fixture) : VisualTestBase(fixture)
 {

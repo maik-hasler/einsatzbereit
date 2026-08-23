@@ -2027,6 +2027,102 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			.Which.Id.Should().Be(original.Id);
 	}
 
+	[Test]
+	public async Task GetEngagementCalendar_ReturnsAWellFormedIcsFile_ForAConfirmedScheduledEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 5,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var timeSlotId = timeSlots.Single().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = timeSlotId },
+			cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		using var http = fixture.CreateHttpClient();
+		var response = await http.GetAsync($"/v1/engagements/{engagement.Id}/calendar", cancellationToken);
+
+		response.EnsureSuccessStatusCode();
+		response.Content.Headers.ContentType!.MediaType.Should().Be("text/calendar");
+		response.Content.Headers.ContentDisposition!.FileName.Should().Be($"engagement-{engagement.Id}.ics");
+
+		var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		body.Should().Contain("BEGIN:VCALENDAR");
+		body.Should().Contain($"UID:{engagement.Id}@einsatzbereit");
+	}
+
+	[Test]
+	public async Task UnpublishVolunteerOpportunity_CascadeCancelsItsConfirmedEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Please let me help." },
+			cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		await olafClient.UnpublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.VolunteerOpportunities.VolunteerOpportunityUnpublishedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the unpublished event within a few poll cycles");
+
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
+		var cascaded = engagements.Items.Should().ContainSingle().Which;
+		cascaded.Status.Should().Be("Cancelled");
+	}
+
+	[Test]
+	public async Task CancelVolunteerOpportunity_CascadeCancelsItsConfirmedEngagement_WithTheOrganizersReason(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Please let me help." },
+			cancellationToken);
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		await olafClient.CancelVolunteerOpportunityAsync(
+			opportunity.Id,
+			new CancelVolunteerOpportunityRequest { Reason = "Venue is no longer available" },
+			cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.VolunteerOpportunities.VolunteerOpportunityCancelledDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("OutboxProcessorJob should dispatch the cancelled event within a few poll cycles");
+
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
+		var cascaded = engagements.Items.Should().ContainSingle().Which;
+		cascaded.Status.Should().Be("Cancelled");
+		cascaded.CancellationReason.Should().Be("Opportunity was cancelled: Venue is no longer available");
+	}
+
 	private static async Task<DateTimeOffset> GetCreatedOnAsync(
 		EinsatzbereitApi volunteerClient, Guid engagementId, CancellationToken cancellationToken)
 	{
