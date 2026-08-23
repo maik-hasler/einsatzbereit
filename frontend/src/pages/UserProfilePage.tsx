@@ -129,7 +129,7 @@ export default function UserProfilePage() {
 									details: details || undefined,
 								});
 							}}
-							className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+							className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
 						/>
 					)}
 				</div>
