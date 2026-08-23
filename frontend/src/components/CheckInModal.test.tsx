@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import CheckInModal from "./CheckInModal";
 import { renderWithProviders } from "../test/render";
 
@@ -17,7 +18,7 @@ beforeEach(() => {
 	api.__reset();
 });
 
-function renderModal(checkInMethod: string) {
+function renderModal(checkInMethod: string, lng: "de" | "en" = "en") {
 	api.getVolunteerOpportunityDetails.mockResolvedValue({
 		id: OPPORTUNITY_ID,
 		checkInMethod,
@@ -33,7 +34,7 @@ function renderModal(checkInMethod: string) {
 			onCheckedIn={() => {}}
 			onClose={() => {}}
 		/>,
-		{ auth: { isAuthenticated: true } },
+		{ lng, auth: { isAuthenticated: true } },
 	);
 }
 
@@ -58,5 +59,43 @@ describe("CheckInModal QR fallback code", () => {
 
 		await screen.findByLabelText(/PIN/i);
 		expect(screen.queryByTestId("checkin-fallback-code")).toBeNull();
+	});
+});
+
+describe("CheckInModal opportunity gone by the time it's opened", () => {
+	it("shows a friendly error instead of spinning forever", async () => {
+		api.getVolunteerOpportunityDetails.mockRejectedValue({ status: 404 });
+		renderWithProviders(
+			<CheckInModal
+				engagementId={ENGAGEMENT_ID}
+				opportunityId={OPPORTUNITY_ID}
+				onCheckedIn={() => {}}
+				onClose={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+
+		expect(
+			await screen.findByText("This opportunity is no longer available."),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("status", { name: /loading/i })).toBeNull();
+	});
+});
+
+describe("CheckInModal localized PIN error", () => {
+	it("shows the German translation, not the raw English server text", async () => {
+		renderModal("PINCode", "de");
+		// No errorCode on the rejection: this exercises the modal's own
+		// fallback copy, not an apiError.* lookup - the fallback is what a
+		// raw, un-translated server string would otherwise leak as.
+		api.checkInWithPin.mockRejectedValue({ status: 400 });
+
+		await userEvent.type(await screen.findByLabelText(/PIN/i), "000000");
+		await userEvent.click(screen.getByRole("button", { name: "Bestätigen" }));
+
+		expect(
+			await screen.findByText("Falsche PIN. Bitte erneut versuchen."),
+		).toBeInTheDocument();
+		expect(screen.queryByText("Invalid PIN. Please try again.")).toBeNull();
 	});
 });

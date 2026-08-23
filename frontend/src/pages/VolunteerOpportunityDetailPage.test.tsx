@@ -477,6 +477,59 @@ describe("opportunity detail page pending explanation", () => {
 		expect(within(card).getByText("Confirmed")).toBeInTheDocument();
 		expect(screen.queryByText(EXPLANATION)).toBeNull();
 	});
+
+	it("shows the status card instead of the sign-up button, once already applied", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(
+			withStatus("Confirmed"),
+		);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		expect(within(card).getByText("Your sign-up")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Express interest" }),
+		).toBeNull();
+	});
+});
+
+describe("opportunity detail page status card time slot", () => {
+	it("states the registered time slot for a multi-slot opportunity", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			participationType: "ScheduledSlots",
+			timeSlots: [
+				{
+					id: "slot-1",
+					startDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+					endDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+					maxParticipants: 5,
+					currentParticipantCount: 1,
+				},
+				{
+					id: "slot-2",
+					startDateTime: new Date(Date.UTC(2027, 0, 21, 9, 0)),
+					endDateTime: new Date(Date.UTC(2027, 0, 21, 13, 0)),
+					maxParticipants: 5,
+					currentParticipantCount: 0,
+				},
+			],
+			currentUserEngagement: {
+				id: "44444444-4444-4444-4444-444444444444",
+				status: "Confirmed",
+				isCheckedIn: false,
+				timeSlotId: "slot-2",
+				remainingReactivations: 2,
+			},
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		expect(within(card).getByText("Your sign-up")).toBeInTheDocument();
+		expect(within(card).getByText("Confirmed")).toBeInTheDocument();
+		expect(within(card).getByText(/^Scheduled:/)).toBeInTheDocument();
+	});
 });
 
 describe("opportunity detail page German sign-up vocabulary", () => {

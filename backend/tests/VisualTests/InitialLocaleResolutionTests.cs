@@ -3,6 +3,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// Stays E2E (#2162, correcting #2159's classification): asserts locale stays
+// deterministic across repeated real hard navigations (full page loads, not
+// client-side routing). The risk under test is a fresh-boot i18next
+// detection race, which only exists across a real reload cycle - the RTL
+// harness's `renderWithProviders` builds one already-initialized i18n
+// instance per render and never re-runs that boot sequence.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class InitialLocaleResolutionTests(AspireFixture fixture) : VisualTestBase(fixture)
 {

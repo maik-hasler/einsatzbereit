@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
@@ -13,6 +13,7 @@ const { api } = vi.hoisted(() => ({
 		publishVolunteerOpportunity: vi.fn(),
 		uploadOpportunityBanner: vi.fn(),
 		getVolunteerOpportunityDetails: vi.fn(),
+		getOpportunityCheckInPin: vi.fn(),
 	},
 }));
 
@@ -256,5 +257,98 @@ describe("create-opportunity wizard: shape and the draft gate", () => {
 		await userEvent.clear(title());
 		await userEvent.type(title(), "Deutscher Titel");
 		await waitFor(() => expect(saveDraft).toBeEnabled());
+	});
+});
+
+async function fillBasicsAndFormat(pinCode: string) {
+	await userEvent.type(title(), "PIN Test Opportunity");
+	await userEvent.type(
+		description(),
+		"Regression test for #549 organizer-settable check-in PIN.",
+	);
+	await userEvent.click(screen.getByTestId("wizard-stepper-2"));
+	await userEvent.click(
+		await screen.findByLabelText(/remote|Remote/i, { selector: "input" }),
+	);
+	await userEvent.click(screen.getByTestId("wizard-stepper-3"));
+	await userEvent.click(
+		await screen.findByRole("radio", { name: "Express interest" }),
+	);
+	await userEvent.click(screen.getByRole("radio", { name: "PIN code" }));
+	const pinInput = screen.getByLabelText(/Check-in PIN/i);
+	await userEvent.clear(pinInput);
+	await userEvent.type(pinInput, pinCode);
+	return pinInput;
+}
+
+describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
+	it("sends the organizer-typed PIN exactly, in the create payload", async () => {
+		openWizard();
+		await fillBasicsAndFormat("482170");
+
+		await userEvent.click(screen.getByTestId("wizard-stepper-4"));
+		fireEvent.change(await screen.findByLabelText(/Interest deadline/i), {
+			target: { value: "2027-06-30" },
+		});
+
+		api.createVolunteerOpportunity.mockResolvedValue({ id: "new-opp-id" });
+		await userEvent.click(screen.getByTestId("modal-submit"));
+
+		await waitFor(() =>
+			expect(api.createVolunteerOpportunity).toHaveBeenCalledWith(
+				expect.objectContaining({ checkInPin: "482170" }),
+			),
+		);
+	});
+
+	it("prefills the existing PIN on edit, and Generate random replaces it with a different one", async () => {
+		api.getOpportunityCheckInPin.mockResolvedValue("135790");
+		renderWithProviders(
+			<CreateVolunteerOpportunityModal
+				organizationId="org-1"
+				initialOpportunity={
+					{
+						id: "existing-opp-id",
+						organizationId: "org-1",
+						titleDe: "Bestehende Chance",
+						descriptionDe: "Beschreibung.",
+						isRemote: true,
+						occurrence: "OneTime",
+						participationType: "IndividualContact",
+						checkInMethod: "PINCode",
+						category: undefined,
+						tags: [],
+						validUntil: new Date(Date.UTC(2027, 5, 30)),
+					} as unknown as Parameters<
+						typeof CreateVolunteerOpportunityModal
+					>[0]["initialOpportunity"]
+				}
+				onClose={() => {}}
+				onSuccess={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+
+		await userEvent.click(await screen.findByTestId("wizard-stepper-3"));
+		const pinInput = await screen.findByLabelText(/Check-in PIN/i);
+		await waitFor(() => expect(pinInput).toHaveValue("135790"));
+
+		await userEvent.click(
+			screen.getByRole("button", { name: /Generate random/i }),
+		);
+		const generatedPin = (pinInput as HTMLInputElement).value;
+		expect(generatedPin).toMatch(/^\d{6}$/);
+		expect(generatedPin).not.toBe("135790");
+
+		await userEvent.click(screen.getByTestId("wizard-stepper-4"));
+		api.updateVolunteerOpportunity.mockResolvedValue(undefined);
+		await userEvent.click(screen.getByTestId("modal-submit"));
+
+		await waitFor(() =>
+			expect(api.updateVolunteerOpportunity).toHaveBeenCalledWith(
+				"existing-opp-id",
+				expect.objectContaining({ checkInPin: generatedPin }),
+			),
+		);
 	});
 });

@@ -179,6 +179,76 @@ describe("my-signups withdraw failure", () => {
 	});
 });
 
+describe("my-signups engagement card organization link", () => {
+	it("links the organization name to its public profile", async () => {
+		mockRows([
+			engagement({
+				organizationId: "55555555-5555-5555-5555-555555555555",
+				organizationName: "Malteser Kiel",
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		const link = within(card).getByRole("link", { name: "Malteser Kiel" });
+		expect(link).toHaveAttribute(
+			"href",
+			"/organizations/55555555-5555-5555-5555-555555555555",
+		);
+	});
+});
+
+describe("my-signups scheduled time slot", () => {
+	it("states the scheduled time and the original sign-up date on the same card", async () => {
+		mockRows([
+			engagement({
+				status: "Confirmed",
+				timeSlotId: "66666666-6666-6666-6666-666666666666",
+				timeSlotStartDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+				timeSlotEndDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(within(card).getByText(/^Scheduled:/)).toBeInTheDocument();
+		expect(within(card).getByText(/^Signed up:/)).toBeInTheDocument();
+	});
+});
+
+describe("my-signups withdraw success (#2148 core journey)", () => {
+	it("removes the card from upcoming and shows it withdrawn under past", async () => {
+		const target = engagement({ status: "Confirmed" });
+		mockRows([target]);
+		api.withdrawEngagement.mockResolvedValue({
+			...target,
+			status: "Withdrawn",
+		});
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByTestId("engagement-card")).toBeNull(),
+		);
+
+		mockRows([{ ...target, status: "Withdrawn" }]);
+		await userEvent.click(screen.getByTestId("engagements-scope-past"));
+
+		const pastCard = await screen.findByTestId("engagement-card");
+		expect(within(pastCard).getByText("Withdrawn")).toBeInTheDocument();
+	});
+});
+
 describe("my-signups check-in affordance", () => {
 	const confirmed = (checkInMethod: string) =>
 		engagement({ status: "Confirmed", checkInMethod });

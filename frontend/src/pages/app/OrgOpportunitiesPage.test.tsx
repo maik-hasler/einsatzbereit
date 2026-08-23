@@ -226,3 +226,117 @@ describe("OrgOpportunitiesPage rows", () => {
 		expect(link.querySelectorAll("svg")).toHaveLength(1);
 	});
 });
+
+describe("OrgOpportunitiesPage unpublish and cancel", () => {
+	it("moves a published opportunity to unpublished, and republishing moves it back", async () => {
+		const live = opportunity(
+			"aaaa0001-0000-0000-0000-000000000001",
+			"Live",
+			"Published",
+		);
+		mockByStatus({ Published: [live] });
+		api.unpublishVolunteerOpportunity.mockImplementation(() => {
+			mockByStatus({
+				Unpublished: [{ ...live, status: "Unpublished" }],
+			});
+			return Promise.resolve(undefined);
+		});
+
+		renderPage();
+
+		const row = await screen.findByText("Live");
+		await userEvent.click(
+			within(row.closest("li") as HTMLElement).getByRole("button", {
+				name: /More actions/,
+			}),
+		);
+		await userEvent.click(screen.getByTestId("opportunity-unpublish"));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Yes, unpublish" }),
+		);
+
+		const unpublished = await waitFor(() => {
+			const el = section("unpublished-section");
+			expect(el).not.toBeNull();
+			return el as HTMLElement;
+		});
+		expect(within(unpublished).getByText("Live")).toBeInTheDocument();
+		expect(
+			within(unpublished).getByTestId("opportunity-status-badge"),
+		).toHaveTextContent("Unpublished");
+		expect(section("published-section")).toBeNull();
+
+		api.publishVolunteerOpportunity.mockImplementation(() => {
+			mockByStatus({ Published: [live] });
+			return Promise.resolve(undefined);
+		});
+		await userEvent.click(screen.getByTestId("opportunity-publish"));
+
+		await waitFor(() => {
+			const published = section("published-section");
+			expect(published).not.toBeNull();
+			expect(
+				within(published as HTMLElement).getByText("Live"),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("moves a published opportunity to cancelled, leaving only delete on its row", async () => {
+		const live = opportunity(
+			"aaaa0002-0000-0000-0000-000000000002",
+			"Live",
+			"Published",
+		);
+		mockByStatus({ Published: [live] });
+		api.cancelVolunteerOpportunity.mockImplementation(() => {
+			mockByStatus({
+				Cancelled: [{ ...live, status: "Cancelled" }],
+			});
+			return Promise.resolve(undefined);
+		});
+
+		renderPage();
+
+		const row = await screen.findByText("Live");
+		await userEvent.click(
+			within(row.closest("li") as HTMLElement).getByRole("button", {
+				name: /More actions/,
+			}),
+		);
+		await userEvent.click(screen.getByTestId("opportunity-cancel"));
+		await userEvent.type(
+			screen.getByLabelText(/reason/i),
+			"Venue is no longer available",
+		);
+		await userEvent.click(
+			screen.getByRole("button", { name: "Yes, cancel opportunity" }),
+		);
+
+		const cancelled = await waitFor(() => {
+			const el = section("cancelled-section");
+			expect(el).not.toBeNull();
+			return el as HTMLElement;
+		});
+		const cancelledRow = within(cancelled)
+			.getByText("Live")
+			.closest("li") as HTMLElement;
+		expect(
+			within(cancelledRow).getByTestId("opportunity-status-badge"),
+		).toHaveTextContent("Cancelled");
+		expect(
+			within(cancelledRow).queryByTestId("opportunity-publish"),
+		).toBeNull();
+
+		await userEvent.click(
+			within(cancelledRow).getByRole("button", { name: /More actions/ }),
+		);
+		expect(
+			within(cancelledRow).getByTestId("opportunity-delete"),
+		).toBeInTheDocument();
+		expect(within(cancelledRow).queryByTestId("opportunity-edit")).toBeNull();
+		expect(
+			within(cancelledRow).queryByTestId("opportunity-unpublish"),
+		).toBeNull();
+		expect(within(cancelledRow).queryByTestId("opportunity-cancel")).toBeNull();
+	});
+});
