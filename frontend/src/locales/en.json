@@ -1252,7 +1252,10 @@
       "engagementCount": "{{count}} confirmed opportunities",
       "engagementCount_other": "{{count}} confirmed opportunities",
       "reportUser": "Report user",
-      "engagementCount_one": "{{count}} confirmed opportunity"
+      "engagementCount_one": "{{count}} confirmed opportunity",
+      "emptyStateTitle": "This profile is still empty",
+      "emptyStateMessage": "This volunteer hasn't added a bio, skills, or languages yet.",
+      "eyebrow": "Profile"
     },
     "administration": {
       "title": "Administration",
