@@ -25,15 +25,12 @@ public class UnsubscribeCommandHandlerTests
 	public async Task Handle_ShouldDisableTheRequestedType_WhenTokenMatches(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 		_userRepo.FindAsync(user.Id, cancellationToken).Returns(user);
 		var command = new UnsubscribeCommand(user.Id, user.UnsubscribeToken, EmailNotificationType.EngagementConfirmed);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		user.NotifyOnEngagementConfirmed.Should().BeFalse();
 		user.NotifyOnNewSignUp.Should().BeTrue();
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
@@ -43,15 +40,12 @@ public class UnsubscribeCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTokenDoesNotMatch(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 		_userRepo.FindAsync(user.Id, cancellationToken).Returns(user);
 		var command = new UnsubscribeCommand(user.Id, Guid.NewGuid(), EmailNotificationType.EngagementConfirmed);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		user.NotifyOnEngagementConfirmed.Should().BeTrue();
 	}
@@ -60,15 +54,12 @@ public class UnsubscribeCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenUserDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		_userRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
 		var command = new UnsubscribeCommand(userId, Guid.NewGuid(), EmailNotificationType.NewSignUp);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
 	}
 }

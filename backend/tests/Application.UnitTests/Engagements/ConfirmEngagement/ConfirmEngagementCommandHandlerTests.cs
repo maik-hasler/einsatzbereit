@@ -55,7 +55,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldConfirmEngagement_WhenEngagementIsPending(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -66,10 +65,8 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Status.Should().Be(EngagementStatus.Confirmed);
 	}
 
@@ -77,7 +74,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldReturnEngagement_WithCorrectId(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -88,10 +84,8 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeSameAs(engagement);
 	}
 
@@ -99,16 +93,13 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
@@ -117,7 +108,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsAlreadyConfirmed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -129,10 +119,8 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 
@@ -140,7 +128,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
@@ -152,10 +139,8 @@ public class ConfirmEngagementCommandHandlerTests
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 

@@ -53,7 +53,6 @@ export default function ActivitySection() {
 		Withdrawn: t("myEngagements.status.Withdrawn"),
 	};
 
-	// --- Engagements ---
 	const [engagementsScope, setEngagementsScope] =
 		useState<EngagementsScope>("upcoming");
 	const {

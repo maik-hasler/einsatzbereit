@@ -60,7 +60,6 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldReturnSucceeded_ForEveryEngagementConfirmedByTheNestedCommand(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementA = CreateConfirmedEngagement();
 		var engagementB = CreateConfirmedEngagement();
 		SeedEngagement(engagementA);
@@ -75,10 +74,8 @@ public class BulkConfirmEngagementsCommandHandlerTests
 			[engagementA.Id, engagementB.Id],
 			DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Failed.Should().BeEmpty();
 		result.Succeeded.Should().HaveCount(2);
 		result.Succeeded.Should().Contain(s => s.EngagementId == engagementA.Id.Value && s.Status == "Confirmed");
@@ -89,7 +86,6 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldCollectFailure_WithoutAbortingTheRestOfTheBatch_WhenANestedConfirmFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var okEngagement = CreateConfirmedEngagement();
 		var badEngagement = CreateConfirmedEngagement();
 		SeedEngagement(okEngagement);
@@ -104,10 +100,8 @@ public class BulkConfirmEngagementsCommandHandlerTests
 			[okEngagement.Id, badEngagement.Id],
 			DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Succeeded.Should().ContainSingle(s => s.EngagementId == okEngagement.Id.Value);
 		result.Failed.Should().ContainSingle(f => f.EngagementId == badEngagement.Id.Value
 			&& f.ErrorCode == "Engagement.NotPending"
@@ -118,16 +112,13 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldCollectFailure_WithoutCallingTheNestedCommand_WhenEngagementDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var missingId = EngagementId.New();
 		_engagementRepo.FindAsync(missingId, Arg.Any<CancellationToken>()).Returns((Engagement?)null);
 
 		var command = new BulkConfirmEngagementsCommand(DefaultOpportunityId, [missingId], DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Succeeded.Should().BeEmpty();
 		result.Failed.Should().ContainSingle(f => f.EngagementId == missingId.Value && f.ErrorCode == "Engagement.NotFound");
 		await _sender.DidNotReceive().Send(Arg.Any<ConfirmEngagementCommand>(), Arg.Any<CancellationToken>());
@@ -137,16 +128,13 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldCollectFailure_WithoutCallingTheNestedCommand_WhenEngagementBelongsToADifferentOpportunity(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var foreignEngagement = CreateConfirmedEngagement(VolunteerOpportunityId.New());
 		SeedEngagement(foreignEngagement);
 
 		var command = new BulkConfirmEngagementsCommand(DefaultOpportunityId, [foreignEngagement.Id], DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Succeeded.Should().BeEmpty();
 		result.Failed.Should().ContainSingle(f => f.EngagementId == foreignEngagement.Id.Value && f.ErrorCode == "Engagement.WrongOpportunity");
 		await _sender.DidNotReceive().Send(Arg.Any<ConfirmEngagementCommand>(), Arg.Any<CancellationToken>());
@@ -156,7 +144,6 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldSendEachDistinctEngagementIdOnlyOnce_WhenDuplicatesArePassed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagement = CreateConfirmedEngagement();
 		SeedEngagement(engagement);
 		_sender.Send(Arg.Is<ConfirmEngagementCommand>(c => c!.EngagementId == engagement.Id), Arg.Any<CancellationToken>())
@@ -167,10 +154,8 @@ public class BulkConfirmEngagementsCommandHandlerTests
 			[engagement.Id, engagement.Id],
 			DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Succeeded.Should().ContainSingle();
 		await _sender.Received(1).Send(
 			Arg.Is<ConfirmEngagementCommand>(c => c!.EngagementId == engagement.Id),
@@ -181,16 +166,13 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_opportunityRepo.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
 		var opportunityId = VolunteerOpportunityId.New();
 		var command = new BulkConfirmEngagementsCommand(opportunityId, [EngagementId.New()], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage($"*{opportunityId.Value}*");
 		await _sender.DidNotReceive().Send(Arg.Any<ConfirmEngagementCommand>(), Arg.Any<CancellationToken>());
 	}
@@ -199,15 +181,12 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_dbContext.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 		var command = new BulkConfirmEngagementsCommand(DefaultOpportunityId, [EngagementId.New()], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*permission*");
 		await _sender.DidNotReceive().Send(Arg.Any<ConfirmEngagementCommand>(), Arg.Any<CancellationToken>());
 	}
@@ -216,7 +195,6 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldPassTimezoneThrough_ToEachNestedConfirmCommand(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagement = CreateConfirmedEngagement();
 		SeedEngagement(engagement);
 		_sender.Send(Arg.Any<ConfirmEngagementCommand>(), Arg.Any<CancellationToken>())
@@ -227,10 +205,8 @@ public class BulkConfirmEngagementsCommandHandlerTests
 			DefaultRequestingUserId,
 			"Europe/Berlin");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _sender.Received(1).Send(
 			Arg.Is<ConfirmEngagementCommand>(c => c!.Timezone == "Europe/Berlin"),
 			Arg.Any<CancellationToken>());
@@ -240,13 +216,10 @@ public class BulkConfirmEngagementsCommandHandlerTests
 	public async Task Handle_ShouldReturnEmptyResult_WhenNoEngagementIdsProvided(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new BulkConfirmEngagementsCommand(DefaultOpportunityId, [], DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Succeeded.Should().BeEmpty();
 		result.Failed.Should().BeEmpty();
 	}

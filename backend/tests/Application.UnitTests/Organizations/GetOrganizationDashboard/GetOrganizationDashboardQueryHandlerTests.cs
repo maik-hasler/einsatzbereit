@@ -36,14 +36,11 @@ public class GetOrganizationDashboardQueryHandlerTests
 	public async Task Handle_ShouldReturnNull_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_orgRepo.FindAsync(OrganizationId.Create(DefaultOrgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().BeNull();
 		await _readRepository.DidNotReceive().GetKpisAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
@@ -52,16 +49,13 @@ public class GetOrganizationDashboardQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_dbContext
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(false);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 
-		// Act
 		var act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*permission*");
 		await _readRepository.DidNotReceive().GetKpisAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
@@ -70,17 +64,14 @@ public class GetOrganizationDashboardQueryHandlerTests
 	public async Task Handle_ShouldReturnKpis_WhenRequestingUserIsOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var kpis = new OrganizationDashboardResponse(
 			PendingEngagements: 2,
 			ConfirmedEngagementsTotal: 5);
 		_readRepository.GetKpisAsync(DefaultOrgId, cancellationToken).Returns(kpis);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().Be(kpis);
 		result!.ConfirmedEngagementsTotal.Should().Be(5);
 	}

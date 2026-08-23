@@ -46,7 +46,6 @@ public class DeleteOpportunityBannerCommandHandlerTests
 	public async Task Handle_ShouldClearBannerImageUrl_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunityWithBanner();
 		_opportunityRepo
@@ -55,10 +54,8 @@ public class DeleteOpportunityBannerCommandHandlerTests
 
 		var command = new DeleteOpportunityBannerCommand(opportunityId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		opportunity.BannerImageUrl.Should().BeNull();
 	}
@@ -67,7 +64,6 @@ public class DeleteOpportunityBannerCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunityWithBanner();
 		_opportunityRepo
@@ -79,10 +75,8 @@ public class DeleteOpportunityBannerCommandHandlerTests
 
 		var command = new DeleteOpportunityBannerCommand(opportunityId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.BannerImageUrl.Should().NotBeNull();

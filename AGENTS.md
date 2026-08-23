@@ -10,6 +10,7 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/AGENTS.md
 ├── keycloak/       Custom Keycloak image + realm config  → keycloak/AGENTS.md
 ├── docs/           arc42 architecture docs + ADRs        → docs/AGENTS.md
+├── scripts/        Repo-wide analysis tooling
 └── .github/        CI workflows + issue templates        → .github/AGENTS.md
 ```
 

@@ -53,7 +53,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldNotifyActiveVolunteers_WithOpportunityCancelledKind(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreatePublishedOpportunity();
 		var volunteerId = Guid.NewGuid();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -63,7 +62,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "No longer needed");
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073), so an
@@ -96,7 +94,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "Venue flooded");
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - one row, and it's the opportunity-level one.
@@ -114,7 +111,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldCancelActiveEngagements_WithOrganizerReasonIncluded(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreatePublishedOpportunity();
 		var timeSlotId = TimeSlotId.New();
 		var pendingEngagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), timeSlotId);
@@ -125,10 +121,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "Venue flooded");
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was cancelled: Venue flooded");
 	}
@@ -137,7 +131,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldCancelActiveEngagements_WithDefaultReason_WhenNoOrganizerReasonGiven(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreatePublishedOpportunity();
 		var timeSlotId = TimeSlotId.New();
 		var pendingEngagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), timeSlotId);
@@ -148,10 +141,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, null);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was cancelled.");
 	}
 
@@ -159,15 +150,12 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunityId, DefaultOrgId, "reason");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
@@ -184,10 +172,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "reason");
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -195,15 +181,12 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldNotSaveChanges_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunityId, DefaultOrgId, "reason");
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 }

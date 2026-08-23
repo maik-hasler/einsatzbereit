@@ -11,7 +11,6 @@ using Domain.VolunteerOpportunities;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
-
 namespace Application.UnitTests.Users.DeleteMyAccount;
 
 public class DeleteMyAccountCommandHandlerTests
@@ -57,7 +56,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldAnonymizeAllEngagements_ReturnedForVolunteerTracking(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementOne = CreateEngagementFor(DefaultUserId);
 		var engagementTwo = CreateEngagementFor(DefaultUserId);
 		_dbContext
@@ -65,10 +63,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([engagementOne, engagementTwo]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		engagementOne.IsAnonymized.Should().BeTrue();
 		engagementTwo.IsAnonymized.Should().BeTrue();
 	}
@@ -85,10 +81,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([engagement]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
 		engagement.IsAnonymized.Should().BeTrue();
 	}
@@ -97,7 +91,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldWithdrawConfirmedNotCheckedInEngagement_BeforeAnonymizing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagement = CreateEngagementFor(DefaultUserId);
 		engagement.Confirm().ThrowIfFailure();
 		_dbContext
@@ -105,10 +98,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([engagement]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
 		engagement.IsAnonymized.Should().BeTrue();
 	}
@@ -127,10 +118,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([engagement]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		engagement.Status.Should().Be(EngagementStatus.Confirmed);
 		engagement.IsCheckedIn.Should().BeTrue();
 		engagement.IsAnonymized.Should().BeTrue();
@@ -140,7 +129,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldLeaveAlreadyTerminatedEngagementAsIs_ButStillAnonymizeIt(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagement = CreateEngagementFor(DefaultUserId);
 		engagement.Cancel().ThrowIfFailure();
 		_dbContext
@@ -148,10 +136,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([engagement]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		engagement.Status.Should().Be(EngagementStatus.Cancelled);
 		engagement.IsAnonymized.Should().BeTrue();
 	}
@@ -160,13 +146,10 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteNotificationsForRecipient(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteNotificationsForRecipientAsync(DefaultUserId, cancellationToken);
 	}
 
@@ -174,7 +157,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteAvatarByItsExactObjectKey_AndSwallowFailures(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
@@ -186,10 +168,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		// Issue #829: a failure deleting the avatar is swallowed rather than rolled back.
 		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", cancellationToken);
@@ -199,15 +179,12 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenUserHasNoAvatar(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
@@ -225,10 +202,8 @@ public class DeleteMyAccountCommandHandlerTests
 		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
@@ -236,15 +211,12 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteTheUserRow_WhenUserExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		_usersRepo.Received(1).Delete(user);
 	}
 
@@ -260,10 +232,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns((User?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
@@ -282,10 +252,8 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		_usersRepo.Received(1).Delete(user);
 		user.Events.Should().ContainSingle().Which.Should().BeOfType<UserAccountDeletedDomainEvent>();
 	}
@@ -302,10 +270,8 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		user.Events.Should().ContainSingle()
 			.Which.Should().BeOfType<UserAccountDeletedDomainEvent>()
 			.Which.UserId.Should().Be(DefaultUserId);
@@ -315,15 +281,12 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldReturnTrue(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 	}
 
@@ -331,13 +294,10 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteTheUserStreak(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteUserStreakAsync(DefaultUserId, cancellationToken);
 	}
 
@@ -345,13 +305,10 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteAchievementsForTheUser(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteAchievementsForUserAsync(DefaultUserId, cancellationToken);
 	}
 
@@ -359,13 +316,10 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldRemoveOrganizationMembershipsAndDashboardLayoutsForTheUser(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
 		await _dbContext.Received(1).RemoveDashboardLayoutsForUserAsync(DefaultUserId, cancellationToken);
 	}
@@ -374,13 +328,10 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteOrganizationInvitationsForTheUser(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteInvitationsForUserAsync(DefaultUserId, cancellationToken);
 	}
 
@@ -394,10 +345,8 @@ public class DeleteMyAccountCommandHandlerTests
 		// see Handle_ShouldStampTargetDeletedOn_ForReportsAgainstTheUser below (#1725).
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteReportsForReporterAsync(DefaultUserId, cancellationToken);
 	}
 
@@ -416,10 +365,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns([report]);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		report.TargetDeletedOn.Should().NotBeNull();
 	}
 
@@ -427,7 +374,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_AndPerformNoOtherAction_WhenSoleOrganizerOfAnOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organization = CreateOrganization("Solo Org");
 		_dbContext
 			.GetOrganizerOrganizationsAsync(DefaultUserId, cancellationToken)
@@ -437,10 +383,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns(1);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		var thrown = await act.Should().ThrowAsync<ResultFailureException>();
 		thrown.Which.Message.Should().Contain("Solo Org");
 		await _dbContext.DidNotReceive().DeleteNotificationsForRecipientAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
@@ -457,7 +401,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldListEveryBlockingOrganizationByName_WhenSoleOrganizerOfMultipleOrganizations(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgAlpha = CreateOrganization("Org Alpha");
 		var orgBeta = CreateOrganization("Org Beta");
 		_dbContext
@@ -467,10 +410,8 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext.CountOrganizersAsync(orgBeta.Id, cancellationToken).Returns(1);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		var thrown = await act.Should().ThrowAsync<ResultFailureException>();
 		thrown.Which.Message.Should().Contain("Org Alpha");
 		thrown.Which.Message.Should().Contain("Org Beta");
@@ -480,7 +421,6 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldProceed_WhenOrganizerButOtherOrganizersRemainForThatOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organization = CreateOrganization("Shared Org");
 		_dbContext
 			.GetOrganizerOrganizationsAsync(DefaultUserId, cancellationToken)
@@ -490,10 +430,8 @@ public class DeleteMyAccountCommandHandlerTests
 			.Returns(2);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
 	}

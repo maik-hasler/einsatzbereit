@@ -155,6 +155,20 @@ dotnet build
 - No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
 
+A comment earns its place by recording something the code cannot state itself:
+a race it guards against, an issue it regresses, a browser or library quirk it
+works around, or a rejected alternative. Structural narration does not qualify -
+that includes bare `// Arrange` / `// Act` / `// Assert` markers in tests, whose
+phases are already delimited by the blank lines between them and named by the
+test method itself. Label a phase only when you have something to say about it
+(`// Arrange - the row is gone but its engagement remains, see #1176`).
+
+`scripts/comment-density.py` reports the ratio of comment lines to non-blank
+lines across hand-written sources (`--top N` ranks the densest files). It is a
+diagnostic, not a gate: a high ratio flags a file worth reading, since the
+densest files are usually either genuinely subtle or quietly narrating
+themselves.
+
 ## Dependency Management
 
 Dependencies are managed by [Renovate](https://docs.renovatebot.com/) (config: `renovate.json`).

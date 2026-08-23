@@ -62,7 +62,6 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -74,7 +73,6 @@ public class EngagementCreatedDomainEventHandlerTests
 
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - organizer emails go out as a single batch (#1729), not one
@@ -89,7 +87,6 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -108,7 +105,6 @@ public class EngagementCreatedDomainEventHandlerTests
 
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - the only organizer opted out, so the batch is never sent at all.
@@ -132,10 +128,8 @@ public class EngagementCreatedDomainEventHandlerTests
 			.Returns<KeycloakUserProfile>(_ => throw new InvalidOperationException("404 Not Found"));
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -147,15 +141,12 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunityId, IsSlotSignUp: false);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -176,10 +167,8 @@ public class EngagementCreatedDomainEventHandlerTests
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -193,16 +182,13 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldEmailVolunteer_WithTheirOwnSignUpReceipt(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _emailService.Received(1).SendAsync(
 			"vera@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
 	}
@@ -213,16 +199,13 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldPickVolunteerEmailTemplate_MatchingIsSlotSignUp(
 		bool isSlotSignUp, EmailTemplateKind expectedTemplate, CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, isSlotSignUp);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			expectedTemplate, Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
@@ -231,7 +214,6 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldRenderVolunteerEmail_InVolunteersPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -241,10 +223,8 @@ public class EngagementCreatedDomainEventHandlerTests
 		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), volunteerId, opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementRequestReceived,
 			"en",
@@ -265,10 +245,8 @@ public class EngagementCreatedDomainEventHandlerTests
 		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns((User?)null);
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), volunteerId, opportunity.Id, IsSlotSignUp: false);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementRequestReceived,
 			"de",

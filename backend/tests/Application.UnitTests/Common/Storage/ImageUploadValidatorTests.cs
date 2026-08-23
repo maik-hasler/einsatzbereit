@@ -10,20 +10,16 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_ShouldNotThrow_WhenFileIsValid()
 	{
-		// Act
 		Action act = () => ImageUploadValidator.EnsureValid(1024, "image/png", "Avatar");
 
-		// Assert
 		act.Should().NotThrow();
 	}
 
 	[Test]
 	public void EnsureValid_ShouldThrowValidationError_WhenFileIsEmpty()
 	{
-		// Act
 		Action act = () => ImageUploadValidator.EnsureValid(0, "image/png", "Avatar");
 
-		// Assert
 		act.Should().Throw<ResultFailureException>()
 			.WithMessage("Avatar image must not be empty.")
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
@@ -32,11 +28,9 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_ShouldThrowValidationError_WhenFileExceedsMaxSize()
 	{
-		// Act
 		Action act = () => ImageUploadValidator.EnsureValid(
 			ImageUploadValidator.MaxFileSizeBytes + 1, "image/png", "Logo");
 
-		// Assert
 		act.Should().Throw<ResultFailureException>()
 			.WithMessage("Logo image must not exceed 2 MB.")
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
@@ -45,10 +39,8 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_ShouldThrowValidationError_WhenContentTypeIsNotAllowed()
 	{
-		// Act
 		Action act = () => ImageUploadValidator.EnsureValid(1024, "image/gif", "Banner");
 
-		// Assert
 		act.Should().Throw<ResultFailureException>()
 			.WithMessage("Banner image must be a JPEG, PNG or WebP image.")
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
@@ -61,10 +53,8 @@ public class ImageUploadValidatorTests
 	[Arguments("image/gif", ".jpg")]
 	public void GetExtension_ShouldMapKnownContentTypes_AndFallBackToJpg(string contentType, string expectedExtension)
 	{
-		// Act
 		var extension = ImageUploadValidator.GetExtension(contentType);
 
-		// Assert
 		extension.Should().Be(expectedExtension);
 	}
 
@@ -78,30 +68,24 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForJpegMagicBytes()
 	{
-		// Act
 		var contentType = ImageUploadValidator.EnsureValid(JpegBytes, "image/jpeg", "Avatar");
 
-		// Assert
 		contentType.Should().Be("image/jpeg");
 	}
 
 	[Test]
 	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForPngMagicBytes()
 	{
-		// Act
 		var contentType = ImageUploadValidator.EnsureValid(PngBytes, "image/png", "Logo");
 
-		// Assert
 		contentType.Should().Be("image/png");
 	}
 
 	[Test]
 	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForWebpMagicBytes()
 	{
-		// Act
 		var contentType = ImageUploadValidator.EnsureValid(WebpBytes, "image/webp", "Banner");
 
-		// Assert
 		contentType.Should().Be("image/webp");
 	}
 
@@ -111,10 +95,8 @@ public class ImageUploadValidatorTests
 		// Arrange: declares image/png but the bytes are neither JPEG, PNG nor WebP.
 		var htmlBytes = "<script>alert(1)</script>"u8.ToArray();
 
-		// Act
 		Action act = () => ImageUploadValidator.EnsureValid(htmlBytes, "image/png", "Avatar");
 
-		// Assert
 		act.Should().Throw<ResultFailureException>()
 			.WithMessage("Avatar image must be a JPEG, PNG or WebP image.")
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
@@ -125,10 +107,8 @@ public class ImageUploadValidatorTests
 	{
 		// Arrange: client declares PNG but the actual bytes are a valid JPEG - the
 		// detected, real type must win over the client-supplied header.
-		// Act
 		var contentType = ImageUploadValidator.EnsureValid(JpegBytes, "image/png", "Avatar");
 
-		// Assert
 		contentType.Should().Be("image/jpeg");
 	}
 }

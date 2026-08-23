@@ -79,15 +79,12 @@ public class UpdateUserProfileCommandHandlerTests
 	public async Task Handle_ShouldSetPreferredLanguage_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = CreateCommand("en");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		user.PreferredLanguage.Should().Be("en");
 	}
 
@@ -102,10 +99,8 @@ public class UpdateUserProfileCommandHandlerTests
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(existingUser);
 		var command = CreateCommand("en");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		existingUser.PreferredLanguage.Should().Be("en");
 	}
 }

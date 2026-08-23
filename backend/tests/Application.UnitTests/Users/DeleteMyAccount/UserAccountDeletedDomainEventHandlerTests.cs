@@ -19,14 +19,11 @@ public class UserAccountDeletedDomainEventHandlerTests
 	public async Task Handle_ShouldDeleteTheKeycloakUser_MatchingTheEventsUserId(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var notification = new UserAccountDeletedDomainEvent(userId);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _keycloakUserService.Received(1).DeleteUserAsync(userId.Value, cancellationToken);
 	}
 }

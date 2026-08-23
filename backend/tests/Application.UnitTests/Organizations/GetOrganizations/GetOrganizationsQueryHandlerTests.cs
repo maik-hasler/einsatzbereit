@@ -22,7 +22,6 @@ public class GetOrganizationsQueryHandlerTests
 	public async Task Handle_ShouldReturnMemberOrganizations_WithNameAndLogoUrl(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 		var org = Organization.Create(OrganizationId.New(), "Fire Department").GetValueOrThrow();
 		org.SetLogoUrl("https://example.com/logo.png");
@@ -31,10 +30,8 @@ public class GetOrganizationsQueryHandlerTests
 			.GetMemberOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([org]);
 
-		// Act
 		var result = await _sut.Handle(new GetOrganizationsQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().HaveCount(1);
 		result[0].Id.Should().Be(org.Id.Value);
 		result[0].Name.Should().Be("Fire Department");
@@ -45,17 +42,14 @@ public class GetOrganizationsQueryHandlerTests
 	public async Task Handle_ShouldReturnEmptyList_WhenUserBelongsToNoOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 
 		_dbContext
 			.GetMemberOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([]);
 
-		// Act
 		var result = await _sut.Handle(new GetOrganizationsQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().BeEmpty();
 	}
 }

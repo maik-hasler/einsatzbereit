@@ -62,15 +62,12 @@ public class GetUserProfileQueryHandlerTests
 	public async Task Handle_ShouldDefaultPreferredLanguageToGerman_WhenRequestLanguageIsUnsupported(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var user = User.Create(DefaultUserId);
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, "de", cancellationToken).Returns(user);
 		var query = new GetUserProfileQuery(DefaultUserId, "fr");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.PreferredLanguage.Should().Be("de");
 	}
 
@@ -88,10 +85,8 @@ public class GetUserProfileQueryHandlerTests
 		_dbContext.GetOrCreateUserAsync(DefaultUserId, "en", cancellationToken).Returns(existingUser);
 		var query = new GetUserProfileQuery(DefaultUserId, "en");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.PreferredLanguage.Should().Be("de");
 	}
 }

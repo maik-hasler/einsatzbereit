@@ -27,7 +27,6 @@ public class GetPublicUserProfileQueryHandlerTests
 	public async Task Handle_ShouldReturnBioSkillsAndLanguages_WhenUserRowExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
@@ -39,10 +38,8 @@ public class GetPublicUserProfileQueryHandlerTests
 		user.UpdateLanguages(["German", "English"]);
 		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
 
-		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.Bio.Should().Be("Loves helping out");
 		result.Skills.Should().ContainSingle().Which.Should().Be("First aid");
@@ -67,10 +64,8 @@ public class GetPublicUserProfileQueryHandlerTests
 		user.SetPhone("+49 555 1234567");
 		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
 
-		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.GetType().GetProperty("PreferredContact").Should().BeNull();
 		result!.GetType().GetProperty("Phone").Should().BeNull();
@@ -90,10 +85,8 @@ public class GetPublicUserProfileQueryHandlerTests
 			.Returns(new KeycloakUserProfile(userId.Value, "vera", "Vera", "Volunteer", "vera@test.de"));
 		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns((User?)null);
 
-		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.AvatarUrl.Should().BeNull();
 		result.Bio.Should().BeNull();
@@ -113,10 +106,8 @@ public class GetPublicUserProfileQueryHandlerTests
 		user.MarkDeleted(DateTimeOffset.UtcNow);
 		_dbContext.FindUserIncludingDeletedAsync(userId, cancellationToken).Returns(user);
 
-		// Act
 		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
 
-		// Assert
 		result.Should().BeNull();
 		await _keycloakUserService
 			.DidNotReceive()

@@ -18,7 +18,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldCreateVolunteerOpportunity_WithValidData()
 	{
-		// Act
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Helpers needed",
@@ -33,7 +32,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
-		// Assert
 		opportunity.TitleDe.Should().Be("Helpers needed");
 		opportunity.DescriptionDe.Should().Be("We need helpers for moving");
 		opportunity.OrganizationId.Should().Be(TestOrganizationId);
@@ -46,7 +44,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldCreateRemoteOpportunity()
 	{
-		// Act
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Remote help",
@@ -61,7 +58,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			validUntil: Now.AddDays(30)).Value;
 
-		// Assert
 		opportunity.IsRemote.Should().BeTrue();
 		opportunity.Address.Should().BeNull();
 	}
@@ -72,7 +68,6 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Create_ShouldFail_WhenTitleIsEmpty(string? title)
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			title!,
@@ -86,7 +81,6 @@ public class VolunteerOpportunityTests
 			CheckInMethod.None,
 			PinGenerator);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Title must not be empty.");
 	}
@@ -97,7 +91,6 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Create_ShouldAllow_EmptyTitle_WhenDraft(string? title)
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			title!,
@@ -112,7 +105,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		result.Value.TitleDe.Should().Be(title);
 	}
@@ -123,7 +115,6 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Create_ShouldFail_WhenDescriptionIsEmpty(string? description)
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -137,7 +128,6 @@ public class VolunteerOpportunityTests
 			CheckInMethod.None,
 			PinGenerator);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Description must not be empty.");
 	}
@@ -145,10 +135,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenTitleExceedsMaxLength()
 	{
-		// Arrange
 		var title = new string('a', VolunteerOpportunity.MaxTitleLength + 1);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			title,
@@ -163,7 +151,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Title must not exceed {VolunteerOpportunity.MaxTitleLength} characters.");
 	}
@@ -171,10 +158,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_TitleAtMaxLength()
 	{
-		// Arrange
 		var title = new string('a', VolunteerOpportunity.MaxTitleLength);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			title,
@@ -189,17 +174,14 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 	}
 
 	[Test]
 	public void Create_ShouldFail_WhenDescriptionExceedsMaxLength()
 	{
-		// Arrange
 		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength + 1);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -214,7 +196,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Description must not exceed {VolunteerOpportunity.MaxDescriptionLength} characters.");
 	}
@@ -222,10 +203,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_DescriptionAtMaxLength()
 	{
-		// Arrange
 		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -240,7 +219,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 	}
 
@@ -249,7 +227,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldSetTitleEnAndDescriptionEn_WhenProvided()
 	{
-		// Act
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Helfer gesucht",
@@ -264,7 +241,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
-		// Assert
 		opportunity.TitleDe.Should().Be("Helfer gesucht");
 		opportunity.TitleEn.Should().Be("Helpers needed");
 		opportunity.DescriptionDe.Should().Be("Wir brauchen Helfer beim Umzug");
@@ -277,7 +253,6 @@ public class VolunteerOpportunityTests
 		// Only the German title/description is required to publish - English is
 		// an optional organizer-supplied translation (#1946).
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Titel",
@@ -293,7 +268,6 @@ public class VolunteerOpportunityTests
 			validUntil: Now.AddDays(30),
 			status: OpportunityStatus.Published);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		result.Value.TitleEn.Should().BeNull();
 		result.Value.DescriptionEn.Should().BeNull();
@@ -302,10 +276,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenTitleEnExceedsMaxLength()
 	{
-		// Arrange
 		var titleEn = new string('a', VolunteerOpportunity.MaxTitleLength + 1);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -320,7 +292,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Title must not exceed {VolunteerOpportunity.MaxTitleLength} characters.");
 	}
@@ -328,10 +299,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenDescriptionEnExceedsMaxLength()
 	{
-		// Arrange
 		var descriptionEn = new string('a', VolunteerOpportunity.MaxDescriptionLength + 1);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -346,7 +315,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Description must not exceed {VolunteerOpportunity.MaxDescriptionLength} characters.");
 	}
@@ -354,7 +322,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Rename_ShouldUpdateBothTitleDeAndTitleEn()
 	{
-		// Arrange
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Titel",
@@ -369,10 +336,8 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
-		// Act
 		var result = opportunity.Rename("Neuer Titel", "New title");
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		opportunity.TitleDe.Should().Be("Neuer Titel");
 		opportunity.TitleEn.Should().Be("New title");
@@ -381,7 +346,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Rename_ShouldClearTitleEn_WhenRenamedWithoutIt()
 	{
-		// Arrange
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Titel",
@@ -396,17 +360,14 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
-		// Act
 		opportunity.Rename("Neuer Titel", null);
 
-		// Assert
 		opportunity.TitleEn.Should().BeNull();
 	}
 
 	[Test]
 	public void ChangeDescription_ShouldUpdateBothDescriptionDeAndDescriptionEn()
 	{
-		// Arrange
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Titel",
@@ -421,10 +382,8 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
-		// Act
 		var result = opportunity.ChangeDescription("Neue Beschreibung", "New description");
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
 		opportunity.DescriptionEn.Should().Be("New description");
@@ -435,10 +394,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenTooManyTags()
 	{
-		// Arrange
 		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -454,7 +411,6 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Draft,
 			tags: tags);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"An opportunity cannot have more than {VolunteerOpportunity.MaxTagsCount} tags.");
 	}
@@ -462,10 +418,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_TagsCountAtMax()
 	{
-		// Arrange
 		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount).Select(i => $"tag{i}").ToList();
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -481,7 +435,6 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Draft,
 			tags: tags);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		result.Value.Tags.Should().HaveCount(VolunteerOpportunity.MaxTagsCount);
 	}
@@ -489,10 +442,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenATagExceedsMaxLength()
 	{
-		// Arrange
 		var tag = new string('a', VolunteerOpportunity.MaxTagLength + 1);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -508,7 +459,6 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Draft,
 			tags: [tag]);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Each tag must not exceed {VolunteerOpportunity.MaxTagLength} characters.");
 	}
@@ -516,10 +466,8 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_TagAtMaxLength()
 	{
-		// Arrange
 		var tag = new string('a', VolunteerOpportunity.MaxTagLength);
 
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -535,21 +483,17 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Draft,
 			tags: [tag]);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 	}
 
 	[Test]
 	public void Recategorize_ShouldFail_WhenTooManyTags()
 	{
-		// Arrange
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		var tags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
 
-		// Act
 		var result = opportunity.Recategorize(null, tags);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"An opportunity cannot have more than {VolunteerOpportunity.MaxTagsCount} tags.");
 		opportunity.Tags.Should().BeEmpty();
@@ -558,14 +502,11 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Recategorize_ShouldFail_WhenATagExceedsMaxLength()
 	{
-		// Arrange
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		var tag = new string('a', VolunteerOpportunity.MaxTagLength + 1);
 
-		// Act
 		var result = opportunity.Recategorize(null, [tag]);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be($"Each tag must not exceed {VolunteerOpportunity.MaxTagLength} characters.");
 	}
@@ -573,13 +514,10 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Recategorize_ShouldUpdateCategoryAndTags_WhenValid()
 	{
-		// Arrange
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
-		// Act
 		var result = opportunity.Recategorize(Category.Environment, ["gardening", "cleanup"]);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		opportunity.Category.Should().Be(Category.Environment);
 		opportunity.Tags.Should().BeEquivalentTo(["gardening", "cleanup"]);
@@ -588,7 +526,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenNotRemoteAndAddressIsNull()
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -602,7 +539,6 @@ public class VolunteerOpportunityTests
 			CheckInMethod.None,
 			PinGenerator);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Address is required for non-remote opportunities.");
 	}
@@ -610,7 +546,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldSetOccurrenceRecurring()
 	{
-		// Act
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Regular help",
@@ -625,7 +560,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			validUntil: Now.AddDays(30)).Value;
 
-		// Assert
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
@@ -633,7 +567,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenPublishedScheduledSlotsHasNoTimeSlots()
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -648,7 +581,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Published);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*Scheduled slots opportunity*");
 	}
@@ -656,7 +588,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_PublishedIndividualContact_WithNoTimeSlots_AndValidUntilGiven()
 	{
-		// Act
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -672,7 +603,6 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Published,
 			validUntil: Now.AddDays(30)).Value;
 
-		// Assert
 		opportunity.Status.Should().Be(OpportunityStatus.Published);
 		opportunity.TimeSlots.Should().BeEmpty();
 	}
@@ -682,7 +612,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenPublishedIndividualContact_HasNoValidUntil()
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -697,7 +626,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Published);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*deadline*");
 	}
@@ -705,7 +633,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_DraftIndividualContact_WithNoValidUntil()
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -720,7 +647,6 @@ public class VolunteerOpportunityTests
 			PinGenerator,
 			status: OpportunityStatus.Draft);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		result.Value.ValidUntil.Should().BeNull();
 	}
@@ -728,7 +654,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldFail_WhenValidUntilGiven_ForScheduledSlots()
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -744,7 +669,6 @@ public class VolunteerOpportunityTests
 			status: OpportunityStatus.Draft,
 			validUntil: Now.AddDays(30));
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("A deadline can only be set for Individual contact opportunities.");
 	}
@@ -754,7 +678,6 @@ public class VolunteerOpportunityTests
 	[Arguments(-1)]
 	public void Create_ShouldFail_WhenValidUntilIsNotInFuture(int daysOffset)
 	{
-		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
 			"Title",
@@ -771,7 +694,6 @@ public class VolunteerOpportunityTests
 			validUntil: Now.AddDays(daysOffset),
 			now: Now);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Deadline must be in the future.");
 	}

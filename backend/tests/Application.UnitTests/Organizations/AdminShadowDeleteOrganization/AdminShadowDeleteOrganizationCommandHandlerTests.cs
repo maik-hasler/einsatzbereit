@@ -79,7 +79,6 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 
-		// Act
 		var result = await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
 		// Assert: shadow-deleted, not hard-deleted or removed from Keycloak - the
@@ -112,10 +111,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 			.GetOpportunitiesForOrganizationAsync(organizationId, cancellationToken)
 			.Returns([opportunity]);
 
-		// Act
 		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		opportunity.IsDeleted.Should().BeTrue();
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
 	}
@@ -124,7 +121,6 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldMarkOpenReportsActioned_OnOrganizationAndItsOpportunities(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
 		var organization = CreateOrganization(orgId);
@@ -145,10 +141,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 			.GetOpenReportsForTargetAsync(ReportTargetType.VolunteerOpportunity, opportunity.Id.Value, cancellationToken)
 			.Returns([opportunityReport]);
 
-		// Act
 		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		orgReport.Status.Should().Be(ReportStatus.Actioned);
 		opportunityReport.Status.Should().Be(ReportStatus.Actioned);
 	}
@@ -184,10 +178,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 			.GetActiveEngagementsForOpportunityAsync(opportunityB.Id, cancellationToken)
 			.Returns([engagementB]);
 
-		// Act
 		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		engagementA.Status.Should().Be(EngagementStatus.Cancelled);
 		engagementA.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)
 			.Which.Should().BeOfType<EngagementCancelledDomainEvent>()
@@ -200,14 +192,11 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}

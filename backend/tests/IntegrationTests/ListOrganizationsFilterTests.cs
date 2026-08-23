@@ -134,11 +134,9 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 		var memberTwoClient = await CreateAuthenticatedClientAsync(memberTwoUsername, memberTwoPassword);
 		await memberTwoClient.AcceptInvitationAsync(invitationTwo.InvitationId, cancellationToken);
 
-		// Act
 		var result = await adminClient.ListOrganizationsAsync(
 			1, 50, search: orgName, cancellationToken: cancellationToken);
 
-		// Assert
 		var summary = result.Items.Should().ContainSingle(o => o.Id == org.Id.Value).Which;
 		summary.MemberCount.Should().Be(3);
 		summary.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));

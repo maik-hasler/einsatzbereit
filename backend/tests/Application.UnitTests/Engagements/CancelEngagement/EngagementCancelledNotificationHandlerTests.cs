@@ -59,7 +59,6 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldEmailVolunteer_WhenEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(volunteerId.Value, Arg.Any<CancellationToken>())
@@ -67,10 +66,8 @@ public class EngagementCancelledNotificationHandlerTests
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), volunteerId, VolunteerOpportunityId.New(), "No longer needed.");
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.Received(1).SendAsync(
 			"vera@example.com",
 			"Test Subject",
@@ -83,7 +80,6 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldRenderCancellationEmail_InVolunteersPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		var volunteer = User.Create(volunteerId);
 		volunteer.SetPreferredLanguage("en");
@@ -92,10 +88,8 @@ public class EngagementCancelledNotificationHandlerTests
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), volunteerId, VolunteerOpportunityId.New(), null);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementCancelled,
 			"en",
@@ -106,16 +100,13 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldEmailVolunteer_WhenSubscribedToEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
 			.Returns("https://example.com/unsubscribe");
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), null);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.Received(1).SendAsync(
 			"user@example.com",
 			Arg.Any<string>(),
@@ -128,14 +119,11 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldRenderReasonSuffix_WhenReasonIsGiven(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), "Not enough sign-ups");
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementCancelledReasonSuffix,
 			Arg.Any<string>(),
@@ -146,14 +134,11 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldNotRenderReasonSuffix_WhenNoReasonIsGiven(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), null);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.DidNotReceive().Render(
 			EmailTemplateKind.EngagementCancelledReasonSuffix,
 			Arg.Any<string>(),
@@ -164,7 +149,6 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldNotEmailVolunteer_WhenOptedOutOfEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		var optedOutVolunteer = User.Create(volunteerId);
 		optedOutVolunteer.UpdateNotificationPreferences(
@@ -178,10 +162,8 @@ public class EngagementCancelledNotificationHandlerTests
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), volunteerId, VolunteerOpportunityId.New(), null);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
@@ -199,10 +181,8 @@ public class EngagementCancelledNotificationHandlerTests
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), null, OpportunityTitle: "Deleted Opportunity");
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementCancelled,
 			Arg.Any<string>(),
@@ -213,17 +193,14 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldSkipSendingEmail_WhenOpportunityGoneAndEventHasNoTitle(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
 		var notification = new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), null);
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}

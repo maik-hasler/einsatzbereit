@@ -24,7 +24,6 @@ public class GetNotificationPreferencesQueryHandlerTests
 	public async Task Handle_ShouldReturnCurrentPreferences_WhenUserRowAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.UpdateNotificationPreferences(
@@ -35,7 +34,6 @@ public class GetNotificationPreferencesQueryHandlerTests
 			notifyOnEngagementReminder: false);
 		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
 
-		// Act
 		var result = await _sut.Handle(new GetNotificationPreferencesQuery(userId), cancellationToken);
 
 		// Assert - reflects the persisted values, not the all-subscribed defaults
@@ -50,11 +48,9 @@ public class GetNotificationPreferencesQueryHandlerTests
 	public async Task Handle_ShouldLazilyCreateAndPersistAUser_WhenNoRowExistsYet(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		_userRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
 
-		// Act
 		var result = await _sut.Handle(new GetNotificationPreferencesQuery(userId), cancellationToken);
 
 		// Assert - defaults are all-subscribed, matching User.Create

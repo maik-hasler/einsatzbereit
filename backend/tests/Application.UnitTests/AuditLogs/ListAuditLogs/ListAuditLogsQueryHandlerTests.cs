@@ -24,7 +24,6 @@ public class ListAuditLogsQueryHandlerTests
 	public async Task Handle_ShouldReturnAuditLogEntries_FromReadRepository(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var entry = new AuditLogEntry(
 			Guid.NewGuid(), Guid.NewGuid(), "Admina Admin", "UserShadowDeleted", "User", Guid.NewGuid(), "Volunteera Vera", null, DateTimeOffset.UtcNow);
 
@@ -32,10 +31,8 @@ public class ListAuditLogsQueryHandlerTests
 			.GetAuditLogsPagedAsync(1, 10, cancellationToken)
 			.Returns(new PagedList<AuditLogEntry>([entry], 1, 1, 10));
 
-		// Act
 		var result = await _sut.Handle(new ListAuditLogsQuery(1, 10), cancellationToken);
 
-		// Assert
 		result.Items.Should().ContainSingle().Which.Should().Be(entry);
 	}
 

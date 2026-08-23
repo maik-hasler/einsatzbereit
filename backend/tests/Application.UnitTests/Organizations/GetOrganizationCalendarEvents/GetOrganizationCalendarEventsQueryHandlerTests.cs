@@ -33,7 +33,6 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 	public async Task Handle_ShouldReturnCalendarEvents_WhenOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var events = new List<OrganizationCalendarEventDto>
 		{
 			new(Guid.NewGuid(), "Title", null, "#ff0000", []),
@@ -42,10 +41,8 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 
 		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().BeEquivalentTo(events);
 	}
 
@@ -53,7 +50,6 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 	public async Task Handle_ShouldPassThroughFromAndTo_Unchanged(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var capturedFrom = DateTimeOffset.MinValue;
 		var capturedTo = DateTimeOffset.MinValue;
 		_readRepository
@@ -66,10 +62,8 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 
 		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
 
-		// Act
 		await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		capturedFrom.Should().Be(DefaultFrom);
 		capturedTo.Should().Be(DefaultTo);
 	}
@@ -78,17 +72,14 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_dbContext
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _readRepository.DidNotReceive().GetCalendarEventsAsync(

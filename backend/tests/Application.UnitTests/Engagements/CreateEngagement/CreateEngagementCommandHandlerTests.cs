@@ -141,17 +141,14 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(),
 			TimeSlotId.New(), Message: null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
 	}
 
@@ -167,15 +164,12 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityIsNotPublished(
 		OpportunityStatus status, CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		SetupOpportunityExists(opportunityId, status);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "Ich helfe gerne!");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
@@ -197,10 +191,8 @@ public class CreateEngagementCommandHandlerTests
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>()).Returns(opportunity);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlot.Id, Message: null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
@@ -216,10 +208,8 @@ public class CreateEngagementCommandHandlerTests
 		SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "I'd like to help");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
 	}
@@ -228,15 +218,12 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenIndividualContactOpportunityIsSignedUpWithATimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId.New(), Message: null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
 	}
@@ -245,16 +232,13 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldCreateScheduledSlotsEngagement_WhenTimeSlotIdIsProvided(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.TimeSlotId.Should().Be(timeSlotId);
 		result.Message.Should().BeNull();
 		result.Status.Should().Be(EngagementStatus.Pending);
@@ -264,16 +248,13 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldCreateIndividualContactEngagement_WhenTimeSlotIdIsNull(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Ich helfe gerne!");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.TimeSlotId.Should().BeNull();
 		result.Message.Should().Be("Ich helfe gerne!");
 		result.Status.Should().Be(EngagementStatus.Pending);
@@ -283,7 +264,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldPersistEngagement_ToRepository(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
@@ -292,10 +272,8 @@ public class CreateEngagementCommandHandlerTests
 			timeSlotId,
 			Message: null);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
 	}
 
@@ -303,7 +281,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTimeSlotIdIsNullAndMessageIsNull(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
@@ -312,10 +289,8 @@ public class CreateEngagementCommandHandlerTests
 			TimeSlotId: null,
 			Message: null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 	}
 
@@ -323,7 +298,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldSetCorrectOpportunityId_OnCreatedEngagement(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
@@ -332,10 +306,8 @@ public class CreateEngagementCommandHandlerTests
 			timeSlotId,
 			Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.OpportunityId.Should().Be(opportunityId);
 	}
 
@@ -343,7 +315,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldSetCorrectVolunteerId_OnCreatedEngagement(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
@@ -353,10 +324,8 @@ public class CreateEngagementCommandHandlerTests
 			timeSlotId,
 			Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.VolunteerId.Should().Be(volunteerId);
 	}
 
@@ -364,17 +333,14 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTimeSlotIsFull(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId, maxParticipants: 3);
 		_dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, Arg.Any<CancellationToken>())
 			.Returns(3);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
@@ -393,10 +359,8 @@ public class CreateEngagementCommandHandlerTests
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).LockTimeSlotForUpdateAsync(timeSlotId, cancellationToken);
 	}
 
@@ -404,7 +368,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldSucceed_WhenTimeSlotHasUnlimitedCapacity_RegardlessOfActiveEngagementCount(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId, maxParticipants: null);
@@ -412,10 +375,8 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(1000);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.TimeSlotId.Should().Be(timeSlotId);
 		result.Status.Should().Be(EngagementStatus.Pending);
 	}
@@ -426,13 +387,11 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldCheckForDuplicateSignUp_ScopedToTheRequestedTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert - the duplicate check is scoped to this time slot, not the whole
@@ -444,13 +403,11 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldLookUpTerminalEngagement_ScopedToTheRequestedTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert - a terminated engagement for a *different* slot must never
@@ -463,7 +420,6 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldReuseTerminalEngagement_WhenOneExistsForTheRequestedTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
@@ -473,10 +429,8 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(terminalEngagement);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeSameAs(terminalEngagement);
 		result.Status.Should().Be(EngagementStatus.Pending);
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
@@ -495,7 +449,6 @@ public class CreateEngagementCommandHandlerTests
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert - a fresh engagement is created for this slot; nothing about the
@@ -530,7 +483,6 @@ public class CreateEngagementCommandHandlerTests
 			]);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert - nothing about this request talks to Keycloak's user endpoint

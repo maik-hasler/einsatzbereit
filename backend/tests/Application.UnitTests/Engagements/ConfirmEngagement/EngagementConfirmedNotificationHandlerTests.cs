@@ -59,7 +59,6 @@ public class EngagementConfirmedNotificationHandlerTests
 	public async Task Handle_ShouldRenderConfirmationEmail_InVolunteersPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		var volunteer = User.Create(volunteerId);
 		volunteer.SetPreferredLanguage("en");
@@ -67,10 +66,8 @@ public class EngagementConfirmedNotificationHandlerTests
 			.Returns([volunteer]);
 		var notification = new EngagementConfirmedDomainEvent(EngagementId.New(), volunteerId, VolunteerOpportunityId.New());
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementConfirmed,
 			"en",
@@ -81,15 +78,12 @@ public class EngagementConfirmedNotificationHandlerTests
 	public async Task Handle_ShouldEmailVolunteer_WhenSubscribedToEngagementConfirmed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
 			.Returns("https://example.com/unsubscribe");
 		var notification = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.Received(1).SendAsync(
 			"user@example.com",
 			Arg.Any<string>(),
@@ -102,7 +96,6 @@ public class EngagementConfirmedNotificationHandlerTests
 	public async Task Handle_ShouldNotEmailVolunteer_WhenOptedOutOfEngagementConfirmed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var volunteerId = UserId.New();
 		var optedOutVolunteer = User.Create(volunteerId);
 		optedOutVolunteer.UpdateNotificationPreferences(
@@ -115,10 +108,8 @@ public class EngagementConfirmedNotificationHandlerTests
 			.Returns([optedOutVolunteer]);
 		var notification = new EngagementConfirmedDomainEvent(EngagementId.New(), volunteerId, VolunteerOpportunityId.New());
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
@@ -127,16 +118,13 @@ public class EngagementConfirmedNotificationHandlerTests
 	public async Task Handle_ShouldSkip_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
 		var notification = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 
-		// Act
 		await _sut.Handle(notification, cancellationToken);
 
-		// Assert
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}

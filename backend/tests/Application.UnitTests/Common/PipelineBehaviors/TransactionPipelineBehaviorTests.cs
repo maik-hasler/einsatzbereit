@@ -4,7 +4,6 @@ using Application.Common.Persistence;
 using AwesomeAssertions;
 using NSubstitute;
 
-
 namespace Application.UnitTests.Common.PipelineBehaviors;
 
 public class TransactionPipelineBehaviorTests
@@ -13,7 +12,6 @@ public class TransactionPipelineBehaviorTests
 	public async Task Handle_ShouldExecuteInTransactionAndSaveChanges_WhenNoTransactionIsActive(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var unitOfWork = Substitute.For<IUnitOfWork>();
 		unitOfWork.HasActiveTransaction.Returns(false);
 		unitOfWork
@@ -22,7 +20,6 @@ public class TransactionPipelineBehaviorTests
 
 		var behavior = new TransactionPipelineBehavior<TestCommand, string>(unitOfWork);
 
-		// Act
 		var result = await behavior.Handle(new TestCommand(), () => ValueTask.FromResult("ok"), cancellationToken);
 
 		// Assert - begin/commit-or-rollback is ApplicationDbContext's own
@@ -39,7 +36,6 @@ public class TransactionPipelineBehaviorTests
 	public async Task Handle_ShouldPropagateExceptionWithoutSaving_WhenNoTransactionIsActiveAndNextThrows(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var unitOfWork = Substitute.For<IUnitOfWork>();
 		unitOfWork.HasActiveTransaction.Returns(false);
 		unitOfWork
@@ -50,10 +46,8 @@ public class TransactionPipelineBehaviorTests
 
 		ValueTask<string> Next() => throw new InvalidOperationException("boom");
 
-		// Act
 		Func<Task> act = async () => await behavior.Handle(new TestCommand(), Next, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("boom");
 		await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
@@ -70,7 +64,6 @@ public class TransactionPipelineBehaviorTests
 
 		var behavior = new TransactionPipelineBehavior<TestCommand, string>(unitOfWork);
 
-		// Act
 		var result = await behavior.Handle(new TestCommand(), () => ValueTask.FromResult("nested-ok"), cancellationToken);
 
 		// Assert - the outermost command owns the single transaction/save; this
@@ -94,10 +87,8 @@ public class TransactionPipelineBehaviorTests
 
 		ValueTask<string> Next() => throw new InvalidOperationException("nested boom");
 
-		// Act
 		Func<Task> act = async () => await behavior.Handle(new TestCommand(), Next, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("nested boom");
 	}
 

@@ -8,7 +8,6 @@ using Domain.Organizations;
 using Domain.Users;
 using NSubstitute;
 
-
 namespace Application.UnitTests.Organizations.CreateInvitation;
 
 public class CreateInvitationCommandHandlerTests
@@ -57,16 +56,13 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, cancellationToken)
 			.Returns(false);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Organizer, DefaultInvitedById);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _keycloakUserService.DidNotReceive().GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -77,13 +73,10 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldCreateInvitation_WhenRequestingUserIsOrgMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		await _dbContext.Received(1).TryCreateInvitationAsync(
 			Arg.Is<OrganizationInvitation>(i => i != null && i.IntendedRole == OrganizationMemberRole.Member),
@@ -106,10 +99,8 @@ public class CreateInvitationCommandHandlerTests
 			.Returns(false);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*pending invitation*");
 		await _emailService.DidNotReceive().SendAsync(
@@ -120,17 +111,14 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldRenderInvitationEmail_InInviteesPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitee = User.Create(DefaultInviteeId);
 		invitee.SetPreferredLanguage("en");
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns([invitee]);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.InvitationReceived,
 			"en",
@@ -142,13 +130,10 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldDefaultToGerman_WhenInviteeHasNoPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.InvitationReceived,
 			"de",

@@ -20,15 +20,12 @@ public class GetUnreadNotificationCountQueryHandlerTests
 	public async Task Handle_ShouldReturnCountFromRepository(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var recipientId = UserId.New();
 		_readRepository.CountUnreadByRecipientAsync(recipientId, cancellationToken).Returns(7);
 		var query = new GetUnreadNotificationCountQuery(recipientId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().Be(7);
 	}
 
@@ -36,15 +33,12 @@ public class GetUnreadNotificationCountQueryHandlerTests
 	public async Task Handle_ShouldReturnZero_WhenNoUnreadNotificationsExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var recipientId = UserId.New();
 		_readRepository.CountUnreadByRecipientAsync(recipientId, cancellationToken).Returns(0);
 		var query = new GetUnreadNotificationCountQuery(recipientId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().Be(0);
 	}
 }

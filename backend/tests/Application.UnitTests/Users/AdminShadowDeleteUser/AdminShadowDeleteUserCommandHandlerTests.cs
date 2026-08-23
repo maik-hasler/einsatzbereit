@@ -35,15 +35,12 @@ public class AdminShadowDeleteUserCommandHandlerTests
 	public async Task Handle_ShouldShadowDeleteUser_AndWriteAuditLog(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 		var user = User.Create(UserId.Create(userId).GetValueOrThrow());
 		_userRepo.FindAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken).Returns(user);
 
-		// Act
 		var result = await _sut.Handle(new AdminShadowDeleteUserCommand(userId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.IsDeleted.Should().BeTrue();
 		await _auditLogRepo.Received(1).AddAsync(
@@ -58,7 +55,6 @@ public class AdminShadowDeleteUserCommandHandlerTests
 	public async Task Handle_ShouldMarkOpenReportsActioned_WhenUserShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 		var user = User.Create(UserId.Create(userId).GetValueOrThrow());
 		_userRepo.FindAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken).Returns(user);
@@ -67,10 +63,8 @@ public class AdminShadowDeleteUserCommandHandlerTests
 			.GetOpenReportsForTargetAsync(ReportTargetType.User, userId, cancellationToken)
 			.Returns([report]);
 
-		// Act
 		await _sut.Handle(new AdminShadowDeleteUserCommand(userId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		report.Status.Should().Be(ReportStatus.Actioned);
 		report.ResolvedByUserId.Should().Be(DefaultAdminUserId);
 	}
@@ -79,14 +73,11 @@ public class AdminShadowDeleteUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenUserNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 		_userRepo.FindAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken).Returns((User?)null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminShadowDeleteUserCommand(userId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}
@@ -95,16 +86,13 @@ public class AdminShadowDeleteUserCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenUserAlreadyShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = Guid.NewGuid();
 		var user = User.Create(UserId.Create(userId).GetValueOrThrow());
 		user.MarkDeleted(DateTimeOffset.UtcNow);
 		_userRepo.FindAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken).Returns(user);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new AdminShadowDeleteUserCommand(userId, DefaultAdminUserId), cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already shadow-deleted*");
 		await _auditLogRepo.DidNotReceive().AddAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
 	}

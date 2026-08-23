@@ -23,7 +23,6 @@ public class DeleteUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldClearAvatarUrl_AndDeleteTheStorageObject_WhenUserHasAnAvatar(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/some-key/avatar.png");
@@ -34,10 +33,8 @@ public class DeleteUserAvatarCommandHandlerTests
 
 		var command = new DeleteUserAvatarCommand(userId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().BeNull();
 		await _fileStorage.Received(1).DeleteAsync("user-avatars/some-key/avatar.png", cancellationToken);
@@ -47,17 +44,14 @@ public class DeleteUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldBeANoop_WhenUserHasNoAvatar(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new DeleteUserAvatarCommand(userId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().BeNull();
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -67,7 +61,6 @@ public class DeleteUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldNotAttemptDeletion_WhenTheStoredUrlCannotBeMappedToAnObjectKey(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/some-key/avatar.png");
@@ -78,10 +71,8 @@ public class DeleteUserAvatarCommandHandlerTests
 
 		var command = new DeleteUserAvatarCommand(userId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().BeNull();
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -108,10 +99,8 @@ public class DeleteUserAvatarCommandHandlerTests
 
 		var command = new DeleteUserAvatarCommand(userId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		user.AvatarUrl.Should().BeNull();
 	}

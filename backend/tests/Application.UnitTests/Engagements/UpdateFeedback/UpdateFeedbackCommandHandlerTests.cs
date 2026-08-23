@@ -41,17 +41,14 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldUpdateFeedback_WhenCalledByOwnerWithValidRating(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, 5, "Actually, great!");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		engagement.FeedbackRating.Should().Be(5);
 		engagement.FeedbackComment.Should().Be("Actually, great!");
@@ -61,16 +58,13 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new UpdateFeedbackCommand(engagementId, UserId.New(), 4, null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*"))
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
@@ -80,17 +74,14 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new UpdateFeedbackCommand(engagementId, UserId.New(), 5, "Hijacked");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*You can only update feedback for your own engagements*"))
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
@@ -100,14 +91,12 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldNotMutateEngagement_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback(rating: 3, comment: "Okay");
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new UpdateFeedbackCommand(engagementId, UserId.New(), 5, "Hijacked");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 		await act.Should().ThrowAsync<ResultFailureException>();
 
@@ -120,7 +109,6 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		engagement.Anonymize();
 		var engagementId = EngagementId.New();
@@ -128,10 +116,8 @@ public class UpdateFeedbackCommandHandlerTests
 
 		var command = new UpdateFeedbackCommand(engagementId, UserId.New(), 5, "Great!");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}
@@ -153,10 +139,8 @@ public class UpdateFeedbackCommandHandlerTests
 
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, 5, "Great!");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*not been submitted*"))
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
@@ -166,7 +150,6 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEditWindowExpired(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var submittedAt = DateTimeOffset.UtcNow.AddDays(-(Engagement.FeedbackEditWindowDays + 1));
 		var (engagement, volunteerId) = CreateEngagementWithFeedback(submittedAt: submittedAt);
 		var engagementId = EngagementId.New();
@@ -174,10 +157,8 @@ public class UpdateFeedbackCommandHandlerTests
 
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, 5, "Too late");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*no longer be edited*"))
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
@@ -191,17 +172,14 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRatingIsOutOfRange(
 		int invalidRating, CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, invalidRating, null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Rating must be between 1 and 5*"))
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
@@ -213,17 +191,14 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldSucceed_WhenRatingIsAtBoundary(
 		int boundaryRating, CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, boundaryRating, null);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		engagement.FeedbackRating.Should().Be(boundaryRating);
 	}
@@ -232,7 +207,6 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCommentExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -240,10 +214,8 @@ public class UpdateFeedbackCommandHandlerTests
 		var tooLongComment = new string('a', 501);
 		var command = new UpdateFeedbackCommand(engagementId, volunteerId, 4, tooLongComment);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*must not exceed 500 characters*"))
 			.Which.Error.Type.Should().Be(ErrorType.Validation);

@@ -40,7 +40,6 @@ public class SearchMemberCandidatesQueryHandlerTests
 	public async Task Handle_ShouldReturnCandidates_ExcludingExistingMembers(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var existingMember = Guid.NewGuid();
 		var candidate = Guid.NewGuid();
 		_keycloakService
@@ -59,10 +58,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 
 		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().ContainSingle(c => c.UserId == candidate);
 	}
 
@@ -70,7 +67,6 @@ public class SearchMemberCandidatesQueryHandlerTests
 	public async Task Handle_ShouldReturnCandidates_ExcludingUsersWithPendingInvitation(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var pendingInvitee = Guid.NewGuid();
 		var candidate = Guid.NewGuid();
 		_keycloakService
@@ -94,10 +90,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 
 		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().ContainSingle(c => c.UserId == candidate);
 	}
 
@@ -129,10 +123,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 
 		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().ContainSingle(c => c.UserId == declinedInvitee);
 	}
 
@@ -146,10 +138,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 
 		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _keycloakService.DidNotReceive().SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());

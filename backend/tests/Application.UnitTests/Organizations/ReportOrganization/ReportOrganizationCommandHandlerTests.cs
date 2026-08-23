@@ -38,7 +38,6 @@ public class ReportOrganizationCommandHandlerTests
 	public async Task Handle_ShouldAddReport_WhenOrganizationExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo
@@ -47,10 +46,8 @@ public class ReportOrganizationCommandHandlerTests
 
 		var command = new ReportOrganizationCommand(orgId, DefaultReporterId, ReportReason.Fraud, "fake org");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _reportRepo.Received(1).AddAsync(
 			Arg.Is<Report>(r => r!.TargetType == ReportTargetType.Organization
@@ -65,7 +62,6 @@ public class ReportOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		_organizationRepo
 			.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken)
@@ -73,10 +69,8 @@ public class ReportOrganizationCommandHandlerTests
 
 		var command = new ReportOrganizationCommand(orgId, DefaultReporterId, ReportReason.Fraud, null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());
@@ -86,7 +80,6 @@ public class ReportOrganizationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenReporterAlreadyHasOpenReport(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo
@@ -98,10 +91,8 @@ public class ReportOrganizationCommandHandlerTests
 
 		var command = new ReportOrganizationCommand(orgId, DefaultReporterId, ReportReason.Fraud, null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _reportRepo.DidNotReceive().AddAsync(Arg.Any<Report>(), Arg.Any<CancellationToken>());

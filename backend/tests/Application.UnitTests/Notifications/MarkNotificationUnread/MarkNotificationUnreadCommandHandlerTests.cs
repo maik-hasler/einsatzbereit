@@ -24,7 +24,6 @@ public class MarkNotificationUnreadCommandHandlerTests
 	public async Task Handle_ShouldMarkNotificationUnreadAndReturnTrue_WhenRequestingUserIsTheRecipient(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
@@ -32,10 +31,8 @@ public class MarkNotificationUnreadCommandHandlerTests
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationUnreadCommand(notification.Id, recipientUserId.Value);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		notification.IsRead.Should().BeFalse();
 		notification.ReadOn.Should().BeNull();
@@ -45,15 +42,12 @@ public class MarkNotificationUnreadCommandHandlerTests
 	public async Task Handle_ShouldReturnFalse_WhenNotificationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var notificationId = NotificationId.New();
 		_notificationRepo.FindAsync(notificationId, cancellationToken).Returns((Notification?)null);
 		var command = new MarkNotificationUnreadCommand(notificationId, Guid.NewGuid());
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeFalse();
 	}
 
@@ -61,7 +55,6 @@ public class MarkNotificationUnreadCommandHandlerTests
 	public async Task Handle_ShouldReturnFalseAndNotMarkUnread_WhenRequestingUserIsNotTheRecipient(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
@@ -69,10 +62,8 @@ public class MarkNotificationUnreadCommandHandlerTests
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationUnreadCommand(notification.Id, Guid.NewGuid());
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		// Mirrors MarkNotificationRead's ownership check (einsatzbereit#829): a
 		// cross-user attempt collapses into the same "false" result as a
 		// nonexistent id rather than leaking whether the id belongs to someone else.
@@ -84,17 +75,14 @@ public class MarkNotificationUnreadCommandHandlerTests
 	public async Task Handle_ShouldReturnTrue_WhenNotificationIsAlreadyUnread(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var recipientUserId = UserId.New();
 		var notification = Notification.Create(
 			recipientUserId, NotificationKind.EngagementCreated, Guid.NewGuid());
 		_notificationRepo.FindAsync(notification.Id, cancellationToken).Returns(notification);
 		var command = new MarkNotificationUnreadCommand(notification.Id, recipientUserId.Value);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		notification.IsRead.Should().BeFalse();
 	}

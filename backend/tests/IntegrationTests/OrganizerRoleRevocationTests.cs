@@ -62,7 +62,6 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 		// coOrganizerClient's original token is fine here.
 		await coOrganizerClient.RemoveMemberAsync(org.Id.Value, soleOrganizerId, cancellationToken);
 
-		// Assert
 		(await fixture.UserHasOrganisatorRoleAsync(soleOrganizerId, cancellationToken))
 			.Should().BeFalse();
 	}
@@ -71,7 +70,6 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 	public async Task DeleteOrganization_ShouldRevokeOrganisatorRole_WhenSoleOrganizerDeletesTheirOnlyOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (userId, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var client = await CreateAuthenticatedClientAsync(username, password);
 
@@ -82,10 +80,8 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 		// Organisator policy, a role claim baked into the JWT at mint time.
 		client = await CreateAuthenticatedClientAsync(username, password);
 
-		// Act
 		await client.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
 
-		// Assert
 		(await fixture.UserHasOrganisatorRoleAsync(userId, cancellationToken))
 			.Should().BeFalse();
 	}

@@ -39,16 +39,13 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 	public async Task Handle_ShouldReturnCheckInPin_WhenOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunityWithPin();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 
 		var query = new GetOpportunityCheckInPinQuery(opportunity.Id, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().Be("48213");
 	}
 
@@ -67,10 +64,8 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 
 		var query = new GetOpportunityCheckInPinQuery(opportunity.Id, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 	}

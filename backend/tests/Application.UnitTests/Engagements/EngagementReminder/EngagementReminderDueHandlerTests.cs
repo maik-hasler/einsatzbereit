@@ -58,7 +58,6 @@ public class EngagementReminderDueHandlerTests
 	public async Task Handle_ShouldSendReminderEmail_WhenOpportunityAndTimeSlotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlotId);
 		var volunteerId = UserId.New();
 		var domainEvent = new EngagementReminderDueDomainEvent(
@@ -70,10 +69,8 @@ public class EngagementReminderDueHandlerTests
 		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
 			.Returns([true]);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _emailService.Received(1).SendBatchAsync(
 			Arg.Is<IReadOnlyList<EmailMessage>>(m => m!.Count == 1 && m[0].To == "vera@example.com"),
 			cancellationToken);
@@ -83,17 +80,14 @@ public class EngagementReminderDueHandlerTests
 	public async Task Handle_ShouldNotThrow_AndShouldNotSendEmail_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var domainEvent = new EngagementReminderDueDomainEvent(
 			EngagementId.New(), UserId.New(), opportunityId, TimeSlotId.New());
 
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
@@ -110,10 +104,8 @@ public class EngagementReminderDueHandlerTests
 
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
@@ -135,10 +127,8 @@ public class EngagementReminderDueHandlerTests
 		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
 			.Returns([false]);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();
 	}
 
@@ -164,10 +154,8 @@ public class EngagementReminderDueHandlerTests
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns([volunteer]);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementReminder,
 			"en",
@@ -200,7 +188,6 @@ public class EngagementReminderDueHandlerTests
 		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
 			.Returns([true]);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - 12:00 UTC on a winter date is 13:00 in Europe/Berlin (CET, UTC+1).
@@ -216,7 +203,6 @@ public class EngagementReminderDueHandlerTests
 	public async Task Handle_ShouldNotSendReminderEmail_WhenVolunteerOptedOutOfReminders(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlotId);
 		var volunteerId = UserId.New();
 		var domainEvent = new EngagementReminderDueDomainEvent(
@@ -233,10 +219,8 @@ public class EngagementReminderDueHandlerTests
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns([optedOutVolunteer]);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}

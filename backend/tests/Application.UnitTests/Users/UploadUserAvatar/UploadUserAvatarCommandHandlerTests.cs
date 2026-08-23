@@ -35,17 +35,14 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldSetAvatarUrl_WhenUserAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().Be("https://example.com/user-avatars/avatar.png");
 	}
@@ -63,10 +60,8 @@ public class UploadUserAvatarCommandHandlerTests
 
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().Be("https://example.com/user-avatars/avatar.png");
 	}
@@ -83,10 +78,8 @@ public class UploadUserAvatarCommandHandlerTests
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _fileStorage.Received(1).UploadAsync(
 			Arg.Is<string>(key => key!.StartsWith($"user-avatars/{userId.Value}/", StringComparison.Ordinal)
 				&& key != $"user-avatars/{userId.Value}/"),
@@ -100,7 +93,6 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldDeleteThePreviousAvatarObject_WhenUserAlreadyHadOne(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
@@ -110,10 +102,8 @@ public class UploadUserAvatarCommandHandlerTests
 			.Returns("user-avatars/old-key/old.png");
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _fileStorage.Received(1).DeleteAsync("user-avatars/old-key/old.png", cancellationToken);
 	}
@@ -122,16 +112,13 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldNotAttemptDeletion_WhenUserHadNoPreviousAvatar(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
@@ -153,10 +140,8 @@ public class UploadUserAvatarCommandHandlerTests
 			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 	}
 
@@ -164,14 +149,11 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldThrow_AndNotUpload_WhenContentTypeIsInvalid(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var userId = UserId.New();
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "application/pdf");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _fileStorage.DidNotReceive().UploadAsync(
@@ -189,10 +171,8 @@ public class UploadUserAvatarCommandHandlerTests
 		var notActuallyAnImage = "not a real image"u8.ToArray();
 		var command = new UploadUserAvatarCommand(userId, notActuallyAnImage, "image/png");
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _fileStorage.DidNotReceive().UploadAsync(

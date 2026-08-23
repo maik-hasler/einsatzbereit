@@ -9,10 +9,8 @@ public class UserTests
 	[Test]
 	public void Create_ShouldDefaultToSubscribedToEveryNotificationType()
 	{
-		// Act
 		var user = User.Create(UserId.New());
 
-		// Assert
 		user.NotifyOnNewSignUp.Should().BeTrue();
 		user.NotifyOnWithdrawal.Should().BeTrue();
 		user.NotifyOnEngagementConfirmed.Should().BeTrue();
@@ -25,31 +23,25 @@ public class UserTests
 	[Test]
 	public void Create_ShouldAssignAnUnsubscribeToken()
 	{
-		// Act
 		var user = User.Create(UserId.New());
 
-		// Assert
 		user.UnsubscribeToken.Should().NotBe(Guid.Empty);
 	}
 
 	[Test]
 	public void Create_ShouldAssignADifferentUnsubscribeToken_ToEachUser()
 	{
-		// Act
 		var first = User.Create(UserId.New());
 		var second = User.Create(UserId.New());
 
-		// Assert
 		first.UnsubscribeToken.Should().NotBe(second.UnsubscribeToken);
 	}
 
 	[Test]
 	public void UpdateNotificationPreferences_ShouldOverwriteAllFiveFlags()
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 
-		// Act
 		user.UpdateNotificationPreferences(
 			notifyOnNewSignUp: false,
 			notifyOnWithdrawal: false,
@@ -57,7 +49,6 @@ public class UserTests
 			notifyOnEngagementCancelled: false,
 			notifyOnEngagementReminder: false);
 
-		// Assert
 		user.NotifyOnNewSignUp.Should().BeFalse();
 		user.NotifyOnWithdrawal.Should().BeFalse();
 		user.NotifyOnEngagementConfirmed.Should().BeFalse();
@@ -68,13 +59,10 @@ public class UserTests
 	[Test]
 	public void Unsubscribe_ShouldFailWithForbidden_WhenTokenDoesNotMatch()
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 
-		// Act
 		var result = user.Unsubscribe(EmailNotificationType.NewSignUp, Guid.NewGuid());
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Type.Should().Be(ErrorType.Forbidden);
 		user.NotifyOnNewSignUp.Should().BeTrue();
@@ -83,13 +71,10 @@ public class UserTests
 	[Test]
 	public void Unsubscribe_ShouldDisableOnlyTheRequestedType_WhenTokenMatches()
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 
-		// Act
 		var result = user.Unsubscribe(EmailNotificationType.EngagementReminder, user.UnsubscribeToken);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		user.NotifyOnEngagementReminder.Should().BeFalse();
 		user.NotifyOnNewSignUp.Should().BeTrue();
@@ -101,14 +86,11 @@ public class UserTests
 	[Test]
 	public void Unsubscribe_ShouldBeIdempotent_WhenCalledTwiceForTheSameType()
 	{
-		// Arrange
 		var user = User.Create(UserId.New());
 		user.Unsubscribe(EmailNotificationType.Withdrawal, user.UnsubscribeToken);
 
-		// Act
 		var result = user.Unsubscribe(EmailNotificationType.Withdrawal, user.UnsubscribeToken);
 
-		// Assert
 		result.IsSuccess.Should().BeTrue();
 		user.NotifyOnWithdrawal.Should().BeFalse();
 	}
@@ -140,10 +122,8 @@ public class UserTests
 		// outside the switch's cases silently no-op'd while reporting success.
 		var user = User.Create(UserId.New());
 
-		// Act
 		var result = user.Unsubscribe((EmailNotificationType)(-1), user.UnsubscribeToken);
 
-		// Assert
 		result.IsFailure.Should().BeTrue();
 		result.Error.Type.Should().Be(ErrorType.Validation);
 	}

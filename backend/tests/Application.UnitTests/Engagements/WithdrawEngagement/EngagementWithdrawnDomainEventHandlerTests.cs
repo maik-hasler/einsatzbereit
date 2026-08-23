@@ -60,7 +60,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToWithdrawal(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -72,7 +71,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - organizer emails go out as a single batch (#1729), not one
@@ -87,7 +85,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfWithdrawal(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -106,7 +103,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - the only organizer opted out, so the batch is never sent at all.
@@ -133,10 +129,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
 			"en",
@@ -159,10 +153,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 			.Returns<KeycloakUserProfile>(_ => throw new InvalidOperationException("404 Not Found"));
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -174,15 +166,12 @@ public class EngagementWithdrawnDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunityId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -194,16 +183,13 @@ public class EngagementWithdrawnDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterNotifying(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 }

@@ -93,7 +93,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldUseGivenCheckInPin(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -105,10 +104,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
 			CheckInPin: "13579");
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.CheckInPin.Should().Be("13579");
 	}
 
@@ -116,7 +113,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldUpdateTitleEnAndDescriptionEn(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -127,10 +123,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "New topic", "Neue Beschreibung", "New description", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.TitleDe.Should().Be("Neues Thema");
 		opportunity.TitleEn.Should().Be("New topic");
 		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
@@ -141,7 +135,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldUpdateFields_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
@@ -153,10 +146,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		opportunity.TitleDe.Should().Be("Neues Thema");
 		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
@@ -167,7 +158,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldUpdateOccurrenceAndParticipationType(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -178,10 +168,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
@@ -190,7 +178,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldSetValidUntil_WhenGivenForIndividualContact(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var validUntil = DateTimeOffset.UtcNow.AddDays(60);
@@ -203,10 +190,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
 			ValidUntil: validUntil);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.ValidUntil.Should().Be(validUntil);
 	}
 
@@ -214,7 +199,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldClearValidUntil_WhenSwitchingToScheduledSlots(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateDraftOpportunity();
 		opportunity.SetValidUntil(DateTimeOffset.UtcNow.AddDays(30), DateTimeOffset.UtcNow);
@@ -226,10 +210,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.ValidUntil.Should().BeNull();
 	}
 
@@ -237,7 +219,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenValidUntilNotInFuture(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -249,10 +230,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
 			ValidUntil: DateTimeOffset.UtcNow.AddDays(-1));
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Deadline must be in the future*");
 	}
@@ -261,7 +240,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenParticipationTypeChanges_AndActiveEngagementsExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
@@ -279,10 +257,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*ParticipationType cannot be changed*");
 	}
@@ -312,10 +288,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*ParticipationType cannot be changed*");
 	}
@@ -325,7 +299,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldAllowRemote_WithNullAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -336,10 +309,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Remote", null, "Desc", null, true, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.IsRemote.Should().BeTrue();
 		opportunity.Address.Should().BeNull();
 	}
@@ -348,7 +319,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 
 		_opportunityRepo
@@ -358,10 +328,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{opportunityId}*");
 	}
@@ -370,7 +338,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTitleIsEmpty(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -381,10 +348,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "   ", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Title must not be empty*");
 	}
@@ -393,7 +358,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldAllowEmptyTitle_WhenDraft(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateDraftOpportunity();
 
@@ -404,10 +368,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		opportunity.TitleDe.Should().Be(string.Empty);
 	}
@@ -416,7 +378,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyActiveVolunteers_WhenAddressChanges(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var activeVolunteer = Guid.NewGuid();
@@ -434,10 +395,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
@@ -451,7 +410,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldRenderOpportunityUpdatedEmail_InVolunteersPreferredLanguage(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var activeVolunteerId = UserId.New();
@@ -473,10 +431,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		_emailTemplateRenderer.Received(1).Render(
 			EmailTemplateKind.OpportunityUpdated,
 			"en",
@@ -487,7 +443,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotNotifyVolunteers_WhenOnlyCosmeticFieldsChange(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var activeVolunteer = Guid.NewGuid();
@@ -504,7 +459,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert - no notification and no email should be sent
@@ -520,7 +474,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTooManyTags(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var tooManyTags = Enumerable.Range(0, VolunteerOpportunity.MaxTagsCount + 1).Select(i => $"tag{i}").ToList();
@@ -532,10 +485,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, tooManyTags, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*cannot have more than*");
 	}
@@ -568,7 +519,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert - the in-app notification still gets created, only the email is skipped.
@@ -584,7 +534,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenNonRemoteAndNoAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -595,10 +544,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Titel", null, "Beschreibung", null, false, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Address is required*");
 	}
@@ -621,10 +568,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.TitleDe.Should().Be("Altes Thema");
@@ -655,10 +600,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.Address.Should().Be(newAddress);
 		opportunity.Address!.Latitude.Should().BeNull();
 		opportunity.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>()
@@ -670,7 +613,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_AndShouldPreserveExistingCoordinates_WhenAddressTextUnchanged(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
 		var opportunity = VolunteerOpportunity.Create(
@@ -687,10 +629,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
 		opportunity.Address!.Latitude.Should().Be(52.52);
 		opportunity.Address!.Longitude.Should().Be(13.405);
@@ -700,7 +640,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldRaiseGeocodingRequestedEvent_WhenSwitchingFromRemoteToPhysicalAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Altes Thema", null, "Alte Beschreibung", null, true, null, Occurrence.OneTime,
@@ -714,10 +653,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		opportunity.Address.Should().Be(DefaultAddress);
 		opportunity.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>().Should().ContainSingle();
 	}

@@ -68,17 +68,14 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldWithdrawEngagement_WhenCalledByOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Status.Should().Be(EngagementStatus.Withdrawn);
 	}
 
@@ -86,7 +83,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldWithdrawConfirmedEngagement_WhenCalledByOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Confirm();
 		var engagementId = EngagementId.New();
@@ -94,10 +90,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Status.Should().Be(EngagementStatus.Withdrawn);
 	}
 
@@ -105,16 +99,13 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new WithdrawEngagementCommand(engagementId, Guid.NewGuid());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
@@ -123,7 +114,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCallerIsNotOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreatePendingEngagementWithVolunteer();
 		var engagementId = EngagementId.New();
 		var differentUserId = Guid.NewGuid();
@@ -131,10 +121,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, differentUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Only the volunteer*");
 	}
@@ -143,7 +131,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsAlreadyWithdrawn(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Withdraw();
 		var engagementId = EngagementId.New();
@@ -151,10 +138,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
@@ -162,7 +147,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Cancel();
 		var engagementId = EngagementId.New();
@@ -170,10 +154,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
@@ -184,7 +166,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreatePendingEngagementWithVolunteer();
 		engagement.Anonymize();
 		var engagementId = EngagementId.New();
@@ -192,10 +173,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, Guid.NewGuid());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}
@@ -204,7 +183,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementIsCheckedIn(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Confirm();
 		engagement.CheckIn();
@@ -213,10 +191,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*checked-in*");
 	}
 
@@ -234,7 +210,6 @@ public class WithdrawEngagementCommandHandlerTests
 	public async Task Handle_ShouldCreateInAppNotification_ForEachOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -243,10 +218,8 @@ public class WithdrawEngagementCommandHandlerTests
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == organizerId && n.Kind == NotificationKind.EngagementWithdrawn),
 			Arg.Any<CancellationToken>());

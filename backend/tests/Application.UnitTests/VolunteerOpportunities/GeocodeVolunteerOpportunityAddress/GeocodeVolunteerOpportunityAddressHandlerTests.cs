@@ -46,17 +46,14 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldApplyCoordinatesAndSave_WhenGeocodingFindsMatch(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateNonRemoteOpportunity();
 		SetupOpportunity(opportunity.Id, opportunity);
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert
 		opportunity.Address!.Latitude.Should().Be(52.52);
 		opportunity.Address!.Longitude.Should().Be(13.405);
 		opportunity.AddressGeocodingFailed.Should().BeFalse();
@@ -67,17 +64,14 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldMarkAddressGeocodingFailedAndSave_WhenGeocodingReturnsNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateNonRemoteOpportunity();
 		SetupOpportunity(opportunity.Id, opportunity);
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(GeocodingResult.NotFound);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert
 		opportunity.AddressGeocodingFailed.Should().BeTrue();
 		opportunity.Address!.Latitude.Should().BeNull();
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
@@ -87,14 +81,12 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldLeaveCoordinatesNullAndNotSave_WhenGeocodingIsTransientFailure(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateNonRemoteOpportunity();
 		SetupOpportunity(opportunity.Id, opportunity);
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(GeocodingResult.TransientFailure);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
 		// Assert: left for GeocodingRetryJob to backstop later - no save needed.
@@ -107,14 +99,12 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldNotThrow_WhenGeocodingServiceThrows(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateNonRemoteOpportunity();
 		SetupOpportunity(opportunity.Id, opportunity);
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(Task.FromException<GeocodingResult>(new HttpRequestException("boom")));
 
-		// Act
 		Func<Task> act = async () =>
 			await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
@@ -130,15 +120,12 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldDoNothing_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var missingId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(missingId, Arg.Any<CancellationToken>()).Returns((VolunteerOpportunity?)null);
 
-		// Act
 		Func<Task> act = async () =>
 			await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(missingId), cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _geocodingService.DidNotReceive().GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -154,10 +141,8 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 		opportunity.Relocate(true, null).ThrowIfFailure();
 		SetupOpportunity(opportunity.Id, opportunity);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert
 		await _geocodingService.DidNotReceive().GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
@@ -172,10 +157,8 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 		opportunity.ApplyGeocodingResult(DefaultAddress.WithCoordinates(1, 1).GetValueOrThrow());
 		SetupOpportunity(opportunity.Id, opportunity);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert
 		await _geocodingService.DidNotReceive().GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
@@ -184,15 +167,12 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldDoNothing_WhenAddressAlreadyMarkedUnresolvable(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateNonRemoteOpportunity();
 		opportunity.MarkAddressGeocodingFailed();
 		SetupOpportunity(opportunity.Id, opportunity);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert
 		await _geocodingService.DidNotReceive().GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
@@ -201,7 +181,6 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldNotCallGeocodingServiceTwice_ForTwoOpportunitiesAtTheSameAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var first = CreateNonRemoteOpportunity();
 		var second = CreateNonRemoteOpportunity();
 		SetupOpportunity(first.Id, first);
@@ -210,11 +189,9 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(first.Id), cancellationToken);
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(second.Id), cancellationToken);
 
-		// Assert
 		second.Address!.Latitude.Should().Be(52.52);
 		await _geocodingService.Received(1).GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -224,7 +201,6 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldNotCacheTransientFailure_SoARetryCanStillResolve(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var first = CreateNonRemoteOpportunity();
 		var second = CreateNonRemoteOpportunity();
 		SetupOpportunity(first.Id, first);
@@ -233,11 +209,9 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(GeocodingResult.TransientFailure);
 
-		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(first.Id), cancellationToken);
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(second.Id), cancellationToken);
 
-		// Assert
 		await _geocodingService.Received(2).GeocodeAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}

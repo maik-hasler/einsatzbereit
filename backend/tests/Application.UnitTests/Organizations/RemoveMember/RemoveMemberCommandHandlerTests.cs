@@ -8,7 +8,6 @@ using Domain.Users;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
-
 namespace Application.UnitTests.Organizations.RemoveMember;
 
 public class RemoveMemberCommandHandlerTests
@@ -70,10 +69,8 @@ public class RemoveMemberCommandHandlerTests
 		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, cancellationToken);
 	}
 
@@ -81,17 +78,14 @@ public class RemoveMemberCommandHandlerTests
 	public async Task Handle_ShouldReturnTrue_OnSuccess(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
 		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 	}
 
@@ -99,7 +93,6 @@ public class RemoveMemberCommandHandlerTests
 	public async Task Handle_ShouldPropagateException_WhenKeycloakFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
@@ -110,10 +103,8 @@ public class RemoveMemberCommandHandlerTests
 			.RemoveMemberAsync(orgId, userId, cancellationToken)
 			.ThrowsAsync(new HttpRequestException("Keycloak responded with 404 NotFound"));
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<HttpRequestException>()
 			.WithMessage("*404*");
 	}
@@ -122,7 +113,6 @@ public class RemoveMemberCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		_dbContext
@@ -130,10 +120,8 @@ public class RemoveMemberCommandHandlerTests
 			.Returns(false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, userId, Arg.Any<CancellationToken>());
 	}
@@ -151,10 +139,8 @@ public class RemoveMemberCommandHandlerTests
 		SetOrganizerCount(orgId, 1);
 		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*only organizer*");
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, Arg.Any<CancellationToken>());
@@ -172,10 +158,8 @@ public class RemoveMemberCommandHandlerTests
 		SetTargetIsOrganizer(orgId, otherUserId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, otherUserId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, otherUserId, cancellationToken);
 	}
@@ -191,10 +175,8 @@ public class RemoveMemberCommandHandlerTests
 		SetTargetIsOrganizer(orgId, DefaultRequestingUserId.Value, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, cancellationToken);
 	}
@@ -210,10 +192,8 @@ public class RemoveMemberCommandHandlerTests
 		AllowRequestingUserAsPlainMember(orgId);
 		var command = new RemoveMemberCommand(orgId, otherUserId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, otherUserId, Arg.Any<CancellationToken>());
 	}
@@ -229,10 +209,8 @@ public class RemoveMemberCommandHandlerTests
 		SetOrganizerCount(orgId, 2);
 		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, cancellationToken);
 	}
@@ -252,10 +230,8 @@ public class RemoveMemberCommandHandlerTests
 		SetRemainingOrganizerOrganizations(userId);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _keycloakService.Received(1).RevokeOrganizerRoleAsync(userId, cancellationToken);
 	}
 
@@ -275,10 +251,8 @@ public class RemoveMemberCommandHandlerTests
 		SetRemainingOrganizerOrganizations(userId, otherOrg);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
@@ -294,10 +268,8 @@ public class RemoveMemberCommandHandlerTests
 		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.DidNotReceive().GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}

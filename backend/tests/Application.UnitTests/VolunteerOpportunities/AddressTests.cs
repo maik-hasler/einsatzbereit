@@ -8,10 +8,8 @@ public class AddressTests
 	[Test]
 	public void Create_ShouldCreateAddress_WithValidData()
 	{
-		// Act
 		var address = Address.Create("Sample Street", "42a", "12345", "Berlin").Value;
 
-		// Assert
 		address.Street.Should().Be("Sample Street");
 		address.HouseNumber.Should().Be("42a");
 		address.ZipCode.Should().Be("12345");

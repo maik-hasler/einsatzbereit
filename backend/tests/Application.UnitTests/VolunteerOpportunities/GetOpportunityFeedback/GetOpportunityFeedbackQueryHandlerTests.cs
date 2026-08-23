@@ -69,7 +69,6 @@ public class GetOpportunityFeedbackQueryHandlerTests
 	public async Task Handle_ShouldReturnFeedbackSummary_WhenOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunity();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 
@@ -83,10 +82,8 @@ public class GetOpportunityFeedbackQueryHandlerTests
 
 		var query = new GetOpportunityFeedbackQuery(opportunity.Id, DefaultRequestingUserId, 1, 10);
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().BeEquivalentTo(summary);
 	}
 
@@ -131,10 +128,8 @@ public class GetOpportunityFeedbackQueryHandlerTests
 
 		var query = new GetOpportunityFeedbackQuery(opportunity.Id, DefaultRequestingUserId, 1, 10);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _engagementReadRepository.DidNotReceive().GetFeedbackByOpportunityAsync(
@@ -145,17 +140,14 @@ public class GetOpportunityFeedbackQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
 
 		var query = new GetOpportunityFeedbackQuery(VolunteerOpportunityId.New(), DefaultRequestingUserId, 1, 10);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 	}

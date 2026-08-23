@@ -51,15 +51,12 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldReturnTrue_AndSetStatusToUnpublished_WhenOpportunityIsPublished(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedOpportunity();
 		SetupOpportunity(opportunityId, opportunity);
 
-		// Act
 		var result = await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		opportunity.Status.Should().Be(OpportunityStatus.Unpublished);
 	}
@@ -68,12 +65,10 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldRaiseUnpublishedDomainEvent_WhenOpportunityIsPublished(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedOpportunity();
 		SetupOpportunity(opportunityId, opportunity);
 
-		// Act
 		await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert - opportunity.Events also carries the Published event raised by
@@ -86,17 +81,14 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityIsDraft(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 		SetupOpportunity(opportunityId, opportunity);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}
@@ -105,17 +97,14 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{opportunityId}*");
 	}
@@ -124,7 +113,6 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedOpportunity();
 		SetupOpportunity(opportunityId, opportunity);
@@ -133,10 +121,8 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(false);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.Status.Should().Be(OpportunityStatus.Published);

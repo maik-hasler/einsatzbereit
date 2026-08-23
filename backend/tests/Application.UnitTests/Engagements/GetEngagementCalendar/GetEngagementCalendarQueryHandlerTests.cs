@@ -22,7 +22,6 @@ public class GetEngagementCalendarQueryHandlerTests
 	public async Task Handle_ShouldReturnNull_WhenReadRepositoryFindsNothing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		_readRepository
 			.GetCalendarInfoAsync(EngagementId.Create(engagementId).GetValueOrThrow(), cancellationToken)
@@ -30,10 +29,8 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().BeNull();
 	}
 
@@ -41,7 +38,6 @@ public class GetEngagementCalendarQueryHandlerTests
 	public async Task Handle_ShouldReturnIcsFile_WithExpectedFileNameAndCoreFields(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		var opportunityId = Guid.CreateVersion7();
 		var start = new DateTimeOffset(2026, 8, 1, 10, 0, 0, TimeSpan.Zero);
@@ -60,10 +56,8 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.FileName.Should().Be($"engagement-{engagementId}.ics");
 		result.Content.Should().Contain("BEGIN:VCALENDAR");
@@ -81,7 +75,6 @@ public class GetEngagementCalendarQueryHandlerTests
 	public async Task Handle_ShouldOmitDescriptionAndLocation_WhenBlank(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		var info = new EngagementCalendarInfo(
 			engagementId,
@@ -97,10 +90,8 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.Content.Should().NotContain("DESCRIPTION:");
 		result.Content.Should().NotContain("LOCATION:");
@@ -117,7 +108,6 @@ public class GetEngagementCalendarQueryHandlerTests
 		string expectedSummaryLine,
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		var info = new EngagementCalendarInfo(
 			engagementId,
@@ -133,10 +123,8 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.Content.Should().Contain(expectedSummaryLine);
 	}
@@ -145,7 +133,6 @@ public class GetEngagementCalendarQueryHandlerTests
 	public async Task Handle_ShouldFoldLinesLongerThan75Octets(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		var longTitle = new string('A', 100);
 		var info = new EngagementCalendarInfo(
@@ -162,10 +149,8 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		result.Should().NotBeNull();
 		result!.Content.Should().Contain("\r\n ");
 		result.Content.Should().Contain(longTitle[..25]);
@@ -178,7 +163,6 @@ public class GetEngagementCalendarQueryHandlerTests
 	public async Task Handle_ShouldUseCrLf_ForEveryLineEnding(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		var longTitle = new string('A', 100);
 		var info = new EngagementCalendarInfo(
@@ -195,7 +179,6 @@ public class GetEngagementCalendarQueryHandlerTests
 
 		var query = new GetEngagementCalendarQuery(engagementId, "https://einsatzbereit.example");
 
-		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert - every "\n" in the file must be immediately preceded by "\r",

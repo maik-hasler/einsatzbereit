@@ -310,7 +310,6 @@ public class CreateTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
@@ -322,10 +321,8 @@ public class CreateTimeSlotCommandHandlerTests
 
 		var command = new CreateTimeSlotCommand(opportunityId, BaseStart, BaseEnd, 10, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.TimeSlots.Should().BeEmpty();

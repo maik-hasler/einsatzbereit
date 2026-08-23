@@ -41,17 +41,14 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldDeleteFeedback_WhenCalledByOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, volunteerId) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new DeleteFeedbackCommand(engagementId, volunteerId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		engagement.FeedbackRating.Should().BeNull();
 		engagement.FeedbackComment.Should().BeNull();
@@ -62,16 +59,13 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEngagementNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new DeleteFeedbackCommand(engagementId, UserId.New());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*"))
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
@@ -81,17 +75,14 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new DeleteFeedbackCommand(engagementId, UserId.New());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*You can only delete feedback for your own engagements*"))
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
@@ -101,14 +92,12 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldNotMutateEngagement_WhenCallerIsNotTheEngagementOwner(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new DeleteFeedbackCommand(engagementId, UserId.New());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 		await act.Should().ThrowAsync<ResultFailureException>();
 
@@ -121,7 +110,6 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var (engagement, _) = CreateEngagementWithFeedback();
 		engagement.Anonymize();
 		var engagementId = EngagementId.New();
@@ -129,10 +117,8 @@ public class DeleteFeedbackCommandHandlerTests
 
 		var command = new DeleteFeedbackCommand(engagementId, UserId.New());
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 	}
@@ -154,10 +140,8 @@ public class DeleteFeedbackCommandHandlerTests
 
 		var command = new DeleteFeedbackCommand(engagementId, volunteerId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*not been submitted*"))
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
@@ -167,7 +151,6 @@ public class DeleteFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenEditWindowExpired(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var submittedAt = DateTimeOffset.UtcNow.AddDays(-(Engagement.FeedbackEditWindowDays + 1));
 		var (engagement, volunteerId) = CreateEngagementWithFeedback(submittedAt);
 		var engagementId = EngagementId.New();
@@ -175,10 +158,8 @@ public class DeleteFeedbackCommandHandlerTests
 
 		var command = new DeleteFeedbackCommand(engagementId, volunteerId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*no longer be edited*"))
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);

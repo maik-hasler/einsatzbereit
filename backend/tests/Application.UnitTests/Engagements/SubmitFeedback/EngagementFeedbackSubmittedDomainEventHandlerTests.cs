@@ -47,7 +47,6 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 	public async Task Handle_ShouldCreateInAppNotification_ForEachOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -61,10 +60,8 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 		var engagementId = EngagementId.New();
 		var domainEvent = new EngagementFeedbackSubmittedDomainEvent(engagementId, UserId.New(), opportunity.Id, 5);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == UserId.Create(organizerId1).GetValueOrThrow()
 				&& n.Kind == NotificationKind.FeedbackSubmitted
@@ -81,7 +78,6 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 	public async Task Handle_ShouldNotNotifyNonOrganizerMembers(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -90,10 +86,8 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 			.Returns([new KeycloakOrganizationMember(memberId, "vera", "Vera", "Volunteer", "vera@example.com", false)]);
 		var domainEvent = new EngagementFeedbackSubmittedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, 5);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
 
@@ -101,16 +95,13 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterNotifying(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new EngagementFeedbackSubmittedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, 5);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -118,15 +109,12 @@ public class EngagementFeedbackSubmittedDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new EngagementFeedbackSubmittedDomainEvent(EngagementId.New(), UserId.New(), opportunityId, 5);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}

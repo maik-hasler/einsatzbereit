@@ -34,15 +34,12 @@ public class DeclineInvitationCommandHandlerTests
 	public async Task Handle_ShouldDeclineInvitationAndSaveChanges_WhenPending(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new DeclineInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		invitation.Status.Should().Be(InvitationStatus.Declined);
 		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
@@ -53,15 +50,12 @@ public class DeclineInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenInvitationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitationId = OrganizationInvitationId.New();
 		_invitationRepo.FindAsync(invitationId, cancellationToken).Returns((OrganizationInvitation?)null);
 		var command = new DeclineInvitationCommand(invitationId, InviteeId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -72,16 +66,13 @@ public class DeclineInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowForbidden_WhenRequestingUserIsNotTheInvitee(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var someoneElse = UserId.New();
 		var command = new DeclineInvitationCommand(invitation.Id, someoneElse);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		invitation.Status.Should().Be(InvitationStatus.Pending);
@@ -93,16 +84,13 @@ public class DeclineInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenInvitationIsAlreadyDeclined(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		invitation.Decline().ThrowIfFailure();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new DeclineInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -113,16 +101,13 @@ public class DeclineInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		invitation.Accept().ThrowIfFailure();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new DeclineInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());

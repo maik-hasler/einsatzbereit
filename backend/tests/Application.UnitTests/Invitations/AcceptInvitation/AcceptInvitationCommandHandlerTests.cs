@@ -43,12 +43,10 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldGrantOrganizerCapability_OnAccept(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert - accepting an Organizer-intended invitation must grant real,
@@ -68,12 +66,10 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldGrantMemberCapabilityOnly_WhenInvitationIntendedRoleIsMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation(OrganizationMemberRole.Member);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert - a Member-intended invitation must not grant the realm-wide
@@ -92,15 +88,12 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenInvitationNotFound(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitationId = OrganizationInvitationId.New();
 		_invitationRepo.FindAsync(invitationId, cancellationToken).Returns((OrganizationInvitation?)null);
 		var command = new AcceptInvitationCommand(invitationId, InviteeId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
@@ -109,16 +102,13 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotTheRecipient(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var someoneElse = UserId.New();
 		var command = new AcceptInvitationCommand(invitation.Id, someoneElse);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
@@ -129,16 +119,13 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenInvitationIsNotPending(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		invitation.Accept().ThrowIfFailure();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
@@ -152,15 +139,12 @@ public class AcceptInvitationCommandHandlerTests
 		// Regression for #1919: an accepted invitation is resolved, so its
 		// InvitationReceived notification must not survive to be clicked into a
 		// /my-signups page with nothing left to show for it.
-		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		await _dbContext.Received(1).DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 	}
 
@@ -180,10 +164,8 @@ public class AcceptInvitationCommandHandlerTests
 			.Returns(OrganizationMembership.Create(OrgId, InviteeId, OrganizationMemberRole.Organizer));
 		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());

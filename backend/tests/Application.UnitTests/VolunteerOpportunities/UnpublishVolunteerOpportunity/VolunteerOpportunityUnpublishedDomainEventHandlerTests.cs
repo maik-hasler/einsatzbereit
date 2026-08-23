@@ -53,7 +53,6 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	public async Task Handle_ShouldNotifyActiveVolunteers_WithOpportunityUnpublishedKind(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreatePublishedOpportunity();
 		var volunteerId = Guid.NewGuid();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -63,7 +62,6 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunity.Id, DefaultOrgId);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073), so an
@@ -79,7 +77,6 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	public async Task Handle_ShouldCancelActiveEngagements_WithUnpublishedReason(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreatePublishedOpportunity();
 		var timeSlotId = TimeSlotId.New();
 		var pendingEngagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), timeSlotId);
@@ -90,10 +87,8 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunity.Id, DefaultOrgId);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was unpublished.");
 	}
@@ -102,15 +97,12 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunityId, DefaultOrgId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await act.Should().NotThrowAsync();
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
@@ -127,10 +119,8 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunity.Id, DefaultOrgId);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 
@@ -138,15 +128,12 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	public async Task Handle_ShouldNotSaveChanges_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunityId, DefaultOrgId);
 
-		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 }

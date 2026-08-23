@@ -40,17 +40,14 @@ public class UploadOrganizationLogoCommandHandlerTests
 	public async Task Handle_ShouldSetLogoUrl_WhenOrganizationExists(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 
 		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.Should().BeTrue();
 		organization.LogoUrl.Should().Be("https://example.com/organization-logos/logo.png");
 	}
@@ -69,10 +66,8 @@ public class UploadOrganizationLogoCommandHandlerTests
 
 		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		organization.LogoUrl.Should().BeNull();

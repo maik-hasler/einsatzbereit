@@ -50,7 +50,6 @@ public class CheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldCheckInEngagement_WhenConfirmed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateConfirmedEngagement(opportunity.Id);
 		var engagementId = engagement.Id;
@@ -60,10 +59,8 @@ public class CheckInEngagementCommandHandlerTests
 
 		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		result.IsCheckedIn.Should().BeTrue();
 	}
 
@@ -71,7 +68,6 @@ public class CheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateConfirmedEngagement(opportunity.Id);
 		var engagementId = engagement.Id;
@@ -84,10 +80,8 @@ public class CheckInEngagementCommandHandlerTests
 
 		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		engagement.IsCheckedIn.Should().BeFalse();
@@ -109,10 +103,8 @@ public class CheckInEngagementCommandHandlerTests
 
 		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
 		engagement.IsCheckedIn.Should().BeFalse();

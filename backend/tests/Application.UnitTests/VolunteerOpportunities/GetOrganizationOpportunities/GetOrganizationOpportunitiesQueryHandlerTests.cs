@@ -106,10 +106,8 @@ public class GetOrganizationOpportunitiesQueryHandlerTests
 
 		var query = new GetOrganizationOpportunitiesQuery(DefaultOrgId, DefaultRequestingUserId, OpportunityStatus.Published, 1, 10);
 
-		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
-		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		await _readRepository.DidNotReceive().GetPagedSummariesByOrganizationAsync(
