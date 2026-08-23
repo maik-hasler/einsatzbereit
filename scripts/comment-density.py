@@ -6,10 +6,20 @@ This script measures the resulting ratio so the trend stays visible: a file
 drifting toward a high ratio is usually one that has started narrating its
 own code rather than recording the reasoning behind it.
 
-The scanner tracks string, char, template and comment state character by
-character, so a "//" inside a string literal is not miscounted as a comment.
-Generated sources (the three NSwag clients, EF Core migrations) are excluded
-- their comment volume says nothing about how the team writes code.
+Coverage spans code and the configuration around it: C-style sources
+(.cs/.ts/.tsx/.js/.css), #-commented config (.yml/.yaml/.sh), AsciiDoc,
+PlantUML, FreeMarker templates and Markdown. CI workflows and shell scripts
+are included on purpose - they are opaque enough to attract narration, and
+leaving them out hid the two densest file types in the repository.
+
+C-style sources get a character-precise scan that tracks string, char and
+template state, so a "//" inside a literal is not miscounted; the remaining
+formats are scanned line by line, which is enough where a comment marker
+occupies the whole line.
+
+Generated and vendored files are excluded - the NSwag clients, EF Core
+migrations, the pnpm lockfile and the vendored frontend-design skill. Their
+comment volume says nothing about how the team writes code.
 
 Usage:
     python3 scripts/comment-density.py            # repository summary
@@ -24,17 +34,35 @@ import subprocess
 import sys
 from collections import defaultdict
 
-EXTENSIONS = {".cs", ".ts", ".tsx", ".js", ".css"}
+# Comment syntax per extension. "c" is the character-precise scanner below;
+# the rest are line-oriented, which is enough for config and markup where a
+# comment marker occupies the whole line.
+C_STYLE = {".cs", ".ts", ".tsx", ".js", ".css"}
+HASH_STYLE = {".yml", ".yaml", ".sh"}
+ADOC_STYLE = {".adoc"}
+PUML_STYLE = {".puml"}
+WRAPPED_STYLE = {".ftl": ("<#--", "-->"), ".md": ("<!--", "-->")}
+
+EXTENSIONS = (
+    C_STYLE | HASH_STYLE | ADOC_STYLE | PUML_STYLE | set(WRAPPED_STYLE)
+)
 
 GENERATED_FILES = {
     "backend/src/Api/Api.cs",
     "backend/tests/IntegrationTests/ApiClient.cs",
     "frontend/src/client/api-client.ts",
+    "frontend/pnpm-lock.yaml",
 }
+
+# Third-party content that is checked in but not written here: the vendored
+# frontend-design skill (Apache-2.0, from anthropics/skills).
+VENDORED_PREFIXES = (".claude/skills/frontend-design/",)
 
 
 def is_generated(path):
-    return path in GENERATED_FILES or "/Migrations/" in path
+    if path in GENERATED_FILES or "/Migrations/" in path:
+        return True
+    return path.startswith(VENDORED_PREFIXES)
 
 
 def scan(text):
@@ -105,13 +133,113 @@ def scan(text):
     return lines, has_code, has_comment
 
 
+def scan_hash(text):
+    """Line-oriented scanner for #-commented config (YAML, shell)."""
+    lines = text.split("\n")
+    has_code = [False] * len(lines)
+    has_comment = [False] * len(lines)
+    for index, raw in enumerate(lines):
+        quote = ""
+        for position, char in enumerate(raw):
+            if quote:
+                if char == quote:
+                    quote = ""
+                continue
+            if char in "'\"":
+                quote = char
+                continue
+            if char == "#":
+                has_comment[index] = True
+                has_code[index] = bool(raw[:position].strip())
+                break
+        else:
+            has_code[index] = bool(raw.strip())
+    return lines, has_code, has_comment
+
+
+def scan_prefix(text, prefix, block=None):
+    """Line-oriented scanner for markup whose comments start a line.
+
+    `block` is an optional fence (AsciiDoc's ////) that toggles a comment
+    region on and off.
+    """
+    lines = text.split("\n")
+    has_code = [False] * len(lines)
+    has_comment = [False] * len(lines)
+    inside = False
+    for index, raw in enumerate(lines):
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        if block and stripped.startswith(block):
+            inside = not inside
+            has_comment[index] = True
+            continue
+        if inside or stripped.startswith(prefix):
+            has_comment[index] = True
+        else:
+            has_code[index] = True
+    return lines, has_code, has_comment
+
+
+def scan_wrapped(text, opener, closer):
+    """Line-oriented scanner for <!-- --> / <#-- --> style comments."""
+    lines = text.split("\n")
+    has_code = [False] * len(lines)
+    has_comment = [False] * len(lines)
+    inside = False
+    for index, raw in enumerate(lines):
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        remainder = stripped
+        saw_comment = False
+        saw_code = False
+        while remainder:
+            if inside:
+                end = remainder.find(closer)
+                saw_comment = True
+                if end == -1:
+                    remainder = ""
+                else:
+                    inside = False
+                    remainder = remainder[end + len(closer):]
+                continue
+            start = remainder.find(opener)
+            if start == -1:
+                saw_code = saw_code or bool(remainder.strip())
+                break
+            if remainder[:start].strip():
+                saw_code = True
+            inside = True
+            saw_comment = True
+            remainder = remainder[start + len(opener):]
+        has_comment[index] = saw_comment
+        has_code[index] = saw_code
+    return lines, has_code, has_comment
+
+
+def scan_for(path, text):
+    ext = os.path.splitext(path)[1]
+    if ext in C_STYLE:
+        return scan(text)
+    if ext in HASH_STYLE:
+        return scan_hash(text)
+    if ext in ADOC_STYLE:
+        return scan_prefix(text, "//", block="////")
+    if ext in PUML_STYLE:
+        return scan_prefix(text, "'")
+    opener, closer = WRAPPED_STYLE[ext]
+    return scan_wrapped(text, opener, closer)
+
+
 def measure(path):
     try:
         text = open(path, encoding="utf-8").read()
     except (OSError, UnicodeDecodeError):
         return None
 
-    lines, has_code, has_comment = scan(text)
+    lines, has_code, has_comment = scan_for(path, text)
     code = comment = mixed = 0
     for index, raw in enumerate(lines):
         if not raw.strip():

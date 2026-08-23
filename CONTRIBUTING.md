@@ -164,10 +164,10 @@ test method itself. Label a phase only when you have something to say about it
 (`// Arrange - the row is gone but its engagement remains, see #1176`).
 
 `scripts/comment-density.py` reports the ratio of comment lines to non-blank
-lines across hand-written sources (`--top N` ranks the densest files). It is a
-diagnostic, not a gate: a high ratio flags a file worth reading, since the
-densest files are usually either genuinely subtle or quietly narrating
-themselves.
+lines across hand-written sources - code, CI workflows, shell scripts, themes
+and docs alike (`--top N` ranks the densest files). It is a diagnostic, not a
+gate: a high ratio flags a file worth reading, since the densest files are
+usually either genuinely subtle or quietly narrating themselves.
 
 ## Dependency Management
 
