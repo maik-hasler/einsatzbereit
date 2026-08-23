@@ -7,12 +7,6 @@ using Domain.Reports;
 
 namespace Application.Users.AdminShadowDeleteUser.v1;
 
-/// <summary>
-/// Admin-only takedown of a user's public presence: hides their profile and
-/// listings (the query filter in UserConfiguration) without touching their
-/// Keycloak account or login - that is <c>SetUserEnabled</c>'s job, a
-/// separate and orthogonal admin capability (see einsatzbereit#1075).
-/// </summary>
 internal sealed class AdminShadowDeleteUserCommandHandler(
 	IApplicationDbContext dbContext)
 	: ICommandHandler<AdminShadowDeleteUserCommand, bool>

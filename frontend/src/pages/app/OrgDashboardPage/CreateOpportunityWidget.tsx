@@ -12,9 +12,6 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-// Replaces the dashboard's former standalone "+ Create opportunity" button
-// (see PR #771 review feedback) - the same action, now a widget an organizer
-// can place/remove like any other, auto-sized to whatever room it gets.
 function CreateOpportunityWidget({ organizationId, onCreated, size }: Props) {
 	const { t } = useTranslation();
 	const [showCreateModal, setShowCreateModal] = useState(false);
@@ -25,9 +22,6 @@ function CreateOpportunityWidget({ organizationId, onCreated, size }: Props) {
 			titleId="widget-create-opportunity-title"
 			title={t("orgDashboard.createOpportunityWidgetTitle")}
 		>
-			{/* The description drops out at compact size, leaving just an
-			icon+label CTA - #771 follow-up review feedback (adaptive layouts
-			per size). */}
 			{!compact && (
 				<p className="text-sm text-gray-500">
 					{t("orgDashboard.createOpportunityWidgetDesc")}

@@ -22,11 +22,6 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
-// #1048: the dashboard's "To-Do" widget counts pending engagements across
-// every opportunity in the organization, but organizers previously had no
-// way to view or action that aggregate queue - only a per-opportunity list
-// (EngagementManagementPage). This page is that org-wide queue, defaulting
-// to the Pending filter the widget links in with.
 export default function OrgEngagementsPage() {
 	const { org } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
@@ -99,10 +94,6 @@ export default function OrgEngagementsPage() {
 		return t("orgEngagements.anonymizedVolunteer");
 	}
 
-	// Confirming swaps the row's Confirm/Cancel button pair for a Revoke
-	// button - the clicked button unmounts on success, so focus needs
-	// somewhere deliberate to land instead of dropping to <body> (same fix
-	// as EngagementManagementPage's handleConfirm).
 	function focusEngagementRowControl(testId: string) {
 		requestAnimationFrame(() => {
 			document.querySelector<HTMLElement>(`[data-testid="${testId}"]`)?.focus();
@@ -167,10 +158,6 @@ export default function OrgEngagementsPage() {
 				{t("orgEngagements.pageDescription")}
 			</p>
 
-			{/* Boxed, matching the invite panel on the Members tab (#1755): a
-			status select and a search field are one filter control, and as two
-			bare form fields on the page background they read as the start of a
-			form rather than as the toolbar for the list below them. */}
 			<div
 				className={`mb-6 flex flex-wrap items-end gap-3 ${cardClass} sm:p-5`}
 			>
@@ -320,10 +307,7 @@ export default function OrgEngagementsPage() {
 										})}
 									</p>
 								</div>
-								{/* One row, not a stack (#1755): as flex-col the status chip
-							floated above the Confirm/Cancel pair, so the card's right
-							corner read as two loosely related clusters at different
-							heights instead of one status-and-actions group. */}
+
 								<div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
 									<span
 										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${ENGAGEMENT_STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}

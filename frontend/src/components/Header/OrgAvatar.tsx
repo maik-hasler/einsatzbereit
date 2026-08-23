@@ -1,23 +1,14 @@
 import { getInitials } from "../../lib/initials";
 
-// An organization's logo, or its initials on a brand tile when it has none.
-// The same eight-line pair of branches had been written out three times in
-// this folder - the switcher's current-org button, the switcher's dropdown
-// rows, and (since #1785) the header's top-level organization entry - so it
-// lives here once instead, like the rest of the repo's shared primitives.
 export default function OrgAvatar({
 	name,
 	logoUrl,
 	size = "md",
 	lazy = false,
 }: {
-	// Empty when the organization isn't resolved yet - getInitials renders "?"
-	// for it, which is what the switcher shows before an org is picked.
 	name: string;
 	logoUrl?: string | null;
-	// "sm" (20px) is the header nav entry's size: the top-level nav is width-
-	// constrained at tablet widths (#1793), so every pixel there is spent on
-	// the name instead. "md" (24px) is the org switcher's.
+
 	size?: "sm" | "md";
 	lazy?: boolean;
 }) {

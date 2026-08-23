@@ -56,9 +56,8 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's -
-		// this is the highest-priority gap called out by the audit, since a leaked PIN
-		// lets an outsider forge check-ins for another org's opportunity.
+		// Arrange
+
 		var opportunity = CreateOpportunityWithPin();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		_dbContext

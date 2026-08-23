@@ -11,19 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Organizations.AdminShadowDeleteOrganization.v1;
 
-/// <summary>
-/// Admin-only takedown of an entire organization: unlike the organizer-triggered
-/// <see cref="DeleteOrganization.v1.DeleteOrganizationCommandHandler"/>, this
-/// skips the sole-member and no-blocking-opportunities guardrails (those exist
-/// to let a lone organizer clean up their own empty org, not to protect an
-/// abusive org with active members/content from an admin takedown) and shadow-
-/// deletes instead of hard-deleting: every one of the organization's volunteer
-/// opportunities is marked deleted first (notifying volunteers, cancelling
-/// engagements, resolving open reports), then the organization itself. Keycloak
-/// membership and dashboard layouts are left untouched so a restore
-/// (<see cref="AdminRestoreOrganization.v1.AdminRestoreOrganizationCommandHandler"/>)
-/// brings the organization back exactly as it was (see einsatzbereit#1075).
-/// </summary>
 internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,

@@ -53,7 +53,6 @@ export default function ActivitySection() {
 		Withdrawn: t("myEngagements.status.Withdrawn"),
 	};
 
-	// --- Engagements ---
 	const [engagementsScope, setEngagementsScope] =
 		useState<EngagementsScope>("upcoming");
 	const {
@@ -126,14 +125,7 @@ export default function ActivitySection() {
 		setWithdrawError(null);
 		try {
 			const updated = await api.withdrawEngagement(confirmWithdrawId);
-			// Withdrawing moves the engagement out of the "upcoming" scope (a
-			// Withdrawn engagement is never returned by the server's upcoming
-			// filter), so patching its status in place would leave it stuck in
-			// the currently-viewed Upcoming list. Remove it there instead; in
-			// the "past" scope (e.g. an engagement whose opportunity was
-			// deleted, still withdrawable but already bucketed as past) it
-			// stays visible with its updated status like the other in-place
-			// patches below.
+
 			setEngagements((prev) =>
 				engagementsScope === "upcoming"
 					? prev.filter((e) => e.id !== confirmWithdrawId)
@@ -204,12 +196,7 @@ export default function ActivitySection() {
 				),
 			);
 			setConfirmDeleteFeedbackId(null);
-			// Deleting swaps this card from the badge+Edit+Delete branch to the
-			// "Leave feedback" branch in the same commit that unmounts the confirm
-			// dialog, so the Delete button Modal's focus-restore effect is looking
-			// for is already gone from the DOM by the time that cleanup runs -
-			// focus would otherwise fall back to <body>. Move it to the button
-			// that replaces it instead, once the new branch has painted.
+
 			requestAnimationFrame(() => {
 				const card = document.querySelector(
 					`[data-engagement-id="${engagementId}"]`,
@@ -261,11 +248,6 @@ export default function ActivitySection() {
 		}
 	}
 
-	// The engagement the withdraw dialog is about to act on, so its message
-	// can name it (matching the admin area's confirmation dialogs, which
-	// already interpolate their target's name - #2043) and warn about the
-	// churn limit (Engagement.MaxReactivationCount) before the volunteer hits
-	// it rather than only on the next failed sign-up attempt.
 	const withdrawTarget = confirmWithdrawId
 		? (engagements.find((e) => e.id === confirmWithdrawId) ?? null)
 		: null;
@@ -276,24 +258,12 @@ export default function ActivitySection() {
 	const withdrawLimitWarning =
 		!withdrawLimitReached && withdrawTarget?.remainingReactivations === 1;
 
-	// role="status"/aria-live content that's already populated the instant its
-	// dialog mounts (as opposed to appearing later inside an already-open one,
-	// like ConfirmDialog's own error banner below) isn't reliably announced by
-	// assistive tech - so, same as ConfirmDialog does for its errorRef, move
-	// focus there once instead of trusting the live region alone (#2043).
 	const limitWarningRef = useRef<HTMLParagraphElement>(null);
 	useEffect(() => {
 		if (withdrawLimitWarning) limitWarningRef.current?.focus();
 	}, [confirmWithdrawId, withdrawLimitWarning]);
 
 	return (
-		// @container (#2044): this section's own width is capped by the
-		// [11rem_minmax(0,1fr)] sidebar layout in MyEngagementsPage/index.tsx to
-		// ~800px regardless of viewport, but the card grids below used to key
-		// their column count off the viewport (`xl:grid-cols-3` at 1280px) - so a
-		// wide-viewport visitor got 3 columns squeezed into that fixed 800px,
-		// wrapping card titles and dates that fit fine at 2 columns. `@container`
-		// variants below key off this element's actual width instead.
 		<section id="activity" className="@container mb-6">
 			{invitationsError && (
 				<ErrorBanner message={invitationsError} className="mb-4" />
@@ -353,47 +323,12 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			{/* No visible heading for the sign-ups list itself (#1796): this list
-			*is* the page, and PageHeaderBand's <h1> already names it further up
-			(compactTitle since #1841 - still display type, just not 72px) - so a
-			SectionHeading repeating that same string read as a category eyebrow
-			that carried no category, and
-			pushed the scope tabs down a page that is short of content to begin
-			with. The invitations block above keeps its visible heading, because
-			that one names a section the <h1> does not.
-
-			The heading survives as an sr-only <h2> so the outline still marks
-			where the invitations block ends and the sign-ups list begins - the
-			one job the visible heading was doing that the <h1> can't do from
-			outside this section. Its own dedicated string ("Sign-ups list"),
-			not a repeat of the <h1>'s "My sign-ups" - identical adjacent h1/h2
-			text announced the same words twice to a screen reader with no
-			visible sighted-user cue that anything had even changed (#2071). */}
 			<h2 className="sr-only">{t("myEngagements.listHeading")}</h2>
 
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
-				// #2072: looks and behaves like a tab set for a sighted mouse user,
-				// but there's no arrow-key navigation between the two segments - so
-				// the honest-semantics call (same one LanguageSelector.tsx and
-				// RowActionsMenu.tsx make for their own controls) is a labelled
-				// group of toggle buttons (aria-pressed), not the full ARIA tabs
-				// pattern (role="tablist"/"tab"/"tabpanel") that promises roving
-				// tabindex and arrow keys this doesn't implement.
-				// grid-cols-2 (not flex): an intrinsically-sized flex-1 track squeezes
-				// both segments to an equal share of the shrink-to-fit container width
-				// - which is sized to the *sum* of their natural widths - so the
-				// longer "Aktuell & Bevorstehend" label got compressed below its own
-				// single-line width and wrapped, while "Vergangen" sat in a mostly
-				// empty, oversized box. CSS Grid's minmax(0,1fr) columns size
-				// every track to the *widest* column's natural content width instead
-				// of splitting the sum evenly, so both stay equal width - keeping
-				// #1836's equal-width fix - without ever squeezing either below its
-				// own single-line size. max-w-full + overflow-x-auto is the same
-				// fallback as .rbc-btn-group in global.css, in case a locale's longer
-				// label still doesn't fit at all (e.g. under large text-scaling) -
-				// scrolls instead of colliding with html's page-wide overflow-x: clip.
+
 				className="mb-4 inline-grid max-w-full grid-cols-2 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1"
 			>
 				<button
@@ -482,10 +417,7 @@ export default function ActivitySection() {
 									{e.opportunityTitle ? (
 										<Link
 											to={`/volunteer-opportunities/${e.opportunityId}`}
-											// Underlined on hover/focus: this carried no underline
-											// and exactly the classes of the non-link fallback span
-											// below it, so a route back to the opportunity read as
-											// plain text (#1777).
+
 											className="text-sm font-semibold text-gray-900 underline-offset-2 transition-colors hover:text-brand-700 hover:underline focus-visible:text-brand-700 focus-visible:underline"
 										>
 											{e.opportunityTitle}
@@ -505,16 +437,7 @@ export default function ActivitySection() {
 											</Link>
 										</p>
 									)}
-									{/* The date region, which always answers the question this page
-									exists for: "when do I have to be somewhere?". The volunteer's own
-									application message used to occupy this spot for every sign-up
-									without a time slot, because the message and the Termin line were
-									two independent conditionals rendering into the same region - so an
-									interest-based sign-up showed a quoted fragment of its own message
-									where the next card showed a date. The message is still on the card,
-									labelled, below. Same three glyphs as the opportunity cards: a
-									calendar for a date that is set, a clock for a deadline running
-									down, arrows for no fixed date (#1777). */}
+
 									{e.timeSlotStartDateTime && e.timeSlotEndDateTime ? (
 										<p
 											data-testid="engagement-date"
@@ -542,12 +465,7 @@ export default function ActivitySection() {
 												<ArrowsRightLeftIcon className="h-3.5 w-3.5 shrink-0" />
 												<span>{t("myEngagements.noFixedDate")}</span>
 											</p>
-											{/* Cancelled/Withdrawn is terminal - the opportunity's own
-											application deadline is no longer actionable for this
-											engagement, so showing it read as a future-looking date on a
-											card that is otherwise done (#2070). The status chip at the
-											top of the card is the one piece of temporal-status
-											information that still applies. */}
+
 											{!isTerminalEngagementStatus(e.status) &&
 												e.opportunityValidUntil && (
 													<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
@@ -571,11 +489,7 @@ export default function ActivitySection() {
 											})}
 										</p>
 									)}
-									{/* Labelled, and out of the date region above - a quoted sentence
-									in the slot where a sibling card states a date reads as that
-									card's date, not as something the reader wrote. line-clamp-2
-									(not truncate) so the ellipsis lands on a word boundary rather
-									than mid-word (#1933). */}
+
 									{e.message && (
 										<p className="mt-1.5 line-clamp-2 text-xs text-gray-500">
 											<span className="font-medium">
@@ -605,9 +519,7 @@ export default function ActivitySection() {
 									{STATUS_LABELS[e.status] ?? e.status}
 								</span>
 							</div>
-							{/* Pending previously had no explanation anywhere on this page
-							either - reused verbatim from the opportunity-detail page's rail
-							(#2075). */}
+
 							{e.status === "Pending" && (
 								<p className="text-xs text-gray-600">
 									{t("myEngagements.pendingExplanation")}

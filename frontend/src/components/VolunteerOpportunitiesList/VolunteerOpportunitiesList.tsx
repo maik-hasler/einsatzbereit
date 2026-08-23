@@ -52,11 +52,6 @@ const CATEGORY_VALUES = [
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 const DEFAULT_RADIUS_KM = "10";
 
-// No heading of its own: the only route that renders this list is
-// /opportunities, whose PageHeaderBand already states the eyebrow, title and
-// lead in display type. This briefly carried a `showHeading` prop instead,
-// but with one call site passing false the heading block was unreachable and
-// kept three locale keys alive that nothing could render.
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
 	const locale = resolveDateLocale(i18n.language);
@@ -80,9 +75,7 @@ export default function VolunteerOpportunitiesList() {
 		? categoriesParam.split(",").filter(Boolean)
 		: [];
 	const hasLocation = !!(lat && lng && radius);
-	// A `city`-only deep link has no coordinates yet (resolved below) but is
-	// still a location filter the visitor asked for - counts toward
-	// hasFilters/the "Standort" chip's active state even before it resolves.
+
 	const hasLocationFilter = hasLocation || !!city;
 
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
@@ -94,12 +87,6 @@ export default function VolunteerOpportunitiesList() {
 		() => setOpenFilter(null),
 	);
 
-	// A `city`-only deep link (bookmarked, shared, or hand-edited) carries no
-	// coordinates to filter by - geocode it once on load so the same URL
-	// resolves to a working location filter instead of silently showing every
-	// opportunity unfiltered (#1962). Guarded on `city && !lat && !lng`, which
-	// never matches the UI's own paths: selectLocationSuggestion and
-	// handleNearMe always set city+lat+lng together in the same update.
 	useEffect(() => {
 		if (!city || lat || lng) return;
 		const controller = new AbortController();
@@ -135,13 +122,9 @@ export default function VolunteerOpportunitiesList() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [city, lat, lng]);
 
-	// Null until the date popover is opened and its calendar reports the month it
-	// mounted on - that report is also what keeps this in step with the grid's own
-	// prev/next and arrow-key navigation.
 	const [visibleCalendarMonth, setVisibleCalendarMonth] =
 		useState<VisibleMonth | null>(null);
 
-	// Same value in, same object out, so MiniCalendar's report effect can't loop.
 	const handleVisibleMonthChange = useCallback(
 		(year: number, month: number) => {
 			setVisibleCalendarMonth((prev) =>
@@ -151,9 +134,6 @@ export default function VolunteerOpportunitiesList() {
 		[],
 	);
 
-	// Closing the popover unmounts the calendar but leaves the month it reported
-	// behind, so this gates on the popover itself - otherwise every later filter
-	// change would keep refetching availability for a grid nobody is looking at.
 	const { availability: dateAvailability, loading: dateAvailabilityLoading } =
 		useOpportunityDateAvailability(
 			openFilter === "date" ? visibleCalendarMonth : null,
@@ -328,9 +308,6 @@ export default function VolunteerOpportunitiesList() {
 
 	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : city;
 
-	// A radius has no centre to measure from until a city (or "Near me") has
-	// actually resolved to coordinates - before that, every chip here would
-	// be selectable but silently have no effect on the results (#2046).
 	const radiusDisabled = !lat || !lng;
 
 	const categoryDisplayValue =
@@ -355,25 +332,11 @@ export default function VolunteerOpportunitiesList() {
 
 	return (
 		<div>
-			{/* Boxing this in its own tinted panel (an earlier pass) made the
-			filter bar read as a separate section from the result cards right
-			below it rather than one continuous "Opportunities" area - reverted
-			to sitting directly on the page background, matching how
-			idealist.org/betterplace.org treat their own search/filter bars (no
-			card, no background tint). */}
-
-			{/* Filter bar */}
 			<div ref={filterBarRef} className="mb-2">
-				{/* Left-aligned, not centred (#1798): the row sits directly above a
-				full-width results grid, so centring the chips put the first one at
-				x=375 at a 1440 viewport while the cards below started at x=32 - two
-				competing left edges on one page. Flex's default `flex-start` keeps
-				every wrapped line starting at the grid's left edge. */}
 				<div
 					data-testid="opportunities-filter-bar"
 					className="flex flex-wrap items-center gap-2 pb-3"
 				>
-					{/* Location + Radius */}
 					<FilterDropdown
 						testId="filter-location"
 						icon={<MapPinIcon className="h-3.5 w-3.5" />}
@@ -444,11 +407,7 @@ export default function VolunteerOpportunitiesList() {
 									</button>
 								))}
 							</div>
-							{/* aria-describedby on each disabled chip above ties it to this
-							id - native `disabled` removes a button from the tab order, so
-							a screen-reader user's virtual cursor would otherwise reach all
-							five chips with no programmatic link to this explanation, same
-							as OrgMembersPage.tsx's disabled "Leave" button + hint pattern. */}
+
 							{radiusDisabled && (
 								<p
 									id="opportunities-radius-hint"
@@ -460,7 +419,6 @@ export default function VolunteerOpportunitiesList() {
 						</div>
 					</FilterDropdown>
 
-					{/* Category multi-select */}
 					<FilterDropdown
 						icon={<TagIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelCategory")}
@@ -488,7 +446,6 @@ export default function VolunteerOpportunitiesList() {
 						</div>
 					</FilterDropdown>
 
-					{/* Participation type */}
 					<FilterDropdown
 						testId="filter-type"
 						icon={<UsersIcon className="h-3.5 w-3.5" />}
@@ -533,7 +490,6 @@ export default function VolunteerOpportunitiesList() {
 						/>
 					</FilterDropdown>
 
-					{/* Remote / onsite */}
 					<FilterDropdown
 						icon={<GlobeIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelRemote")}
@@ -621,7 +577,6 @@ export default function VolunteerOpportunitiesList() {
 						/>
 					</FilterDropdown>
 
-					{/* Date range - custom calendar picker */}
 					<FilterDropdown
 						icon={<CalendarIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelDateRange")}
@@ -643,10 +598,6 @@ export default function VolunteerOpportunitiesList() {
 						/>
 					</FilterDropdown>
 
-					{/* Keyword (static pill) - set from the homepage hero's search
-					box, surfaced and clearable here like any other applied filter
-					rather than staying a hidden param once the visitor scrolls
-					down to the results. */}
 					{keyword && (
 						<div
 							role="group"
@@ -668,7 +619,6 @@ export default function VolunteerOpportunitiesList() {
 						</div>
 					)}
 
-					{/* Tag (static pill) */}
 					{tag && (
 						<div
 							role="group"

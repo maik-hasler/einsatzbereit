@@ -3,35 +3,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression coverage for #1787: nothing locked the page behind an open
-/// dialog, so a wheel past the end of Modal.tsx's own scroll container chained
-/// straight through to the document underneath and the reader's position in it
-/// was gone by the time they closed the dialog.
-///
-/// The lock deliberately targets the *root* element rather than
-/// <c>document.body</c>. A UA only propagates the body's overflow to the
-/// viewport while the root's own overflow computes to <c>visible</c>, and
-/// <c>global.css</c> sets <c>html { overflow-x: clip }</c> - so the
-/// <c>document.body.style.overflow = "hidden"</c> that MobileMenu.tsx had run
-/// since #1672 clipped the body box and left the viewport scrolling merrily
-/// underneath it. Both overlays share <c>lib/scrollLock.ts</c> now, and
-/// <see cref="MobileMenu_Open_LocksPageBehindScrim"/> covers that second case.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const int ViewportWidth = 375;
 	private const int ViewportHeight = 667;
 
-	/// <summary>
-	/// Wheel ticks are dispatched repeatedly rather than as one large delta -
-	/// closer to real trackpad input, and the same approach
-	/// CreateOpportunityModalViewportTests uses against this wrapper. A real
-	/// user-initiated wheel is the only faithful probe here: a JS
-	/// <c>scrollTo()</c> still moves a locked document, because
-	/// <c>overflow: hidden</c> only blocks user input, not programmatic scrolls.
-	/// </summary>
 	private Task<int> WheelOverDialogAsync(int ticks = 8) =>
 		WheelAtAsync(ViewportWidth / 2f, ViewportHeight / 2f, ticks);
 
@@ -43,24 +20,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		return await ReadSettledScrollYAsync();
 	}
 
-	/// <summary>
-	/// Reads <c>window.scrollY</c> once it has stopped moving, counting rendered
-	/// frames rather than milliseconds.
-	///
-	/// The scroll a wheel event causes lands on a later frame, and under this
-	/// suite's own CPU contention (AssemblyParallelLimit.cs) that frame is not
-	/// guaranteed to be the next one - which is what the fixed settle beat this
-	/// replaces was covering for. A wall-clock wait is the wrong instrument for
-	/// it in both directions: it is dead time on an idle runner, and it is still
-	/// a guess on a loaded one. Waiting for the offset to hold steady across
-	/// several consecutive animation frames instead scales with how fast the
-	/// browser is actually painting.
-	///
-	/// Several frames, not two: most assertions here are that the page did *not*
-	/// move, and a two-sample check could settle on the unchanged offset in the
-	/// window before a broken lock's scroll had been applied at all - passing the
-	/// test for the wrong reason.
-	/// </summary>
 	private Task<int> ReadSettledScrollYAsync() =>
 		Page.EvaluateAsync<int>(
 			"""
@@ -79,12 +38,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 			})
 			""");
 
-	/// <summary>
-	/// The page behind must actually be scrollable, or every "did not scroll"
-	/// assertion in this class would hold no matter what the component does.
-	/// Polled rather than read once: dashboard widgets and the opportunity list
-	/// both arrive asynchronously, and the document is short until they land.
-	/// </summary>
 	private async Task WaitForScrollablePageAsync(string what)
 	{
 		var lastHeight = 0;
@@ -101,8 +54,7 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 	private async Task OpenCreateOpportunityWizardAsync()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		// Resize after FastSignInAsync, not before - its own success check waits
-		// on the desktop-only "User menu" button, hidden below the md breakpoint.
+
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 		await Page.SetViewportSizeAsync(ViewportWidth, ViewportHeight);
@@ -112,13 +64,8 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await WaitForScrollablePageAsync("the org dashboard");
 
-		// Start away from the top so "the offset survives the dialog" is a real
-		// claim about a real offset rather than about zero.
 		await Page.EvaluateAsync("() => window.scrollTo(0, 200)");
-		// Assert the scroll landed rather than waiting a fixed beat and hoping:
-		// every later assertion in this test compares against this offset, so a
-		// dialog opened before the page got there would be measured against the
-		// wrong baseline.
+
 		(await ReadSettledScrollYAsync()).Should().Be(200,
 			"the page has to actually be at the starting offset before the dialog opens");
 
@@ -132,9 +79,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 	{
 		await OpenCreateOpportunityWizardAsync();
 
-		// Read the baseline once the dialog is up: clicking the trigger may have
-		// scrolled it into view, so the offset the user must get back is the one
-		// in effect at the moment the lock took hold, not the one before.
 		var baseline = await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)");
 
 		(await Page.EvaluateAsync<string>("() => document.documentElement.style.overflow"))
@@ -150,13 +94,9 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		(await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)")).Should().Be(baseline,
 			"the reader must come back to where they were before the dialog opened");
 
-		// And the lock must actually let go - a stuck lock would leave the whole
-		// app unscrollable, a far worse bug than the one being fixed.
 		(await Page.EvaluateAsync<string>("() => document.documentElement.style.overflow"))
 			.Should().BeEmpty("closing the last dialog must restore the root element's own overflow");
 
-		// Back to the top first, so "it moved" can't come down to how much room
-		// happened to be left below whatever offset the dialog was opened at.
 		await Page.EvaluateAsync("() => window.scrollTo(0, 0)");
 		(await WheelOverDialogAsync(4)).Should().BeGreaterThan(0,
 			"the page must scroll again once the dialog is closed");
@@ -168,11 +108,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await OpenCreateOpportunityWizardAsync();
 		var baseline = await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)");
 
-		// Dirty the form so Escape raises the discard confirm on top of the
-		// wizard instead of closing it - two Modals mounted at once, which is
-		// what the lock's reference counting exists for. React tears the parent
-		// down before the child, so a naive per-instance capture/restore would
-		// either unlock early here or leave the page locked forever.
 		await Page.Locator("#opportunity-title").FillAsync("Scroll lock probe");
 		await Page.Keyboard.PressAsync("Escape");
 
@@ -183,7 +118,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		(await WheelOverDialogAsync()).Should().Be(baseline,
 			"the page must stay locked while a nested confirm dialog is open");
 
-		// Dismiss only the inner dialog - the wizard is still open behind it.
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
 		await Expect(confirmTitle).Not.ToBeVisibleAsync();
 		await Expect(Page.Locator("[role='dialog']")).ToHaveCountAsync(1);
@@ -193,7 +127,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 		(await WheelOverDialogAsync()).Should().Be(baseline,
 			"the outer wizard still holds its own reference to the lock");
 
-		// Now discard for real: both dialogs go, and the lock goes with them.
 		await Page.Keyboard.PressAsync("Escape");
 		await Expect(confirmTitle).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" }).ClickAsync();
@@ -222,16 +155,6 @@ public class ModalScrollLockTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		var baseline = await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)");
 
-		// Wheel over the scrim, below the panel - not over the panel itself.
-		// The panel is its own overscroll-contain scroll container, so a wheel
-		// inside it is absorbed there and never reaches the document, which
-		// would leave this assertion holding even with the lock deleted.
-		//
-		// Geometry and the hit test happen together inside one evaluate, both
-		// so they describe the same instant and because passing coordinates
-		// back in as an argument is what broke the first version of this test:
-		// the float[] arrived as undefined and elementFromPoint threw on a
-		// non-finite double. A returned -1 means no usable scrim point exists.
 		var scrimY = await Page.EvaluateAsync<float>(@"() => {
 			const panel = document.querySelector('[role=""dialog""]');
 			if (!panel) return -1;

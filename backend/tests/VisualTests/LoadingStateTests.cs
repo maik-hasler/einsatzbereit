@@ -4,27 +4,9 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #765: several pages rendered bare, unstyled "Loading..."
-/// text while fetching, with no visual sign anything was happening. These
-/// tests delay the underlying API call so the loading state is observable
-/// long enough to assert on it, then confirm real content replaces it.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	/// <summary>
-	/// Holds a routed response open until the test releases it.
-	///
-	/// A loading state can only be asserted on while the request behind it is
-	/// still in flight, so these tests have to keep one there deliberately. That
-	/// used to be a fixed <c>Task.Delay(1500)</c> inside the route handler, which
-	/// turns the assertions into a race against a stopwatch: on a contended
-	/// runner the response can land before the skeleton is ever looked at, and
-	/// the test fails with nothing wrong in the UI. Holding the response until
-	/// the assertions have run inverts that - the request stays in flight exactly
-	/// as long as they need, however slow the machine is, and no longer.
-	/// </summary>
 	private static TaskCompletionSource NewResponseGate() =>
 		new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -47,8 +29,6 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync(detailUrl);
 
-		// See the comment in OpportunitiesPage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
-		// above on why this is scoped to ":has(.animate-pulse)".
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		try
 		{
@@ -58,10 +38,6 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		finally
 		{
-			// The skeleton has been seen, so let the request behind it finish and
-			// the rest of this test assert what replaces it. In a finally, so a
-			// failed assertion above surfaces as itself rather than as a request
-			// left hanging until Playwright's timeout.
 			detailResponse.TrySetResult();
 		}
 

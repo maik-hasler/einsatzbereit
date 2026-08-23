@@ -38,16 +38,6 @@ function UpcomingOpportunitiesWidget({
 	const api = useApiClient();
 	const [showCreateModal, setShowCreateModal] = useState(false);
 
-	// Shared with QuickCheckInWidget, which fetches the same organization-wide
-	// opportunities on the same mount - see useSharedOrgFetch. Only one of the
-	// two fetcher closures actually runs per useSharedOrgFetch's dedup, so its
-	// args (status, pageNumber, pageSize) must stay identical to
-	// QuickCheckInWidget's. `nextTimeSlotStart` (already computed server-side
-	// per opportunity) covers this widget's whole need for "when's the next
-	// shift" - no separate getOrganizationCalendarEvents fetch required (#1389:
-	// that endpoint now requires a bounded date range, and this widget has no
-	// natural one to bind to since it wants the single soonest upcoming slot
-	// across every opportunity, however far out that is).
 	const [opportunities, , opportunitiesError] = useSharedOrgFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
@@ -62,9 +52,6 @@ function UpcomingOpportunitiesWidget({
 	);
 	const error = opportunitiesError;
 
-	// Picking, ordering and capping lives in lib/upcomingOpportunities.ts so it
-	// can be unit-tested against the shapes this API client actually returns -
-	// notably that its "Date" fields arrive as strings (see that module).
 	const items = useMemo<UpcomingItem[] | null>(
 		() =>
 			opportunities
@@ -114,12 +101,6 @@ function UpcomingOpportunitiesWidget({
 			)}
 			{items !== null && !error && items.length > 0 && (
 				<ul className="space-y-3">
-					{/* Every fetched item always renders - only the metadata line
-					is dropped at compact size, never the items themselves. Size
-					can change from a plain window resize (outside edit mode, so
-					the inert-content guard doesn't apply), and unmounting an item
-					a keyboard user had focus on would silently drop focus to the
-					document body - #771 follow-up, a11y. */}
 					{items.map((item) => (
 						<li
 							key={item.id}

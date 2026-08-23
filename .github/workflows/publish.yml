@@ -14,9 +14,6 @@ permissions:
   packages: write
 
 jobs:
-  # Single restore+build for the whole solution, shared by the three test
-  # jobs below via upload-artifact/download-artifact instead of each of them
-  # redoing it - see the matching job in dotnet.yml for the full rationale.
   backend-build:
     name: Backend Build
     runs-on: ubuntu-latest
@@ -36,11 +33,6 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Building the whole solution here compiles tests/VisualTests.csproj,
-      # which downloads Chrome for Testing + Chrome Headless Shell (~290 MiB
-      # combined) from cdn.playwright.dev via its InstallPlaywrightBrowsers
-      # MSBuild target. Caching this means that download only happens when
-      # the pinned TUnit.Playwright version changes, not on every RC cut.
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -62,9 +54,6 @@ jobs:
           path: |
             backend/**/bin/**
             backend/**/obj/**
-          # See the matching step in dotnet.yml - tests/VisualTests's
-          # Playwright driver lives under a dot-prefixed bin/.../.playwright/
-          # folder that upload-artifact excludes by default.
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -95,9 +84,6 @@ jobs:
           name: backend-build
           path: backend
 
-      # See the matching step in dotnet.yml - artifact zip/unzip drops the
-      # Unix executable bit on the native apphost binaries `dotnet run`
-      # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
@@ -136,9 +122,6 @@ jobs:
           name: backend-build
           path: backend
 
-      # See the matching step in dotnet.yml - artifact zip/unzip drops the
-      # Unix executable bit on the native apphost binaries `dotnet run`
-      # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
@@ -202,9 +185,6 @@ jobs:
           name: backend-build
           path: backend
 
-      # See the matching step in dotnet.yml - artifact zip/unzip drops the
-      # Unix executable bit on the native apphost binaries `dotnet run`
-      # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
@@ -223,10 +203,6 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      # See the matching step in dotnet.yml's visual-tests job for why this
-      # cache exists, and this job's backend-build job for why it needs
-      # restoring again here (a different runner from the one that populated
-      # it - needs: backend-build guarantees this lands after that save).
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -239,8 +215,6 @@ jobs:
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
-      # strategy.job-total is the matrix length, so the shard count is never
-      # written down twice and can't drift from the `shard:` list above.
       - name: Resolve shard filter
         id: shard
         run: |
@@ -255,10 +229,6 @@ jobs:
             --treenode-filter "${{ steps.shard.outputs.filter }}" \
             --minimum-expected-tests "${{ steps.shard.outputs.min-tests }}"
 
-      # #2145's first acceptance criterion: the fixed per-shard Aspire boot is
-      # what decides how many shards are still worth adding, so keep measuring it
-      # rather than re-deriving it from step timestamps once. AspireFixture writes
-      # the file at the end of InitializeAsync.
       - name: Report Aspire stack startup cost
         if: always()
         working-directory: backend
@@ -319,17 +289,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # Runs the exact same lint/format/i18n/nginx-header/type-check/unit-test/
-  # container smoke-test gate as frontend.yml's PR/push gate - see #1733:
-  # before this, publish-frontend below ran only pnpm lint/check/test/build
-  # inline and never built or smoke-tested the nginx image at all, so the
-  # release path skipped the nginx CSP/HSTS/Permissions-Policy checks and the
-  # image build guarding the artifact actually being pushed.
-  #
-  # The origins below are placeholders, not a target: the released image
-  # resolves its real API/Keycloak/storage origins from environment variables
-  # at container start (docker-entrypoint.d/99-runtime-config.sh), so what
-  # this gate builds with only has to be well-formed, not real.
   frontend-checks:
     name: Frontend Checks
     needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
@@ -385,11 +344,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # No VITE_* build args on purpose: the image is environment-agnostic
-          # and resolves its origins at container start from config.js
-          # (docker-entrypoint.d/99-runtime-config.sh, see frontend/AGENTS.md).
-          # Whoever runs the image supplies those environment variables; baking
-          # any origin in here would tie one build to one target.
 
   publish-keycloak:
     name: Publish Keycloak
@@ -446,10 +400,6 @@ jobs:
 
   github-release:
     name: GitHub Release
-    # This is where publish.yml stops - it builds and pushes images, then
-    # records the release. What consumes a published tag, and where, is
-    # outside this repository: no repository_dispatch, no cross-repo secret,
-    # nothing here reaches into a running environment.
     needs: [publish-backend, publish-frontend, publish-keycloak]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -458,8 +408,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history + tags needed to find the previous tag and diff
-          # commit messages against it below.
           fetch-depth: 0
 
       - name: Extract version from tag
@@ -473,20 +421,11 @@ jobs:
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Groups commit subjects since the previous tag by Conventional Commit
-      # type (enforced PR-title-side by pr-title.yml, so main's history is
-      # squash-merged commits in that format already) instead of relying on
-      # GitHub's own auto-generated notes, which group by PR label - a label
-      # this repo's PRs don't consistently set.
       - name: Generate release notes from Conventional Commits
         id: notes
         run: |
           CURRENT_TAG="${{ steps.version.outputs.tag }}"
 
-          # Previous tag = the one immediately before this one in semver
-          # order across both stable and rc tags - not the previous tag
-          # chronologically, since an rc for an already-released line could
-          # in principle be re-cut later.
           PREV_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --list 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*' --sort=-v:refname \
             | grep -A1 -x -F "$CURRENT_TAG" | tail -n1)
           if [ "$PREV_TAG" = "$CURRENT_TAG" ]; then
@@ -539,10 +478,6 @@ jobs:
             FLAGS+=(--prerelease)
           fi
 
-          # Idempotent: a re-run of this job (e.g. after an unrelated failure
-          # elsewhere in the workflow, retried via "Re-run failed jobs") would
-          # otherwise fail with "release already exists" - edit notes in place
-          # instead, mirroring the tag-idempotency check in release-rc.yml.
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             echo "Release $TAG already exists - updating notes instead."
             gh release edit "$TAG" --repo "${{ github.repository }}" --notes-file release-notes.md "${FLAGS[@]}"

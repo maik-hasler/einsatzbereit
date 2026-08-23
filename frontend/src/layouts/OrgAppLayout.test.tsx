@@ -174,7 +174,6 @@ describe("OrgAppLayout shell", () => {
 		renderOrgApp();
 
 		expect(
-			// Awaited: the switcher is a skeleton until the Header's org list resolves.
 			await screen.findByRole("button", { name: "Switch organization" }),
 		).toBeInTheDocument();
 		const rail = screen.getByRole("navigation", {

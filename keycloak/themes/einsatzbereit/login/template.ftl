@@ -1,13 +1,3 @@
-<#--
-	Shared shell for every page in this theme.
-
-	`eyebrow` and `lead` are message keys, not markup: each page names the step
-	of the funnel it belongs to and, where the step is not self-explanatory,
-	says in one line what is about to happen. They are macro parameters rather
-	than <#nested> sections so that a template which has nothing to add simply
-	omits them, and so the strings stay in the message bundles with everything
-	else that gets translated.
--->
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle" eyebrow="" lead="" showBackLink=true>
 <!DOCTYPE html>
 <html lang="${locale.currentLanguageTag!'de'}">
@@ -15,10 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="color-scheme" content="light">
-	<#-- Every page used to inherit login.ftl's default pageTitle, so the browser
-	tab read "Anmelden" while the page itself said "Es ist ein Fehler
-	aufgetreten" - and a visitor with the reset-password and sign-in pages open
-	side by side had two identical tabs. Each template passes its own now. -->
+
 	<title>${msg(pageTitle, realm.displayName!'Einsatzbereit')} - Einsatzbereit</title>
 	<link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/favicon.svg">
 	<link rel="stylesheet" href="${url.resourcesPath}/css/einsatzbereit.css">
@@ -28,13 +15,7 @@
 
 	<div class="top-controls">
 		<#if realm.internationalizationEnabled && locale.supported?has_content>
-		<#-- #1944: the SPA's Header/LanguageSelector.tsx labels both its
-		trigger and its menu via aria-label, so the control announces what it
-		does even though its visible content is just the current language
-		code. This disclosure already mirrors that trigger-plus-menu pattern
-		(<details>/<summary> is the browser-native equivalent of the SPA's
-		button + aria-expanded) but had no aria-label of its own - a screen
-		reader only heard the two-letter code. -->
+
 		<details class="lang-switcher">
 			<summary class="lang-trigger" aria-label="${msg("switchLanguage")}">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -53,9 +34,6 @@
 	<main class="auth-main">
 		<div class="auth-card">
 
-			<#-- The logo is the one control present on every page in this theme,
-			so it carries the way back to the product rather than sitting there
-			as decoration. -->
 			<a class="auth-brand" href="${properties.siteUrl}">
 				<img src="${url.resourcesPath}/img/logo.svg" alt="Einsatzbereit" class="auth-logo">
 			</a>
@@ -100,13 +78,6 @@
 
 		</div>
 
-		<#-- Way back to the product. Without it, a visitor who reaches these
-		pages and changes their mind is stuck on an origin (login.*) that has
-		no other link on it - browser Back is the only exit. showBackLink=false
-		opts a page out when it already renders its own explicit cancel/exit
-		control (#1931: logout-confirm.ftl's "Cancel" link has the exact same
-		href and effect, so both rendered as two differently-worded controls
-		for one action). -->
 		<#if showBackLink>
 		<p class="auth-back">
 			<a href="${properties.siteUrl}" class="back-link">

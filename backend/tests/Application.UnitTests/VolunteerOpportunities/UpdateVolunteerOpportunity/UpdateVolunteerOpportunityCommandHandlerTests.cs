@@ -291,10 +291,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenParticipationTypeChanges_AndOnlyCancelledEngagementsExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1145: switching away from ScheduledSlots clears every time
-		// slot, which cascade-sets even a Cancelled engagement's TimeSlotId to null,
-		// silently erasing its historical date. The guard must block on ANY engagement
-		// referencing this opportunity, not just Pending/Confirmed ones.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
@@ -429,7 +427,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
 			.Returns([activeVolunteer]);
 
-		// Material change: new address (city changed).
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
@@ -500,14 +497,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
 			.Returns([activeVolunteer]);
 
-		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - no notification and no email should be sent
+		// Assert
 		await _notifRepo.DidNotReceive().AddAsync(
 			Arg.Any<Notification>(),
 			cancellationToken);
@@ -544,10 +540,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldSkipVolunteer_WhenKeycloakProfileLookupFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - GetUserProfilesAsync (#1678) silently drops a volunteer it
-		// couldn't resolve (e.g. deleted in Keycloak) instead of throwing and
-		// aborting the whole notification batch, unlike the old per-volunteer
-		// GetUserAsync loop.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var activeVolunteer = Guid.NewGuid();
@@ -571,7 +565,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - the in-app notification still gets created, only the email is skipped.
+		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
@@ -607,7 +601,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 
@@ -635,10 +629,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldRaiseGeocodingRequestedEvent_AndResetCoordinates_WhenAddressTextChanges(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: geocoding itself now happens out of band (see
-		// GeocodeVolunteerOpportunityAddressHandler) - changing the address text
-		// just needs to reset any previously-resolved coordinates and raise the
-		// event that triggers re-resolution (#1388).
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
 		var opportunity = VolunteerOpportunity.Create(
@@ -683,7 +675,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// Same street/house number/zip/city as geocodedAddress - only cosmetic fields change.
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 

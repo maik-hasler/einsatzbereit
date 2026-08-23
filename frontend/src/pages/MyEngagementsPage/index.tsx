@@ -4,10 +4,6 @@ import ProfileSubNav from "../../components/ProfileSubNav";
 import PageHeaderBand from "../../components/PageHeaderBand";
 import ActivitySection from "./ActivitySection";
 
-// Open invitations and sign-ups - split out of the overloaded /profile into
-// their own page (#1684), reachable at the same /my-signups URL that
-// notification action links and the header's notification-bell fallback
-// already pointed at (previously just a redirect back into /profile).
 export default function MyEngagementsPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("myEngagementsPage.title"));

@@ -172,7 +172,6 @@ public class ConfirmEngagementCommandHandlerTests
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
-		// Streak at 3 consecutive weeks; next activity takes it to 4
 		var streak = BuildActivityStreakOf(volunteerId, 3);
 		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
@@ -196,7 +195,6 @@ public class ConfirmEngagementCommandHandlerTests
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
-		// Streak at 1; next activity takes it to 2 - no badge yet
 		var streak = BuildActivityStreakOf(volunteerId, 1);
 		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
@@ -232,10 +230,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardDedicatedBadge_WhenLifetimeConfirmationsReach5_EvenIfLiveConfirmedCountIsLower(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #668: a volunteer's live "currently confirmed" count can be
-		// pulled back down by an unrelated opportunity deletion/cancellation elsewhere.
-		// Milestone eligibility must key off the monotonic lifetime counter on the
-		// volunteer's UserStreak, not that live count.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(
@@ -305,8 +299,6 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldRaiseConfirmedEvent_ForThePostCommitEmailHandler(
 		CancellationToken cancellationToken)
 	{
-		// #1150: the volunteer's confirmation email moved to
-		// EngagementConfirmedNotificationHandler, dispatched post-commit.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
@@ -331,7 +323,7 @@ public class ConfirmEngagementCommandHandlerTests
 	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
 	{
 		var streak = UserStreak.Create(userId);
-		// Use Europe/Berlin (matches the handler) so week boundaries agree at runtime.
+
 		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
 		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlin).DateTime;
 		var currentYear = System.Globalization.ISOWeek.GetYear(now);

@@ -8,12 +8,6 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Sitemap.GetSitemap.v1;
 
-// AllowAnonymous is deliberate: search-engine crawlers fetch this directly, with no
-// Bearer token to attach (einsatzbereit#1092). Served under the versioned API prefix
-// like every other endpoint - the frontend's nginx proxies its own /sitemap.xml to
-// this route over the internal container network, since a sitemap must be served
-// from the same host as the URLs it lists while the frontend and backend are
-// reached under different hostnames.
 internal sealed class GetSitemapEndpoint : IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

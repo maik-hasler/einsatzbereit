@@ -6,12 +6,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #760 (the follow-up admin dashboard, not the original 403 fix):
-/// admins previously had no way to block/unblock a user or promote/demote them
-/// to admin. A disposable Keycloak user is provisioned for the duration of this
-/// test and deleted afterwards, so it never affects other (parallel) tests.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -34,26 +28,16 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
-			// einsatzbereit#1054 added a second "Search" button (organization
-			// list), so the unscoped role lookup now matches two elements -
-			// scope to the form containing the user-search input.
+
 			await Page.Locator("form")
 				.Filter(new() { Has = Page.Locator("#admin-user-search") })
 				.GetByRole(AriaRole.Button, new() { Name = "Search" })
 				.ClickAsync();
 
-			// einsatzbereit#1294: Block/Promote carry a per-row aria-label (the
-			// user's name interpolated into the middle of the phrase, e.g.
-			// "Promote {name} to admin") so screen-reader users navigating a
-			// list of many identical-looking buttons can tell them apart -
-			// asserting the full accessible name here also proves that fix.
 			var row = Page.Locator("li").Filter(new() { HasTextString = username });
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 			await Expect(row.GetByText("Active")).ToBeVisibleAsync();
 
-			// Both actions confirm first since einsatzbereit#1773 - see
-			// AdministrationPage_BlockAndPromote_RequireConfirmationNamingTheUser
-			// below for why, and for the dismissal half of the behaviour.
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" }).ClickAsync();
 			await ConfirmDialogAsync("Yes, block");
 			await Expect(row.GetByText("Blocked")).ToBeVisibleAsync();
@@ -65,10 +49,6 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Expect(adminBadge).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Remove admin from {username}" })).ToBeVisibleAsync();
 
-			// #2088: the badge used to share the amber warning tone with actual
-			// status indicators (e.g. a flagged organization), which read as a
-			// warning rather than a role designation. It now uses the same
-			// brand-tinted tone as other role badges (e.g. the Organizer chip).
 			var badgeBackground = await adminBadge.EvaluateAsync<string>(
 				"el => getComputedStyle(el).backgroundColor");
 			badgeBackground.Should().Be("rgb(240, 250, 245)", "the admin badge should use the brand tone, not amber");
@@ -79,16 +59,6 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		}
 	}
 
-	/// <summary>
-	/// Regression for einsatzbereit#1773: blocking an account and granting
-	/// platform admin fired straight from onClick with no confirmation, while
-	/// the lower-stakes organization shadow-delete one tab over already had a
-	/// ConfirmDialog. One mis-click on a dense row of two adjacent buttons
-	/// handed a stranger full platform administration, or locked a volunteer
-	/// out, with no undo. Asserts the dialog names the person and that
-	/// dismissing it leaves Keycloak untouched - not just the row's rendering,
-	/// which would also stay put if the request had merely failed.
-	/// </summary>
 	[Test]
 	public async Task AdministrationPage_BlockAndPromote_RequireConfirmationNamingTheUser()
 	{
@@ -151,18 +121,13 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var (username, userId) = await CreateDisposableUserAsync(keycloak);
 		try
 		{
-			// LoginAsync's "Sign in" button is CSS-hidden below the md breakpoint
-			// (it moves into the mobile burger menu), so sign in at desktop size
-			// first and only shrink afterwards - see OrganizationDashboardNavLinkTests.
 			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
 			await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 			await Page.GotoAsync($"{origin}/administration/users");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Page.Locator("#admin-user-search").FillAsync(username);
-			// einsatzbereit#1054 added a second "Search" button (organization
-			// list), so the unscoped role lookup now matches two elements -
-			// scope to the form containing the user-search input.
+
 			await Page.Locator("form")
 				.Filter(new() { Has = Page.Locator("#admin-user-search") })
 				.GetByRole(AriaRole.Button, new() { Name = "Search" })
@@ -175,14 +140,6 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			var blockButton = row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" });
 			await Expect(blockButton).ToBeVisibleAsync();
 
-			// Regression #813: on narrow viewports the name/email cell used to shrink
-			// to a sliver next to the still-full-width status badge and action
-			// buttons instead of wrapping onto its own line above them. Poll rather
-			// than read both boxes once: the row's flex-col layout can still be
-			// mid-reflow the instant it first becomes visible (trailing the search
-			// re-render), and a single read can catch that transient frame under
-			// CI resource contention - same rationale as VisualTestBase's own
-			// PollUntilAsync-based geometry assertions.
 			var nameWidth = 0f;
 			var nameBottom = 0f;
 			var blockY = 0f;
@@ -220,9 +177,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.Locator("#admin-user-search").FillAsync("admin");
-		// einsatzbereit#1054 added a second "Search" button (organization
-		// list), so the unscoped role lookup now matches two elements -
-		// scope to the form containing the user-search input.
+
 		await Page.Locator("form")
 			.Filter(new() { Has = Page.Locator("#admin-user-search") })
 			.GetByRole(AriaRole.Button, new() { Name = "Search" })
@@ -234,11 +189,6 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(ownRow.GetByRole(AriaRole.Button)).Not.ToBeVisibleAsync();
 	}
 
-	/// <summary>
-	/// Clicks a ConfirmDialog's danger action and waits for it to close. The
-	/// dialog is portaled to document.body (see Modal.tsx), so it is never
-	/// inside the row locator that opened it.
-	/// </summary>
 	private async Task ConfirmDialogAsync(string confirmLabel)
 	{
 		var dialog = Page.GetByRole(AriaRole.Dialog);
@@ -277,13 +227,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(Uri keycloak)
 	{
 		var adminToken = await AuthHelper.GetAdminTokenAsync(keycloak);
-		// Not "admintest760-..." (deliberately doesn't contain "admin" as a
-		// substring): Keycloak's search= does infix matching, so a name
-		// containing "admin" would also match AdministrationPage_OwnRow_
-		// HasNoBlockOrDemoteButtons's search for "admin", surfacing this
-		// disposable user's row in that unrelated test's results - and if
-		// this test's own cleanup below deletes it mid-request, the other
-		// test's per-user Keycloak role lookup 404s on the now-gone id.
+
 		var username = $"tempuser760-{Guid.NewGuid():N}";
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
@@ -322,5 +266,4 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var response = await adminHttp.DeleteAsync($"/admin/realms/{Realm}/users/{userId}");
 		response.EnsureSuccessStatusCode();
 	}
-
 }

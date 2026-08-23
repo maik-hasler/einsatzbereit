@@ -5,13 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Coverage for #1046: the organizer's "Manage sign-ups" page gained a
-/// status filter (mirroring the volunteer-side scope toggle in
-/// ActivitySection) on top of the pagination added by #1456. This asserts
-/// the status dropdown actually narrows the visible rows instead of just
-/// being wired up server-side.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementManagementFiltersTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -49,8 +42,6 @@ public class EngagementManagementFiltersTests(AspireFixture fixture) : VisualTes
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		// Fresh organization rather than olaf's shared seed org - see the
-		// identical note in EngagementManagementCheckInPinTests.
 		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"{label} Org {suffix}" });

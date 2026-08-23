@@ -77,8 +77,8 @@ public class EngagementCreatedDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert - organizer emails go out as a single batch (#1729), not one
-		// SendAsync call per organizer.
+		// Assert
+
 		await _emailService.Received(1).SendBatchAsync(
 			Arg.Is<IReadOnlyList<EmailMessage>>(messages => messages!.Any(m =>
 				m.To == "olaf@example.com" && m.Body.Contains("https://example.com/unsubscribe"))),
@@ -111,7 +111,7 @@ public class EngagementCreatedDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert - the only organizer opted out, so the batch is never sent at all.
+		// Assert
 		await _emailService.DidNotReceive().SendBatchAsync(
 			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
@@ -120,10 +120,6 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldSkip_WhenVolunteersKeycloakAccountIsAlreadyDeleted(
 		CancellationToken cancellationToken)
 	{
-		// A volunteer who deletes their account immediately after signing up can have
-		// UserAccountDeletedDomainEvent dispatched from the outbox before this event -
-		// there is no ordering guarantee between the two - so this must tolerate the
-		// volunteer already being gone rather than dead-lettering forever.
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -167,10 +163,8 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterNotifying(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - regression: Publisher.Publish() resolves this handler from
-		// its own child scope (a different IApplicationDbContext instance than
-		// OutboxProcessorJob's), so any organizer User rows created here by
-		// GetOrCreateUsersAsync must be saved explicitly.
+		// Arrange
+
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -182,12 +176,6 @@ public class EngagementCreatedDomainEventHandlerTests
 		// Assert
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
-
-	// --- Volunteer sign-up receipt (#1729) ---
-	//
-	// Sent from here rather than synchronously from CreateEngagementCommandHandler
-	// so the time-slot row lock (#1142) that handler holds no longer stays open
-	// across this SMTP send too.
 
 	[Test]
 	public async Task Handle_ShouldEmailVolunteer_WithTheirOwnSignUpReceipt(
@@ -255,9 +243,8 @@ public class EngagementCreatedDomainEventHandlerTests
 	public async Task Handle_ShouldDefaultVolunteerEmailToGerman_WhenNoProfileExistsYet(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a volunteer who signs up without ever having loaded their
-		// profile page has no User row yet, so PreferredLanguage can't have
-		// been seeded; the recipient's language must still resolve, never NRE.
+		// Arrange
+
 		var organizationId = OrganizationId.New();
 		var opportunity = CreateOpportunity(organizationId);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);

@@ -95,9 +95,8 @@ public class CancelVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new CancelVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId, "Venue cancelled"), cancellationToken);
 
-		// Assert - opportunity.Events also carries the Published event raised by
-		// CreatePublishedOpportunity()'s own Publish() call, so assert the
-		// Cancelled event was added rather than that it's the only one.
+		// Assert
+
 		var cancelled = opportunity.Events.OfType<VolunteerOpportunityCancelledDomainEvent>().Should().ContainSingle().Which;
 		cancelled.Reason.Should().Be("Venue cancelled");
 	}

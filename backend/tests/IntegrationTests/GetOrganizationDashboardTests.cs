@@ -4,11 +4,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1398: OrganizationDashboardReadRepository used to
-// materialize every opportunity id for an org into memory and re-check it with
-// in-memory Contains(), instead of an IN (SELECT ...) subquery. These tests pin
-// down the KPI counts themselves so a future change to that query keeps
-// producing the same numbers, whatever shape the query takes underneath.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
@@ -37,7 +32,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
-		// Two open opportunities.
 		var opportunityA = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -64,13 +58,11 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 			cancellationToken)).Single().Id;
 		await olafClient.PublishVolunteerOpportunityAsync(opportunityB.Id, cancellationToken);
 
-		// Pending: vera signs up for opportunityA and is left untouched.
 		await veraClient.CreateEngagementAsync(
 			opportunityA.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// Cancelled: olaf signs up for opportunityA himself, then cancels it as organizer.
 		var toBeCancelled = await olafClient.CreateEngagementAsync(
 			opportunityA.Id,
 			new CreateEngagementRequest { Message = "Second helper" },
@@ -80,14 +72,12 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 			new CancelEngagementRequest { Reason = "No longer needed" },
 			cancellationToken);
 
-		// Confirmed, within next 7 days: vera on the near time slot.
 		var nearEngagement = await veraClient.CreateEngagementAsync(
 			opportunityB.Id,
 			new CreateEngagementRequest { TimeSlotId = slotNear },
 			cancellationToken);
 		await olafClient.ConfirmEngagementAsync(nearEngagement.Id, cancellationToken);
 
-		// Confirmed, beyond next 7 days: olaf himself on the far time slot.
 		var farEngagement = await olafClient.CreateEngagementAsync(
 			opportunityB.Id,
 			new CreateEngagementRequest { TimeSlotId = slotFar },
@@ -107,7 +97,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		// org1 (olaf): one opportunity with a pending and a confirmed engagement.
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity1 = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
 		var engagement1 = await veraClient.CreateEngagementAsync(
@@ -116,11 +105,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement1.Id, cancellationToken);
 
-		// org2 (vera): its own opportunity with its own pending engagement, which
-		// must never leak into org1's counts. CreateVolunteerOpportunity requires
-		// the "organisator" role claim, which Keycloak only grants vera once she
-		// creates an org - her existing veraClient token predates that, so a fresh
-		// token has to be minted to pick it up.
 		var org2Id = await CreateOrganizationAsync(veraClient, cancellationToken);
 		var veraOrganizerClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var opportunity2 = await CreateOpportunityAsync(veraOrganizerClient, org2Id, cancellationToken);
@@ -168,8 +152,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		layout.HasCustomLayout.Should().BeFalse();
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{
@@ -213,8 +195,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Created as a draft: a ScheduledSlots opportunity can't be published until it has
-		// at least one time slot, and callers add slots separately after this returns.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{

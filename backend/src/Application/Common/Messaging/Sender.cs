@@ -9,13 +9,6 @@ internal sealed class Sender(
 {
 	private static readonly ConcurrentDictionary<Type, IHandlerWrapper> HandlerWrapperCache = [];
 
-	// A Send() call issued from within a handler that is itself running inside
-	// a Send() call (e.g. ConfirmEngagementCommandHandler dispatching
-	// AwardAchievementCommand) reuses the outer call's DI scope instead of
-	// opening a new one. This makes the nested command share the same
-	// IApplicationDbContext/IUnitOfWork instance as its caller, so
-	// TransactionPipelineBehavior can let the outermost command own the single
-	// begin/commit/rollback and nested writes rise or fall with it.
 	private static readonly AsyncLocal<IServiceScope?> AmbientScope = new();
 
 	public async ValueTask<TResponse> Send<TResponse>(

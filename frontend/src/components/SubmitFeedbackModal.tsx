@@ -15,8 +15,7 @@ interface SubmitFeedbackModalProps {
 	opportunityTitle: string;
 	onSubmitted: (rating: number, comment: string | null) => void;
 	onClose: () => void;
-	/** Pre-fills the form and switches submit/cancel wording to editing an
-	 * existing rating (PUT) instead of creating a new one (POST). */
+
 	initialRating?: number;
 	initialComment?: string | null;
 }
@@ -85,11 +84,7 @@ export default function SubmitFeedbackModal({
 						{t("feedback.ratingLabel")}
 						<RequiredMark />
 					</p>
-					{/* The stars are aria-pressed toggle buttons, so this is a plain
-					`group` - and ARIA does not allow aria-required on `group` (axe's
-					aria-allowed-attr would flag it). Folding "required" into the
-					group's own name is what carries the asterisk across to screen
-					readers here; it lives in the component, not in the string. */}
+
 					<div
 						className="flex gap-1"
 						role="group"

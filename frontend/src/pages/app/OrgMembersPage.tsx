@@ -72,11 +72,6 @@ export default function OrgMembersPage() {
 		setMemberSearch(value);
 	}
 
-	// Debounce moved into an effect (mirrors useCitySuggestions.ts) so cleanup
-	// runs on every keystroke and on unmount - the previous setTimeout-in-a-
-	// handler version had no cleanup at all, so a request could still land
-	// after the component unmounted, and had no way to tell a stale response
-	// apart from the latest one (#1232).
 	useEffect(() => {
 		if (memberSearch.length < 4) {
 			setMemberCandidates([]);
@@ -125,8 +120,6 @@ export default function OrgMembersPage() {
 	>(null);
 
 	useEffect(() => {
-		// Invitations are an Organizer-only management concern - a plain Member
-		// would just get a 403 here, so skip the doomed request entirely.
 		if (!isOrganizer) return;
 		api
 			.getOrgInvitations(org.id)
@@ -236,10 +229,7 @@ export default function OrgMembersPage() {
 		setRemoveMemberError(null);
 		try {
 			await api.removeMember(org.id, userId);
-			// Optimistic update for immediate feedback, plus a real refetch (#1230)
-			// - `org` (and thus `members`, synced from it above) only otherwise
-			// refreshes when `organizationId` changes, so navigating away and back
-			// without this would show the removed member again.
+
 			setMembers((prev) => prev.filter((m) => m.userId !== userId));
 			reloadOrg();
 			setRemoveTarget(null);
@@ -270,10 +260,6 @@ export default function OrgMembersPage() {
 
 	return (
 		<div>
-			{/* max-w-4xl, was max-w-2xl (#1755): a member row carries a name, an
-			email, a role chip and up to two actions, which at 672px left the
-			actions crowded against the name while ~700px of page sat empty
-			beside them. Still flush left, per #766. */}
 			<div data-content-wrapper className="max-w-4xl">
 				{successMessage && (
 					<SuccessBanner message={successMessage} className="mb-4" />
@@ -282,10 +268,6 @@ export default function OrgMembersPage() {
 					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
 
-				{/* Boxed, and side by side from sm up: the search field and the role
-				select are one action ("invite this person, as this"), but as two
-				full-width controls stacked on bare page they read as the start of a
-				long form and gave the page no first section at all (#1755). */}
 				{isOrganizer && (
 					<div className={`mb-8 ${cardClass} sm:p-6`}>
 						<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
@@ -531,13 +513,6 @@ export default function OrgMembersPage() {
 						message={t("orgSettings.noMembersHint")}
 					/>
 				) : (
-					// Boxed like every other list on this page. It was the only one
-					// left as a bare divide-y on the page background, so the page's
-					// actual subject - who is in this organization - was the one
-					// thing with no surface of its own (#1755).
-					// cardClass's own p-4 is deliberately not used here: the padding
-					// belongs on each row, not the frame, which surfaceClasses.ts
-					// calls out as the one card-like case it doesn't cover.
 					<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
 						<ul className="divide-y divide-gray-100">
 							{members.map((member) => (
@@ -554,9 +529,7 @@ export default function OrgMembersPage() {
 										<p className="truncate text-xs text-gray-500">
 											{member.email}
 										</p>
-										{/* Every member gets a role chip, not just organizers - a
-										bare row for regular members made status legible only by
-										the absence of a chip (#2083). */}
+
 										<Chip
 											tone={member.isOrganisator ? "brand" : "neutral"}
 											size="sm"
@@ -568,12 +541,6 @@ export default function OrgMembersPage() {
 										</Chip>
 									</div>
 									{member.userId === currentUserId ? (
-										// Hint sits right under its button instead of in a
-										// footnote at the bottom of the card, so a disabled
-										// control's explanation is where the eye already is
-										// (#2083). The `title` tooltip this used to carry is
-										// gone too - the text is now always visible, not just on
-										// hover, so a duplicate tooltip would be redundant.
 										<div className="flex shrink-0 flex-col items-end gap-1">
 											<Button
 												type="button"
@@ -594,10 +561,6 @@ export default function OrgMembersPage() {
 													id="leave-organization-hint"
 													className="max-w-48 text-right text-xs text-gray-500"
 												>
-													{/* States the whole path here, at the point the user
-													first hits the wall, instead of leaving them to piece
-													it together from this page's disabled button plus the
-													separate hint on the settings page (#2074). */}
 													<Trans
 														i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
 														components={{

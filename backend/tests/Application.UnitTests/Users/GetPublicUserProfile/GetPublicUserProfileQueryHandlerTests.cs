@@ -53,10 +53,6 @@ public class GetPublicUserProfileQueryHandlerTests
 	public async Task Handle_ShouldNotExposePreferredContactOrPhone_EvenWhenSet(
 		CancellationToken cancellationToken)
 	{
-		// #1028: this endpoint is AllowAnonymous() - PreferredContact/Phone must
-		// never leak to an anonymous visitor, regardless of what the volunteer
-		// has set on their own profile. Contact info only ever reaches an
-		// organizer through an actual engagement (EngagementSummary).
 		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
@@ -80,10 +76,6 @@ public class GetPublicUserProfileQueryHandlerTests
 	public async Task Handle_ShouldReturnEmptyProfileFields_WhenNoUserRowExists(
 		CancellationToken cancellationToken)
 	{
-		// A missing local row (never lazily created - see GetOrCreateUserAsync's
-		// callers) is not the same as a shadow-deleted user: it just means this
-		// person never touched their own profile/settings yet. The profile still
-		// resolves via Keycloak, with Bio/Skills/Languages/AvatarUrl defaulted.
 		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
@@ -105,9 +97,6 @@ public class GetPublicUserProfileQueryHandlerTests
 	public async Task Handle_ShouldReturnNull_AndNotCallKeycloak_WhenUserIsShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		// #1677 bug #1: a shadow-deleted user's public profile must 404 outright,
-		// not fall back to default Bio/Skills/Languages while still calling
-		// Keycloak and returning a fully populated response.
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.MarkDeleted(DateTimeOffset.UtcNow);

@@ -6,10 +6,6 @@ export interface SubNavItem {
 	label: string;
 }
 
-// The account area's left rail, extracted so the administration area can use
-// the same one rather than growing a second look for the same job. Vertical
-// from lg up, horizontal tab strip below it (a rail would eat a phone
-// viewport whole) - see ProfileSubNav for the reasoning behind that split.
 export default function SubNavRail({
 	items,
 	active,

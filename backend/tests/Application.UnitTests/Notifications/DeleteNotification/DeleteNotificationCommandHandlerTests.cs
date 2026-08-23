@@ -71,9 +71,7 @@ public class DeleteNotificationCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		// Same ownership-check shape as MarkNotificationRead/MarkNotificationUnread
-		// (einsatzbereit#829): a cross-user attempt collapses into the same
-		// "false" result as a nonexistent id, and never touches the row.
+
 		result.Should().BeFalse();
 		_notificationRepo.DidNotReceiveWithAnyArgs().Delete(default!);
 	}

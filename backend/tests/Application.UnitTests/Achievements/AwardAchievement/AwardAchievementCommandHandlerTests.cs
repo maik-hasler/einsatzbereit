@@ -85,9 +85,8 @@ public class AwardAchievementCommandHandlerTests
 	public async Task Handle_ShouldRemainIdempotent_WhenAwardedTwiceInSequence(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the database, not a prior existence check, is what makes the
-		// second call a no-op (#1205): both calls build a fresh Achievement and
-		// let ON CONFLICT decide.
+		// Arrange
+
 		var userId = UserId.New();
 		_catalogService.FindByKey(TestBadge.Key).Returns(TestBadge);
 		_dbContext.TryAwardAchievementAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>())

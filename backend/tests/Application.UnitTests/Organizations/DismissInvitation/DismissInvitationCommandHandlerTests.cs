@@ -6,7 +6,6 @@ using Domain.Organizations;
 using Domain.Users;
 using NSubstitute;
 
-
 namespace Application.UnitTests.Organizations.DismissInvitation;
 
 public class DismissInvitationCommandHandlerTests
@@ -112,9 +111,6 @@ public class DismissInvitationCommandHandlerTests
 	public async Task Handle_ShouldDeleteInvitation_WhenRequestingUserIsOrgMemberAndInvitationIsPending(
 		CancellationToken cancellationToken)
 	{
-		// #1040: a pending invitation must be revocable, not just Declined/Expired
-		// ones - previously an organizer had no way to undo a wrong invite before
-		// the invitee acted on it.
 		// Arrange
 		var invitation = CreatePendingInvitation(DefaultOrgId);
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);

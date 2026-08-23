@@ -5,20 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Visual tests for #1932: a saved layout that never reached the full
-/// GRID_COLUMNS width on some of its rows (most commonly a lightly-
-/// customized layout that trimmed a widget down without ever widening it
-/// back out) used to render inside a container that always spanned the
-/// full page width regardless - leaving a permanent blank block next to
-/// whichever rows fell short, reading as unfinished on a wide viewport.
-/// OrgDashboardPage/index.tsx now splits the layout into independent row
-/// bands (groupIntoRowBands in widgetCatalog.ts) and caps each band's own
-/// container to the width its own widgets actually reach, so a narrow
-/// band's container ends right where its widgets end instead of always
-/// spanning the page - see widgetCatalog.test.ts for the split logic
-/// itself; this covers the resulting rendered layout.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -39,9 +25,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// UpcomingOpportunities lands at (x=1, y=1, width=4, height=2) - see
-		// placeNewWidget in widgetCatalog.ts - the only widget on the grid,
-		// reaching column 4 of the 8-column grid.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-UpcomingOpportunities").ClickAsync();
@@ -52,11 +35,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 		var tile = Page.GetByTestId("widget-tile-UpcomingOpportunities");
 		await Expect(tile).ToBeVisibleAsync();
 
-		// The tile's own immediate parent is its row band's own grid
-		// container (OrgDashboardPage/index.tsx) - if the band is correctly
-		// capped to this lone widget's own reach, the band's rendered width
-		// should be (close to) the tile's own width, not the full
-		// page-width grid the tile would otherwise only span half of.
 		double parentWidth = 0, tileWidth = 0;
 		await PollUntilAsync(async () =>
 		{
@@ -71,10 +49,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 			"a standalone narrow widget's own row band should be capped to its own width, not the "
 			+ $"full page-width grid (tile width: {tileWidth}px, parent/band width: {parentWidth}px)");
 
-		// And that band really is capped, not just coincidentally as wide as
-		// the tile for some other reason - it should be meaningfully
-		// narrower than the page's own content column (~1376px at this
-		// viewport, see --container-page in global.css).
 		parentWidth.Should().BeLessThan(800,
 			"the band should be capped to roughly half the grid's width (UpcomingOpportunities is "
 			+ "4 of GRID_COLUMNS=8) rather than spanning the full ~1376px content column "
@@ -100,11 +74,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// Settings lands first at (x=1, y=1, width=8, height=1) - full
-		// width. VolunteerStats is added next and lands right below it, at
-		// (x=1, y=2, width=4, height=1) - see placeNewWidget in
-		// widgetCatalog.ts - in its own separate, narrower band, since the
-		// two don't share any row.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
@@ -131,10 +100,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 			return settingsWidths[1] > 0 && statsTileWidth > 0;
 		}, () => "Settings/VolunteerStats tiles never reported a non-zero width");
 
-		// The full-width Settings row's own band needs no capping, so its
-		// container renders visibly wider than VolunteerStats' own capped
-		// one - a single shared full-width grid behind both (the pre-#1932
-		// behavior) would make the two equal instead.
 		(settingsParentWidth - statsParentWidth).Should().BeGreaterThan(200,
 			"the full-width Settings band and the narrower VolunteerStats band should render at "
 			+ $"visibly different widths (Settings band: {settingsParentWidth}px, "
@@ -147,11 +112,6 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 		await DeleteOrganizationAsync(backend, organizationId);
 	}
 
-	/// <summary>
-	/// Same per-widget removal loop as OrgDashboardCustomizeTests - kept
-	/// local rather than shared, matching how each VisualTests class in
-	/// this suite already owns its own copy of this kind of setup helper.
-	/// </summary>
 	private async Task RemoveAllWidgetsAsync()
 	{
 		foreach (var (testId, widgetTitle) in new[]
@@ -177,10 +137,7 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 	{
 		var backend = Fixture.GetEndpoint("backend");
 		using var http = await CreateAuthenticatedHttpClientAsync(backend);
-		// #1890: POST /v1/organizations calls out to Keycloak's admin API in
-		// turn, which can trip the resilience-pipeline rejection/timeout
-		// under this suite's sustained concurrent load - retry rather than
-		// fail outright on a transient 500.
+
 		var response = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name });
 		response.EnsureSuccessStatusCode();
 		var org = await response.Content.ReadFromJsonAsync<JsonElement>();

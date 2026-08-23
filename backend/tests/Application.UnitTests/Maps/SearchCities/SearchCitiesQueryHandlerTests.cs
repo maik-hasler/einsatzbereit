@@ -118,10 +118,6 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 	[Test]
 	public async Task Handle_ShouldNotShareCache_BetweenDifferentLanguagesForTheSameQuery()
 	{
-		// #1277: an English and a German request for the same city text must
-		// resolve independently, since Nominatim returns different exonyms
-		// per requested language (e.g. "Munich" vs "Munchen") - sharing a
-		// cache entry would leak one language's result into the other's.
 		var englishResult = new List<CitySuggestion> { new("Munich", 48.1372, 11.5755) };
 		var germanResult = new List<CitySuggestion> { new("Munchen", 48.1372, 11.5755) };
 		_geocodingService

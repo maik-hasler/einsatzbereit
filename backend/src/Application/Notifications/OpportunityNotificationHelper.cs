@@ -12,22 +12,6 @@ namespace Application.Notifications;
 
 internal static class OpportunityNotificationHelper
 {
-	/// <summary>
-	/// Creates a notification of the given kind for every distinct volunteer who
-	/// has an active (pending or confirmed) engagement on the opportunity, or -
-	/// when <paramref name="timeSlotId"/> is given - only those engaged on that
-	/// specific time slot. The opportunity id is used as the related entity id.
-	/// <paramref name="opportunityTitle"/>, when given, is snapshotted onto each
-	/// created notification so its title can still be shown once the opportunity
-	/// itself is deleted and a live lookup would find nothing (einsatzbereit#2073).
-	/// When <paramref name="keycloakUserService"/>, <paramref name="emailService"/>,
-	/// <paramref name="emailTemplateRenderer"/> and <paramref name="opportunityTitle"/>
-	/// are all supplied, also emails every notified volunteer in a single batch
-	/// (einsatzbereit#1057), localized per recipient's <see cref="User.PreferredLanguage"/>
-	/// - callers that already email affected volunteers through another path (e.g.
-	/// an engagement cancellation) should omit these so the volunteer isn't emailed
-	/// twice.
-	/// </summary>
 	public static async Task NotifyActiveVolunteersAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
@@ -61,12 +45,6 @@ internal static class OpportunityNotificationHelper
 		var volunteerUsersById = (await dbContext.GetOrCreateUsersAsync(volunteerUserIds, cancellationToken))
 			.ToDictionary(u => u.Id);
 
-		// Batched instead of one GetUserAsync call per volunteer (#1678) - this runs
-		// inside TransactionPipelineBehavior's DB transaction (see callers), so an N+1
-		// here held row locks open for N sequential outbound Keycloak calls. Mirrors
-		// the GetUserProfilesAsync usage in GetEngagementsQueryHandler; a volunteer
-		// whose lookup fails (e.g. deleted in Keycloak) is silently skipped rather
-		// than aborting the whole batch.
 		var profileMap = await keycloakUserService.GetUserProfilesAsync(volunteerIds, cancellationToken);
 
 		var messages = new List<EmailMessage>(volunteerIds.Count);

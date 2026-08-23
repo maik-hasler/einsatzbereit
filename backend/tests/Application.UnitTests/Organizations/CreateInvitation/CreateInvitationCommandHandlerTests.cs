@@ -8,7 +8,6 @@ using Domain.Organizations;
 using Domain.Users;
 using NSubstitute;
 
-
 namespace Application.UnitTests.Organizations.CreateInvitation;
 
 public class CreateInvitationCommandHandlerTests
@@ -97,10 +96,6 @@ public class CreateInvitationCommandHandlerTests
 	public async Task Handle_ShouldThrowConflict_WhenAPendingInvitationAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1202: TryCreateInvitationAsync returning false (the
-		// partial unique index rejected the insert) must surface as the same
-		// Conflict error the old non-atomic pre-check used to throw, not a raw
-		// unhandled failure.
 		_dbContext
 			.TryCreateInvitationAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>())
 			.Returns(false);

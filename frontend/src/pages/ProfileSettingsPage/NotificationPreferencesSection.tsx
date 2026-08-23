@@ -21,9 +21,7 @@ type PreferenceKey =
 const PREFERENCE_ROWS: {
 	key: PreferenceKey;
 	labelKey: string;
-	// Both emails are sent to the organizer of an opportunity, which nobody
-	// can be without belonging to an organization first - so these two rows
-	// are filtered out for everyone else, see organizerRowsVisible below.
+
 	organizerOnly?: boolean;
 }[] = [
 	{
@@ -50,8 +48,6 @@ const PREFERENCE_ROWS: {
 	},
 ];
 
-// Extracted so the grouped (organizer + volunteer) and flat (volunteer-only)
-// layouts below render the exact same row markup instead of two copies of it.
 function PreferenceRowList({
 	rows,
 	preferences,
@@ -84,10 +80,6 @@ function PreferenceRowList({
 	);
 }
 
-// Self-contained email-notification-preferences card (#1055), split out of
-// ProfileOverviewPage in the same style as DangerZoneCard, relocated to
-// ProfileSettingsPage - see #1684. Owns its own fetch/save/error state and
-// API calls independently of the profile form.
 export default function NotificationPreferencesSection() {
 	const api = useApiClient();
 	const { t } = useTranslation();
@@ -126,27 +118,14 @@ export default function NotificationPreferencesSection() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// #1783: a volunteer who belongs to no organization can never organize an
-	// opportunity, so the two organizer emails can never fire for her - and
-	// their labels ("... you organize") read as if she does. Hide them rather
-	// than offer settings with no effect. Their stored values are still saved
-	// untouched below, so they survive her later joining an organization.
-	//
-	// Fail open when the organization list itself failed to load: that state
-	// is indistinguishable from "no organizations" here, and silently dropping
-	// a real organizer's own settings is the worse of the two outcomes.
 	const organizerRowsVisible = orgs.length > 0 || orgsFailed;
 	const visibleRows = PREFERENCE_ROWS.filter(
 		(row) => !row.organizerOnly || organizerRowsVisible,
 	);
-	// #1844: once the organizer rows are visible, the flat list mixes two
-	// audiences of the same account with no separation - split it into the two
-	// groups below rather than growing a third layout for the always-volunteer
-	// case, where a single group heading would just repeat the card title.
+
 	const organizerRows = visibleRows.filter((row) => row.organizerOnly);
 	const volunteerRows = visibleRows.filter((row) => !row.organizerOnly);
-	// Held until the organization list resolves too, so the two organizer rows
-	// appear with the rest of the list instead of popping in a beat later.
+
 	const loading = preferencesLoading || orgsLoading;
 
 	function toggle(key: PreferenceKey) {
@@ -179,11 +158,6 @@ export default function NotificationPreferencesSection() {
 	}
 
 	return (
-		// White card, not the gray-50 cardSubtleClass: this is the page's primary
-		// content, not an aside, and a grey slab was the largest surface on it.
-		// max-w-3xl caps the measure inside the page's shared max-w-5xl column -
-		// a checkbox list has no reason to run the full width even though the
-		// column does (see the note on the page's own wrapper).
 		<section className={`mb-6 max-w-3xl ${cardClass} sm:p-6`}>
 			<PageSectionHeading>
 				{t("notificationPreferences.title")}
@@ -195,10 +169,7 @@ export default function NotificationPreferencesSection() {
 			{loading && (
 				<div className="space-y-2" role="status">
 					<span className="sr-only">{t("profile.loading")}</span>
-					{/* visibleRows, not PREFERENCE_ROWS: membership is still
-					unknown here, so this is the volunteer-sized list - the card
-					then grows into the organizer rows rather than five
-					placeholders collapsing into three for everyone else. */}
+
 					{visibleRows.map((row) => (
 						<Skeleton key={row.key} className="h-5 w-64" />
 					))}

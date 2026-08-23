@@ -4,13 +4,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #686: CheckInModal's opportunity-details fetch had no
-/// .catch(), so a 404 (opportunity deleted after the engagements list was
-/// loaded, e.g. by an organizer in another tab, but before the volunteer
-/// clicks the still-rendered "Check in" button) left the modal stuck on
-/// "Loading..." forever with an unhandled promise rejection.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -40,9 +33,7 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 			isRemote = true,
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
-			// einsatzbereit#1016: the "Check in" button only renders for QRCode/PINCode
-			// opportunities now, so this race (organizer deletes the opportunity between
-			// list load and button click) needs a method that still shows the button.
+
 			checkInMethod = "QRCode",
 			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
@@ -69,16 +60,6 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 
-		// EngagementReadRepository.GetByVolunteerAsync orders "Current &
-		// upcoming" by time-slot start, and this opportunity has none - so on a
-		// shared session where other concurrently-running tests have already
-		// given vera their own time-slotted upcoming engagements, this row can
-		// land past the first (10-item) page instead of being visible
-		// immediately, so page through to it.
-		//
-		// Wait for the first page before starting: the WaitForLoadStateAsync
-		// above can settle before the engagements fetch is even issued, since
-		// useLoadMore only requests from an effect after React commits.
 		await Expect(Page.Locator("#activity [data-testid='engagement-card']").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await LoadMoreUntilVisibleAsync(row);
@@ -87,9 +68,6 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		var checkInButton = row.GetByRole(AriaRole.Button, new() { Name = "Check in" });
 		await Expect(checkInButton).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Simulate the race: the organizer deletes the opportunity in another
-		// tab/session after the volunteer's list has already loaded, but before
-		// they click the still-rendered "Check in" button.
 		(await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}"))
 			.EnsureSuccessStatusCode();
 
@@ -101,5 +79,4 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(dialog.GetByText("Loading…")).Not.ToBeVisibleAsync();
 	}
-
 }

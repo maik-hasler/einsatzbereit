@@ -118,12 +118,6 @@ public class UserTests
 	public void Unsubscribe_ShouldMakeIsSubscribedToReturnFalse_ForEveryDefinedType(
 		EmailNotificationType type)
 	{
-		// #1725: a data-driven regression guard, not just a happy-path check for
-		// the types that exist today - if a future EmailNotificationType member
-		// is added without a matching case in both Unsubscribe's switch and
-		// IsSubscribedTo's switch expression, this fails immediately for that
-		// new member instead of silently reporting a successful opt-out that
-		// does nothing (the switch's missing default arm before this fix).
 		var user = User.Create(UserId.New());
 
 		var result = user.Unsubscribe(type, user.UnsubscribeToken);
@@ -135,9 +129,8 @@ public class UserTests
 	[Test]
 	public void Unsubscribe_ShouldFailWithValidation_ForAnUnrecognizedType()
 	{
-		// Arrange - #1725: Unsubscribe's switch had no default arm and returned
-		// Result.Success() unconditionally, so an EmailNotificationType value
-		// outside the switch's cases silently no-op'd while reporting success.
+		// Arrange
+
 		var user = User.Create(UserId.New());
 
 		// Act

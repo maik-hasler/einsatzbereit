@@ -22,9 +22,6 @@ internal sealed class SetUserAdminStatusCommandHandler(
 				"Users.CannotModifyServiceAccount",
 				"The backend's own service account cannot be promoted or demoted."));
 
-		// Per-actor guard only: this closes the accidental self-lockout footgun,
-		// not two different admins racing to demote each other. Accepted as an
-		// MVP limitation - recoverable via the Keycloak admin console.
 		if (!request.IsAdmin && request.TargetUserId == request.ActingUserId)
 			throw new ResultFailureException(Error.Conflict(
 				"Users.CannotDemoteSelf",

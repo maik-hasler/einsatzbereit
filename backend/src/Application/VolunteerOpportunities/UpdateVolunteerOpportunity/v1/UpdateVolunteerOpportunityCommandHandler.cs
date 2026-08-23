@@ -43,12 +43,6 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			var engagements = await engagementReadRepository.GetByOpportunityAsync(
 				opportunityId, cancellationToken);
 
-			// Widened from "Pending or Confirmed" to any engagement at all (#1145):
-			// switching away from ScheduledSlots clears every time slot
-			// (VolunteerOpportunity.SwitchParticipationType), which cascade-deletes
-			// the slot rows and sets Withdrawn/Cancelled/checked-in-and-completed
-			// engagements' TimeSlotId to null too, silently erasing their date -
-			// not just the active ones the old guard checked.
 			if (engagements.Count > 0)
 				throw new ResultFailureException(Error.Conflict(
 					"VolunteerOpportunity.ParticipationTypeLocked",
@@ -62,11 +56,6 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		opportunity.Rename(request.TitleDe, request.TitleEn).ThrowIfFailure();
 		opportunity.ChangeDescription(request.DescriptionDe, request.DescriptionEn).ThrowIfFailure();
 
-		// Relocate raises VolunteerOpportunityGeocodingRequestedDomainEvent itself
-		// when the address text actually changed (or is newly added after
-		// switching away from remote), and skips re-resolving an unchanged
-		// address (see GeocodeVolunteerOpportunityAddressHandler for the
-		// out-of-band geocoding attempt this triggers - #1388).
 		opportunity.Relocate(request.IsRemote, request.Address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);
 		opportunity.Recategorize(request.Category, request.Tags).ThrowIfFailure();
@@ -74,8 +63,6 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		opportunity.SwitchParticipationType(request.ParticipationType);
 		opportunity.SetValidUntil(request.ValidUntil, DateTimeOffset.UtcNow).ThrowIfFailure();
 
-		// Only notify on material changes (location or schedule); cosmetic edits
-		// (title, description, tags) must not spam engaged volunteers.
 		var materialChanged =
 			prevIsRemote != request.IsRemote ||
 			prevOccurrence != request.Occurrence ||

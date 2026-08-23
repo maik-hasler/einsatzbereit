@@ -71,9 +71,7 @@ public class MarkNotificationReadCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		// A cross-user attempt collapses into the same "false" result as a nonexistent id,
-		// deliberately not leaking whether the id belongs to someone else - this is exactly
-		// the ownership-verification branch GitHub issue #829 asks to cover directly.
+
 		result.Should().BeFalse();
 		notification.IsRead.Should().BeFalse();
 	}

@@ -154,6 +154,15 @@ dotnet build
 - Comments explain *why*, not *what*
 - No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
+- A comment warns about a trap the code cannot show - an ordering that must hold,
+  a guard whose removal opens a race or an authorization hole, a literal that
+  looks redundant but is load-bearing. Rationale and history belong in the issue
+  tracker and `git log`
+- Same bar in tests: no narration above a class or method, none inside a phase.
+  `// Arrange` / `// Act` / `// Assert` stay bare
+- Not prose, leave them alone: toolchain directives (`eslint-disable-*`,
+  `/// <reference ... />`, `# v1.2.3` on a pinned SHA), a comment that is a
+  block's only content (ESLint's `no-empty`), and the template prompts
 
 ## Dependency Management
 

@@ -1,12 +1,5 @@
 import type { ReactNode } from "react";
 
-// Single source for every icon glyph used across the app (#1115), so all
-// stroke icons share one 24x24 viewBox and stroke weight via StrokeIcon
-// instead of drifting apart across hand-copied paths. Solid (filled) icons
-// and the small drag-handle family keep their own native size since they're
-// a different rendering style, not a stroke weight that can drift. Icons are
-// decorative unless noted otherwise, so they default to aria-hidden.
-
 function StrokeIcon({
 	className = "h-5 w-5",
 	children,
@@ -54,13 +47,8 @@ interface IconProps {
 }
 
 interface ChevronIconProps extends IconProps {
-	// Rotates the glyph 180deg (with a transition) when true - the same
-	// open/closed indicator pattern repeated across every dropdown, filter,
-	// and expandable menu in the header and filter bar.
 	open?: boolean;
 }
-
-// ── Navigation / chrome ──────────────────────────────────────────────────
 
 export function ChevronDownIcon({
 	className = "h-3.5 w-3.5",
@@ -144,13 +132,6 @@ export function CheckIcon({ className = "h-4 w-4" }: IconProps) {
 	);
 }
 
-// A single component switching its inner <path> by prop, not two components
-// switched by a ternary at the call site - see MobileHeader.tsx's usage: a
-// ternary between two different icon *components* at the same JSX position
-// made Playwright's (and real users') clicks on the wrapping <button> stop
-// reaching its onClick handler, since React remounts the whole subtree - SVG
-// element and all - across the type change. A ternary between two <path>s
-// inside one stable component (this) doesn't remount anything.
 export function MenuToggleIcon({
 	className = "h-6 w-6",
 	open = false,
@@ -301,8 +282,6 @@ export function KeyIcon({ className = "h-4 w-4" }: IconProps) {
 	);
 }
 
-// ── Info glyphs ──────────────────────────────────────────────────────────
-
 export function MapPinIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
@@ -373,10 +352,6 @@ export function ClockIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	);
 }
 
-// The "no fixed date" counterpart to CalendarIcon (a specific date) and
-// ClockIcon (a deadline) on an opportunity card's date line - three distinct
-// glyphs so the *kind* of date a card states is legible before its label is
-// read (#1777).
 export function ArrowsRightLeftIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
@@ -599,11 +574,6 @@ export function BroomIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	);
 }
 
-// ── Route-state glyphs (see components/RouteState.tsx) ───────────────────
-// One per failure mode a route can land in, so the four states read as four
-// different situations at a glance rather than as one interchangeable
-// "something went wrong" screen (#1774).
-
 export function QuestionMarkCircleIcon({ className = "h-8 w-8" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
@@ -651,8 +621,6 @@ export function ExclamationTriangleIcon({ className = "h-8 w-8" }: IconProps) {
 		</StrokeIcon>
 	);
 }
-
-// ── Category glyphs (see VolunteerOpportunitiesList/CategoryGlyph.tsx) ────
 
 export function AcademicCapIcon({ className = "h-10 w-10" }: IconProps) {
 	return (
@@ -726,8 +694,6 @@ export function ComputerDesktopIcon({ className = "h-10 w-10" }: IconProps) {
 	);
 }
 
-// ── Solid (filled) icons - own rendering style, not a stroke weight ───────
-
 export function StarIcon({ className = "h-6 w-6" }: IconProps) {
 	return (
 		<SolidIcon className={className}>
@@ -736,9 +702,6 @@ export function StarIcon({ className = "h-6 w-6" }: IconProps) {
 	);
 }
 
-// Heroicons' 20x20 "mini" set, not the 24x24 outline family above - kept at
-// its own native size rather than force-fit into the 24 grid, same as
-// Heroicons itself ships it (a solid fill has no stroke weight to drift).
 export function CheckIconSolid({ className = "h-4 w-4" }: IconProps) {
 	return (
 		<SolidIcon className={className} viewBox="0 0 20 20">
@@ -762,9 +725,6 @@ export function PawIcon({ className = "h-10 w-10" }: IconProps) {
 		</SolidIcon>
 	);
 }
-
-// ── Drag-handle family (org dashboard widgets) - own 16x16 glyphs, not
-// part of the 24x24 outline set above ──────────────────────────────────
 
 export function GripDotsIcon({ className = "h-4 w-4" }: IconProps) {
 	return (

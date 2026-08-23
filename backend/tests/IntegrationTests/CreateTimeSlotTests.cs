@@ -11,8 +11,6 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	[Before(Test)]
 	public Task ResetAsync() => fixture.ResetAsync();
 
-	// ── CreateTimeSlot (#907) ─────────────────────────────────────────────────
-
 	[Test]
 	public async Task CreateTimeSlot_ShouldReturn400_WhenRecurrenceCountGreaterThan1AndFrequencyIsNull(
 		CancellationToken cancellationToken)
@@ -84,8 +82,6 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 		timeSlots.Single().MaxParticipants.Should().BeNull();
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{
@@ -108,9 +104,6 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Time slots can only be added to ScheduledSlots opportunities (see
-		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a ScheduledSlots
-		// opportunity can't be published until it has at least one time slot.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{

@@ -40,11 +40,6 @@ internal sealed class AcceptInvitationCommandHandler(
 
 		invitation.Accept().ThrowIfFailure();
 
-		// #1919: the InvitationReceived notification's job is done the moment
-		// this invitation stops being actionable - leaving it in place meant
-		// clicking it later (from the bell's recent-notifications list, still
-		// unread or not) landed on /my-signups with no trace of what it was
-		// about.
 		await dbContext.DeleteInvitationReceivedNotificationsAsync(invitation.Id.Value, cancellationToken);
 
 		await keycloakOrganizationService.AddMemberAsync(
@@ -52,10 +47,6 @@ internal sealed class AcceptInvitationCommandHandler(
 			invitation.InviteeId.Value,
 			cancellationToken);
 
-		// The realm "organisator" role is only needed for the Organizer tier -
-		// it gates org-management endpoints as a coarse precondition on top of
-		// the real per-org OrganizationMembership.Role check. A plain Member
-		// never needs it.
 		if (invitation.IntendedRole == OrganizationMemberRole.Organizer)
 		{
 			await keycloakOrganizationService.AssignOrganizerRoleAsync(

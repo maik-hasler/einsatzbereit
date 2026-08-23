@@ -16,12 +16,7 @@ export function Stepper({
 	onStepClick: (n: number) => void;
 	steps: string[];
 	stepLabel: (n: number, label: string) => string;
-	/**
-	 * The step whose last click was refused, plus the id of the element that
-	 * says why. The refusal message is announced once when it appears; wiring
-	 * it up as the button's description means re-focusing that same button
-	 * re-reads the reason instead of leaving it to be inferred (#1782).
-	 */
+
 	blocked?: { step: number; messageId: string };
 }) {
 	return (
@@ -54,10 +49,7 @@ export function Stepper({
 											: "bg-gray-200 group-hover:bg-brand-200"
 								}`}
 							/>
-							{/* The rule above carries the error state; the label keeps
-							its normal colour. Turning the step's *name* red read as
-							"this step is broken" rather than "a field in here needs
-							attention" - the fields themselves already say which. */}
+
 							<span
 								className={`truncate text-xs font-semibold ${
 									isActive
@@ -77,7 +69,6 @@ export function Stepper({
 	);
 }
 
-/** Text field with a floating label, wired to a react-hook-form registration. */
 export function FloatingField({
 	id,
 	label,
@@ -102,7 +93,7 @@ export function FloatingField({
 	multiline?: boolean;
 	rows?: number;
 	showCount?: boolean;
-	/** Live value for the character counter (from `watch`) - registration alone doesn't expose it. */
+
 	displayValue?: string;
 	wrapperClassName?: string;
 	inputMode?: "numeric";

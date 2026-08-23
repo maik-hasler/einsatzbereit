@@ -1,12 +1,6 @@
 import { z } from "zod";
 import type { TFunction } from "i18next";
 
-/**
- * Shared by CreateOrganizationModal and OrgSettingsPage - both edit the same
- * organization fields and must reject the same invalid states before ever
- * reaching the server (mirrors backend/src/Domain/Organizations/Organization.cs
- * and backend/src/Domain/Common/Address.cs).
- */
 export function buildOrganizationFormSchema(t: TFunction) {
 	const required = t("orgSettings.fieldRequired");
 	const invalidZip = t("orgSettings.zipInvalid");
@@ -29,9 +23,6 @@ export function buildOrganizationFormSchema(t: TFunction) {
 			if (!data.name.trim())
 				ctx.addIssue({ code: "custom", path: ["name"], message: required });
 
-			// Optional, but if provided it's rendered as an anonymous-visible
-			// href (OrganizationProfileView) - only an absolute http(s) URL is
-			// accepted, mirroring Organization.ChangeContactInfo server-side.
 			const website = data.website.trim();
 			if (website) {
 				let isValidWebsite: boolean;
@@ -50,10 +41,6 @@ export function buildOrganizationFormSchema(t: TFunction) {
 					});
 			}
 
-			// The address is optional as a whole, but once any one part of it is
-			// filled in the backend requires all of street/houseNumber/zipCode/city
-			// together (Address.Create) - so partial input must be caught here too,
-			// not just at the server round-trip.
 			const hasAddress =
 				data.street.trim() ||
 				data.houseNumber.trim() ||

@@ -30,10 +30,6 @@ function renderRow(isRead: boolean) {
 
 const TEXT = "Your sign-up for Deutscher Einsatz was confirmed";
 
-/**
- * The row's own button, queried structurally: the delete and mark-as-unread
- * controls carry the same notification text in their labels.
- */
 function rowButton(): HTMLElement {
 	const button = document.querySelector<HTMLElement>("li > button");
 	expect(button).not.toBeNull();

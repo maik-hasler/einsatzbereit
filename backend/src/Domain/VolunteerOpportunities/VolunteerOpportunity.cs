@@ -25,28 +25,16 @@ public sealed class VolunteerOpportunity
 
 	public string TitleDe { get; private set; }
 
-	/// <summary>
-	/// Optional English translation of <see cref="TitleDe"/> (einsatzbereit#1946) -
-	/// German is the one locale every opportunity is guaranteed to carry (see
-	/// EnsurePublishable), English is an organizer-supplied addition. Callers that
-	/// need to display a title for a given viewer locale fall back to
-	/// <see cref="TitleDe"/> when this is null or blank rather than requiring it.
-	/// </summary>
 	public string? TitleEn { get; private set; }
 
 	public string DescriptionDe { get; private set; }
 
-	/// <summary>Optional English translation of <see cref="DescriptionDe"/> - see <see cref="TitleEn"/>.</summary>
 	public string? DescriptionEn { get; private set; }
 
 	public bool IsRemote { get; private set; }
 
 	public Address? Address { get; private set; }
 
-	// True once a geocoding attempt has come back with a confirmed no-match for
-	// this Address (Nominatim NotFound) - stops GeocodingRetryJob and the
-	// event-driven handler from retrying an address that will never resolve.
-	// Reset to false whenever the address text actually changes (see Relocate).
 	public bool AddressGeocodingFailed { get; private set; }
 
 	public Occurrence Occurrence { get; private set; }
@@ -69,12 +57,6 @@ public sealed class VolunteerOpportunity
 
 	public string? CheckInPin { get; private set; }
 
-	/// <summary>
-	/// Application deadline for Individual contact opportunities, which can never
-	/// have TimeSlots (see AddTimeSlot) and would otherwise carry no date at all
-	/// (einsatzbereit#1086). Always null for ScheduledSlots opportunities, which
-	/// express "when" through their time slots instead.
-	/// </summary>
 	public DateTimeOffset? ValidUntil { get; private set; }
 
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
@@ -157,10 +139,6 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
-	// Tags was the one free-text field with no bound anywhere - unlike
-	// Title/Description above, a self-registered organizer could push
-	// unbounded tag strings/counts straight into the row and the GIN index
-	// on it (#1678).
 	private static Result EnsureValidTags(IReadOnlyCollection<string> tags)
 	{
 		if (tags.Count > MaxTagsCount)
@@ -254,10 +232,6 @@ public sealed class VolunteerOpportunity
 			if (publishable.IsFailure)
 				return Result.Failure<VolunteerOpportunity>(publishable.Error);
 
-			// Time slots can only be added after the aggregate is created (see
-			// AddTimeSlot), so a ScheduledSlots opportunity can never satisfy the
-			// "at least one time slot" rule at construction time. Callers must
-			// create it as a Draft, add slots, then call Publish().
 			if (participationType == ParticipationType.ScheduledSlots)
 				return Result.Failure<VolunteerOpportunity>(Error.Validation(
 					"VolunteerOpportunity.ScheduledSlotsMustStartAsDraft",
@@ -288,11 +262,6 @@ public sealed class VolunteerOpportunity
 			validUntil,
 			now ?? DateTimeOffset.UtcNow);
 
-		// Create's caller (CreateVolunteerOpportunityEndpoint) resolves a fresh
-		// address synchronously before dispatching the create command (#1963),
-		// so address.Latitude is already set on the happy path - only an address
-		// that came back from a TransientFailure (network hiccup, not a bad
-		// address) still needs the async outbox retry to pick it up later.
 		if (!isRemote && address is not null && address.Latitude is null)
 			opportunity.AddEvent(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id));
 
@@ -362,9 +331,6 @@ public sealed class VolunteerOpportunity
 		if (Status == OpportunityStatus.Cancelled)
 			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyCancelled", "Opportunity is already cancelled."));
 
-		// Draft opportunities have no engagements and no public visibility to
-		// take down - Delete already covers "give up on this draft" without
-		// needing a cancellation reason kept around for audit purposes.
 		if (Status == OpportunityStatus.Draft)
 			return Result.Failure(Error.Conflict("VolunteerOpportunity.CannotCancelDraft", "A draft opportunity cannot be cancelled - delete it instead."));
 
@@ -471,12 +437,6 @@ public sealed class VolunteerOpportunity
 
 		IsRemote = isRemote;
 
-		// Callers always supply a fresh, uncoordinated Address (built from raw
-		// street/house number/zip/city text - see CreateVolunteerOpportunityEndpoint
-		// / UpdateVolunteerOpportunityEndpoint), so only replace the current
-		// Address when the location actually changed; otherwise keep whatever
-		// coordinates and AddressGeocodingFailed state a previous geocoding
-		// attempt produced instead of wiping them out on every unrelated edit.
 		if (isRemote || address is null || addressTextChanged)
 		{
 			Address = address;
@@ -489,10 +449,6 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
-	// Applies the outcome of an out-of-band geocoding attempt (see
-	// GeocodeVolunteerOpportunityAddressHandler / GeocodingRetryJob) - distinct
-	// from Relocate, which is for organizer-driven address edits and
-	// deliberately skips re-resolving an unchanged address.
 	public void ApplyGeocodingResult(Address resolvedAddress)
 	{
 		Address = resolvedAddress;
@@ -545,11 +501,6 @@ public sealed class VolunteerOpportunity
 		}
 		else
 		{
-			// Otherwise the old PIN stays live for anyone who saw it even after the
-			// organizer deliberately turns PIN check-in off - and it would silently
-			// come back into effect if PINCode is re-selected later without
-			// supplying a fresh custom PIN, since the regeneration branch above only
-			// fires when CheckInPin is null (#1165).
 			CheckInPin = null;
 		}
 
@@ -558,15 +509,9 @@ public sealed class VolunteerOpportunity
 
 	public void SwitchParticipationType(ParticipationType participationType)
 	{
-		// Time slots are only meaningful for ScheduledSlots opportunities (see AddTimeSlot).
-		// Clearing them when switching away prevents orphaned slots from lingering
-		// once the opportunity no longer surfaces them. Callers must ensure no
-		// active engagements reference these slots before switching away.
 		if (ParticipationType == ParticipationType.ScheduledSlots && participationType != ParticipationType.ScheduledSlots)
 			_timeSlots.Clear();
 
-		// Mirror of the above for the other direction: ValidUntil is only
-		// meaningful for IndividualContact opportunities (see SetValidUntil).
 		if (ParticipationType == ParticipationType.IndividualContact && participationType != ParticipationType.IndividualContact)
 			ValidUntil = null;
 

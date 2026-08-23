@@ -6,9 +6,6 @@ interface Props {
 	onClose: () => void;
 }
 
-// Suspense fallback for lazy-loaded modal content (e.g. QRScannerModal) - keeps
-// the dialog chrome in place instead of leaving the trigger click looking
-// like a no-op while the chunk loads.
 export default function ModalLoadingFallback({ onClose }: Props) {
 	const { t } = useTranslation();
 	return (

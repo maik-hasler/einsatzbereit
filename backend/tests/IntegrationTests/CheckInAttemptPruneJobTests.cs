@@ -8,10 +8,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.CheckInAttemptPruneJob.PruneExpiredAttemptsAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres, rather than waiting a real 15-minute lockout window plus a real hourly tick
-// for the pruning behavior (#1176) to become observable.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class CheckInAttemptPruneJobTests(IntegrationTestFixture fixture)

@@ -21,12 +21,6 @@ public interface IEngagementReadRepository
 		IReadOnlyList<Guid>? volunteerIds = null,
 		CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Engagements across every opportunity belonging to the organization
-	/// (#1048) - the aggregate queue the dashboard's "To-Do" widget count
-	/// links to, since <see cref="GetPagedByOpportunityAsync"/> only scopes
-	/// to a single opportunity.
-	/// </summary>
 	ValueTask<PagedList<EngagementSummary>> GetPagedByOrganizationAsync(
 		OrganizationId organizationId,
 		int pageNumber,
@@ -42,30 +36,14 @@ public interface IEngagementReadRepository
 		int pageSize,
 		CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// All engagements for the volunteer, unpaginated and not split into
-	/// upcoming/past buckets - used by the account data export (#1076), which
-	/// needs the complete history in one shot rather than a page of it.
-	/// </summary>
 	ValueTask<List<EngagementSummary>> GetAllByVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Checked-in engagements for the volunteer, unpaginated - used by the
-	/// printable engagement record (#1096), which needs the complete
-	/// attendance history in one shot rather than a page of it.
-	/// </summary>
 	ValueTask<List<EngagementSummary>> GetCheckedInByVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Distinct volunteer ids with an active (pending or confirmed) engagement on
-	/// the opportunity, filtered at the database level using the existing
-	/// (OpportunityId, Status) index - or, when <paramref name="timeSlotId"/> is
-	/// given, only those engaged on that specific time slot.
-	/// </summary>
 	ValueTask<List<Guid>> GetActiveVolunteerIdsByOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		TimeSlotId? timeSlotId,

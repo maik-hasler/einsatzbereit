@@ -9,10 +9,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.AbuseReportRetentionJob.DeleteExpiredReportsAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres, rather than waiting a real 24-hour tick for the pruning behavior (#1725) to
-// become observable.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AbuseReportRetentionJobTests(IntegrationTestFixture fixture)
@@ -56,10 +52,6 @@ public class AbuseReportRetentionJobTests(IntegrationTestFixture fixture)
 	public async Task DeleteExpiredReportsAsync_ReportWhoseTargetWasNeverDeleted_IsNeverRemoved(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard: a report against a still-existing account (TargetDeletedOn
-		// still null) must never be pruned, no matter how old it is - only
-		// DeleteMyAccountCommandHandler stamps TargetDeletedOn, and only once the
-		// target account is actually gone.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var reportId = await SeedReportAsync(
 			dbContext, targetDeletedOn: null, cancellationToken);

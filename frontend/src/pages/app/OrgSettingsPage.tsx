@@ -68,15 +68,9 @@ export default function OrgSettingsPage() {
 	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const formRef = useRef<HTMLFormElement>(null);
-	// Tracks the blob: URL handed to setLogoUrl so it can be revoked once
-	// replaced - unrevoked, each upload pinned the previewed file in memory
-	// for the rest of the tab's life (#1245).
+
 	const logoObjectUrlRef = useRef<string | null>(null);
 
-	// Reconciles the local preview with the server once reloadOrg's refetch
-	// resolves (see handleLogoCropped/handleRemoveLogo below) - without this,
-	// `logoUrl` stayed on whatever blob: preview or null the upload/removal
-	// set locally, permanently out of sync with `org` (#1230).
 	useEffect(() => {
 		if (logoObjectUrlRef.current) {
 			URL.revokeObjectURL(logoObjectUrlRef.current);
@@ -93,24 +87,9 @@ export default function OrgSettingsPage() {
 	const [deleting, setDeleting] = useState(false);
 	const isSoleMember = org.members.length === 1;
 	const settingsErrorRef = useRef<HTMLParagraphElement>(null);
-	// Bumped on every failed save so two consecutive failures carrying the
-	// same message still re-run the scroll effect below - a token, rather than
-	// keying that effect on `settingsError` itself, for the same reason
-	// CreateVolunteerOpportunityModal's DetailsStep keeps one.
+
 	const [saveErrorToken, setSaveErrorToken] = useState(0);
 
-	// The form's own Save sits at its end (see the action row below), which is
-	// past the fold - but the error banner is above the first field. Failing a
-	// save from down there would otherwise look like nothing happened at all,
-	// so bring the banner into view; role="alert" only covers the
-	// screen-reader half of that.
-	//
-	// Focused as well as scrolled, same pairing as DetailsStep's publish error
-	// (#688, the same "the error is a screen away from the button that caused
-	// it" problem): whichever control submitted goes `disabled` for the
-	// duration of the request, which blurs it to <body>, so without this a
-	// keyboard user is left at the top of the document with the message
-	// nowhere near their tab position.
 	useEffect(() => {
 		if (!saveErrorToken) return;
 		const reduceMotion = window.matchMedia(
@@ -131,10 +110,7 @@ export default function OrgSettingsPage() {
 			? t("orgSettings.editDisabledNotOrganizerHint")
 			: undefined,
 		onEdit: () => setEditing(true),
-		// Goes through the form's native submit (not onSubmit() directly) so
-		// react-hook-form's handleSubmit runs the same zod validation, error
-		// display and focus-the-offending-field behavior as pressing Enter in
-		// the form would.
+
 		onSave: () => formRef.current?.requestSubmit(),
 		onCancel: handleCancelEdit,
 	});
@@ -172,10 +148,7 @@ export default function OrgSettingsPage() {
 			const url = URL.createObjectURL(croppedFile);
 			logoObjectUrlRef.current = url;
 			setLogoUrl(url);
-			// Refreshes `org` (and thus the effect above, once it resolves) so
-			// the preview is reconciled with the real server URL - without this,
-			// the org logo shown elsewhere (e.g. the org switcher) stayed stale
-			// until a full reload (#1230).
+
 			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
@@ -261,10 +234,6 @@ export default function OrgSettingsPage() {
 			<div data-content-wrapper className="max-w-2xl">
 				{!editing && (
 					<OrganizationProfileView
-						// Stacked, not the public profile's contact sidebar: this page
-						// is already inside its own max-w-2xl settings column, so a
-						// 1fr/18rem split here left ~340px for the description and
-						// squeezed the danger-zone panel below it to half width.
 						layout="stacked"
 						name={org.name}
 						logoUrl={logoUrl}
@@ -298,11 +267,7 @@ export default function OrgSettingsPage() {
 							<DangerZonePanel
 								className="mt-8"
 								title={t("orgSettings.dangerZone")}
-								// #1789: the "remove the other members first" sentence
-								// used to be passed unconditionally, so a sole member -
-								// the only person who *can* delete - read it next to an
-								// enabled button. Same predicate as `disabled` below, so
-								// text and control can no longer disagree.
+
 								description={t(
 									isSoleMember
 										? "orgSettings.deleteOrganizationSoleMemberHint"
@@ -637,18 +602,6 @@ export default function OrgSettingsPage() {
 								</div>
 							</fieldset>
 
-							{/* Cancel/Save also live in the page header
-							(useEditModeQuickActions), but this form runs well past the
-							fold - having filled in the address right above, the organizer
-							had to scroll all the way back up to commit (#1784). Repeating
-							the pair here ends the form where the work ends.
-
-							The Save is a real type="submit", not another
-							requestSubmit() caller: it makes this the form's only submit
-							button, which is also what implicit submission needs, so
-							pressing Enter in a field now submits too - exactly the
-							behaviour the header's requestSubmit() path has always been
-							written to mirror. */}
 							<div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-5">
 								<Button
 									type="button"

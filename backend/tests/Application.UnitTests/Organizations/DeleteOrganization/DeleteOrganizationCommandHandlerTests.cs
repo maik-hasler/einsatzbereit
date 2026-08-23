@@ -43,9 +43,7 @@ public class DeleteOrganizationCommandHandlerTests
 		_dbContext
 			.GetActiveEngagementsForOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Domain.Engagements.Engagement>());
-		// Default: the requesting user organizes nothing else, matching the common
-		// case (a fresh test user whose only org is the one being deleted) - tests
-		// for the #1677 fix override this via SetRemainingOrganizerOrganizations.
+
 		_dbContext
 			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Organization>());
@@ -102,10 +100,7 @@ public class DeleteOrganizationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_organizationRepo.Received(1).Delete(organization);
-		// Issue #1218: the Keycloak call is no longer made directly here - it's deferred to
-		// OrganizationDeletedDomainEventHandler, dispatched via the outbox after this command's
-		// transaction commits, so a failed commit can no longer leave Keycloak's copy deleted
-		// while the local rollback restores everything.
+
 		organization.Events.Should().ContainSingle(e => e is OrganizationDeletedDomainEvent);
 		((OrganizationDeletedDomainEvent)organization.Events.Single()).OrganizationId.Should().Be(organization.Id);
 		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -201,10 +196,8 @@ public class DeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldDeleteTheOrganizationsFinishedOpportunities_SoNoneSurviveAsOrphanRows(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1153: there is no FK from volunteer_opportunities to
-		// organizations, so without this cleanup a fully-lapsed opportunity (past
-		// the blocking check above, which only stops future slots/active
-		// engagements) would survive the organization's deletion as an orphan row.
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
@@ -257,10 +250,8 @@ public class DeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldRevokeKeycloakRole_WhenRequestingUserHasNoRemainingOrganizations(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the sole-member guard above already forces the requesting user
-		// to be this organization's only (and therefore only Organizer) member, so
-		// deleting it and organizing nothing else must revoke the realm-wide role
-		// (#1677).
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
@@ -280,9 +271,8 @@ public class DeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldNotRevokeKeycloakRole_WhenRequestingUserStillOrganizesAnotherOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the requesting user still organizes a different organization,
-		// so the realm-wide role (shared across every org they organize, #1386)
-		// must stay assigned.
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);

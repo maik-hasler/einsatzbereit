@@ -44,25 +44,9 @@ internal sealed class ApplicationDbContextInitializer(
 		}
 	}
 
-	// Exceptions are intentionally left to propagate (#1212) - the caller (Program.cs)
-	// decides whether that means logging and continuing (Development) or failing
-	// startup outright (everywhere else). Silently swallowing here used to mean a
-	// SaveChangesAsync failure after the Keycloak-dependent seeding below had already
-	// run left orphaned Keycloak organizations with nothing pointing at them locally,
-	// and re-seeding on the next boot (the empty-database guard below still sees an
-	// empty table) made it worse by risking creating a *second* orphaned set. SeedOrg1Async/
-	// SeedOrg2Async now look up an existing organization by name before creating one,
-	// so a retry after a partial failure reuses what already exists instead.
 	public async ValueTask SeedAsync(
 		CancellationToken cancellationToken = default)
 	{
-		// Skipping is still the right behavior - re-seeding a populated database
-		// would have to delete rows that are no longer demo data - but it is no
-		// longer silent (#1776). A long-lived environment kept serving an English demo
-		// data set for months after the seed set was translated to German, because this
-		// guard trips on every restart and nothing anywhere said the seed set had not
-		// been applied. The only way to pick up a changed seed set is to wipe the
-		// database, so the one signal that makes that decidable is this log line.
 		var existingOrganizations = await dbContext.Set<Organization>().CountAsync(cancellationToken);
 		if (existingOrganizations > 0)
 		{
@@ -94,15 +78,7 @@ internal sealed class ApplicationDbContextInitializer(
 			category: Category.Health,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		opp1.AddTimeSlot(DayAt(now, 14, 9), DayAt(now, 14, 17), 20, now).GetValueOrThrow();
-		// A second, already-elapsed slot (#1909) - a ScheduledSlots opportunity is only
-		// publicly listed while at least one of its slots hasn't ended yet (see
-		// ApplyPubliclyListedFilters), so this is added alongside the future slot above
-		// rather than instead of it. Lets Vera's second sign-up below land as a genuinely
-		// reachable "past, checked-in, awaiting feedback" engagement instead of leaving
-		// that state only reachable as accumulated test debris. AddTimeSlot/TimeSlot.Create
-		// validates startDateTime against the "now" it is given, not DateTimeOffset.UtcNow,
-		// so an artificial anchor before the slot's own start satisfies that check while the
-		// persisted dates stay genuinely in the past.
+
 		var opp1PastSlotStart = DayAt(now, -3, 9);
 		var opp1PastSlotEnd = DayAt(now, -3, 17);
 		var opp1PastSlot = opp1.AddTimeSlot(opp1PastSlotStart, opp1PastSlotEnd, 20, opp1PastSlotStart.AddDays(-1)).GetValueOrThrow();
@@ -183,7 +159,7 @@ internal sealed class ApplicationDbContextInitializer(
 			category: Category.Animals,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		opp3.AddTimeSlot(DayAt(now, 7, 10), DayAt(now, 7, 14), 5, now).GetValueOrThrow();
-		// Unlimited capacity - demonstrates the "no cap" option locally (#1066).
+
 		opp3.AddTimeSlot(DayAt(now, 21, 10), DayAt(now, 21, 14), null, now).GetValueOrThrow();
 		opp3.Publish().ThrowIfFailure();
 
@@ -252,12 +228,6 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
-		// A second engagement against opp1's past slot (allowed alongside the pending
-		// sign-up below - see the (VolunteerId, TimeSlotId) unique index, which already
-		// permits several engagements per opportunity as long as they're against
-		// different slots, e.g. #1067's recurring-series signups). Checked in but
-		// feedback not yet submitted - the reachable "past, completed, awaiting
-		// feedback" example the rating flow needs to be testable at all (#1909).
 		var opp1PastEngagement = Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1PastSlot.Id);
 		opp1PastEngagement.Confirm().ThrowIfFailure();
 		opp1PastEngagement.CheckIn().ThrowIfFailure();
@@ -274,11 +244,6 @@ internal sealed class ApplicationDbContextInitializer(
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
-	// Slot times are pinned to a fixed hour of day instead of inheriting
-	// DateTimeOffset.UtcNow's time-of-day. Otherwise every seeded shift starts at
-	// whatever o'clock the seeder happened to run - a seeded environment ended up
-	// advertising 23:05-03:05 "shifts" across the whole demo data set, which reads as a bug
-	// rather than as sample content.
 	private static DateTimeOffset DayAt(DateTimeOffset from, int daysAhead, int hourUtc) =>
 		new DateTimeOffset(from.UtcDateTime.Date, TimeSpan.Zero)
 			.AddDays(daysAhead)
@@ -286,9 +251,6 @@ internal sealed class ApplicationDbContextInitializer(
 
 	private async Task<OrganizationId> SeedOrg1Async(CancellationToken cancellationToken)
 	{
-		// Both seeded orgs deliberately share a leading word and first letter -
-		// OrgAppMobileResponsiveTests (#809) covers switcher truncation for exactly
-		// that case, so renaming these apart would silently defeat that test.
 		const string name = "Lindenauer Nachbarschaftshilfe e.V.";
 
 		var keycloakId = await keycloakOrganizationService.FindOrganizationByNameAsync(name, cancellationToken)
@@ -342,11 +304,6 @@ internal sealed class ApplicationDbContextInitializer(
 		return org.Id;
 	}
 
-	// Checked-before-added rather than a bare AddMemberAsync call, so re-running
-	// seeding after a partial failure (the organization was already reused via
-	// FindOrganizationByNameAsync, but a prior attempt had already added this member
-	// too) doesn't depend on Keycloak's add-member endpoint tolerating a duplicate
-	// add - we just never call it a second time for the same member.
 	private async Task EnsureMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken)
 	{
 		var members = await keycloakOrganizationService.GetMembersAsync(organizationId, cancellationToken);
@@ -356,7 +313,6 @@ internal sealed class ApplicationDbContextInitializer(
 		await keycloakOrganizationService.AddMemberAsync(organizationId, userId, cancellationToken);
 	}
 
-	// Same reasoning as EnsureMemberAsync above, for the realm-wide organisator role.
 	private async Task EnsureOrganizerRoleAsync(Guid userId, CancellationToken cancellationToken)
 	{
 		var organisatorIds = await keycloakOrganizationService.GetRealmOrganisatorUserIdsAsync(cancellationToken);

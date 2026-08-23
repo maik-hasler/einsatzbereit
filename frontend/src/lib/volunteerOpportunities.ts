@@ -20,10 +20,6 @@ export interface FetchVolunteerOpportunitiesOptions {
 	keyword?: string;
 }
 
-/**
- * Named-options wrapper around the NSwag-generated `EinsatzbereitApi.getVolunteerOpportunities`,
- * which takes many positional parameters - see einsatzbereit#870.
- */
 export function fetchVolunteerOpportunities(
 	api: EinsatzbereitApi,
 	options: FetchVolunteerOpportunitiesOptions,
@@ -50,12 +46,7 @@ export function fetchVolunteerOpportunities(
 export interface FetchVolunteerOpportunityDateAvailabilityOptions {
 	from: Date;
 	to: Date;
-	/**
-	 * Minutes to add to UTC to get the caller's local time - the sign convention of
-	 * `Intl`/ISO offsets ("+02:00" is 120), i.e. the negation of what
-	 * `Date.prototype.getTimezoneOffset()` returns. Decides which calendar day a
-	 * time slot is counted on.
-	 */
+
 	utcOffsetMinutes: number;
 	occurrence?: string;
 	participationType?: string;
@@ -68,11 +59,6 @@ export interface FetchVolunteerOpportunityDateAvailabilityOptions {
 	keyword?: string;
 }
 
-/**
- * Named-options wrapper around the NSwag-generated
- * `EinsatzbereitApi.getVolunteerOpportunityDateAvailability`, whose 12 positional
- * parameters are the same trap `fetchVolunteerOpportunities` above exists to avoid.
- */
 export function fetchVolunteerOpportunityDateAvailability(
 	api: EinsatzbereitApi,
 	options: FetchVolunteerOpportunityDateAvailabilityOptions,

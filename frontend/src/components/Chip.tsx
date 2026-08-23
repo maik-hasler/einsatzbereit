@@ -2,10 +2,6 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { Link } from "react-router";
 import { CloseIcon } from "./icons";
 
-// Shared pill primitive for tags, categories, and status indicators - see
-// issue #1125: the same "tag" concept previously had a different
-// background/size/weight in the wizard, the profile view, and the
-// opportunity detail page.
 const TONE_CLASSES = {
 	brand: "bg-brand-50 text-brand-700",
 	neutral: "bg-gray-100 text-gray-600",

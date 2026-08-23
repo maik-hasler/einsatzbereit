@@ -56,15 +56,6 @@ internal sealed class DeleteOrganizationCommandHandler(
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
 
-		// The role is realm-wide, not per-organization (see #1386), so it can only
-		// be revoked once the requesting user organizes no other organization
-		// (#1677) - otherwise this deletion would also lock them out of that other
-		// org. The sole-member guard above already confirmed the requesting user is
-		// this organization's only (and therefore only Organizer) member, and
-		// RemoveMembershipsForOrganizationAsync above already deleted that
-		// membership row, so - like RemoveMemberCommandHandler, unlike
-		// ChangeMemberRoleCommandHandler's still-in-memory demotion - no exclusion
-		// filter is needed here.
 		var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(
 			request.RequestingUserId, cancellationToken);
 
@@ -93,8 +84,6 @@ internal sealed class DeleteOrganizationCommandHandler(
 				cancellationToken);
 		}
 
-		// Resolves any open abuse reports against the organization itself - it
-		// can't be reported-and-open once it no longer exists (#1075).
 		var openReports = await dbContext.GetOpenReportsForTargetAsync(
 			ReportTargetType.Organization, organizationId.Value, cancellationToken);
 		foreach (var report in openReports)

@@ -32,9 +32,6 @@ internal sealed class SearchMemberCandidatesQueryHandler(
 
 		var memberIds = currentMembers.Select(m => m.UserId).ToHashSet();
 
-		// Excluded alongside existing members (#1062) - a candidate with a
-		// pending invitation would otherwise still show up in search, and
-		// selecting them fails with a 409 the search results gave no hint of.
 		var invitations = await dbContext.GetInvitationsForOrganizationAsync(
 			OrganizationId.Create(query.OrganizationId).GetValueOrThrow(),
 			cancellationToken);

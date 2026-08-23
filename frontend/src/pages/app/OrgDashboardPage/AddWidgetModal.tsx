@@ -20,17 +20,8 @@ function Bar({ className = "" }: { className?: string }) {
 	return <div className={`h-2 rounded-full bg-gray-200 ${className}`} />;
 }
 
-// Small, static mockups hinting at each widget's shape - deliberately not a
-// live render of the organizer's real data (that would mean extra API calls
-// just to browse the picker, and isn't really "an example" so much as a
-// leak of whatever happens to be in this org right now). Also reused by
-// OrgDashboardPage's drag overlay (see EditableWidgetTile) for the same
-// reason: the floating clone shown while dragging must not mount a second
-// live instance of the widget (double data fetch, duplicate side effects).
 function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
-		// One stat plus the link out to the pending queue - the second stat
-		// block moved to VolunteerStats below (#1780).
 		case "ToDo":
 			return (
 				<div className="space-y-1.5" aria-hidden="true">
@@ -104,10 +95,6 @@ interface Props {
 	onClose: () => void;
 }
 
-// Opened from the "Add Widget" quick action (edit mode only, see
-// widgetCatalog.ts/useEditModeQuickActions) - lets an organizer browse the
-// widgets not currently on their dashboard, each with a small preview, and
-// add one or more without leaving the picker (see #771 review feedback).
 export default function AddWidgetModal({
 	availableKeys,
 	onAdd,
@@ -117,13 +104,6 @@ export default function AddWidgetModal({
 	const [announcement, setAnnouncement] = useState("");
 	const pendingFocusIndexRef = useRef<number | null>(null);
 
-	// Adding a widget unmounts the very button that was just pressed (it drops
-	// out of `availableKeys`), so focus needs somewhere deliberate to land
-	// instead of falling to <body> while the dialog is still open - mirrors
-	// EngagementManagementPage's focusEngagementRowControl for the same
-	// "pressed control disappears" shape. Runs one frame after the prop
-	// update so the replacement button (or the Done button, once the list
-	// empties) already exists in the DOM.
 	useEffect(() => {
 		if (pendingFocusIndexRef.current === null) return;
 		const index = pendingFocusIndexRef.current;
@@ -173,9 +153,6 @@ export default function AddWidgetModal({
 				</p>
 			</div>
 
-			{/* Always mounted (not conditional on `announcement`) so the live
-			region is registered before it ever gets content - see
-			CheckInModal.tsx's identical pattern for why. */}
 			<p role="status" className="sr-only">
 				{announcement}
 			</p>

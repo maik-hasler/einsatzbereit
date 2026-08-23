@@ -7,14 +7,6 @@ using TUnit.Core;
 
 namespace VisualTests;
 
-/// <summary>
-/// The opportunity-detail page's map is a fixed, static view of the
-/// opportunity's location, not a browsable map - it used to allow
-/// dragging/panning on desktop (`dragging={!L.Browser.mobile}` only disabled
-/// it on mobile, see SingleMarkerMapTouchScrollTests.cs's #1664 fix).
-/// SingleMarkerMap.tsx now disables every Leaflet interaction unconditionally
-/// (dragging, all zoom modes, keyboard) and drops the zoom control.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -56,12 +48,6 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// VisualTests always runs against FakeGeocodingService (AppHost.cs's
-		// Geocoding__UseFakeService override), which reports TransientFailure
-		// so no seeded opportunity here ever gets real coordinates - the map
-		// would never render otherwise. Patch coordinates into the one
-		// response this page actually reads (the detail fetch), same as
-		// SingleMarkerMapTouchScrollTests.cs.
 		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
 		{
 			if (route.Request.Method != "GET")
@@ -89,8 +75,6 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 		var mapContainer = Page.Locator(".leaflet-container");
 		await Expect(mapContainer).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// zoomControl={false}: there's nothing left for the +/- buttons to do
-		// once every zoom mode is disabled, so the control isn't rendered.
 		await Expect(Page.Locator(".leaflet-control-zoom")).Not.ToBeAttachedAsync();
 
 		var mapPane = Page.Locator(".leaflet-map-pane");
@@ -101,8 +85,6 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 		var centerX = box!.X + (box.Width / 2);
 		var centerY = box.Y + (box.Height / 2);
 
-		// A plain mouse drag used to pan the map on desktop -
-		// `dragging={!L.Browser.mobile}` only ever disabled it on mobile.
 		await Page.Mouse.MoveAsync(centerX, centerY);
 		await Page.Mouse.DownAsync();
 		await Page.Mouse.MoveAsync(centerX + 120, centerY + 80, new() { Steps = 10 });
@@ -117,9 +99,6 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task SingleMarkerMap_AttributionLinks_UseBrandColor()
 	{
-		// #2058: Leaflet ships no color for its attribution links, so they
-		// rendered in Leaflet's own default blue instead of the brand green
-		// used everywhere else in the app. #226947 (brand-700) is rgb(34, 105, 71).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -189,11 +168,6 @@ public class SingleMarkerMapStaticTests(AspireFixture fixture) : VisualTestBase(
 	[Test]
 	public async Task SingleMarkerMap_DirectionsLink_UsesCoordinates_WhenAvailable()
 	{
-		// #2058: before this, there was no escape hatch off the static,
-		// unpannable map anywhere on the page - a visitor had to copy the
-		// address by hand into another app. With coordinates available the
-		// directions link should go straight to them rather than a re-geocode
-		// of the text address.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);

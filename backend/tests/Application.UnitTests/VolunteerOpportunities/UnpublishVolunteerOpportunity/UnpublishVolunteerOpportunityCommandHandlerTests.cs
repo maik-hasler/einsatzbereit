@@ -76,9 +76,8 @@ public class UnpublishVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new UnpublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert - opportunity.Events also carries the Published event raised by
-		// CreatePublishedOpportunity()'s own Publish() call, so assert the
-		// Unpublished event was added rather than that it's the only one.
+		// Assert
+
 		opportunity.Events.Should().ContainSingle(e => e is VolunteerOpportunityUnpublishedDomainEvent);
 	}
 

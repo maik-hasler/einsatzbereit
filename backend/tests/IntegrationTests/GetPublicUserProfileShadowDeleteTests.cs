@@ -3,12 +3,6 @@ using AwesomeAssertions;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1677 bug #1: GetPublicUserProfileQueryHandler used
-// to only consult the filtered dbContext.Users.FindAsync for AvatarUrl/Bio/etc
-// (falling back to defaults for a shadow-deleted target) while still calling
-// Keycloak and still returning a fully populated PublicUserProfileResponse -
-// so a shadow-deleted user's public profile stayed fully browsable instead of
-// 404ing like the rest of their public presence.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class GetPublicUserProfileShadowDeleteTests(IntegrationTestFixture fixture)
@@ -23,10 +17,6 @@ public class GetPublicUserProfileShadowDeleteTests(IntegrationTestFixture fixtur
 		var (userId, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var targetClient = await CreateAuthenticatedClientAsync(username, password);
 
-		// The very first profile load lazily creates the local `user` row -
-		// AdminShadowDeleteUserCommandHandler looks it up via a filtered
-		// Users.FindAsync and 404s if it's missing, so this must run before the
-		// shadow-delete below has anything to hide.
 		await targetClient.GetUserProfileAsync(cancellationToken);
 
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");

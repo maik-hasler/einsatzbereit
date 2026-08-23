@@ -203,9 +203,7 @@ describe("OrgSettingsPage logo upload rejection", () => {
 
 		await userEvent.upload(
 			input as HTMLInputElement,
-			// applyAccept: false - the input has an `accept` list that userEvent
-			// honours by default, dropping the file before the change event and
-			// leaving the guard under test unexercised.
+
 			new File(["not an image"], "notes.txt", { type: "text/plain" }),
 			{ applyAccept: false },
 		);

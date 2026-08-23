@@ -77,7 +77,6 @@ internal sealed class ReportConfiguration
 
 		builder.HasIndex(r => r.Status);
 
-		// Supports AbuseReportRetentionJob's global prune scan (#1725).
 		builder.HasIndex(r => r.TargetDeletedOn);
 	}
 }

@@ -25,9 +25,6 @@ internal sealed class CancelVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Cascade-cancelling active engagements + notifying volunteers happens
-		// asynchronously via the outbox (VolunteerOpportunityCancelledDomainEventHandler),
-		// not inline here - see Cancel()'s doc comment on OpportunityStatus.
 		opportunity.Cancel(request.Reason).ThrowIfFailure();
 
 		return true;

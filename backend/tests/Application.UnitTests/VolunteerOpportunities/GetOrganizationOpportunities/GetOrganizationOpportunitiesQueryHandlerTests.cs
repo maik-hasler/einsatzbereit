@@ -99,7 +99,7 @@ public class GetOrganizationOpportunitiesQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller has no membership at all in the target organization.
+		// Arrange
 		_dbContext
 			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);

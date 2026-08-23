@@ -7,21 +7,12 @@ using Infrastructure.BackgroundJobs;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "Organization"/"OrganizationId" DTO types, which would otherwise shadow the domain
-// types of the same name pulled in via the "Domain.Organizations" using above.
+
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.AutomaticCheckInJob.ClaimAndCheckInAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres - the job's own PeriodicTimer only fires hourly, and the interesting behavior
-// here (einsatzbereit#1042) is the atomic per-row claim that prevents two replicas'
-// ticks from both checking in (and raising a duplicate domain event for) the same
-// engagement, which is only provable by calling it twice concurrently against two
-// independent ApplicationDbContexts/connections.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class AutomaticCheckInJobTests(IntegrationTestFixture fixture)
@@ -119,10 +110,6 @@ public class AutomaticCheckInJobTests(IntegrationTestFixture fixture)
 	public async Task ClaimAndCheckInAsync_TwoConcurrentCallsAgainstTheSameEngagement_OnlyOneClaimsIt(
 		CancellationToken cancellationToken)
 	{
-		// Simulates two replicas' AutomaticCheckInJob ticks racing over the same ended
-		// slot - two independent ApplicationDbContexts (separate connections) so the
-		// atomic per-row claim is genuinely exercised at the database level, not just
-		// serialized by sharing one DbContext/connection.
 		await using var seedContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
 		var (engagementId, _, _) = await SeedConfirmedEngagementAsync(
@@ -148,8 +135,6 @@ public class AutomaticCheckInJobTests(IntegrationTestFixture fixture)
 			1, "the losing replica must not have queued a second check-in event for the same engagement");
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private static async Task<(EngagementId EngagementId, VolunteerOpportunityId OpportunityId, TimeSlotId TimeSlotId)> SeedConfirmedEngagementAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset timeSlotEnd,
@@ -160,20 +145,13 @@ public class AutomaticCheckInJobTests(IntegrationTestFixture fixture)
 		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"AutoCheckInTestOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
 
-		// ScheduledSlots opportunities can't be created directly as Published (they must have
-		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
-		// here since nothing in this test path depends on the opportunity being published.
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id, "Beach Cleanup", null, "Help clean the beach", null, true, null,
 			Occurrence.OneTime, ParticipationType.ScheduledSlots, checkInMethod, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).Value;
 
 		var timeSlotStart = timeSlotEnd.AddHours(-2);
-		// TimeSlot.Create rejects a start date <= "now" (see TimeSlot.Validate), so an
-		// already-ended slot can't be created against the real clock - pass an
-		// artificially-past "now" here instead, well before timeSlotStart, so domain
-		// validation passes regardless of whether timeSlotStart/timeSlotEnd are
-		// themselves in the past relative to the real clock.
+
 		var creationNow = timeSlotStart.AddDays(-1);
 		var timeSlot = opportunity.AddTimeSlot(timeSlotStart, timeSlotEnd, 10, creationNow).Value;
 		dbContext.Set<VolunteerOpportunity>().Add(opportunity);

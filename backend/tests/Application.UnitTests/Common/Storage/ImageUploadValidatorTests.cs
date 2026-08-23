@@ -108,7 +108,7 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_WithContentBytes_ShouldThrow_WhenDeclaredTypeIsSpoofed()
 	{
-		// Arrange: declares image/png but the bytes are neither JPEG, PNG nor WebP.
+		// Arrange
 		var htmlBytes = "<script>alert(1)</script>"u8.ToArray();
 
 		// Act
@@ -123,8 +123,8 @@ public class ImageUploadValidatorTests
 	[Test]
 	public void EnsureValid_WithContentBytes_ShouldReturnRealType_WhenDeclaredTypeDoesNotMatchActualBytes()
 	{
-		// Arrange: client declares PNG but the actual bytes are a valid JPEG - the
-		// detected, real type must win over the client-supplied header.
+		// Arrange
+
 		// Act
 		var contentType = ImageUploadValidator.EnsureValid(JpegBytes, "image/png", "Avatar");
 

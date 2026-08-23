@@ -73,9 +73,7 @@ public class MarkNotificationUnreadCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		// Mirrors MarkNotificationRead's ownership check (einsatzbereit#829): a
-		// cross-user attempt collapses into the same "false" result as a
-		// nonexistent id rather than leaking whether the id belongs to someone else.
+
 		result.Should().BeFalse();
 		notification.IsRead.Should().BeTrue();
 	}

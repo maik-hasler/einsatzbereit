@@ -132,7 +132,7 @@ describe("HomePage hero search", () => {
 		await userEvent.click(screen.getByRole("button", { name: /Search/i }));
 
 		const probe = await screen.findByTestId("location-probe");
-		// URLSearchParams encodes a space as "+", not "%20".
+
 		expect(probe.textContent).toBe("/opportunities?q=Erste+Hilfe");
 		expect(api.searchCities).not.toHaveBeenCalled();
 	});

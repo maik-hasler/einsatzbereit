@@ -50,9 +50,6 @@ internal sealed class CreateEngagementCommandHandler(
 			if (timeSlot.EndDateTime <= DateTimeOffset.UtcNow)
 				throw new ResultFailureException(Error.Conflict("Engagement.TimeSlotEnded", "Conflict: this time slot has already ended."));
 
-			// Row lock (#1142): held for the rest of this command's transaction, so a
-			// second concurrent sign-up for the same slot blocks here until this one
-			// commits or rolls back, instead of both reading the same stale count.
 			await dbContext.LockTimeSlotForUpdateAsync(request.TimeSlotId.Value, cancellationToken);
 
 			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(
@@ -93,17 +90,6 @@ internal sealed class CreateEngagementCommandHandler(
 			await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		}
 
-		// Neither the organizer "New sign-up" email nor the volunteer's own
-		// sign-up receipt is sent here (#1174, #1729): both move off this
-		// request's DB transaction onto the outbox, delivered by
-		// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler
-		// once EngagementCreatedDomainEvent/EngagementReactivatedDomainEvent (raised
-		// above by Engagement.CreateSlotSignUp/CreateIndividualContact/Reactivate)
-		// is dispatched - see EngagementOrganizerNotificationHelper and
-		// EngagementVolunteerConfirmationHelper. This matters because the time-slot
-		// row lock (#1142) taken above is held for the rest of this transaction, so
-		// a synchronous SMTP send here would block every other volunteer trying to
-		// book the same slot behind a full mail round trip.
 		return engagement;
 	}
 }

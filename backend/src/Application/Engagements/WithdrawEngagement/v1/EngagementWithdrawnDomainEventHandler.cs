@@ -9,9 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.WithdrawEngagement.v1;
 
-// Consumer of EngagementWithdrawnDomainEvent (#1174) - sends the organizer
-// withdrawal email. See EngagementOrganizerNotificationHelper for the full
-// rationale.
 internal sealed class EngagementWithdrawnDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

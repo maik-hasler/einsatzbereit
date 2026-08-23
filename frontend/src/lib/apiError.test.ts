@@ -98,10 +98,6 @@ describe("getApiErrorStatus", () => {
 		);
 	});
 
-	// The case #1774 turns on: NSwag emits no 400 branch for
-	// GetOrganizationDetails, so an all-zero organization id (rejected by
-	// OrganizationId.Create) arrives as a bare ApiException whose only usable
-	// signal is this status.
 	it("reads the status off an ApiException-shaped rejection carrying no errorCode", () => {
 		expect(getApiErrorStatus({ status: 400, response: "{}" })).toBe(400);
 	});
@@ -124,11 +120,6 @@ describe("getApiErrorStatus", () => {
 });
 
 describe("isNetworkError", () => {
-	// #1901: a fetch that never reached the server (dropped connection, DNS
-	// failure) is the one case getApiErrorStatus itself cannot distinguish
-	// from "an error response happened to omit its status" - this makes that
-	// distinction available under its own name for callers that specifically
-	// want to treat "no HTTP response at all" as an offline signal.
 	it("returns true for a rejection with no status (e.g. a network failure)", () => {
 		expect(isNetworkError(new TypeError("Failed to fetch"))).toBe(true);
 	});

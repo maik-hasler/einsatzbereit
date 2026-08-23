@@ -20,8 +20,6 @@ internal sealed class UpdateUserProfileCommandHandler(
 			request.LastName,
 			cancellationToken);
 
-		// preferredLanguage: null - PreferredLanguage is set explicitly below regardless
-		// of whether this call creates the row or finds an existing one (#1148).
 		var user = await dbContext.GetOrCreateUserAsync(request.UserId, preferredLanguage: null, cancellationToken);
 
 		user.ChangeBio(request.Bio);

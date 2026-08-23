@@ -119,9 +119,6 @@ public class GetVolunteerOpportunityMetaQueryHandlerTests
 	public async Task Handle_ShouldNotSplitSurrogatePair_WhenTruncatingLongDescription(
 		CancellationToken cancellationToken)
 	{
-		// The 😀 emoji sits at UTF-16 indices 199-200 (a surrogate pair) - a
-		// naive cut at the 200-char limit would land mid-pair and produce an
-		// unpaired surrogate in the output.
 		var longDescription = new string('a', 199) + "\U0001F600" + new string('b', 50);
 		var opportunityId = Guid.NewGuid();
 		_readRepository

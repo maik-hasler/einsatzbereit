@@ -9,18 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.Common;
 
-/// <summary>
-/// Emails the volunteer their own sign-up/reactivation receipt - shared by
-/// EngagementCreatedDomainEventHandler and EngagementReactivatedDomainEventHandler
-/// (einsatzbereit#1729). Runs off the transactional outbox rather than inline in
-/// the triggering create/reactivate request, so the time-slot row lock (#1142)
-/// held by CreateEngagementCommandHandler no longer stays open across a
-/// synchronous SMTP send. Unlike the organizer notification
-/// (EngagementOrganizerNotificationHelper), this is never gated by preference
-/// (#1055): it's the direct, synchronous-feeling response to the volunteer's own
-/// just-submitted action, not a repeatable notification about someone else's
-/// activity.
-/// </summary>
 internal static class EngagementVolunteerConfirmationHelper
 {
 	public static async Task NotifyAsync(
@@ -38,9 +26,6 @@ internal static class EngagementVolunteerConfirmationHelper
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(opportunityId, cancellationToken);
 		if (opportunity is null)
 		{
-			// Deleted between the triggering command committing and the outbox
-			// dispatching this event - nothing left to confirm, and retrying would
-			// never resolve.
 			logger.LogWarning(
 				"Skipping volunteer confirmation for opportunity {OpportunityId}: it no longer exists",
 				opportunityId.Value);
@@ -54,9 +39,6 @@ internal static class EngagementVolunteerConfirmationHelper
 		}
 		catch (Exception ex)
 		{
-			// Same race as EngagementOrganizerNotificationHelper: an immediate
-			// account deletion can beat this event out of the outbox. Retrying
-			// would never resolve that, so skip rather than dead-letter forever.
 			logger.LogWarning(
 				ex,
 				"Skipping volunteer confirmation for engagement {EngagementId}: volunteer {VolunteerId} could not be looked up in Keycloak",

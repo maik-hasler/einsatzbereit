@@ -91,7 +91,7 @@ public class SetUserAdminStatusCommandHandlerTests
 	public async Task Handle_ShouldAllowSelfPromotion_BecauseGuardOnlyBlocksDemoting(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - already-admin promoting "self" is a no-op-ish reassert, not the lockout footgun.
+		// Arrange
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(actingUserId, cancellationToken).Returns(false);
 		var command = new SetUserAdminStatusCommand(actingUserId, actingUserId, IsAdmin: true);

@@ -50,8 +50,6 @@ public static class ServiceCollectionExtensions
 
 		foreach (var behavior in behaviors)
 		{
-			// Open generic types must be registered as their generic type definitions,
-			// not as constructed generic types with unresolved type parameters.
 			if (behavior.IsGenericTypeDefinition)
 			{
 				services.AddTransient(behaviorType, behavior);

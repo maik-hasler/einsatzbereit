@@ -5,11 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Visual tests for #549: organizers can set a custom check-in PIN (or
-/// generate a random one) on both create and edit, instead of always
-/// getting a randomly assigned PIN they can only view afterwards.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -38,11 +33,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		// Click the visible label card, not the sr-only radio <input>. An
-		// sr-only element (1x1px, clip:rect(0,0,0,0)) is not a reliable pointer
-		// target - Playwright's hit-test at its coordinates can resolve to the
-		// grid/label painted behind it, so clicking the input directly is
-		// position-dependent and flaky. The wrapping <label> is the real control.
+
 		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])").ClickAsync();
 		await Page.Locator("label:has(input[name='checkInMethod'][value='PINCode'])").ClickAsync();
 
@@ -51,8 +42,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await pinInput.FillAsync("482170");
 
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
-		// Individual-contact opportunities need an application deadline before
-		// they can be published (einsatzbereit#1086).
+
 		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
 
 		var createResponseTask = Page.WaitForResponseAsync(r =>
@@ -113,8 +103,6 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Editing now lives exclusively in the org app's Opportunities tab,
-		// not the public detail page (#751).
 		var oppRow = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(oppRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await OpportunityRowHelper.ClickActionAsync(oppRow, "opportunity-edit");
@@ -138,5 +126,4 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var persistedPin = await pinResponse.Content.ReadFromJsonAsync<string>();
 		persistedPin.Should().Be(generatedPin);
 	}
-
 }

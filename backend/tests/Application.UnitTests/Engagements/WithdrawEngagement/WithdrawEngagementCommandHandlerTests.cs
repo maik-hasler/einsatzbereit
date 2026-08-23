@@ -177,9 +177,6 @@ public class WithdrawEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
-	// Regression for #1217: the ownership check below runs before Withdraw()'s
-	// own IsAnonymized guard (#1140), so it used to dereference the null
-	// VolunteerId directly and crash with a 500 instead of returning a 409.
 	[Test]
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
@@ -219,16 +216,6 @@ public class WithdrawEngagementCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*checked-in*");
 	}
-
-	// --- Organizer notifications (#1174) ---
-	//
-	// The organizer withdrawal email (subscription-gated per #1055) is sent
-	// asynchronously via the outbox (EngagementWithdrawnDomainEventHandler), not
-	// synchronously here, so a create/withdraw loop never holds this request's
-	// DB transaction open across one SMTP send per organizer - see that
-	// handler's tests for the subscription-preference/localization coverage.
-	// The in-app bell-icon Notification row (unconditional, not
-	// subscription-gated) stays synchronous.
 
 	[Test]
 	public async Task Handle_ShouldCreateInAppNotification_ForEachOrganizer(

@@ -150,7 +150,6 @@ public class DeleteTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// Target the last occurrence - EntireSeries must still reach back to the earlier ones.
 		var command = new DeleteTimeSlotCommand(opportunityId, slot3.Id.Value, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
 
 		// Act
@@ -185,7 +184,7 @@ public class DeleteTimeSlotCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - engagements are cancelled rather than blocking the delete, and each affected volunteer is notified.
+		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("The recurring time slot series was cancelled.");
 		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
@@ -202,8 +201,8 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldExcludePastOccurrences_FromBulkDelete(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: slot1 is a past occurrence (created as valid-at-the-time via an
-		// artificially-past `now`), slot2 is still upcoming.
+		// Arrange
+
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", null, "Beschreibung", null, false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
 			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
@@ -233,7 +232,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenBulkScopeAndTimeSlotNotPartOfSeries(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a standalone slot with no SeriesId.
+		// Arrange
 		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlot);
 		var opportunityId = opportunity.Id.Value;
 		_opportunityRepo

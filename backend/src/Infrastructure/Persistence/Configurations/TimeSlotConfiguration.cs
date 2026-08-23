@@ -31,9 +31,6 @@ internal sealed class TimeSlotConfiguration
 
 		builder.Property(ts => ts.RecurrenceCount);
 
-		// now() backfills existing rows when this column is added by migration;
-		// the AuditableEntityInterceptor supplies an explicit value on every
-		// insert, so the DB default never fires for new rows.
 		builder.Property(ts => ts.CreatedOn)
 			.HasDefaultValueSql("now()");
 
@@ -43,10 +40,6 @@ internal sealed class TimeSlotConfiguration
 
 		builder.HasIndex(ts => ts.StartDateTime);
 
-		// Supports the expiry filter (ts.EndDateTime >= now) used by the public
-		// opportunity list, GetCalendarInfoAsync and EngagementReminderJob's
-		// window filter (#1200) - StartDateTime alone doesn't cover a predicate
-		// on EndDateTime.
 		builder.HasIndex(ts => ts.EndDateTime);
 	}
 }

@@ -8,22 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.UnpublishVolunteerOpportunity.v1;
 
-// Consumer of VolunteerOpportunityUnpublishedDomainEvent (#1038): the command
-// handler only flips Status and raises the event; the engagement
-// cascade-cancel + volunteer notification happens here, dispatched by
-// OutboxProcessorJob like every other domain event (see EngagementReminderDueHandler
-// for the same pattern), so a transient failure (e.g. an email send) is
-// retried on the next poll cycle instead of being lost mid-request.
-//
-// Publisher.Publish() resolves this handler from its own fresh child scope
-// (see Application/Common/Messaging/Publisher.cs), not the scope
-// OutboxProcessorJob itself is running in - so the IApplicationDbContext
-// injected here is a *different* DbContext instance than the one
-// OutboxProcessorJob.ProcessBatchAsync later calls SaveChangesAsync on.
-// Nothing else persists this handler's writes (Engagement.Cancel(), the new
-// Notification rows), so it must call SaveChangesAsync itself via IUnitOfWork
-// (both resolve to the same ApplicationDbContext instance within this scope -
-// see Infrastructure/ServiceCollectionExtensions.cs).
 internal sealed class VolunteerOpportunityUnpublishedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
@@ -40,9 +24,6 @@ internal sealed class VolunteerOpportunityUnpublishedDomainEventHandler(
 
 		if (opportunity is null)
 		{
-			// Deleted between the Unpublish command committing and the outbox
-			// dispatching this event - nothing left to cascade, and retrying
-			// would never resolve.
 			logger.LogWarning(
 				"Skipping unpublish cascade for opportunity {OpportunityId}: it no longer exists",
 				notification.OpportunityId.Value);

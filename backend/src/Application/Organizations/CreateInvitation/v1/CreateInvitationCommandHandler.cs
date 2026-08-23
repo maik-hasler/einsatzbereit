@@ -47,10 +47,6 @@ internal sealed class CreateInvitationCommandHandler(
 			request.Role,
 			now);
 
-		// Atomic insert-if-none-pending (#1202) instead of a separate
-		// HasPendingInvitationAsync check followed by an unconditional add - two
-		// concurrent invites for the same (org, invitee) used to both pass the
-		// check and both insert a Pending row, relying on nothing to stop it.
 		var created = await dbContext.TryCreateInvitationAsync(invitation, cancellationToken);
 		if (!created)
 			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyInvited", "A pending invitation already exists for this user."));

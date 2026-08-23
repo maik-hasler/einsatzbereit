@@ -66,8 +66,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073), so an
-		// opportunity later hard/shadow-deleted still shows a title on this notification.
+		// Assert
+
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityCancelled
 				&& n.RelatedEntityId == opportunity.Id.Value
@@ -79,10 +79,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldCreateExactlyOneNotification_ForAVolunteerWhoIsAlsoHavingAnEngagementCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Regression for einsatzbereit#1790: the cascade used to write an
-		// OpportunityCancelled row *and* an EngagementCancelled row for the same
-		// volunteer in the same handler run, so Vera saw the same fact twice,
-		// timestamped in the same minute, with the unread badge counting both.
 		var opportunity = CreatePublishedOpportunity();
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
@@ -99,14 +95,12 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert - one row, and it's the opportunity-level one.
+		// Assert
 		await _notifRepo.Received(1).AddAsync(Arg.Any<Notification>(), cancellationToken);
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == volunteerId && n.Kind == NotificationKind.OpportunityCancelled),
 			cancellationToken);
 
-		// The engagement itself is still cancelled - only its notification is skipped,
-		// and Cancel() still raises the event that sends the volunteer's email.
 		engagement.Status.Should().Be(EngagementStatus.Cancelled);
 	}
 
@@ -176,10 +170,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterCascade(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - regression: Publisher.Publish() resolves this handler from
-		// its own child scope (a different IApplicationDbContext instance than
-		// OutboxProcessorJob's), so nothing else persists the engagement
-		// cancellation/notification writes unless this handler saves them itself.
+		// Arrange
+
 		var opportunity = CreatePublishedOpportunity();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "reason");

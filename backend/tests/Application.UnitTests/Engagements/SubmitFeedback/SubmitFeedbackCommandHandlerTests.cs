@@ -109,15 +109,11 @@ public class SubmitFeedbackCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 		await act.Should().ThrowAsync<ResultFailureException>();
 
-		// Assert: the ownership guard fires before the domain method runs, so feedback stays unset.
+		// Assert
 		engagement.FeedbackRating.Should().BeNull();
 		engagement.FeedbackSubmittedAt.Should().BeNull();
 	}
 
-	// Regression for #1217: the ownership check below runs before
-	// SubmitFeedback()'s own IsAnonymized guard (#1140), so it used to
-	// dereference the null VolunteerId directly and crash with a 500 instead
-	// of returning a 409.
 	[Test]
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)

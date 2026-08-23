@@ -5,8 +5,6 @@ namespace ArchitectureTests;
 
 public sealed class ValueObjectConventionTests
 {
-	// IValueObject is a marker interface (#1014) - without an enforced rule, a new
-	// Id-suffixed value object can silently forget to implement it and CI stays green.
 	[Test]
 	public void IdSuffixedTypes_ShouldImplement_IValueObject()
 	{

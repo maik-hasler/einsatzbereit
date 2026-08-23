@@ -19,9 +19,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 	ApplicationDbContext dbContext)
 	: IVolunteerOpportunityReadRepository
 {
-	// Same Published + not-yet-expired filter as GetPagedSummariesAsync below (#1086) -
-	// a sitemap entry for an opportunity that's no longer publicly listed would just be
-	// a dead link to crawlers.
 	public async ValueTask<IReadOnlyList<SitemapEntry>> GetPublishedForSitemapAsync(
 		CancellationToken cancellationToken = default)
 	{
@@ -40,9 +37,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 	{
 		var now = DateTimeOffset.UtcNow;
 
-		// No Join to Organizations here - org name/logo are looked up separately below,
-		// for just the page actually returned, keeping this query focused on filtering
-		// and paging VolunteerOpportunity rows.
 		var query = ApplyPubliclyListedFilters(
 			dbContext.VolunteerOpportunitiesQuery,
 			now,
@@ -63,18 +57,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (filter.DateTo is DateTimeOffset dateTo)
 			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
-		// Order on the entity itself, before the Select below - ordering by a
-		// value-object id's unwrapped .Value (whether accessed directly in the key
-		// selector or read back off an already-projected anonymous property) defeats
-		// the Npgsql provider's translation of the whole query ("could not be
-		// translated"). Ordering by the value object (vo.Id) instead translates
-		// cleanly, since EF already has a converter registered for it. For the same
-		// reason, Id is kept as VolunteerOpportunityId (not unwrapped to .Value) all
-		// the way through this projection and the radius branch's below - the radius
-		// branch's own ThenBy(s => s.Id) tie-breaker re-derives whatever expression
-		// backs s.Id from the original entity, so unwrapping here would resurface the
-		// exact same translation failure one layer down. Callers below unwrap to
-		// .Value only after materialization (ToListAsync), in memory.
 		var baseQuery = query
 			.OrderByDescending(vo => vo.CreatedOn)
 			.ThenBy(vo => vo.Id)
@@ -120,11 +102,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var centerLon = filter.CenterLongitude!.Value;
 			var radiusKm = filter.RadiusKm!.Value;
 
-			// Distance is computed once here (haversine formula, #1729) and referenced
-			// in both the Where below and the OrderBy further down - filtering,
-			// ordering, and paging all happen in Postgres instead of materializing the
-			// whole bounding box into memory and redoing all three client-side on every
-			// request/page.
 			var withDistance = baseQuery
 				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
 				.Select(s => new
@@ -176,10 +153,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 			var orgMap = await LoadOrganizationSummariesAsync(page.Select(x => x.OrganizationId), cancellationToken);
 
-			// Mirrors the inner-join semantics the previous single-query version had -
-			// an opportunity whose organization is gone (deleted between the two
-			// queries, or a data-integrity gap) is silently excluded rather than
-			// shown with a missing organization name.
 			var summaries = page
 				.Where(x => orgMap.ContainsKey(x.OrganizationId))
 				.Select(x =>
@@ -209,7 +182,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 		var organizationSummaries = await LoadOrganizationSummariesAsync(rows.Select(x => x.OrganizationId), cancellationToken);
 
-		// See the HasRadius branch above for why rows without a matching org are skipped.
 		var result = rows
 			.Where(x => organizationSummaries.ContainsKey(x.OrganizationId))
 			.Select(x =>
@@ -243,17 +215,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			filter.Keyword,
 			ResolveBoundingBox(filter.CenterLatitude, filter.CenterLongitude, filter.RadiusKm));
 
-		// One row per (opportunity, slot) in the window instead of a GROUP BY on a day
-		// expression: which calendar day an instant falls on depends on the caller's UTC
-		// offset, and there is no dependable Npgsql translation for date_trunc over a
-		// shifted timestamptz to group by. The endpoint caps the window at ~2 months, so
-		// what this materializes stays in the order of one calendar page of time slots.
-		//
-		// Matches GetPagedSummariesAsync's date filter exactly - on StartDateTime only,
-		// with no second look at EndDateTime. A slot that started earlier today and has
-		// already ended still puts today in the listing's results (its opportunity is
-		// only listed at all if some other slot is still ahead), so it has to put today
-		// in this answer too or the calendar would deny a day the list then fills.
 		var slots = await query
 			.SelectMany(vo => vo.TimeSlots
 				.Where(ts => ts.StartDateTime >= filter.From && ts.StartDateTime <= filter.To)
@@ -266,10 +227,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				}))
 			.ToListAsync(cancellationToken);
 
-		// The bounding box above is the cheap DB-side narrowing; the exact haversine
-		// distance is the same second pass the radius branch of GetPagedSummariesAsync
-		// makes, just run in memory here over the already-bounded window rather than
-		// duplicating that inline formula a second time (GeoMath is the shared one).
 		var withinRadius = filter.HasRadius
 			? slots.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
 				GeoMath.DistanceKm(
@@ -308,10 +265,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.ToDictionaryAsync(x => x.Id.Value, x => (x.Name, x.LogoUrl), cancellationToken);
 	}
 
-	// Every clause the public listing and the date-availability calendar have to agree
-	// on, so an opportunity that can't show up in the results can't put a dot on a day
-	// cell either (#1779). Paging and the picked date range stay with their callers -
-	// those are the two things the two queries deliberately differ on.
 	private IQueryable<VolunteerOpportunity> ApplyPubliclyListedFilters(
 		IQueryable<VolunteerOpportunity> source,
 		DateTimeOffset now,
@@ -325,11 +278,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 	{
 		var query = source
 			.Where(vo => vo.Status == OpportunityStatus.Published)
-			// ScheduledSlots opportunities expire once their last time slot ends.
-			// IndividualContact opportunities can never have time slots (see
-			// VolunteerOpportunity.AddTimeSlot) and instead expire via ValidUntil -
-			// a null ValidUntil (a legacy row published before ValidUntil existed)
-			// is treated as already expired rather than kept forever (#1086).
+
 			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
 
 		if (!string.IsNullOrWhiteSpace(occurrence) && Enum.TryParse<Occurrence>(occurrence, ignoreCase: true, out var occ))
@@ -358,20 +307,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (!string.IsNullOrWhiteSpace(tag))
 			query = query.Where(vo => vo.Tags.Contains(tag));
 
-		// Same .ToLower().Contains(...) pattern as OrganizationReadRepository's
-		// own (now-removed) name search - Npgsql translates this to a
-		// parameterized "lower(column) LIKE '%...%'", the established
-		// convention in this repo for case-insensitive substring matching (no
-		// EF.Functions.ILike usage exists elsewhere to follow instead). The
-		// organization-name clause is an Any(...) subquery rather than a real
-		// Join, specifically so it doesn't change query's element type (still
-		// bare VolunteerOpportunity) - a real Join would ripple into every
-		// vo.* reference in the caller's projection (see #869's comment) and
-		// the HasRadius branch's CountAsync(query)/baseQuery reuse.
-		//
-		// Matches across both locale variants of Title/Description (#1946) -
-		// TitleEn/DescriptionEn are optional, so a null check guards each before
-		// the ILike-style .Contains(...) call.
 		if (!string.IsNullOrWhiteSpace(keyword))
 		{
 			var loweredKeyword = keyword.ToLower();
@@ -407,8 +342,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(g => VolunteerOpportunityId.Create(g).GetValueOrThrow())
 			.ToList();
 
-		// Null means "at least one time slot on this opportunity is uncapped" -
-		// distinct from 0, which means no time slots at all (e.g. IndividualContact).
 		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => opportunityIds.Contains(vo.Id))
 			.Select(vo => new
@@ -433,10 +366,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		);
 	}
 
-	// Shared post-materialization mapping only - the ~20-field EF projection itself stays
-	// duplicated in each query below. Introducing a named type for the Join/Select result
-	// broke EF Core's column pruning (it fell back to selecting every column of both
-	// entities and fully materializing them client-side) - see #869 follow-up.
 	private static VolunteerOpportunitySummary ToSummary(
 		Guid id,
 		string titleDe,
@@ -814,14 +743,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(ts => (TimeSlotId?)TimeSlotId.Create(ts.SlotId).GetValueOrThrow())
 			.ToList();
 
-		// Single query instead of a correlated Count(...) subquery per slot
-		// (#1389) - but grouped client-side rather than via GroupBy(...).Value in
-		// the query itself: EF Core can't reliably translate .Value/GroupBy on a
-		// Nullable<TimeSlotId> sitting behind TimeSlotId's HasConversion (unlike
-		// LoadParticipantStatsAsync's participantCounts query below, which groups
-		// by the non-nullable OpportunityId and works fine). Fetching the raw
-		// nullable values and counting them here keeps it to one round trip
-		// without hitting that translation gap.
 		var activeSlotIds = await dbContext.EngagementsQuery
 			.Where(e => slotIds.Contains(e.TimeSlotId) &&
 				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))

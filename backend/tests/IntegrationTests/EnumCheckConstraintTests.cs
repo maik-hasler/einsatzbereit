@@ -12,22 +12,12 @@ using Infrastructure.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using TUnit.Core.Interfaces;
-// Organization/OrganizationId collide with the generated ApiClient.cs DTOs of the same
-// name in this same "IntegrationTests" namespace (see the same workaround in
-// EngagementReadRepositoryTests.cs).
+
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Regression coverage for einsatzbereit#1210 - enum-to-string columns had no DB-level
-// constraint, so a typo'd or partially-migrated string value could sit in the DB and
-// throw when EF tries to parse it back into the CLR enum on read (a 500, not a 400 at
-// write time). These tests assert both that valid values still round-trip through the
-// full write+read path, and that Postgres now rejects an invalid string outright via the
-// CHECK constraints added in the AddEnumCheckConstraints migration - bypassing the
-// value converter with a raw UPDATE, since the converter itself would reject a bad
-// C# enum value before it ever reached the DB.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
@@ -493,8 +483,6 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 			"volunteer_opportunity", "status", opportunity.Id.Value, "ck_volunteer_opportunity_status_valid", cancellationToken);
 	}
 
-	// Draft sidesteps Create's Published-only validation (a deadline, at least one time
-	// slot for ScheduledSlots, etc.) - these tests only care about the enum columns.
 	private static VolunteerOpportunity CreateDraftOpportunity(DomainOrganizationId organizationId) =>
 		VolunteerOpportunity.Create(
 			organizationId,
@@ -525,9 +513,6 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		await using var connection = (NpgsqlConnection)dbContext.Database.GetDbConnection();
 		await connection.OpenAsync(cancellationToken);
 
-		// Identifiers are double-quoted since "user" is a reserved Postgres keyword and
-		// would otherwise fail with a syntax error (42601), not the check violation (23514)
-		// this test is actually after.
 		await using var cmd = new NpgsqlCommand(
 			$"UPDATE \"{table}\" SET \"{column}\" = 'NotARealValue' WHERE id = @id", connection);
 		cmd.Parameters.AddWithValue("id", id);

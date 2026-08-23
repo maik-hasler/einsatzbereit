@@ -74,8 +74,6 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var authenticatedClient = await CreateAuthenticatedClientAsync();
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		// 23:30 UTC is already half past one the next morning in UTC+02:00 - the exact
-		// off-by-one-day a visitor would see marked on the wrong cell (#1779).
 		var slotStart = UtcDayAt(daysFromToday: 7, hour: 23, minute: 30);
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Late night shift", slotStart, cancellationToken);
 
@@ -213,9 +211,6 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			categories: ["Environment"],
 			cancellationToken: cancellationToken);
 
-		// The expected days go in as an array, not as a loose argument: with a plain
-		// string first, this binds to Equal(params string[]) and the "because" text
-		// below is read as a second expected day rather than as an explanation.
 		result.Select(d => d.Date).Should().Equal(
 			new[] { matching.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
 			"a day is only worth marking if the filters already applied would let its opportunity through");
@@ -268,20 +263,11 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			"the listing rejects it, and silently ignoring it here would mark days the listing then refuses to fill");
 	}
 
-	// Built offset-explicitly rather than via DateTimeOffset.Date.ToUniversalTime(),
-	// which reads an Unspecified-kind DateTime back as *local* time and would silently
-	// shift every seeded slot on a runner whose timezone is not UTC.
 	private static DateTimeOffset UtcDayAt(int daysFromToday, int hour, int minute = 0) =>
 		new DateTimeOffset(DateTimeOffset.UtcNow.AddDays(daysFromToday).Date, TimeSpan.Zero)
 			.AddHours(hour)
 			.AddMinutes(minute);
 
-	// Every anonymous request in this class gets its own X-Forwarded-For, the isolation
-	// OutputCachingTests.cs and RateLimitingTests.cs already use. Without it these reads
-	// join the single anonymous-IP bucket (60 req/60s - IntegrationTestFixture restores
-	// the real default on purpose) that the whole ~500-test suite shares, and what
-	// breaks is not these tests but whichever unrelated ones happen to run once the
-	// bucket is spent.
 	private EinsatzbereitApi CreateAnonymousClient(string clientIp)
 	{
 		var httpClient = fixture.CreateHttpClient();
@@ -314,8 +300,6 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		CancellationToken cancellationToken,
 		string? category = null)
 	{
-		// A ScheduledSlots opportunity can't be published without a time slot, so it is
-		// created as a draft, given its slot, and only then published.
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			TitleDe = title,

@@ -22,7 +22,7 @@ function renderCalendar() {
 			fromStr=""
 			toStr=""
 			onChange={onChange}
-			// A Map keyed by ISO date, not a plain object.
+
 			availability={new Map()}
 		/>,
 	);
@@ -48,8 +48,6 @@ describe("MiniCalendar past days", () => {
 
 		await userEvent.click(yesterday as HTMLElement);
 
-		// aria-disabled leaves the button clickable on purpose (arrow keys must
-		// cross past days), so the guard in clickDay is what is under test.
 		expect(onChange).not.toHaveBeenCalled();
 	});
 });

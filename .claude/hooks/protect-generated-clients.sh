@@ -1,7 +1,4 @@
 #!/bin/bash
-# Blocks Edit/Write on NSwag-generated files.
-# They regenerate automatically on `dotnet build` (Debug config) via the
-# "NSwag" MSBuild target in backend/src/Api/Api.csproj - never hand-edited.
 
 INPUT=$(cat)
 FILE_PATH=$(printf '%s' "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed -E 's/.*:[[:space:]]*"(.*)"$/\1/')

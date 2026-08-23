@@ -7,18 +7,8 @@ namespace Infrastructure.Storage;
 
 internal sealed class MinioFileStorageService : IFileStorageService
 {
-	// Object keys are stable for some callers (e.g. "organization-logos/{OrganizationId}{ext}"),
-	// so a long max-age would serve a stale image after re-upload. A moderate TTL plus
-	// the "?v=" cache-busting query param below (which changes on every
-	// upload) keeps caching effective without that staleness risk.
 	internal const string CacheControlHeaderValue = "public, max-age=3600";
 
-	// Bucket policy only grants public read under this prefix, not the whole bucket, so a
-	// future non-public object type (participant lists, ID scans) can be added outside it
-	// with no policy change. Transparent to callers - GetPublicUrl already returns the
-	// full URL - but changing this value only affects future uploads; existing objects
-	// stay under the old prefix, which is acceptable on this repo's disposable,
-	// resettable demo environment (not worth a migration script pre-1.0).
 	private const string PublicPrefix = "public/";
 
 	private readonly IMinioClient _minio;
@@ -84,9 +74,6 @@ internal sealed class MinioFileStorageService : IFileStorageService
 			cancellationToken);
 	}
 
-	// Not on IFileStorageService (#1011 - no callers through the interface);
-	// internal rather than private so GetObjectKeyFromPublicUrl's inverse-of-this
-	// relationship stays directly testable from IntegrationTests.
 	internal string GetPublicUrl(string objectKey)
 	{
 		var baseUrl = (_settings.PublicEndpoint ?? _settings.Endpoint).TrimEnd('/');
@@ -104,11 +91,6 @@ internal sealed class MinioFileStorageService : IFileStorageService
 		return queryIndex >= 0 ? withoutPrefix[..queryIndex] : withoutPrefix;
 	}
 
-	// BucketExistsAsync's own bool result only distinguishes "bucket present"
-	// from "bucket absent" - both are a reachable server and neither should fail
-	// a readiness probe on a fresh environment before EnsureBucketReadyAsync has
-	// ever run. Unreachability (the thing the probe actually cares about) surfaces
-	// as a thrown exception instead, which callers are expected to catch.
 	public async Task PingAsync(CancellationToken cancellationToken = default) =>
 		await _minio.BucketExistsAsync(
 			new BucketExistsArgs().WithBucket(_settings.BucketName),
@@ -141,8 +123,6 @@ internal sealed class MinioFileStorageService : IFileStorageService
 					cancellationToken);
 			}
 
-			// Scoped to PublicPrefix, not the whole bucket - see that constant's
-			// comment for why.
 			var policy = $"{{\"Version\":\"2012-10-17\",\"Statement\":[{{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::{_settings.BucketName}/{PublicPrefix}*\"]}}]}}";
 
 			await _minio.SetPolicyAsync(

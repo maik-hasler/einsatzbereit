@@ -71,9 +71,6 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			request.MaxParticipants,
 			DateTimeOffset.UtcNow).ThrowIfFailure();
 
-		// Notify volunteers with an active engagement on this time slot that it
-		// changed (#406) - scoped to the slot itself, not every volunteer on the
-		// opportunity, so editing one slot doesn't spam registrants of others (#811).
 		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
 			dbContext,
 			engagementReadRepository,
@@ -89,13 +86,6 @@ internal sealed class UpdateTimeSlotCommandHandler(
 		return new UpdateTimeSlotResult(1, []);
 	}
 
-	/// <summary>
-	/// "This and following"/"entire series": capacity-only, deliberately not
-	/// letting a single edit reschedule sibling occurrences (einsatzbereit#1058).
-	/// An occurrence whose active sign-up count already exceeds the requested
-	/// capacity is skipped rather than failing the whole batch, mirroring the
-	/// single-slot guard below applied per-occurrence.
-	/// </summary>
 	private async ValueTask<UpdateTimeSlotResult> UpdateSeriesCapacityAsync(
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,

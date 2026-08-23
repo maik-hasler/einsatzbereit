@@ -15,8 +15,6 @@ internal sealed class UploadUserAvatarCommandHandler(
 	{
 		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Avatar");
 
-		// #1148: idempotent get-or-create instead of a check-then-Add that could
-		// race a concurrent first-time call for the same user.
 		var user = await dbContext.GetOrCreateUserAsync(request.UserId, preferredLanguage: null, cancellationToken);
 		var previousAvatarUrl = user.AvatarUrl;
 
@@ -37,10 +35,6 @@ internal sealed class UploadUserAvatarCommandHandler(
 		return true;
 	}
 
-	// Every upload gets a fresh random object key (see above), so the previous
-	// one is orphaned unless explicitly removed here. Best-effort: the new
-	// avatar is already live by this point, so a failed cleanup just leaves an
-	// unreferenced object in storage rather than a broken avatar.
 	private async Task DeletePreviousAvatarAsync(string? previousAvatarUrl, CancellationToken cancellationToken)
 	{
 		if (previousAvatarUrl is null)

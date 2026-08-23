@@ -91,10 +91,8 @@ public class DeleteUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldNotThrow_AndStillClearAvatarUrl_WhenDeletingTheStorageObjectFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the local field is what the user/UI actually observes - a
-		// storage cleanup failure just leaves an orphaned object behind rather
-		// than blocking the removal (mirrors UploadUserAvatarCommandHandler's
-		// best-effort cleanup of the previous avatar).
+		// Arrange
+
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/some-key/avatar.png");

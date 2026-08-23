@@ -95,9 +95,6 @@ internal sealed class EngagementReadRepository(
 		if (status is not null)
 			scopedQuery = scopedQuery.Where(e => e.Status == status.Value);
 
-		// Nullable-to-nullable equality (no .Value unwrap on the nullable value-object
-		// column) - the same shape already proven safe by
-		// GetActiveVolunteerIdsByOpportunityAsync below.
 		if (timeSlotId is not null)
 			scopedQuery = scopedQuery.Where(e => e.TimeSlotId == timeSlotId);
 
@@ -114,11 +111,6 @@ internal sealed class EngagementReadRepository(
 		IReadOnlyList<Guid>? volunteerIds = null,
 		CancellationToken cancellationToken = default)
 	{
-		// Kept as an IQueryable (not materialized) so this compiles to a
-		// correlated "IN (SELECT ...)" subquery instead of shipping the id list
-		// to and from Postgres as a literal array - same approach as
-		// OrganizationDashboardReadRepository.GetKpisAsync, whose pending count
-		// this endpoint's queue must line up with (#1048).
 		var orgOpportunityIds = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == organizationId)
 			.Select(vo => vo.Id);
@@ -133,10 +125,6 @@ internal sealed class EngagementReadRepository(
 		return await BuildPagedResultAsync(scopedQuery, pageNumber, pageSize, cancellationToken);
 	}
 
-	// Candidate ids as List<UserId?> (not .Value-unwrapped) so Contains stays
-	// translatable against the nullable value-object VolunteerId column - see
-	// the EF Core nullable-value-object gotcha this repository already has to
-	// work around for TimeSlotId.
 	private static IQueryable<Engagement> ApplyVolunteerIdsFilter(
 		IQueryable<Engagement> query,
 		IReadOnlyList<Guid>? volunteerIds)
@@ -251,16 +239,6 @@ internal sealed class EngagementReadRepository(
 	{
 		var now = DateTimeOffset.UtcNow;
 
-		// Deliberately not an inner join against VolunteerOpportunitiesQuery: deleting an
-		// opportunity hard-deletes its row while only cancelling (not deleting) the
-		// volunteer's Engagement rows, so an inner join would silently drop those
-		// engagements from the volunteer's own history (#667). Opportunity/organization
-		// data is instead looked up separately and merged in below, falling back to
-		// null when the opportunity no longer exists.
-		//
-		// The time slot join below IS a left join (an IndividualContact engagement has
-		// no TimeSlotId at all), used only to bucket/order by the slot's dates - actual
-		// time slot data for the response is still looked up in MapToSummariesAsync.
 		var scopedQuery =
 			from e in dbContext.EngagementsQuery
 			where e.VolunteerId == volunteerId
@@ -268,35 +246,8 @@ internal sealed class EngagementReadRepository(
 			from ts in tsGroup.DefaultIfEmpty()
 			select new { Engagement = e, TimeSlotStart = (DateTimeOffset?)ts.StartDateTime, TimeSlotEnd = (DateTimeOffset?)ts.EndDateTime };
 
-		// Current/upcoming vs. past split (#675): a checked-in Confirmed engagement
-		// represents a shift that has already happened, so it counts as past even
-		// though its status is not yet terminal.
-		//
-		// opportunityExists is only used to reclassify bucket membership below,
-		// not to join in opportunity data - that still happens separately further
-		// down per the no-inner-join note above, so a deleted opportunity's
-		// engagements keep appearing here rather than vanishing per #667.
 		var opportunityExists = dbContext.VolunteerOpportunitiesQuery.Select(o => o.Id);
 
-		// A non-terminal engagement whose opportunity was deleted can never be
-		// confirmed, checked into, or otherwise acted on again, so it belongs in
-		// Past rather than staying in "Current & upcoming" forever (#703). Likewise
-		// (#1163) a time slot that has already ended moves the engagement to Past
-		// regardless of status/check-in - previously only IsCheckedIn could do that,
-		// but check-in is optional (CheckInMethod.None has no check-in action at all),
-		// so a shift nobody checked in for stayed "upcoming" permanently. An
-		// engagement with no time slot (IndividualContact) is unaffected either way.
-		//
-		// #1855: the "checked-in Confirmed engagement is always past" assumption above
-		// only holds once the slot has actually ended. CheckIn() (see Domain/Engagements/
-		// Engagement.cs) has no time-based guard at all - an organizer can check a
-		// volunteer in as soon as Confirmed, e.g. at arrival for a still-ongoing
-		// multi-hour shift, or (as filed) for a slot dated weeks out - so IsCheckedIn
-		// alone is not proof the shift is over. A checked-in engagement whose slot end
-		// is still in the future is therefore kept in "Current & upcoming" instead,
-		// the same way an un-checked-in one already is; only once TimeSlotEnd is null
-		// (no time slot at all, e.g. IndividualContact - nothing to compare "now"
-		// against) or has actually passed does check-in alone move it to Past.
 		scopedQuery = upcoming
 			? scopedQuery.Where(x =>
 				opportunityExists.Contains(x.Engagement.OpportunityId)
@@ -321,10 +272,6 @@ internal sealed class EngagementReadRepository(
 
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 
-		// Upcoming is ordered by the slot's own start time (soonest shift first,
-		// #1163) rather than CreatedOn, which reflected sign-up order, not shift
-		// order; entries with no time slot sort last. Both branches add the primary
-		// key as a tiebreaker (#1161) so ties can't repeat/skip rows across pages.
 		var orderedQuery = upcoming
 			? scopedQuery.OrderBy(x => x.TimeSlotStart ?? DateTimeOffset.MaxValue).ThenBy(x => x.Engagement.Id)
 			: scopedQuery.OrderByDescending(x => x.Engagement.CreatedOn).ThenBy(x => x.Engagement.Id);
@@ -430,11 +377,7 @@ internal sealed class EngagementReadRepository(
 				e.IsCheckedIn,
 				e.FeedbackSubmittedAt.HasValue,
 				e.CreatedOn,
-				// Prefer the live TimeSlot join (freshest - reflects a legitimate
-				// reschedule) but fall back to the engagement's own snapshot once the
-				// slot is gone (opportunity/time slot hard-deleted nulls TimeSlotId via
-				// ON DELETE SET NULL) - otherwise a preserved past engagement would show
-				// no date at all for the shift it was for (#1203).
+
 				TimeSlotStartDateTime: timeSlot?.StartDateTime ?? e.TimeSlotStartDateTime,
 				TimeSlotEndDateTime: timeSlot?.EndDateTime ?? e.TimeSlotEndDateTime,
 				Location: location,

@@ -66,8 +66,8 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
 
-		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073), so an
-		// opportunity later hard/shadow-deleted still shows a title on this notification.
+		// Assert
+
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUnpublished
 				&& n.RelatedEntityId == opportunity.Id.Value
@@ -119,10 +119,8 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	public async Task Handle_ShouldSaveChanges_AfterCascade(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - regression: Publisher.Publish() resolves this handler from
-		// its own child scope (a different IApplicationDbContext instance than
-		// OutboxProcessorJob's), so nothing else persists the engagement
-		// cancellation/notification writes unless this handler saves them itself.
+		// Arrange
+
 		var opportunity = CreatePublishedOpportunity();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		var domainEvent = new VolunteerOpportunityUnpublishedDomainEvent(opportunity.Id, DefaultOrgId);

@@ -51,9 +51,8 @@ public class AcceptInvitationCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert - accepting an Organizer-intended invitation must grant real,
-		// functional capability, not just Keycloak org membership with nothing
-		// behind it (#826): the invitee becomes a full Organizer.
+		// Assert
+
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).AddMemberAsync(OrgId.Value, InviteeId.Value, cancellationToken);
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(InviteeId.Value, cancellationToken);
@@ -76,8 +75,8 @@ public class AcceptInvitationCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert - a Member-intended invitation must not grant the realm-wide
-		// organizer role, only local org membership.
+		// Assert
+
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).AddMemberAsync(OrgId.Value, InviteeId.Value, cancellationToken);
 		await _keycloakService.DidNotReceive().AssignOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -149,9 +148,6 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldDeleteInvitationReceivedNotification_OnAccept(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1919: an accepted invitation is resolved, so its
-		// InvitationReceived notification must not survive to be clicked into a
-		// /my-signups page with nothing left to show for it.
 		// Arrange
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
@@ -168,11 +164,6 @@ public class AcceptInvitationCommandHandlerTests
 	public async Task Handle_ShouldBeIdempotentNoOp_WhenMembershipAlreadyExists(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1202: a double-accept (two in-flight requests for the
-		// same invitation) must not surface the second request's unique-index
-		// violation on organization_membership as a 500 - it should observe that
-		// the invitee is already a member and return successfully without
-		// re-inserting or re-calling Keycloak.
 		var invitation = CreatePendingInvitation();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		_dbContext

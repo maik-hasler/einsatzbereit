@@ -10,13 +10,6 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-// A minimal shortcut tile to the settings page - distinct from
-// SettingsWidget's full organization summary card, for organizers who just
-// want a quick link rather than a preview. #2045: the label is always
-// visible, even at this widget's own tiny default compact footprint - a
-// bare gear icon with no on-screen text gave a sighted organizer no clue
-// what it was or that it was clickable, even though the link already had an
-// accessible name (aria-label below) for assistive tech.
 function SettingsIconWidget({ organizationId, size }: Props) {
 	const { t } = useTranslation();
 	const title = t("orgDashboard.settingsIconWidgetTitle");

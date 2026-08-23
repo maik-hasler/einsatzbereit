@@ -9,28 +9,17 @@ import { CancelIcon, EditIcon, SaveIcon } from "../components/QuickActionIcons";
 interface Options {
 	editing: boolean;
 	saving?: boolean;
-	// Disables just the "Edit" action (e.g. OrgDashboardPage while its saved
-	// layout fetch has failed - entering edit mode on an unconfirmed layout
-	// risks a Save that overwrites the organizer's real one, see #1234).
+
 	editDisabled?: boolean;
-	// Native `disabled` alone drops the button from the tab order with no way
-	// for a keyboard/screen-reader user to discover why it's gone - surfaced
-	// as a `title` on the button instead (see OrgMembersPage's
-	// leaveOrganizationLastOrganizerHint for the same disabled+title pairing).
-	// Only meaningful while editDisabled is true.
+
 	editDisabledTitle?: string;
 	onEdit: () => void;
 	onSave: () => void;
 	onCancel: () => void;
-	// Extra actions shown only while editing, before Cancel/Save (e.g.
-	// OrgDashboardPage's "Add Widget") - must itself be referentially stable
-	// (useMemo) for the same reason `actions` below is, see useQuickActions.
+
 	extraEditingActions?: QuickAction[];
 }
 
-// Shared Edit/Save/Cancel quick-action trio for pages with a page-level edit
-// mode (OrgDashboardPage, OrgSettingsPage): "Edit" alone while read-only,
-// "Cancel"+"Save" while editing - never both groups at once.
 export function useEditModeQuickActions({
 	editing,
 	saving,
@@ -43,12 +32,6 @@ export function useEditModeQuickActions({
 }: Options) {
 	const { t } = useTranslation();
 
-	// Route through refs (always up to date) rather than depending on
-	// onEdit/onSave/onCancel directly in the useMemo below - those are fresh
-	// closures every render of the calling page (e.g. OrgDashboardPage's
-	// onSave closes over the current draftLayout), so memoizing on them
-	// would defeat the memoization entirely and reintroduce the infinite
-	// render loop this hook exists to avoid (see useQuickActions).
 	const onEditRef = useRef(onEdit);
 	onEditRef.current = onEdit;
 	const onSaveRef = useRef(onSave);
@@ -56,11 +39,6 @@ export function useEditModeQuickActions({
 	const onCancelRef = useRef(onCancel);
 	onCancelRef.current = onCancel;
 
-	// Swapping the action-bar button group unmounts whichever button was
-	// focused, dropping focus to <body> for keyboard/screen-reader users.
-	// Re-focus the first button of the newly-shown group - but only on an
-	// actual editing-state toggle within this page, never on first mount (a
-	// fresh page mounting "Edit" for the first time should not steal focus).
 	const hasMounted = useRef(false);
 	useEffect(() => {
 		if (!hasMounted.current) {
@@ -69,12 +47,6 @@ export function useEditModeQuickActions({
 		}
 		const nextKey = editing ? "cancel" : "edit";
 		const frame = requestAnimationFrame(() => {
-			// Skip if a dialog opened in the same tick as this edit-mode toggle
-			// (e.g. OrgDashboardPage's empty state jumping straight into "Edit"
-			// + the Add Widget picker together) - the dialog already moved focus
-			// into itself and owns it while open, so refocusing the action bar
-			// here would yank focus back out from behind the backdrop and break
-			// the dialog's focus containment.
 			if (document.querySelector('[role="dialog"]')) return;
 			document
 				.querySelector<HTMLButtonElement>(
@@ -85,9 +57,6 @@ export function useEditModeQuickActions({
 		return () => cancelAnimationFrame(frame);
 	}, [editing]);
 
-	// Memoized on just the visual/primitive deps so the array reference (and
-	// thus useQuickActions's effect below) stays stable across renders that
-	// don't actually change what the buttons show - see useQuickActions.
 	const actions = useMemo(
 		() =>
 			editing

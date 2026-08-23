@@ -5,16 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// #1757 gave the opportunity list its own /opportunities route and left the
-/// landing page with no trace of real inventory: a hero promising "find an
-/// opportunity that fits you", and then straight into a pitch at
-/// organizations. These pin the three-card preview that answers the hero -
-/// that it renders seeded opportunities, that it stays a preview rather than
-/// growing back into the grid, that it sits ahead of the organization band so
-/// the page stays volunteer-facing until it changes audience, and that both
-/// its link and its cards are real entry points.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -38,15 +28,6 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 			"a volunteer reaching the organization pitch before any opportunity is the ordering #1757 left behind");
 	}
 
-	/// <summary>
-	/// #1914: at 768px the landing preview stayed single-column
-	/// (grid-cols-1 until lg) while /opportunities, rendering the same
-	/// OpportunityListItem card, already showed a two-column grid at that
-	/// width (sm:grid-cols-2). Seeds two fresh published opportunities so the
-	/// newest-first preview deterministically has at least two cards, then
-	/// checks they land side by side rather than stacked - the same
-	/// side-by-side check ListLayoutGridTests uses for /opportunities itself.
-	/// </summary>
 	[Test]
 	public async Task LandingPreview_AtTabletViewport_IsTwoColumnGridLikeOpportunitiesList()
 	{
@@ -116,19 +97,9 @@ public class LandingOpportunityPreviewTests(AspireFixture fixture) : VisualTestB
 		var preview = Page.GetByTestId("landing-latest-opportunities");
 		await Expect(preview).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// h3, not h2 - the card takes a headingLevel prop and this section
-		// passes 3, because its own "These opportunities need people" heading is
-		// the h2 these cards sit under. /opportunities passes 3 too, for its own
-		// sr-only "Search results" h2 (#2071) - every current call site of the
-		// shared OpportunityCard sits under a section heading and demotes to h3.
-		// Asserting the level here rather than matching "h2, h3" keeps that
-		// pinned regardless.
 		var firstCard = preview.Locator("li").First;
 		var title = (await firstCard.Locator("h3").InnerTextAsync()).Trim();
 
-		// The stretched-link pattern the card uses (an absolutely positioned
-		// <a> covering the <li>) is easy to break with a later z-index change,
-		// and a preview whose cards are not clickable is decoration.
 		await firstCard.Locator("a[href*='/volunteer-opportunities/']").First.ClickAsync();
 
 		await Page.WaitForURLAsync(

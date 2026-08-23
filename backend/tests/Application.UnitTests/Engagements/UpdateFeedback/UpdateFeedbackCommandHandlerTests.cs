@@ -111,7 +111,7 @@ public class UpdateFeedbackCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 		await act.Should().ThrowAsync<ResultFailureException>();
 
-		// Assert: the ownership guard fires before the domain method runs.
+		// Assert
 		engagement.FeedbackRating.Should().Be(3);
 		engagement.FeedbackComment.Should().Be("Okay");
 	}
@@ -140,7 +140,7 @@ public class UpdateFeedbackCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenFeedbackNotYetSubmitted(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: checked in, but never submitted feedback.
+		// Arrange
 		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),

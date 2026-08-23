@@ -8,12 +8,6 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Meta.GetVolunteerOpportunityMeta.v1;
 
-// AllowAnonymous is deliberate: only reached via frontend/nginx.conf.template's
-// bot-User-Agent rewrite for /volunteer-opportunities/{id} (einsatzbereit#1680), which
-// carries no Bearer token to attach - same rationale as GetSitemapEndpoint. Served under
-// the versioned API prefix like every other endpoint; the frontend's nginx proxies its
-// own internal /__meta/volunteer-opportunities/{id} rewrite target to this route over
-// the internal Docker network.
 internal sealed class GetVolunteerOpportunityMetaEndpoint : IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

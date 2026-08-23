@@ -23,11 +23,6 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		referrerPolicy.Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
 	}
 
-	// The Aspire-hosted backend under test runs with ASPNETCORE_ENVIRONMENT=Development
-	// (Api's own launchSettings.json profile - AppHost.cs never overrides it for the
-	// "backend" resource), which is exactly the environment HSTS is intentionally
-	// skipped for (#1370): local dev serves plain HTTP, and HSTS would force a
-	// browser-cached HTTPS upgrade that breaks it.
 	[Test]
 	public async Task GetAlive_ShouldNotIncludeHsts_WhenRunningInDevelopment(CancellationToken cancellationToken)
 	{
@@ -38,11 +33,6 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		response.Headers.TryGetValues("Strict-Transport-Security", out _).Should().BeFalse();
 	}
 
-	// Uses a successful (200) anonymous request specifically: /alive's health-check
-	// middleware, and a bad-request ProblemDetails response, both independently carry
-	// their own cache-prevention headers regardless of authentication - unrelated to
-	// the Cache-Control:no-store logic this test targets, but enough to make the
-	// assertion fail for the wrong reason. A plain 200 avoids both.
 	[Test]
 	public async Task GetVolunteerOpportunities_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
 	{
@@ -68,14 +58,6 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		cacheControl.Should().ContainSingle().Which.Should().Be("no-store");
 	}
 
-	// Regression for #1180: the security-header middleware used to set headers
-	// directly before calling next(), with app.UseExceptionHandler() registered
-	// after it. ExceptionHandlerMiddleware calls Response.Clear() when it catches
-	// an exception (here, CreateEngagement's ResultFailureException for a
-	// nonexistent opportunity, mapped to a 404 ProblemDetails body) - which wiped
-	// any header set that way, regardless of the two middlewares' relative order.
-	// The header middleware now registers via Response.OnStarting instead, which
-	// runs after that Clear() and so survives it.
 	[Test]
 	public async Task CreateEngagement_ShouldIncludeBaselineSecurityHeaders_OnErrorResponse(
 		CancellationToken cancellationToken)
@@ -96,10 +78,6 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		exception.Which.Headers.TryGetValue("X-Frame-Options", out var frameOptions).Should().BeTrue();
 		frameOptions.Should().ContainSingle().Which.Should().Be("DENY");
 
-		// Not asserted as a single exact value: ASP.NET Core's own
-		// ExceptionHandlerMiddleware also clears Cache-Control on exception
-		// responses via its own OnStarting registration, so the header may carry
-		// both its directives and ours - only that "no-store" is present matters.
 		exception.Which.Headers.TryGetValue("Cache-Control", out var cacheControl).Should().BeTrue();
 		cacheControl.Should().Contain(value => value.Contains("no-store"));
 	}

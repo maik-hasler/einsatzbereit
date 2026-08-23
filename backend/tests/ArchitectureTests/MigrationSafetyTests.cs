@@ -3,13 +3,6 @@ using AwesomeAssertions;
 
 namespace ArchitectureTests;
 
-// #1194: a migration that narrows a previously-unbounded (text) string column
-// to a bounded varchar(n) fails outright if any existing row already exceeds
-// n - and because Database__MigrateOnStartup retries and rethrows on every
-// boot (ApplicationDbContextInitializer.MigrateAsync), one such row puts the
-// backend in a permanent crash loop that only a manual SQL fix can clear.
-// This enforces that every future narrowing migration truncates/validates the
-// existing data first, the same way the ones already in the repo now do.
 public sealed class MigrationSafetyTests
 {
 	[Test]
@@ -36,13 +29,6 @@ public sealed class MigrationSafetyTests
 		if (upMethod is null)
 			yield break;
 
-		// A call narrows an unbounded column when it introduces a maxLength
-		// with no corresponding oldMaxLength (EF only emits oldMaxLength when
-		// the previous type was itself bounded) - the unbounded -> bounded
-		// case is exactly what crash-loops MigrateOnStartup on overlong
-		// pre-existing data. A bounded -> smaller-bounded narrowing (both
-		// maxLength and oldMaxLength present) is rarer and left to review by
-		// eye rather than this check.
 		foreach (Match call in Regex.Matches(upMethod, @"migrationBuilder\.AlterColumn<string>\s*\((?<args>[^;]*?)\);", RegexOptions.Singleline))
 		{
 			var args = call.Groups["args"].Value;

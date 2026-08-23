@@ -5,24 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// #1783: /profile/settings rendered all five email-notification checkboxes
-/// unconditionally, including the two that only ever fire for the organizer of
-/// an opportunity ("New sign-ups for opportunities you organize", "Volunteer
-/// withdrawals from opportunities you organize"). A volunteer who belongs to no
-/// organization can never receive either, and the wording implies she organizes
-/// something - so both rows are now gated on organization membership.
-///
-/// Needs vera to deterministically have zero organizations, so - like
-/// HomePageOrgCtaTests and OrgAppRestructureTests - this class opts into
-/// fixture.ResetAsync() plus the keyed [NotInParallel], which excludes only the
-/// other classes sharing the "visualtests-db" key rather than the whole
-/// assembly.
-///
-/// #1844 added the grouping tests below: once both audiences' rows are
-/// visible (Olaf), they render under two "As an organizer" / "As a
-/// volunteer" headings instead of one flat list.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("visualtests-db")]
 public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -33,16 +15,6 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 	[Test]
 	public async Task ProfileSettings_SaveWithHiddenOrganizerRows_StillSendsTheirStoredValues()
 	{
-		// Hiding the rows must not drop them from the PUT payload: the endpoint
-		// takes all five flags, so a save that omitted (or defaulted) the two
-		// hidden ones would silently switch both off for anyone who later joins
-		// an organization - a data-loss bug introduced by the fix itself.
-		//
-		// vera is a shared account other classes drive concurrently (e.g.
-		// EmailDeliveryTests, which asserts on mail actually delivered to her),
-		// so this seeds only the two organizer flags - the three volunteer ones
-		// that gate her own emails are read and echoed back untouched - and
-		// restores even those in the finally below.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		var backend = Fixture.GetEndpoint("backend");
@@ -59,9 +31,6 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 			string? savedPayload = null;
 			await Page.RouteAsync("**/v1/users/me/notification-preferences", async route =>
 			{
-				// The browser's own PUT is let through untouched - this only
-				// snapshots what the page sent. The preflight OPTIONS hits the
-				// same URL and carries no body, hence the method check.
 				if (route.Request.Method == "PUT")
 				{
 					savedPayload = route.Request.PostData;
@@ -91,7 +60,6 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 			sent.NotifyOnWithdrawal.Should().BeTrue(
 				"a hidden organizer preference must be sent back with the value the server returned");
 
-			// And it round-trips: re-reading from the API shows both still set.
 			var persisted = await GetPreferencesAsync(http);
 			persisted.NotifyOnNewSignUp.Should().BeTrue();
 			persisted.NotifyOnWithdrawal.Should().BeTrue();

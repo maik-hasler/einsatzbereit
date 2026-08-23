@@ -67,10 +67,6 @@ public class OrganizationTests
 		result.IsFailure.Should().BeTrue();
 	}
 
-	// --- Name length cap (#1158) ---
-	// Create already enforced this in CreateOrganizationCommandHandler (before its
-	// Keycloak call), but Rename had no cap at all - both now share the same rule.
-
 	[Test]
 	public void Create_ShouldFail_WhenNameExceedsMaxLength()
 	{

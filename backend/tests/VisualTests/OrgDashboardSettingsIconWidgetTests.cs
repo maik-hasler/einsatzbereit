@@ -5,15 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Visual tests for the SettingsIcon widget's label (#2045). At its own
-/// catalog default (compact, 2x1 - see widgetCatalog.ts), the icon+label row
-/// used to hide the text span entirely and rely on WidgetCard's own title
-/// bar alone - leaving a sighted organizer looking at a bare gear icon with
-/// no visible caption on the tile itself, even though the stretched Link
-/// already carried an accessible name for assistive tech. The label is now
-/// always rendered, regardless of size.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardSettingsIconWidgetTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -29,10 +20,6 @@ public class OrgDashboardSettingsIconWidgetTests(AspireFixture fixture) : Visual
 
 		var organizationId = await CreateOrganizationAsync($"Visual SettingsIcon {Guid.NewGuid():N}");
 
-		// Saves a layout with just the SettingsIcon widget at its own catalog
-		// default (2x1, classifyWidth's own compact threshold) directly
-		// through the API, rather than driving the "Add Widget" picker in the
-		// browser just to reach the same placement.
 		using (var http = await CreateAuthenticatedHttpClientAsync(backend))
 		{
 			var response = await http.PutAsJsonAsync(
@@ -51,12 +38,6 @@ public class OrgDashboardSettingsIconWidgetTests(AspireFixture fixture) : Visual
 		var settingsIconWidget = Page.GetByTestId("widget-tile-SettingsIcon");
 		await Expect(settingsIconWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The decorative icon+label group (aria-hidden - the accessible name
-		// comes from the stretched Link) must show the label text on screen,
-		// not just carry it as an accessible name nobody sighted can see.
-		// Scoped to the <span> tag specifically - WidgetCard's own <h2> title
-		// carries the same "Settings" text, and a plain GetByText would match
-		// both, which Playwright's strict mode rejects as ambiguous.
 		await Expect(settingsIconWidget.Locator("span", new() { HasText = "Settings" }))
 			.ToBeVisibleAsync();
 

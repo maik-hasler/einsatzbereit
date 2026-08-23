@@ -5,11 +5,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1385 - the landing page's main query (GetPagedSummariesAsync)
-// filters on Status and sorts by CreatedOn, and separately filters on Tags containment,
-// with none of it indexed. Asserts the indexes actually exist in Postgres rather than
-// just that the EF Core model declares them, since a migration can drift from the model
-// snapshot (e.g. a hand-edited migration, or one generated against a stale snapshot).
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class VolunteerOpportunityIndexTests(IntegrationTestFixture fixture)
@@ -40,9 +35,6 @@ public class VolunteerOpportunityIndexTests(IntegrationTestFixture fixture)
 	{
 		var indexDef = await GetIndexDefinitionAsync("ix_does_not_exist_1385");
 
-		// Sanity check that the lookup itself is discriminating (an unknown name
-		// returns null) rather than the two assertions above passing vacuously
-		// against a lookup that always finds something.
 		indexDef.Should().BeNull();
 	}
 

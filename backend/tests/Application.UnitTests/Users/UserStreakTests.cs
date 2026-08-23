@@ -88,7 +88,6 @@ public class UserStreakTests
 			streak.RecordLogin(Today.AddDays(i));
 		}
 
-		// Skip a day
 		streak.RecordLogin(Today.AddDays(8));
 
 		streak.LoginStreak.Should().Be(1);
@@ -117,9 +116,6 @@ public class UserStreakTests
 	[Test]
 	public void RecordConfirmedEngagement_ShouldNeverDecrease_RegardlessOfOtherState()
 	{
-		// The counter has no "undo" - it must stay monotonic even if unrelated
-		// engagements are later cancelled or their opportunities deleted, since
-		// those transitions never call this method.
 		var streak = UserStreak.Create(UserId.New());
 
 		for (var i = 0; i < 5; i++)

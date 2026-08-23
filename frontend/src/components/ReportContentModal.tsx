@@ -18,10 +18,7 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 
 interface ReportContentModalProps {
 	targetLabel: string;
-	/** `targetLabel`'s actual language, when it may differ from the active
-	 * UI language - e.g. a German-only opportunity title reported from the
-	 * English UI (einsatzbereit#2057). Omit when `targetLabel` is always in
-	 * the UI language. */
+
 	targetLabelLang?: string;
 	onSubmit: (reason: ReportReason, details: string) => Promise<void>;
 	onClose: () => void;

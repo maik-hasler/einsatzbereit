@@ -4,22 +4,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #2065 (finding 4): the opportunity detail page had no
-/// offline handling at all - a dropped connection fell into the same generic
-/// <c>LoadMoreError</c> branch as any other server failure, complete with a
-/// retry button that could not possibly succeed while the connection was
-/// down. It now renders the same dedicated offline <c>RouteState</c> every
-/// other offline-aware surface in the app already uses (#1774), plus the
-/// manual retry fallback #2065 added there too.
-///
-/// Simulated by pinning <c>navigator.onLine</c> false and aborting the detail
-/// request rather than by <c>Context.SetOfflineAsync</c>, because this suite
-/// blocks service workers (see <see cref="VisualTestBase.ContextOptions"/>),
-/// so a genuinely offline document navigation could not load the app shell at
-/// all - the same technique <c>OrgAppLayoutErrorStatesTests</c> used for the
-/// org shell.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailOfflineTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -75,12 +59,6 @@ public class OpportunityDetailOfflineTests(AspireFixture fixture) : VisualTestBa
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" })).ToBeVisibleAsync();
 	}
 
-	/// <summary>
-	/// #2065's core scenario: a connection that came back without the browser
-	/// ever firing an <c>online</c> event. <c>navigator.onLine</c> stays pinned
-	/// false for the whole test - clicking "Try again" is the only thing that
-	/// can recover, proving the manual retry does not depend on that event.
-	/// </summary>
 	[Test]
 	public async Task OpportunityDetail_ManualRetry_SucceedsWithoutAnOnlineEvent()
 	{

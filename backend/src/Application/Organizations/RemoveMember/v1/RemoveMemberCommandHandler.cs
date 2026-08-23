@@ -21,8 +21,6 @@ internal sealed class RemoveMemberCommandHandler(
 		var organizationId = OrganizationId.Create(request.OrganizationId).GetValueOrThrow();
 		var userId = UserId.Create(request.UserId).GetValueOrThrow();
 
-		// Leaving is a self-service action available to any tier, not an
-		// org-management action - only removing someone else requires Organizer.
 		if (userId == request.RequestingUserId)
 		{
 			await OwnershipGuard.EnsureIsMemberAsync(
@@ -62,12 +60,6 @@ internal sealed class RemoveMemberCommandHandler(
 
 		if (isOrganizer)
 		{
-			// The role is realm-wide, not per-organization (see #1386), so it can
-			// only be revoked once the removed user organizes no other
-			// organization (#1677) - otherwise this removal would also lock them
-			// out of that other org. RemoveMembershipAsync above already deleted
-			// this org's membership row, so unlike ChangeMemberRoleCommandHandler's
-			// still-in-memory demotion, no exclusion filter is needed here.
 			var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(userId, cancellationToken);
 
 			if (remainingOrganizerOrgs.Count == 0)

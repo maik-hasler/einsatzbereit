@@ -46,9 +46,6 @@ public class SetOpportunityColorCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		// #c10007, not #ff0000: pure red's best text contrast falls short of
-		// the 4.5:1 floor added for einsatzbereit#1726 - see
-		// VolunteerOpportunityTests.SetColor_ShouldFail_WhenTextContrastIsBelowMinimum.
 		var command = new SetOpportunityColorCommand(opportunityId, "#c10007", DefaultRequestingUserId);
 
 		// Act
@@ -63,7 +60,7 @@ public class SetOpportunityColorCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo

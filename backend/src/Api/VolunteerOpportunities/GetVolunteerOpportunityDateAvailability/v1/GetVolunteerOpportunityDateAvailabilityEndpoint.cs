@@ -12,21 +12,13 @@ namespace Api.VolunteerOpportunities.GetVolunteerOpportunityDateAvailability.v1;
 internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 	: IEndpoint
 {
-	// A month at a time is what the date-filter calendar asks for; the cap is deliberately
-	// loose enough for a caller that wants the month plus its neighbours in one request,
-	// and tight enough that the window can never be widened into a full-table scan.
 	private const int MaxWindowDays = 62;
 
-	// UTC-14:00 (Line Islands) to UTC+14:00 (Kiritimati) - the full range of real-world
-	// offsets, so anything outside it is a malformed caller rather than a distant one.
 	private const int MaxUtcOffsetMinutes = 14 * 60;
 
 	public void MapEndpoint(
 		IEndpointRouteBuilder app)
 	{
-		// Sits under the /volunteer-opportunities prefix but ahead of no route it could
-		// shadow - GetVolunteerOpportunityDetails' sibling segment is {id:guid}-constrained,
-		// so "date-availability" can never be mistaken for an opportunity id.
 		app.MapGet("/volunteer-opportunities/date-availability", GetVolunteerOpportunityDateAvailabilityAsync)
 			.WithName("GetVolunteerOpportunityDateAvailability")
 			.Produces<IReadOnlyList<VolunteerOpportunityAvailableDate>>()
@@ -34,9 +26,7 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
-			// Same policy (and therefore same eviction tag) as the listing itself: the two
-			// answers are derived from the same rows, so a write that makes one stale makes
-			// the other stale in the same instant.
+
 			.CacheOutput(OutputCachingPolicies.VolunteerOpportunityListing)
 			.MapToApiVersion(1);
 	}

@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-// Guards against the regression class behind issue #1405: the runtime
-// config script (/config.js) blocked HTML parsing (no defer), delaying
-// first contentful paint on every page load. Purely static checks - no
-// Docker/nginx/browser required.
+
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";

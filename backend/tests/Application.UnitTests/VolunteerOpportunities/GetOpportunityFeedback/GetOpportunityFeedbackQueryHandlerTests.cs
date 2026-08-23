@@ -122,7 +122,7 @@ public class GetOpportunityFeedbackQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller belongs to a different organization than the opportunity's.
+		// Arrange
 		var opportunity = CreateOpportunity();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		_dbContext

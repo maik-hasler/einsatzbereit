@@ -4,10 +4,6 @@ using Infrastructure.Email;
 
 namespace IntegrationTests.Email;
 
-// Reads the real embedded en.json/de.json resources - no DB/Testcontainers
-// involved, so this runs like a plain unit test despite living in the
-// IntegrationTests project (which has the Infrastructure.csproj reference
-// Application.UnitTests deliberately doesn't, per Clean Architecture layering).
 public class EmailTemplateRendererTests
 {
 	private readonly EmailTemplateRenderer _sut = new();

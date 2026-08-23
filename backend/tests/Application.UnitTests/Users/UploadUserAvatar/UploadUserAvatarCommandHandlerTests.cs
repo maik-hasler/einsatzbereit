@@ -18,8 +18,6 @@ public class UploadUserAvatarCommandHandlerTests
 
 	private static readonly UserId DefaultUserId = UserId.New();
 
-	// Minimal valid PNG signature - ImageUploadValidator detects content type from
-	// the actual magic bytes, not the client-declared header.
 	private static readonly byte[] PngBytes =
 		[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00];
 
@@ -54,9 +52,8 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldCreateUserAndSetAvatarUrl_WhenUserDoesNotExistYet(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a user who has only ever authenticated via Keycloak has no local
-		// User row yet (no upfront registration step) - GetOrCreateUserAsync creates
-		// it idempotently instead of a racy check-then-add (#1148).
+		// Arrange
+
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
@@ -75,9 +72,8 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldUseARandomObjectKeyUnderTheUserId_NotOnlyTheUserId(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the avatar object key must not be reconstructible from the user id
-		// alone (issue #1175) - it's a public identifier exposed by member search and
-		// public-profile endpoints.
+		// Arrange
+
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
@@ -139,8 +135,8 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldNotThrow_WhenDeletingThePreviousAvatarObjectFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the new avatar is already live at this point, so a cleanup failure
-		// for the orphaned old object must not fail the whole upload.
+		// Arrange
+
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
@@ -182,9 +178,8 @@ public class UploadUserAvatarCommandHandlerTests
 	public async Task Handle_ShouldThrow_AndNotUpload_WhenContentBytesDoNotMatchDeclaredContentType(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: declared content-type is allowed, but the magic bytes don't match
-		// any known image signature - ImageUploadValidator detects the mismatch from
-		// the actual bytes rather than trusting the client-supplied header.
+		// Arrange
+
 		var userId = UserId.New();
 		var notActuallyAnImage = "not a real image"u8.ToArray();
 		var command = new UploadUserAvatarCommand(userId, notActuallyAnImage, "image/png");

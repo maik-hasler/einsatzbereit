@@ -43,18 +43,12 @@ function setsEqual(a, b) {
 	return true;
 }
 
-// Values that are legitimately identical between en.json and de.json - brand
-// names, loanwords, interpolation-only strings, and the language names
-// themselves (which name a language, not describe something *in* it, so they
-// never translate). Anything NOT on this list that happens to match must be
-// reviewed: either it's another legitimate loanword (add it here) or it's a
-// forgotten translation (#1258).
 const ALLOWED_IDENTICAL_KEYS = new Set(
 	[
 		"brand.name",
-		// The operator's contact address - one value, not a translation.
+
 		"contact.email",
-		// Same established German loanword as help.eyebrow/contact.eyebrow.
+
 		"footer.support",
 		"footer.license",
 		"nav.administration",
@@ -100,29 +94,19 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"orgOverview.tabDashboard",
 		"orgOverview.calendarAgenda",
 		"orgOverview.eventChipUnlimited",
-		// "Support" is the established German loanword for this, and both
-		// pages' eyebrow names the same category in either language.
+
 		"help.eyebrow",
 		"contact.eyebrow",
 	].map((k) => `translation.${k}`),
 );
 
-// Email-template keys that are legitimately identical (or legitimately both
-// empty) between languages.
 const EMAIL_TEMPLATE_ALLOWED_IDENTICAL_KEYS = new Set([
-	// A reason suffix appended into another template's body - it has no
-	// subject line of its own, so both languages leave it empty.
+
 	"EngagementCancelledReasonSuffix.subject",
-	// Same as above - a body-only fragment (the unsubscribe line) spliced into
-	// every other outgoing template, with no subject line of its own.
+
 	"EmailFooter.subject",
 ]);
 
-// Keys that interpolate {{count}} but never need a plural form: the
-// surrounding word is grammatically invariant regardless of quantity in both
-// languages (a unit abbreviation, a participle, or a fixed-position
-// indicator), or - like nCategoriesSelected - the call site never actually
-// renders them with count === 1 in the first place.
 const PLURAL_EXEMPT_KEYS = new Set(
 	[
 		"opportunities.nCategoriesSelected",
@@ -198,7 +182,7 @@ function checkPluralCompleteness(enValues, deValues, label) {
 	const violations = [];
 	for (const [key, value] of Object.entries(enValues)) {
 		if (typeof value !== "string") continue;
-		if (pluralBaseKey(key) !== null) continue; // this key IS a plural variant, not a base key to check
+		if (pluralBaseKey(key) !== null) continue;
 		if (!value.includes("{{count}}")) continue;
 		if (PLURAL_EXEMPT_KEYS.has(key)) continue;
 		const hasOneOrOther =
@@ -217,9 +201,6 @@ function checkPluralCompleteness(enValues, deValues, label) {
 }
 
 function checkPluralSuffixParity(enKeys, deKeys, label) {
-	// Within each file, a key's plural family (_one/_other/...) must be
-	// internally consistent between en and de - e.g. en has X_one/X_other but
-	// de only has X_other is a real asymmetry (German still needs both forms).
 	const enFamilies = new Map();
 	const deFamilies = new Map();
 	for (const k of enKeys) {
@@ -249,15 +230,6 @@ function checkPluralSuffixParity(enKeys, deKeys, label) {
 	return [`${label}: plural-form suffixes differ between en and de for the same key:\n` + violations.join("\n")];
 }
 
-// ── Usage check (#1002) ─────────────────────────────────────────────────────
-// Parity alone lets dead keys accumulate silently, as long as both locale
-// files stay in lockstep. This scans source for t("key") / t(`key`) calls and
-// flags any en.json key with no reference - literal or via a dynamic prefix
-// (t(`foo.${x}`), t(`foo` + x), t("foo." + x)). A dynamic reference protects
-// its whole prefix subtree rather than trying to guess the exact suffix, so
-// this only ever produces false negatives (missing a truly dead key), never
-// false positives that would break an unrelated PR. Locale-only - email
-// templates aren't referenced via t() from frontend source.
 function checkUnusedKeys(enKeys) {
 	const srcDir = join(__dirname, "../src");
 
@@ -275,8 +247,6 @@ function checkUnusedKeys(enKeys) {
 		return out;
 	}
 
-	// A key is "translation.foo.bar" once flattened - t() calls never spell out
-	// the implicit i18next default-namespace root, so strip it before comparing.
 	const enKeysNoRoot = new Set([...enKeys].map((k) => k.replace(/^translation\./, "")));
 
 	const sourceText = walkSourceFiles(srcDir)
@@ -285,22 +255,12 @@ function checkUnusedKeys(enKeys) {
 
 	const dynamicRoots = new Set();
 
-	// `foo.bar.${x}` / `foo${x}` - static text between the opening backtick and
-	// the first ${, truncated to the last "." so a bare suffix like `scope${s}`
-	// doesn't wrongly protect the whole file (no dot -> no root added; that shape
-	// is caught by the concatenation branch below instead). A dotted one like
-	// `foo.bar.${x}` protects "foo.bar". Deliberately NOT anchored to a preceding
-	// `t(` - a key is often built into a variable first (e.g.
-	// `const key = \`apiError.${code}\`; i18next.t(key)` in lib/apiError.ts) and
-	// only passed to t()/i18next.t() afterward.
 	for (const m of sourceText.matchAll(/`([A-Za-z0-9_.]*)\$\{/g)) {
 		const prefix = m[1];
 		const lastDot = prefix.lastIndexOf(".");
 		if (lastDot > 0) dynamicRoots.add(prefix.slice(0, lastDot));
 	}
 
-	// "foo.bar" + x / "foo.bar." + x / `foo.bar` + x - static text immediately
-	// before a `+`. Same reasoning as above: not anchored to a preceding t(.
 	for (const m of sourceText.matchAll(/["'`]([A-Za-z0-9_.]+)["'`]\s*\+/g)) {
 		const prefix = m[1].replace(/\.$/, "");
 		dynamicRoots.add(prefix);

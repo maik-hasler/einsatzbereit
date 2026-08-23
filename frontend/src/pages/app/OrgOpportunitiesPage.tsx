@@ -167,16 +167,10 @@ export default function OrgOpportunitiesPage() {
 	const [cancelError, setCancelError] = useState<string | null>(null);
 
 	const [searchParams, setSearchParams] = useSearchParams();
-	// Id of a just-saved / just-arrived-at draft to reveal, so the organizer
-	// can see where a draft landed (issue #708).
+
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
 	const highlightRef = useRef<HTMLLIElement | null>(null);
 
-	// Memoized so the array reference stays stable across renders that don't
-	// change the translated label - see useQuickActions for why an
-	// unmemoized array here causes an infinite render loop. setShowCreate is
-	// React's useState setter (referentially stable), so no staleness risk
-	// from not routing it through a ref.
 	const quickActions = useMemo(
 		() =>
 			isOrganizer
@@ -194,9 +188,6 @@ export default function OrgOpportunitiesPage() {
 	);
 	useQuickActions(quickActions);
 
-	// A draft saved from the Calendar tab navigates in with ?highlight=<id>.
-	// Surface it once, then drop the param so a later refresh doesn't keep
-	// re-highlighting the same row.
 	useEffect(() => {
 		const h = searchParams.get("highlight");
 		if (!h) return;
@@ -207,8 +198,6 @@ export default function OrgOpportunitiesPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Once the highlighted row has actually rendered (list loaded), scroll it
-	// into view and let the highlight ring linger briefly before clearing.
 	useEffect(() => {
 		if (!highlightedId || !highlightRef.current) return;
 		const reduceMotion = window.matchMedia(
@@ -314,13 +303,6 @@ export default function OrgOpportunitiesPage() {
 		}
 	}
 
-	// The Published section's own heading and description already say
-	// "Published" - a per-row badge repeating the same word inside a section
-	// that's already grouped by status carried no information (#984). Draft/
-	// Unpublished/Cancelled keep their badge: those sections' rows can be
-	// the direct result of an action the organizer just took (publish,
-	// unpublish, cancel), so the badge doubles as visible confirmation of
-	// that status change.
 	function renderRow(
 		item: VolunteerOpportunitySummary,
 		showStatusBadge = true,
@@ -383,11 +365,7 @@ export default function OrgOpportunitiesPage() {
 							{description.text}
 						</p>
 					)}
-					{/* Unconditional: this is the number an organizer opens the page
-					for. It used to render on one published row in five, because the
-					two-branch check it replaced dropped the whole line whenever
-					`totalMaxParticipants` was 0 - which is every opportunity with no
-					time slots, i.e. every interest-based one (#1777). */}
+
 					<p
 						data-testid="opportunity-signup-count"
 						className="mt-1 text-xs text-gray-500"
@@ -395,13 +373,7 @@ export default function OrgOpportunitiesPage() {
 						{formatSignUpCount(getOpportunityCapacity(item), t)}
 					</p>
 				</div>
-				{/* One visible primary action per card plus an overflow menu, not
-				five side-by-side buttons. Publish is the exception: on a draft it
-				*is* the primary thing to do, so it stays out here. Everything else
-				(Edit, Unpublish, Cancel, Delete) moves into the menu - three of
-				those read as destructive and two shared the same red outline, so
-				the card gave "Delete" exactly as much weight as the action an
-				organizer actually came for. */}
+
 				<div className="mt-auto flex flex-wrap items-center gap-2">
 					{isOrganizer && (status === "Draft" || status === "Unpublished") && (
 						<Button

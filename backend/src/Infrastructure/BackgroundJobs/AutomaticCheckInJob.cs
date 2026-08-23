@@ -10,14 +10,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Opportunities using CheckInMethod.None are labelled as "automatic" check-in, but
-// until this job existed nothing ever set IsCheckedIn for them - attendance and
-// feedback (which requires IsCheckedIn) were permanently dead for that
-// configuration (einsatzbereit#1042). This job finds confirmed, not-yet-checked-in
-// engagements whose time slot has ended on a CheckInMethod.None opportunity and
-// marks them checked in, following the same atomic claim-per-row pattern as
-// EngagementReminderJob so concurrent replicas can never double-process the same
-// engagement.
 internal sealed class AutomaticCheckInJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<AutomaticCheckInJob> logger,
@@ -91,36 +83,18 @@ internal sealed class AutomaticCheckInJob(
 			logger.LogInformation("Automatically checked in {Count} engagement(s)", checkedIn);
 	}
 
-	// Exposed so IntegrationTests can exercise the claim race directly against a real
-	// ApplicationDbContext - e.g. two concurrent calls racing over the same ended
-	// time slot, without waiting an hour for a real tick from two replicas.
 	internal static async Task<int> ClaimAndCheckInAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset now,
 		int maxBatchSize,
 		CancellationToken cancellationToken = default)
 	{
-		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
-		// manually-began transaction to run as one retryable unit via
-		// CreateExecutionStrategy() - see
-		// ApplicationDbContext.ExecuteInTransactionAsync's comment and
-		// EngagementReminderJob's matching wrapper for why retrying this
-		// whole delegate from scratch is safe.
 		var strategy = dbContext.Database.CreateExecutionStrategy();
 
 		return await strategy.ExecuteAsync<int>(async _ =>
 		{
-			// One transaction for the whole claim-and-enqueue batch - see
-			// EngagementReminderJob.ClaimAndQueueRemindersAsync for why: without it, a
-			// crash between the ExecuteUpdateAsync claims and the outbox SaveChangesAsync
-			// below would leave engagements marked IsCheckedIn with no outbox row ever
-			// written for the domain event, losing it silently instead of retrying.
 			await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-			// Only ScheduledSlots engagements carry a TimeSlotId, so IndividualContact
-			// opportunities (which have no time slot, hence no well-defined "event end")
-			// are not candidates here - the same limitation EngagementReminderJob already
-			// has for its 24h-before-start window.
 			var candidates = await dbContext.Set<Engagement>()
 				.Where(e =>
 					e.Status == EngagementStatus.Confirmed &&
@@ -152,9 +126,6 @@ internal sealed class AutomaticCheckInJob(
 
 			foreach (var candidate in candidates)
 			{
-				// Atomic per-row claim, same reasoning as EngagementReminderJob: if another
-				// replica's tick already claimed this engagement, this affects 0 rows
-				// instead of racing to check it in (and raise its domain event) twice.
 				var rowsAffected = await dbContext.Set<Engagement>()
 					.Where(e => e.Id == candidate.Id && !e.IsCheckedIn)
 					.ExecuteUpdateAsync(

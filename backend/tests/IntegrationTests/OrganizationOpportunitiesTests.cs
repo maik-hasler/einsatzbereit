@@ -158,10 +158,8 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		veraHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", veraToken);
 		var veraClient = new EinsatzbereitApi(veraHttpClient);
 
-		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// vera (organisator, but NOT in org1) tries to access org1's opportunities
 		var act = () => veraClient.GetOrganizationOpportunitiesAsync(org1Id, "Published", 1, 10, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();

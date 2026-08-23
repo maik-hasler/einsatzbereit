@@ -7,9 +7,6 @@ using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.AdminRestoreVolunteerOpportunity.v1;
 
-/// <summary>
-/// Undoes an admin shadow delete (<see cref="AdminShadowDeleteVolunteerOpportunity.v1.AdminShadowDeleteVolunteerOpportunityCommandHandler"/>).
-/// </summary>
 internal sealed class AdminRestoreVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext)
 	: ICommandHandler<AdminRestoreVolunteerOpportunityCommand, bool>

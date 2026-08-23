@@ -6,10 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Invitations.DeclineInvitation.v1;
 
-// Consumer of OrganizationInvitationDeclinedDomainEvent (#1047): DeclineInvitationCommandHandler
-// only flips the invitation's Status and raises the event; letting the inviting organizer know
-// their invite was declined happens here, dispatched by OutboxProcessorJob like every other
-// domain event.
 internal sealed class OrganizationInvitationDeclinedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

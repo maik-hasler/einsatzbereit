@@ -10,11 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.EngagementReminder.v1;
 
-// Consumer of EngagementReminderDueDomainEvent (#1392): EngagementReminderJob only
-// detects which engagements are due for a 24h reminder and atomically claims + queues
-// them into the outbox (Infrastructure/BackgroundJobs/EngagementReminderJob.cs); actual
-// delivery happens here, dispatched by OutboxProcessorJob like every other domain event,
-// so a transient failure is retried on the next poll cycle instead of being lost.
 internal sealed class EngagementReminderDueHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
@@ -33,10 +28,6 @@ internal sealed class EngagementReminderDueHandler(
 
 		if (opportunity is null || timeSlot is null)
 		{
-			// The opportunity/time slot this reminder was queued for no longer exists
-			// (deleted between claim and dispatch) - nothing to remind about, and
-			// retrying would never resolve, so this is treated as handled rather than
-			// re-thrown for the outbox to retry forever.
 			logger.LogWarning(
 				"Skipping reminder for engagement {EngagementId}: opportunity {OpportunityId} or time slot {TimeSlotId} no longer exists",
 				notification.EngagementId.Value,
@@ -81,9 +72,6 @@ internal sealed class EngagementReminderDueHandler(
 		var subject = content.Subject;
 		var body = EmailFooter.Append(emailTemplateRenderer, language, content.Body, unsubscribeUrl);
 
-		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
-		// is observable as a bool - SendAsync never throws and never reports outcome,
-		// which would make it impossible to know whether to let the outbox retry.
 		var results = await emailService.SendBatchAsync(
 			[new EmailMessage(user.Email, subject, body, notification.EngagementId.Value.ToString())], cancellationToken);
 		if (!results[0])
@@ -95,15 +83,6 @@ internal sealed class EngagementReminderDueHandler(
 			notification.EngagementId.Value);
 	}
 
-	// Mirrors the frontend's own locale mapping (frontend/src/lib/format.ts:
-	// "de" -> "de-DE", else "en-GB") so reminder emails read naturally in
-	// either language instead of leaking an English day/month name.
-	//
-	// No per-opportunity timezone is stored (see ConfirmEngagementCommandHandler's
-	// own ResolveTimeZone), so - like every other server-side fallback in this
-	// codebase - this defaults to Europe/Berlin rather than .ToLocalTime(), which
-	// would resolve against the container's clock (UTC, since no TZ is set in the
-	// API's Dockerfile) and announce the wrong hour to the volunteer.
 	private static string FormatStart(DateTimeOffset startDateTime, string language)
 	{
 		var berlinTime = TimeZoneInfo.ConvertTime(startDateTime, TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin"));

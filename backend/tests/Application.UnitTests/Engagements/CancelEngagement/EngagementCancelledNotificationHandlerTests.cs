@@ -190,9 +190,6 @@ public class EngagementCancelledNotificationHandlerTests
 	public async Task Handle_ShouldUseOpportunityTitleFromEvent_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{
-		// The cascade from deleting/shadow-deleting an opportunity cancels its
-		// engagements in the same transaction, so the opportunity row is already
-		// gone (or filtered out) by the time this dispatches post-commit (#1150).
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);

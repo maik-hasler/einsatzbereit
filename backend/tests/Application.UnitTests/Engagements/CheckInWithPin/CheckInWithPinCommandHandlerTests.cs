@@ -40,9 +40,6 @@ public class CheckInWithPinCommandHandlerTests
 	public async Task Handle_ShouldThrowNotOwner_BeforeComparingPin_WhenNonOwnerGuessesWrongPin(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #806: a non-owner must get the same "not owner" failure
-		// regardless of whether the guessed PIN happens to be correct or wrong -
-		// otherwise the response distinguishes valid from invalid PINs (an oracle).
 		var opportunityId = VolunteerOpportunityId.New();
 		var engagementId = EngagementId.New();
 		var owner = UserId.New();
@@ -61,9 +58,6 @@ public class CheckInWithPinCommandHandlerTests
 		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
 	}
 
-	// Regression for #1217: the ownership check below runs before CheckIn()'s
-	// own IsAnonymized guard (#1140), so it used to dereference the null
-	// VolunteerId directly and crash with a 500 instead of returning a 409.
 	[Test]
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
@@ -170,10 +164,6 @@ public class CheckInWithPinCommandHandlerTests
 		string? submittedPin,
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1139: a "None"/"QRCode"/"Manual" opportunity never sets
-		// CheckInPin, so it stays null. Before this fix, submitting an empty body
-		// (deserializing Pin as null) made `opportunity.CheckInPin != request.Pin`
-		// compare null to null and pass, checking the volunteer in without any PIN.
 		var engagementId = EngagementId.New();
 		var owner = UserId.New();
 		var opportunity = CreateNonPinOpportunity(CheckInMethod.None);

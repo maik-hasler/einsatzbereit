@@ -46,17 +46,8 @@ import {
 	type WidgetSizeClass,
 } from "./widgetCatalog";
 
-// Lets a band's own container (see the `needsRowBanding` render branch
-// below) override --dashboard-grid-columns (global.css's
-// .dashboard-widget-grid rule) - csstype's CSSProperties has no index
-// signature for custom properties, so the plain type needs this widening.
 type BandGridStyle = CSSProperties & { "--dashboard-grid-columns": number };
 
-// Matches Tailwind's default `lg` breakpoint, which is also where the
-// widget grid switches from a single stacked column to the real 8-column
-// grid (see the grid container's className below) - corner-to-corner
-// placement and the green cell backdrop only make sense once that grid
-// exists, so both are gated on this.
 function useIsLargeViewport() {
 	const [isLarge, setIsLarge] = useState(
 		() => window.matchMedia("(min-width: 1024px)").matches,
@@ -70,10 +61,6 @@ function useIsLargeViewport() {
 	return isLarge;
 }
 
-// Pure action tools with no read-only value for a viewer who can't perform
-// the action they trigger (creating an opportunity, running check-in) -
-// filtered out of a plain Member's rendered layout entirely, unlike the
-// other widgets (ToDo, Calendar, Settings, ...) which stay useful read-only.
 const ORGANIZER_ONLY_WIDGET_KEYS: readonly WidgetKey[] = [
 	"CreateOpportunity",
 	"QuickCheckIn",
@@ -88,29 +75,15 @@ export default function OrgDashboardPage() {
 	const isLargeViewport = useIsLargeViewport();
 	usePageTitle(`${t("orgOverview.tabDashboard")} - ${org.name}`);
 
-	// Bumped after a published opportunity is created so the Calendar and
-	// Upcoming Opportunities widgets (which each own their own data) refetch.
 	const [refreshKey, setRefreshKey] = useState(0);
 
-	// Renders the default layout immediately rather than gating the whole
-	// grid behind the GET .../dashboard/layout round trip - most visits get
-	// exactly this layout back anyway (no customization saved yet), and a
-	// returning organizer's customized layout swaps in a moment later instead
-	// of blocking first paint on it.
 	const [savedLayout, setSavedLayout] =
 		useState<PlacedWidget[]>(DEFAULT_LAYOUT);
 	const [editing, setEditing] = useState(false);
 	const [draftLayout, setDraftLayout] = useState<PlacedWidget[] | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
-	// Distinguishes "no custom layout exists" (the optimistic DEFAULT_LAYOUT
-	// render above is genuinely accurate) from "the fetch to confirm that
-	// failed" (#1234: it used to collapse both into the same silent
-	// DEFAULT_LAYOUT fallback - indistinguishable from a real empty
-	// customization, so a returning organizer hitting a transient backend
-	// outage could edit and save over their actual saved layout without ever
-	// being told theirs failed to load). Blocks entering edit mode (see
-	// startEditing below) until a load actually succeeds.
+
 	const [layoutLoadFailed, setLayoutLoadFailed] = useState(false);
 	const [retryingLayoutLoad, setRetryingLayoutLoad] = useState(false);
 
@@ -134,13 +107,7 @@ export default function OrgDashboardPage() {
 							: null;
 					})
 					.filter((w): w is PlacedWidget => w !== null);
-				// Only a brand-new organizer (no saved layout row at all,
-				// hasCustomLayout=false) gets the default layout applied. An
-				// organizer who deliberately removed every widget and saved that
-				// has hasCustomLayout=true with an empty list - respecting that
-				// as a real empty layout, instead of silently reapplying the
-				// default, is the #771 follow-up fix for "remove all widgets,
-				// it resets back to the default set on refresh".
+
 				setSavedLayout(response.hasCustomLayout ? sanitized : DEFAULT_LAYOUT);
 				setLayoutLoadFailed(false);
 			})
@@ -169,41 +136,13 @@ export default function OrgDashboardPage() {
 		(key) => !layout.some((w) => w.widgetKey === key),
 	);
 
-	// Below `lg` the grid collapses to a single stacked column (see the
-	// `gridStyle` ternary in the render loop below) - plain document flow,
-	// where DOM order IS visual order. `layout` itself carries no such
-	// guarantee (see sortByPosition in widgetCatalog.ts), which on lg+ is
-	// harmless (each tile is placed explicitly via `gridStyle`'s gridColumn/
-	// gridRow) but on mobile let a widget dragged to the bottom on desktop
-	// render first (#1845).
 	const mobileLayout = isLargeViewport ? layout : sortByPosition(layout);
 
-	// #1932: a layout that never reaches the full GRID_COLUMNS width on every
-	// row (most commonly a lightly-customized layout that trimmed some
-	// widgets down without ever widening them back out) used to render
-	// inside a container that always spanned the full page width regardless,
-	// leaving a permanent blank block next to whichever rows fell short.
-	// Bands split the layout into independent runs of rows (see
-	// groupIntoRowBands in widgetCatalog.ts) so each run's own container can
-	// be capped to the width its own widgets actually reach instead. Only
-	// computed outside edit mode (which needs the full canvas for
-	// placement) and at `lg`+ (mobile already collapses to one stacked
-	// column with nothing to cap) - and only actually used for rendering
-	// (see needsRowBanding below) once some band falls short, so the
-	// default, fully-packed DEFAULT_LAYOUT renders exactly as before.
 	const rowBands = !editing && isLargeViewport ? groupIntoRowBands(layout) : [];
 	const needsRowBanding = rowBands.some((band) => band.columns < GRID_COLUMNS);
 
-	// Memoized so CreateOpportunityWidget's React.memo (see that component)
-	// actually skips re-rendering while a placement is in progress - a fresh
-	// function reference on every OrgDashboardPage render (which happens on
-	// every cursor move while placing a widget) would defeat it otherwise.
 	const handleOpportunityCreated = useCallback(
 		(createdDraftId?: string) => {
-			// Drafts live on the Opportunities tab now. When one is saved from
-			// here, take the organizer there with the new draft highlighted so
-			// it is never lost (issue #708). A published opportunity just
-			// refreshes the widgets.
 			if (createdDraftId) {
 				navigate(
 					`/app/${organizationId}/dashboard/opportunities?highlight=${createdDraftId}`,
@@ -243,35 +182,21 @@ export default function OrgDashboardPage() {
 		placement.cancelPlacing();
 		setEditing(false);
 		setDraftLayout(null);
-		// Defensive: the Add Widget picker has no legitimate way to still be
-		// open when Cancel fires (its own backdrop blocks the quick action bar
-		// while it's up), but leaving it open here would keep it wired to
-		// handleAddWidget, which writes straight into draftLayout regardless of
-		// `editing` - closing it keeps edit-mode exit unambiguous.
+
 		setShowAddWidgetModal(false);
 	}
 
 	function startEditing() {
-		// Blocked while the true saved layout is unconfirmed (see
-		// layoutLoadFailed above), or for a plain Member (read-only tier) -
-		// the "Edit" quick action is already disabled for both, but the
-		// empty-state CTA below calls this directly too.
 		if (layoutLoadFailed || !isOrganizer) return;
 		setDraftLayout(savedLayout);
 		setEditing(true);
 	}
 
-	// Used by EmptyState's CTA when the dashboard has zero widgets and isn't
-	// already in edit mode - jumps straight into editing and opens the picker,
-	// rather than making the organizer find the "Edit" quick action first.
 	function handleStartEditingAndAddWidget() {
 		if (!editing) startEditing();
 		setShowAddWidgetModal(true);
 	}
 
-	// Memoized on just the primitive/visual deps (see useQuickActions) - the
-	// "Add Widget" action only needs to change when there's actually nothing
-	// left to add, not on every render.
 	const hasWidgetsToAdd = availableToAdd.length > 0;
 	const extraEditingActions = useMemo(
 		() =>
@@ -282,12 +207,7 @@ export default function OrgDashboardPage() {
 							label: t("orgDashboard.addWidgetHeading"),
 							icon: <PlusIcon />,
 							onClick: () => setShowAddWidgetModal(true),
-							// Matches Cancel/Save's own disabled-while-saving guard
-							// (useEditModeQuickActions) - without this, a widget picked
-							// while the PUT from an earlier Save is still in flight gets
-							// silently wiped the moment that save resolves (handleSave
-							// unconditionally nulls draftLayout), with no indication to
-							// the organizer that the addition never actually persisted.
+
 							disabled: saving,
 						},
 					]
@@ -310,19 +230,13 @@ export default function OrgDashboardPage() {
 
 	function handleRemoveWidget(key: WidgetKey) {
 		const wasPlacing = placement.placingKey === key;
-		// #14: closes whatever gap removing this widget just left instead of
-		// leaving the rest of the layout sitting where it was.
+
 		setDraftLayout((prev) =>
 			compactLayout((prev ?? []).filter((w) => w.widgetKey !== key)),
 		);
 		if (wasPlacing) {
 			placement.cancelPlacing();
-			// Removing the widget currently being placed unmounts the very
-			// button that had focus (its whole tile disappears), dropping
-			// focus to <body> with nothing to restore it - move it somewhere
-			// stable and still meaningful instead. The widget just removed is
-			// always addable again, so "Add Widget" is guaranteed to exist by
-			// the next frame.
+
 			requestAnimationFrame(() => {
 				document
 					.querySelector<HTMLButtonElement>(
@@ -336,9 +250,7 @@ export default function OrgDashboardPage() {
 	function handleAddWidget(key: WidgetKey) {
 		setDraftLayout((prev) => {
 			const current = prev ?? [];
-			// #14: placeNewWidget only knows the tallest existing widget's
-			// bottom edge, not gaps elsewhere on the grid - compacting after
-			// lets the new widget slide up into one of those if it fits.
+
 			return compactLayout([...current, placeNewWidget(key, current)]);
 		});
 	}
@@ -406,11 +318,6 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	// An empty layout is ambiguous only in the API response (see the
-	// useEffect above) - once resolved into `layout`, zero widgets always
-	// means "genuinely nothing here right now" (either a deliberately
-	// emptied saved layout, or a draft mid-edit), so it always gets the same
-	// empty state rather than silently falling back to the default set.
 	const isEmpty = layout.length === 0;
 
 	const { activeKey, previewRect, previewValid, placingKey, anchor, cursor } =
@@ -422,32 +329,15 @@ export default function OrgDashboardPage() {
 	const previewBottom = previewRect
 		? previewRect.y + previewRect.height - 1
 		: 0;
-	// #1902: the backdrop only needs real headroom while a placement is
-	// actually in progress (corner-to-corner flow or a real pointer drag,
-	// both captured by activeKey) - a widget being dragged/resized needs
-	// room below the existing content to drop into. Idle, a single spare
-	// row is enough to read as "this grid is still editable" without
-	// papering the whole viewport in placeholder tiles past the last widget.
+
 	const guidePadding = activeKey !== null ? 4 : 1;
-	// Clamped, not just summed - `Array.from({ length })` below throws a
-	// RangeError (taking down the whole page, not just this component) for
-	// a non-finite or absurdly large length, and Math.min/max propagate NaN
-	// rather than ignoring it, so a plain Math.min(ceiling, ...) wouldn't
-	// actually catch that case. contentRows/previewBottom are normally
-	// well-behaved, but this is the one spot a stray NaN/Infinity anywhere
-	// upstream would otherwise become unrecoverable rather than just a
-	// visually-wrong backdrop.
+
 	const rawGuideRows =
 		Math.max(contentRows, cursor?.row ?? 0, previewBottom) + guidePadding;
 	const guideRows = Number.isFinite(rawGuideRows)
 		? Math.min(GRID_MAX_ROWS + 4, rawGuideRows)
 		: GRID_MAX_ROWS + 4;
 
-	// #1402: up to 832 cells at GRID_MAX_ROWS, so handlers live once on the
-	// grid container (see handleGuideCellClick/handleGuideCellPointerOver
-	// below) reading data-col/data-row off the event target, rather than a
-	// closure per cell. Memoized so an unrelated re-render (e.g. `saving`
-	// toggling) doesn't recompute all 832 cells for no reason.
 	const guideCells = useMemo(() => {
 		if (!editing || !isLargeViewport) return null;
 		return Array.from({ length: guideRows * GRID_COLUMNS }, (_, i) => {
@@ -480,13 +370,6 @@ export default function OrgDashboardPage() {
 		placingKey,
 	]);
 
-	// Delegated handlers for the grid-guide backdrop cells (see guideCells
-	// above) - a single pair of listeners on the container instead of one
-	// onClick/onPointerEnter per cell. Cells carry no handlers of their own;
-	// pointer-events-none (see the className above) already keeps events from
-	// reaching them at all while nothing is being placed, so both of these
-	// are effectively no-ops outside an active placement even though they're
-	// always wired up.
 	function guideCellFromEvent(
 		target: EventTarget | null,
 	): { col: number; row: number } | null {
@@ -509,13 +392,6 @@ export default function OrgDashboardPage() {
 		if (cell) placement.handleCellHover(cell);
 	}
 
-	// Shared per-widget tile renderer for both the plain grid (below) and each
-	// row band's own grid (see needsRowBanding below) - `rowOffset` remaps a
-	// widget's stored (grid-absolute) y into a position relative to whichever
-	// container is actually rendering it: 0 for the plain grid (where a
-	// widget's own y already is the grid row), or a band's own
-	// `startRow - 1` otherwise, since CSS grid rows are always relative to
-	// their own container.
 	function renderTile(widget: PlacedWidget, rowOffset = 0) {
 		const isPlacingThis = activeKey === widget.widgetKey;
 		const rect = isPlacingThis && previewRect ? previewRect : widget;
@@ -527,14 +403,6 @@ export default function OrgDashboardPage() {
 				gridStyle={
 					isLargeViewport
 						? {
-								// Explicit start line (not just `span N`) is required
-								// here: the green backdrop cells above claim every
-								// single cell of the grid explicitly, which fully
-								// saturates CSS Grid's auto-placement algorithm for this
-								// row range. A widget tile placed with only a span (no
-								// start) would have nowhere left to auto-place into and
-								// would overflow into new auto-generated rows below the
-								// entire backdrop.
 								gridColumn: `${rect.x} / span ${rect.width}`,
 								gridRow: `${rect.y - rowOffset} / span ${rect.height}`,
 							}
@@ -580,15 +448,6 @@ export default function OrgDashboardPage() {
 		</div>
 	) : needsRowBanding ? (
 		<div data-testid="dashboard-widget-grid" className="flex flex-col gap-4">
-			{/* #1932: only reachable outside edit mode (rowBands is empty
-			otherwise - see its definition above), so there's no backdrop/
-			placement surface to worry about here. Each band gets its own
-			independent grid, capped to the width its own widgets actually
-			reach (see groupIntoRowBands in widgetCatalog.ts) instead of always
-			spanning the full GRID_COLUMNS - so a lightly-customized layout
-			that trimmed some widgets down without ever widening them back out
-			doesn't leave the rest of that width sitting permanently blank
-			next to them. */}
 			{rowBands.map((band) => {
 				const bandStyle: BandGridStyle = {
 					gridTemplateColumns: `repeat(${band.columns}, minmax(0, 1fr))`,
@@ -608,13 +467,6 @@ export default function OrgDashboardPage() {
 				);
 			})}
 			{isOrganizer && !layoutLoadFailed && (
-				// Same affordance as the unbanded branch's customize hint below,
-				// just outside any CSS grid entirely (a plain block, not
-				// gridRow-positioned within one) since there's no single shared
-				// grid left to position it inside of. Reuses the plain
-				// .dashboard-widget-grid row-height calc (default
-				// --dashboard-grid-columns, full width) so it renders exactly as
-				// tall as an ordinary content row.
 				<div className="dashboard-widget-grid grid">
 					<button
 						type="button"
@@ -631,69 +483,18 @@ export default function OrgDashboardPage() {
 	) : (
 		<div
 			data-testid="dashboard-widget-grid"
-			// Uniform (not minmax(64px, auto)) row height while editing: CSS Grid
-			// auto-rows apply to the whole row band across every column, not just
-			// the cell whose content demanded the extra height - a minmax row
-			// would let a single tall widget stretch its entire row, including the
-			// backdrop guide cells and any other widget sharing that row. A widget
-			// whose content exceeds its allotted rows scrolls internally instead
-			// (see WidgetCard).
-			//
-			// The row height itself (see .dashboard-widget-grid[--editing] in
-			// global.css) tracks the actual rendered column width via a container
-			// query, rather than a flat pixel constant - width already scales
-			// with the viewport (grid-cols-8's 1fr tracks), and matching row
-			// height to it keeps a widget's on-screen proportions (short-and-wide
-			// vs. tall-and-narrow) consistent across screen sizes instead of
-			// warping while its stored cell width/height stays the same.
-			//
-			// #2045: outside edit mode there's no backdrop/resize affordance to
-			// keep uniform for, so the modifier class is dropped and rows size to
-			// their own content instead (align-items: start in global.css keeps a
-			// short card from being stretched to match a taller sibling in the
-			// same row) - a card holding one line of real content no longer
-			// claims a full square cell's worth of empty white space.
+
 			className={`dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8 ${editing ? "dashboard-widget-grid--editing" : ""}`}
-			// role="presentation": this delegated onClick/onPointerOver only ever
-			// acts on a bubbled event that actually originated on one of the
-			// aria-hidden guide cells above (see guideCellFromEvent) - the
-			// container's own "clickability" isn't a perceivable action in its
-			// own right, and doesn't affect its real interactive descendants
-			// (the widget tiles' own buttons keep their normal roles/focus).
-			// Satisfies jsx-a11y/click-events-have-key-events and
-			// jsx-a11y/no-static-element-interactions, which both exempt
-			// presentation/hidden elements - the keyboard-accessible equivalent
-			// of this same placement flow is the per-widget "Move or resize"
-			// button + arrow keys (see useWidgetPlacement's handleArrowKeyDown).
-			// Must be a literal string, not a conditional - both rules read it
-			// via getLiteralPropValue and don't resolve a ternary.
+
 			role="presentation"
 			onClick={editing && isLargeViewport ? handleGuideCellClick : undefined}
 			onPointerOver={
 				editing && isLargeViewport ? handleGuideCellPointerOver : undefined
 			}
 		>
-			{/* Light green cell backdrop behind the whole grid while editing, so
-			an organizer can see the underlying 8-column structure. These cells
-			double as the corner-to-corner placement surface: while a widget is
-			being placed, they become clickable (see handleGuideCellClick above)
-			and are tinted blue/red to preview whether the current selection is a
-			valid placement. Gated on isLargeViewport since the grid itself
-			collapses to a single stacked column below `lg`, where this wouldn't
-			mean anything. */}
 			{guideCells}
 			{mobileLayout.map((widget) => renderTile(widget))}
-			{/* #1939: a first-time organizer has no reason to suspect the blank
-			space below their widgets is customizable - this dashed "+" tile
-			sits in the row right after the current layout's last occupied row
-			(the same "next free row" placeNewWidget appends to) and is visible
-			any time the dashboard has real content, not just once editing has
-			already been discovered. Gated the same way as the guide-cell
-			backdrop above (isLargeViewport - mobile's single stacked column has
-			no unused grid space to point at) plus isOrganizer/layoutLoadFailed,
-			since clicking it jumps straight into edit mode via startEditing,
-			which is itself blocked for a non-organizer or an unconfirmed saved
-			layout. */}
+
 			{!editing && isLargeViewport && isOrganizer && !layoutLoadFailed && (
 				<button
 					type="button"
@@ -718,12 +519,6 @@ export default function OrgDashboardPage() {
 		<>
 			{editing && isLargeViewport && placingKey && cursor && (
 				<div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-4 py-2 text-sm text-brand-800">
-					{/* role="status" makes this a live region, so screen readers
-					announce it not just when placing starts but on every
-					subsequent update - including the column/row text changing as
-					arrow keys move the cursor, which is otherwise silent to
-					assistive tech (the tinted preview cells are a purely visual
-					cue). */}
 					<p role="status" data-testid="dashboard-placement-status">
 						{anchor
 							? t("orgDashboard.placingBannerPickEnd", {
@@ -737,10 +532,7 @@ export default function OrgDashboardPage() {
 									row: cursor.row,
 								})}
 					</p>
-					{/* Escape cancels for keyboard users via the Move/Resize
-					button's own onKeyDown - mouse/touch users have no equivalent
-					gesture (every grid-cell click locks/commits a corner
-					immediately), so this is their only way to back out. */}
+
 					<button
 						type="button"
 						onClick={placement.cancelPlacing}
@@ -758,11 +550,7 @@ export default function OrgDashboardPage() {
 						className="flex-1"
 						message={t("orgDashboard.layoutLoadError")}
 					/>
-					{/* aria-describedby ties this to the error text above - its own
-					accessible name ("Retry") says nothing about what it's retrying,
-					and a screen-reader user tabbing to it after the banner's one-time
-					aria-live announcement has already passed would otherwise hear
-					just "Retry, button" with no context. */}
+
 					<button
 						type="button"
 						onClick={retryLoadLayout}

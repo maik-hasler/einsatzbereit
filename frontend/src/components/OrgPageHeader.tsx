@@ -10,35 +10,15 @@ import { ChevronLeftIcon } from "./icons";
 interface Props {
 	organizationId: string;
 	orgName: string;
-	/** The current page's own name - the tab's label, or a nested page's title. */
+
 	title: string;
-	/** `title`'s actual language, when it may differ from the active UI
-	 * language - e.g. a German-only opportunity title (einsatzbereit#2057).
-	 * Omit when `title` is always in the UI language (the common case: a
-	 * tab's own label). */
+
 	titleLang?: string;
 	activeTabKey: string;
-	/** Only set on a nested page (e.g. an opportunity's sign-ups), pointing at
-	 * the tab that owns it. A tab page needs none: its own entry in the section
-	 * rail below already says where it sits. */
+
 	back?: { href: string; label: string } | null;
 }
 
-// The org app's page header. Deliberately NOT PageHeaderBand: that band is the
-// public site's opening statement (brand-800 stage, 72px display type, blur
-// blobs, a wave cap) and it costs ~400px before the first row of real content.
-// On the public site that trade is right - a visitor arriving from the landing
-// page is being introduced to a page. An organizer opening the app is not:
-// they came to see what is going on in their organization right now, and every
-// pixel spent restating "Dashboard" in display type is a pixel not spent on
-// the widgets that answer that question.
-//
-// So this is app chrome, not marketing chrome: one line of identity, one line
-// of title plus the page's own actions, and the section rail - roughly a
-// quarter of the band's height, with navigation in the space the band used for
-// atmosphere. It also stays out of HeaderOverlayContext (no useOverlaysHeader):
-// nothing dark runs behind the header here, so the header keeps its normal
-// opaque treatment.
 export default function OrgPageHeader({
 	organizationId,
 	orgName,
@@ -48,33 +28,13 @@ export default function OrgPageHeader({
 	back,
 }: Props) {
 	const { t } = useTranslation();
-	// Same QuickActionsContext PageHeaderBand reads, with the same keys and
-	// data-testids - the dashboard's Edit/Save/Cancel/Add-widget actions and
-	// the opportunity tab's Create action land here unchanged, just in
-	// on-light variants now that they no longer sit on brand-800.
+
 	const actions = useQuickActionsList();
 
-	// #1898/#2062: the tab row scrolls (overflow-x-auto below) but nothing on
-	// screen said so - on a 375px viewport "Mitglieder" fell off the edge with
-	// no fade/arrow/peek to suggest more tabs existed. useScrollFade tracks
-	// scroll position so each edge's fade mask only shows while there is
-	// actually more to reveal in that direction, rather than a static mask
-	// that would still show once fully scrolled to an end.
 	const navRef = useRef<HTMLElement>(null);
 	const { canScrollStart: canScrollLeft, canScrollEnd: canScrollRight } =
 		useScrollFade(navRef, "x");
 
-	// #2062: bring the active tab into view on load/navigation instead of
-	// requiring the organizer to notice and scroll to it themselves - most
-	// useful on narrow viewports where a tab further down the list (e.g.
-	// "Mitglieder") can start out fully scrolled past the right edge.
-	// Adjusts navRef's own scrollLeft directly rather than
-	// activeTabRef.current.scrollIntoView(): that walks every scrollable
-	// ancestor including the window itself, so a reader who had scrolled
-	// deep into a long page and then switched tabs via the header's org
-	// switcher or mobile menu would get the whole page snapped back to the
-	// top just to bring this row's tab back on screen - a jarring, unasked
-	// side effect of what's meant to be a horizontal-only fix.
 	const activeTabRef = useRef<HTMLAnchorElement>(null);
 	useEffect(() => {
 		const nav = navRef.current;
@@ -101,11 +61,6 @@ export default function OrgPageHeader({
 				</Link>
 			)}
 			<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-				{/* No logo mark here on purpose: the header's org switcher already
-				names the organization, and anything sitting left of the title
-				would push it off the left edge every page's content is aligned to.
-				The eyebrow says which organization this is; the h1 says which of
-				its pages you are on. */}
 				<div className="min-w-0">
 					<p className="truncate text-xs font-semibold tracking-widest text-gray-500 uppercase">
 						{orgName}
@@ -140,15 +95,6 @@ export default function OrgPageHeader({
 				)}
 			</div>
 
-			{/* The org app's sections, in the app itself. Until now they were
-			reachable only from the avatar dropdown's collapsible submenu or the
-			mobile burger - so an organizer looking at their dashboard had no
-			visible route to sign-ups, opportunities, members or settings at all.
-			Horizontally scrollable rather than wrapped on narrow viewports, same
-			pattern as the account area's SubNavRail below `lg`. The edge fades
-			below are the affordance that tells a touch user there's more to
-			scroll to (#1898) - a static mask would keep showing after the row is
-			fully scrolled to that end, so they track real scroll position. */}
 			<div className="relative mt-4">
 				<nav
 					ref={navRef}

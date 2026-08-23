@@ -350,12 +350,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldSaveWithNullCoordinates_AndRaiseGeocodingRequestedEvent_ForUncoordinatedNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: TestAddress carries no coordinates, as if
-		// CreateVolunteerOpportunityEndpoint's synchronous geocoding attempt
-		// came back as a TransientFailure (Nominatim unreachable, not a bad
-		// address) - Create persists with null coordinates and raises the
-		// event that triggers GeocodeVolunteerOpportunityAddressHandler's
-		// out-of-band retry.
+		// Arrange
+
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", null, "Description", null, TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
@@ -374,9 +370,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_ForAlreadyCoordinatedNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the happy path - CreateVolunteerOpportunityEndpoint already
-		// resolved the address synchronously (GeocodeAddressQuery) before
-		// dispatching this command, so no out-of-band retry is needed (#1963).
+		// Arrange
+
 		var coordinatedAddress = TestAddress.WithCoordinates(52.52, 13.405).Value;
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", null, "Description", null, TestOrganizationId, false, coordinatedAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);

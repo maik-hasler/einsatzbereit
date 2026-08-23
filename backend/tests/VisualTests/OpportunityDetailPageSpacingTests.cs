@@ -5,40 +5,11 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1111: three mutually-exclusive blocks on the opportunity
-/// detail page - the "your application status" card, the sign-up CTA, and
-/// the anonymous login prompt - were missing the `mb-6` bottom margin every
-/// other top-level block on the page carries, so whichever one rendered sat
-/// flush against the "About this organization" section right below it with
-/// zero gap. Fixed by adding `mb-6` to each of the three.
-///
-/// #1754's two-column redesign (`lg:grid-cols-[minmax(0,1fr)_20rem]`) moved
-/// all three blocks into a sticky rail beside the reading column, while
-/// "About this organization" stayed behind in the reading column - the two
-/// are no longer vertically stacked, so a "gap above" check no longer means
-/// anything (whichever column happens to be taller decides its sign, not any
-/// actual spacing bug). What still matters, and what the redesign's own
-/// `lg:gap-10` exists to guarantee, is that the rail never overlaps the
-/// reading column horizontally - these checks now assert that gap instead.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// Comfortably below the intended `lg:gap-10` (40px) column gap, but far
-	// enough above zero that a regression back to the rail actually
-	// overlapping the reading column (the bug's modern equivalent of "flush
-	// against the next section") cannot pass.
 	private const double MinExpectedGapPx = 16;
 
-	/// <summary>
-	/// Asserts a visible horizontal gap exists between the right edge of the
-	/// "About this organization" section (in the reading column) and the left
-	/// edge of <paramref name="block"/> (in the sticky rail beside it), reading
-	/// both boxes in a single EvaluateAsync call so nothing can shift layout
-	/// between the two reads (see VisualTestBase.AssertMaxWidthContentCenteredAsync
-	/// for the same pattern).
-	/// </summary>
 	private async Task AssertRailDoesNotOverlapAboutOrganizationAsync(ILocator block, string label)
 	{
 		var aboutOrg = Page.GetByTestId("about-organization");
@@ -80,9 +51,6 @@ public class OpportunityDetailPageSpacingTests(AspireFixture fixture) : VisualTe
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
-		// Full profile so "About this organization" - the section these blocks
-		// must maintain a gap against - actually renders (it's conditional on
-		// at least one of these fields being set).
 		var updateResponse = await http.PutAsJsonAsync($"/v1/organizations/{organizationId}", new
 		{
 			name = orgName,

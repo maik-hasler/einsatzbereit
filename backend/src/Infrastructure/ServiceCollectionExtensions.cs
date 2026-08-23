@@ -64,14 +64,6 @@ public static class ServiceCollectionExtensions
 				{
 					npg.MigrationsAssembly("Infrastructure");
 
-					// A restarting postgres container (daily db-backup dump, the
-					// same-host db-backup restart, a connection reset) is a normal
-					// event on this single-node compose stack - retry transient
-					// Npgsql faults instead of surfacing them as a 500. Every
-					// manually-began transaction (TransactionPipelineBehavior,
-					// the outbox/reminder/check-in background jobs) runs through
-					// Database.CreateExecutionStrategy() so it can be retried as
-					// one unit - see ApplicationDbContext.ExecuteInTransactionAsync.
 					npg.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
 				});
 
@@ -130,12 +122,6 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<AbuseReportRetentionOptionsSetup>();
 		services.AddHostedService<AbuseReportRetentionJob>();
 
-
-		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see
-		// AppHost.cs) so they never make a real network call to Nominatim -
-		// deterministic, instant, and independent of any HTTP client resilience
-		// timing (unlike an earlier version of this override that pointed
-		// BaseUrl at an unroutable address instead).
 		if (configuration.GetValue<bool>("Geocoding:UseFakeService"))
 		{
 			services.AddSingleton<IGeocodingService, FakeGeocodingService>();
@@ -151,15 +137,7 @@ public static class ServiceCollectionExtensions
 					client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
 					client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
 				})
-				// ServiceDefaults.AddServiceDefaults applies AddStandardResilienceHandler
-				// (3 retries, exponential backoff, ~30s worst case) to every HttpClient by
-				// default. Geocoding already has its own retry story -
-				// GeocodeVolunteerOpportunityAddressHandler's Found/NotFound/
-				// TransientFailure classification plus the hourly GeocodingRetryJob
-				// backstop - so stacking Polly's retries on top would make a single
-				// geocoding attempt block for tens of seconds on any hiccup instead of
-				// failing fast to TransientFailure. 1 is the minimum MaxRetryAttempts
-				// accepts (0 fails options validation on startup).
+
 				.AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 1);
 		}
 

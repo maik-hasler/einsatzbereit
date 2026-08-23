@@ -9,10 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
-// Consumer of EngagementCreatedDomainEvent - sends the organizer "New sign-up"
-// email (#1174) and the volunteer's own sign-up receipt (#1729). See
-// EngagementOrganizerNotificationHelper and EngagementVolunteerConfirmationHelper
-// for the full rationale.
 internal sealed class EngagementCreatedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

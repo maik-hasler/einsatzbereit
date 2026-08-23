@@ -10,7 +10,6 @@ const PARTICIPATION_TYPE_VALUES = [
 ] as const;
 const CHECK_IN_METHOD_VALUES = ["None", "QRCode", "PINCode", "Manual"] as const;
 
-/** Built inside the component (via useMemo) so validation messages are translated. */
 export function buildOpportunityFormSchema(t: TFunction) {
 	const required = t("createOpportunity.fieldRequired");
 	const invalidPin = t("createOpportunity.checkInPinInvalid");
@@ -36,9 +35,6 @@ export function buildOpportunityFormSchema(t: TFunction) {
 			validUntil: z.string(),
 		})
 		.superRefine((data, ctx) => {
-			// Only the German variant is required to publish (matches the
-			// backend's EnsurePublishable) - the English one is an optional
-			// translation an organizer can add later (einsatzbereit#1946).
 			if (!data.titleDe.trim())
 				ctx.addIssue({ code: "custom", path: ["titleDe"], message: required });
 			if (!data.descriptionDe.trim())
@@ -86,7 +82,6 @@ export type OpportunityFormValues = z.infer<
 	ReturnType<typeof buildOpportunityFormSchema>
 >;
 
-/** Which fields belong to each wizard step, for per-step "Next" validation. */
 export const STEP_FIELDS: Record<number, (keyof OpportunityFormValues)[]> = {
 	1: ["titleDe", "titleEn", "descriptionDe", "descriptionEn"],
 	2: ["street", "houseNumber", "zipCode", "city"],

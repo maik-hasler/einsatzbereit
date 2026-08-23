@@ -5,19 +5,10 @@ import { CheckIcon } from "../components/icons";
 import { statusTitleClass } from "../lib/headingClasses";
 import { cardClass } from "../lib/surfaceClasses";
 
-// Landing page the one-click unsubscribe link in transactional emails
-// redirects to after UnsubscribeEndpoint records the opt-out server-side
-// (#1675) - replaces a bare, unbranded HTML response with a page that
-// actually renders in the reader's language and gives them a way back
-// into the app instead of a dead end.
 export default function UnsubscribePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("unsubscribe.title"));
 
-	// Boxed rather than floating text on white: this is the end of a flow that
-	// started in an email client, so the confirmation needs an edge that says
-	// "this is the receipt" (#1755). Same treatment as UnsubscribeConfirmPage,
-	// the step immediately before it.
 	return (
 		<div className="mx-auto max-w-md py-10 sm:py-16">
 			<div className={`${cardClass} text-center sm:p-8`}>

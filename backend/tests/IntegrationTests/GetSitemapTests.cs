@@ -72,10 +72,6 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 		xml.Should().NotContain($"/volunteer-opportunities/{draft.Id}</loc>");
 	}
 
-	// CreateTimeSlotAsync's domain validation rejects a past StartDateTime, so there is no
-	// API path to create an already-expired slot - seeded directly through the aggregate,
-	// the same way GetVolunteerOpportunitiesTests.CreateOpportunityWithExpiredTimeSlotAsync
-	// does for the equivalent public-listing expiry filter this method reuses (#1086).
 	[Test]
 	public async Task GetSitemap_ShouldNotIncludeExpiredOpportunity(
 		CancellationToken cancellationToken)
@@ -91,10 +87,6 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 		xml.Should().NotContain($"/volunteer-opportunities/{expired.Id}</loc>");
 	}
 
-	// The output cache key is method + path + query string, and this route has no eviction
-	// tag wired up (unlike the volunteer-opportunity listing's dedicated policy, #1543) - a
-	// unique, otherwise-unused query string per call keeps every test in this class from
-	// colliding on one shared cached response within ShortPublicReadSeconds.
 	private static string SitemapRoute() => $"/v1/sitemap.xml?_={Guid.NewGuid()}";
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)

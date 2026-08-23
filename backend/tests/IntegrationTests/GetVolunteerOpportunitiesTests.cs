@@ -3,9 +3,7 @@ using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "OrganizationId" and "Address" DTO types, which would otherwise shadow the
-// domain types of the same name.
+
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 using DomainAddress = Domain.Common.Address;
 
@@ -22,13 +20,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist(
 		CancellationToken cancellationToken)
 	{
-		// This test (unlike its siblings) performs no write of its own before reading the
-		// listing, so it has nothing to evict the shared output cache tag with (#1543) -
-		// Respawn resets the database between tests, but not the output-cached response
-		// from whichever earlier test last populated this exact route/query-string's cache
-		// entry. Creating a Draft opportunity forces a fresh (post-eviction) read while
-		// keeping the assertions below accurate: drafts never appear in the public,
-		// Published-only listing.
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -696,10 +687,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_MatchingOrganizationName(
 		CancellationToken cancellationToken)
 	{
-		// Organizations dropped their own public directory/browse page in
-		// favor of being findable through this same keyword search (a search
-		// for an NPO/NGO's name should surface its opportunities even when
-		// the keyword appears in neither the title nor the description).
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var matchingOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken, "Riverside Wildlife Rescue");
 		var otherOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
@@ -721,10 +708,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByRadius_AndOrderResultsByDistanceAscending(
 		CancellationToken cancellationToken)
 	{
-		// The API-created opportunities above never carry real coordinates in this
-		// test environment (geocoding is deliberately pointed at an unroutable
-		// address for integration tests - see IntegrationTestFixture), so radius
-		// search needs opportunities seeded directly with explicit Latitude/Longitude.
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
@@ -779,10 +762,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	private static async Task<Guid> CreateOrganizationAsync(
 		EinsatzbereitApi client, CancellationToken cancellationToken, string? namePrefix = null)
 	{
-		// The GUID suffix is appended after a trailing space rather than
-		// concatenated directly, so a caller-supplied multi-word namePrefix
-		// (e.g. "Riverside Wildlife Rescue") stays intact as a contiguous
-		// substring for keyword-search tests to match against.
 		var uniqueName = $"{namePrefix ?? "Testorg"}_{Guid.NewGuid()}";
 		var organization = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = uniqueName }, cancellationToken);
@@ -793,8 +772,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, string description,
 		CancellationToken cancellationToken)
 	{
-		// A ScheduledSlots opportunity can't be published until it has at least one time
-		// slot, so create it as a draft, add a slot, then publish it.
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			TitleDe = title,
@@ -877,13 +854,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		return opportunity;
 	}
 
-	// CreateTimeSlotAsync's domain validation rejects a past StartDateTime (see
-	// TimeSlot.Validate's "TimeSlot.StartMustBeFuture" rule), so there is no API path to
-	// create an already-expired slot. Seeding one directly through the aggregate - with an
-	// artificially past "now" older than the slot itself - reproduces what happens for real
-	// once enough wall-clock time passes after a legitimately-created future slot; the read
-	// repository's expiry filter (VolunteerOpportunityReadRepository.GetPagedSummariesAsync)
-	// only cares about the stored dates, not how they got there.
 	private async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithExpiredTimeSlotAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
@@ -939,9 +909,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
 
-	// Radius search needs real coordinates, which nothing created through the API
-	// has in this test environment (geocoding is deliberately unroutable here) -
-	// seeded directly the same way AddExpiredTimeSlotDirectlyAsync above does.
 	private static async Task SeedPublishedOpportunityWithCoordinatesAsync(
 		ApplicationDbContext dbContext, Guid orgId, string title, double latitude, double longitude,
 		CancellationToken cancellationToken)

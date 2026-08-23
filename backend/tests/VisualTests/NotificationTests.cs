@@ -7,13 +7,6 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	/// <summary>
-	/// Regression for #1015: the org app was restructured in #9 to nest
-	/// opportunities/members/settings under a /dashboard parent segment, but
-	/// the EngagementCreated notification's actionUrl was never updated to
-	/// match, so clicking it sent an organizer to a 404 instead of the
-	/// engagement management page.
-	/// </summary>
 	[Test]
 	public async Task EngagementCreatedNotification_NavigatesToEngagementManagementPage()
 	{
@@ -67,9 +60,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		// .First: the row's own select button is always the first interactive
-		// element (before the conditional mark-unread/delete action buttons
-		// added by #1061), but it has no aria-label of its own to filter by.
+
 		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
@@ -77,26 +68,11 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			new() { Timeout = 15_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" })).Not.ToBeVisibleAsync();
-		// The org app shell rendered (its band, not the removed breadcrumb bar).
+
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
-	/// <summary>
-	/// Regression for #1927: a real, unread InvitationReceived notification
-	/// navigated to /my-signups when clicked, but nothing there read as
-	/// related to the invitation - no dedicated acceptance surface was found
-	/// after checking notifications, profile, settings, and the
-	/// organizations directory. The routing itself
-	/// (NotificationReadRepository -> "/my-signups", einsatzbereit#1684) was
-	/// only ever asserted at the API level
-	/// (IntegrationTests.NotificationTests), never that the destination page
-	/// actually renders anything invitation-related - exactly the gap the
-	/// report fell into. Drives the whole journey: notification click ->
-	/// /my-signups -> the "Open invitations" card -> Accept, proving the
-	/// in-app acceptance surface the notification implies really exists and
-	/// really works.
-	/// </summary>
 	[Test]
 	public async Task InvitationReceivedNotification_NavigatesToMySignups_WhereTheInviteeCanAcceptIt()
 	{
@@ -132,9 +108,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var notificationItem = panel.Locator("li", new() { HasText = orgName }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		// .First: the row's own select button is always the first interactive
-		// element (before the conditional mark-unread/delete action buttons
-		// added by #1061), but it has no aria-label of its own to filter by.
+
 		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
@@ -152,14 +126,6 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(invitationCard).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
-	/// <summary>
-	/// Regression for #1222: clicking a notification awaited markOneRead()
-	/// with no error handling, so a failed mark-as-read call left an
-	/// unhandled rejection that silently swallowed the subsequent
-	/// setNotifOpen/onNavigate calls - clicking a notification did nothing
-	/// at all. Navigation must proceed regardless of whether marking the
-	/// notification read succeeds, and the failure must surface as a toast.
-	/// </summary>
 	[Test]
 	public async Task ClickingNotification_StillNavigates_WhenMarkAsReadFails()
 	{
@@ -206,10 +172,6 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.RouteAsync("**/v1/notifications/*/read", async route =>
 		{
-			// Cross-origin in this test environment - a fulfilled response still
-			// needs CORS headers or fetch() rejects before the app's own
-			// error-handling code (and thus the toast) ever runs, same as
-			// frontend/src/contexts/ToastContext.test.tsx's coalescing case.
 			await route.FulfillAsync(new()
 			{
 				Status = 500,
@@ -228,9 +190,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		// .First: the row's own select button is always the first interactive
-		// element (before the conditional mark-unread/delete action buttons
-		// added by #1061), but it has no aria-label of its own to filter by.
+
 		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
 
 		await Page.WaitForURLAsync(

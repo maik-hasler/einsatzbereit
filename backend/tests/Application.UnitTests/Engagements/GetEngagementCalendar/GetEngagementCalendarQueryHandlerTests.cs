@@ -171,9 +171,6 @@ public class GetEngagementCalendarQueryHandlerTests
 		result.Content.Should().Contain(longTitle[..25]);
 	}
 
-	// Regression for #1729: StringBuilder.AppendLine uses Environment.NewLine,
-	// which is "\n" (not "\r\n") on Linux - mixing that with the folding logic's
-	// explicit "\r\n" produced a file that violated RFC 5545's CRLF requirement.
 	[Test]
 	public async Task Handle_ShouldUseCrLf_ForEveryLineEnding(
 		CancellationToken cancellationToken)
@@ -198,8 +195,8 @@ public class GetEngagementCalendarQueryHandlerTests
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
-		// Assert - every "\n" in the file must be immediately preceded by "\r",
-		// i.e. there is no bare LF anywhere once every CRLF is stripped out.
+		// Assert
+
 		result.Should().NotBeNull();
 		result!.Content.Replace("\r\n", string.Empty).Should().NotContain("\n");
 		result.Content.Replace("\r\n", string.Empty).Should().NotContain("\r");

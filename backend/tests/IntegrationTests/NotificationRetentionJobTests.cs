@@ -9,10 +9,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.NotificationRetentionJob.DeleteExpiredNotificationsAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres, rather than waiting a real 24-hour tick for the pruning behavior (#1209) to
-// become observable.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class NotificationRetentionJobTests(IntegrationTestFixture fixture)
@@ -57,9 +53,6 @@ public class NotificationRetentionJobTests(IntegrationTestFixture fixture)
 	public async Task DeleteExpiredNotificationsAsync_ReadNotificationPrunesOnReadDate_NotCreationDate(
 		CancellationToken cancellationToken)
 	{
-		// #1725: a notification created well past the read-retention cutoff but
-		// only read yesterday must survive - retention is measured from when it
-		// was actually read, not from when it was created.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var notificationId = await SeedNotificationAsync(
 			dbContext, isRead: true, createdOn: ReadCutoff.AddDays(-100), readOn: DateTimeOffset.UtcNow.AddDays(-1), cancellationToken);
@@ -90,9 +83,6 @@ public class NotificationRetentionJobTests(IntegrationTestFixture fixture)
 	public async Task DeleteExpiredNotificationsAsync_UnreadNotificationPastReadButWithinUnreadRetention_IsNotRemoved(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard for the read/unread split itself: an unread
-		// notification older than the (shorter) read retention window must
-		// survive until it also crosses the longer unread retention window.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var notificationId = await SeedNotificationAsync(
 			dbContext, isRead: false, createdOn: ReadCutoff.AddDays(-1), readOn: null, cancellationToken);
@@ -122,10 +112,6 @@ public class NotificationRetentionJobTests(IntegrationTestFixture fixture)
 		dbContext.Set<Notification>().Add(notification);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		// CreatedOn is stamped by AuditableEntityInterceptor on save - overwrite
-		// it (and ReadOn, to simulate a read that happened at an arbitrary time
-		// rather than "now") directly afterward so seeded rows can simulate an
-		// arbitrary age.
 		await dbContext.Set<Notification>()
 			.Where(n => n.Id == notification.Id)
 			.ExecuteUpdateAsync(s => s

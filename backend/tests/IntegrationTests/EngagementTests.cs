@@ -16,8 +16,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	[Before(Test)]
 	public Task ResetAsync() => fixture.ResetAsync();
 
-	// ── CreateEngagement ──────────────────────────────────────────────────────
-
 	[Test]
 	public async Task CreateEngagement_ShouldReturn201_WhenVolunteerSignsUp(
 		CancellationToken cancellationToken)
@@ -71,8 +69,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(404);
 	}
 
-	// ── GetEngagements ────────────────────────────────────────────────────────
-
 	[Test]
 	public async Task GetEngagements_ShouldReturnSignedUpVolunteer(
 		CancellationToken cancellationToken)
@@ -109,8 +105,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetEngagements_ShouldReturn403_WhenRequestingUserIsNotAMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// #1024: GetEngagements is readable by any member (Organizer or Member) of the
-		// opportunity's organization - vera has no relationship to olaf's org at all.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -318,10 +312,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.TotalItems.Should().Be(0);
 	}
 
-	// #1381: KeycloakUserService.GetUserProfilesAsync resolves one volunteer per
-	// entry concurrently now (was a sequential loop). This guards against the
-	// obvious way that could go wrong - a result ending up under the wrong
-	// volunteer's id because of an indexing/ordering bug in the parallel fetch.
 	[Test]
 	public async Task GetEngagements_ShouldResolveEachVolunteersOwnName_WhenLookedUpConcurrently(
 		CancellationToken cancellationToken)
@@ -347,8 +337,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			item.VolunteerName.Should().Be(expectedUsernameByEngagementId[item.Id]);
 		}
 	}
-
-	// ── ConfirmEngagement ─────────────────────────────────────────────────────
 
 	[Test]
 	public async Task ConfirmEngagement_ShouldReturnConfirmedStatus_WhenOrganisatorConfirms(
@@ -383,7 +371,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// vera is not an organisator - she cannot confirm engagements
 		var act = () => veraClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
@@ -402,8 +389,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(404);
 	}
-
-	// ── CancelEngagement ──────────────────────────────────────────────────────
 
 	[Test]
 	public async Task CancelEngagement_ShouldReturnCancelledStatus_WhenOrganisatorCancels(
@@ -447,8 +432,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
 	}
-
-	// ── BulkConfirmEngagements / BulkCancelEngagements ───────────────────────────
 
 	[Test]
 	public async Task BulkConfirmEngagements_ShouldConfirmAllPendingEngagements_WhenOrganisatorConfirms(
@@ -635,8 +618,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(404);
 	}
 
-	// ── WithdrawEngagement ────────────────────────────────────────────────────
-
 	[Test]
 	public async Task WithdrawEngagement_ShouldReturnWithdrawnStatus_WhenVolunteerWithdraws(
 		CancellationToken cancellationToken)
@@ -655,8 +636,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		result.Status.Should().Be("Withdrawn");
 	}
-
-	// ── GetMyEngagements ──────────────────────────────────────────────────────
 
 	[Test]
 	public async Task GetMyEngagements_ShouldReturnVolunteerEngagements(
@@ -678,8 +657,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		myEngagements.Items.Single().Status.Should().Be("Pending");
 	}
 
-	// ── Non-terminal engagement for a deleted opportunity (#703) ─────────────
-
 	[Test]
 	public async Task GetMyEngagements_MovesToPast_WhenOpportunityIsGoneAndEngagementIsNonTerminal(
 		CancellationToken cancellationToken)
@@ -694,7 +671,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// Leaves the engagement Pending, a state the normal delete flow never produces.
 		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
 
 		var upcoming = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
@@ -704,20 +680,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		past.Items.Should().ContainSingle(e => e.Id == engagement.Id && e.Status == "Pending");
 	}
 
-	// ── Deleted opportunity keeps the volunteer's own history (#667) ─────────
-
-	/// <summary>
-	/// Distinct from the #703 case above, which deletes the row directly
-	/// and leaves the engagement Pending: this one goes through the normal
-	/// delete flow, which hard-deletes the opportunity while only *cancelling*
-	/// the affected engagements.
-	///
-	/// <c>GetByVolunteerAsync</c> used an inner join against
-	/// <c>VolunteerOpportunitiesQuery</c>, so once the opportunity row was gone
-	/// the volunteer's own engagement silently vanished from their history
-	/// entirely. It must still be listed, marked Cancelled, with no resolvable
-	/// title.
-	/// </summary>
 	[Test]
 	public async Task GetMyEngagements_StillListsEngagement_AfterItsOpportunityIsDeleted(
 		CancellationToken cancellationToken)
@@ -746,8 +708,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			"the opportunity backing this engagement no longer exists, so its title can "
 			+ "no longer be resolved");
 	}
-
-	// ── CheckInEngagement ────────────────────────────────────────────────────
 
 	[Test]
 	public async Task CheckInEngagement_ShouldMarkAsCheckedIn_WhenOrganisatorChecksIn(
@@ -791,8 +751,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(400);
 	}
-
-	// ── CheckInWithPin ────────────────────────────────────────────────────────
 
 	[Test]
 	public async Task CheckInWithPin_ShouldMarkAsCheckedIn_WhenVolunteerUsesCorrectPin(
@@ -852,10 +810,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task CheckInWithPin_ShouldReturn409_WhenOpportunityDoesNotUsePinCheckIn(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1139: a "None" (or QRCode/Manual) opportunity never sets
-		// a CheckInPin, so it stays null server-side. Posting a check-in with a
-		// blank/empty PIN must be rejected outright, not accidentally accepted
-		// because "null equals null".
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "None", cancellationToken);
@@ -876,8 +830,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(409);
 
-		// Confirmed + not-checked-in + opportunity still exists stays in the
-		// upcoming bucket (EngagementReadRepository.cs), not past.
 		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
 		myEngagements.Items.Single().IsCheckedIn.Should().BeFalse();
 	}
@@ -920,11 +872,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		details.Should().NotBeNull();
 	}
 
-	// Regression for #1893: the opportunity detail page's Withdraw action used
-	// to ignore check-in state entirely because CurrentUserEngagementInfo never
-	// carried IsCheckedIn, guaranteeing a 409 from Engagement.Withdraw's guard
-	// once a volunteer had checked in. This pins the field the frontend now
-	// gates on, mirroring GetMyEngagements' IsCheckedIn (already covered above).
 	[Test]
 	public async Task GetVolunteerOpportunityDetails_ShouldReflectCheckedInStatus_OnCurrentUserEngagement(
 		CancellationToken cancellationToken)
@@ -1008,8 +955,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		// 5 wrong guesses trip the per-engagement lockout (independent of the
-		// generic 100 req/60s rate limit - see #806).
 		for (var attempt = 0; attempt < 5; attempt++)
 		{
 			var wrongAttempt = () => veraClient.CheckInWithPinAsync(
@@ -1021,8 +966,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			wrongException.Which.StatusCode.Should().Be(400);
 		}
 
-		// Even the correct PIN must now be rejected while locked out - proves the
-		// lockout blocks further attempts outright rather than just rate-limiting them.
 		var lockedOutAttempt = () => veraClient.CheckInWithPinAsync(
 			engagement.Id,
 			new CheckInWithPinRequest { Pin = pin },
@@ -1031,8 +974,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var lockedException = await lockedOutAttempt.Should().ThrowAsync<ApiException>();
 		lockedException.Which.StatusCode.Should().Be(403);
 	}
-
-	// ── Duplicate sign-up rejection ───────────────────────────────────────────
 
 	[Test]
 	public async Task CreateEngagement_ShouldReturn409_WhenVolunteerAlreadySignedUp(
@@ -1056,15 +997,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(409);
 	}
-
-	// ── Concurrent overbooking prevention (#1142, #1729) ─────────────────────
-	//
-	// CreateEngagementCommandHandler's time-slot row lock (LockTimeSlotForUpdateAsync)
-	// is the only thing standing between a shared opportunity link and an
-	// overbooked shift. Every other test above exercises it against a mock or
-	// sequentially - this is the one place it runs against real concurrent
-	// requests hitting a real Postgres, proving the lock actually serializes
-	// them instead of letting two callers both read the same stale count.
 
 	[Test]
 	public async Task CreateEngagement_ShouldAllowExactlyOneSignUp_WhenManyVolunteersRaceForASingleSlot(
@@ -1095,8 +1027,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			volunteerClients.Add(await CreateAuthenticatedClientAsync(username, password));
 		}
 
-		// Every volunteer's request is already in flight before any of them is
-		// awaited - Task.WhenAll on N distinct HTTP calls, not a sequential loop.
 		var signUpTasks = volunteerClients.Select(async client =>
 		{
 			try
@@ -1125,8 +1055,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		nonTerminalCount.Should().Be(1, "the database must never end up with more live engagements than the slot's capacity");
 	}
 
-	// ── Cross-user withdrawal ─────────────────────────────────────────────────
-
 	[Test]
 	public async Task WithdrawEngagement_ShouldReturn403_WhenUserWithdrawsAnotherUsersEngagement(
 		CancellationToken cancellationToken)
@@ -1147,8 +1075,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
-	// ── Cross-org ownership ───────────────────────────────────────────────────
-
 	[Test]
 	public async Task GetEngagements_ShouldReturn403_WhenOrganisatorAccessesOtherOrgsOpportunity(
 		CancellationToken cancellationToken)
@@ -1163,10 +1089,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// vera (organisator, but NOT in org1) tries to access org1's engagements
 		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
@@ -1235,13 +1159,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// the organisator role is a Keycloak realm role baked into the JWT at
-		// mint time, so vera's already-issued token doesn't carry it yet - get a
-		// fresh one, or the "organisator" policy itself rejects her before the
-		// request ever reaches the ownership guard this test means to exercise.
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		// vera (organisator of org2, NOT org1) tries to check in org1's engagement
 		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
@@ -1258,14 +1177,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		// vera creates her own org up front - this grants her the organisator
-		// role, but not over org1, whose opportunity row will be deleted below.
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// the organisator role is a Keycloak realm role baked into the JWT at
-		// mint time, so vera's already-issued token doesn't carry it yet - get a
-		// fresh one, or the "organisator" policy itself rejects her before the
-		// request ever reaches the handler this test means to exercise.
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var engagement = await veraClient.CreateEngagementAsync(
@@ -1275,25 +1188,15 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		// Leaves the engagement Confirmed, a state the normal delete flow never produces.
 		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
 
-		// There's no API to observe the opportunity row directly - confirm the
-		// precondition at the DB level so a failure below can't be confused with
-		// the delete itself silently not having taken effect.
 		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id)).Should().Be(0);
 
-		// With no opportunity row left to resolve an owning organization from, the
-		// ownership guard can no longer be evaluated at all - the handler must
-		// reject with NotFound rather than silently skipping the guard and letting
-		// any organizer, from any organization, check the engagement in.
 		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(404);
 	}
-
-	// ── Re-apply after withdrawal (#522) ─────────────────────────────────────
 
 	[Test]
 	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerReapliesAfterWithdrawal(
@@ -1346,19 +1249,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.Status.Should().Be("Pending");
 	}
 
-	/// <summary>
-	/// Regression for #1215: <c>Engagement.Reactivate(...)</c> used to
-	/// overwrite <c>CreatedOn</c> with the re-application time, breaking the
-	/// audit-trail invariant that <c>CreatedOn</c> records when a row was first
-	/// created.
-	///
-	/// This deliberately supersedes #648's fix, which refreshed
-	/// <c>CreatedOn</c> on reactivation so the volunteer's engagements tab and
-	/// the organizer's sign-ups page would surface the latest activity date.
-	/// #1215 accepts that those views show the original application date again
-	/// after a withdraw-and-reapply, in exchange for an immutable
-	/// <c>CreatedOn</c>.
-	/// </summary>
 	[Test]
 	public async Task CreateEngagement_ShouldKeepOriginalCreatedOn_WhenVolunteerReapliesAfterWithdrawal(
 		CancellationToken cancellationToken)
@@ -1376,12 +1266,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await veraClient.WithdrawEngagementAsync(first.Id, cancellationToken);
 
-		// The regression sets CreatedOn to the re-application time, so the test
-		// is only meaningful if "the original time" and "now" are
-		// distinguishable. Marking the instant the second application starts
-		// establishes that separation without sleeping for it, and states the
-		// invariant more directly besides: a refreshed CreatedOn would land at
-		// or after this mark, an untouched one strictly before it.
 		var reapplyStartedAt = DateTimeOffset.UtcNow;
 
 		var second = await veraClient.CreateEngagementAsync(
@@ -1399,8 +1283,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			"CreatedOn must predate the re-application entirely, not merely happen to "
 			+ "match a value read earlier");
 	}
-
-	// ── ScheduledSlots capacity enforcement (#523) ─────────────────────────────────
 
 	[Test]
 	public async Task CreateEngagement_ShouldReturn409_WhenTimeSlotIsFull(
@@ -1476,8 +1358,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.Status.Should().Be("Pending");
 	}
 
-	// ── GetOpportunityFeedback (#628) ─────────────────────────────────────────
-
 	[Test]
 	public async Task GetOpportunityFeedback_ShouldReturnEmptySummary_WhenNoFeedbackSubmitted(
 		CancellationToken cancellationToken)
@@ -1529,9 +1409,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		// Two distinct volunteers each submit feedback so the total spans more than
-		// one page at pageSize=1 - olaf both organizes the opportunity and, here,
-		// engages on it as a second volunteer (no domain rule forbids that).
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraEngagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "Vera helps" }, cancellationToken);
@@ -1582,8 +1459,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		summary.AverageRating.Should().BeNull();
 		summary.FeedbackCount.Should().Be(0);
 	}
-
-	// ── UpdateFeedback / DeleteFeedback (#1069) ───────────────────────────────
 
 	[Test]
 	public async Task UpdateFeedback_ShouldUpdateRatingAndComment_WhenCalledByOwnerWithinWindow(
@@ -1681,9 +1556,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
-		// Backdate the submission directly in the DB - there's no API path to
-		// simulate the passage of time, so this mirrors the raw-SQL approach the
-		// check-constraint tests below already use to bypass the domain.
 		await using (var dbContext = fixture.CreateApplicationDbContext())
 		{
 			var expiredSubmittedAt = DateTimeOffset.UtcNow.AddDays(-(Engagement.FeedbackEditWindowDays + 1));
@@ -1809,14 +1681,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(409);
 	}
 
-	// ── Feedback rating DB check constraint (#1214) ───────────────────────────
-	// SubmitFeedback already rejects an out-of-range rating (Application.UnitTests
-	// covers that), but that only guards the one write path through the API. These
-	// exercise the CK_engagement_feedback_rating_range constraint directly via raw
-	// SQL, bypassing the domain entirely, so a future write path that skips
-	// SubmitFeedback (a migration, a bulk import, a manual data fix) still can't
-	// leave feedback_rating outside 1-5.
-
 	[Test]
 	[Arguments(1)]
 	[Arguments(3)]
@@ -1860,8 +1724,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
 	}
 
-	// ── Cross-opportunity time slot validation (#524) ─────────────────────────
-
 	[Test]
 	public async Task CreateEngagement_ShouldReturn400_WhenTimeSlotBelongsToOtherOpportunity(
 		CancellationToken cancellationToken)
@@ -1872,9 +1734,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var opportunityA = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		// opportunityA needs a slot of its own purely so it can be published -
-		// the request below targets opportunityA with a time slot id from
-		// opportunityB, and that mismatch is what the test is exercising.
 		await olafClient.CreateTimeSlotAsync(
 			opportunityA.Id,
 			new CreateTimeSlotRequest
@@ -1908,8 +1767,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(400);
 	}
-
-	// ── Multiple time slots per opportunity (#1067) ───────────────────────────
 
 	[Test]
 	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameScheduledSlotsOpportunity(
@@ -1986,11 +1843,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task CreateEngagement_ShouldPreserveAttendanceAndFeedback_WhenOrganizerCancelsToFreeUpADifferentTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1067: an organizer cancelling an attended engagement to
-		// "unblock" a volunteer for a different slot of the same recurring
-		// opportunity must not resurrect that attended record into the new slot -
-		// its attendance/feedback history has to survive untouched, and the new
-		// slot needs a brand new engagement row.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -2043,20 +1895,10 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		secondAfter.Id.Should().NotBe(firstEngagement.Id);
 	}
 
-	// ── Multi-slot signup deletion cascade (#1724) ───────────────────────────
-
 	[Test]
 	public async Task DeleteVolunteerOpportunity_ShouldSucceed_WhenOneVolunteerHasEngagementsForMultipleTimeSlots(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1724: a volunteer signing up for two slots of the same
-		// recurring opportunity legitimately holds two Engagement rows sharing
-		// (volunteer_id, opportunity_id), differing only by time_slot_id (#1067).
-		// Deleting the opportunity cancels both engagements, then hard-deletes
-		// their time slots, which nulls time_slot_id on both via its ON DELETE
-		// SET NULL FK - the two now-null rows used to collide on the
-		// (volunteer_id, opportunity_id) partial unique index and 500 the whole
-		// deletion.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -2094,11 +1936,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task DeleteTimeSlot_EntireSeries_ShouldSucceed_WhenOneVolunteerHasEngagementsForMultipleTimeSlots(
 		CancellationToken cancellationToken)
 	{
-		// Same regression as above (#1724), exercised via the "entire series"
-		// delete scope instead of a full opportunity delete -
-		// DeleteTimeSlotCommandHandler.DeleteSeriesAsync force-cancels active
-		// engagements for every affected slot before removing the slots
-		// themselves, hitting the same partial-index collision.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -2140,14 +1977,10 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		engagements.Should().OnlyContain(e => e.Status == EngagementStatus.Cancelled);
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	[Test]
 	public async Task ConfirmEngagement_ShouldNotReturn500_WhenAnXTimezoneHeaderIsSent(
 		CancellationToken cancellationToken)
 	{
-		// An IANA zone other than the server's own used to crash the handler
-		// before it reached the not-found branch.
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
 		using var http = fixture.CreateHttpClient();
 		http.DefaultRequestHeaders.Authorization =
@@ -2157,9 +1990,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var response = await http.PostAsync(
 			$"/v1/engagements/{Guid.NewGuid()}/confirm", content: null, cancellationToken);
 
-		// 404 = the handler parsed the header and ran, then found no engagement.
-		// 403 = the authorization gate fired first, which still means middleware
-		// accepted the header. 500 is the regression.
 		((int)response.StatusCode).Should().BeOneOf(404, 403);
 	}
 
@@ -2167,9 +1997,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	public async Task GetMyEngagements_ShouldReturnTheReactivatedEngagement_AfterWithdrawAndReapply(
 		CancellationToken cancellationToken)
 	{
-		// #1215's reuse-the-row invariant is covered by
-		// CreateEngagement_ShouldKeepOriginalCreatedOn_... above; this is the
-		// other half - the reactivated engagement is readable again afterwards.
 		var organizerClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(organizerClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(organizerClient, orgId, cancellationToken);
@@ -2183,9 +2010,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await volunteerClient.WithdrawEngagementAsync(original.Id, cancellationToken);
 
-		// Withdrawn engagements bucket as past, so the upcoming list is empty
-		// here - which is what makes the reappearance below a real transition
-		// rather than a row that never moved.
 		var whileWithdrawn = await volunteerClient.GetMyEngagementsAsync(
 			1, 10, upcoming: true, cancellationToken);
 		whileWithdrawn.Items.Should().BeEmpty();
@@ -2195,7 +2019,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "Re-application after withdrawal." },
 			cancellationToken);
 
-		// Same row, reactivated - not a second engagement.
 		reactivated.Id.Should().Be(original.Id);
 
 		var afterReapply = await volunteerClient.GetMyEngagementsAsync(
@@ -2277,8 +2100,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Created as a draft: a ScheduledSlots opportunity can't be published until it has
-		// at least one time slot, and callers add slots separately after this returns.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{

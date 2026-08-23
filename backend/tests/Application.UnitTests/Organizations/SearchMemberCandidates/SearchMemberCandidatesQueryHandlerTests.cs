@@ -105,8 +105,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 	public async Task Handle_ShouldReturnCandidate_WhenInvitationIsNotPending(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a Declined invitation shouldn't block the invitee from
-		// being re-invited via search.
+		// Arrange
+
 		var declinedInvitee = Guid.NewGuid();
 		_keycloakService
 			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())

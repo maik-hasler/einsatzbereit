@@ -59,23 +59,12 @@ import {
 	UserGroupIcon,
 } from "../components/icons";
 
-// Lazy-loaded: Leaflet only renders once an opportunity actually has
-// coordinates, so keep it out of this page's (and thus the shared home page
-// bundle's) initial chunk - #971.
 const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
 
-// Lazy-loaded: the multi-step create/edit form is only ever needed by the
-// owning organizer editing their own draft, never by the public visitors who
-// make up the vast majority of this page's traffic.
 const CreateVolunteerOpportunityModal = lazy(
 	() => import("../components/CreateVolunteerOpportunityModal"),
 );
 
-/**
- * The page's one capacity sentence, in the same "free places" framing the
- * cards use - never the per-slot maximum, which is what let the list and this
- * page describe the same opportunity two different ways (#1777).
- */
 function describeCapacity(
 	capacity: OpportunityCapacity,
 	t: TFunction,
@@ -87,11 +76,6 @@ function describeCapacity(
 				tone: "text-teal-700",
 			};
 		case "notApplicable":
-			// The type badge stays put regardless of the current viewer's own
-			// application status; the joined count - once there is one - is an
-			// addition next to it, not a replacement, so which piece of
-			// information appears here doesn't depend on whether this
-			// particular viewer has already applied (#1941).
 			return {
 				label: t("opportunities.byInterest"),
 				tone: "text-gray-700",
@@ -118,7 +102,6 @@ function describeCapacity(
 	}
 }
 
-/** A single slot's remaining places, sharing the sign-up modal's helpers. */
 function slotCapacityLabel(
 	slot: { maxParticipants?: number | undefined; bookedCount: number },
 	t: TFunction,
@@ -130,16 +113,6 @@ function slotCapacityLabel(
 		: t("opportunities.spotsLeft", { count: spotsLeft });
 }
 
-/**
- * The at-a-glance panel's WANN fact - the next upcoming time slot's start,
- * or the application deadline for an expression-of-interest opportunity.
- * This field used to show the recurrence category ("Einmalig"/"One-time")
- * instead - the one label a scanning reader trusts to carry a date carried
- * none, while the real date sat ~500px further down in the time slot list
- * (#2055). Recurrence isn't dropped, just demoted to a Chip in the meta row
- * below, matching how the browse list's cards already state it
- * (OpportunityListItem).
- */
 function describeWhenFact(
 	opportunity: VolunteerOpportunityDetails,
 	t: TFunction,
@@ -159,15 +132,6 @@ function describeWhenFact(
 		: t("opportunities.flexibleDate");
 }
 
-/**
- * The at-a-glance panel's ABLAUF/"How it works" fact. Used to restate the
- * participation type category ("Zeitslots") - the exact word the time slot
- * list's own section heading carries a few hundred pixels below, so the fact
- * added nothing a reader couldn't already see there (#2055). A Scheduled-
- * slots opportunity now states its actual slot count instead; an interest-
- * based one keeps the participation type, since it has no such list to
- * duplicate and the category itself is still real information there.
- */
 function describeHowFact(
 	opportunity: VolunteerOpportunityDetails,
 	t: TFunction,
@@ -192,18 +156,12 @@ export default function VolunteerOpportunityDetailPage() {
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	// #2065: whether `error` came from a request that never got an HTTP
-	// response at all - the same offline signal useLoadMore/OrgAppLayout use,
-	// since `navigator.onLine` alone can misreport `true` right after a hard
-	// reload while genuinely offline (#1901).
+
 	const [errorIsNetworkFailure, setErrorIsNetworkFailure] = useState(false);
 	const online = useOnlineStatus();
 	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
 	const [showSignUp, setShowSignUp] = useState(false);
-	// Set when the sign-up modal was opened from a specific slot row rather
-	// than the rail's generic sign-up button - undefined for the rail's own
-	// "secondary entry point" (#2075), which still lets the modal pick for a
-	// multi-slot opportunity.
+
 	const [preselectedSlotId, setPreselectedSlotId] = useState<
 		string | undefined
 	>(undefined);
@@ -214,10 +172,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [publishing, setPublishing] = useState(false);
 
-	// See ActivitySection.tsx's identical ref/effect for why: a role="status"
-	// region that's already populated the instant the withdraw dialog mounts
-	// isn't reliably announced by assistive tech, so focus is moved there once
-	// instead of trusting the live region alone (#2043).
 	const withdrawLimitWarningRef = useRef<HTMLParagraphElement>(null);
 	const withdrawLimitWarningActive =
 		showWithdrawConfirm &&
@@ -230,12 +184,7 @@ export default function VolunteerOpportunityDetailPage() {
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
-	// A stale Keycloak session left in sessionStorage from an earlier login still
-	// populates auth.user.profile after the token has expired, so this must
-	// gate on isAuthenticated too - otherwise an anonymous visitor with old
-	// organisator claims fires an authenticated getOrganizations() call below,
-	// 401s, and gets force-redirected to sign-in on a page that's meant to
-	// work without being logged in.
+
 	const isOrganisator = isAuthenticated && roles.includes("organisator");
 	const [userOrgIds, setUserOrgIds] = useState<string[]>([]);
 
@@ -283,23 +232,11 @@ export default function VolunteerOpportunityDetailPage() {
 
 	useEffect(() => {
 		if (!opportunityId) return;
-		// Avoids briefly showing the previous opportunity's organization card
-		// (email/phone/address) while the new one loads, since this state isn't
-		// otherwise tied to opportunityId and would only refresh once the
-		// organizationId effect below notices it changed.
+
 		setOrgProfile(null);
 		setOrgProfileError(null);
 		load();
-		// `auth.isAuthenticated`, not `api` itself (#1237): useApiClient() memoizes
-		// on user.access_token, which automaticSilentRenew replaces every ~4
-		// minutes even though the user's actual auth status hasn't changed -
-		// depending on `api` directly reran this effect (and its setLoading(true)
-		// skeleton swap) on every one of those renewals. Unlike ProfileOverviewPage
-		// (behind ProtectedRoute, so always already-authenticated on mount), this
-		// page is public and can mount before auth has finished resolving - the
-		// anonymous-vs-authenticated fetch genuinely differs (draft visibility,
-		// currentUserEngagement), so a real `isAuthenticated` flip (once auth
-		// settles, or on sign-in/out) still needs to trigger a refetch.
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId, isAuthenticated]);
 
@@ -372,8 +309,7 @@ export default function VolunteerOpportunityDetailPage() {
 			<div className="mx-auto max-w-4xl" role="status">
 				<span className="sr-only">{t("opportunities.loading")}</span>
 				<Skeleton className="mb-6 h-56 w-full sm:h-72" />
-				{/* Same flush-left reading column as the loaded page below, so the
-				skeleton doesn't sit at a different x than the content replacing it. */}
+
 				<div className="max-w-2xl">
 					<div className="mb-3 flex items-center justify-between gap-3">
 						<Skeleton className="h-6 w-32 rounded-full" />
@@ -388,12 +324,6 @@ export default function VolunteerOpportunityDetailPage() {
 		);
 	if (error)
 		return errorIsOffline ? (
-			// #2065: this page had no offline handling at all - a dropped
-			// connection fell into the generic error branch below, with a retry
-			// button that could not succeed while the connection was down. Not
-			// `inline`: unlike OpportunityResultsList's offline notice, this
-			// replaces the whole route rather than one section of a page that
-			// already owns an <h1>.
 			<RouteState
 				variant="offline"
 				title={t("routeState.offline.title")}
@@ -403,11 +333,7 @@ export default function VolunteerOpportunityDetailPage() {
 		) : (
 			<LoadMoreError
 				message={t("opportunities.error", { message: error })}
-				// load() unconditionally flips `loading` back to true, so the
-				// `if (loading)` skeleton above always pre-empts this branch the
-				// instant a retry starts - there's no in-between state where this
-				// button would be visible mid-request, so it can never actually be
-				// clicked twice.
+
 				retrying={false}
 				onRetry={load}
 			/>
@@ -419,27 +345,14 @@ export default function VolunteerOpportunityDetailPage() {
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
 
-	// Everything in the action row above the at-a-glance panel is conditional,
-	// so the row itself has to be too - otherwise a visitor who qualifies for
-	// none of its contents gets an empty flex row and its mb-4 as a dead gap
-	// between the band and the panel. Report no longer requires
-	// isAuthenticated to render (#2061), so its own condition is just
-	// !isOwner now; simplifies to isDraft || !isOwner ((isDraft && isOwner)
-	// || !isOwner) rather than restating both branches' original shape.
 	const hasActionRow = isDraft || !isOwner;
 
 	const cue = opportunity.currentUserEngagement;
 
-	// The slot the signed-in volunteer registered for, so the status card
-	// below can show its date/time next to the status Chip - matching what
-	// /my-signups already shows for the same engagement (#1938).
 	const registeredTimeSlot = cue
 		? opportunity.timeSlots.find((ts) => ts.id === cue.timeSlotId)
 		: undefined;
 
-	// Folded down by the shared contract, with the same rule the list
-	// projection uses - so this page can no longer state a different capacity
-	// than the card the reader clicked to get here (#1777).
 	const capacity = getCapacityFromTimeSlots(
 		opportunity.timeSlots,
 		opportunity.currentParticipantCount,
@@ -452,27 +365,15 @@ export default function VolunteerOpportunityDetailPage() {
 		secondaryLabel: capacitySecondaryLabel,
 	} = describeCapacity(capacity, t);
 
-	// Used for the "Where" fact, the map's accessible name, and the
-	// directions link below - one computed string instead of three inline
-	// copies of the same template literal drifting apart.
 	const address = opportunity.isRemote
 		? ""
 		: `${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`;
-	// Coordinates aren't always available (geocoding failure/pending retry,
-	// see backend/AGENTS.md's "Domain events") - fall back to a text query so
-	// the directions link (the only escape hatch off this page onto an
-	// actually routable map, #2058) still works even when SingleMarkerMap
-	// itself can't render.
+
 	const directionsUrl =
 		opportunity.latitude != null && opportunity.longitude != null
 			? `https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`
 			: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 
-	// formatPostedAgo's relative text ("Vor 5 Tagen veroeffentlicht") is the
-	// one documented exception to the site's numeric date convention - it
-	// still needs the absolute date available to screen readers (`aria-label`,
-	// not just `title`, which browse-mode AT users and touch/mobile never see
-	// - #2047) and to sighted mouse users (`title`).
 	const postedOnRelative = formatPostedAgo(
 		opportunity.createdOn as unknown as string,
 		t,
@@ -487,9 +388,6 @@ export default function VolunteerOpportunityDetailPage() {
 			.filter((opp) => opp.id !== opportunity.id)
 			.slice(0, 3) ?? [];
 
-	// The four mutually-exclusive-ish blocks the sticky rail can show. Named
-	// here (rather than inlined twice) because #1965 renders the same rail
-	// content a second time on narrow viewports - see renderActionRail below.
 	const showDeadlineCard =
 		opportunity.participationType === "IndividualContact" &&
 		!!opportunity.validUntil &&
@@ -498,13 +396,7 @@ export default function VolunteerOpportunityDetailPage() {
 		isAuthenticated && !isOwner && !!cue && !isDraft;
 	const showSignUpCta = isAuthenticated && !isOwner && !cue && !isDraft;
 	const showLoginPrompt = !isAuthenticated && !isDraft;
-	// An owner viewing their own published opportunity gets none of the three
-	// blocks above (each requires !isOwner) - without this, the rail is just
-	// silently empty, indistinguishable from a rendering failure, and offers
-	// no way back to the management view (#2081). Excluded for isDraft: the
-	// action row already shows the draft badge plus Edit/Publish there, and an
-	// unpublished draft has no engagements yet for the linked management page
-	// to show.
+
 	const showOwnerNotice = isOwner && !isDraft;
 	const hasActionRail =
 		showDeadlineCard ||
@@ -513,20 +405,6 @@ export default function VolunteerOpportunityDetailPage() {
 		showLoginPrompt ||
 		showOwnerNotice;
 
-	// The sticky rail's content, rendered once for the lg+ sidebar and once
-	// more (testIdSuffix "-mobile") right above the map for narrow viewports -
-	// the aside is invisible below lg (`hidden` until `lg:block`) since sticky
-	// positioning and the grid column it's pinned to (#2050) only exist at
-	// that breakpoint, so without this second copy a mobile visitor would
-	// have no way to reach the CTA at all (#1965). Only one instance is ever
-	// visible at a given viewport (the aside hides below lg, this copy hides
-	// at lg+), so duplicated ids don't collide and duplicated buttons are
-	// never both reachable at once.
-	// Takes the already-null-checked opportunity as a parameter rather than
-	// closing over the outer `opportunity` state directly - TS control-flow
-	// narrowing doesn't carry a `const`'s narrowed type into a nested function
-	// declared after the null check, so referencing `opportunity` in here
-	// would still type as possibly-null.
 	function renderActionRail(
 		testIdSuffix: string,
 		opp: VolunteerOpportunityDetails,
@@ -578,9 +456,7 @@ export default function VolunteerOpportunityDetailPage() {
 								>
 									{t(`myEngagements.status.${cue.status}`)}
 								</Chip>
-								{/* Pending previously had no explanation anywhere on this
-								page - the amber chip alone didn't say what "pending" means,
-								who resolves it, or how long it takes (#2075). */}
+
 								{cue.status === "Pending" && (
 									<p className="mt-1.5 text-xs text-gray-600">
 										{t("myEngagements.pendingExplanation")}
@@ -607,10 +483,7 @@ export default function VolunteerOpportunityDetailPage() {
 									</Chip>
 								)}
 							</div>
-							{/* Withdrawing after check-in is rejected server-side (Engagement.Withdraw's
-							IsCheckedIn guard, #673) - hide the action rather than let a volunteer hit
-							that 409, matching the same isCheckedIn gate /my-signups already applies
-							(#1893). */}
+
 							{!cue.isCheckedIn && (
 								<Button
 									type="button"
@@ -627,16 +500,11 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-				{/* Sign-up CTA */}
 				{showSignUpCta && (
 					<div
 						data-testid={`signup-cta${testIdSuffix}`}
 						className={`space-y-3 ${cardClass} sm:p-5`}
 					>
-						{/* Only the full state speaks here now: it explains why the
-						button below is disabled. The remaining places themselves are
-						stated in the meta row above, where every visitor sees them
-						rather than only signed-in non-owners (#1777). */}
 						{isFull && (
 							<p className="text-sm font-medium text-red-600">
 								{t("opportunities.noSpotsLeft")}
@@ -701,10 +569,7 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.descriptionEn,
 		i18n.language,
 	);
-	// Only ever true for the English UI falling back to German content - the
-	// German variant is required, so the reverse never happens (#2057). Checked
-	// on both fields independently since an organizer may translate one but
-	// not the other.
+
 	const isGermanFallback =
 		headerTitle.lang !== i18n.language ||
 		(headerLead !== undefined && headerLead.lang !== i18n.language);
@@ -733,9 +598,6 @@ export default function VolunteerOpportunityDetailPage() {
 			</PageHeaderBand>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
-				{/* Banner image - spans the full width of this wider wrapper; a
-			reading column is right for prose below, but there's no reason to
-			confine a banner to it too (#1727). */}
 				{opportunity.bannerImageUrl && (
 					<img
 						src={opportunity.bannerImageUrl}
@@ -746,42 +608,13 @@ export default function VolunteerOpportunityDetailPage() {
 					/>
 				)}
 
-				{/* Two columns from lg up (#1755). What a visitor reads to decide -
-			what it is, when, where, who runs it - stays in the reading column;
-			what they act on (deadline, their own status, the sign-up button) moves
-			into a sticky rail beside it. The CTA used to sit inline after the
-			time-slot list, which on a long opportunity put the page's only
-			conversion point below the fold while ~500px of page sat empty next to
-			it. One column below lg, where a 20rem rail would just be a narrow box
-			and the CTA is better off in reading order anyway. The rail is the
-			first child below (not the reading column) with explicit grid
-			placement pinning each side back to its visual column/row (#2050) -
-			DOM order used to match visual order by accident, which put the rail
-			last in both and made the CTA the 8th focusable element on the page,
-			after the report button, the map and the organization's contact
-			links. */}
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
-					{/* Hidden below lg: the mobile-only copy right above the map (#1965)
-				carries the same content there instead. sticky needs a scroll
-				container that is not the grid item itself; lg:items-start on the
-				grid keeps this from stretching to full row height, which would
-				make top-24 have nothing left to stick against. */}
 					<aside className="hidden lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
 						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
 					</aside>
 
 					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
-						{/* Flush left inside the outer wrapper, not centred within it.
-			#1727 deliberately let the banner span the full wrapper while prose
-			stayed at a reading measure - but centring the prose meant the page
-			alternated between two column widths, reading as misaligned blocks
-			rather than one document. Sharing a left edge keeps #1727's wider
-			banner and a readable measure at the same time. */}
 						<div className="max-w-2xl">
-							{/* Report (and the owner's draft controls) sit on the same line
-							as the at-a-glance panel's top edge rather than floating alone
-							above an empty stretch of column - the org chip that used to
-							anchor this row moved into the band's eyebrow. */}
 							{hasActionRow && (
 								<div
 									className="mb-4 flex items-center gap-3"
@@ -798,16 +631,8 @@ export default function VolunteerOpportunityDetailPage() {
 											</Chip>
 										</div>
 									)}
-									{/* ml-auto rather than justify-between on the row: the draft
-									chip beside it is conditional, and justify-between would have
-									needed an empty placeholder div to keep the actions right of
-									the column for everyone who doesn't see the chip. */}
+
 									<div className="ml-auto flex shrink-0 gap-2">
-										{/* Shown to anonymous visitors too - they're the ones most
-										likely to encounter spam - with the click routed through
-										sign-in first instead of hiding the control entirely
-										(#2061), since reporting itself requires an authenticated
-										account on the backend. */}
 										{!isOwner && (
 											<Button
 												variant="outline"
@@ -853,13 +678,6 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							)}
 
-							{/* At-a-glance panel (#1755). The three facts a volunteer decides
-						on - when, how, where - were three identical grey icon rows in a
-						flat white box, with the category chip, the participant count and
-						the posted-on date orphaned as three more separate lines under
-						it. One tinted panel with labelled columns gives them a hierarchy
-						and puts the page's first real colour below the band; the loose
-						lines collapse into a single meta row beneath it. */}
 							<dl
 								className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6"
 								data-testid="opportunity-at-a-glance"
@@ -905,18 +723,13 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							</dl>
 
-							{/* Meta row - category, tags, headcount and posted-on, previously
-						three separate stranded lines. */}
 							<div className="mb-6 flex flex-wrap items-center gap-2">
 								{opportunity.category && (
 									<Chip tone="brand">
 										{t(`opportunities.category.${opportunity.category}`)}
 									</Chip>
 								)}
-								{/* Recurrence, demoted from the at-a-glance panel's WANN slot
-								(#2055) - that field now carries the actual next date/deadline
-								instead, matching how the browse list's cards already state
-								recurrence as a Chip beside the category one. */}
+
 								<Chip
 									tone="neutral"
 									size="sm"
@@ -934,22 +747,14 @@ export default function VolunteerOpportunityDetailPage() {
 										{tag}
 									</Chip>
 								))}
-								{/* Capacity, stated once and to everyone. It used to live only
-							inside the sign-up box, gated on `isAuthenticated && !isOwner &&
-							!cue && !isDraft`, so an anonymous visitor - most of this page's
-							traffic - never saw the remaining places at all and read the
-							per-slot maximum instead. That is what made a card saying "19
-							spots left" open a page saying "(max. 20 people)" (#1777). */}
+
 								<span
 									data-testid="opportunity-capacity"
 									className={`text-sm font-medium ${capacityTone}`}
 								>
 									{capacityLabel}
 								</span>
-								{/* Addition, not a replacement, for the type badge above -
-								an "Interessenbekundung" offer keeps stating its type once it
-								has applicants, instead of the slot swapping to the applicant
-								count only for the viewer who happens to have applied (#1941). */}
+
 								{capacitySecondaryLabel && (
 									<span
 										data-testid="opportunity-capacity-secondary"
@@ -967,9 +772,6 @@ export default function VolunteerOpportunityDetailPage() {
 								</span>
 							</div>
 
-							{/* Mobile-only duplicate of the sticky rail (#1965) - see
-						renderActionRail's comment above. lg:hidden because the aside
-						below already carries the same content at lg+. */}
 							{hasActionRail && (
 								<div
 									className="mb-6 space-y-6 lg:hidden"
@@ -981,11 +783,6 @@ export default function VolunteerOpportunityDetailPage() {
 
 							{!opportunity.isRemote && (
 								<div className="mb-6">
-									{/* Coordinates can be missing (geocoding failure/pending
-									retry, see backend/AGENTS.md's "Domain events") - in that
-									case the address above (already promoted into the "Where"
-									fact) is all there is to show; a same-sized placeholder box
-									saying so again added nothing but reserved space (#2058). */}
 									{opportunity.latitude != null &&
 										opportunity.longitude != null && (
 											<div className="overflow-hidden rounded-card border border-gray-100 shadow-resting">
@@ -1000,11 +797,7 @@ export default function VolunteerOpportunityDetailPage() {
 												</Suspense>
 											</div>
 										)}
-									{/* The map (when it renders) has every pan/zoom interaction
-									disabled by design - this is the escape hatch that was
-									missing entirely before (#2058): a real, routable map in
-									another app. Falls back to a text-address query above when
-									there are no coordinates to link to directly. */}
+
 									<a
 										href={directionsUrl}
 										target="_blank"
@@ -1019,13 +812,6 @@ export default function VolunteerOpportunityDetailPage() {
 							)}
 						</div>
 
-						{/* Time slots - held to the same max-w-2xl measure as the blocks
-			above and below it (#1794). #1727 had let this list span the full grid
-			column on the grounds that date/spot rows aren't prose, but at 1440px
-			that gave the main column a second right edge 120px out from its
-			neighbours', so the page read as three misaligned blocks rather than
-			one. One measure for the whole column wins over the marginally roomier
-			rows. */}
 						{opportunity.participationType === "ScheduledSlots" &&
 							opportunity.timeSlots.length > 0 && (
 								<div
@@ -1037,13 +823,6 @@ export default function VolunteerOpportunityDetailPage() {
 									</SectionHeading>
 									<ul className="space-y-2">
 										{opportunity.timeSlots.map((ts) => {
-											// The rows themselves are the primary control now - not
-											// just an inert preview of what the rail's sign-up button
-											// opens ~700px away (#2075). Only wired up where a click
-											// could actually do something: a slot with no spots left
-											// can't be signed up for, and every other viewer state
-											// (anonymous, owner, already applied, draft) has no
-											// sign-up action to trigger in the first place.
 											const clickable =
 												showSignUpCta &&
 												!isSlotFull(ts.maxParticipants, ts.bookedCount);
@@ -1056,10 +835,7 @@ export default function VolunteerOpportunityDetailPage() {
 															i18n.language,
 														)}
 													</span>
-													{/* Free places, the same framing the cards and the sign-up
-													modal's slot picker use. This said "(max. N people)" while the
-													card that linked here said "N spots left", so the two
-													disagreed about the same opportunity (#1777). */}
+
 													<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
 														{slotCapacityLabel(ts, t)}
 														{clickable && (
@@ -1184,14 +960,6 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				</div>
 
-				{/* More from this organization - held to the same max-w-2xl measure
-			as the reading column above (#2044). #1727 had let this section span
-			the full outer wrapper so a third card wouldn't orphan onto its own
-			row, but that put a 1152px-wide block directly below a 672px-wide
-			column on the same scroll, reading as two different pages stacked.
-			One measure for the whole page wins over the marginally roomier grid -
-			dropping the xl:grid-cols-3 step rather than keeping a column count
-			this measure can no longer fit without squeezing each card. */}
 				{otherOrgOpportunities.length > 0 && (
 					<div className="mb-6 max-w-2xl" data-testid="more-from-organization">
 						<SectionHeading>

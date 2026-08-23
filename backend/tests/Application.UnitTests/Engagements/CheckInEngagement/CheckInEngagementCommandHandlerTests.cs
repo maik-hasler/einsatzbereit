@@ -97,9 +97,8 @@ public class CheckInEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenOpportunityIsGone(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: opportunity row is gone (e.g. hard-deleted) but its engagement
-		// survived as a non-terminal row. The ownership guard must not be silently
-		// skipped in this case - it must reject before ever reaching CheckIn.
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var engagement = CreateConfirmedEngagement(opportunityId);
 		var engagementId = engagement.Id;

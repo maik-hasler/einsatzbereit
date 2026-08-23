@@ -13,12 +13,6 @@ import ModalLoadingFallback from "../ModalLoadingFallback";
 import Skeleton from "../Skeleton";
 import { ChevronDownIcon, PlusIcon } from "../icons";
 
-// Lazy-loaded: this component is statically imported by Header, which is
-// eager on every route (including the anonymous landing page) - without
-// this, react-hook-form + zod stay in the entry chunk regardless of whether
-// HomePage's own CreateOrganizationModal usage is lazy-loaded, since
-// bundlers keep a module in its statically-importing chunk even when a
-// *different* call site imports it dynamically (#1728).
 const CreateOrganizationModal = lazy(
 	() => import("../CreateOrganizationModal"),
 );
@@ -32,13 +26,10 @@ export default function OrganizationSwitcher({
 }: {
 	currentOrgId: string;
 	currentTab: string;
-	// Fetched by the parent Header (which needs the same list for its own
-	// nav-gating logic) so this component isn't firing a second, identical
-	// getOrganizations() request on every org-app-shell page load.
+
 	orgs: OrganizationSummaryDto[];
 	loading: boolean;
-	// Set when the shared organizations fetch failed, so this can be told
-	// apart from a genuine "user has zero organizations" empty list.
+
 	error: string | null;
 }) {
 	const navigate = useNavigate();
@@ -88,21 +79,12 @@ export default function OrganizationSwitcher({
 					aria-label={t("organization.switchLabel")}
 				>
 					{!error && (
-						// No name until an org resolves - OrgAvatar renders "?" for it.
 						<OrgAvatar
 							name={currentOrg?.name ?? ""}
 							logoUrl={currentOrg?.logoUrl}
 						/>
 					)}
-					{/* Middle-ellipsis, not end-truncation: two names sharing a
-					leading word (e.g. two seeded orgs both starting "Lindenauer")
-					used to become indistinguishable once cut. Split into a
-					`truncate` head (grows the browser's own end-ellipsis when
-					squeezed) and a `shrink-0` tail (never truncated) rather than
-					doing this in JS, so the DOM text stays the exact, full org
-					name - only the *rendered* width adapts - and a title
-					attribute still covers hover regardless of how much is
-					visible (#2080). */}
+
 					<span
 						data-testid="org-switcher-current-name"
 						title={error ? undefined : currentOrg?.name}
@@ -152,9 +134,7 @@ export default function OrganizationSwitcher({
 										}`}
 									>
 										<OrgAvatar name={org.name} logoUrl={org.logoUrl} lazy />
-										{/* No truncate here (unlike the collapsed trigger above) -
-										the panel already has the width to spare, so a long name
-										wraps onto a second line instead of being cut off (#1907). */}
+
 										<span className="min-w-0 flex-1">{org.name}</span>
 									</button>
 								</li>

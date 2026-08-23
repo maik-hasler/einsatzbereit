@@ -1,38 +1,19 @@
 import { useEffect, useState } from "react";
 
 export interface OutlineEntry {
-	/** Must match the id on the corresponding <DocumentSection>. */
 	id: string;
 	label: string;
 }
 
 interface Props {
 	entries: OutlineEntry[];
-	/** Accessible name for the nav landmark, e.g. "On this page". */
+
 	label: string;
 }
 
-// Sticky table of contents for the long legal texts. The privacy policy runs
-// to nine sections and the terms to seven; as flat prose they were only
-// readable front-to-back, with no way to see the shape of the document or jump
-// to the one clause a visitor actually came for (issue #1755). Legal text is
-// genuinely a numbered clause sequence, so an outline encodes real structure
-// here rather than decorating a list.
-//
-// Scroll position is tracked with IntersectionObserver rather than a scroll
-// handler so the browser does the work off the main thread. rootMargin's -96px
-// top inset keeps the sticky site header from claiming a section before it is
-// actually in view; the -70% bottom inset narrows the "active" strip to the
-// upper third of the viewport, so exactly one entry lights up at a time
-// instead of every section that happens to be on screen.
 export default function DocumentOutline({ entries, label }: Props) {
 	const [activeId, setActiveId] = useState<string | undefined>(entries[0]?.id);
 
-	// Derived string, not the array itself: the caller writes `entries` inline,
-	// so a new array identity arrives on every render and would re-run this
-	// effect (tearing down and rebuilding the observer) each time. Joining the
-	// ids gives a value that only changes when the outline really changes, and
-	// keeps the effect honest for exhaustive-deps - nothing else is referenced.
 	const ids = entries.map((entry) => entry.id).join(",");
 
 	useEffect(() => {

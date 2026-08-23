@@ -12,7 +12,6 @@ export default function TermsOfUsePage() {
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
-	// Slug ids, not numbers - see the same note in PrivacyPolicyPage.
 	const sections = [
 		{ id: "scope", label: t("termsOfUse.section1Title") },
 		{ id: "accounts", label: t("termsOfUse.section2Title") },

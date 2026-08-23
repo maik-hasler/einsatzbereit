@@ -69,7 +69,7 @@ public class SetUserEnabledCommandHandlerTests
 	public async Task Handle_ShouldAllowEnablingSelf_BecauseGuardOnlyBlocksDisabling(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - re-enabling your own (already-active) account isn't the footgun the guard exists for.
+		// Arrange
 		var actingUserId = Guid.NewGuid();
 		_keycloakService.IsServiceAccountAsync(actingUserId, cancellationToken).Returns(false);
 		var command = new SetUserEnabledCommand(actingUserId, actingUserId, Enabled: true);

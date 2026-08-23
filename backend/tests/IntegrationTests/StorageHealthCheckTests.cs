@@ -23,17 +23,11 @@ public class StorageHealthCheckTests(IntegrationTestFixture fixture)
 		await act.Should().NotThrowAsync();
 	}
 
-	// Regression guard for #1081: before this, nothing in the backend's own
-	// readiness probe checked storage connectivity at all, so /health reported
-	// Healthy even while MinIO was completely unreachable and every upload/image
-	// fetch was failing.
 	[Test]
 	public async Task PingAsync_ShouldThrow_WhenMinioIsUnreachable(CancellationToken cancellationToken)
 	{
 		var storage = new MinioFileStorageService(Options.Create(new StorageSettings
 		{
-			// Nothing listens on this port - connection refused immediately, no
-			// real network round trip to wait out.
 			Endpoint = "http://127.0.0.1:1",
 			AccessKey = "minio",
 			SecretKey = "minio123",

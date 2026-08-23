@@ -5,10 +5,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Coverage for #1048: the dashboard's "To-Do" widget counts pending
-// engagements across every opportunity in the organization, but until this
-// endpoint existed there was no way to list that same aggregate queue -
-// organizers had to open each opportunity's own engagement list in turn.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
@@ -50,10 +46,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 
 		var pending = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "Still pending" }, cancellationToken);
-		// A volunteer can only have one active engagement per opportunity
-		// (Engagement.AlreadySignedUp), so the second sign-up comes from olaf
-		// himself rather than vera again - organizers can sign up for their own
-		// org's opportunities too (see GetOrganizationDashboardTests).
+
 		var toConfirm = await olafClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "About to be confirmed" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(toConfirm.Id, cancellationToken);
@@ -77,10 +70,6 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 		await veraClient.CreateEngagementAsync(
 			opportunity1.Id, new CreateEngagementRequest { Message = "Helping org1" }, cancellationToken);
 
-		// CreateVolunteerOpportunity requires the "organisator" role claim, which
-		// Keycloak only grants vera once she creates an org - her existing
-		// veraClient token predates that, so a fresh token has to be minted to
-		// pick it up (same gotcha as GetOrganizationDashboardTests).
 		var org2Id = await CreateOrganizationAsync(veraClient, cancellationToken);
 		var veraOrganizerClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var opportunity2 = await CreateOpportunityAsync(veraOrganizerClient, org2Id, cancellationToken);
@@ -178,9 +167,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 			opportunityA.Id, new CreateEngagementRequest { Message = "First" }, cancellationToken);
 		await veraClient.CreateEngagementAsync(
 			opportunityB.Id, new CreateEngagementRequest { Message = "Second" }, cancellationToken);
-		// A volunteer can only have one active engagement per opportunity
-		// (Engagement.AlreadySignedUp) - the third sign-up (also on
-		// opportunityA) comes from olaf himself rather than vera again.
+
 		await olafClient.CreateEngagementAsync(
 			opportunityA.Id, new CreateEngagementRequest { Message = "Third" }, cancellationToken);
 
@@ -197,8 +184,6 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 		var allIds = firstPage.Items.Concat(secondPage.Items).Select(e => e.Id).ToList();
 		allIds.Should().OnlyHaveUniqueItems();
 	}
-
-	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)

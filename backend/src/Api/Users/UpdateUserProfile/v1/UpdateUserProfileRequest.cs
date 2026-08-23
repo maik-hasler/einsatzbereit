@@ -12,9 +12,6 @@ public sealed record UpdateUserProfileRequest(
 	[MaxLength(200)] string? PreferredContact = null,
 	[MaxLength(5)] string? PreferredLanguage = null)
 {
-	// Skills/Languages carry no DataAnnotations attribute - MaxLengthAttribute
-	// only checks a collection's item Count, not each item's string length, so
-	// both caps are enforced manually in UpdateUserProfileEndpoint (#1173).
 	public const int MaxSkillsCount = 50;
 
 	public const int MaxSkillLength = 100;

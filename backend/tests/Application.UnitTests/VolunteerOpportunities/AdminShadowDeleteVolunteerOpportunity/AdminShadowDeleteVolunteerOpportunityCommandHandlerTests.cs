@@ -63,8 +63,8 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldShadowDeleteOpportunity_WithoutCheckingOwnership(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: no IsOrganizerAsync stub configured at all - if the handler
-		// called OwnershipGuard, NSubstitute's default (false) would make this fail.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		_opportunityRepo
@@ -74,7 +74,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
-		// Assert: shadow-deleted, not removed - the takedown must be restorable.
+		// Assert
 		result.Should().BeTrue();
 		opportunity.IsDeleted.Should().BeTrue();
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
@@ -113,10 +113,8 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - same guarantee as the organizer-triggered delete (#1057): a
-		// shadow-delete's auto-cancelled engagements must in-app-notify the
-		// volunteer, and raise an event carrying the opportunity's title for
-		// EngagementCancelledNotificationHandler's post-commit email (#1150).
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -134,10 +132,8 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
 
-		// Assert - TitleSnapshot is captured here too (einsatzbereit#2073): a
-		// shadow-deleted opportunity is filtered out of every query by
-		// VolunteerOpportunityConfiguration's IsDeleted filter, so a later live
-		// lookup by relatedEntityId would find nothing to interpolate {{title}} with.
+		// Assert
+
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled

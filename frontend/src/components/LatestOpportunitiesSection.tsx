@@ -10,27 +10,8 @@ import { useLoadMore } from "../hooks/useLoadMore";
 import { fetchVolunteerOpportunities } from "../lib/volunteerOpportunities";
 import { ArrowRightIcon } from "./icons";
 
-// The landing page's only look at real inventory. #1757 moved the opportunity
-// list to its own /opportunities route, which left the landing page promising
-// "find an opportunity that fits you" in the hero and then showing nothing but
-// a pitch at organizations - a visitor had no evidence there was anything to
-// find until they navigated away.
-//
-// Three cards, not the grid: this is proof of inventory plus a way in, and
-// /opportunities owns browsing. It deliberately renders the same
-// OpportunityCard that page uses rather than a second, leaner card - a
-// visitor who follows the link should land on the thing they just clicked
-// past, and the design system exists to stop one concept growing three
-// representations.
 const PREVIEW_COUNT = 3;
 
-// One column until sm, capped at a readable measure; two from sm to match
-// /opportunities' grid at the same breakpoint (both render the same
-// OpportunityCard, so the two surfaces should look alike at 768px);
-// three across from lg. Shared verbatim by the skeletons so the layout
-// doesn't shift when the fetch settles. Three items in a two-column grid
-// leaves the third sitting alone in the first column on tablet - preferred
-// over stretching a single card to the full section width.
 const GRID_CLASS =
 	"mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3";
 
@@ -39,30 +20,11 @@ export default function LatestOpportunitiesSection() {
 	const api = useApiClient();
 	const titleId = useId();
 
-	// Newest first - that is what the listing endpoint orders by
-	// (VolunteerOpportunityReadRepository sorts on CreatedOn descending), so
-	// the heading says "just published" rather than claiming these are the
-	// soonest or the nearest.
-	// No getErrorMessage override: nothing here renders a generic error message
-	// (see below, a non-offline failure removes the section entirely), so
-	// translating one would produce a string with nowhere to go.
 	const { items, loading, error, errorIsOffline, retryLoadMore } =
 		useLoadMore<VolunteerOpportunitySummary>((pageNumber) =>
 			fetchVolunteerOpportunities(api, { pageNumber, pageSize: PREVIEW_COUNT }),
 		);
 
-	// A generic failure still removes the section rather than rendering an
-	// error box - that would argue against the hero directly above it, and
-	// /opportunities is where a visitor gets the real error state and a retry.
-	// Offline is different (#2065): the section used to vanish then too, which
-	// on a reload with no connection threw away the one piece of evidence this
-	// page gives that there is anything to find, with no explanation - unlike
-	// /opportunities, which has said so since #1774. An empty result (no error,
-	// zero items) still removes the section either way - the `!error` here is
-	// deliberate: useLoadMore's own contract is "items is empty whenever error
-	// is set" (see UseLoadMoreResult.error), so without it this branch would
-	// fire for the offline case too (items is empty then as well) and hide the
-	// offline notice this whole guard exists to keep visible.
 	if ((error && !errorIsOffline) || (!loading && !error && items.length === 0))
 		return null;
 
@@ -80,9 +42,7 @@ export default function LatestOpportunitiesSection() {
 						{t("landing.latestTitle")}
 					</h2>
 				</div>
-				{/* A link, not a Button. The hero above owns this page's primary
-				action and the org band below owns the other one; a third filled
-				button between them would flatten all three. */}
+
 				<Link
 					to="/opportunities"
 					data-testid="landing-all-opportunities-link"
@@ -93,15 +53,6 @@ export default function LatestOpportunitiesSection() {
 				</Link>
 			</div>
 
-			{/* Always mounted, not conditional on the message - registered before
-			the connection ever drops so writing into it on the offline transition
-			actually announces (a role="status" node inserted into the DOM already
-			populated does not reliably announce; see RouteState's own comment on
-			this and OpportunityResultsList's identical pattern for the
-			/opportunities list, #2065). RouteState's offline variant carries no
-			live region of its own by design - announcing the transition is left
-			to the caller, and unlike the list this section previously had
-			nothing else nearby that could double as one. */}
 			<p role="status" className="sr-only">
 				{error && errorIsOffline
 					? `${t("routeState.offline.title")}. ${t("landing.offline")}`

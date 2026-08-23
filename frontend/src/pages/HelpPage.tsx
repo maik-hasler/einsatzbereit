@@ -10,12 +10,6 @@ export default function HelpPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("help.title"));
 
-	// Two audiences, not a sequence - so the page splits by who is asking
-	// rather than numbering the questions. The General section above them
-	// holds the questions that belong to neither role - it's also the
-	// landing page's FAQ verbatim, making this page the single source both
-	// surfaces answer from rather than two FAQs that happen to link to each
-	// other (#2061).
 	const generalItems = [
 		{ q: t("help.generalQ1"), a: t("help.generalA1") },
 		{ q: t("help.generalQ2"), a: t("help.generalA2") },
@@ -96,19 +90,12 @@ export default function HelpPage() {
 									opportunitiesLink: (
 										<Link to="/opportunities" className={linkClass} />
 									),
-									// Organizations have no listing page of their own -
-									// findable via the same search as opportunities (keyword
-									// search matches org names too), so this points at the
-									// same route as opportunitiesLink.
+
 									organizationsLink: (
 										<Link to="/opportunities" className={linkClass} />
 									),
 									contactLink: <Link to="/contact" className={linkClass} />,
-									// Same role address as /contact - a mailto: link here too,
-									// not the plain unclickable text it used to be (#2061). Trans
-									// fills this from help.contactBody's <emailLink> tag content,
-									// not from children written here, so it's self-closing like
-									// Footer.tsx's licenseLink.
+
 									emailLink: (
 										// eslint-disable-next-line jsx-a11y/anchor-has-content
 										<a

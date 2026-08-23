@@ -2,37 +2,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Visual tests for #758: the org app shell's icon-led breadcrumb action bar
-/// moved out of OrgAppLayout.tsx into the shared Header.tsx component, which
-/// both the org app shell and the public site (via AppLayout.tsx +
-/// usePageToolbar) now render through. Public-site pages previously used a
-/// separate mechanism (ToolbarContext/Breadcrumb.tsx) that rendered plain-text
-/// chips inside &lt;main&gt;, with no icon and no Home entry beneath &lt;header&gt;
-/// specifically - these tests pin the new, shared behaviour.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
 	public async Task AccountPages_ReplaceActionBar_WithHeaderNavHomeAndSectionLevelEditing()
 	{
-		// #758 made /profile the canonical example of the shared action bar.
-		// #1755 gave the three account pages (/profile, /my-signups,
-		// /profile/settings) the same PageHeaderBand the legal pages use, and a
-		// band page renders no action bar - the title would otherwise be stated
-		// twice with a grey strip cutting through the treatment.
-		//
-		// The bar itself is unchanged and still covered on the org app shell by
-		// OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression
-		// below. What this pins instead is that the two things the bar carried
-		// for /profile survived the move: the way back home, and the ability to
-		// edit - the latter now as the Profile details section's own button
-		// rather than a quick action in the page chrome, and the former as the
-		// header nav's "Home" entry rather than a link inside this page's band.
-		// The band's own copy of that link is gone: it said the same thing on
-		// every subpage, in the one place a visitor does not look for site
-		// navigation.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -51,17 +26,11 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(homeLink).ToBeVisibleAsync();
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
 
-		// Edit sits inside the Profile details section, next to the fields it
-		// edits, matching how /profile/settings has always saved. It used to be
-		// published through QuickActionsContext for the page chrome to render,
-		// which left the account area running two editing paradigms at once.
 		var editButton = Page.GetByTestId("profile-edit");
 		await Expect(editButton).ToBeVisibleAsync();
 		await Expect(Page.Locator("main section").Filter(new() { Has = editButton }))
 			.ToBeVisibleAsync();
 
-		// The sub-nav is what ties the three pages together now that each has
-		// its own band; all three must offer all three destinations.
 		var subNav = Page.Locator("main nav[aria-label]").First;
 		foreach (var tab in new[] { "Profile", "Sign-ups", "Settings" })
 			await Expect(subNav.GetByRole(AriaRole.Link, new() { Name = tab })).ToBeVisibleAsync();
@@ -70,13 +39,6 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	[Test]
 	public async Task OrgAppShell_UsesTheSameBandAsEveryOtherPage_NoActionBarLeft()
 	{
-		// #758 gave the org app shell the shared action bar; this replaces that
-		// acceptance criterion. The bar is gone from the whole product now - the
-		// org app was the last surface still rendering it, which is what made it
-		// read as a third visual system next to the public site and the account
-		// area. What has to survive the removal is what the bar carried: the
-		// page's own name, a way back up one level, and the org switcher
-		// remaining a separate control in the header.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
@@ -93,13 +55,6 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	[Test]
 	public async Task PageHeaderBand_MakesHeaderTransparent_UntilScrolledPastTheBand()
 	{
-		// #1755: the band runs up *behind* the sticky header (negative
-		// --header-height margin), so the header has to drop its own white
-		// background and switch its controls to on-dark variants while that's
-		// true - otherwise a white bar sits across the top of a dark band.
-		// Once scrolled past, there is white page underneath again and the
-		// header has to take its background back, or white-on-dark controls
-		// would be left sitting on white.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -112,12 +67,9 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(header).ToContainClassAsync("bg-transparent");
 
 		await Page.EvaluateAsync("() => window.scrollTo(0, 600)");
-		// The header cross-fades over 300ms (transition-all duration-300).
+
 		await Expect(header).ToContainClassAsync("bg-white/95", new() { Timeout = 5_000 });
 
-		// Leaving the page has to release the transparency again - the overlay
-		// flag is refcounted precisely because React mounts the incoming route
-		// before unmounting the outgoing one.
 		await Page.GotoAsync($"{origin}/imprint");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(header).ToContainClassAsync("bg-transparent");

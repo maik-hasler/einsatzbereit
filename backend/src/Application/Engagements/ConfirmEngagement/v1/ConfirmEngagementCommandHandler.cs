@@ -86,10 +86,6 @@ internal sealed class ConfirmEngagementCommandHandler(
 		return streak.TotalConfirmedEngagements;
 	}
 
-	// Milestones are keyed by a monotonically-increasing lifetime confirmation
-	// count (never decremented by later cancellations/deletions elsewhere), and
-	// evaluated with >= rather than an exact match, so a threshold can never be
-	// skipped over or made permanently unreachable.
 	private static readonly (int Threshold, string Key)[] MilestoneThresholds =
 	[
 		(1, "first-step"),

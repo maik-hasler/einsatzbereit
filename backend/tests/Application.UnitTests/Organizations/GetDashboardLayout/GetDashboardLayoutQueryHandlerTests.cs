@@ -102,10 +102,6 @@ public class GetDashboardLayoutQueryHandlerTests
 	public async Task Handle_ShouldReturnHasCustomLayoutTrue_WhenLayoutExistsWithZeroWidgets(
 		CancellationToken cancellationToken)
 	{
-		// Regression guard for #771 review feedback: an organizer who removes
-		// every widget and saves that must NOT be indistinguishable from a
-		// brand-new organizer who never customized anything - both have an
-		// empty Widgets list, but only this one has a saved layout row.
 		var layout = OrganizationDashboardLayout.Create(
 			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
 			DefaultRequestingUserId,

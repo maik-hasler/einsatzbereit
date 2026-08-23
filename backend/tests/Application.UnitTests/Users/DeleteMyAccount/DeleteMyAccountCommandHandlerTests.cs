@@ -11,7 +11,6 @@ using Domain.VolunteerOpportunities;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
-
 namespace Application.UnitTests.Users.DeleteMyAccount;
 
 public class DeleteMyAccountCommandHandlerTests
@@ -35,12 +34,7 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetReportHistoryForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Report>());
-		// #1725: FindUserIncludingDeletedAsync now must return non-null for the many
-		// tests below that only care about a different side effect (achievement
-		// deletion, invitation deletion, etc.) - the handler throws when it's null,
-		// where the old dbContext.Users.FindAsync-based code silently tolerated it.
-		// Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing overrides this back to
-		// null to exercise that exact case.
+
 		_dbContext
 			.FindUserIncludingDeletedAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => User.Create(callInfo.ArgAt<UserId>(0)));
@@ -77,8 +71,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldWithdrawPendingEngagement_BeforeAnonymizing_SoItStopsOccupyingCapacity(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1140: a stuck Pending/Confirmed row would otherwise occupy
-		// time-slot capacity forever once anonymized, since nothing else ever terminates it.
+		// Arrange
+
 		var engagement = CreateEngagementFor(DefaultUserId);
 		_dbContext
 			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
@@ -117,8 +111,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldLeaveCheckedInEngagementConfirmed_ButStillAnonymizeIt(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a checked-in engagement is historical record of a completed shift;
-		// Withdraw() refuses a checked-in engagement, so it stays Confirmed but anonymized.
+		// Arrange
+
 		var engagement = CreateEngagementFor(DefaultUserId);
 		engagement.Confirm().ThrowIfFailure();
 		engagement.CheckIn().ThrowIfFailure();
@@ -191,7 +185,7 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await act.Should().NotThrowAsync();
-		// Issue #829: a failure deleting the avatar is swallowed rather than rolled back.
+
 		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", cancellationToken);
 	}
 
@@ -215,10 +209,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenStoredAvatarUrlDoesNotMatchAnyKnownObjectKey(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: a malformed/legacy AvatarUrl that GetObjectKeyFromPublicUrl can't parse back
-		// into an object key. Explicitly configured to return null - NSubstitute's unconfigured
-		// default for a string-returning method is "", not null, even though this method's
-		// return type is string?.
+		// Arrange
+
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl("not-a-valid-storage-url");
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
@@ -252,9 +244,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldThrowNotFound_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1725: explicitly override the constructor's default back to
-		// null, simulating a row that genuinely doesn't exist. Reporting success here
-		// would mean a legally-mandated erasure request silently no-ops.
+		// Arrange
+
 		_dbContext
 			.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken)
 			.Returns((User?)null);
@@ -273,10 +264,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteTheUserRow_WhenUserIsShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1725: a shadow-deleted user (IsDeleted=true) is hidden by the global
-		// !IsDeleted query filter but must still be found and fully erased here, not silently
-		// skipped - the account is still reachable and this is the only path that raises
-		// UserAccountDeletedDomainEvent, which is what deletes the Keycloak identity.
+		// Arrange
+
 		var user = User.Create(DefaultUserId);
 		user.MarkDeleted(DateTimeOffset.UtcNow);
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
@@ -294,10 +283,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldRaiseUserAccountDeletedEvent_OnlyAfterUserRowIsFoundAndMarkedForDeletion(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1141: the Keycloak identity is irreversible, so its deletion must be
-		// deferred to a post-commit domain-event handler rather than called inline here (see
-		// UserAccountDeletedDomainEventHandler). The handler's only job is to raise that event
-		// on the aggregate once the local row is actually about to be deleted.
+		// Arrange
+
 		var user = User.Create(DefaultUserId);
 		_dbContext.FindUserIncludingDeletedAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
@@ -388,10 +375,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldDeleteReportsFiledByTheUser(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1676: reports the user filed (as reporter) survived deletion,
-		// including up to 1000 chars of free text. Reports where the deleted user is the
-		// *subject* are moderation history and are intentionally kept, not deleted here -
-		// see Handle_ShouldStampTargetDeletedOn_ForReportsAgainstTheUser below (#1725).
+		// Arrange
+
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -405,10 +390,8 @@ public class DeleteMyAccountCommandHandlerTests
 	public async Task Handle_ShouldStampTargetDeletedOn_ForReportsAgainstTheUser(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - issue #1725: a report where this user is the *target* (as
-		// opposed to the reporter) survives account deletion as moderation
-		// history, but had no retention limit at all - stamping TargetDeletedOn
-		// here is what lets AbuseReportRetentionJob eventually prune it.
+		// Arrange
+
 		var report = Report.Create(
 			ReportTargetType.User, DefaultUserId.Value, UserId.New(), ReportReason.Harassment, details: null).Value;
 		_dbContext

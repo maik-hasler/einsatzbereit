@@ -9,13 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Backstops coordinate resolution for opportunities whose address is still
-// unresolved an hour after creation/update - normally
-// GeocodeVolunteerOpportunityAddressHandler resolves it within seconds via the
-// outbox pipeline, but a GeocodingOutcome.TransientFailure there (Nominatim
-// outage, timeout) leaves it for this job to retry. Rows with
-// AddressGeocodingFailed set (a confirmed NotFound) are excluded so a
-// permanently-bad address isn't retried every hour forever.
 internal sealed class GeocodingRetryJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<GeocodingRetryJob> logger)

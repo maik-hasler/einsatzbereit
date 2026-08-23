@@ -9,13 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
-// Consumer of EngagementReactivatedDomainEvent: a withdrawn/cancelled engagement
-// is reused via Engagement.Reactivate (called from CreateEngagementCommandHandler)
-// rather than inserting a new row, but it still deserves the same organizer
-// "New sign-up" email (#1174) and volunteer receipt (#1729) a genuinely new
-// engagement gets. Mirrors EngagementCreatedDomainEventHandler - see
-// EngagementOrganizerNotificationHelper and EngagementVolunteerConfirmationHelper
-// for the full rationale.
 internal sealed class EngagementReactivatedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

@@ -17,14 +17,10 @@ internal sealed class OrganizationDashboardReadRepository(
 	{
 		var orgId = OrganizationId.Create(organizationId).GetValueOrThrow();
 
-		// Kept as an IQueryable (not materialized) so every use below compiles to a
-		// correlated "IN (SELECT ...)" subquery instead of shipping the id list to
-		// and from Postgres as a literal array.
 		var orgOpportunityIds = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
 			.Select(vo => vo.Id);
 
-		// A single grouped query covers every status breakdown (pending, confirmed, ...).
 		var countsByStatus = await dbContext.EngagementsQuery
 			.Where(e => orgOpportunityIds.Contains(e.OpportunityId))
 			.GroupBy(e => e.Status)

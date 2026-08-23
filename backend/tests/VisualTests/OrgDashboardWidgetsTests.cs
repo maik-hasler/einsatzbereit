@@ -6,27 +6,12 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Visual tests for the org dashboard's widget grid (Calendar, Upcoming
-/// Opportunities, Settings, To-Do, Create opportunity, Volunteers), which
-/// lets an organizer see pending-application and confirmed-volunteer counts
-/// without navigating to another tab. The pending queue lives in the "Needs
-/// your attention" tile and reads as resolved when empty; the confirmed
-/// total sits in its own neutral "Volunteers" tile. Customization itself
-/// (add/remove/place via the "Edit" quick action) is covered by
-/// OrgDashboardCustomizeTests.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
 	public async Task ToDoWidget_OffersNoCta_WhenTheDashboardCountsFailToLoad()
 	{
-		// The "View pending sign-ups" link must sit inside the kpis-present
-		// branch: outside it, a failed fetch renders a live call to action beside
-		// the error banner, offering to work a queue whose size the page just
-		// failed to read. Both count tiles surface their own failure and nothing
-		// else.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
@@ -44,10 +29,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
-		// Only the KPI endpoint fails - the layout endpoint below it
-		// (.../dashboard/layout) is deliberately left alone by this glob, so
-		// the widget grid itself still renders and the tiles can be asserted
-		// on.
 		await Page.RouteAsync($"**/v1/organizations/{organizationId}/dashboard", async route =>
 		{
 			if (route.Request.Method != "GET")
@@ -85,25 +66,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
-		// WidgetCard only set overflow-y-auto on its content wrapper, and
-		// html sets overflow-x: clip page-wide (global.css) - together, any
-		// widget content wider than its rendered width (the Calendar widget's
-		// toolbar button rows, and its Agenda table's fixed-width date/time
-		// columns squeezing the flexible EVENT column) silently blew out past
-		// the widget on a narrow viewport with no way to reach it, rather than
-		// scrolling within the widget itself. Fixed by giving WidgetCard's
-		// wrapper overflow-x-auto too (containing the blowout so it scrolls
-		// instead of clipping) and letting the toolbar's button rows and the
-		// Agenda table scroll horizontally on their own (global.css) instead
-		// of being clipped or squeezed unreadably.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		// Sign in and land on the dashboard at the default (desktop) viewport
-		// first - FastSignInAsync's "User menu" button doesn't exist in the DOM
-		// at all below the mobile breakpoint (see OrgAppMobileResponsiveTests),
-		// only appearing inside the hamburger menu once opened.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -128,9 +94,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
-		// Gives the Calendar widget an event to render - without one, the
-		// Agenda view shows its empty-state span instead of the table whose
-		// EVENT column this test needs to measure.
 		var oppTitle = $"Visual812 Opportunity {suffix}";
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
@@ -147,12 +110,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// Pinned to a fixed 10:00 UTC start rather than DateTimeOffset.UtcNow -
-		// a "now + 3 days" slot inherits whatever time of day the suite happens
-		// to run at, and a 2-hour slot starting late enough in the day crosses
-		// midnight. The Agenda view then renders the one event as two rows (one
-		// per day it touches), and the GetByText(oppTitle) lookup below hits a
-		// Playwright strict-mode violation from matching both.
 		var start = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(3).AddHours(10), TimeSpan.Zero);
 		var end = start.AddHours(2);
 		(await http.PostAsJsonAsync(
@@ -170,24 +127,18 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		});
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Narrow the browser to the mobile viewport this row overflows at.
 		await Page.SetViewportSizeAsync(390, 844);
 
 		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
 		var agendaButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true });
-		// Reachable only by scrolling this one row (its own overflow-x: auto,
-		// not the whole page) - if the fix regresses back to a plain clipped
-		// row, this button has no scrollable ancestor to bring it into view
-		// and the click below times out instead of landing.
+
 		await agendaButton.ScrollIntoViewIfNeededAsync();
 		await Expect(agendaButton).ToBeVisibleAsync();
 		await agendaButton.ClickAsync();
 
 		var eventHeader = calendarWidget.Locator(".rbc-agenda-table thead th", new() { HasText = "Event" });
 		await Expect(eventHeader).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		// Single EvaluateAsync per poll (not a bare BoundingBoxAsync read) so a
-		// late layout pass on the freshly-rendered Agenda table can't be
-		// sampled mid-reflow.
+
 		var eventHeaderWidth = 0d;
 		await PollUntilAsync(async () =>
 		{
@@ -219,14 +170,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task CalendarWidget_SelectEventAndSaveColor_RecoloredEventSurvivesReload()
 	{
-		// CalEvents, and the Calendar's components/eventPropGetter/messages
-		// props, were rebuilt from scratch on every render (including on every
-		// pointer movement while dragging the color picker below), fixed by
-		// memoizing calEvents off calData and hoisting the static props out of
-		// the component. This exercises the full select-event -> pick color ->
-		// save round trip end to end, so a broken useMemo dependency array or a
-		// debounced picker that never flushes its final value would show up as
-		// a failing assertion here rather than only as a missed re-render.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -271,8 +214,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// Close enough to "now" that it always falls in the current month, so
-		// the widget's default month view shows it without switching tabs.
 		var start = DateTimeOffset.UtcNow.AddHours(1);
 		var end = start.AddHours(2);
 		(await http.PostAsJsonAsync(
@@ -293,7 +234,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var calendarEvent = calendarWidget.Locator(".rbc-event").First;
 		await Expect(calendarEvent).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// No color set yet - eventPropGetter falls back to DEFAULT_EVENT_COLOR.
 		await Expect(calendarEvent).ToHaveCSSAsync("background-color", "rgb(34, 105, 71)");
 
 		await calendarEvent.ClickAsync();
@@ -313,9 +253,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		await Expect(calendarEvent).ToHaveCSSAsync("background-color", "rgb(51, 102, 204)");
 
-		// Reload so calData (and the memoized calEvents derived from it) come
-		// back fresh from the server, proving the color actually persisted
-		// rather than only reflecting the modal's optimistic local update.
 		await Page.ReloadAsync();
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var reloadedEvent = calendarWidget.Locator(".rbc-event").First;
@@ -326,15 +263,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	[Test]
 	public async Task UpcomingOpportunitiesWidget_ListsAPublishedOpportunity_WithItsNextSlotTime()
 	{
-		// The suite only ever asserted this widget's *empty* state, so nothing
-		// covered the one branch that touches the data: a populated row. A
-		// change that called a Date method on nextTimeSlotStart shipped past
-		// every frontend check because the generated API client types that
-		// field as Date while handing callers the raw JSON string (it parses
-		// with a plain JSON.parse and no reviver) - the widget threw and fell
-		// into its error boundary for any organization that actually had an
-		// upcoming opportunity. See lib/upcomingOpportunities.ts, whose unit
-		// tests pin the same contract at the pure-function level.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -394,9 +322,6 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var upcomingWidget = Page.GetByTestId("widget-tile-UpcomingOpportunities");
 		await Expect(upcomingWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The row itself, its formatted slot time, and its capacity line - a
-		// crash inside the widget would replace all three with the tile's
-		// error-boundary fallback instead.
 		await Expect(upcomingWidget.GetByRole(AriaRole.Link, new() { Name = oppTitle }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(upcomingWidget).ToContainTextAsync(start.ToString("yyyy"));

@@ -7,23 +7,13 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.VolunteerOpportunities;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "Address"/"OrganizationId" DTO types, which would otherwise shadow the domain
-// types of the same name pulled in via the "Domain.Common"/"Domain.Organizations"
-// usings below (see the same workaround in OrganizationMembershipBackfillJobTests.cs).
+
 using DomainAddress = Domain.Common.Address;
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.Persistence.Repositories.EngagementReadRepository directly
-// (InternalsVisibleTo, see Infrastructure.csproj) against the real integration Postgres.
-// GetActiveVolunteerIdsByOpportunityAsync's DB-level status/time-slot filtering and its
-// nullable-UserId Distinct() projection (einsatzbereit#1390) aren't exercised by the
-// NSubstitute-mocked Application.UnitTests handler tests (which only assert on the
-// interface's behavior, not that the EF query actually translates) - this is the only
-// place that would catch an EF query-translation failure against real Postgres.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
@@ -40,8 +30,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var opportunityId = VolunteerOpportunityId.New();
 
-		// No time slots involved here, so plain individual-contact engagements
-		// (TimeSlotId always null) avoid the TimeSlot foreign key entirely.
 		var pending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Pending").GetValueOrThrow();
 		var confirmed = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Confirmed").GetValueOrThrow();
 		confirmed.Confirm().ThrowIfFailure();
@@ -49,9 +37,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		cancelled.Cancel().ThrowIfFailure();
 		var withdrawn = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Withdrawn").GetValueOrThrow();
 		withdrawn.Withdraw().ThrowIfFailure();
-		// A pending engagement whose volunteer account was later deleted (#829) -
-		// VolunteerId is null even though Status is still Pending, so there is no
-		// one left to notify and it must not show up in the result.
+
 		var anonymizedPending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Anonymized").GetValueOrThrow();
 		anonymizedPending.Anonymize();
 
@@ -109,9 +95,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenOpportunityIsDraft(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1155: this endpoint is anonymous (no organizer check), so an
-		// unpublished Draft opportunity's details must not leak to whoever holds the
-		// engagement id, matching what GetDetailsAsync already enforces.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
 		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
@@ -212,14 +195,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		public string GeneratePin() => "0000";
 	}
 
-	// Regression for #1184: the anonymous .ics calendar feed (AllowAnonymous,
-	// engagementId as capability token) must not leak title/description/address
-	// for an opportunity the organizer has taken off Published, nor keep serving
-	// a withdrawn/cancelled engagement's feed - both must 404 via a null return.
-	//
-	// ScheduledSlots opportunities can't be created directly as Published (Create()
-	// requires at least one time slot to exist first), so every case here starts as
-	// Draft, adds a slot, then Publish()es before being driven to the case's status.
 	private async Task<(VolunteerOpportunity Opportunity, TimeSlot Slot)> CreatePublishedOpportunityWithSlotAsync(
 		ApplicationDbContext dbContext,
 		CancellationToken cancellationToken)
@@ -313,11 +288,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		info.Should().BeNull();
 	}
 
-	// Regression for #1051: EngagementSummary never carried CancellationReason,
-	// so a reason set via Engagement.Cancel(reason) never reached the
-	// volunteer's own "My profile -> Engagements" list (GetByVolunteerAsync)
-	// nor the organizer's "Manage applications" list (GetPagedByOpportunityAsync),
-	// even though the domain model, command, and email already supported it.
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldIncludeCancellationReason_WhenEngagementCancelledWithReason(
 		CancellationToken cancellationToken)
@@ -366,9 +336,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
-		// GetPagedByOpportunityAsync inner-joins through to OrganizationsQuery, so
-		// a random unsaved OrganizationId would silently drop the row - a real
-		// Organization must exist for the opportunity to be returned at all.
 		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CancellationReasonOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
 
@@ -392,10 +359,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			.Which.CancellationReason.Should().Be("Position filled");
 	}
 
-	// Regression for #1016: EngagementSummary never carried CheckInMethod, so the
-	// frontend couldn't tell a QRCode/PINCode opportunity (where a "Check in" button
-	// makes sense) apart from a Manual or None one (where it doesn't) and always
-	// rendered the button.
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldIncludeCheckInMethod_FromOpportunity(
 		CancellationToken cancellationToken)
@@ -429,9 +392,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	public async Task GetByVolunteerAsync_ShouldDefaultCheckInMethodToNone_WhenOpportunityWasDeleted(
 		CancellationToken cancellationToken)
 	{
-		// Same no-inner-join scenario as the CancellationReason regression above
-		// (#667): a hard-deleted opportunity leaves no row to join CheckInMethod
-		// from, so the mapping must fall back to a safe default rather than throw.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 		var opportunityId = VolunteerOpportunityId.New();
@@ -442,8 +402,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var repository = new EngagementReadRepository(dbContext);
 
-		// A Pending engagement whose opportunity no longer exists moves to the Past
-		// bucket (#703) - see GetByVolunteerAsync's opportunityExists handling.
 		var page = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
 
 		page.Items.Should().ContainSingle()
@@ -478,15 +436,10 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			.Which.CheckInMethod.Should().Be("PINCode");
 	}
 
-	// --- Current & Upcoming never expiring (#1163) ---
-
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldMoveEndedTimeSlotToPastBucket_EvenWhenNeverCheckedIn(
 		CancellationToken cancellationToken)
 	{
-		// A Confirmed engagement for a CheckInMethod.None slot can never be checked
-		// in (no check-in action applies), so IsCheckedIn alone used to leave it in
-		// "upcoming" forever once its shift had already happened.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
@@ -555,10 +508,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
-		// A real opportunity, not a fresh VolunteerOpportunityId: #703's rule
-		// reclassifies an engagement whose opportunity is gone as past, so
-		// engagements pointing at ids with no row would *both* land in past and
-		// this case would be about the wrong rule entirely.
 		var organization = DomainOrganization.Create(
 			DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
@@ -595,18 +544,10 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			.Which.Id.Should().Be(withdrawn.Id.Value);
 	}
 
-	// --- Checked-in engagement ahead of its time slot's end (#1855) ---
-
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldKeepCheckedInEngagement_InUpcomingBucket_WhenTimeSlotHasNotEndedYet(
 		CancellationToken cancellationToken)
 	{
-		// Engagement.CheckIn() has no time-based guard - an organizer can check a
-		// volunteer in as soon as it is Confirmed, e.g. at arrival for a
-		// still-ongoing multi-hour shift. Before #1855 IsCheckedIn alone moved a
-		// Confirmed engagement to Past regardless of the slot's own end time, so
-		// a shift that had not even started yet could show up as a completed,
-		// feedback-ready "Past" item.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
@@ -641,10 +582,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	public async Task GetByVolunteerAsync_ShouldMoveCheckedInEngagement_ToPastBucket_OnceTimeSlotHasEnded(
 		CancellationToken cancellationToken)
 	{
-		// Complements the regression above: once the slot has genuinely ended,
-		// a checked-in engagement still belongs in Past - #1855 only defers the
-		// move until the slot's own end time actually arrives, it does not stop
-		// checked-in engagements from ever reaching Past.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
@@ -680,10 +617,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	public async Task GetByVolunteerAsync_ShouldKeepCheckedInEngagementWithNoTimeSlot_InPastBucket(
 		CancellationToken cancellationToken)
 	{
-		// A checked-in IndividualContact engagement has no TimeSlotId at all, so
-		// there is no date to compare "now" against - #1855's new carve-out is
-		// scoped to a resolvable TimeSlotEnd and must leave this case exactly as
-		// before (Past), not reclassify it for lack of information either way.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
@@ -712,8 +645,6 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		past.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
-	// --- GetCheckedInByVolunteerAsync (engagement record, #1096) ---
-
 	[Test]
 	public async Task GetCheckedInByVolunteerAsync_ShouldReturnOnlyCheckedInEngagements_WithResolvedTimeSlot(
 		CancellationToken cancellationToken)
@@ -730,8 +661,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(-2).AddHours(3), 10, DateTimeOffset.UtcNow.AddDays(-3)).GetValueOrThrow();
-		// A volunteer can only have one engagement per time slot (ix_engagement_volunteer_id_time_slot_id),
-		// so the "not checked in" cases need their own slots on the same opportunity.
+
 		var otherSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(-1).AddHours(3), 10, DateTimeOffset.UtcNow.AddDays(-3)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
@@ -793,8 +723,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
-		// Added out of chronological order - CreatedOn (sign-up order) must not
-		// determine the upcoming bucket's order, only the slot's own start time.
+
 		var laterSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(20), DateTimeOffset.UtcNow.AddDays(20).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
 		var soonerSlot = opportunity.AddTimeSlot(

@@ -7,18 +7,12 @@ using Infrastructure.BackgroundJobs;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using TUnit.Core.Interfaces;
-// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
-// "Organization"/"OrganizationId" DTO types, which would otherwise shadow the domain
-// types of the same name pulled in via the "Domain.Organizations" using above.
+
 using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.BackgroundJobs.InvitationExpiryJob.ExpireDueInvitationsAsync
-// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real integration
-// Postgres, rather than waiting a real 14 days + a real hourly tick for the invitation
-// expiry behavior (#1053) to become observable.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class InvitationExpiryJobTests(IntegrationTestFixture fixture)
@@ -72,10 +66,6 @@ public class InvitationExpiryJobTests(IntegrationTestFixture fixture)
 	public async Task ExpireDueInvitationsAsync_PendingInvitationPastItsWindow_DeletesItsInvitationReceivedNotification(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1919: an expired invitation's InvitationReceived
-		// notification is never marked read automatically, so without this it
-		// stuck around forever, pointing the invitee at a /my-signups page with
-		// nothing left to show for it.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var createdAt = DateTimeOffset.UtcNow.AddDays(-(OrganizationInvitation.ExpiryWindowDays + 1));
 		var invitationId = await SeedInvitationAsync(dbContext, createdAt, cancellationToken);

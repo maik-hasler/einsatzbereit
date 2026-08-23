@@ -1,12 +1,5 @@
 <#import "template.ftl" as layout>
-<#--
-	With verifyEmail on, Keycloak deliberately leaves the password fields off
-	this form and collects the password after the address is confirmed instead
-	(RegistrationPassword.buildPage). Nothing said so, so the form just looked
-	like it had lost a field - and the next screen, asking for a password, came
-	out of nowhere. The `lead` below is the missing half of that flow, and it
-	appears only in the case that actually needs explaining.
--->
+
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError("email","username","password","password-confirm")
 	displayRequiredFields=true
@@ -65,8 +58,6 @@
 				</div>
 			</#if>
 
-			<#-- Only rendered when the realm collects the password here, i.e. when
-			verifyEmail is off. See the lead above. -->
 			<#if passwordRequired??>
 				<div class="form-group">
 					<div class="form-field form-field--with-toggle">

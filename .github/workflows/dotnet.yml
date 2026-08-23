@@ -25,12 +25,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The shard split is computed, not checked in, so nothing in a normal run
-  # would notice if it stopped covering everything - a class that falls out of
-  # every shard's filter does not fail, it just silently stops being tested.
-  # This asserts the four shards still partition the suite exactly: every test
-  # class in exactly one shard, none dropped, none run twice. No .NET, no
-  # Docker, no `needs` - it fails within seconds of the run starting.
   visual-test-shard-partition:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -87,57 +81,22 @@ jobs:
         working-directory: backend
         run: dotnet format --verify-no-changes --no-restore
 
-  # Single restore+build for the whole solution, shared by format-check/
-  # fast-tests/integration-tests/visual-tests below via upload-artifact/
-  # download-artifact instead of each of those four jobs redoing it.
-  # format-check only strictly needs a restore (no build output), but
-  # depends on this anyway to keep the whole workflow down to one restore -
-  # at the cost of format-check's own signal landing later than it would
-  # standalone, now behind this job's setup+build time.
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # VisualTests.csproj's InstallPlaywrightBrowsers target (below, via
-      # `dotnet build`) shells out to `playwright install --with-deps
-      # chromium`, which runs its own `apt-get update`/`install` on every
-      # Playwright-cache miss. apt has no default network timeout, so a
-      # stalled connection to the runner's mirror hangs silently instead of
-      # failing - observed burning this job's entire timeout with zero
-      # output partway through `apt-get update` (einsatzbereit#2139-2138
-      # CI). Retries + a bounded per-request timeout turn that hang into a
-      # fast retry/failure instead.
       - name: Harden apt against CI mirror stalls
         run: |
           echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::http::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::https::Timeout "15";' | sudo tee -a /etc/apt/apt.conf.d/80-retries
 
-          # Acquire::http::Timeout only aborts a connection that goes fully
-          # silent - it doesn't catch one that's merely glacial. Observed a
-          # `.deb` package trickle in at ~8 KB/s from azure.archive.ubuntu.com
-          # (one runner-images mirrorlist entry, /etc/apt/apt-mirrors.txt)
-          # for 7+ minutes before the next package stalled outright, burning
-          # the whole job timeout without ever going idle long enough to
-          # retry (einsatzbereit#2139 CI). Drop that entry from the
-          # mirrorlist so apt only ever considers the direct, historically
-          # reliable archive - a plain substring swap, safe even if the
-          # file's exact format changes upstream.
           if [ -f /etc/apt/apt-mirrors.txt ]; then
             sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
           fi
 
-      # Reproduced locally: a concurrent `apt-get install` (this repo's own
-      # sandbox ran several `dotnet build` invocations in parallel) fails
-      # this same Playwright `--with-deps` install immediately with "E:
-      # Could not get lock /var/lib/dpkg/lock-frontend" instead of hanging -
-      # a different symptom from the mirror stall above, but the same
-      # command is exposed to it. GitHub-hosted runners run apt-daily.timer/
-      # apt-daily-upgrade.timer shortly after boot, which can hold this same
-      # lock for a few minutes; waiting it out here is cheap insurance
-      # against that immediate failure mode landing on this step instead.
       - name: Wait for background apt/dpkg locks to clear
         run: |
           for i in $(seq 1 60); do
@@ -162,11 +121,6 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Building the whole solution here compiles tests/VisualTests.csproj,
-      # which downloads Chrome for Testing + Chrome Headless Shell (~290 MiB
-      # combined) from cdn.playwright.dev via its InstallPlaywrightBrowsers
-      # MSBuild target. Caching this means that download only happens when
-      # the pinned TUnit.Playwright version changes, not on every run.
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -181,12 +135,6 @@ jobs:
         working-directory: backend
         run: dotnet build --no-restore
 
-      # NSwag (Api.csproj's Debug-only MSBuild target) just regenerated these
-      # three files into the working tree above. All three are committed, so
-      # a PR that changes a DTO or route and forgets to commit the
-      # regenerated client would otherwise pass every check here - the
-      # frontend type-checks against the stale client and only breaks at
-      # runtime against the new API.
       - name: Verify generated API client and OpenAPI doc are committed
         run: |
           if ! git diff --exit-code -- \
@@ -204,10 +152,6 @@ jobs:
           dotnet tool install --global dotnet-ef --version 10.0.11
           dotnet ef migrations has-pending-model-changes -p src/Infrastructure -s src/Api --no-build
 
-      # visual-tests actually launches a browser on its own runner (a
-      # different machine from this job), so it needs its own Playwright
-      # browser cache restore below - this artifact only carries the .NET
-      # build output (bin/obj), not ~/.cache/ms-playwright.
       - name: Upload build output
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -215,12 +159,6 @@ jobs:
           path: |
             backend/**/bin/**
             backend/**/obj/**
-          # tests/VisualTests's Playwright driver lives under a dot-prefixed
-          # bin/.../.playwright/ folder (upload-artifact excludes dotfiles by
-          # default), which silently dropped it from the artifact on the
-          # first real run of this shape and failed visual-tests with
-          # "Driver not found" - no test build output here is actually
-          # sensitive, so including hidden files is safe.
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -237,11 +175,6 @@ jobs:
         with:
           global-json-file: backend/global.json
 
-      # Restoring (not re-running `dotnet restore`) the same NuGet cache key
-      # the build job just populated - --no-restore/--no-build still need the
-      # actual package contents on disk (analyzers/build targets they
-      # contribute get imported during MSBuild evaluation), not just the
-      # bin/obj output below.
       - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -255,20 +188,10 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
-      # TUnit's Microsoft.Testing.Platform runner ships coverage support out of the
-      # box (Microsoft.Testing.Extensions.CodeCoverage arrives transitively via
-      # TUnit itself - no extra PackageReference needed in any test project) - a
-      # fixed --coverage-output name keeps the path below predictable instead of
-      # the tool's default GUID-named file.
       - name: Test - Application.UnitTests
         working-directory: backend
         run: dotnet run --project tests/Application.UnitTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output application-unittests.cobertura.xml
@@ -277,11 +200,6 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/ArchitectureTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output architecturetests.cobertura.xml
 
-      # Report-only (einsatzbereit#1327): no threshold gate, so a low or
-      # dropping number never blocks a merge - visibility is the point.
-      # Written straight to the job's own step summary rather than via a
-      # third-party action, to avoid per-class noise and a dependency on a
-      # Node 20 runtime GitHub Actions is deprecating.
       - name: Publish coverage summary
         if: github.event_name == 'pull_request'
         working-directory: backend
@@ -335,11 +253,6 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
@@ -368,25 +281,9 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
-  # Sharded across several standard ubuntu-latest runners (einsatzbereit#2145).
-  # This one job was ~78% of the workflow's wall-clock and failed 53% of runs:
-  # 542 tests on a 4-vCPU runner, where AssemblyParallelLimit.cs caps concurrency
-  # at ProcessorCount - 2 (= 2), is ~271 sequential slots no matter how fast any
-  # single test is. A bigger runner would have fixed that in one line, but larger
-  # runners are metered per-minute even on a public repo, so this stays on the
-  # free standard tier and buys the parallelism by adding runners instead of
-  # cores - each shard gets its own 4 vCPUs and its own Aspire stack.
-  #
-  # fail-fast: false because a shard failing tells you nothing about the other
-  # three; cancelling them would just hide three quarters of the signal behind
-  # one flake.
   visual-tests:
     needs: build
     runs-on: ubuntu-latest
-    # Each shard measures ~4-5 min after #2148 cut the suite to 232 cases (see
-    # docs/TDRs/2_slow_ci_pipeline.adoc); this is a hang guard, deliberately far
-    # above the expected runtime rather than the near-miss the old unsharded
-    # 25 min was against a 19-25 min job.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -413,22 +310,10 @@ jobs:
           name: backend-build
           path: backend
 
-      # actions/upload-artifact/download-artifact zip the artifact and don't
-      # preserve the Unix executable bit, so the native apphost binaries
-      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
-      # actually launches) come back non-executable and fail with
-      # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
-      # Restores the same Playwright browser cache the build job just
-      # populated - the build job's download happened on that job's own
-      # runner, a different machine from this one, so the browser binary
-      # itself (~/.cache/ms-playwright, not part of the artifact above) has
-      # to be fetched again here. `needs: build` guarantees this restore
-      # lands after that job's cache save, so this is a guaranteed hit rather
-      # than a fresh download.
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -455,8 +340,6 @@ jobs:
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
-      # strategy.job-total is the matrix length, so the shard count is never
-      # written down twice and can't drift from the `shard:` list above.
       - name: Resolve shard filter
         id: shard
         run: |
@@ -471,10 +354,6 @@ jobs:
             --treenode-filter "${{ steps.shard.outputs.filter }}" \
             --minimum-expected-tests "${{ steps.shard.outputs.min-tests }}"
 
-      # #2145's first acceptance criterion: the fixed per-shard Aspire boot is
-      # what decides how many shards are still worth adding, so keep measuring it
-      # rather than re-deriving it from step timestamps once. AspireFixture writes
-      # the file at the end of InitializeAsync.
       - name: Report Aspire stack startup cost
         if: always()
         working-directory: backend
@@ -486,16 +365,10 @@ jobs:
             echo "::warning::shard ${{ matrix.shard }}: no Aspire boot timing recorded - the stack never finished starting"
           fi
 
-      # VisualTestBase only keeps a trace for tests that actually failed (see
-      # TeardownTracingAsync) - upload whatever landed so a flake can be
-      # inspected (playwright.dev/dotnet/docs/trace-viewer) instead of
-      # re-guessed from a bare assertion message.
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          # Per shard: upload-artifact rejects a second upload under a name
-          # another matrix leg already claimed.
           name: playwright-traces-shard-${{ matrix.shard }}
           path: backend/tests/VisualTests/bin/**/trace-artifacts/**
           if-no-files-found: ignore

@@ -59,7 +59,7 @@ public class UploadOrganizationLogoCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller is not an organizer of this organization.
+		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);

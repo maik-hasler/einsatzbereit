@@ -26,11 +26,6 @@
 		});
 	}
 
-	// Same readyState guard floating-labels.js already had. Waiting only on
-	// DOMContentLoaded means the toggle silently does nothing whenever this
-	// script runs after the event has already fired - which is exactly what
-	// happens on a cached load, since theme.properties injects it at the end
-	// of <body>.
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', init);
 	} else {

@@ -5,15 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #659: the "Signed up: {date}" line (text-gray-400 on white)
-/// and the Withdrawn status badge (text-gray-500 on bg-gray-100) failed WCAG
-/// AA color-contrast. MyEngagementsPage_AsVera_HasNoSeriousA11yViolations in
-/// AccessibilityTests.cs only caught this when a dated/Withdrawn engagement
-/// happened to already be present for vera at scan time - seed/timing
-/// dependent under the shared AspireFixture session. This test deterministically
-/// creates a Withdrawn engagement first, so the violation is always exercised.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -44,12 +35,8 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #675 split the tab into "Current & upcoming" (default) and "Past" -
-		// a Withdrawn engagement now only shows up under "Past".
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 
-		// Confirm the Withdrawn badge this fix targets is actually on the page
-		// before scanning - otherwise a pass proves nothing.
 		await Expect(Page.GetByText("Withdrawn").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var result = await Page.RunAxe();
@@ -73,9 +60,6 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		// Create a fresh organization rather than reusing olaf's shared seed
-		// org - other VisualTests running concurrently in this shared Aspire
-		// session can mutate/delete shared orgs.
 		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"EngagementStatusContrast Org {suffix}" });

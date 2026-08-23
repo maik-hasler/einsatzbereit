@@ -10,20 +10,12 @@ export default function ImprintPage() {
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
-	// The first three blocks are all short records of the same shape (a name,
-	// an address, a way to reach someone), so they read as a row of cards
-	// rather than three prose sections. Two of them repeat the same name and
-	// address on purpose - DDG and MStV each require their own statement - and
-	// the card labels are what keep that reading as deliberate compliance
-	// rather than a duplication bug.
 	const records = [
 		{ title: t("imprint.section1Title"), body: t("imprint.section1Body") },
 		{
 			title: t("imprint.section2Title"),
 			body: t("imprint.section2Body"),
-			// Contact is the one record with an email address in its body -
-			// rendered via Trans below so that address is a mailto: link
-			// rather than the plain, unclickable text it used to be (#2061).
+
 			isContact: true,
 		},
 		{ title: t("imprint.section3Title"), body: t("imprint.section3Body") },
@@ -37,10 +29,6 @@ export default function ImprintPage() {
 			/>
 
 			<div data-content-wrapper className="mx-auto max-w-5xl">
-				{/* No clause numbers here, unlike the terms and privacy pages: the
-				imprint copy already cites its own statutory sections ("§ 5 DDG",
-				"§ 18 MStV"), so a second, unrelated numbering running alongside
-				would read as a competing citation scheme. */}
 				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{records.map(({ title, body, isContact }) => (
 						<section key={title} className={cardClass}>

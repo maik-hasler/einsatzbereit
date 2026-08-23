@@ -23,9 +23,6 @@ public sealed class OrganizationInvitation
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
-	// How long a Pending invitation stays actionable before InvitationExpiryJob
-	// flips it to Expired. Shared by both Create (initial send) and Resend
-	// (which restarts the same window) so the two paths can never drift apart.
 	public const int ExpiryWindowDays = 14;
 
 #pragma warning disable CS8618
@@ -49,10 +46,6 @@ public sealed class OrganizationInvitation
 		ExpiresOn = now.AddDays(ExpiryWindowDays);
 	}
 
-	// Deliberately does not take an organization/invitee display name (#1207) -
-	// both are looked up fresh at read time (a join to organization, a Keycloak
-	// lookup for the invitee) instead of being frozen here, so a later rename
-	// doesn't leave a stale label on an outstanding invitation.
 	public static OrganizationInvitation Create(
 		OrganizationId organizationId,
 		UserId inviteeId,
@@ -94,10 +87,6 @@ public sealed class OrganizationInvitation
 		return Result.Success();
 	}
 
-	// Called by InvitationExpiryJob for every Pending invitation whose window
-	// has elapsed (#1053). No domain event: unlike Accept/Decline this has no
-	// interested subscriber - expiring is a silent cleanup, not something the
-	// invitee or organizer needs to be told about the instant it happens.
 	public Result Expire(DateTimeOffset now)
 	{
 		var pending = EnsurePending();
@@ -111,11 +100,6 @@ public sealed class OrganizationInvitation
 		return Result.Success();
 	}
 
-	// Only an Expired invitation can be resent (#1053) - a still-Pending one
-	// already has a live 14-day window running, and Accepted/Declined are
-	// final. This also doubles as the only rate limit resend needs: the
-	// window this restarts must itself elapse again before another resend is
-	// possible, so an organizer can't spam the invitee's inbox on demand.
 	public Result Resend(DateTimeOffset now)
 	{
 		if (Status != InvitationStatus.Expired)

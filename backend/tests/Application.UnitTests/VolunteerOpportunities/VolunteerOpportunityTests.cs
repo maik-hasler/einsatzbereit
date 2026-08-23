@@ -244,8 +244,6 @@ public class VolunteerOpportunityTests
 		result.IsSuccess.Should().BeTrue();
 	}
 
-	// --- Per-locale title/description (#1946) ---
-
 	[Test]
 	public void Create_ShouldSetTitleEnAndDescriptionEn_WhenProvided()
 	{
@@ -274,9 +272,6 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Create_ShouldAllow_PublishingWithoutEnglishVariant()
 	{
-		// Only the German title/description is required to publish - English is
-		// an optional organizer-supplied translation (#1946).
-
 		// Act
 		var result = VolunteerOpportunity.Create(
 			TestOrganizationId,
@@ -429,8 +424,6 @@ public class VolunteerOpportunityTests
 		opportunity.DescriptionDe.Should().Be("Neue Beschreibung");
 		opportunity.DescriptionEn.Should().Be("New description");
 	}
-
-	// --- Tags (#1678) ---
 
 	[Test]
 	public void Create_ShouldFail_WhenTooManyTags()
@@ -677,8 +670,6 @@ public class VolunteerOpportunityTests
 		opportunity.TimeSlots.Should().BeEmpty();
 	}
 
-	// --- ValidUntil (einsatzbereit#1086) ---
-
 	[Test]
 	public void Create_ShouldFail_WhenPublishedIndividualContact_HasNoValidUntil()
 	{
@@ -878,8 +869,6 @@ public class VolunteerOpportunityTests
 		opportunity.ValidUntil.Should().Be(Now.AddDays(14));
 	}
 
-	// --- Unpublish / Cancel (einsatzbereit#1038) ---
-
 	[Test]
 	public void Unpublish_ShouldSetStatusToUnpublished_WhenPublished()
 	{
@@ -996,8 +985,6 @@ public class VolunteerOpportunityTests
 		result.Error.Type.Should().Be(ErrorType.Conflict);
 		opportunity.Status.Should().Be(OpportunityStatus.Cancelled);
 	}
-
-	// --- Update (granular methods) ---
 
 	[Test]
 	public void Update_ShouldChangeAllFields()
@@ -1153,17 +1140,11 @@ public class VolunteerOpportunityTests
 		result.Error.Description.Should().Be("Address is required for non-remote opportunities.");
 	}
 
-	// --- SetColor (einsatzbereit#1286) ---
-
 	[Test]
 	public void SetColor_ShouldSetValue_WhenHexHasSufficientContrast()
 	{
 		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
-		// #c10007, not #ff0000: pure red's best text contrast (white-on-red)
-		// is only 4.44:1 - it clears the 3:1 chip-vs-page floor but not the
-		// 4.5:1 text floor added for einsatzbereit#1726, see
-		// SetColor_ShouldFail_WhenTextContrastIsBelowMinimum below.
 		var result = opportunity.SetColor("#c10007");
 
 		result.IsSuccess.Should().BeTrue();
@@ -1213,11 +1194,6 @@ public class VolunteerOpportunityTests
 		opportunity.Color.Should().BeNull();
 	}
 
-	// einsatzbereit#1726: #2d8a5e (the project's own brand-600) clears the
-	// 3:1 chip-vs-page floor above (4.28:1) but its best possible chip text
-	// (white, also 4.28:1) still falls short of the independent 4.5:1 text
-	// floor - the two candidates cross over near this luminance, so neither
-	// white nor near-black text clears it.
 	[Test]
 	[Arguments("#2d8a5e")]
 	[Arguments("#ff0000")]
@@ -1246,8 +1222,6 @@ public class VolunteerOpportunityTests
 		opportunity.Publish();
 		return opportunity;
 	}
-
-	// --- CheckInPin ---
 
 	[Test]
 	public void Create_ShouldGeneratePin_WhenPINCodeAndNoPinGiven()
@@ -1295,8 +1269,6 @@ public class VolunteerOpportunityTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Check-in PIN must be 4 to 6 digits.");
 	}
-
-	// --- CheckInPin triviality (#1176) ---
 
 	[Test]
 	[Arguments("0000")]
@@ -1426,8 +1398,6 @@ public class VolunteerOpportunityTests
 
 		opportunity.TimeSlots.Should().HaveCount(2);
 	}
-
-	// --- RemoveTimeSlot ---
 
 	[Test]
 	public void RemoveTimeSlot_ShouldRemoveSlot_WhenSlotExists()

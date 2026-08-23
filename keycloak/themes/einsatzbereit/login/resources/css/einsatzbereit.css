@@ -1,10 +1,3 @@
-/* The app's two faces, self-hosted from the theme's own resources - the same
- * files the frontend ships (@fontsource/barlow-condensed,
- * @fontsource-variable/source-sans-3), copied in at build time. Before this
- * the sign-in pages asked for 'Inter', which is not bundled anywhere, so they
- * silently rendered in system-ui: the one surface in the funnel that did not
- * look like the product it signs you into. Latin subset only, and just the
- * weights these pages actually use, to keep the auth pages light. */
 @font-face {
 	font-family: 'Barlow Condensed';
 	font-style: normal;
@@ -21,12 +14,6 @@
 	src: url('../fonts/source-sans-3-latin-wght-normal.woff2') format('woff2');
 }
 
-/* Token names and values are lifted from the frontend's @theme block
- * (frontend/src/styles/global.css) rather than re-picked by eye. Anything
- * that has a counterpart there - the brand ramp, the card recipe in
- * lib/surfaceClasses.ts, the control recipe in lib/formClasses.ts, the
- * elevation scale - is mirrored exactly, because a value that only *nearly*
- * matches is what made these pages read as a different product. */
 :root {
 	--font-display: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
 	--font-sans: 'Source Sans 3 Variable', ui-sans-serif, system-ui, sans-serif;
@@ -42,23 +29,14 @@
 	--background:  var(--brand-50);
 	--card:        #ffffff;
 	--foreground:  #111827;
-	/* gray-500. The frontend's a11y notes call out gray-400 (2.6:1 on white)
-	 * as below the 4.5:1 AA floor for text - this is the muted tone that
-	 * clears it, and the one every muted string on these pages uses. */
+
 	--muted-fg:    #6b7280;
-	/* Two borders, not one. Cards take gray-100 and controls take gray-200,
-	 * matching surfaceClasses.cardClass and formClasses.inputSurfaceClass.
-	 * The single gray-300 both used to share drew the card's outline heavier
-	 * than the inputs inside it, which is backwards. */
+
 	--border-card: #f3f4f6;
 	--border-ctl:  #e5e7eb;
 	--ring:        var(--brand-700);
 	--destructive: #dc2626;
 
-	/* rounded-card (16px) for the card; rounded-xl (12px) for every
-	 * interactive control. The frontend keeps these deliberately distinct -
-	 * see its Design System notes - and this theme used a single 8px radius
-	 * doubled to 16px for the card, so the controls came out 4px too round. */
 	--radius-card: 1rem;
 	--radius-ctl:  0.75rem;
 
@@ -87,17 +65,12 @@ body {
 
 a { color: inherit; }
 
-/* One focus treatment for the whole theme, copied from the frontend's global
- * :focus-visible rule (issue #992) - brand outline plus a white halo so it
- * stays visible on the card and on the tinted field alike. Individual
- * components below deliberately do not define their own. */
 :focus-visible {
 	outline: 2px solid var(--ring);
 	outline-offset: 2px;
 	box-shadow: 0 0 0 4px rgb(255 255 255 / 0.9);
 }
 
-/* ── Page shell ──────────────────────────────────────────────────────────── */
 .auth-page {
 	position: relative;
 	min-height: 100svh;
@@ -105,12 +78,7 @@ a { color: inherit; }
 
 .auth-main {
 	display: flex;
-	/* column, not the default row. This single missing declaration is what put
-	 * the "back to Einsatzbereit" link *beside* the card instead of under it -
-	 * the two are siblings, so a row axis laid them out side by side on every
-	 * page in the theme. On a phone the link then claimed a third of the
-	 * viewport and squeezed the card to ~262px, wrapping "remember me" and
-	 * "forgot password" onto two lines each. */
+
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
@@ -118,10 +86,6 @@ a { color: inherit; }
 	padding: 5rem 1rem 3rem;
 }
 
-/* ── Language switcher ───────────────────────────────────────────────────── */
-/* Absolute, not fixed: the register form with its terms disclosure open runs
- * well past one viewport, and a fixed pill floats over the form the whole way
- * down. Anchored to the top of the page it scrolls away like page chrome. */
 .top-controls {
 	position: absolute;
 	top: 1.25rem;
@@ -190,9 +154,6 @@ a { color: inherit; }
 .lang-item:hover { background-color: var(--brand-50); }
 .lang-item[aria-current="true"] { font-weight: 600; color: var(--brand-700); }
 
-/* ── Card ────────────────────────────────────────────────────────────────── */
-/* cardClass from the frontend's lib/surfaceClasses.ts: rounded-card,
- * border-gray-100, bg-white, shadow-resting. */
 .auth-card {
 	width: 100%;
 	max-width: 26rem;
@@ -206,9 +167,6 @@ a { color: inherit; }
 	box-shadow: var(--shadow-resting);
 }
 
-/* ── Brand ───────────────────────────────────────────────────────────────── */
-/* A link, not a bare image: on this origin it is the only always-present route
- * back to the product, and a logo that does nothing is a dead control. */
 .auth-brand {
 	display: inline-flex;
 	align-self: flex-start;
@@ -221,25 +179,12 @@ a { color: inherit; }
 	display: block;
 }
 
-/* ── Card header ─────────────────────────────────────────────────────────── */
-/* The border-top that used to sit here drew a rule between the logo and the
- * title for no reason a reader could name - the title is already 2.25rem of
- * condensed display type against 2rem of logo, which is all the separation
- * the two need. */
 .card-header {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
 }
 
-/* Names which step of the funnel you are on. It earns its place on a chain
- * like register -> verify email -> set password, where three consecutive
- * Keycloak screens otherwise arrive with no indication they belong to one
- * sequence; it is not decoration applied to every heading for texture.
- *
- * brand-700, not brand-600, for the same reason the primary button is:
- * brand-600 on white measures ~4.3:1, and at 11px this is the smallest text
- * on the page - the last place to spend contrast. */
 .card-eyebrow {
 	font-size: 0.6875rem;
 	font-weight: 600;
@@ -248,10 +193,6 @@ a { color: inherit; }
 	color: var(--brand-700);
 }
 
-/* Display face, matching every other page title in the product. The frontend
- * sets its page titles at text-5xl and up; inside a 26rem card that is far
- * too big, but 1.75rem left Barlow Condensed reading as body copy rather than
- * as the display face it is. */
 .card-title {
 	font-family: var(--font-display);
 	font-size: 2.25rem;
@@ -274,17 +215,12 @@ a { color: inherit; }
 	margin-top: -0.125rem;
 }
 
-/* ── Card body / footer ──────────────────────────────────────────────────── */
 .card-body {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 }
 
-/* Left, like everything else in the card. Centring worked for the two-word
- * "No account yet? Register" and fell apart on the verify-email footer, where
- * a full sentence wrapped to two ragged centred lines with the link split
- * across the break. */
 .card-footer {
 	font-size: 0.875rem;
 	color: var(--muted-fg);
@@ -301,7 +237,6 @@ a { color: inherit; }
 }
 .card-footer a:hover { text-decoration: underline; }
 
-/* ── Alert / flash messages ──────────────────────────────────────────────── */
 .alert {
 	display: flex;
 	align-items: flex-start;
@@ -319,9 +254,7 @@ a { color: inherit; }
 	border-color: rgb(220 38 38 / 0.25);
 	color: #b91c1c;
 }
-/* Warnings used to share the error styling outright, so "your session will
- * expire soon" arrived in the same red as "that password is wrong". Amber is
- * the frontend's own caution tone (its warning chip uses amber-700). */
+
 .alert-warning {
 	background: rgb(180 83 9 / 0.07);
 	border-color: rgb(180 83 9 / 0.25);
@@ -338,33 +271,24 @@ a { color: inherit; }
 	color: #1d4ed8;
 }
 
-/* ── Form ────────────────────────────────────────────────────────────────── */
 .auth-form {
 	display: flex;
 	flex-direction: column;
 	gap: 0.875rem;
 }
 
-/* Outer group: field wrapper + optional error message below */
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 0.25rem;
 }
 
-/* Position context for the floating label and optional action button.
- * `.input-group` is the class Keycloak's own base templates put around an
- * input/visibility-button pair (kcInputGroup in theme.properties) - it is
- * listed here so that any base template this theme does not override still
- * gets a positioned ancestor for its label instead of one that escapes to
- * the page corner. */
 .form-field,
 .input-group {
 	position: relative;
 	display: block;
 }
 
-/* ── Text / email / password inputs ─────────────────────────────────────── */
 .form-input {
 	display: block;
 	width: 100%;
@@ -382,21 +306,12 @@ a { color: inherit; }
 	appearance: none;
 }
 
-/* Hide the single-space placeholder used for :placeholder-shown detection */
 .form-input::placeholder { color: transparent; }
 
-/* Border shift only. The ring itself comes from the global :focus-visible
- * rule at the top of this file, exactly as it does in the app - a second,
- * component-local ring was what made these inputs glow differently from
- * every other input in the product. */
 .form-input:focus { border-color: var(--brand-500); }
 
 .form-input[aria-invalid="true"] { border-color: var(--destructive); }
 
-/* The global :focus-visible ring above is brand-700 (green) - on a field
- * that also has a red error border, that made the one field the user is
- * actually looking at look the least like it had a problem (#2063). Recolor
- * the ring to match the error instead of overriding it away. */
 .form-input[aria-invalid="true"]:focus-visible { outline-color: var(--destructive); }
 
 .form-input:disabled {
@@ -405,7 +320,6 @@ a { color: inherit; }
 	background: #f9fafb;
 }
 
-/* ── Floating label ──────────────────────────────────────────────────────── */
 .form-label {
 	position: absolute;
 	left: 0.875rem;
@@ -424,7 +338,6 @@ a { color: inherit; }
 	text-overflow: ellipsis;
 }
 
-/* Float when focused or when the input has content (placeholder not shown) */
 .form-input:focus + .form-label,
 .form-input:not(:placeholder-shown) + .form-label,
 .form-field.has-value .form-label {
@@ -441,7 +354,6 @@ a { color: inherit; }
 	color: var(--destructive);
 }
 
-/* ── Password input + toggle button ─────────────────────────────────────── */
 .form-field--with-toggle .form-input { padding-right: 3.25rem; }
 
 .btn-password-toggle {
@@ -465,8 +377,6 @@ a { color: inherit; }
 .form-input::-ms-reveal,
 .form-input::-ms-clear { display: none; }
 
-/* currentColor, not a baked-in grey: the icon used to stay #6b7280 through
- * hover and focus while the button around it darkened. */
 .btn-password-toggle .icon-eye,
 .btn-password-toggle .icon-eye-off {
 	display: inline-block;
@@ -487,7 +397,6 @@ a { color: inherit; }
 	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94'/%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
 }
 
-/* ── Inline field error ──────────────────────────────────────────────────── */
 .form-error {
 	display: block;
 	font-size: 0.8125rem;
@@ -495,7 +404,6 @@ a { color: inherit; }
 	padding-left: 0.125rem;
 }
 
-/* ── "Remember me" + "Forgot password" row ──────────────────────────────── */
 .form-options {
 	display: flex;
 	align-items: center;
@@ -530,19 +438,12 @@ a { color: inherit; }
 	text-decoration: underline;
 }
 
-/* "Forgot password?" sat in the same muted grey as the static "Remember me"
- * label beside it, with nothing marking it as interactive, while the
- * .card-footer "Register" link on the same card got full brand treatment
- * (#2063). Same color/weight here, resting and hovered alike. */
 .form-options a.link-accent,
 .form-options a.link-accent:hover {
 	color: var(--brand-700);
 	font-weight: 600;
 }
 
-/* One checkbox treatment for the whole theme. Previously "remember me" was
- * styled through .form-options and the registration consent box through
- * .terms-checkbox, so the two checkboxes in the same theme looked unrelated. */
 .form-options input[type="checkbox"],
 .checkbox-control {
 	width: 1rem;
@@ -565,7 +466,6 @@ a { color: inherit; }
 	cursor: pointer;
 }
 
-/* ── Submit / action buttons ─────────────────────────────────────────────── */
 .form-buttons {
 	display: flex;
 	flex-direction: column;
@@ -597,11 +497,6 @@ a { color: inherit; }
 	pointer-events: none;
 }
 
-/* brand-700, not brand-600. Button.tsx documents why: white text on
- * brand-600 measures ~4.3:1, under the WCAG AA 4.5:1 floor that the
- * frontend's own axe-core suite enforces - and brand-700 is the green every
- * primary button in the product already uses, so the auth pages were also
- * the only place a "primary" button was a different green. */
 .btn-primary {
 	background: var(--brand-700);
 	color: #ffffff;
@@ -609,8 +504,6 @@ a { color: inherit; }
 }
 .btn-primary:hover { background: var(--brand-800); }
 
-/* Matches Button.tsx's `outline` variant - the frontend's treatment for a
- * secondary action on a light surface (cancel, dismiss). */
 .btn-secondary {
 	background: #ffffff;
 	color: #374151;
@@ -626,23 +519,8 @@ a { color: inherit; }
 input[type="submit"].btn,
 button.btn { cursor: pointer; }
 
-/* ── Required star ───────────────────────────────────────────────────────── */
-/* aria-hidden in the markup; the field's own `required` attribute is what
- * actually carries this to assistive tech. */
 .required { color: var(--destructive); margin-left: 0.125rem; }
 
-/* ── Prose inside the card ───────────────────────────────────────────────── */
-/* `.instruction` is Keycloak's own class for the body copy on its info,
- * error, verify-email and page-expired templates. It had no rule at all, so
- * every one of those pages rendered its single most important sentence as
- * unstyled default-serif-metrics text.
- *
- * One colour, on every page that uses it. On the four pages above the
- * instruction *is* the page - it is the whole reason the page exists - so it
- * takes the foreground tone, not the muted one reserved for `.card-lead`'s
- * secondary line under a title. An earlier version of this block muted it
- * only inside #kc-info-message/#kc-error-message, which left the identical
- * sentence reading darker on verify-email than on the error page. */
 .instruction,
 #kc-info-message,
 #kc-error-message {
@@ -668,17 +546,12 @@ button.btn { cursor: pointer; }
 	text-underline-offset: 3px;
 }
 
-/* Keycloak's own trace id on the error page - support metadata, not a
- * sentence the visitor is meant to read as prose. */
 #traceId {
 	font-size: 0.75rem;
 	color: var(--muted-fg);
 	word-break: break-all;
 }
 
-/* ── Select / textarea ───────────────────────────────────────────────────── */
-/* Same inline chevron the frontend's selectClass uses, so a native select
- * here reads as the same control as one in the app. */
 select.form-input {
 	padding-right: 2.25rem;
 	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
@@ -695,11 +568,6 @@ textarea.form-input {
 	resize: vertical;
 }
 
-/* ── Terms block on the registration form ────────────────────────────────── */
-/* The full legal text used to render inline: ~190 words of unstyled prose
- * wedged between the username field and the submit button, at the same size
- * and color as everything else. The intro line stays out here (it is the
- * actual ask); everything else sits behind this disclosure. */
 #kc-registration-terms-text {
 	font-size: 0.8125rem;
 	line-height: 1.5;
@@ -719,8 +587,7 @@ textarea.form-input {
 	border-radius: 0.25rem;
 	padding: 0.125rem 0;
 }
-/* The default disclosure triangle is the browser's glyph in the browser's
- * color - the one arrow on the page that did not match the theme's icon set. */
+
 .terms-details > summary::-webkit-details-marker { display: none; }
 .terms-details > summary::marker { content: ""; }
 
@@ -736,14 +603,6 @@ textarea.form-input {
 .terms-details p { margin: 0 0 0.5rem; }
 .terms-details a { color: var(--brand-700); text-underline-offset: 3px; }
 
-/* Scrollable rather than unbounded: terms.ftl renders the realm's full terms
- * text, which can be arbitrarily long, and an unbounded block pushes the
- * accept/decline buttons off the bottom of a phone screen.
- *
- * Bordered and tinted (the frontend's cardSubtleClass recipe) so the clipped
- * edge reads as a panel you can scroll rather than as text that just stops
- * mid-sentence - capping the height without drawing the box is what makes a
- * scroll container look like a rendering fault. */
 #kc-terms-text {
 	max-height: 20rem;
 	overflow-y: auto;
@@ -760,9 +619,6 @@ textarea.form-input {
 #kc-terms-text p:last-child { margin-bottom: 0; }
 #kc-terms-text a { color: var(--brand-700); text-underline-offset: 3px; }
 
-/* ── Back links ──────────────────────────────────────────────────────────── */
-/* Shared by the card footer's "back to sign in" and the page's "back to
- * Einsatzbereit" - one back-link treatment, chevron included. */
 .back-link {
 	display: inline-flex;
 	align-items: center;
@@ -793,31 +649,17 @@ textarea.form-input {
 	text-decoration: underline;
 }
 
-/* ── Wrappers the un-overridden base templates emit ──────────────────────── */
-/* This theme overrides every template a visitor can currently reach. These
- * rules are the floor for the rest of Keycloak's base login theme (TOTP
- * enrolment, WebAuthn, identity-provider linking, consent) - none of which
- * this realm can reach today, but any of which is one realm setting away, and
- * all of which would otherwise arrive as raw unstyled markup. */
 #kc-content-wrapper,
 .content-wrapper { display: flex; flex-direction: column; gap: 1rem; }
 
 .form-input-wrapper { display: flex; flex-direction: column; gap: 0.25rem; }
 
-/* flex, so user-profile-commons.ftl's required marker - a <span> sibling of
- * the label, not a child of it - sits on the label's line instead of dropping
- * to one of its own. */
 .form-label-wrapper {
 	display: flex;
 	align-items: baseline;
 	margin-bottom: 0.25rem;
 }
 
-/* The base templates put their label in a wrapper *above* the input rather
- * than as the input's sibling, so the floating-label rules cannot apply.
- * Rendering those labels statically is the honest fallback - a label that
- * cannot float should look like a plain label, not like one stuck mid-field.
- * Matches formClasses.labelClass in the frontend. */
 .form-label-wrapper .form-label {
 	position: static;
 	transform: none;
@@ -830,9 +672,6 @@ textarea.form-input {
 	pointer-events: auto;
 }
 
-/* A field whose label is rendered statically above it has no floating label
- * to leave room for, so the input's top-heavy padding would strand its value
- * against the bottom edge. */
 .form-label-wrapper + .form-input-wrapper .form-input {
 	height: auto;
 	min-height: 2.75rem;
@@ -845,18 +684,6 @@ textarea.form-input {
 .clearfix { clear: both; }
 .checkbox label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
 
-/* ── Motion ──────────────────────────────────────────────────────────────── */
-/* The frontend's own fade-up keyframe and 0.12s stagger, gated on the same
- * media query it uses. Two steps only - the card, then the way out from under
- * it - because the whole page is one card; a longer orchestration on four
- * form fields would be motion for its own sake.
- *
- * Unlike the frontend's decorative fade-up (which does animate opacity 0 -> 1,
- * fine for marketing content nobody needs to read within the first second),
- * this stays at opacity: 1 throughout and only animates the slide-up offset
- * (#1960) - the sign-in card's heading, labels and "Sign In" button must be
- * fully legible from the very first frame, since a password manager or screen
- * reader can interact with the form before any entrance animation settles. */
 @media (prefers-reduced-motion: no-preference) {
 	@keyframes auth-fade-up {
 		from { opacity: 1; transform: translateY(12px); }
@@ -867,7 +694,6 @@ textarea.form-input {
 	.auth-back { animation: auth-fade-up 0.45s ease-out 0.12s both; }
 }
 
-/* ── Small screens ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
 	.auth-main { padding: 4.5rem 1rem 2rem; }
 

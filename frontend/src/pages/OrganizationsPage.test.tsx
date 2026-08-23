@@ -42,8 +42,6 @@ describe("OrganizationsPage directory cards", () => {
 
 		await screen.findByText("Freiwillige Feuerwehr Kiel");
 
-		// Both names start with "F", so a charAt(0) monogram would draw two
-		// identical circles - the defect. getInitials takes first and last word.
 		expect(screen.getByText("FK")).toBeInTheDocument();
 		expect(screen.getByText("FH")).toBeInTheDocument();
 	});

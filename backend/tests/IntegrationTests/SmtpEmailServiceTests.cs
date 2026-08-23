@@ -13,22 +13,6 @@ using Microsoft.Extensions.Options;
 
 namespace IntegrationTests;
 
-// Exercises Infrastructure.Email.SmtpEmailService directly (InternalsVisibleTo,
-// see Infrastructure.csproj) against a loopback socket instead of a real relay,
-// so - unlike the rest of this project - it needs no Aspire/Testcontainers
-// fixture and runs as a plain fast unit test.
-//
-// Regression coverage for #1341: a send failure must be swallowed - SendAsync
-// never throws, by design (see the comment on IEmailService.SendBatchAsync) -
-// but still observable, now via a metric rather than only a log line nothing
-// was watching.
-//
-// [NotInParallel] with a key unique to this class (not the "IntegrationDb"
-// key other IntegrationTests classes share): EmailMetrics.MeterName is a
-// process-wide constant, so a MeterListener started in one test backfires
-// on every not-yet-disposed Meter of that name from a concurrently-running
-// test in this class too - it must not also serialize against the unrelated
-// Aspire/Testcontainers-backed suite this class deliberately avoids needing.
 [NotInParallel(nameof(SmtpEmailServiceTests))]
 public class SmtpEmailServiceTests
 {
@@ -64,11 +48,6 @@ public class SmtpEmailServiceTests
 		recorded.Should().ContainSingle(m => m.Status == "failed" && m.Value == 1);
 	}
 
-	// Regression coverage for einsatzbereit#1189: a failed send used to log the
-	// recipient's raw email address plus the subject line (which can itself carry
-	// a volunteer's name), landing real PII in container logs and the OTLP sink on
-	// every misconfigured-SMTP send. The failure log must now carry only the
-	// correlation id the caller supplied, never the address or subject.
 	[Test]
 	public async Task SendAsync_ServerUnreachable_LogsCorrelationIdWithoutRecipientOrSubject()
 	{
@@ -87,12 +66,6 @@ public class SmtpEmailServiceTests
 		record.Message.Should().NotContain("Beach Cleanup");
 	}
 
-	// Regression coverage for #1400: SendBatchAsync must share one SMTP connection
-	// across every message in the batch, not reconnect per message. FakeSmtpServer
-	// only ever accepts one TCP connection (see AcceptAsync below), so if
-	// SendBatchAsync tried to reconnect for message 2 or 3 there would be nothing
-	// listening and those sends would fail - all three succeeding here is itself
-	// proof the batch shares one connection.
 	[Test]
 	public async Task SendBatchAsync_ServerAcceptsAllMessages_SendsEveryMessageOverOneConnection()
 	{
@@ -236,12 +209,6 @@ public class SmtpEmailServiceTests
 		});
 		listener.Start();
 
-		// Meter creation (inside EmailMetrics' constructor) must happen after the
-		// listener is listening, or InstrumentPublished never fires for it - but
-		// callers construct EmailMetrics before this returns, so replay isn't
-		// needed here; RecordEmailSendMeasurements is always called first in
-		// these tests. Recording the listener disposal isn't necessary either:
-		// it's process/test-local and TUnit tears down between tests.
 		return recorded;
 	}
 
@@ -277,10 +244,6 @@ public class SmtpEmailServiceTests
 		}
 	}
 
-	// Minimal but protocol-correct SMTP responder: greets, accepts EHLO/MAIL
-	// FROM/RCPT TO/DATA/QUIT with no auth or TLS (matching EnableSsl=false,
-	// Username=null in these tests), just enough for MailKit's SmtpClient.SendAsync
-	// to consider the send successful.
 	private sealed class FakeSmtpServer : IAsyncDisposable
 	{
 		private readonly TcpListener _listener;
@@ -348,9 +311,6 @@ public class SmtpEmailServiceTests
 				}
 				else if (line.StartsWith("RSET", StringComparison.OrdinalIgnoreCase))
 				{
-					// MailKit issues RSET to clear the transaction after a rejected
-					// RCPT TO before starting the next message - without a reply
-					// here the client blocks reading a response that never comes.
 					await writer.WriteLineAsync("250 OK");
 				}
 				else if (line.StartsWith("QUIT", StringComparison.OrdinalIgnoreCase))

@@ -34,14 +34,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
 	}
 
-	/// <summary>
-	/// The negative twin of the test above. Regression for #655: an
-	/// EngagementCreated notification resolves its title through a live lookup
-	/// of the opportunity, so once that opportunity is deleted the title can no
-	/// longer be resolved and the org-app deep link can no longer be built.
-	/// Both must read as absent rather than as a stale title or a link that
-	/// 404s.
-	/// </summary>
 	[Test]
 	public async Task GetMyNotifications_EngagementCreated_DropsTitleAndDeepLink_AfterOpportunityDeleted(
 		CancellationToken cancellationToken)
@@ -70,16 +62,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			+ "org-app deep link can be built");
 	}
 
-	/// <summary>
-	/// Regression for #2073. Unlike the
-	/// organizer-facing EngagementCreated notification above, the volunteer's
-	/// own OpportunityDeleted notification is the only way they learn which
-	/// sign-up was affected, so it must not lose its title the same way.
-	/// <c>Notification.TitleSnapshot</c> is captured when the notification is
-	/// created - before the delete removes the opportunity row - and
-	/// <c>NotificationReadRepository</c> falls back to it once the live title
-	/// join finds nothing.
-	/// </summary>
 	[Test]
 	public async Task GetMyNotifications_OpportunityDeleted_KeepsSnapshottedTitle_AfterOpportunityDeleted(
 		CancellationToken cancellationToken)
@@ -162,11 +144,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_OpportunityCancelled_GivesTheVolunteerExactlyOneNotification(
 		CancellationToken cancellationToken)
 	{
-		// Regression for einsatzbereit#1790: cancelling an opportunity used to write
-		// both an OpportunityCancelled and an EngagementCancelled notification for the
-		// same volunteer inside one cascade run, so Vera got two rows in the same minute
-		// telling her the same thing and the unread badge counted both. Exactly one
-		// notification per affected volunteer is the assertion whose absence let that ship.
 		const string opportunityTitle = "Notification Opportunity Cancel Test";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -184,8 +161,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			new CancelVolunteerOpportunityRequest { Reason = "Venue flooded" },
 			cancellationToken);
 
-		// The cascade runs in VolunteerOpportunityCancelledDomainEventHandler, dispatched
-		// async by OutboxProcessorJob (polls every 5s) - same budget as OutboxTests.cs.
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
 			"Domain.VolunteerOpportunities.VolunteerOpportunityCancelledDomainEvent", TimeSpan.FromSeconds(45));
 		processed.Should().BeTrue("OutboxProcessorJob should dispatch the cancelled event within a few poll cycles");
@@ -215,7 +190,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		await veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
 
-		// The organizer, not the withdrawing volunteer, is the recipient here.
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
 		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementWithdrawn");
@@ -228,11 +202,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_InvitationReceived_HasOrganizationNameAsRelatedTitleAndInvitationsUrl(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1053: RelatedEntityId on an InvitationReceived
-		// notification is the invitation's own id, not an opportunity id - the
-		// repository used to always look it up as one, so relatedTitle stayed
-		// null and the frontend rendered "You've been invited to join a
-		// deleted opportunity" for every single invitation.
 		const string organizationName = "Invitation Notification Test Org";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -248,7 +217,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "InvitationReceived");
 		notification.RelatedTitle.Should().Be(organizationName);
-		// einsatzbereit#1684: invitations moved off /profile onto their own page.
+
 		notification.ActionUrl.Should().Be("/my-signups");
 	}
 
@@ -256,9 +225,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_InvitationAccepted_HasOrganizationNameAsRelatedTitleAndMembersUrl(
 		CancellationToken cancellationToken)
 	{
-		// einsatzbereit#1047: the inviting organizer previously heard nothing
-		// back when an invite was accepted - they had to re-open the members
-		// page and diff the list to find out.
 		const string organizationName = "Invitation Accepted Notification Test Org";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -272,10 +238,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
-		// Unlike the inline InvitationReceived notification above, InvitationAccepted
-		// is created by OrganizationInvitationAcceptedDomainEventHandler, dispatched
-		// async by OutboxProcessorJob (which polls every 5s) - give it several cycles
-		// before asserting, same budget as OutboxTests.cs.
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
 			"Domain.Organizations.OrganizationInvitationAcceptedDomainEvent", TimeSpan.FromSeconds(45));
 		processed.Should().BeTrue("OutboxProcessorJob should dispatch the accepted event within a few poll cycles");
@@ -319,9 +281,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_InvitationReceived_IsRemoved_WhenInvitationIsAccepted(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1919: an accepted invitation is resolved, so its
-		// InvitationReceived notification must not survive to be clicked into a
-		// /my-signups page with nothing left to show for it.
 		const string organizationName = "Invitation Accept Cleanup Test Org";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -370,9 +329,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_InvitationReceived_IsRemoved_WhenOrganizerDismissesInvitation(
 		CancellationToken cancellationToken)
 	{
-		// An organizer revoking a still-Pending invitation (#1040) deletes the
-		// invitation row outright - the invitee's InvitationReceived notification
-		// would otherwise point at an invitation that no longer exists at all.
 		const string organizationName = "Invitation Dismiss Cleanup Test Org";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -397,8 +353,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_FeedbackSubmitted_HasRelatedTitleAndOrganizerDashboardUrl(
 		CancellationToken cancellationToken)
 	{
-		// einsatzbereit#1047: a volunteer submitting feedback previously
-		// notified nobody - the organizer had no signal that feedback had come in.
 		const string opportunityTitle = "Notification Feedback Test";
 
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -522,9 +476,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
 
-		// Direct ownership-check coverage for #829: vera is not the recipient of
-		// olaf's notification, so this must 404 (not 403, to avoid leaking
-		// existence) and must not flip IsRead as a side effect.
 		var act = () => veraClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();

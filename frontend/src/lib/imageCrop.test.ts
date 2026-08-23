@@ -8,8 +8,6 @@ import {
 
 describe("coverScale", () => {
 	it("picks the width ratio when the image is relatively taller than the frame", () => {
-		// 1000x2000 image into a 200x200 frame - height ratio (0.1) would leave
-		// gaps on the sides, so the wider width ratio (0.2) must win.
 		expect(coverScale(1000, 2000, 200, 200)).toBe(0.2);
 	});
 
@@ -24,7 +22,6 @@ describe("coverScale", () => {
 
 describe("clampOffset", () => {
 	it("leaves an offset unchanged when it is already within bounds", () => {
-		// 400x400 scaled image in a 320x320 frame: valid x/y range is [-80, 0].
 		expect(clampOffset({ x: -40, y: -20 }, 400, 400, 320, 320)).toEqual({
 			x: -40,
 			y: -20,
@@ -55,14 +52,9 @@ describe("clampOffset", () => {
 
 describe("recenterOffsetForScale", () => {
 	it("keeps the frame's center point fixed on the image when zooming in", () => {
-		// 320x320 frame, image centered at scale 1 (offset -40,-40 for a 400x400
-		// scaled image) - the point at natural-space center of the visible
-		// region should still be at the frame's center after zooming to scale 2.
 		const offset = { x: -40, y: -40 };
 		const recentered = recenterOffsetForScale(offset, 1, 2, 320, 320);
 
-		// centerImgX/Y at scale 1 was (160 - -40) / 1 = 200; at scale 2 the
-		// offset needed to keep that point at the frame center is 160 - 200*2.
 		expect(recentered).toEqual({ x: 160 - 200 * 2, y: 160 - 200 * 2 });
 	});
 
@@ -74,9 +66,6 @@ describe("recenterOffsetForScale", () => {
 
 describe("computeSourceRect", () => {
 	it("maps a centered offset at cover scale to the full natural image extent on the wider axis", () => {
-		// 1000x2000 natural image, cover scale into a 200x200 frame is 0.2
-		// (width-constrained), centered vertically: scaledH = 2000*0.2 = 400,
-		// offset.y = (200-400)/2 = -100.
 		const scale = coverScale(1000, 2000, 200, 200);
 		const offset = { x: 0, y: -100 };
 

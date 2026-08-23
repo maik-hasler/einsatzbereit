@@ -38,10 +38,6 @@ export default function QRScannerModal({
 	const [scanError, setScanError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 
-	// The camera/scan UI unmounts once `success` flips true (see the
-	// conditional render below) - move focus deliberately to the remaining
-	// "Done" button instead of letting it drop to <body>. Queried by
-	// data-testid rather than a ref since Button.tsx doesn't forward refs.
 	useEffect(() => {
 		if (!success) return;
 		requestAnimationFrame(() => {
@@ -101,10 +97,6 @@ export default function QRScannerModal({
 						const raw = barcode.rawValue.trim();
 						if (!UUID_RE.test(raw)) continue;
 
-						// The backend is the sole source of truth on whether this id is
-						// a real, checkable-in engagement - there is no complete
-						// client-side list to match against once the organizer's
-						// engagement view is paginated (#1401).
 						matched = true;
 						alive = false;
 						try {
@@ -117,9 +109,7 @@ export default function QRScannerModal({
 							setScanError(
 								getApiErrorMessage(err, t("checkIn.qrCheckInError")),
 							);
-							// A failed check-in is retryable - keep the loop alive so
-							// the timer below reschedules the next scan instead of
-							// leaving the camera live with a dead loop (#1228).
+
 							alive = true;
 						}
 						break;
@@ -132,7 +122,6 @@ export default function QRScannerModal({
 			if (alive) timer = setTimeout(() => void loop(), 500);
 		};
 
-		// Give camera stream a moment to initialize
 		timer = setTimeout(() => void loop(), 1000);
 		return () => {
 			alive = false;
@@ -191,9 +180,6 @@ export default function QRScannerModal({
 				</>
 			)}
 
-			{/* Always mounted (not conditional on `success`) so the live region is
-			registered before it ever gets content - see CheckInModal.tsx's
-			identical pattern for why. */}
 			<p
 				role="status"
 				className={success ? "text-sm font-medium text-green-700" : "sr-only"}

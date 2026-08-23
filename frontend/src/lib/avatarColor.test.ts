@@ -7,10 +7,6 @@ describe("avatarColorClasses", () => {
 	});
 
 	it("picks different pairs for different seeds", () => {
-		// Not a strict guarantee for arbitrary seeds (a fixed-size palette must
-		// collide eventually), but these two are chosen to land on different
-		// palette entries, which is the whole point of #993: two organizations
-		// sharing an initial should not also share a color.
 		expect(
 			avatarColorClasses("11111111-1111-1111-1111-111111111111"),
 		).not.toEqual(avatarColorClasses("22222222-2222-2222-2222-222222222222"));

@@ -4,10 +4,6 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { notifyAvatarChanged } from "../../lib/avatarBus";
 import { validateImageUpload } from "../../lib/imageUpload";
 
-// Owns the avatar upload/remove-in-progress state (upload/remove flags, error,
-// file input ref, crop step) so ProfileOverviewPage doesn't have to - see
-// #872, #1063. avatarUrl itself stays with the caller since it's also shown
-// outside edit mode.
 export function useAvatarUpload(onChange: (url: string | null) => void) {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
@@ -16,9 +12,7 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 	const [error, setError] = useState<string | null>(null);
 	const [croppingFile, setCroppingFile] = useState<File | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
-	// Tracks the blob: URL handed to `onChange` so a later upload (or
-	// unmount) can revoke it - unrevoked, each upload pinned the whole
-	// previewed image file in memory for the rest of the tab's life (#1245).
+
 	const objectUrlRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -52,8 +46,7 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 			const url = URL.createObjectURL(croppedFile);
 			objectUrlRef.current = url;
 			onChange(url);
-			// The header fetched its own copy of avatarUrl independently and has
-			// no other way to learn it just changed (#1245).
+
 			notifyAvatarChanged();
 		} catch {
 			setError(t("profile.avatarUploadError"));
@@ -74,8 +67,7 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
 			objectUrlRef.current = null;
 			onChange(null);
-			// The header fetched its own copy of avatarUrl independently and has
-			// no other way to learn it just changed (#1245).
+
 			notifyAvatarChanged();
 		} catch {
 			setError(t("profile.avatarRemoveError"));

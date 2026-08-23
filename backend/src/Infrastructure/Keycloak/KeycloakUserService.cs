@@ -23,10 +23,6 @@ internal sealed class KeycloakUserService(
 
 	private const int RoleLookupConcurrency = 8;
 
-	// Keycloak's admin API isn't built for a burst of concurrent per-user
-	// lookups; this caps how many of the (up to MaxPageSize) volunteer profile
-	// lookups run at once so a large page doesn't fire e.g. 100 simultaneous
-	// requests at it.
 	private const int MaxConcurrentUserLookups = 8;
 
 	private readonly KeycloakOptions _options = options.Value;
@@ -61,8 +57,6 @@ internal sealed class KeycloakUserService(
 		var distinctIds = userIds.Distinct().ToList();
 		var names = new string?[distinctIds.Count];
 
-		// Each slot is written by exactly one iteration, so no cross-task
-		// synchronization is needed for the array itself.
 		await Parallel.ForEachAsync(
 			Enumerable.Range(0, distinctIds.Count),
 			new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentUserLookups, CancellationToken = cancellationToken },
@@ -127,8 +121,6 @@ internal sealed class KeycloakUserService(
 		string? lastName,
 		CancellationToken cancellationToken = default)
 	{
-		// Keycloak's admin API merges PUT bodies and skips null fields, so to
-		// clear firstName/lastName we must send an empty string instead of null.
 		var body = new
 		{
 			firstName = firstName ?? string.Empty,
@@ -181,12 +173,6 @@ internal sealed class KeycloakUserService(
 		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
 			JsonOptions, cancellationToken) ?? [];
 
-		// Bounded Task.WhenAll: each call builds its own HttpRequestMessage and
-		// sets its own Authorization header (see SendAuthorizedAsync), so unlike
-		// the old DefaultRequestHeaders-mutating version, concurrent per-user
-		// role lookups no longer race each other. The SemaphoreSlim caps
-		// in-flight requests so a max-size page doesn't fire 100 simultaneous
-		// calls at Keycloak.
 		using var roleLookupThrottle = new SemaphoreSlim(RoleLookupConcurrency);
 		var itemTasks = users
 			.Where(user => user.ServiceAccountClientId is null)
@@ -202,13 +188,6 @@ internal sealed class KeycloakUserService(
 					}
 					catch
 					{
-						// This user just came back from the list call above, but Keycloak
-						// can still 404 the follow-up per-user role lookup if they're
-						// deleted between the two calls (observed in CI: a short-lived
-						// test-created user removed by its own cleanup mid-request) -
-						// same "ignore individual lookup failures" tolerance as
-						// GetDisplayNamesAsync above, so one stale/racy id doesn't sink
-						// the whole admin Users table.
 						roles = [];
 					}
 
@@ -231,10 +210,6 @@ internal sealed class KeycloakUserService(
 
 		items.Sort((a, b) => string.Compare(a.Username, b.Username, StringComparison.OrdinalIgnoreCase));
 
-		// The count includes the filtered-out service-account entries (e.g.
-		// service-account-backend), so this can be off by a small, fixed amount
-		// from the actual number of human users - not worth a second full scan
-		// to correct for a cosmetic pageCount imprecision on an admin-only page.
 		var countQuery = searchParam is null ? "" : $"?search={searchParam}";
 		var countResponse = await SendAuthorizedAsync(
 			() => new HttpRequestMessage(
@@ -350,11 +325,6 @@ internal sealed class KeycloakUserService(
 			?? throw new InvalidOperationException($"Keycloak role '{roleName}' not found.");
 	}
 
-	// Builds a fresh HttpRequestMessage per attempt (createRequest is invoked
-	// again on retry) and sets Authorization directly on that message rather
-	// than on httpClient.DefaultRequestHeaders - concurrent callers sharing
-	// this instance (e.g. ListUsersAsync's per-user role lookups) no longer
-	// race on a shared header collection.
 	private async Task<HttpResponseMessage> SendAuthorizedAsync(
 		Func<HttpRequestMessage> createRequest,
 		CancellationToken cancellationToken)
@@ -365,9 +335,6 @@ internal sealed class KeycloakUserService(
 			return response;
 		}
 
-		// The cached admin token was rejected (e.g. Keycloak cold start or key
-		// rotation). Refresh once and retry so a transient 401 self-heals
-		// instead of bubbling up as a 500.
 		response.Dispose();
 		return await SendOnceAsync(createRequest, forceRefresh: true, cancellationToken);
 	}
@@ -397,8 +364,7 @@ internal sealed class KeycloakUserService(
 		}
 
 		var method = response.RequestMessage?.Method;
-		// Strip the query string - it can carry PII such as search terms - before it
-		// ever reaches the Error-level exception message that gets logged/exported.
+
 		var path = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path);
 
 		if (logger.IsEnabled(LogLevel.Debug))

@@ -1,10 +1,5 @@
 #!/usr/bin/env node
-// Guards against the regression class behind issue #1343: the
-// Content-Security-Policy header was duplicated across four nginx location
-// blocks, and img-src was missing the MinIO storage origin because a new
-// env var got added to the header string but not to the envsubst variable
-// list that actually renders it, so it never got substituted at container
-// start. Purely static checks - no Docker/nginx/envsubst required.
+
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
@@ -27,8 +22,6 @@ function fail(message) {
 	ok = false;
 }
 
-// 1. The CSP value must be defined exactly once, via the "map $host
-// $csp_header { default "..."; }" idiom, not duplicated per location.
 const mapMatch = template.match(
 	/map\s+\$host\s+\$csp_header\s*\{\s*default\s+"([^"]+)";\s*\}/,
 );
@@ -54,11 +47,6 @@ if (!mapMatch) {
 		);
 	}
 
-	// Regression for #2042: frame-src without 'self' blocks the hidden iframe
-	// automaticSilentRenew/signinSilent() load for silent_redirect_uri
-	// (src/main.tsx, same-origin - see src/silentRenew.ts), breaking silent SSO
-	// and automatic token renewal in the released image while looking fine locally
-	// (the dev server sends no CSP header at all).
 	const frameSrcMatch = policy.match(/frame-src ([^;]+);/);
 	if (!frameSrcMatch || !frameSrcMatch[1].split(" ").includes("'self'")) {
 		fail(
@@ -74,11 +62,6 @@ if (!mapMatch) {
 	}
 }
 
-// 2. Every add_header Content-Security-Policy line must reference a shared
-// $csp_header* variable - none may hardcode the policy inline, which is
-// exactly how the four copies drifted out of sync before. $csp_header_silent_renew
-// (#2042) is a second, deliberate exception to "exactly one policy" - see
-// check 5 below - so both are allowed here, just not a third ad hoc one.
 const allowedCspHeaderLines = new Set([
 	"add_header Content-Security-Policy $csp_header always;",
 	"add_header Content-Security-Policy $csp_header_silent_renew always;",
@@ -101,9 +84,6 @@ for (const line of cspHeaderLines) {
 	}
 }
 
-// 3. Every ${CSP_*} variable referenced in the template must actually be
-// passed to the envsubst call that renders it - otherwise it's left as a
-// literal, unexpanded "${CSP_...}" placeholder in the running container.
 const templateVars = [...new Set(template.match(/\$\{CSP_[A-Z_]+\}/g) ?? [])];
 
 const envsubstMatch = entrypoint.match(
@@ -125,10 +105,6 @@ if (!envsubstMatch) {
 	}
 }
 
-// 4. STORAGE_PUBLIC_URL (the source env var for CSP_STORAGE_ORIGIN) needs a
-// documented default, matching the existing VITE_API_URL/
-// VITE_KEYCLOAK_AUTHORITY_URL fallbacks, so the container doesn't emit an
-// empty img-src origin when the var isn't set.
 if (!/:\s*"\$\{STORAGE_PUBLIC_URL:=[^}]+\}"/.test(entrypoint)) {
 	fail(
 		"99-runtime-config.sh is missing a default fallback for STORAGE_PUBLIC_URL (expected a `: \"${STORAGE_PUBLIC_URL:=...}\"` line).",
@@ -145,13 +121,6 @@ if (!/export\s+.*\bCSP_STORAGE_ORIGIN\b/.test(entrypoint)) {
 	fail("99-runtime-config.sh computes CSP_STORAGE_ORIGIN but never exports it.");
 }
 
-// 5. silent-renew.html (#2042) needs frame-ancestors 'self' (and a matching
-// X-Frame-Options: SAMEORIGIN) to actually render inside the hidden iframe
-// automaticSilentRenew/signinSilent() loads it in - frame-src 'self' on the
-// *parent* (checked in 1 above) only governs what the parent may embed;
-// whether the embed is actually allowed to render is a separate check
-// against frame-ancestors/X-Frame-Options on silent-renew.html's *own*
-// response, so both are required and neither is sufficient alone.
 const silentRenewMapMatch = template.match(
 	/map\s+\$host\s+\$csp_header_silent_renew\s*\{\s*default\s+"([^"]+)";\s*\}/,
 );

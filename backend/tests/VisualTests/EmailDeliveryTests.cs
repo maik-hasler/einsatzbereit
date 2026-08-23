@@ -6,19 +6,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// The one email journey that stays end-to-end: a real volunteer action in
-/// the browser has to end in a real message leaving the backend's SMTP path.
-///
-/// Regression for #1341 - the backend's SmtpOptions had no auth/TLS support
-/// and silently swallowed send failures - proved by polling Mailpit's own
-/// message store rather than by trusting the API call's 200.
-///
-/// The Keycloak realm's own SMTP config (#1070/#1342) moved to
-/// <c>IntegrationTests/Email/RealmSmtpDeliveryTests.cs</c> in
-/// einsatzbereit#2148: that case never opened a browser in the first place,
-/// so it was paying for Playwright and a frontend it never touched.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -44,20 +31,13 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 		await Page.Locator("#sign-up-message").FillAsync($"Delivery check for {suffix}");
-		// The submit button now carries the same label as the trigger behind it
-		// ("Express interest" end to end, #1775), so the click is scoped to the
-		// dialog rather than matching both.
+
 		await Page.Locator("[role='dialog']").GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']", new() { State = WaitForSelectorState.Detached });
 
 		await AssertMailpitReceivedMessageToAsync(mailpit, "vera@example.com", subjectContains: suffix);
 	}
 
-	// Polls Mailpit's own message store (rather than trusting the sender's
-	// HTTP response alone) so this fails loudly if SMTP delivery is broken -
-	// exactly the failure mode #1070/#1341/#1342 describe. Client-side
-	// filtering (recipient + optional subject substring) avoids depending on
-	// Mailpit's search query syntax for an assertion this test-critical.
 	private static async Task AssertMailpitReceivedMessageToAsync(
 		Uri mailpit, string recipientEmail, string? subjectContains = null)
 	{

@@ -1,15 +1,5 @@
 <#import "template.ftl" as layout>
-<#--
-	The TERMS_AND_CONDITIONS *required action*, as opposed to the registration
-	authenticator of the same name that this realm already runs (see
-	register.ftl's consent checkbox). It is one realm setting away rather than
-	reachable today, but the theme owns the terms copy either way, and an
-	unstyled page here would land on existing accounts - the people least
-	expecting one.
 
-	The two buttons carry the same weight in base, side by side. Accepting is
-	the action the page is asking for; declining ends the session.
--->
 <@layout.registrationLayout
 	displayMessage=false
 	pageTitle="termsTitle"

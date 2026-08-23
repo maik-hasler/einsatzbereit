@@ -73,8 +73,8 @@ public class ChangeMemberRoleCommandHandlerTests
 	public async Task Handle_ShouldDemoteButNotRevokeKeycloakRole_WhenTargetStillOrganizesAnotherOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the realm role is shared across every org the user organizes (#1386),
-		// so it must stay assigned while they still organize a different one.
+		// Arrange
+
 		SetMembership(OrganizationMemberRole.Organizer);
 		_dbContext.CountOrganizersAsync(OrgId, Arg.Any<CancellationToken>()).Returns(2);
 		var otherOrg = Organization.Create(OrganizationId.New(), "Other Org").GetValueOrThrow();

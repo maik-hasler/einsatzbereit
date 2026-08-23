@@ -4,11 +4,6 @@ using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Regression coverage for #1389: GetCalendarEventsAsync used to return every
-// time slot an organization ever created, with no date bound and a
-// per-slot correlated COUNT subquery. These tests pin down that only slots
-// within the requested [from, to] window come back, and that booked counts
-// stay correct once the count query is grouped instead of correlated.
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
 [NotInParallel("IntegrationDb")]
 public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
@@ -81,13 +76,11 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 			cancellationToken)).Single().Id;
 		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
-		// Pending engagement counts toward bookedCount.
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { TimeSlotId = slotId },
 			cancellationToken);
 
-		// Cancelled engagement must not count.
 		var toBeCancelled = await olafClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { TimeSlotId = slotId },
@@ -167,10 +160,8 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		veraHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", veraToken);
 		var veraClient = new EinsatzbereitApi(veraHttpClient);
 
-		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
-		// vera (organisator, but NOT in org1) tries to access org1's calendar events
 		var act = () => veraClient.GetOrganizationCalendarEventsAsync(
 			org1Id,
 			DateTimeOffset.UtcNow,
@@ -201,8 +192,6 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		events.Should().BeEmpty();
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────────
-
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{
@@ -225,9 +214,6 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsDraftOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Time slots can only be added to ScheduledSlots opportunities (see
-		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a ScheduledSlots
-		// opportunity can't be published until it has at least one time slot.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{

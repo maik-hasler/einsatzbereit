@@ -30,8 +30,6 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Purely local - answered from organization_membership, so the requesting
-		// user's own role never depends on the Keycloak call below (#1709).
 		var isRequestingUserOrganizer = await dbContext.IsOrganizerAsync(
 			organization.Id, request.RequestingUserId, cancellationToken);
 
@@ -60,11 +58,6 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 			membersUnavailable);
 	}
 
-	// The org app shell (navigation, dashboard, every tab besides Members) doesn't
-	// need Keycloak's member roster to render - only the Members tab does. A
-	// transient Keycloak failure here used to throw and 500 the whole shell along
-	// with it (#1709); fall back to what organization_membership already knows
-	// locally (id + role, no Keycloak-sourced username/email/name) instead.
 	private async Task<(List<OrganizationMemberDto> Members, bool Unavailable)> GetMemberRosterAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken)

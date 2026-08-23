@@ -5,13 +5,10 @@ import type { VolunteerOpportunitiesFilters } from "./useVolunteerOpportunitiesD
 
 export interface VisibleMonth {
 	year: number;
-	/** 0-11, matching `Date.prototype.getMonth()`. */
+
 	month: number;
 }
 
-// The date range is the one filter this deliberately drops: the calendar is being
-// asked which days are worth picking, so scoping the answer to the range already
-// picked would only ever confirm itself and mark nothing else (#1779).
 export type OpportunityDateAvailabilityFilters = Omit<
 	VolunteerOpportunitiesFilters,
 	"dateFrom" | "dateTo"
@@ -19,13 +16,6 @@ export type OpportunityDateAvailabilityFilters = Omit<
 
 const NO_AVAILABILITY: ReadonlyMap<string, number> = new Map();
 
-/**
- * How many opportunities each day of `visibleMonth` has, keyed by local ISO date
- * (`YYYY-MM-DD`) so the day cells can look themselves up without re-deriving a
- * calendar day from a timestamp. Returns an empty map while the date popover is
- * closed (`visibleMonth` null) - nothing is asked of the backend until a visitor
- * actually opens the calendar.
- */
 export function useOpportunityDateAvailability(
 	visibleMonth: VisibleMonth | null,
 	filters: OpportunityDateAvailabilityFilters,
@@ -57,8 +47,6 @@ export function useOpportunityDateAvailability(
 			return;
 		}
 
-		// Local midnight to local end-of-day, the same day boundaries the grid draws -
-		// `new Date(year, month + 1, 0)` is the last day of `month`, not the next one.
 		const from = new Date(year, month, 1, 0, 0, 0, 0);
 		const to = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
@@ -75,10 +63,7 @@ export function useOpportunityDateAvailability(
 			{
 				from,
 				to,
-				// getTimezoneOffset() counts minutes *behind* UTC (Berlin in summer
-				// returns -120), the opposite sign of the "+02:00" the API asks for.
-				// Read off `from` rather than today so a month on the far side of a DST
-				// change is bucketed with its own offset, not the current one.
+
 				utcOffsetMinutes: -from.getTimezoneOffset(),
 				occurrence: occurrence || undefined,
 				participationType: participationType || undefined,
@@ -104,9 +89,6 @@ export function useOpportunityDateAvailability(
 				);
 			})
 			.catch(() => {
-				// The marks are a hint on top of a calendar that still works without
-				// them, so a failed lookup degrades to an unmarked grid rather than an
-				// error the visitor has to get past before picking a date.
 				if (controller.signal.aborted) return;
 				setAvailability(NO_AVAILABILITY);
 			})

@@ -30,10 +30,6 @@ public class CreateEngagementCommandHandlerTests
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
-	// ScheduledSlots opportunities can only be created as Draft (Create() itself
-	// rejects a Published ScheduledSlots opportunity, since a time slot can only
-	// be added after construction) - callers that need a Published one must add a
-	// slot and call Publish() themselves.
 	private VolunteerOpportunity CreateTestOpportunity(
 		VolunteerOpportunityId id, OpportunityStatus status = OpportunityStatus.Published)
 	{
@@ -54,10 +50,6 @@ public class CreateEngagementCommandHandlerTests
 		if (status == OpportunityStatus.Draft)
 			return opportunity;
 
-		// Published is unreachable at construction time for ScheduledSlots (see
-		// Create's ScheduledSlotsMustStartAsDraft guard) - add a throwaway slot
-		// so Publish()'s own ScheduledSlotsRequiresTimeSlot check is satisfied,
-		// then walk to the requested terminal status the same way real code would.
 		_ = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
@@ -87,10 +79,6 @@ public class CreateEngagementCommandHandlerTests
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService);
 	}
 
-	// Individual-contact opportunities never have time slots - this is the fixture
-	// for tests that sign up with TimeSlotId: null. Unlike ScheduledSlots, an
-	// IndividualContact opportunity can be created directly in any status (it has
-	// no "must have a time slot before publishing" constraint).
 	private void SetupOpportunityExists(
 		VolunteerOpportunityId opportunityId, OpportunityStatus status = OpportunityStatus.Published)
 	{
@@ -155,11 +143,6 @@ public class CreateEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
 	}
 
-	// --- Missing validations (#1149) ---
-
-	// Regression coverage for #1182: a Draft opportunity is deliberately hidden
-	// from non-organizers on the read side; sign-up must refuse it too, and the
-	// same holds for an opportunity that was published and later taken down.
 	[Test]
 	[Arguments(OpportunityStatus.Draft)]
 	[Arguments(OpportunityStatus.Unpublished)]
@@ -185,9 +168,8 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenTimeSlotHasAlreadyEnded(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the slot's start/end are in the past relative to real time, but
-		// still valid at TimeSlot.Create time thanks to an artificially-past `now`
-		// (TimeSlot rejects a past start otherwise - no real API path can create one).
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var opportunity = CreateTestOpportunity(opportunityId, OpportunityStatus.Draft);
 		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
@@ -210,8 +192,8 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldThrow_WhenScheduledSlotsOpportunityIsSignedUpWithoutATimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - previously fell into the individual-contact branch and produced
-		// a Pending engagement with no TimeSlotId, bypassing per-slot capacity entirely.
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "I'd like to help");
@@ -380,15 +362,12 @@ public class CreateEngagementCommandHandlerTests
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
 	}
 
-	// --- Time-slot row lock (#1142) ---
-
 	[Test]
 	public async Task Handle_ShouldLockTheTimeSlot_BeforeCountingActiveEngagements(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - held for the rest of this command's transaction so a concurrent
-		// sign-up for the same slot serializes behind this one instead of both
-		// reading the same stale count.
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
@@ -420,8 +399,6 @@ public class CreateEngagementCommandHandlerTests
 		result.Status.Should().Be(EngagementStatus.Pending);
 	}
 
-	// --- Time-slot-scoped uniqueness (#1067) ---
-
 	[Test]
 	public async Task Handle_ShouldCheckForDuplicateSignUp_ScopedToTheRequestedTimeSlot(
 		CancellationToken cancellationToken)
@@ -435,8 +412,8 @@ public class CreateEngagementCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - the duplicate check is scoped to this time slot, not the whole
-		// opportunity, so a second sign-up for a different slot isn't blocked.
+		// Assert
+
 		await _dbContext.Received(1).HasEngagementAsync(volunteerId, opportunityId, timeSlotId, cancellationToken);
 	}
 
@@ -453,9 +430,8 @@ public class CreateEngagementCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - a terminated engagement for a *different* slot must never
-		// surface here, or reactivating it would wipe that other slot's
-		// attendance/feedback data (the #1067 compounding bug).
+		// Assert
+
 		await _dbContext.Received(1).GetTerminalEngagementAsync(volunteerId, opportunityId, timeSlotId, cancellationToken);
 	}
 
@@ -486,10 +462,8 @@ public class CreateEngagementCommandHandlerTests
 	public async Task Handle_ShouldCreateNewEngagement_WhenATerminalEngagementOnlyExistsForAnotherTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - simulates the volunteer having a cancelled/attended
-		// engagement on a different slot of the same opportunity: since
-		// GetTerminalEngagementAsync is stubbed per-timeSlotId, it returns null
-		// for *this* slot, exactly like the real time-slot-scoped query would.
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
@@ -498,29 +472,19 @@ public class CreateEngagementCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert - a fresh engagement is created for this slot; nothing about the
-		// other slot's terminal engagement is touched.
+		// Assert
+
 		result.TimeSlotId.Should().Be(timeSlotId);
 		result.Status.Should().Be(EngagementStatus.Pending);
 		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
 	}
 
-	// --- Notifications and emails (#1174, #1729) ---
-	//
-	// Neither the organizer "New sign-up" email (subscription-gated per #1055)
-	// nor the volunteer's own sign-up receipt is sent synchronously from this
-	// handler anymore - both go out asynchronously via the outbox, by
-	// EngagementCreatedDomainEventHandler / EngagementReactivatedDomainEventHandler
-	// - see those handlers' tests (including localized-email and
-	// subscription-preference coverage) and EngagementVolunteerConfirmationHelper.
-
 	[Test]
 	public async Task Handle_ShouldNotSendAnyEmailSynchronously_RegardlessOfHowManyOrganizersExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a rapid create/withdraw loop must no longer hold this
-		// request's DB transaction open across a synchronous SMTP send, whether
-		// for the organizers or for the volunteer's own receipt (#1142).
+		// Arrange
+
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -533,9 +497,8 @@ public class CreateEngagementCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - nothing about this request talks to Keycloak's user endpoint
-		// or renders/sends an email; only the organizer membership lookup (needed
-		// for in-app Notification rows) remains.
+		// Assert
+
 		await _keycloakService.Received(1).GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }

@@ -10,7 +10,6 @@ using Domain.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
-
 namespace Application.UnitTests.Organizations.GetOrganizationDetails;
 
 public class GetOrganizationDetailsQueryHandlerTests
@@ -86,10 +85,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 		string expectedRole,
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the requesting user's own role must come from
-		// organization_membership, not from scanning the Keycloak-sourced Members
-		// roster below - the org app shell needs it even when that roster can't be
-		// loaded (#1709).
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
@@ -110,10 +107,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldFallBackToLocalRoster_WhenKeycloakMemberLookupFails(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: any transient Keycloak failure on the members lookup used to
-		// throw and take down the whole org app shell along with it (#1709) - it
-		// should degrade to what organization_membership already knows locally
-		// instead.
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 		var organizerId = Guid.NewGuid();
@@ -187,8 +182,8 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller has no membership at all in the target organization (any
-		// member - Organizer or plain Member - may view organization details).
+		// Arrange
+
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 

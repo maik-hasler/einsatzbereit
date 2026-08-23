@@ -9,9 +9,6 @@ internal sealed class SearchCitiesQueryHandler(
 	IMemoryCache cache)
 	: IQueryHandler<SearchCitiesQuery, IReadOnlyList<CitySuggestion>>
 {
-	// City name-to-coordinates mappings are effectively static, so a repeated
-	// query never needs to reach Nominatim (and its shared one-request-per-
-	// second throttle, see NominatimGeocodingService) again within this window.
 	private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
 	public async ValueTask<IReadOnlyList<CitySuggestion>> Handle(
@@ -28,9 +25,6 @@ internal sealed class SearchCitiesQueryHandler(
 
 		var results = await geocodingService.SearchCitiesAsync(request.Query, request.Language, cancellationToken);
 
-		// Don't cache an empty result - it's indistinguishable here from a
-		// transient geocoding failure, and caching that would turn a temporary
-		// hiccup into a day-long false "no such city" for every visitor.
 		if (results.Count > 0)
 			cache.Set(cacheKey, results, CacheDuration);
 

@@ -8,9 +8,7 @@ import { getOnlineStatus, subscribeOnlineStatus } from "../lib/onlineStatus";
 
 interface Props {
 	children: ReactNode;
-	/** Renders in place of the default full-page fallback - for a boundary
-	 * scoped to a smaller region (e.g. a single dashboard widget) where the
-	 * full-page "Something went wrong" UI would break the surrounding layout. */
+
 	fallback?: ReactNode;
 }
 
@@ -35,22 +33,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 	}
 
 	componentDidMount() {
-		// #1955: every route is lazy-loaded (App.tsx), so navigating to one
-		// whose chunk was never fetched throws a plain TypeError straight out of
-		// the dynamic import() - not routed through useOnlineStatus/RouteState at
-		// all, unlike every other offline-aware surface in the app.
 		this.unsubscribeOnlineStatus = subscribeOnlineStatus(() => {
 			const online = getOnlineStatus();
 			const cameBackOnline = online && !this.state.online;
-			// React.lazy() caches its import() promise - and a rejection - for
-			// the lifetime of the page (App.tsx's lazy() calls are module-level
-			// constants shared by every render), so clearing `hasError` here
-			// would just re-render straight into the exact same cached rejection
-			// and re-throw it instantly. Only a real reload re-fetches the chunk
-			// from scratch, mirroring what a visitor who reloads by hand already
-			// gets once back online - and matching what routeState.offline's
-			// reused copy ("we load the page again - you do not have to do
-			// anything") promises.
+
 			if (
 				cameBackOnline &&
 				this.state.hasError &&
@@ -91,10 +77,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 						variant="offline"
 						title={t("routeState.offline.title")}
 						message={t("routeState.offline.message")}
-						// A real reload, not a state reset (#2065's fallback for a
-						// connection that came back without the browser firing
-						// `online`) - see componentDidMount for why React.lazy()'s
-						// cached rejection needs exactly that.
+
 						onRetry={() => window.location.reload()}
 					/>
 				);

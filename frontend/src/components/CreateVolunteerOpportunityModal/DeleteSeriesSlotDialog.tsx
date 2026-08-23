@@ -15,9 +15,6 @@ interface Props {
 
 const SCOPES: SeriesEditScope[] = ["Only", "ThisAndFollowing", "EntireSeries"];
 
-/** Lets the organizer pick how much of a recurring series a delete affects,
- * since a series occurrence can't just be removed like a standalone slot
- * (einsatzbereit#1058). */
 export default function DeleteSeriesSlotDialog({
 	bookedCount,
 	loading,

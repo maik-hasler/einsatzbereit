@@ -1,16 +1,7 @@
 namespace Application.Common.Meta;
 
-// Builds a standalone HTML document carrying one entity's own title/description/image
-// in its OG and Twitter card tags, instead of the site-wide metadata frontend/index.html
-// hardcodes (einsatzbereit#1680). Only ever reaches a social-preview crawler or search
-// engine - frontend/nginx.conf.template only proxies here for User-Agents it recognizes
-// as a bot, so this never needs to match the SPA's own hashed asset filenames or ship a
-// working app shell, just correct tags plus a plain fallback link for anything that does
-// render the body.
 public static class MetaHtmlBuilder
 {
-	// OG/Twitter cards truncate long descriptions anyway; capping here keeps the
-	// preview's own wording intact instead of an engine-chosen cut mid-sentence.
 	private const int MaxDescriptionLength = 200;
 
 	public static string Build(
@@ -63,9 +54,6 @@ public static class MetaHtmlBuilder
 		if (value.Length <= MaxDescriptionLength)
 			return value;
 
-		// Back off one code unit when the cut would land inside a UTF-16 surrogate
-		// pair (e.g. an emoji in a user-entered description) - otherwise the
-		// trailing half-character renders as U+FFFD in any client that validates it.
 		var cutIndex = char.IsLowSurrogate(value[MaxDescriptionLength])
 			? MaxDescriptionLength - 1
 			: MaxDescriptionLength;
@@ -73,10 +61,6 @@ public static class MetaHtmlBuilder
 		return string.Concat(value.AsSpan(0, cutIndex).TrimEnd(), "...");
 	}
 
-	// Escapes only what HTML text/double-quoted-attribute content actually needs -
-	// unlike WebUtility.HtmlEncode, this leaves non-ASCII characters (e.g. umlauts in
-	// organization/opportunity names) as literal UTF-8 rather than numeric character
-	// references, which the document's own <meta charset="UTF-8" /> already covers.
 	private static string HtmlEscape(string value) =>
 		value
 			.Replace("&", "&amp;")

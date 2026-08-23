@@ -71,10 +71,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldShadowDeleteOrganization_EvenWithMultipleMembers(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: no GetMembersAsync stub at all, and no IsOrganizerAsync stub -
-		// if the handler consulted either, this would still have to pass, proving
-		// it doesn't gate on organizer membership or member count like the
-		// organizer-triggered delete flow does.
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
@@ -82,8 +80,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
-		// Assert: shadow-deleted, not hard-deleted or removed from Keycloak - the
-		// takedown must be restorable.
+		// Assert
+
 		result.Should().BeTrue();
 		organization.IsDeleted.Should().BeTrue();
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
@@ -99,8 +97,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldCascadeShadowDeleteOpportunities_EvenWithFutureTimeSlotsOrActiveEngagements(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: an opportunity that would 409-block the organizer-triggered
-		// delete flow must still be force-shadow-deleted here.
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
 		var organization = CreateOrganization(orgId);
@@ -157,10 +155,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	public async Task Handle_ShouldCancelAndRaiseEventCarryingTheOpportunityTitle_ForEachCascadedEngagement(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the cascade must resolve every one of the org's opportunities
-		// (#1057), not just the first; the email itself now happens post-commit via
-		// EngagementCancelledNotificationHandler (#1150), so this only proves each
-		// engagement is cancelled and carries the right title on its event.
+		// Arrange
+
 		var orgId = Guid.NewGuid();
 		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
 		var organization = CreateOrganization(orgId);

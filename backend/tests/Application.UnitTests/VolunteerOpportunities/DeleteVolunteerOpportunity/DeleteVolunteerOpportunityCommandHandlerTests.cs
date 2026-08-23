@@ -114,10 +114,8 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
-		// TitleSnapshot must be captured here since the opportunity row is hard-deleted
-		// right after, so a later live lookup by relatedEntityId would find nothing to
-		// interpolate {{title}} with (einsatzbereit#2073).
+		// Assert
+
 		await _notifRepo.Received(2).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityDeleted
 				&& n.RelatedEntityId == opportunityId
@@ -150,7 +148,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
-		// Assert - active engagements are cancelled, not left dangling after the opportunity is gone.
+		// Assert
 		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
 		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
@@ -161,12 +159,8 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a deletion must in-app-notify+cancel the volunteer the same way
-		// an organizer-triggered single-engagement cancel does (einsatzbereit#1057),
-		// not just via the opportunity-level "was removed" notification. The email
-		// itself now happens post-commit via EngagementCancelledNotificationHandler
-		// (#1150), so this only proves each engagement is cancelled and carries the
-		// right title on its event.
+		// Arrange
+
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();

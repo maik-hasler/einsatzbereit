@@ -201,10 +201,6 @@ public class CancelEngagementCommandHandlerTests
 	public async Task Handle_ShouldRaiseCancelledEventCarryingTheOpportunityTitle_ForThePostCommitNotificationHandler(
 		CancellationToken cancellationToken)
 	{
-		// #1150: the email itself moved to EngagementCancelledNotificationHandler,
-		// dispatched post-commit - the title is denormalized onto the event here
-		// since some other callers cancel as part of deleting the opportunity in
-		// the same transaction (nothing left to look up by the time it dispatches).
 		var engagementId = EngagementId.New();
 		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);

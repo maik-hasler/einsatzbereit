@@ -5,15 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #667: GetByVolunteerAsync (backing GET /v1/me/engagements,
-/// the volunteer's "My profile -> Engagements" list) used an inner join
-/// against VolunteerOpportunitiesQuery. Deleting an opportunity hard-deletes
-/// that row while only cancelling (not deleting) affected Engagement rows,
-/// so the inner join silently dropped the volunteer's own engagement entirely
-/// once its opportunity was gone - it should still appear, marked Cancelled,
-/// with a fallback title.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -40,9 +31,6 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await Page.GotoAsync($"{origin}/my-signups");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// #675 split the tab into "Current & upcoming" (default) and "Past" -
-		// the opportunity's deletion cancels the engagement, so it now only
-		// shows up under "Past".
 		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 
 		await Expect(Page.GetByText("This opportunity has been removed").First)
@@ -66,19 +54,12 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await AuthHelper.GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		// Create a fresh organization rather than reusing olaf's shared seed
-		// org - other VisualTests running concurrently in this shared Aspire
-		// session can mutate/delete shared orgs, which made GET
-		// /v1/organizations intermittently race to an empty list here.
 		var createOrgResponse = await PostJsonWithRetryAsync(http,
 			"/v1/organizations",
 			new { name = $"EngHistDeletedOpp Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();
 		var org = await createOrgResponse.Content.ReadFromJsonAsync<JsonElement>();
-		// CreateOrganizationEndpoint returns the raw domain Organization
-		// aggregate (unlike GetOrganizations, which projects to a DTO), so
-		// its strongly-typed OrganizationId record struct serializes as a
-		// nested { "value": "<guid>" } object rather than a plain string.
+
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new

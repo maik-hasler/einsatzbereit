@@ -32,8 +32,6 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Notifies volunteers (#405), cancels active engagements (#548), and
-		// resolves any open abuse reports against the opportunity (#1075).
 		await VolunteerOpportunityDeletionHelper.DeleteAsync(
 			dbContext,
 			engagementReadRepository,

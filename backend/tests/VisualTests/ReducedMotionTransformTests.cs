@@ -5,25 +5,9 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// #2068: global.css's prefers-reduced-motion guard only wrapped the
-/// @keyframes-based .animate-fade-up family - every hand-rolled hover/open
-/// transform transition kept running regardless, since each one needs its
-/// own motion-reduce:transition-none the way LatestOpportunitiesSection.tsx's
-/// arrow already had it. Covers the two the issue's audit found unguarded:
-/// OpportunityCard's banner hover zoom and the shared ChevronDownIcon's
-/// open-state rotate (used by every dropdown/filter built on it).
-///
-/// VisualTestBase already emulates prefers-reduced-motion: reduce for the
-/// whole suite (see its ContextOptions), so these only need to prove the
-/// transition itself is turned off under that emulation - not that the
-/// underlying hover/open state still works, which the rest of the suite
-/// already covers.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// 1x1 transparent PNG, the shared fixture image for banner/logo uploads.
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
@@ -85,8 +69,6 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		var card = Page.Locator("li", new() { HasText = title });
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The banner <img> is the card's first <img> - it sits above the
-		// organization-logo image in OpportunityCard's markup.
 		var banner = card.Locator("img").First;
 		await Expect(banner).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
@@ -111,15 +93,10 @@ public class ReducedMotionTransformTests(AspireFixture fixture) : VisualTestBase
 		await trigger.ClickAsync();
 		await Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
 
-		// The trigger renders two <svg>s - FilterDropdown's own leading `icon`
-		// prop (UsersIcon here, no transition classes) followed by this
-		// ChevronDownIcon - so scope to the last one instead of the bare
-		// locator, which strict-mode-violates on both matching.
 		var chevron = trigger.Locator("svg").Last;
 		var transitionProperty = await chevron.EvaluateAsync<string>(
 			"el => getComputedStyle(el).transitionProperty");
 		transitionProperty.Should().Be("none",
 			"the shared ChevronDownIcon's open-state rotate is a transform transition too, per #2068's audit");
 	}
-
 }

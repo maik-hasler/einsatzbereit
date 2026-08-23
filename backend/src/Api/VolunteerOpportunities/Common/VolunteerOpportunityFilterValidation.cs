@@ -2,16 +2,8 @@ using Domain.VolunteerOpportunities;
 
 namespace Api.VolunteerOpportunities.Common;
 
-// The public listing and the date-availability calendar behind its date filter take the
-// same filter vocabulary, so they have to reject the same bad input the same way: a
-// category typo that 400s on /volunteer-opportunities but is quietly dropped by the
-// calendar would mark days the list then can't fill (#1779).
 internal static class VolunteerOpportunityFilterValidation
 {
-	/// <summary>
-	/// Returns a problem result for the first rule the shared filter parameters break,
-	/// or null when all of them are valid.
-	/// </summary>
 	public static IResult? Validate(
 		double? centerLatitude,
 		double? centerLongitude,

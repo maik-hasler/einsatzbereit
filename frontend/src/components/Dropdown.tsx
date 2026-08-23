@@ -30,12 +30,6 @@ function lastEnabledIndex(options: DropdownOption[]): number {
 	return -1;
 }
 
-/**
- * Accessible replacement for a native <select>, styled to match the app's
- * inputs instead of falling back to the browser/OS picker. Implements the
- * WAI-ARIA "select-only combobox" pattern - focus stays on the trigger
- * button and the active option is tracked via aria-activedescendant.
- */
 export default function Dropdown({
 	id,
 	value,
@@ -197,8 +191,6 @@ export default function Dropdown({
 							aria-disabled={opt.disabled || undefined}
 							onMouseEnter={() => !opt.disabled && setActiveIndex(index)}
 							onMouseDown={(e) => {
-								// Keep focus on the trigger button (combobox pattern)
-								// instead of letting the option steal it.
 								e.preventDefault();
 								commit(index);
 							}}

@@ -10,20 +10,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
 	{
-		// The breadcrumb is a direct "Home > {organization name}" - no
-		// "Organizations" middle crumb, since organizations are found via the
-		// volunteer-opportunity search's keyword field, not a browse page.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		// The opportunity list, and the org links on its cards, live on
-		// /opportunities rather than the landing page.
 		await Page.GotoAsync($"{origin}/opportunities");
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Seed data always publishes opportunities - a non-waiting
-		// CountAsync() right after the h1 check above raced the list's
-		// opportunity fetch and could silently skip this test instead of failing.
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
 		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -33,16 +25,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// No breadcrumb bar: the PageHeaderBand already states the org name as the
-		// h1, so a bar directly above restating it is duplication.
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
 		orgName.Should().NotBeNullOrWhiteSpace();
 
-		// The band carried a "Home" link too, until every subpage repeating the
-		// same one destination inside its own hero was replaced by a single
-		// "Home" entry in the header nav - on screen on every page at once.
 		await Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Home" }))
 			.ToHaveCountAsync(0);
 		await Expect(Page.GetByTestId("nav-home")).ToBeVisibleAsync();
@@ -51,10 +38,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
-		// Engagement management is a nested org app route, so the org switcher must
-		// stay visible rather than swapping to the public site header/footer. With
-		// no tab bar, the way back to the opportunities list is the breadcrumb's
-		// "Opportunities" link.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -90,17 +73,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task DirectNavigation_ToEachDashboardNestedRoute_RendersRealContent_NotErrorBoundary()
 	{
-		// Opportunities/members/settings (and the
-		// dashboard index) are nested under a pathless "dashboard" parent
-		// route (see App.tsx) whose element used to be a bare <Outlet />
-		// with no `context` prop - that starts a brand new outlet context
-		// instead of forwarding OrgAppLayout's <Outlet context={{org,
-		// reloadOrg}}>, so every one of these pages got undefined from
-		// useOutletContext<OrgAppContext>() and crashed on the very first
-		// destructure, caught by the app-wide ErrorBoundary. A direct
-		// (full page load) navigation to each route below exercises that
-		// same render chain from scratch every time, unlike a client-side
-		// Link click that could in principle reuse already-mounted state.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -126,11 +98,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			await Expect(errorBoundaryHeading).ToHaveCountAsync(0);
 
-			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
-			// above it, at the app root), taking the header band down with it -
-			// so the band's h1 carries the page's name precisely when the page
-			// rendered for real, regardless of whether the org has any
-			// opportunities/members/etc. to show.
 			await Expect(Page.Locator("main").GetByRole(AriaRole.Heading, new() { Level = 1 }))
 				.ToHaveTextAsync(activePageLabel, new() { Timeout = 10_000 });
 		}
@@ -139,8 +106,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_ClosesOnEscape()
 	{
-		// Dropdown/overlay menus in the Header only closed on outside
-		// click - Escape did nothing. useDismissableOverlay fixes this.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
@@ -160,11 +125,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_SwitchingLanguage_LazilyLoadsAndAppliesTranslations()
 	{
-		// Both translation bundles used to be statically imported into the
-		// entry chunk. Each language's JSON is now fetched lazily on demand via a
-		// custom i18next backend - switching language must still dynamically load
-		// and apply the target locale's strings, and switching back must reuse the
-		// already-loaded English bundle without breaking.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
@@ -196,11 +156,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task HomePage_LanguageSelector_DropdownStaysInsideViewportAt1440px()
 	{
-		// The open <ul> was anchored "top-full left-0" with a fixed
-		// w-36 (144px) width, so it grew rightward from the trigger's left
-		// edge instead of the trigger's own right edge - at 1440px that pushed
-		// the panel's right edge past the viewport, clipping its border/
-		// background and truncating "Deutsch" with no visible box edge.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.SetViewportSizeAsync(1440, 900);
@@ -223,8 +178,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task MobileMenu_ClosesOnEscape()
 	{
-		// MobileMenu offered neither outside-click nor Escape dismissal
-		// at all - useDismissableOverlay now backs it too.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.SetViewportSizeAsync(390, 844);
@@ -250,9 +203,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await hamburger!.ClickAsync();
 
-		// Both header variants are mounted at this point (the desktop one is
-		// only hidden by CSS), and the mobile menu's copy is the later of the
-		// two in the DOM.
 		var mobileLangBtn = Page.GetByTestId("language-selector-trigger").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
@@ -263,9 +213,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Footer_CtaLink_FromHomePage_NavigatesToOpportunitiesPage()
 	{
-		// The footer CTA is a plain destination link, not a "/#opportunities"
-		// fragment that scrolls the landing page - guard that it lands on the
-		// populated list.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
@@ -284,9 +231,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Footer_CtaLink_FromAnotherPage_NavigatesToOpportunitiesPage()
 	{
-		// The companion to the test above from a page that is not the landing
-		// page: the footer is shared by every route, so the CTA has to reach
-		// the list from anywhere, not just from "/".
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync($"{frontend}help");
@@ -305,8 +249,6 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task AccountControls_UserMenu_ClosesOnEscape()
 	{
-		// The account/notification dropdowns (useAccountMenu) only
-		// closed on outside click.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");

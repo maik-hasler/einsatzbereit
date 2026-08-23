@@ -25,8 +25,6 @@ internal static class EndpointTestHelper
 		builder.Services.AddAuthorization();
 		builder.Services.AddRateLimiter(_ => { });
 
-		// AddEndpoints() uses Assembly.GetExecutingAssembly(), which is ArchitectureTests here.
-		// Manually register all IEndpoint implementations from the Api assembly instead.
 		var endpointTypes = AssemblyAnchors.PresentationLayer.GetTypes()
 			.Where(t => t is { IsClass: true, IsAbstract: false }
 				&& typeof(IEndpoint).IsAssignableFrom(t));

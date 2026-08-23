@@ -72,7 +72,6 @@ describe("my-signups engagement card date region", () => {
 
 		expect(screen.getByText("Your message:")).toBeInTheDocument();
 		expect(
-			// Substring: the card wraps the message in typographic quotes.
 			screen.getByText(/I would like to help on weekends\./),
 		).toBeInTheDocument();
 		expect(screen.getByText(/Express interest by/)).toBeInTheDocument();

@@ -97,7 +97,7 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 		// Act
 		await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert: left for GeocodingRetryJob to backstop later - no save needed.
+		// Assert
 		opportunity.Address!.Latitude.Should().BeNull();
 		opportunity.AddressGeocodingFailed.Should().BeFalse();
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -118,8 +118,8 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 		Func<Task> act = async () =>
 			await _sut.Handle(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id), cancellationToken);
 
-		// Assert: an exception here means we genuinely don't know the outcome -
-		// never treat it as NotFound, and let GeocodingRetryJob retry later.
+		// Assert
+
 		await act.Should().NotThrowAsync();
 		opportunity.Address!.Latitude.Should().BeNull();
 		opportunity.AddressGeocodingFailed.Should().BeFalse();
@@ -148,8 +148,8 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldDoNothing_WhenOpportunityHasSinceGoneRemote(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: the address changed again (or went remote) before this event
-		// was dispatched - a newer event supersedes this stale one.
+		// Arrange
+
 		var opportunity = CreateNonRemoteOpportunity();
 		opportunity.Relocate(true, null).ThrowIfFailure();
 		SetupOpportunity(opportunity.Id, opportunity);
@@ -166,8 +166,8 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	public async Task Handle_ShouldDoNothing_WhenCoordinatesAlreadyResolved(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: an earlier attempt (or GeocodingRetryJob) already resolved this
-		// opportunity before this event dispatched.
+		// Arrange
+
 		var opportunity = CreateNonRemoteOpportunity();
 		opportunity.ApplyGeocodingResult(DefaultAddress.WithCoordinates(1, 1).GetValueOrThrow());
 		SetupOpportunity(opportunity.Id, opportunity);

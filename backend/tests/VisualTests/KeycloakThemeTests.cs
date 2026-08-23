@@ -7,44 +7,16 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Covers the custom Keycloak login theme (<c>keycloak/themes/einsatzbereit</c>).
-///
-/// It had no automated coverage of any kind, and the gap showed: the theme
-/// overrode four templates and inherited the rest from <c>parent=base</c>, so
-/// the pages a real signup walks through - confirm your email, then set a
-/// password - rendered Keycloak's stock markup inside the theme's card, with
-/// its own floating-label rules unable to match it. Nothing in CI could see
-/// that, because nothing in CI ever loaded those pages.
-///
-/// These tests drive Keycloak's own origin directly rather than going through
-/// the SPA (<see cref="AuthHelper.LoginAsync"/>), because most of these pages
-/// are only reachable from a required action, and the point here is the page
-/// itself rather than how the app got you there.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const string Realm = "einsatzbereit";
 	private const string FrontendClientId = "frontend";
 
-	// Mirrors theme.properties' siteUrl. Declared there rather than derived,
-	// because the frontend client carries no baseUrl - see keycloak/AGENTS.md.
 	private const string SiteUrl = "https://einsatzbereit.maik-hasler.de";
 
-	// Satisfies the realm's passwordPolicy (upperCase(1), length(8)) - a
-	// weaker one is rejected by the admin API at user-creation time, not at
-	// login, so it would fail in CreateThrowawayUserAsync with an error that
-	// says nothing about this test.
 	private const string ThrowawayPassword = "Throwaway123";
 
-	/// <summary>
-	/// Builds an authorization URL for the real <c>frontend</c> client. PKCE is
-	/// mandatory on it (<c>pkceCodeChallengeMethod: S256</c>), so a request
-	/// without a challenge never reaches the login page at all - it comes back
-	/// as an error page, which would silently turn every assertion below into a
-	/// test of error.ftl.
-	/// </summary>
 	private string AuthUrl(string endpoint = "auth", string? locale = null)
 	{
 		var keycloak = Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/');
@@ -73,30 +45,17 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	private static string Base64Url(byte[] bytes) =>
 		Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
-	/// <summary>
-	/// Asserts the shell every page in this theme shares: the brand lockup, the
-	/// card, and the way back to the product.
-	/// </summary>
 	private async Task AssertThemeShellAsync(string label)
 	{
 		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.Locator(".auth-logo")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
 
-		// The stylesheet actually applied, rather than a 404 leaving the page as
-		// unstyled default-serif markup that would still satisfy every locator
-		// above. bg-white on the card is the cheapest single proof of that.
 		var cardBackground = await Page.Locator(".auth-card")
 			.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
 		cardBackground.Should().Be("rgb(255, 255, 255)",
 			$"{label}: the theme stylesheet should have loaded and styled the card");
 
-		// The back link sits *below* the card, not beside it. .auth-main is a
-		// flex container holding both, and it was missing flex-direction: column
-		// - so the two laid out as a row on every page in the theme, parking the
-		// link in the whitespace to the right of the card. At 390px wide it took
-		// a third of the viewport with it and squeezed the login form's
-		// "remember me" and "forgot password" onto two lines each.
 		await AssertVerticalGapBetweenAsync(
 			Page.Locator(".auth-card"), Page.Locator(".auth-back"), label);
 	}
@@ -111,22 +70,13 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Account");
 		await Expect(Page.Locator("#password")).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-login")).ToBeVisibleAsync();
-		// #2063: stock Keycloak's doLogIn is Title Case ("Sign In"), which read
-		// inconsistently against the sentence-case eyebrow right above it and
-		// the rest of the app.
+
 		await Expect(Page.Locator("#kc-login")).ToHaveAttributeAsync("value", "Sign in");
 	}
 
 	[Test]
 	public async Task Login_LanguageSwitcher_HasAccessibleName()
 	{
-		// The trigger's only visible content is the two-letter language
-		// code ("EN"/"DE"), so without an explicit label a screen reader
-		// announced just that code, not what the control does. The SPA's
-		// counterpart (Header/LanguageSelector.tsx) labels both its trigger
-		// button and its open menu via aria-label - this pins the same
-		// accessible names down here, and that both supported locales still
-		// show up once the menu opens.
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
@@ -143,12 +93,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_PrimaryButton_UsesTheProductsOwnGreen()
 	{
-		// Button.tsx documents that white text on brand-600 (#2d8a5e) measures
-		// ~4.3:1, under the WCAG AA 4.5:1 floor this suite's own axe scans
-		// enforce, and that every primary button in the app therefore uses
-		// brand-700. The auth pages were the one surface still on
-		// brand-600 - both a contrast failure and a visibly different green
-		// from the button the same person clicked one page earlier.
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator("#kc-login")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
@@ -160,12 +104,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_ForgotPasswordLink_MatchesRegisterLinkTreatment()
 	{
-		// #2063: "Forgot password?" used to render in the same muted grey as
-		// the static "Remember me" label beside it, with no underline and
-		// nothing marking it as interactive - while the less critical
-		// "Register" link in the card footer got full brand-700 treatment.
-		// Also pins the sentence-case wording (stock Keycloak's doForgotPassword
-		// is Title Case: "Forgot Password?").
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		var forgotPassword = Page.GetByRole(AriaRole.Link, new() { Name = "Forgot password?", Exact = true });
 		await Expect(forgotPassword).ToBeVisibleAsync(new() { Timeout = 30_000 });
@@ -178,13 +116,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_FailedAttempt_AssociatesErrorWithBothFieldsAndRecolorsFocusRing()
 	{
-		// #2063: both fields got aria-invalid="true" after a failed attempt,
-		// but neither pointed aria-describedby at the error message span - a
-		// screen-reader user tabbing back into them heard "invalid" with no
-		// explanation why. Separately, the theme's global brand-green
-		// :focus-visible ring was drawn on top of the red error border, so the
-		// field the user is actually looking at looked the least like it had
-		// a problem - the ring should turn red to match instead.
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
@@ -209,12 +140,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_LanguageMenu_LabelsAreEndonymsRegardlessOfCurrentLocale()
 	{
-		// #2063: stock Keycloak's messages_de.properties lists "Deutsch" for
-		// German but "Englisch (English)" for English - translating the other
-		// locale's name into the current one, with the endonym only in
-		// brackets. The in-app switcher (Header/LanguageSelector.tsx) uses
-		// endonyms for both languages regardless of which one is currently
-		// active; the theme's menu should match.
 		foreach (var locale in new[] { "en", "de" })
 		{
 			await Page.GotoAsync(AuthUrl(locale: locale));
@@ -233,17 +158,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Login_AuthFadeUpKeyframe_NeverDipsBelowFullOpacity()
 	{
-		// The auth-fade-up keyframe used to fade opacity
-		// 0 -> 1 over 0.45s, so the card's heading, labels and the primary
-		// "Sign In" button rendered as low-contrast gray-green for the first
-		// second or so after load - the single most function-critical page in
-		// the product briefly looking broken, and interactable (by a password
-		// manager or screen reader) before the fade even settled. Asserts
-		// against the parsed @keyframes rule itself rather than sampling
-		// getComputedStyle during the real animation, which would depend on
-		// exactly when this test happens to sample relative to a CI runner's
-		// load timing - the CSSOM still exposes the rule's frames regardless
-		// of whether prefers-reduced-motion currently matches it.
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -280,12 +194,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task Register_OmitsPasswordFields_AndSaysWhy()
 	{
-		// The realm has verifyEmail on, so Keycloak deliberately leaves the
-		// password off this form and collects it after the address is confirmed
-		// (RegistrationPassword.buildPage). Nothing said so, and the form just
-		// looked like it had lost a field. If verifyEmail is ever turned off,
-		// this test failing is the correct outcome - register.ftl renders the
-		// password fields again and the lead must go with it.
 		await Page.GotoAsync(AuthUrl("registrations", locale: "en"));
 		await Expect(Page.Locator("#email")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
@@ -321,9 +229,7 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			await AssertThemeShellAsync("verify-email");
 			await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Confirm your email");
-			// .instruction is Keycloak's own class for this page's body copy. It
-			// had no rule in the theme at all, so the single sentence this page
-			// exists to deliver rendered unstyled.
+
 			await Expect(Page.Locator(".instruction")).ToBeVisibleAsync();
 			var color = await Page.Locator(".instruction").First
 				.EvaluateAsync<string>("el => getComputedStyle(el).color");
@@ -339,12 +245,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task UpdatePassword_FloatingLabelsAttachToTheirField()
 	{
-		// The single most-visited page in this theme after sign-in itself, and
-		// the one that was worst off: base's markup puts the <label> in a
-		// wrapper div *above* the input rather than as its sibling, which the
-		// theme's floating-label rules (.form-input + .form-label) cannot match.
-		// The label is position: absolute, so with no positioned ancestor and no
-		// rule to place it, it escaped its field entirely.
 		var username = $"theme-pw-{Guid.NewGuid():N}"[..24];
 		var userId = await Fixture.CreateThrowawayUserAsync(
 			username, ThrowawayPassword, emailVerified: true, requiredActions: ["UPDATE_PASSWORD"]);
@@ -357,8 +257,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Expect(Page.Locator(".card-eyebrow")).ToHaveTextAsync("Password");
 			await Expect(Page.Locator("#password-confirm")).ToBeVisibleAsync();
 
-			// The label overlaps its own input, which is only true when the two
-			// are siblings inside the positioned .form-field wrapper.
 			var labelSitsOnField = await Page.EvaluateAsync<bool>(
 				"""
 				() => {
@@ -375,9 +273,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 				"update-password: the floating label should sit inside its own field, "
 				+ "which only holds when the template emits label as a sibling of the input");
 
-			// The visibility toggle is wired up here too - it is a separate
-			// script from the floating labels and had its own latent bug
-			// (a DOMContentLoaded-only listener with no readyState guard).
 			await Page.Locator("button[aria-controls='password-new']").ClickAsync();
 			await Expect(Page.Locator("#password-new")).ToHaveAttributeAsync("type", "text");
 		}
@@ -390,12 +285,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task UpdateProfile_IsThemed()
 	{
-		// This page's fields come from base's userProfileCommons macro, which
-		// renders labels above their inputs rather than as siblings - so unlike
-		// every fixed form in this theme it deliberately falls to the static
-		// label treatment. Asserting it here keeps that fallback honest: a
-		// label that cannot float should look like a plain label, not like one
-		// stranded mid-field.
 		var username = $"theme-profile-{Guid.NewGuid():N}"[..24];
 		var userId = await Fixture.CreateThrowawayUserAsync(
 			username, ThrowawayPassword, emailVerified: true, requiredActions: ["UPDATE_PROFILE"]);
@@ -425,13 +314,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task ErrorPage_OffersAVisibleWayBack()
 	{
-		// Two separate defects met on this page. Base only renders a way out
-		// when ${client.baseUrl} is set, and this realm's frontend client has
-		// none - so the page a stuck visitor is most likely to be looking at
-		// had nothing to click. And once the theme added a button, the prose
-		// rule for links inside #kc-error-message (id, 1-0-1) outranked
-		// .btn-primary (0-1-0) and painted the label brand-700 on a brand-700
-		// fill: a solid green bar with an invisible label.
 		var keycloak = Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/');
 		await Page.GotoAsync(
 			$"{keycloak}/realms/{Realm}/login-actions/action-token?key=not-a-real-key&client_id={FrontendClientId}");
@@ -447,47 +329,29 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		contrast[0].Should().NotBe(contrast[1],
 			"error page: the back-to-application button's label must not be the same color as its fill");
 
-		// A button that is visible but points nowhere is the same dead end with
-		// extra steps. This is the assertion that actually pins the
-		// properties.siteUrl fallback down - contrast alone would still pass if
-		// the href collapsed back to base's empty ${client.baseUrl}.
 		await Expect(backLink).ToHaveAttributeAsync("href", SiteUrl);
 	}
 
 	[Test]
 	public async Task LogoutConfirm_OffersACancel()
 	{
-		// A confirmation with only the irreversible action on it is not a
-		// confirmation. Base pairs "Sign out" with a cancel link gated on
-		// ${client.baseUrl}, which is empty here, so the page shipped with one
-		// button.
 		var keycloak = Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/');
 		await Page.GotoAsync(
 			$"{keycloak}/realms/{Realm}/protocol/openid-connect/logout?client_id={FrontendClientId}");
 
 		await Expect(Page.Locator("#kc-logout")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Not AssertThemeShellAsync: its vertical-gap check requires .auth-back
-		// to be visible, which this page deliberately omits (see below).
 		await Expect(Page.Locator(".auth-card")).ToBeVisibleAsync();
 		await Expect(Page.Locator(".auth-logo")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
 		await Expect(Page.Locator("#kc-logout-cancel")).ToBeVisibleAsync();
 
-		// This page's own Cancel link above is its only way out - the
-		// generic "Back to Einsatzbereit" safety net from template.ftl must not
-		// also render here, or the two identical-destination controls sit side
-		// by side with no visible distinction.
 		await Expect(Page.Locator(".auth-back")).ToHaveCountAsync(0);
 	}
 
 	[Test]
 	public async Task Pages_HaveDistinctBrowserTitles()
 	{
-		// Every template inherited login.ftl's default pageTitle, so the tab
-		// read "Sign In" on the error page, the logout confirmation and the
-		// verify-email page alike - and two auth pages open side by side were
-		// indistinguishable in the tab strip.
 		var keycloak = Fixture.GetEndpoint("keycloak").ToString().TrimEnd('/');
 
 		await Page.GotoAsync(AuthUrl(locale: "en"));
@@ -511,13 +375,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task GermanPages_KeepTheProductsDuRegister()
 	{
-		// Keycloak's stock German addresses the user as "Sie"; the product says
-		// "du" throughout. Any base message that reaches a user therefore has to
-		// be overridden in messages_de.properties, and German is the default
-		// served locale - so a missed override shows the mixed register to most
-		// visitors, on the first screen they see. Nothing else in CI checks
-		// this: the bundles are not TypeScript, so i18n-check never sees them,
-		// and key parity (which is checked) says nothing about the wording.
 		foreach (var (endpoint, marker) in new[] { ("auth", "#username"), ("registrations", "#email") })
 		{
 			await Page.GotoAsync(AuthUrl(endpoint, locale: "de"));
@@ -525,8 +382,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			var card = await Page.Locator(".auth-card").InnerTextAsync();
 
-			// Word-boundary matched: "Sie" as its own word, not the "sie" inside
-			// "diese" or a sentence-initial lowercase form.
 			card.Should().NotMatchRegex(@"\bSie\b",
 				$"{endpoint}: the German copy should address the user as du, not Sie");
 			card.Should().NotMatchRegex(@"\bIhre[nmrs]?\b",
@@ -571,11 +426,6 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 	}
 
-	/// <summary>
-	/// Drives the theme's own single-step login form (username and password on
-	/// one page) as <paramref name="username"/>, and returns once Keycloak has
-	/// moved off it - to whichever required-action page the account is carrying.
-	/// </summary>
 	private async Task SignInThroughKeycloakUiAsync(string username)
 	{
 		await Page.GotoAsync(AuthUrl(locale: "en"));
@@ -585,17 +435,9 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Locator("#password").FillAsync(ThrowawayPassword);
 		await Page.Locator("#kc-login").ClickAsync();
 
-		// Waits on the login form going away rather than on a URL: the redirect
-		// races the frame's own navigation, which is what made URL waits
-		// intermittently flaky elsewhere in this suite (see AuthHelper.LoginAsync).
 		await Expect(Page.Locator("#kc-form-login")).ToHaveCountAsync(0, new() { Timeout = 30_000 });
 	}
 
-	// Same serious/critical filter AccessibilityTests applies. Kept local
-	// rather than shared: that class's list also escalates a set of moderate
-	// landmark/heading rules chosen for the SPA's layout, and these pages are a
-	// different document structure entirely (no header/footer landmarks, one
-	// card) - inheriting that list would couple two unrelated gates.
 	private static void AssertNoSeriousViolations(AxeResult result, string label)
 	{
 		var violations = result.Violations

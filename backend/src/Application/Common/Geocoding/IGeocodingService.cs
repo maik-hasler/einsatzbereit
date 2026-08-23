@@ -8,10 +8,8 @@ public enum GeocodingOutcome
 {
 	Found,
 
-	/// <summary>The geocoding provider confirmed no match exists for this address; retrying the same query won't help.</summary>
 	NotFound,
 
-	/// <summary>The geocoding provider could not be reached or answered unexpectedly (timeout, rate limit, outage); worth retrying later.</summary>
 	TransientFailure,
 }
 

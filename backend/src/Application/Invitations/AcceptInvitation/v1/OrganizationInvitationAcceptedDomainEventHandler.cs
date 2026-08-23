@@ -6,10 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Invitations.AcceptInvitation.v1;
 
-// Consumer of OrganizationInvitationAcceptedDomainEvent (#1047): AcceptInvitationCommandHandler
-// only flips the invitation's Status and raises the event; letting the inviting organizer know
-// their invite was accepted happens here, dispatched by OutboxProcessorJob like every other
-// domain event.
 internal sealed class OrganizationInvitationAcceptedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

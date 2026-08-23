@@ -1,12 +1,5 @@
 #!/usr/bin/env node
-// Guards against the regression class behind issue #1220: the
-// Permissions-Policy header shipped `camera=()` (an empty allowlist), so the
-// browser rejected camera access before ever prompting the user - silently
-// breaking the QR check-in scanner in the released image while leaving it visually
-// functional. The value is duplicated across four nginx location blocks (no
-// $host-keyed map like $csp_header, since it never varies by host), so a
-// future edit could silently regress one block and miss the other three.
-// Purely static checks - no Docker/nginx required.
+
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";

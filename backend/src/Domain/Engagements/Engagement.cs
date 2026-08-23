@@ -14,11 +14,6 @@ public sealed class Engagement
 
 	public TimeSlotId? TimeSlotId { get; private set; }
 
-	// Snapshotted from the TimeSlot at sign-up/reactivation time (#1203): TimeSlotId gets
-	// nulled by engagement.time_slot_id's ON DELETE SET NULL once the slot is hard-deleted,
-	// so this is what keeps a volunteer's past-engagement history showing when a shift was.
-	// Prefer a live join to TimeSlot when TimeSlotId is present (it may have been
-	// rescheduled since) - fall back to these only once the slot is gone.
 	public DateTimeOffset? TimeSlotStartDateTime { get; private set; }
 
 	public DateTimeOffset? TimeSlotEndDateTime { get; private set; }
@@ -49,16 +44,8 @@ public sealed class Engagement
 
 	private bool IsTerminated => Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled;
 
-	// Bounds how many times a single withdrawn/cancelled engagement can be
-	// reused via Reactivate: without a cap, a volunteer could loop create/withdraw
-	// indefinitely against the same opportunity, and every cycle mails the
-	// volunteer plus every organizer of the org (einsatzbereit#1174).
 	public const int MaxReactivationCount = 5;
 
-	// Reasonable window (#1069) for a volunteer to reconsider a submitted rating
-	// or comment. Measured from the original FeedbackSubmittedAt rather than
-	// reset by each edit, so editing repeatedly can't keep the window open
-	// indefinitely.
 	public const int FeedbackEditWindowDays = 14;
 
 #pragma warning disable CS8618
@@ -141,12 +128,6 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	// opportunityTitle is denormalized onto EngagementCancelledDomainEvent (#1150)
-	// rather than looked up from OpportunityId when the event is later dispatched -
-	// several callers cancel engagements as part of deleting the opportunity itself
-	// in the same transaction, so by dispatch time there would be nothing left to
-	// look up. Optional only so existing callers/tests that don't have a title
-	// handy (or don't care about the eventual notification) keep compiling.
 	public Result Cancel(string? reason = null, string? opportunityTitle = null)
 	{
 		if (IsAnonymized)

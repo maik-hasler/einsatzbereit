@@ -38,7 +38,7 @@ public class GetNotificationPreferencesQueryHandlerTests
 		// Act
 		var result = await _sut.Handle(new GetNotificationPreferencesQuery(userId), cancellationToken);
 
-		// Assert - reflects the persisted values, not the all-subscribed defaults
+		// Assert
 		result.NotifyOnNewSignUp.Should().BeFalse();
 		result.NotifyOnWithdrawal.Should().BeTrue();
 		result.NotifyOnEngagementConfirmed.Should().BeTrue();
@@ -57,7 +57,7 @@ public class GetNotificationPreferencesQueryHandlerTests
 		// Act
 		var result = await _sut.Handle(new GetNotificationPreferencesQuery(userId), cancellationToken);
 
-		// Assert - defaults are all-subscribed, matching User.Create
+		// Assert
 		result.NotifyOnNewSignUp.Should().BeTrue();
 		result.NotifyOnEngagementReminder.Should().BeTrue();
 		await _userRepo.Received(1).AddAsync(Arg.Any<User>(), cancellationToken);

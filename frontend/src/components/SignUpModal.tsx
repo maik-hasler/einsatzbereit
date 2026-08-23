@@ -21,10 +21,7 @@ interface Props {
 	organizationId: string;
 	participationType: string;
 	timeSlots: TimeSlotDetail[];
-	// Set when the volunteer clicked a specific slot row on the detail page
-	// rather than the rail's generic sign-up button (#2075) - that click
-	// already answered "which slot", so this skips the redundant re-picking
-	// step below and goes straight to a confirmation of that one slot.
+
 	preselectedTimeSlotId?: string;
 	onClose: () => void;
 	onSuccess: () => void;
@@ -41,11 +38,7 @@ export default function SignUpModal({
 }: Props) {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
-	// Only a row click settles which slot up front - the rail button is a
-	// generic "sign up" trigger with no slot of its own in mind, so it always
-	// goes through the picker below just as before (pre-selected once there's
-	// only one open slot to pick, #657 - not skipped, since the rail button
-	// remains a secondary entry point without a slot already in hand, #2075).
+
 	const confirmedTimeSlot = preselectedTimeSlotId
 		? timeSlots.find((ts) => ts.id === preselectedTimeSlotId)
 		: undefined;
@@ -59,11 +52,7 @@ export default function SignUpModal({
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	// Set alongside `error` (never independently) when the failure is
-	// specifically the reactivation churn limit (Engagement.Reactivate,
-	// backend/src/Domain/Engagements/Engagement.cs) - the error message names
-	// "the organization" as the remedy but has no way to link to it on its
-	// own, so this renders an actual link below it instead (#2043).
+
 	const [showContactOrganizationLink, setShowContactOrganizationLink] =
 		useState(false);
 	const [messageError, setMessageError] = useState<string | null>(null);
@@ -71,11 +60,6 @@ export default function SignUpModal({
 
 	const isScheduledSlots = participationType === "ScheduledSlots";
 
-	// Native `required` used to move focus to the invalid field for free as
-	// part of the browser's own constraint validation - #1908 replaced that
-	// validation with a translated inline message, so focus has to be sent
-	// there by hand (mirrors DetailsStep.tsx's error-focus effect, whose
-	// equivalent is react-hook-form's default `shouldFocusError` elsewhere).
 	useEffect(() => {
 		if (!messageError) return;
 		messageFieldRef.current?.focus();
@@ -137,10 +121,6 @@ export default function SignUpModal({
 						{timeSlots.length === 0 ? (
 							<p className="text-sm text-gray-500">{t("signUp.noTimeSlots")}</p>
 						) : confirmedTimeSlot ? (
-							// The volunteer already named this exact slot by clicking its
-							// row, so this states it as a fact instead of making them
-							// re-pick it from the same dropdown they'd otherwise see below
-							// (#2075).
 							<p
 								className="text-sm text-gray-700"
 								data-testid="sign-up-confirmed-slot"
@@ -155,12 +135,6 @@ export default function SignUpModal({
 							</p>
 						) : (
 							<>
-								{/* Visually hidden, not removed - the dialog title just above
-								("Sign up for a slot") already conveys this on screen, so showing
-								it again here read as a duplicated label (#987); the dropdown
-								still needs its own accessible name for screen reader users
-								landing on it directly, shortened to the field's name alone so it
-								doesn't just restate the title (#2056). */}
 								<label htmlFor="sign-up-time-slot" className="sr-only">
 									{t("signUp.selectTimeSlot")}
 								</label>
@@ -203,8 +177,6 @@ export default function SignUpModal({
 
 				{!isScheduledSlots && (
 					<div>
-						{/* Scoped to this branch: the slot-picker variant has no required
-						field, so its legend would explain an absent asterisk. */}
 						<RequiredFieldsLegend className="mb-2" />
 						<label htmlFor="sign-up-message" className={`mb-1 ${labelClass}`}>
 							{t("signUp.message")}

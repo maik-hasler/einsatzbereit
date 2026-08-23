@@ -5,9 +5,6 @@ import {
 } from "./citySuggestionSort";
 
 describe("filterByLabelMatch", () => {
-	// The bug this closes (#2046): querying "Lei" returned Nominatim's own
-	// fuzzy matches (Koeln, Dresden, Regensburg, Halle) alongside - or
-	// instead of - Leipzig, none of which contain "lei" at all.
 	it("drops results whose label doesn't contain the query anywhere", () => {
 		const results = [
 			{ label: "Koeln" },
@@ -54,9 +51,6 @@ describe("filterByLabelMatch", () => {
 });
 
 describe("sortByLabelPrefixMatch", () => {
-	// The bug this closes (#1856): "Leip" returned ["Leip", "Lindenwalde"]
-	// with no "Leipzig", because the upstream geocoder's own order buried a
-	// true prefix match behind an unrelated substring match.
 	it("sorts a prefix match ahead of a match that only contains the query elsewhere", () => {
 		const results = [{ label: "Lindenwalde" }, { label: "Leipzig" }];
 

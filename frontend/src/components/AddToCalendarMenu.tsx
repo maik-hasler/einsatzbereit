@@ -21,11 +21,6 @@ function toGoogleDateTime(date: Date): string {
 		.replace(/\.\d{3}Z$/, "Z");
 }
 
-/**
- * Small action menu offering direct quick-add links (no file download) for
- * Google Calendar and Outlook.com, plus a webcal subscribe link and a plain
- * .ics download as fallbacks for Apple Calendar / desktop calendar apps.
- */
 export default function AddToCalendarMenu({
 	engagementId,
 	title,

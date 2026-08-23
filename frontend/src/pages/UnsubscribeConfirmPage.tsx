@@ -8,12 +8,6 @@ import { EnvelopeIcon } from "../components/icons";
 import { statusTitleClass } from "../lib/headingClasses";
 import { cardClass } from "../lib/surfaceClasses";
 
-// One-click-unsubscribe links in transactional emails point here instead of
-// straight at the backend's state-changing endpoint (#1725) - a mail scanner
-// or link prefetcher that follows an email link only ever loads this static
-// page (no state change); the actual unsubscribe only happens once a person
-// deliberately clicks the confirm link below, which navigates on to the
-// backend's (unchanged) GET /v1/users/{userId}/unsubscribe.
 const TYPE_LABEL_KEYS: Record<string, string> = {
 	NewSignUp: "notificationPreferences.newSignUp",
 	Withdrawal: "notificationPreferences.withdrawal",
@@ -39,8 +33,6 @@ export default function UnsubscribeConfirmPage() {
 		? `${runtimeConfig.apiUrl}/v1/users/${encodeURIComponent(userId ?? "")}/unsubscribe?type=${encodeURIComponent(type ?? "")}&token=${encodeURIComponent(token ?? "")}`
 		: undefined;
 
-	// Boxed rather than floating text on white - see the same note on
-	// UnsubscribePage, the step this one leads into (#1755).
 	return (
 		<div className="mx-auto max-w-md py-10 sm:py-16">
 			<div className={`${cardClass} text-center sm:p-8`}>

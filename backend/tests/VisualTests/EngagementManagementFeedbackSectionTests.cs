@@ -5,16 +5,6 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
-/// <summary>
-/// Regression for #1835: the "Feedback" section on the per-opportunity
-/// "Manage sign-ups" page (EngagementManagementPage) rendered its heading via
-/// PageSectionHeading - the same font-display text-2xl family as the page's
-/// own H1 (OrgPageHeader) - and stayed on screen with a permanent
-/// "No feedback yet." placeholder even when the opportunity had zero
-/// feedback submissions. The fix demotes the heading to a subordinate size
-/// and only renders the section once there is feedback (or a load error) to
-/// show.
-/// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
@@ -50,9 +40,6 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 		var feedbackHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Feedback", Exact = true });
 		await Expect(feedbackHeading).ToBeVisibleAsync();
 
-		// The bug was purely visual weight (same face/size family as the page's
-		// own H1), not structure - assert the rendered heading is actually
-		// smaller than the page title rather than just present.
 		var titleFontSize = await pageTitle.EvaluateAsync<double>(
 			"el => parseFloat(getComputedStyle(el).fontSize)");
 		var feedbackFontSize = await feedbackHeading.EvaluateAsync<double>(
@@ -71,9 +58,6 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		// Fresh organization rather than olaf's shared seed org - other
-		// VisualTests running concurrently in this shared Aspire session can
-		// mutate/delete shared orgs (see EngagementManagementCheckInPinTests).
 		var orgResponse = await PostJsonWithRetryAsync(olafHttp,
 			"/v1/organizations", new { name = $"FeedbackSection {label} Org {suffix}" });
 		orgResponse.EnsureSuccessStatusCode();

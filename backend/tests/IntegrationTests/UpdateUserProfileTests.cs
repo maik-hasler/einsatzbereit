@@ -55,10 +55,6 @@ public class UpdateUserProfileTests(
 		exception.Which.StatusCode.Should().Be(401);
 	}
 
-	// Regression for #1173: [MaxLength] attributes on request records were
-	// never enforced (no validation was registered), so oversized values used
-	// to reach the DB unbounded instead of being rejected.
-
 	[Test]
 	public async Task UpdateUserProfile_ShouldReturn400_WhenBioExceedsMaxLength(
 		CancellationToken cancellationToken)
@@ -129,7 +125,6 @@ public class UpdateUserProfileTests(
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
-	// 1x1 transparent PNG.
 	private static readonly byte[] TinyPng = Convert.FromBase64String(
 		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 

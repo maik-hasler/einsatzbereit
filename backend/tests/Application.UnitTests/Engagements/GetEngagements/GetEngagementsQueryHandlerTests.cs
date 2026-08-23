@@ -255,10 +255,7 @@ public class GetEngagementsQueryHandlerTests
 				Arg.Any<IReadOnlyList<Guid>?>(),
 				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
-		// GetUserProfilesAsync swallows individual Keycloak lookup failures (deleted user,
-		// transient error) and simply omits that id from the map - this volunteer's entry
-		// must fall back to whatever the repository already returned (VolunteerPhone stays
-		// intact; VolunteerName/VolunteerEmail stay null) rather than throwing.
+
 		_keycloakUserService
 			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
 			.Returns(new Dictionary<Guid, KeycloakUserProfile>());

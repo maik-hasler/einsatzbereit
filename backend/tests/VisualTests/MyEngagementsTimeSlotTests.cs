@@ -8,11 +8,6 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class MyEngagementsTimeSlotTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	/// <summary>
-	/// Regression for #705: an engagement card for a "Scheduled slots" opportunity only
-	/// showed the "Signed up" date, never the opportunity's own scheduled time slot -
-	/// forcing volunteers to open the opportunity's detail page just to see when to show up.
-	/// </summary>
 	[Test]
 	public async Task ConfirmedEngagementWithTimeSlot_ShowsScheduledTimeSlot_OnEngagementCard()
 	{
@@ -89,7 +84,6 @@ public class MyEngagementsTimeSlotTests(AspireFixture fixture) : VisualTestBase(
 		var row = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The card must render the slot's own scheduled date, not just "Signed up: ...".
 		await Expect(row.GetByText("Scheduled:")).ToBeVisibleAsync();
 		await Expect(row.GetByText("Signed up:")).ToBeVisibleAsync();
 	}
