@@ -24,6 +24,7 @@ internal sealed class CheckInWithPinEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
