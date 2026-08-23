@@ -4,6 +4,6 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<NoWarn>$(NoWarn);NU1507</NoWarn>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 </Project>

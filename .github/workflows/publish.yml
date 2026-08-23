@@ -41,7 +41,7 @@ jobs:
 
       - name: Restore backend
         working-directory: backend
-        run: dotnet restore
+        run: dotnet restore --locked-mode
 
       - name: Build backend
         working-directory: backend
@@ -143,8 +143,8 @@ jobs:
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.2
-          docker pull ghcr.io/axllent/mailpit:latest
-          docker pull quay.io/minio/minio:latest
+          docker pull ghcr.io/axllent/mailpit:v1.31.0
+          docker pull quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
 
       - name: Test - IntegrationTests (Aspire + Docker)
         working-directory: backend
@@ -212,8 +212,8 @@ jobs:
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.2
-          docker pull ghcr.io/axllent/mailpit:latest
-          docker pull quay.io/minio/minio:latest
+          docker pull ghcr.io/axllent/mailpit:v1.31.0
+          docker pull quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
 
       - name: Resolve shard filter
         id: shard
