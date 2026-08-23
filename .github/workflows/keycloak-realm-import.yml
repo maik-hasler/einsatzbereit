@@ -41,6 +41,7 @@ jobs:
           KC_VERSION: ${{ steps.kc.outputs.version }}
         run: |
           set -u
+          KC_FRONTEND_URL="https://app.example.test"
           IMPORT_DIR="$RUNNER_TEMP/kc-import"
           mkdir -p "$IMPORT_DIR"
           cp keycloak/realms/*-realm.json "$IMPORT_DIR/"
@@ -48,7 +49,7 @@ jobs:
           docker run -d --name kc-import-check -p 8080:8080 \
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
-            -e KC_FRONTEND_URL=https://app.example.test \
+            -e "KC_FRONTEND_URL=$KC_FRONTEND_URL" \
             -e KEYCLOAK_BACKEND_SECRET=dummy-not-a-real-secret \
             -e KC_SMTP_HOST=localhost \
             -e KC_SMTP_PORT=1025 \
@@ -107,4 +108,17 @@ jobs:
             exit 1
           fi
 
-          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all client placeholders resolved."
+          frontend_redirect_uris=$(printf '%s' "$clients" | jq -r '.[] | select(.clientId == "frontend") | .redirectUris[]')
+          missing=""
+          for path in /callback /silent-renew.html; do
+            if ! printf '%s\n' "$frontend_redirect_uris" | grep -qF "$KC_FRONTEND_URL$path"; then
+              missing="$missing $KC_FRONTEND_URL$path"
+            fi
+          done
+
+          if [ -n "$missing" ]; then
+            echo "::error::The imported 'frontend' client's redirectUris are missing:$missing - frontend/src/main.tsx sends these as redirect_uri/silent_redirect_uri, so Keycloak would reject the authorization request with invalid_redirect_uri."
+            exit 1
+          fi
+
+          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all client placeholders resolved and the 'frontend' client's redirectUris covering every URI main.tsx can send."

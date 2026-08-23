@@ -85,7 +85,8 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "redirectUris": [
-        "${KC_FRONTEND_URL}/callback"
+        "${KC_FRONTEND_URL}/callback",
+        "${KC_FRONTEND_URL}/silent-renew.html"
       ],
       "webOrigins": [
         "${KC_FRONTEND_URL}"
