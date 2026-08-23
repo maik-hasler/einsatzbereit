@@ -167,17 +167,25 @@ def main():
     nonblank = code + comment
 
     if args.json:
-        json.dump({"totals": {"code": code, "comment": comment,
-                              "ratio": comment / nonblank},
-                   "files": files}, sys.stdout, indent=1)
+        summary = {
+            "totals": {
+                "code": code,
+                "comment": comment,
+                "ratio": comment / nonblank,
+            },
+            "files": files,
+        }
+        json.dump(summary, sys.stdout, indent=1)
         print()
         return 0
 
     print(f"files          {len(files)}")
     print(f"code lines     {code}")
     print(f"comment lines  {comment}")
-    print(f"density        {comment / nonblank * 100:.2f}%  "
-          f"(comment lines / non-blank lines)")
+    print(
+        f"density        {comment / nonblank * 100:.2f}%  "
+        f"(comment lines / non-blank lines)"
+    )
 
     by_ext = defaultdict(lambda: defaultdict(int))
     for f in files:
@@ -187,8 +195,10 @@ def main():
     print("\nby extension")
     for ext, bucket in sorted(by_ext.items(), key=lambda kv: -kv[1]["comment"]):
         total = bucket["code"] + bucket["comment"]
-        print(f"  {ext:5} {bucket['comment']:6} / {total:7}  "
-              f"{bucket['comment'] / total * 100:5.2f}%")
+        print(
+            f"  {ext:5} {bucket['comment']:6} / {total:7}  "
+            f"{bucket['comment'] / total * 100:5.2f}%"
+        )
 
     if args.top:
         print(f"\ndensest {args.top} files (>=40 non-blank lines)")
