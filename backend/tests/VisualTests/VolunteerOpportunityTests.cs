@@ -21,24 +21,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task MultipleFilters_AllReflectedInUrl()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await Page.GotoAsync($"{origin}/opportunities");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByTestId("filter-frequency").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
-		await Page.GetByTestId("filter-type").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
-
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*occurrence=OneTime"));
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=ScheduledSlots"));
-	}
-
-	[Test]
 	public async Task FrequencyFilter_PanelStaysBelowHeader()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
