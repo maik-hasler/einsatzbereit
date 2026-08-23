@@ -173,10 +173,12 @@ or a method, none inside a phase. `// Arrange` / `// Act` / `// Assert` stay as
 bare markers, and carry nothing else; what a test proves belongs in its method
 name and its assertions.
 
-Two kinds of comment look like prose but are not, and must survive: directives
-the toolchain reads (`eslint-disable-*`, `/// <reference ... />`, `# v1.2.3` on
-a pinned action SHA), and a comment that is a block's only content, which is
-what stops ESLint's `no-empty` firing on a deliberately empty `catch`.
+Three kinds of comment look like prose but are not, and must survive:
+directives the toolchain reads (`eslint-disable-*`, `/// <reference ... />`,
+`# v1.2.3` on a pinned action SHA); a comment that is a block's only content,
+which is what stops ESLint's `no-empty` firing on a deliberately empty `catch`;
+and the HTML comments in `.github/PULL_REQUEST_TEMPLATE.md` and the issue
+templates, which are the prompts a contributor fills in and never render.
 
 `scripts/comment-density.py` reports the ratio of comment lines to non-blank
 lines across hand-written sources - code, CI workflows, shell scripts, themes
