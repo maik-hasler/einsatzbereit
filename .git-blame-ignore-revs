@@ -1,2 +1,5 @@
 # Bulk reformat: add .editorconfig, enforce tabs, lint coding style (#128)
 6df1ee067e7253350a5115d41351eb6c808ffd17
+
+# Bulk comment cleanup: strip bare Arrange/Act/Assert markers (#TBD)
+50b4f1eed2c6d47815d195ab5b73c95298ee34ea
