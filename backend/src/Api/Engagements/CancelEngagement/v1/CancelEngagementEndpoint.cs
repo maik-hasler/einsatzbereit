@@ -26,6 +26,7 @@ internal sealed class CancelEngagementEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)

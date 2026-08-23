@@ -23,6 +23,7 @@ internal sealed class SubmitFeedbackEndpoint
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);

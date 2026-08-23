@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Text.Json;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -162,13 +161,13 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 				$"Engagement '{engagementId}' not found in GetEngagements response.");
 	}
 
-	private static async Task<ApiException> CaptureFailureAsync(Func<Task> act)
+	private static async Task<ApiException<ProblemDetails>> CaptureFailureAsync(Func<Task> act)
 	{
 		try
 		{
 			await act();
 		}
-		catch (ApiException ex)
+		catch (ApiException<ProblemDetails> ex)
 		{
 			return ex;
 		}
@@ -176,20 +175,10 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		throw new Exception("Expected the undo-check-in call to fail, but it succeeded.");
 	}
 
-	private static string? ErrorCodeOf(ApiException ex)
+	private static string? ErrorCodeOf(ApiException<ProblemDetails> ex)
 	{
-		if (ex is ApiException<ProblemDetails> typed)
-		{
-			typed.Result.AdditionalProperties.Should().ContainKey("errorCode",
-				"the API's ProblemDetails carries the domain error code as an extension member");
-			return typed.Result.AdditionalProperties["errorCode"]?.ToString();
-		}
-
-		ex.Response.Should().NotBeNullOrEmpty(
-			"an untyped ApiException carries the unparsed ProblemDetails body as its Response");
-		using var problem = JsonDocument.Parse(ex.Response);
-		problem.RootElement.TryGetProperty("errorCode", out var errorCode).Should().BeTrue(
-			"the API's ProblemDetails carries the domain error code as an extension member");
-		return errorCode.GetString();
+		ex.Result.AdditionalProperties.Should().ContainKey("errorCode",
+			"a Result-pattern failure must carry an errorCode in its ProblemDetails");
+		return ex.Result.AdditionalProperties["errorCode"]?.ToString();
 	}
 }

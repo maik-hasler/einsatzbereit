@@ -24,6 +24,7 @@ internal sealed class UndoCheckInEngagementEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
