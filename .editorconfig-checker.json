@@ -5,6 +5,7 @@
     "ApiClient\\.cs$",
     "api-client\\.ts$",
     "openapi-v1\\.json$",
+    "packages\\.lock\\.json$",
     "node_modules"
   ]
 }
