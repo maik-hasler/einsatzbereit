@@ -34,9 +34,9 @@
 		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.17.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.17.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.17.0]" />
-		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.4.6]" />
-		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.4.6]" />
-		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.4.6]" />
+		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.5.2]" />
+		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.5.2]" />
+		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.5.2]" />
 		<PackageVersion Include="AwesomeAssertions" Version="[9.6.0]" />
 		<PackageVersion Include="Deque.AxeCore.Playwright" Version="[4.13.0]" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="[10.0.11]" />
