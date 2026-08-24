@@ -70,6 +70,34 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
+        "/^backend/src/Aspire/AppHost/AppHost\\.cs$/",
+        "/^\\.github/workflows/dotnet\\.yml$/",
+        "/^\\.github/workflows/publish\\.yml$/"
+      ],
+      "matchStrings": [
+        "ghcr\\.io/axllent/mailpit:(?<currentValue>v[\\d]+\\.[\\d]+\\.[\\d]+)",
+        "ghcr\\.io/axllent/mailpit\",\\s*\"(?<currentValue>v[\\d]+\\.[\\d]+\\.[\\d]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/axllent/mailpit"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^backend/src/Aspire/AppHost/AppHost\\.cs$/",
+        "/^\\.github/workflows/dotnet\\.yml$/",
+        "/^\\.github/workflows/publish\\.yml$/"
+      ],
+      "matchStrings": [
+        "quay\\.io/minio/minio:(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z(?:\\.hotfix\\.[0-9a-f]+)?)",
+        "quay\\.io/minio/minio\",\\s*\"(?<currentValue>RELEASE\\.[\\d-]+T[\\d-]+Z(?:\\.hotfix\\.[0-9a-f]+)?)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "quay.io/minio/minio"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
         "/^AGENTS\\.md$/",
         "/^README\\.md$/"
       ],
