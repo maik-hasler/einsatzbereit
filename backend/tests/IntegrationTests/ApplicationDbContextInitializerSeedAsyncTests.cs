@@ -1,7 +1,9 @@
 using System.Text.RegularExpressions;
+using Application.Achievements.BadgeCatalog;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using AwesomeAssertions;
+using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
@@ -39,7 +41,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var existingOrgId = keycloak.SeedExistingOrganization("Lindenauer Nachbarschaftshilfe e.V.");
 
 		var initializer = new ApplicationDbContextInitializer(
-			dbContext, keycloak, new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+			dbContext, keycloak, new RandomPinGenerator(), new FakeBadgeCatalogService(), NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
 
@@ -64,7 +66,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		keycloak.SeedExistingOrganizerRole(OlafId);
 
 		var initializer = new ApplicationDbContextInitializer(
-			dbContext, keycloak, new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+			dbContext, keycloak, new RandomPinGenerator(), new FakeBadgeCatalogService(), NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
 
@@ -87,7 +89,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		};
 
 		var initializer = new ApplicationDbContextInitializer(
-			dbContext, keycloak, new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+			dbContext, keycloak, new RandomPinGenerator(), new FakeBadgeCatalogService(), NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		Func<Task> act = async () => await initializer.SeedAsync(cancellationToken);
 
@@ -113,6 +115,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			dbContext,
 			new FakeKeycloakOrganizationService(),
 			new RandomPinGenerator(),
+			new FakeBadgeCatalogService(),
 			NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
@@ -154,6 +157,7 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			dbContext,
 			new FakeKeycloakOrganizationService(),
 			new RandomPinGenerator(),
+			new FakeBadgeCatalogService(),
 			NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
@@ -187,7 +191,8 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
 		var initializer = new ApplicationDbContextInitializer(
-			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), new FakeBadgeCatalogService(),
+			NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
 
@@ -215,13 +220,45 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 	}
 
 	[Test]
+	public async Task SeedAsync_AwardsFirstStepAchievementForVeraSeededPastEngagement_SoTheProfileIsNotSelfContradictory(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var initializer = new ApplicationDbContextInitializer(
+			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), new FakeBadgeCatalogService(),
+			NullLogger<ApplicationDbContextInitializer>.Instance);
+
+		await initializer.SeedAsync(cancellationToken);
+
+		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
+
+		var streak = await dbContext.GetUserStreakAsync(veraUserId, cancellationToken);
+		streak.Should().NotBeNull(
+			"Vera's seeded past engagement is Confirmed, so a real confirmation through the normal flow would have "
+			+ "created her streak row too");
+		streak!.TotalConfirmedEngagements.Should().BeGreaterThanOrEqualTo(1,
+			"her one seeded confirmed engagement must count toward the milestone gate, or the profile's header "
+			+ "count and her badge progress silently disagree with what actually earns badges (#2229)");
+
+		var achievements = await dbContext.Set<Achievement>()
+			.Where(a => a.UserId == veraUserId)
+			.ToListAsync(cancellationToken);
+		achievements.Should().Contain(a => a.Key == "first-step",
+			"seeding Vera's past engagement as already Confirmed bypasses ConfirmEngagementCommandHandler, the only "
+			+ "place that normally awards \"first-step\" - without seeding the award to match, her profile shows "
+			+ "100% badge progress for a badge she was never actually granted (#2229)");
+	}
+
+	[Test]
 	public async Task SeedAsync_SeedsLocalMembershipRowForVera_SoHerOwnOrganizationsQueryFindsIt(
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
 		var initializer = new ApplicationDbContextInitializer(
-			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), NullLogger<ApplicationDbContextInitializer>.Instance);
+			dbContext, new FakeKeycloakOrganizationService(), new RandomPinGenerator(), new FakeBadgeCatalogService(),
+			NullLogger<ApplicationDbContextInitializer>.Instance);
 
 		await initializer.SeedAsync(cancellationToken);
 
@@ -247,13 +284,14 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			dbContext,
 			new FakeKeycloakOrganizationService(),
 			new RandomPinGenerator(),
+			new FakeBadgeCatalogService(),
 			NullLogger<ApplicationDbContextInitializer>.Instance).SeedAsync(cancellationToken);
 
 		var logger = new FakeLogger<ApplicationDbContextInitializer>();
 		var keycloak = new FakeKeycloakOrganizationService();
 
 		await new ApplicationDbContextInitializer(
-			dbContext, keycloak, new RandomPinGenerator(), logger).SeedAsync(cancellationToken);
+			dbContext, keycloak, new RandomPinGenerator(), new FakeBadgeCatalogService(), logger).SeedAsync(cancellationToken);
 
 		keycloak.CreateOrganizationCallCount.Should().Be(0, "seeding must not run a second time");
 		(await dbContext.Set<DomainOrganization>().CountAsync(cancellationToken)).Should().Be(
@@ -264,6 +302,14 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 			"the warning has to say the seed set was not applied, not just that seeding was skipped");
 		record.Message.Should().Contain("Wipe the database",
 			"an operator reading this line needs to be told what to do about it");
+	}
+
+	private sealed class FakeBadgeCatalogService : IBadgeCatalogService
+	{
+		public IReadOnlyList<Application.Achievements.BadgeCatalog.BadgeCatalogEntry> GetAll() => [];
+
+		public Application.Achievements.BadgeCatalog.BadgeCatalogEntry? FindByKey(string key) =>
+			new(key, AchievementType.Milestone, key, key, IsHidden: false);
 	}
 
 	private sealed class FakeKeycloakOrganizationService : IKeycloakOrganizationService

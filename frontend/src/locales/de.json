@@ -1182,6 +1182,7 @@
       "lockedBadge": "Geheimes Abzeichen",
       "hiddenBadgeTeaser": "Eine Überraschung für Freiwillige, die dabeibleiben.",
       "badgeProgress": "{{current}} von {{target}}",
+      "pendingUnlock": "Wird in Kürze freigeschaltet",
       "badgesTitle": "Abzeichen",
       "activityStreak": "Wochen in Serie · {{badge}}",
       "activityStreak_one": "Woche in Serie · {{badge}}",
