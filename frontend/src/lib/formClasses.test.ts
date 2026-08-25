@@ -45,19 +45,15 @@ describe("formClasses", () => {
 		expect(labelClass).toContain("text-gray-600");
 	});
 
-	it("keeps the select chevron's data URI free of raw whitespace Tailwind can't parse (#2051)", () => {
-		const urlToken = selectClass.match(/bg-\[url\('([^']+)'\)\]/);
-		expect(urlToken).not.toBeNull();
-		const dataUri = urlToken?.[1] ?? "";
-		expect(dataUri).not.toBe("");
-		expect(/\s/.test(dataUri)).toBe(false);
-
-		const svgMarkup = decodeURIComponent(
-			dataUri.slice(dataUri.indexOf(",") + 1),
-		);
-		const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
-		expect(doc.querySelector("parsererror")).toBeNull();
-		expect(doc.querySelector("svg")).not.toBeNull();
+	it("never paints the select chevron as a data: background image (#2225)", () => {
+		// The deployed CSP's img-src has no `data:` - a `bg-[url('data:...')]` chevron
+		// is silently blocked while appearance-none has already removed the native
+		// arrow, leaving the control looking disabled. components/Select.tsx draws
+		// the chevron as an inline <svg> instead; this class must stay free of any
+		// background-image so that fix can't silently regress.
+		expect(selectClass).not.toContain("data:");
+		expect(selectClass).not.toContain("bg-[url(");
+		expect(selectClass).toContain("appearance-none");
 	});
 
 	it("gives every invalid field the same red border/focus treatment (#2239)", () => {

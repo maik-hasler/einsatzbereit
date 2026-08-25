@@ -10,12 +10,13 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { looksLikeEmail } from "../../lib/emailLike";
-import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
+import { inputClass, labelClass } from "../../lib/formClasses";
 import { orgTabPath } from "../../lib/orgTabs";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import Chip from "../../components/Chip";
+import Select from "../../components/Select";
 import SectionHeading from "../../components/SectionHeading";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
@@ -288,19 +289,18 @@ export default function OrgMembersPage() {
 								<label htmlFor="invite-role" className={labelClass}>
 									{t("orgSettings.inviteRoleLabel")}
 								</label>
-								<select
+								<Select
 									id="invite-role"
 									value={inviteRole}
 									onChange={(e) =>
 										setInviteRole(e.target.value as "Member" | "Organizer")
 									}
-									className={selectClass}
 								>
 									<option value="Member">{t("orgSettings.roleMember")}</option>
 									<option value="Organizer">
 										{t("orgSettings.organisator")}
 									</option>
-								</select>
+								</Select>
 							</div>
 						</div>
 						{memberSearch.length > 0 && memberSearch.length < 4 && (
