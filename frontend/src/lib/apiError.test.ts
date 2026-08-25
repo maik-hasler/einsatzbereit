@@ -15,6 +15,7 @@ vi.mock("../i18n", () => ({
 import {
 	getApiErrorMessage,
 	getApiErrorStatus,
+	hasActionableErrorCode,
 	isApiErrorCode,
 	isApiForbiddenError,
 	isApiNotFoundError,
@@ -221,5 +222,47 @@ describe("isApiForbiddenError", () => {
 
 	it("returns false for a non-object value", () => {
 		expect(isApiForbiddenError("403")).toBe(false);
+	});
+});
+
+describe("hasActionableErrorCode", () => {
+	beforeEach(() => {
+		existsMock.mockReset();
+		tMock.mockReset();
+	});
+
+	it("returns true when errorCode has a matching translation", () => {
+		existsMock.mockReturnValue(true);
+		expect(hasActionableErrorCode({ errorCode: "Org.NotFound" })).toBe(true);
+		expect(existsMock).toHaveBeenCalledWith("apiError.Org.NotFound");
+	});
+
+	it("returns false when errorCode has no matching translation", () => {
+		existsMock.mockReturnValue(false);
+		expect(hasActionableErrorCode({ errorCode: "Unmapped.Code" })).toBe(false);
+	});
+
+	it("returns false when there is no errorCode (e.g. a network failure)", () => {
+		expect(hasActionableErrorCode(new TypeError("Failed to fetch"))).toBe(
+			false,
+		);
+		expect(existsMock).not.toHaveBeenCalled();
+	});
+
+	it("returns false when errorCode is only whitespace", () => {
+		expect(hasActionableErrorCode({ errorCode: "   " })).toBe(false);
+		expect(existsMock).not.toHaveBeenCalled();
+	});
+
+	it("returns false for a status-only rejection with no errorCode", () => {
+		expect(hasActionableErrorCode({ status: 500 })).toBe(false);
+	});
+
+	it("returns false for null", () => {
+		expect(hasActionableErrorCode(null)).toBe(false);
+	});
+
+	it("returns false for a non-object value", () => {
+		expect(hasActionableErrorCode("boom")).toBe(false);
 	});
 });

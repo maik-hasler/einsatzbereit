@@ -9,6 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
 import { dispatchToast } from "./lib/toastBus";
+import { handleUnhandledRejection } from "./lib/unhandledRejection";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "@fontsource-variable/source-sans-3";
@@ -57,8 +58,7 @@ const oidcConfig = {
 };
 
 window.addEventListener("unhandledrejection", (event) => {
-	console.error("[unhandledrejection]", event.reason);
-	dispatchToast("error", i18n.t("error.serverError"));
+	handleUnhandledRejection(event.reason);
 });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
