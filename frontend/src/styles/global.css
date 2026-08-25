@@ -361,8 +361,8 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 }
 
 /* A field marked invalid keeps its own focus ring color (#2239) - otherwise
-   the brand-colored ring reads as "this is fine", fighting the red border
-   and error text right next to it. */
+the brand-colored ring reads as "this is fine", fighting the red border
+and error text right next to it. */
 [aria-invalid="true"]:focus-visible {
 	--focus-ring-color: var(--color-red-600);
 }
