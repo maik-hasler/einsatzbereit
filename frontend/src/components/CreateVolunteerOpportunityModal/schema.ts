@@ -11,7 +11,12 @@ const PARTICIPATION_TYPE_VALUES = [
 const CHECK_IN_METHOD_VALUES = ["None", "QRCode", "PINCode", "Manual"] as const;
 
 export function buildOpportunityFormSchema(t: TFunction) {
-	const required = t("createOpportunity.fieldRequired");
+	const titleRequired = t("createOpportunity.titleRequired");
+	const descriptionRequired = t("createOpportunity.descriptionRequired");
+	const streetRequired = t("createOpportunity.streetRequired");
+	const houseNumberRequired = t("createOpportunity.houseNumberRequired");
+	const zipRequired = t("createOpportunity.zipRequired");
+	const cityRequired = t("createOpportunity.cityRequired");
 	const invalidPin = t("createOpportunity.checkInPinInvalid");
 	const tooLong = (max: number) => t("createOpportunity.fieldTooLong", { max });
 
@@ -36,34 +41,42 @@ export function buildOpportunityFormSchema(t: TFunction) {
 		})
 		.superRefine((data, ctx) => {
 			if (!data.titleDe.trim())
-				ctx.addIssue({ code: "custom", path: ["titleDe"], message: required });
+				ctx.addIssue({
+					code: "custom",
+					path: ["titleDe"],
+					message: titleRequired,
+				});
 			if (!data.descriptionDe.trim())
 				ctx.addIssue({
 					code: "custom",
 					path: ["descriptionDe"],
-					message: required,
+					message: descriptionRequired,
 				});
 			if (!data.isRemote) {
 				if (!data.street.trim())
 					ctx.addIssue({
 						code: "custom",
 						path: ["street"],
-						message: required,
+						message: streetRequired,
 					});
 				if (!data.houseNumber.trim())
 					ctx.addIssue({
 						code: "custom",
 						path: ["houseNumber"],
-						message: required,
+						message: houseNumberRequired,
 					});
 				if (!data.zipCode.trim())
 					ctx.addIssue({
 						code: "custom",
 						path: ["zipCode"],
-						message: required,
+						message: zipRequired,
 					});
 				if (!data.city.trim())
-					ctx.addIssue({ code: "custom", path: ["city"], message: required });
+					ctx.addIssue({
+						code: "custom",
+						path: ["city"],
+						message: cityRequired,
+					});
 			}
 			if (
 				data.checkInMethod === "PINCode" &&
