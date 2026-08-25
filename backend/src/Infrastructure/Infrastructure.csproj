@@ -27,4 +27,8 @@
 		<InternalsVisibleTo Include="IntegrationTests" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<EmbeddedResource Include="Geocoding\GermanCities\german-cities.json" />
+	</ItemGroup>
+
 </Project>

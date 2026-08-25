@@ -7,6 +7,11 @@ import {
 } from "./VolunteerOpportunitiesList/useCitySuggestions";
 import { MapPinIcon } from "./icons";
 
+// A short query that matches nothing yet may still complete into a real city
+// as the user keeps typing - only assert "no match" once the query is long
+// enough that it's unlikely to still be a mid-word prefix (#2227).
+const MIN_CONFIDENT_NO_MATCH_LENGTH = 3;
+
 export default function LocationSearchInput({
 	id,
 	value,
@@ -40,9 +45,13 @@ export default function LocationSearchInput({
 		? t("opportunities.citySearching")
 		: error
 			? error
-			: value.length >= 2 && suggestions.length === 0
-				? t("opportunities.cityNoMatch")
-				: "";
+			: suggestions.length > 0
+				? ""
+				: value.length >= MIN_CONFIDENT_NO_MATCH_LENGTH
+					? t("opportunities.cityNoMatch")
+					: value.length >= 2
+						? t("opportunities.cityKeepTyping")
+						: "";
 
 	useEffect(() => {
 		setActiveSuggestionIndex(-1);
