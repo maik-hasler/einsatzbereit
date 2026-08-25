@@ -376,6 +376,21 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task NotFoundPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/this-route-does-not-exist");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Find opportunities" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	[Retry(2)]
 	[Arguments("organizations")]
 	[Arguments("users")]
