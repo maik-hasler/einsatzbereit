@@ -301,6 +301,7 @@ export default function HomePage() {
 									type="submit"
 									size="lg"
 									pill
+									variant="onDark"
 									disabled={resolvingHeroLocation}
 									className="shrink-0 shadow-md"
 								>
