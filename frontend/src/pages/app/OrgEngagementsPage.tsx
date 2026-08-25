@@ -8,7 +8,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { formatDate } from "../../lib/format";
-import { inputClass, labelClass, selectClass } from "../../lib/formClasses";
+import { inputClass, labelClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { cardClass } from "../../lib/surfaceClasses";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -17,6 +17,7 @@ import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
+import Select from "../../components/Select";
 import { TrashIcon } from "../../components/icons";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
@@ -165,11 +166,10 @@ export default function OrgEngagementsPage() {
 					<label htmlFor="org-engagement-status-filter" className={labelClass}>
 						{t("orgEngagements.filterLabelStatus")}
 					</label>
-					<select
+					<Select
 						id="org-engagement-status-filter"
 						value={statusFilter}
 						onChange={(e) => handleStatusChange(e.target.value)}
-						className={selectClass}
 					>
 						<option value="">{t("orgEngagements.allStatuses")}</option>
 						{Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -177,7 +177,7 @@ export default function OrgEngagementsPage() {
 								{label}
 							</option>
 						))}
-					</select>
+					</Select>
 				</div>
 				<form
 					onSubmit={handleSearchSubmit}

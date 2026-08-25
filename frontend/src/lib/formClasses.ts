@@ -31,6 +31,11 @@ export const inputClass = getInputClass();
 
 export const textareaClass = getTextareaClass();
 
-export const selectClass = `${inputClass} appearance-none bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-9 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke-width=%221.5%22%20stroke=%22%236b7280%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20d=%22m19.5%208.25-7.5%207.5-7.5-7.5%22/%3E%3C/svg%3E')]`;
+// No background-image chevron here (#2225) - the deployed CSP's img-src has no
+// `data:`, which silently strips a CSS-painted arrow while appearance-none has
+// already removed the native one. `components/Select.tsx` draws the chevron as
+// an inline <svg> instead, so every consumer should render through that
+// component rather than applying this class to a bare <select>.
+export const selectClass = `${inputClass} appearance-none pr-9`;
 
 export const labelClass = getLabelClass();
