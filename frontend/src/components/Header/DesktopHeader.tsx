@@ -4,12 +4,14 @@ import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
 import OrgAvatar from "../OrgAvatar";
 import Button from "../Button";
+import { SpinnerIcon } from "../Spinner";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
+import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { buildPrimaryNav } from "../../lib/headerNav";
 
 export default function DesktopHeader({
-	isLoggedIn,
+	authStatus,
 	isTransparent,
 	menu,
 	displayName,
@@ -20,7 +22,7 @@ export default function DesktopHeader({
 	onSignIn,
 	onRegister,
 }: {
-	isLoggedIn: boolean;
+	authStatus: AuthDisplayStatus;
 	isTransparent: boolean;
 	menu: AccountMenuState;
 	displayName: string;
@@ -104,7 +106,7 @@ export default function DesktopHeader({
 				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
 			/>
 
-			{isLoggedIn ? (
+			{authStatus === "signedIn" && (
 				<AccountControls
 					transparent={isTransparent}
 					menu={menu}
@@ -113,7 +115,9 @@ export default function DesktopHeader({
 					isAdmin={isAdmin}
 					onSignOut={onSignOut}
 				/>
-			) : (
+			)}
+
+			{authStatus === "signedOut" && (
 				<div className="flex items-center gap-3">
 					<Button
 						type="button"
@@ -130,6 +134,25 @@ export default function DesktopHeader({
 						{t("nav.register")}
 					</Button>
 				</div>
+			)}
+
+			{authStatus === "pending" && (
+				<div className="flex items-center px-2" role="status">
+					<SpinnerIcon
+						className={`h-5 w-5 ${isTransparent ? "brightness-0 invert" : ""}`}
+					/>
+					<span className="sr-only">{t("nav.checkingSignIn")}</span>
+				</div>
+			)}
+
+			{authStatus === "sessionExpired" && (
+				<Button
+					type="button"
+					onClick={onSignIn}
+					variant={isTransparent ? "onDark" : "primary"}
+				>
+					{t("nav.sessionExpired")}
+				</Button>
 			)}
 			<div
 				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}

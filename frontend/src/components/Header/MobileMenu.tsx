@@ -6,7 +6,9 @@ import Button from "../Button";
 import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
 import OrgAvatar from "../OrgAvatar";
+import { SpinnerIcon } from "../Spinner";
 import type { OrganizationSummaryDto } from "../../client/api-client";
+import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import { buildPrimaryNav } from "../../lib/headerNav";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
@@ -14,7 +16,7 @@ import { lockScroll } from "../../lib/scrollLock";
 
 export default function MobileMenu({
 	isTransparent,
-	isLoggedIn,
+	authStatus,
 	avatarUrl,
 	initials,
 	displayName,
@@ -27,7 +29,7 @@ export default function MobileMenu({
 	onSignOut,
 }: {
 	isTransparent: boolean;
-	isLoggedIn: boolean;
+	authStatus: AuthDisplayStatus;
 	avatarUrl: string | null;
 	initials: string;
 	displayName: string;
@@ -175,7 +177,7 @@ export default function MobileMenu({
 					<div className="pb-2">
 						<LanguageSelector transparent={isTransparent} />
 					</div>
-					{isLoggedIn ? (
+					{authStatus === "signedIn" && (
 						<div className="space-y-1">
 							<div className="flex items-center gap-3 px-3 py-2">
 								{avatarUrl ? (
@@ -236,7 +238,9 @@ export default function MobileMenu({
 								{t("nav.signOut")}
 							</button>
 						</div>
-					) : (
+					)}
+
+					{authStatus === "signedOut" && (
 						<div className="space-y-2">
 							<Button
 								type="button"
@@ -255,6 +259,29 @@ export default function MobileMenu({
 								{t("nav.register")}
 							</Button>
 						</div>
+					)}
+
+					{authStatus === "pending" && (
+						<div
+							role="status"
+							className={`flex items-center gap-2 px-3 py-2 text-sm ${isTransparent ? "text-white/70" : "text-gray-500"}`}
+						>
+							<SpinnerIcon
+								className={`h-4 w-4 ${isTransparent ? "brightness-0 invert" : ""}`}
+							/>
+							<span>{t("nav.checkingSignIn")}</span>
+						</div>
+					)}
+
+					{authStatus === "sessionExpired" && (
+						<Button
+							type="button"
+							onClick={onSignIn}
+							variant={isTransparent ? "onDark" : "primary"}
+							fullWidth
+						>
+							{t("nav.sessionExpired")}
+						</Button>
 					)}
 				</div>
 			</div>

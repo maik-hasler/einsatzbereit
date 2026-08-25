@@ -21,7 +21,7 @@ describe("MobileMenu a11y", () => {
 	};
 
 	it("has no violations for a signed-out visitor", async () => {
-		renderWithProviders(<MobileMenu {...base} isLoggedIn={false} />);
+		renderWithProviders(<MobileMenu {...base} authStatus="signedOut" />);
 		await expectNoA11yViolations();
 	});
 
@@ -29,7 +29,7 @@ describe("MobileMenu a11y", () => {
 		renderWithProviders(
 			<MobileMenu
 				{...base}
-				isLoggedIn
+				authStatus="signedIn"
 				activeOrg={{
 					id: "org-1",
 					name: "Freiwillige Feuerwehr",
@@ -46,17 +46,29 @@ describe("MobileMenu a11y", () => {
 	});
 
 	it("has no violations for a platform admin", async () => {
-		renderWithProviders(<MobileMenu {...base} isLoggedIn isAdmin />);
+		renderWithProviders(<MobileMenu {...base} authStatus="signedIn" isAdmin />);
 		await expectNoA11yViolations();
 	});
 
 	it("has no violations over the transparent landing-page header", async () => {
-		renderWithProviders(<MobileMenu {...base} isLoggedIn isTransparent />);
+		renderWithProviders(
+			<MobileMenu {...base} authStatus="signedIn" isTransparent />,
+		);
+		await expectNoA11yViolations();
+	});
+
+	it("has no violations while probing for a live Keycloak session", async () => {
+		renderWithProviders(<MobileMenu {...base} authStatus="pending" />);
+		await expectNoA11yViolations();
+	});
+
+	it("has no violations for an expired session", async () => {
+		renderWithProviders(<MobileMenu {...base} authStatus="sessionExpired" />);
 		await expectNoA11yViolations();
 	});
 
 	it("no longer links out to Keycloak's own account console (#1675)", () => {
-		renderWithProviders(<MobileMenu {...base} isLoggedIn />);
+		renderWithProviders(<MobileMenu {...base} authStatus="signedIn" />);
 
 		expect(
 			screen.getByRole("link", { name: "My profile" }),

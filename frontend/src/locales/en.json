@@ -32,6 +32,8 @@
       "signOut": "Sign out",
       "signIn": "Sign in",
       "register": "Register",
+      "checkingSignIn": "Checking sign-in status…",
+      "sessionExpired": "Session expired - sign in again",
       "openMenu": "Open menu",
       "menu": "Menu"
     },

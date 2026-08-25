@@ -28,6 +28,40 @@ describe("Header for an anonymous visitor", () => {
 	});
 });
 
+describe("Header while the silent-SSO probe is in flight (#2224)", () => {
+	it("holds a neutral state instead of offering to sign in", () => {
+		renderWithProviders(<Header />, {
+			auth: { isAuthenticated: false, isLoading: true },
+		});
+
+		expect(screen.queryAllByRole("button", { name: "Sign in" })).toHaveLength(
+			0,
+		);
+		expect(screen.queryByRole("button", { name: "Register" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "User menu" })).toBeNull();
+		expect(
+			screen.getAllByText("Checking sign-in status…")[0],
+		).toBeInTheDocument();
+	});
+});
+
+describe("Header after a failed token renewal (#2224)", () => {
+	it("surfaces an explicit expired state instead of reverting to the anonymous interface", () => {
+		renderWithProviders(<Header />, {
+			auth: { isAuthenticated: true },
+			sessionExpired: true,
+		});
+
+		expect(
+			screen.getAllByRole("button", {
+				name: "Session expired - sign in again",
+			})[0],
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "User menu" })).toBeNull();
+	});
+});
+
 const ORG = {
 	id: "77777777-7777-7777-7777-777777777777",
 	name: "Freiwillige Feuerwehr Kiel",
