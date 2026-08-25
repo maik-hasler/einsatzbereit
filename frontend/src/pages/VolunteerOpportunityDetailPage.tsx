@@ -614,7 +614,7 @@ export default function VolunteerOpportunityDetailPage() {
 					</aside>
 
 					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
-						<div className="max-w-2xl">
+						<div>
 							{hasActionRow && (
 								<div
 									className="mb-4 flex items-center gap-3"
@@ -814,10 +814,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 						{opportunity.participationType === "ScheduledSlots" &&
 							opportunity.timeSlots.length > 0 && (
-								<div
-									className="mb-6 max-w-2xl"
-									data-testid="opportunity-time-slots"
-								>
+								<div className="mb-6" data-testid="opportunity-time-slots">
 									<SectionHeading>
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
@@ -871,7 +868,7 @@ export default function VolunteerOpportunityDetailPage() {
 									</ul>
 								</div>
 							)}
-						<div className="max-w-2xl">
+						<div>
 							{orgProfileError && !orgProfile && (
 								<div className="mb-6" data-testid="about-organization">
 									<SectionHeading>
@@ -904,7 +901,7 @@ export default function VolunteerOpportunityDetailPage() {
 											orgProfile.website ||
 											orgProfile.address) && (
 											<div
-												className={`space-y-2.5 ${cardClass} text-sm text-gray-700`}
+												className={`max-w-md space-y-2.5 ${cardClass} text-sm text-gray-700`}
 											>
 												{orgProfile.contactEmail && (
 													<div className="flex items-center gap-3">
@@ -956,22 +953,26 @@ export default function VolunteerOpportunityDetailPage() {
 										)}
 									</div>
 								)}
+
+							{otherOrgOpportunities.length > 0 && (
+								<div className="mb-6" data-testid="more-from-organization">
+									<SectionHeading>
+										{t("opportunities.moreFromOrganization")}
+									</SectionHeading>
+									<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+										{otherOrgOpportunities.map((opp) => (
+											<OpportunityCard
+												key={opp.id}
+												item={opp}
+												headingLevel={3}
+											/>
+										))}
+									</ul>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
-
-				{otherOrgOpportunities.length > 0 && (
-					<div className="mb-6 max-w-2xl" data-testid="more-from-organization">
-						<SectionHeading>
-							{t("opportunities.moreFromOrganization")}
-						</SectionHeading>
-						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							{otherOrgOpportunities.map((opp) => (
-								<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
-							))}
-						</ul>
-					</div>
-				)}
 				{showSignUp && (
 					<SignUpModal
 						opportunityId={opportunity.id}
