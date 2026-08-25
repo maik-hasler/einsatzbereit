@@ -895,7 +895,10 @@ export default function VolunteerOpportunityDetailPage() {
 											{t("opportunities.aboutOrganization")}
 										</SectionHeading>
 										{orgProfile.description && (
-											<p className="mb-3 leading-relaxed text-gray-600">
+											<p
+												lang="de"
+												className="mb-3 leading-relaxed text-gray-600"
+											>
 												{orgProfile.description}
 											</p>
 										)}

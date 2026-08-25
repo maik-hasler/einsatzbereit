@@ -134,6 +134,24 @@ describe("opportunity detail page content language", () => {
 	});
 });
 
+describe("about this organization section", () => {
+	it("marks the organization's German description as German on an English page", async () => {
+		api.getPublicOrganizationProfile.mockResolvedValue({
+			id: details.organizationId,
+			name: details.organizationName,
+			description: "Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+			openOpportunities: [],
+		});
+
+		renderDetail("en");
+
+		const description = await screen.findByText(
+			"Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+		);
+		expect(description).toHaveAttribute("lang", "de");
+	});
+});
+
 const scheduledSlots = {
 	...details,
 	participationType: "ScheduledSlots",

@@ -252,7 +252,10 @@ export default function OrganizationsPage() {
 											</div>
 											<div className="min-w-0 flex-1">
 												{org.description && (
-													<p className="line-clamp-2 text-sm text-gray-500">
+													<p
+														lang="de"
+														className="line-clamp-2 text-sm text-gray-500"
+													>
 														{org.description}
 													</p>
 												)}
