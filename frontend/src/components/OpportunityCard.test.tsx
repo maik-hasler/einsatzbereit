@@ -25,8 +25,10 @@ const base: OpportunityCardItem = {
 	organizationName: "Freiwillige Feuerwehr Kiel",
 };
 
-const renderCard = (item: OpportunityCardItem) =>
-	renderWithProviders(<OpportunityCard item={item} headingLevel={3} />);
+const renderCard = (item: OpportunityCardItem, keyword?: string) =>
+	renderWithProviders(
+		<OpportunityCard item={item} headingLevel={3} keyword={keyword} />,
+	);
 
 describe("OpportunityCard date and capacity contract", () => {
 	it.each([
@@ -132,5 +134,33 @@ describe("OpportunityCard organization badge", () => {
 		const link = screen.getByTestId("opportunity-org-link");
 		expect(link.querySelector("img")).toBeNull();
 		expect(link.querySelector("[aria-hidden='true']")).toHaveTextContent("FK");
+	});
+});
+
+describe("OpportunityCard cross-locale search match notice (#2242)", () => {
+	it("explains a match that only exists in the hidden German title", () => {
+		renderCard(base, "Deutscher");
+
+		expect(
+			screen.getByTestId("opportunity-cross-locale-match"),
+		).toHaveTextContent("Deutscher Titel");
+	});
+
+	it("stays silent when the keyword already appears in the displayed English title", () => {
+		renderCard(base, "English");
+
+		expect(screen.queryByTestId("opportunity-cross-locale-match")).toBeNull();
+	});
+
+	it("stays silent when no keyword is active", () => {
+		renderCard(base);
+
+		expect(screen.queryByTestId("opportunity-cross-locale-match")).toBeNull();
+	});
+
+	it("stays silent when the keyword only matches the already-visible organization name", () => {
+		renderCard(base, "Feuerwehr");
+
+		expect(screen.queryByTestId("opportunity-cross-locale-match")).toBeNull();
 	});
 });

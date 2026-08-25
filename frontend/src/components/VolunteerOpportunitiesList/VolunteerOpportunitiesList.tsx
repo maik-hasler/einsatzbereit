@@ -671,6 +671,7 @@ export default function VolunteerOpportunitiesList() {
 				loadMoreError={loadMoreError}
 				loadMoreErrorIsOffline={loadMoreErrorIsOffline}
 				onRetryLoadMore={retryLoadMore}
+				keyword={keyword}
 			/>
 		</div>
 	);
