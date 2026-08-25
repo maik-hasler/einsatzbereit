@@ -62,9 +62,15 @@ export default function MobileMenu({
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Tab" || !panelRef.current) return;
-			const focusables = Array.from(
+			const panelFocusables = Array.from(
 				panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
 			).filter((el) => el.offsetParent !== null);
+			// The toggle that opened this menu lives in the header, outside
+			// panelRef, so it's included here explicitly - otherwise Tab/Shift+Tab
+			// can cycle through the panel forever without ever reaching it.
+			const focusables = triggerRef.current
+				? [triggerRef.current, ...panelFocusables]
+				: panelFocusables;
 			if (focusables.length === 0) return;
 			const first = focusables[0];
 			const last = focusables[focusables.length - 1];
@@ -78,7 +84,7 @@ export default function MobileMenu({
 		}
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, []);
+	}, [triggerRef]);
 
 	return (
 		<div ref={rootRef}>

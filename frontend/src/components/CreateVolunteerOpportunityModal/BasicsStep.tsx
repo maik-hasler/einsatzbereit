@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { UseFormRegister, UseFormWatch } from "react-hook-form";
 import { FloatingField } from "./shared";
 import type { OpportunityFormValues } from "./schema";
-import { PhotoIcon } from "../icons";
+import { ExclamationTriangleIcon, PhotoIcon } from "../icons";
 import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 
 interface Props {
@@ -77,10 +77,12 @@ export default function BasicsStep({
 					>
 						{t(`language.${lang}`)}
 						{hasError[lang] && (
-							<span
-								aria-hidden="true"
-								className="h-1.5 w-1.5 rounded-full bg-red-500"
-							/>
+							<span className="inline-flex items-center">
+								<ExclamationTriangleIcon className="h-3 w-3 text-red-600" />
+								<span className="sr-only">
+									{t("createOpportunity.contentLanguageHasError")}
+								</span>
+							</span>
 						)}
 					</button>
 				))}

@@ -60,4 +60,36 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 			60.0,
 			$"Bell and burger gap ({gap:F0}px) should be <= 60px - a large gap indicates they are not grouped");
 	}
+
+	[Test]
+	public async Task MobileMenu_ToggleLabel_SwapsBetweenOpenAndClose_AndStaysInTheFocusTrap()
+	{
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+
+		var frontend = Fixture.GetEndpoint("frontend");
+		await Page.GotoAsync(frontend.ToString());
+
+		var toggle = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First;
+		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await toggle.ClickAsync();
+		await Expect(toggle).ToHaveAttributeAsync("aria-label", "Close menu");
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+		var register = Page.GetByRole(AriaRole.Button, new() { Name = "Register" }).First;
+		await Expect(register).ToBeVisibleAsync();
+		await register.FocusAsync();
+		await Page.Keyboard.PressAsync("Tab");
+
+		// Tab from the last item in the open mobile menu should reach the toggle
+		// that opened it, not skip over it (#2234).
+		await Expect(toggle).ToBeFocusedAsync();
+
+		await Page.Keyboard.PressAsync("Shift+Tab");
+		// Shift+Tab from the toggle should cycle back into the panel, not escape the trap.
+		await Expect(register).ToBeFocusedAsync();
+
+		await toggle.ClickAsync();
+		await Expect(toggle).ToHaveAttributeAsync("aria-label", "Open menu");
+	}
 }

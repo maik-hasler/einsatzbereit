@@ -33,6 +33,7 @@
       "signIn": "Anmelden",
       "register": "Registrieren",
       "openMenu": "Menü öffnen",
+      "closeMenu": "Menü schließen",
       "menu": "Menü"
     },
     "footer": {
@@ -258,6 +259,7 @@
       "fieldTitle": "Titel",
       "fieldDescription": "Beschreibung",
       "contentLanguageGroup": "Inhaltssprache",
+      "contentLanguageHasError": "Enthält Fehler",
       "contentLanguageEnglishHint": "Optional. Freiwillige, die die Seite auf Englisch anzeigen, sehen diesen Text anstelle der deutschen Version unten - lass das Feld leer, um allen den deutschen Text zu zeigen.",
       "fieldStreet": "Straße",
       "fieldNumber": "Hausnummer",

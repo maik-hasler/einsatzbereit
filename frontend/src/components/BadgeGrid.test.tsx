@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import BadgeGrid from "./BadgeGrid";
-import type { BadgeCatalogEntry } from "../client/api-client";
+import type {
+	AchievementSummary,
+	BadgeCatalogEntry,
+} from "../client/api-client";
 import { renderWithProviders } from "../test/render";
 
 const catalog: BadgeCatalogEntry[] = [
@@ -27,6 +31,74 @@ const catalog: BadgeCatalogEntry[] = [
 		isHidden: false,
 	},
 ];
+
+const earnedOnlyCatalog: BadgeCatalogEntry[] = [
+	{
+		key: "trailblazer",
+		type: 0,
+		name: "Trailblazer",
+		description: "Earned after your very first opportunity.",
+		isHidden: false,
+	},
+];
+
+const earnedFirst: AchievementSummary[] = [
+	{
+		id: "ach-1",
+		type: "FirstEngagement",
+		key: "trailblazer",
+		name: "Trailblazer",
+		description: "Earned after your very first opportunity.",
+		unlockedAt: new Date(Date.UTC(2026, 6, 1, 10, 0)),
+	},
+];
+
+describe("BadgeGrid tooltip", () => {
+	it("shows the description inline on an earned badge, not only in the tooltip", () => {
+		renderWithProviders(
+			<BadgeGrid earned={earnedFirst} catalog={earnedOnlyCatalog} />,
+		);
+
+		const card = screen.getByRole("group", { name: "Trailblazer" });
+		expect(card).toHaveTextContent(
+			"Earned after your very first opportunity.",
+		);
+	});
+
+	it("dismisses the tooltip with Escape without moving focus away", () => {
+		renderWithProviders(
+			<BadgeGrid earned={earnedFirst} catalog={earnedOnlyCatalog} />,
+		);
+
+		const card = screen.getByRole("group", { name: "Trailblazer" });
+		const tooltip = screen.getByRole("tooltip", { hidden: true });
+
+		card.focus();
+		fireEvent.focus(card);
+		expect(tooltip).toHaveClass("block");
+
+		fireEvent.keyDown(card, { key: "Escape" });
+
+		expect(tooltip).toHaveClass("hidden");
+		expect(card).toHaveFocus();
+	});
+
+	it("stays open when the pointer moves from the card onto the tooltip itself", async () => {
+		renderWithProviders(
+			<BadgeGrid earned={earnedFirst} catalog={earnedOnlyCatalog} />,
+		);
+
+		const card = screen.getByRole("group", { name: "Trailblazer" });
+		const tooltip = screen.getByRole("tooltip", { hidden: true });
+
+		await userEvent.hover(card);
+		expect(tooltip).toHaveClass("block");
+
+		await userEvent.unhover(card);
+		await userEvent.hover(tooltip);
+		expect(tooltip).toHaveClass("block");
+	});
+});
 
 describe("BadgeGrid German copy", () => {
 	const renderGrid = () =>

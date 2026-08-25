@@ -86,6 +86,28 @@ describe("create-opportunity wizard: focus on the first invalid field (#2077)", 
 	});
 });
 
+describe("create-opportunity wizard: language tab error indicator (#2234)", () => {
+	it("exposes the error on the German tab through its accessible name, not colour alone", async () => {
+		openWizard();
+		await userEvent.click(screen.getByTestId("modal-next"));
+
+		await waitFor(() => expect(titleError()).not.toBeNull());
+
+		const deTab = screen.getByTestId("opportunity-content-language-de");
+		expect(deTab).toHaveAccessibleName(/Contains errors/);
+	});
+
+	it("carries no error indicator on the English tab, which has none", async () => {
+		openWizard();
+		await userEvent.click(screen.getByTestId("modal-next"));
+
+		await waitFor(() => expect(titleError()).not.toBeNull());
+
+		const enTab = screen.getByTestId("opportunity-content-language-en");
+		expect(enTab).not.toHaveAccessibleName(/Contains errors/);
+	});
+});
+
 describe("create-opportunity wizard: blocked stepper jumps (#1782)", () => {
 	it("names the step standing in the way, in an assertive live region tied to the refused control", async () => {
 		openWizard();
