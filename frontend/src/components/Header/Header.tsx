@@ -51,7 +51,12 @@ export default function Header({
 		(orgs.length > 1 && activeOrg
 			? { currentOrgId: activeOrg.id, currentTab: "dashboard" }
 			: undefined);
-	const navOrg = effectiveOrgSwitcher ? null : activeOrg;
+	// Only the org app's own route context makes the primary-nav "go to my
+	// org" entry redundant (its own in-app navigation already covers that).
+	// Outside the app, keep it even once the switcher fallback above also
+	// renders - for a multi-org user it's still the one place the mobile
+	// menu offers direct links into the org's sub-tabs.
+	const navOrg = orgSwitcher ? null : activeOrg;
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);

@@ -84,7 +84,7 @@ describe("Header organization entry", () => {
 		).toBeNull();
 	});
 
-	it("offers a switcher instead of a single link once a member belongs to more than one organization", async () => {
+	it("offers a switcher alongside the direct link once a member belongs to more than one organization", async () => {
 		const ORG_B = {
 			id: "88888888-8888-8888-8888-888888888888",
 			name: "Foerderverein Hamburg",
@@ -98,12 +98,18 @@ describe("Header organization entry", () => {
 				name: "Switch organization, currently Foerderverein Hamburg",
 			}),
 		).toBeInTheDocument();
-		expect(screen.queryByTestId("nav-organization")).toBeNull();
+		// The alphabetically-first org (ORG_B) is the resolved active one -
+		// the direct nav entry still points at it, same as a single-org
+		// member, so the mobile menu keeps offering direct sub-tab links.
+		expect(await screen.findByTestId("nav-organization")).toHaveAttribute(
+			"href",
+			`/app/${ORG_B.id}/dashboard`,
+		);
 		expect(
 			container.ownerDocument.querySelector(
 				'[data-testid="nav-forOrganizations"]',
 			),
-		).toBeInTheDocument();
+		).toBeNull();
 	});
 
 	it("keeps the pitch for a signed-in non-member", async () => {
