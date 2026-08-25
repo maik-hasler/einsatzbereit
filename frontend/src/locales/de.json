@@ -896,6 +896,7 @@
       "clearReadError": "Gelesene Benachrichtigungen konnten nicht gelöscht werden.",
       "loadError": "Benachrichtigungen konnten nicht geladen werden.",
       "empty": "Keine Benachrichtigungen.",
+      "emptyCta": "Einsätze durchsuchen",
       "loadMore": "Mehr laden",
       "loadingMore": "Lädt…",
       "markReadError": "Benachrichtigung konnte nicht als gelesen markiert werden.",
@@ -906,18 +907,18 @@
       "deletedOpportunityPlaceholder": "einen gelöschten Einsatz",
       "unread": "Ungelesen",
       "kinds": {
-        "EngagementCreated": "Neue Anmeldung eingegangen für {{title}}",
-        "EngagementConfirmed": "Deine Anmeldung für {{title}} wurde bestätigt",
-        "EngagementCancelled": "Deine Anmeldung für {{title}} wurde abgesagt",
-        "EngagementWithdrawn": "Eine Anmeldung für {{title}} wurde zurückgezogen",
-        "OpportunityUpdated": "{{title}} wurde aktualisiert",
-        "OpportunityDeleted": "{{title}} wurde entfernt",
-        "OpportunityUnpublished": "{{title}} wurde zurückgezogen und deine Anmeldung wurde abgesagt",
-        "OpportunityCancelled": "Der Einsatz {{title}} wurde abgesagt - deine Anmeldung ist damit hinfällig",
-        "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten",
-        "InvitationAccepted": "Deine Einladung, {{title}} beizutreten, wurde angenommen",
-        "InvitationDeclined": "Deine Einladung, {{title}} beizutreten, wurde abgelehnt",
-        "FeedbackSubmitted": "Neues Feedback erhalten für {{title}}"
+        "EngagementCreated": "Neue Anmeldung eingegangen für <titleSpan>{{title}}</titleSpan>",
+        "EngagementConfirmed": "Deine Anmeldung für <titleSpan>{{title}}</titleSpan> wurde bestätigt",
+        "EngagementCancelled": "Deine Anmeldung für <titleSpan>{{title}}</titleSpan> wurde abgesagt",
+        "EngagementWithdrawn": "Eine Anmeldung für <titleSpan>{{title}}</titleSpan> wurde zurückgezogen",
+        "OpportunityUpdated": "<titleSpan>{{title}}</titleSpan> wurde aktualisiert",
+        "OpportunityDeleted": "<titleSpan>{{title}}</titleSpan> wurde entfernt",
+        "OpportunityUnpublished": "<titleSpan>{{title}}</titleSpan> wurde zurückgezogen und deine Anmeldung wurde abgesagt",
+        "OpportunityCancelled": "Der Einsatz <titleSpan>{{title}}</titleSpan> wurde abgesagt - deine Anmeldung ist damit hinfällig",
+        "InvitationReceived": "Du wurdest eingeladen, <titleSpan>{{title}}</titleSpan> beizutreten",
+        "InvitationAccepted": "Deine Einladung, <titleSpan>{{title}}</titleSpan> beizutreten, wurde angenommen",
+        "InvitationDeclined": "Deine Einladung, <titleSpan>{{title}}</titleSpan> beizutreten, wurde abgelehnt",
+        "FeedbackSubmitted": "Neues Feedback erhalten für <titleSpan>{{title}}</titleSpan>"
       }
     },
     "language": {
