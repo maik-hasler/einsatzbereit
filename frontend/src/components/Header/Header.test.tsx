@@ -84,6 +84,28 @@ describe("Header organization entry", () => {
 		).toBeNull();
 	});
 
+	it("offers a switcher instead of a single link once a member belongs to more than one organization", async () => {
+		const ORG_B = {
+			id: "88888888-8888-8888-8888-888888888888",
+			name: "Foerderverein Hamburg",
+		};
+		api.getOrganizations.mockResolvedValue([ORG, ORG_B]);
+
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		expect(
+			await screen.findByRole("button", {
+				name: "Switch organization, currently Foerderverein Hamburg",
+			}),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("nav-organization")).toBeNull();
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-forOrganizations"]',
+			),
+		).toBeInTheDocument();
+	});
+
 	it("keeps the pitch for a signed-in non-member", async () => {
 		api.getOrganizations.mockResolvedValue([]);
 
