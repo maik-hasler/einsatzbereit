@@ -629,7 +629,8 @@ export default function ActivitySection() {
 								{isTerminalEngagementStatus(e.status) &&
 									engagementsScope === "upcoming" &&
 									e.opportunityTitle &&
-									e.remainingReactivations === 0 && (
+									e.remainingReactivations !== undefined &&
+									e.remainingReactivations <= 0 && (
 										<span className="text-xs text-gray-500">
 											{t("myEngagements.reactivationLimitReached")}{" "}
 											{e.organizationId && (
