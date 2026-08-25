@@ -5,6 +5,10 @@ import {
 	textareaClass,
 	labelClass,
 	selectClass,
+	fieldBorderClass,
+	getInputClass,
+	getTextareaClass,
+	getLabelClass,
 } from "./formClasses";
 
 describe("formClasses", () => {
@@ -54,5 +58,33 @@ describe("formClasses", () => {
 		const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
 		expect(doc.querySelector("parsererror")).toBeNull();
 		expect(doc.querySelector("svg")).not.toBeNull();
+	});
+
+	it("gives every invalid field the same red border/focus treatment (#2239)", () => {
+		expect(fieldBorderClass(true)).toContain("border-red-300");
+		expect(fieldBorderClass(true)).toContain("focus:border-red-400");
+		expect(fieldBorderClass(true)).not.toContain("border-gray-200");
+	});
+
+	it("keeps the pristine border/focus treatment when there is no error", () => {
+		expect(fieldBorderClass(false)).toContain("border-gray-200");
+		expect(fieldBorderClass(false)).toContain("focus:border-brand-400");
+		expect(fieldBorderClass(false)).not.toContain("border-red-300");
+	});
+
+	it("carries the invalid border into getInputClass/getTextareaClass", () => {
+		expect(getInputClass(true)).toContain("border-red-300");
+		expect(getTextareaClass(true)).toContain("border-red-300");
+		expect(getTextareaClass(true)).toContain("resize-y");
+	});
+
+	it("defaults getInputClass/getTextareaClass to the pristine treatment", () => {
+		expect(getInputClass()).toBe(inputClass);
+		expect(getTextareaClass()).toBe(textareaClass);
+	});
+
+	it("turns the label red on error, same as the field it labels", () => {
+		expect(getLabelClass(true)).toContain("text-red-600");
+		expect(getLabelClass(false)).toBe(labelClass);
 	});
 });

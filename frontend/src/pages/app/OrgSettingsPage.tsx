@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
-import { inputClass, labelClass } from "../../lib/formClasses";
+import {
+	getInputClass,
+	getTextareaClass,
+	labelClass,
+} from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
 import {
 	IMAGE_UPLOAD_ACCEPT,
@@ -367,7 +371,12 @@ export default function OrgSettingsPage() {
 								</div>
 							</div>
 
-							<Field label={t("orgSettings.fieldName")} id="org-name" required>
+							<Field
+								label={t("orgSettings.fieldName")}
+								id="org-name"
+								required
+								error={errors.name?.message}
+							>
 								<input
 									id="org-name"
 									maxLength={100}
@@ -375,23 +384,15 @@ export default function OrgSettingsPage() {
 									aria-invalid={errors.name ? true : undefined}
 									aria-describedby={errors.name ? "org-name-error" : undefined}
 									aria-required="true"
-									className={inputClass}
+									className={getInputClass(Boolean(errors.name))}
 									{...register("name")}
 								/>
-								{errors.name && (
-									<p
-										id="org-name-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.name.message}
-									</p>
-								)}
 							</Field>
 
 							<Field
 								label={t("orgSettings.fieldDescription")}
 								id="org-description"
+								error={errors.description?.message}
 							>
 								<textarea
 									id="org-description"
@@ -402,23 +403,15 @@ export default function OrgSettingsPage() {
 									aria-describedby={
 										errors.description ? "org-description-error" : undefined
 									}
-									className={inputClass}
+									className={getTextareaClass(Boolean(errors.description))}
 									{...register("description")}
 								/>
-								{errors.description && (
-									<p
-										id="org-description-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.description.message}
-									</p>
-								)}
 							</Field>
 
 							<Field
 								label={t("orgSettings.fieldContactEmail")}
 								id="org-contact-email"
+								error={errors.contactEmail?.message}
 							>
 								<input
 									id="org-contact-email"
@@ -429,21 +422,16 @@ export default function OrgSettingsPage() {
 									aria-describedby={
 										errors.contactEmail ? "org-contact-email-error" : undefined
 									}
-									className={inputClass}
+									className={getInputClass(Boolean(errors.contactEmail))}
 									{...register("contactEmail")}
 								/>
-								{errors.contactEmail && (
-									<p
-										id="org-contact-email-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.contactEmail.message}
-									</p>
-								)}
 							</Field>
 
-							<Field label={t("orgSettings.fieldPhone")} id="org-phone">
+							<Field
+								label={t("orgSettings.fieldPhone")}
+								id="org-phone"
+								error={errors.contactPhone?.message}
+							>
 								<input
 									id="org-phone"
 									type="tel"
@@ -453,21 +441,16 @@ export default function OrgSettingsPage() {
 									aria-describedby={
 										errors.contactPhone ? "org-phone-error" : undefined
 									}
-									className={inputClass}
+									className={getInputClass(Boolean(errors.contactPhone))}
 									{...register("contactPhone")}
 								/>
-								{errors.contactPhone && (
-									<p
-										id="org-phone-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.contactPhone.message}
-									</p>
-								)}
 							</Field>
 
-							<Field label={t("orgSettings.fieldWebsite")} id="org-website">
+							<Field
+								label={t("orgSettings.fieldWebsite")}
+								id="org-website"
+								error={errors.website?.message}
+							>
 								<input
 									id="org-website"
 									type="url"
@@ -478,18 +461,9 @@ export default function OrgSettingsPage() {
 									aria-describedby={
 										errors.website ? "org-website-error" : undefined
 									}
-									className={inputClass}
+									className={getInputClass(Boolean(errors.website))}
 									{...register("website")}
 								/>
-								{errors.website && (
-									<p
-										id="org-website-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.website.message}
-									</p>
-								)}
 							</Field>
 
 							<fieldset className="rounded-card border border-gray-200 p-4">
@@ -498,106 +472,82 @@ export default function OrgSettingsPage() {
 								</legend>
 								<div className="mt-3 grid grid-cols-3 gap-3">
 									<div className="col-span-2">
-										<label htmlFor="org-street" className={labelClass}>
-											{t("orgSettings.fieldStreet")}
-										</label>
-										<input
+										<Field
+											label={t("orgSettings.fieldStreet")}
 											id="org-street"
-											maxLength={200}
-											autoComplete="off"
-											aria-invalid={errors.street ? true : undefined}
-											aria-describedby={
-												errors.street ? "org-street-error" : undefined
-											}
-											className={inputClass}
-											{...register("street")}
-										/>
-										{errors.street && (
-											<p
-												id="org-street-error"
-												className="mt-1 text-xs text-red-600"
-												role="alert"
-											>
-												{errors.street.message}
-											</p>
-										)}
+											error={errors.street?.message}
+										>
+											<input
+												id="org-street"
+												maxLength={200}
+												autoComplete="off"
+												aria-invalid={errors.street ? true : undefined}
+												aria-describedby={
+													errors.street ? "org-street-error" : undefined
+												}
+												className={getInputClass(Boolean(errors.street))}
+												{...register("street")}
+											/>
+										</Field>
 									</div>
 									<div>
-										<label htmlFor="org-house-number" className={labelClass}>
-											{t("orgSettings.fieldHouseNumber")}
-										</label>
-										<input
+										<Field
+											label={t("orgSettings.fieldHouseNumber")}
 											id="org-house-number"
-											maxLength={20}
-											autoComplete="off"
-											aria-invalid={errors.houseNumber ? true : undefined}
-											aria-describedby={
-												errors.houseNumber
-													? "org-house-number-error"
-													: undefined
-											}
-											className={inputClass}
-											{...register("houseNumber")}
-										/>
-										{errors.houseNumber && (
-											<p
-												id="org-house-number-error"
-												className="mt-1 text-xs text-red-600"
-												role="alert"
-											>
-												{errors.houseNumber.message}
-											</p>
-										)}
+											error={errors.houseNumber?.message}
+										>
+											<input
+												id="org-house-number"
+												maxLength={20}
+												autoComplete="off"
+												aria-invalid={errors.houseNumber ? true : undefined}
+												aria-describedby={
+													errors.houseNumber
+														? "org-house-number-error"
+														: undefined
+												}
+												className={getInputClass(Boolean(errors.houseNumber))}
+												{...register("houseNumber")}
+											/>
+										</Field>
 									</div>
 									<div>
-										<label htmlFor="org-zip" className={labelClass}>
-											{t("orgSettings.fieldZip")}
-										</label>
-										<input
+										<Field
+											label={t("orgSettings.fieldZip")}
 											id="org-zip"
-											maxLength={5}
-											autoComplete="off"
-											aria-invalid={errors.zipCode ? true : undefined}
-											aria-describedby={
-												errors.zipCode ? "org-zip-error" : undefined
-											}
-											className={inputClass}
-											{...register("zipCode")}
-										/>
-										{errors.zipCode && (
-											<p
-												id="org-zip-error"
-												className="mt-1 text-xs text-red-600"
-												role="alert"
-											>
-												{errors.zipCode.message}
-											</p>
-										)}
+											error={errors.zipCode?.message}
+										>
+											<input
+												id="org-zip"
+												maxLength={5}
+												autoComplete="off"
+												aria-invalid={errors.zipCode ? true : undefined}
+												aria-describedby={
+													errors.zipCode ? "org-zip-error" : undefined
+												}
+												className={getInputClass(Boolean(errors.zipCode))}
+												{...register("zipCode")}
+											/>
+										</Field>
 									</div>
 									<div className="col-span-2">
-										<label htmlFor="org-city" className={labelClass}>
-											{t("orgSettings.fieldCity")}
-										</label>
-										<input
+										<Field
+											label={t("orgSettings.fieldCity")}
 											id="org-city"
-											maxLength={100}
-											autoComplete="off"
-											aria-invalid={errors.city ? true : undefined}
-											aria-describedby={
-												errors.city ? "org-city-error" : undefined
-											}
-											className={inputClass}
-											{...register("city")}
-										/>
-										{errors.city && (
-											<p
-												id="org-city-error"
-												className="mt-1 text-xs text-red-600"
-												role="alert"
-											>
-												{errors.city.message}
-											</p>
-										)}
+											error={errors.city?.message}
+										>
+											<input
+												id="org-city"
+												maxLength={100}
+												autoComplete="off"
+												aria-invalid={errors.city ? true : undefined}
+												aria-describedby={
+													errors.city ? "org-city-error" : undefined
+												}
+												className={getInputClass(Boolean(errors.city))}
+												{...register("city")}
+											/>
+										</Field>
 									</div>
 								</div>
 							</fieldset>
