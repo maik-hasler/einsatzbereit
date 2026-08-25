@@ -105,6 +105,7 @@ export default function OrganizationProfilePage() {
 				eyebrow={t("orgProfile.eyebrow")}
 				title={profile.name}
 				lead={profile.description ?? undefined}
+				leadLang="de"
 			>
 				{profile.website && (
 					<Button

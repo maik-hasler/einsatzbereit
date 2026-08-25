@@ -153,7 +153,10 @@ export default function OrganizationProfileView({
 				>
 					<div className="min-w-0">
 						{description && (
-							<p className="mb-6 max-w-2xl leading-relaxed text-gray-700">
+							<p
+								lang="de"
+								className="mb-6 max-w-2xl leading-relaxed text-gray-700"
+							>
 								{description}
 							</p>
 						)}
