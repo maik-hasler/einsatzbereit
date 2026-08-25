@@ -161,6 +161,7 @@ export default function VolunteerOpportunitiesList() {
 		loadMoreError,
 		loadMoreErrorIsOffline,
 		retryLoadMore,
+		totalItems,
 	} = useVolunteerOpportunitiesData({
 		occurrence,
 		participationType,
@@ -663,6 +664,7 @@ export default function VolunteerOpportunitiesList() {
 				error={error}
 				errorIsOffline={errorIsOffline}
 				items={items}
+				totalItems={totalItems}
 				hasFilters={hasFilters}
 				onClearFilters={clearFilters}
 				hasMore={hasMore}
