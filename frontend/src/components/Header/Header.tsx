@@ -45,7 +45,12 @@ export default function Header({
 
 	// A member of more than one organization needs a way to switch between
 	// them from outside the org app too (#2226), not just once they're
-	// already inside /app/:orgId/*.
+	// already inside /app/:orgId/*. Below lg:, that's the only org control
+	// in the collapsed header at all (the rest lives a tap deep in the
+	// hamburger menu), so the fallback switcher pill renders there; at lg:+
+	// the existing primary-nav "go to my org" entry already fills that role
+	// and there isn't room for both without overflowing the row (see the
+	// lg:hidden below), so the fallback stays mobile/tablet-only.
 	const effectiveOrgSwitcher =
 		orgSwitcher ??
 		(orgs.length > 1 && activeOrg
@@ -130,7 +135,9 @@ export default function Header({
 						</Link>
 
 						{effectiveOrgSwitcher && (
-							<div className="min-w-0 flex-1 sm:flex-none">
+							<div
+								className={`min-w-0 flex-1 sm:flex-none ${orgSwitcher ? "" : "lg:hidden"}`}
+							>
 								<OrganizationSwitcher
 									currentOrgId={effectiveOrgSwitcher.currentOrgId}
 									currentTab={effectiveOrgSwitcher.currentTab}
