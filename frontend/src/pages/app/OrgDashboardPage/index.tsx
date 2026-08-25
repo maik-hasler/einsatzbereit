@@ -518,7 +518,7 @@ export default function OrgDashboardPage() {
 	return (
 		<>
 			{editing && isLargeViewport && placingKey && cursor && (
-				<div className="sticky top-24 z-30 mb-3 flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-4 py-2 text-sm text-brand-800 shadow-md">
+				<div className="sticky top-24 z-40 mb-3 flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-4 py-2 text-sm text-brand-800 shadow-md">
 					<p role="status" data-testid="dashboard-placement-status">
 						{anchor
 							? t("orgDashboard.placingBannerPickEnd", {
