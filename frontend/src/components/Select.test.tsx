@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Select from "./Select";
+import { renderWithProviders } from "../test/render";
 
 describe("Select", () => {
 	it("renders a native select carrying the passed-through props", () => {
-		render(
+		renderWithProviders(
 			<label htmlFor="status">
 				Status
 				<Select id="status" value="open" onChange={() => {}}>
@@ -24,7 +25,7 @@ describe("Select", () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
 
-		render(
+		renderWithProviders(
 			<label htmlFor="status">
 				Status
 				<Select id="status" value="open" onChange={onChange}>
@@ -42,7 +43,7 @@ describe("Select", () => {
 	});
 
 	it("hides the chevron it draws from assistive tech (#2225)", () => {
-		const { container } = render(
+		const { container } = renderWithProviders(
 			<Select value="open" onChange={() => {}}>
 				<option value="open">Open</option>
 			</Select>,

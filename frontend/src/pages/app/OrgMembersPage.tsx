@@ -261,7 +261,7 @@ export default function OrgMembersPage() {
 
 	return (
 		<div>
-			<div data-content-wrapper className="max-w-4xl">
+			<div data-content-wrapper className="max-w-6xl">
 				{successMessage && (
 					<SuccessBanner message={successMessage} className="mb-4" />
 				)}
@@ -269,380 +269,416 @@ export default function OrgMembersPage() {
 					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
 
-				{isOrganizer && (
-					<div className={`mb-8 ${cardClass} sm:p-6`}>
-						<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
-							<div>
-								<label htmlFor="member-search" className={labelClass}>
-									{t("orgSettings.inviteLabel")}
-								</label>
-								<input
-									id="member-search"
-									type="search"
-									value={memberSearch}
-									onChange={(e) => handleMemberSearchChange(e.target.value)}
-									placeholder={t("orgSettings.invitePlaceholder")}
-									className={inputClass}
-								/>
-							</div>
-							<div>
-								<label htmlFor="invite-role" className={labelClass}>
-									{t("orgSettings.inviteRoleLabel")}
-								</label>
-								<Select
-									id="invite-role"
-									value={inviteRole}
-									onChange={(e) =>
-										setInviteRole(e.target.value as "Member" | "Organizer")
-									}
-								>
-									<option value="Member">{t("orgSettings.roleMember")}</option>
-									<option value="Organizer">
-										{t("orgSettings.organisator")}
-									</option>
-								</Select>
-							</div>
-						</div>
-						{memberSearch.length > 0 && memberSearch.length < 4 && (
-							<p role="status" className="mt-1 text-xs text-gray-500">
-								{t("orgSettings.searchMinChars")}
-							</p>
-						)}
-						{memberSearchLoading && (
-							<p role="status" className="mt-1 text-xs text-gray-500">
-								{t("orgSettings.searching")}
-							</p>
-						)}
-						{memberSearchError && (
-							<ErrorBanner message={memberSearchError} className="mt-1" />
-						)}
-						{memberCandidates.length > 0 && (
-							<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-								{memberCandidates.map((candidate) => (
-									<li
-										key={candidate.userId}
-										className="flex items-center justify-between px-3 py-2"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-medium text-gray-900">
-												{candidate.firstName && candidate.lastName
-													? `${candidate.firstName} ${candidate.lastName}`
-													: candidate.username}
-											</p>
-											{candidate.firstName && candidate.lastName && (
-												<p className="truncate text-xs text-gray-500">
-													@{candidate.username}
-												</p>
-											)}
-										</div>
-										<Button
-											type="button"
-											onClick={() => handleInviteMember(candidate.userId)}
-											disabled={invitingUserId === candidate.userId}
-											size="sm"
-											className="ml-3 shrink-0"
-										>
-											{t("orgSettings.invite")}
-										</Button>
-									</li>
-								))}
-							</ul>
-						)}
-						{memberSearch.length >= 4 &&
-							!memberSearchLoading &&
-							!memberSearchError &&
-							memberCandidates.length === 0 && (
-								<p role="status" className="mt-1 text-xs text-gray-500">
-									{looksLikeEmail(memberSearch)
-										? t("orgSettings.noSearchResultsEmail")
-										: t("orgSettings.noSearchResults")}
-								</p>
-							)}
-					</div>
-				)}
-
-				{invitations.some((i) => i.status === "Pending") && (
-					<div className="mb-6">
-						<SectionHeading>
-							{t("orgSettings.pendingInvitations")}
-						</SectionHeading>
-						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-							{invitations
-								.filter((i) => i.status === "Pending")
-								.map((invitation) => (
-									<li
-										key={invitation.id}
-										className="flex items-center justify-between px-3 py-2"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-medium text-gray-900">
-												{invitation.inviteeName}
-												{invitation.intendedRole === "Organizer" && (
-													<Chip tone="brand" size="sm" className="ml-2">
-														{t("orgSettings.organisator")}
-													</Chip>
-												)}
-											</p>
-											<p className="truncate text-xs text-gray-500">
-												{t("orgSettings.invitationSentOn", {
-													date: formatDate(
-														invitation.createdOn as unknown as string,
-														i18n.language,
-													),
-												})}
-											</p>
-										</div>
-										<button
-											type="button"
-											onClick={() => handleDismissInvitation(invitation.id)}
-											disabled={dismissingInvitationId === invitation.id}
-											aria-label={t("orgSettings.dismissInvitationNamed", {
-												name: invitation.inviteeName,
-											})}
-											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-										>
-											{t("orgSettings.dismissInvitation")}
-										</button>
-									</li>
-								))}
-						</ul>
-					</div>
-				)}
-
-				{invitations.some((i) => i.status === "Declined") && (
-					<div className="mb-6">
-						<SectionHeading>
-							{t("orgSettings.declinedInvitations")}
-						</SectionHeading>
-						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-							{invitations
-								.filter((i) => i.status === "Declined")
-								.map((invitation) => (
-									<li
-										key={invitation.id}
-										className="flex items-center justify-between px-3 py-2"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-medium text-gray-900">
-												{invitation.inviteeName}
-											</p>
-										</div>
-										<button
-											type="button"
-											onClick={() => handleDismissInvitation(invitation.id)}
-											disabled={dismissingInvitationId === invitation.id}
-											aria-label={t("orgSettings.dismissInvitationNamed", {
-												name: invitation.inviteeName,
-											})}
-											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-										>
-											{t("orgSettings.dismissInvitation")}
-										</button>
-									</li>
-								))}
-						</ul>
-					</div>
-				)}
-
-				{invitations.some((i) => i.status === "Expired") && (
-					<div className="mb-6">
-						<SectionHeading>
-							{t("orgSettings.expiredInvitations")}
-						</SectionHeading>
-						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-							{invitations
-								.filter((i) => i.status === "Expired")
-								.map((invitation) => (
-									<li
-										key={invitation.id}
-										className="flex items-center justify-between px-3 py-2"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-medium text-gray-900">
-												{invitation.inviteeName}
-											</p>
-										</div>
-										<div className="ml-3 flex shrink-0 items-center gap-3">
-											<button
-												type="button"
-												onClick={() => handleResendInvitation(invitation.id)}
-												disabled={
-													resendingInvitationId === invitation.id ||
-													dismissingInvitationId === invitation.id
-												}
-												aria-label={t("orgSettings.resendInvitationNamed", {
-													name: invitation.inviteeName,
-												})}
-												className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-											>
-												{resendingInvitationId === invitation.id
-													? t("orgSettings.resendingInvitation")
-													: t("orgSettings.resendInvitation")}
-											</button>
-											<button
-												type="button"
-												onClick={() => handleDismissInvitation(invitation.id)}
-												disabled={
-													dismissingInvitationId === invitation.id ||
-													resendingInvitationId === invitation.id
-												}
-												aria-label={t("orgSettings.dismissInvitationNamed", {
-													name: invitation.inviteeName,
-												})}
-												className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-											>
-												{t("orgSettings.dismissInvitation")}
-											</button>
-										</div>
-									</li>
-								))}
-						</ul>
-					</div>
-				)}
-
-				{org.membersUnavailable && (
-					<ErrorBanner
-						message={t("orgSettings.membersUnavailable")}
-						className="mb-4"
-					/>
-				)}
-
-				{members.length === 0 ? (
-					<EmptyState
-						title={t("orgSettings.noMembers")}
-						message={t("orgSettings.noMembersHint")}
-					/>
-				) : (
-					<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
-						<ul className="divide-y divide-gray-100">
-							{members.map((member) => (
-								<li
-									key={member.userId}
-									className="flex items-center justify-between gap-4 px-4 py-4"
-								>
-									<div className="min-w-0">
-										<p className="truncate text-sm font-medium text-gray-900">
-											{member.firstName && member.lastName
-												? `${member.firstName} ${member.lastName}`
-												: member.username}
-										</p>
-										<p className="truncate text-xs text-gray-500">
-											{member.email}
-										</p>
-
-										<Chip
-											tone={member.isOrganisator ? "brand" : "neutral"}
-											size="sm"
-											className="mt-0.5"
-										>
-											{member.isOrganisator
-												? t("orgSettings.organisator")
-												: t("orgSettings.roleMember")}
-										</Chip>
+				<div
+					className={
+						isOrganizer
+							? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10"
+							: ""
+					}
+				>
+					{isOrganizer && (
+						<aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+							<div className={`mb-8 ${cardClass} sm:p-6`}>
+								<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+									<div>
+										<label htmlFor="member-search" className={labelClass}>
+											{t("orgSettings.inviteLabel")}
+										</label>
+										<input
+											id="member-search"
+											type="search"
+											value={memberSearch}
+											onChange={(e) => handleMemberSearchChange(e.target.value)}
+											placeholder={t("orgSettings.invitePlaceholder")}
+											className={inputClass}
+										/>
 									</div>
-									{member.userId === currentUserId ? (
-										<div className="flex shrink-0 flex-col items-end gap-1">
-											<Button
-												type="button"
-												variant="dangerOutline"
-												size="sm"
-												onClick={() => setShowLeaveConfirm(true)}
-												disabled={isLastOrganizer}
-												aria-describedby={
-													isLastOrganizer
-														? "leave-organization-hint"
-														: undefined
-												}
+									<div>
+										<label htmlFor="invite-role" className={labelClass}>
+											{t("orgSettings.inviteRoleLabel")}
+										</label>
+										<Select
+											id="invite-role"
+											value={inviteRole}
+											onChange={(e) =>
+												setInviteRole(e.target.value as "Member" | "Organizer")
+											}
+										>
+											<option value="Member">
+												{t("orgSettings.roleMember")}
+											</option>
+											<option value="Organizer">
+												{t("orgSettings.organisator")}
+											</option>
+										</Select>
+									</div>
+								</div>
+								{memberSearch.length > 0 && memberSearch.length < 4 && (
+									<p role="status" className="mt-1 text-xs text-gray-500">
+										{t("orgSettings.searchMinChars")}
+									</p>
+								)}
+								{memberSearchLoading && (
+									<p role="status" className="mt-1 text-xs text-gray-500">
+										{t("orgSettings.searching")}
+									</p>
+								)}
+								{memberSearchError && (
+									<ErrorBanner message={memberSearchError} className="mt-1" />
+								)}
+								{memberCandidates.length > 0 && (
+									<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+										{memberCandidates.map((candidate) => (
+											<li
+												key={candidate.userId}
+												className="flex items-center justify-between px-3 py-2"
 											>
-												{t("orgSettings.leaveOrganization")}
-											</Button>
-											{isLastOrganizer && (
-												<p
-													id="leave-organization-hint"
-													className="max-w-48 text-right text-xs text-gray-500"
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium text-gray-900">
+														{candidate.firstName && candidate.lastName
+															? `${candidate.firstName} ${candidate.lastName}`
+															: candidate.username}
+													</p>
+													{candidate.firstName && candidate.lastName && (
+														<p className="truncate text-xs text-gray-500">
+															@{candidate.username}
+														</p>
+													)}
+												</div>
+												<Button
+													type="button"
+													onClick={() => handleInviteMember(candidate.userId)}
+													disabled={invitingUserId === candidate.userId}
+													size="sm"
+													className="ml-3 shrink-0"
 												>
-													<Trans
-														i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
-														components={{
-															settingsLink: (
-																<Link
-																	to={orgTabPath(org.id, "settings")}
-																	className="underline hover:text-brand-700"
-																/>
+													{t("orgSettings.invite")}
+												</Button>
+											</li>
+										))}
+									</ul>
+								)}
+								{memberSearch.length >= 4 &&
+									!memberSearchLoading &&
+									!memberSearchError &&
+									memberCandidates.length === 0 && (
+										<p role="status" className="mt-1 text-xs text-gray-500">
+											{looksLikeEmail(memberSearch)
+												? t("orgSettings.noSearchResultsEmail")
+												: t("orgSettings.noSearchResults")}
+										</p>
+									)}
+							</div>
+						</aside>
+					)}
+
+					<div
+						className={
+							isOrganizer ? "min-w-0 lg:col-start-1 lg:row-start-1" : ""
+						}
+					>
+						{invitations.some((i) => i.status === "Pending") && (
+							<div className="mb-6">
+								<SectionHeading>
+									{t("orgSettings.pendingInvitations")}
+								</SectionHeading>
+								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+									{invitations
+										.filter((i) => i.status === "Pending")
+										.map((invitation) => (
+											<li
+												key={invitation.id}
+												className="flex items-center justify-between px-3 py-2"
+											>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium text-gray-900">
+														{invitation.inviteeName}
+														{invitation.intendedRole === "Organizer" && (
+															<Chip tone="brand" size="sm" className="ml-2">
+																{t("orgSettings.organisator")}
+															</Chip>
+														)}
+													</p>
+													<p className="truncate text-xs text-gray-500">
+														{t("orgSettings.invitationSentOn", {
+															date: formatDate(
+																invitation.createdOn as unknown as string,
+																i18n.language,
 															),
-														}}
-													/>
-												</p>
-											)}
-										</div>
-									) : isOrganizer ? (
-										<div className="flex shrink-0 items-center gap-2">
-											{(() => {
-												const memberName =
-													member.firstName && member.lastName
+														})}
+													</p>
+												</div>
+												<button
+													type="button"
+													onClick={() => handleDismissInvitation(invitation.id)}
+													disabled={dismissingInvitationId === invitation.id}
+													aria-label={t("orgSettings.dismissInvitationNamed", {
+														name: invitation.inviteeName,
+													})}
+													className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+												>
+													{t("orgSettings.dismissInvitation")}
+												</button>
+											</li>
+										))}
+								</ul>
+							</div>
+						)}
+
+						{invitations.some((i) => i.status === "Declined") && (
+							<div className="mb-6">
+								<SectionHeading>
+									{t("orgSettings.declinedInvitations")}
+								</SectionHeading>
+								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+									{invitations
+										.filter((i) => i.status === "Declined")
+										.map((invitation) => (
+											<li
+												key={invitation.id}
+												className="flex items-center justify-between px-3 py-2"
+											>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium text-gray-900">
+														{invitation.inviteeName}
+													</p>
+												</div>
+												<button
+													type="button"
+													onClick={() => handleDismissInvitation(invitation.id)}
+													disabled={dismissingInvitationId === invitation.id}
+													aria-label={t("orgSettings.dismissInvitationNamed", {
+														name: invitation.inviteeName,
+													})}
+													className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+												>
+													{t("orgSettings.dismissInvitation")}
+												</button>
+											</li>
+										))}
+								</ul>
+							</div>
+						)}
+
+						{invitations.some((i) => i.status === "Expired") && (
+							<div className="mb-6">
+								<SectionHeading>
+									{t("orgSettings.expiredInvitations")}
+								</SectionHeading>
+								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+									{invitations
+										.filter((i) => i.status === "Expired")
+										.map((invitation) => (
+											<li
+												key={invitation.id}
+												className="flex items-center justify-between px-3 py-2"
+											>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium text-gray-900">
+														{invitation.inviteeName}
+													</p>
+												</div>
+												<div className="ml-3 flex shrink-0 items-center gap-3">
+													<button
+														type="button"
+														onClick={() =>
+															handleResendInvitation(invitation.id)
+														}
+														disabled={
+															resendingInvitationId === invitation.id ||
+															dismissingInvitationId === invitation.id
+														}
+														aria-label={t("orgSettings.resendInvitationNamed", {
+															name: invitation.inviteeName,
+														})}
+														className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+													>
+														{resendingInvitationId === invitation.id
+															? t("orgSettings.resendingInvitation")
+															: t("orgSettings.resendInvitation")}
+													</button>
+													<button
+														type="button"
+														onClick={() =>
+															handleDismissInvitation(invitation.id)
+														}
+														disabled={
+															dismissingInvitationId === invitation.id ||
+															resendingInvitationId === invitation.id
+														}
+														aria-label={t(
+															"orgSettings.dismissInvitationNamed",
+															{
+																name: invitation.inviteeName,
+															},
+														)}
+														className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+													>
+														{t("orgSettings.dismissInvitation")}
+													</button>
+												</div>
+											</li>
+										))}
+								</ul>
+							</div>
+						)}
+
+						{org.membersUnavailable && (
+							<ErrorBanner
+								message={t("orgSettings.membersUnavailable")}
+								className="mb-4"
+							/>
+						)}
+
+						{members.length === 0 ? (
+							<EmptyState
+								title={t("orgSettings.noMembers")}
+								message={t("orgSettings.noMembersHint")}
+							/>
+						) : (
+							<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
+								<ul className="divide-y divide-gray-100">
+									{members.map((member) => (
+										<li
+											key={member.userId}
+											className="flex items-center justify-between gap-4 px-4 py-4"
+										>
+											<div className="min-w-0">
+												<p className="truncate text-sm font-medium text-gray-900">
+													{member.firstName && member.lastName
 														? `${member.firstName} ${member.lastName}`
-														: member.username;
-												return (
-													<>
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																void handleChangeMemberRole(
-																	member.userId,
-																	member.isOrganisator ? "Member" : "Organizer",
-																)
-															}
-															disabled={
-																changingRoleUserId === member.userId ||
-																(member.isOrganisator && organizerCount <= 1)
-															}
-															title={
-																member.isOrganisator && organizerCount <= 1
-																	? t("orgSettings.changeRoleLastOrganizerHint")
-																	: undefined
-															}
-															aria-label={
-																member.isOrganisator
-																	? t("orgSettings.demoteToMemberNamed", {
+														: member.username}
+												</p>
+												<p className="truncate text-xs text-gray-500">
+													{member.email}
+												</p>
+
+												<Chip
+													tone={member.isOrganisator ? "brand" : "neutral"}
+													size="sm"
+													className="mt-0.5"
+												>
+													{member.isOrganisator
+														? t("orgSettings.organisator")
+														: t("orgSettings.roleMember")}
+												</Chip>
+											</div>
+											{member.userId === currentUserId ? (
+												<div className="flex shrink-0 flex-col items-end gap-1">
+													<Button
+														type="button"
+														variant="dangerOutline"
+														size="sm"
+														onClick={() => setShowLeaveConfirm(true)}
+														disabled={isLastOrganizer}
+														aria-describedby={
+															isLastOrganizer
+																? "leave-organization-hint"
+																: undefined
+														}
+													>
+														{t("orgSettings.leaveOrganization")}
+													</Button>
+													{isLastOrganizer && (
+														<p
+															id="leave-organization-hint"
+															className="max-w-48 text-right text-xs text-gray-500"
+														>
+															<Trans
+																i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
+																components={{
+																	settingsLink: (
+																		<Link
+																			to={orgTabPath(org.id, "settings")}
+																			className="underline hover:text-brand-700"
+																		/>
+																	),
+																}}
+															/>
+														</p>
+													)}
+												</div>
+											) : isOrganizer ? (
+												<div className="flex shrink-0 items-center gap-2">
+													{(() => {
+														const memberName =
+															member.firstName && member.lastName
+																? `${member.firstName} ${member.lastName}`
+																: member.username;
+														return (
+															<>
+																<Button
+																	type="button"
+																	variant="outline"
+																	size="sm"
+																	onClick={() =>
+																		void handleChangeMemberRole(
+																			member.userId,
+																			member.isOrganisator
+																				? "Member"
+																				: "Organizer",
+																		)
+																	}
+																	disabled={
+																		changingRoleUserId === member.userId ||
+																		(member.isOrganisator &&
+																			organizerCount <= 1)
+																	}
+																	title={
+																		member.isOrganisator && organizerCount <= 1
+																			? t(
+																					"orgSettings.changeRoleLastOrganizerHint",
+																				)
+																			: undefined
+																	}
+																	aria-label={
+																		member.isOrganisator
+																			? t("orgSettings.demoteToMemberNamed", {
+																					name: memberName,
+																				})
+																			: t(
+																					"orgSettings.promoteToOrganizerNamed",
+																					{
+																						name: memberName,
+																					},
+																				)
+																	}
+																>
+																	{member.isOrganisator
+																		? t("orgSettings.demoteToMember")
+																		: t("orgSettings.promoteToOrganizer")}
+																</Button>
+																<Button
+																	type="button"
+																	variant="dangerOutline"
+																	size="sm"
+																	onClick={() =>
+																		setRemoveTarget({
+																			userId: member.userId,
 																			name: memberName,
 																		})
-																	: t("orgSettings.promoteToOrganizerNamed", {
+																	}
+																	aria-label={t(
+																		"orgSettings.removeMemberNamed",
+																		{
 																			name: memberName,
-																		})
-															}
-														>
-															{member.isOrganisator
-																? t("orgSettings.demoteToMember")
-																: t("orgSettings.promoteToOrganizer")}
-														</Button>
-														<Button
-															type="button"
-															variant="dangerOutline"
-															size="sm"
-															onClick={() =>
-																setRemoveTarget({
-																	userId: member.userId,
-																	name: memberName,
-																})
-															}
-															aria-label={t("orgSettings.removeMemberNamed", {
-																name: memberName,
-															})}
-														>
-															{t("orgSettings.removeMember")}
-														</Button>
-													</>
-												);
-											})()}
-										</div>
-									) : null}
-								</li>
-							))}
-						</ul>
+																		},
+																	)}
+																>
+																	{t("orgSettings.removeMember")}
+																</Button>
+															</>
+														);
+													})()}
+												</div>
+											) : null}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
 					</div>
-				)}
+				</div>
 			</div>
 
 			{showLeaveConfirm && (
