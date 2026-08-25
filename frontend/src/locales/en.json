@@ -1197,6 +1197,7 @@
       "lockedBadge": "Mystery Badge",
       "hiddenBadgeTeaser": "A surprise for volunteers who stick around.",
       "badgeProgress": "{{current}} of {{target}}",
+      "pendingUnlock": "Unlocking soon",
       "badgesTitle": "Badges",
       "activityStreak": "Weeks in a row · {{badge}}",
       "activityStreak_one": "Week in a row · {{badge}}",

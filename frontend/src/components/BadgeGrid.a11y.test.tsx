@@ -68,4 +68,23 @@ describe("BadgeGrid a11y", () => {
 		renderWithProviders(<BadgeGrid earned={[]} catalog={catalog} />);
 		await expectNoA11yViolations();
 	});
+
+	it("has no violations when progress reaches the target but the award isn't granted yet (#2229)", async () => {
+		renderWithProviders(
+			<BadgeGrid
+				earned={[]}
+				catalog={[
+					{
+						key: "first-step",
+						type: 0,
+						name: "First Step",
+						description: "Earned on your first confirmed opportunity.",
+						isHidden: false,
+					},
+				]}
+				progress={{ engagements: 1, loginStreak: 0, activityStreak: 0 }}
+			/>,
+		);
+		await expectNoA11yViolations();
+	});
 });
