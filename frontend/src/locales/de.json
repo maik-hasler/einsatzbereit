@@ -32,6 +32,8 @@
       "signOut": "Abmelden",
       "signIn": "Anmelden",
       "register": "Registrieren",
+      "checkingSignIn": "Anmeldestatus wird geprüft…",
+      "sessionExpired": "Sitzung abgelaufen - bitte erneut anmelden",
       "openMenu": "Menü öffnen",
       "menu": "Menü"
     },

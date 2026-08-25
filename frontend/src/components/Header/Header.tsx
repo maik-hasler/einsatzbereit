@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
+import { useAuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
 import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
@@ -25,7 +26,8 @@ export default function Header({
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const location = useLocation();
-	const isLoggedIn = auth.isAuthenticated;
+	const authStatus = useAuthDisplayStatus();
+	const isLoggedIn = authStatus === "signedIn";
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
 		user?.preferred_username ??
@@ -129,7 +131,7 @@ export default function Header({
 						)}
 
 						<DesktopHeader
-							isLoggedIn={isLoggedIn}
+							authStatus={authStatus}
 							isTransparent={isTransparent}
 							menu={menu}
 							displayName={displayName}
@@ -156,7 +158,7 @@ export default function Header({
 				{mobileOpen && (
 					<MobileMenu
 						isTransparent={isTransparent}
-						isLoggedIn={isLoggedIn}
+						authStatus={authStatus}
 						avatarUrl={avatarUrl}
 						initials={initials}
 						displayName={displayName}
