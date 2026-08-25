@@ -102,11 +102,14 @@ export default function NotificationDropdown({
 					}
 					className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-modal"
 				>
-					<div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+					<div
+						data-testid="notification-panel-header"
+						className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-gray-100 px-4 py-3"
+					>
 						<p className="text-sm font-medium text-gray-900">
 							{t("notifications.bellLabel")}
 						</p>
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
 							{notifications.some((n) => !n.isRead) && (
 								<button
 									type="button"

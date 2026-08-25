@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -8,6 +9,7 @@ import { enGB, de } from "date-fns/locale";
 
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
+import { useScrollFade } from "../../../hooks/useScrollFade";
 import Modal from "../../../components/Modal";
 import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
@@ -171,12 +173,13 @@ function CalendarWidget({
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const calendarContainerRef = useRef<HTMLDivElement | null>(null);
+	const [agendaViewEl, setAgendaViewEl] = useState<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
 		if (!container) return;
 
-		function stripMonthTableRoles() {
+		function syncRbcDom() {
 			container
 				?.querySelectorAll(
 					'.rbc-month-view[role], .rbc-month-row[role], .rbc-row-content[role], .rbc-date-cell[role], .rbc-row.rbc-month-header[role], [role="columnheader"]',
@@ -185,13 +188,26 @@ function CalendarWidget({
 					el.removeAttribute("role");
 					el.removeAttribute("aria-sort");
 				});
+
+			const agendaView =
+				container?.querySelector<HTMLDivElement>(".rbc-agenda-view") ?? null;
+			setAgendaViewEl((prev) => (prev === agendaView ? prev : agendaView));
 		}
 
-		stripMonthTableRoles();
-		const observer = new MutationObserver(stripMonthTableRoles);
+		syncRbcDom();
+		const observer = new MutationObserver(syncRbcDom);
 		observer.observe(container, { childList: true, subtree: true });
 		return () => observer.disconnect();
 	}, []);
+
+	const agendaViewRef = useMemo(
+		() => ({ current: agendaViewEl }),
+		[agendaViewEl],
+	);
+	const {
+		canScrollStart: canScrollAgendaLeft,
+		canScrollEnd: canScrollAgendaRight,
+	} = useScrollFade(agendaViewRef, "x");
 
 	const [calView, setCalView] = useState<View>(() => defaultViewForSize(size));
 	const [calDate, setCalDate] = useState(new Date());
@@ -416,6 +432,27 @@ function CalendarWidget({
 					</div>
 				)}
 			</div>
+
+			{agendaViewEl &&
+				createPortal(
+					<>
+						<div
+							aria-hidden="true"
+							data-testid="calendar-agenda-fade-left"
+							className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent transition-opacity duration-200 ${
+								canScrollAgendaLeft ? "opacity-100" : "opacity-0"
+							}`}
+						/>
+						<div
+							aria-hidden="true"
+							data-testid="calendar-agenda-fade-right"
+							className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent transition-opacity duration-200 ${
+								canScrollAgendaRight ? "opacity-100" : "opacity-0"
+							}`}
+						/>
+					</>,
+					agendaViewEl,
+				)}
 
 			{selectedEvent && (
 				<Modal

@@ -84,6 +84,16 @@ public class OrgAppCompactHeaderTests(AspireFixture fixture) : VisualTestBase(fi
 		railBox!.Width.Should().BeLessThanOrEqualTo(375,
 			"the section rail scrolls inside itself instead of widening the page");
 
+		var fadeRight = Page.GetByTestId("org-tabs-fade-right");
+		var fadeRightOpacity = await fadeRight.EvaluateAsync<string>("el => getComputedStyle(el).opacity");
+		fadeRightOpacity.Should().Be("1",
+			"the tab bar overflows at 375px and must hint that more tabs are reachable by scrolling");
+
+		var fadeLeft = Page.GetByTestId("org-tabs-fade-left");
+		var fadeLeftOpacity = await fadeLeft.EvaluateAsync<string>("el => getComputedStyle(el).opacity");
+		fadeLeftOpacity.Should().Be("0",
+			"the rail starts scrolled to its first tab, so there is nothing to scroll back to yet");
+
 		await Page.SetViewportSizeAsync(1280, 720);
 		await DeleteOrganizationAsync(backend, organizationId);
 	}
