@@ -1,6 +1,6 @@
 import type { UseFormRegisterReturn } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
+import CharCount from "../CharCount";
 import { RequiredMark } from "../RequiredMark";
 
 export function Stepper({
@@ -157,14 +157,5 @@ export function FloatingField({
 				)
 			)}
 		</div>
-	);
-}
-
-function CharCount({ current, max }: { current: number; max: number }) {
-	const { t } = useTranslation();
-	return (
-		<p className="mt-1 text-right text-xs text-gray-500">
-			{t("createOpportunity.charCount", { current, max })}
-		</p>
 	);
 }

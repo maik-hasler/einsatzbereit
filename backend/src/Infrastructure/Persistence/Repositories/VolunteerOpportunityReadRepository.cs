@@ -494,16 +494,20 @@ internal sealed class VolunteerOpportunityReadRepository(
 				ts.RecurrenceCount))
 			.ToListAsync(cancellationToken);
 
+		var viewerId = requestingUserId is Guid requestingUserIdValue
+			? UserId.Create(requestingUserIdValue).GetValueOrThrow()
+			: (UserId?)null;
+
 		var currentParticipantCount = await dbContext.EngagementsQuery
 			.CountAsync(e =>
 				e.OpportunityId == opportunityId_ &&
-				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed) &&
+				(viewerId == null || e.VolunteerId != viewerId),
 				cancellationToken);
 
 		CurrentUserEngagementInfo? currentUserEngagement = null;
-		if (requestingUserId is Guid uid)
+		if (viewerId is UserId userId_)
 		{
-			var userId_ = UserId.Create(uid).GetValueOrThrow();
 			var engagement = await dbContext.EngagementsQuery
 				.Where(e =>
 					e.OpportunityId == opportunityId_ &&

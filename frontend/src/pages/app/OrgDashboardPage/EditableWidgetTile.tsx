@@ -145,6 +145,7 @@ export default function EditableWidgetTile({
 							disabled={placingDisabled}
 							className={`absolute top-2 left-1/2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
+							title={moveLabel}
 						>
 							<GripDotsIcon />
 						</button>

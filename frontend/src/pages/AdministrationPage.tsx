@@ -80,6 +80,7 @@ export default function AdministrationPage() {
 			<PageHeaderBand
 				eyebrow={t("administration.title")}
 				title={sectionTitle}
+				compactTitle
 			/>
 
 			<div
@@ -645,7 +646,13 @@ function UsersSection() {
 											)}
 										</p>
 										<p className="truncate text-xs text-gray-500">
-											{row.username} &middot; {row.email}
+											{row.firstName && row.lastName ? (
+												<>
+													{row.username} &middot; {row.email}
+												</>
+											) : (
+												row.email
+											)}
 										</p>
 									</div>
 									<div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">

@@ -5,6 +5,7 @@ import { useAuth } from "react-oidc-context";
 import type { PublicOrganizationSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { avatarColorClasses } from "../lib/avatarColor";
@@ -59,6 +60,7 @@ export default function OrganizationsPage() {
 	);
 
 	usePageTitle(t("organizationsPage.title"));
+	usePageDescription(t("organizationsPage.lead"));
 
 	function commitSearch(value: string) {
 		setSearchParams(

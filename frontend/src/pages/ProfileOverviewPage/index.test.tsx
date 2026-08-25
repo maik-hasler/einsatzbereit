@@ -119,7 +119,7 @@ describe("ProfileOverviewPage streak stat tiles (German)", () => {
 
 		expect(streakTile).toHaveTextContent("Wochenheld");
 		expect(streakTile).not.toHaveTextContent("Anmeldeserie");
-		expect(loginTile).toHaveTextContent("Tage in Folge angemeldet");
+		expect(loginTile).toHaveTextContent("Tage in Folge");
 		expect(loginTile).toHaveTextContent("Anmeldeserie");
 		expect(loginTile).not.toHaveTextContent("Wochenheld");
 	});
@@ -128,7 +128,7 @@ describe("ProfileOverviewPage streak stat tiles (German)", () => {
 		renderWithStreaks({ loginStreak: 1, activityStreak: 0 });
 
 		const loginTile = await screen.findByTestId("profile-stat-login-streak");
-		expect(loginTile).toHaveTextContent("Tag in Folge angemeldet");
+		expect(loginTile).toHaveTextContent("Tag in Folge");
 		expect(loginTile).not.toHaveTextContent("Login-Serie");
 	});
 });
