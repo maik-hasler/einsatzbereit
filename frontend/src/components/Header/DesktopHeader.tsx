@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
-import OrgAvatar from "./OrgAvatar";
+import OrgAvatar from "../OrgAvatar";
 import Button from "../Button";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";

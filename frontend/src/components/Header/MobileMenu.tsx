@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import Button from "../Button";
 import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
-import OrgAvatar from "./OrgAvatar";
+import OrgAvatar from "../OrgAvatar";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import { buildPrimaryNav } from "../../lib/headerNav";
@@ -87,15 +87,14 @@ export default function MobileMenu({
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"
-				className="fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 lg:hidden"
+				className="animate-fade-in fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 lg:hidden"
 			/>
 			<div
 				ref={panelRef}
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-
-				className={`absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
+				className={`animate-fade-up absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{isTransparent && (
 					<div
@@ -232,7 +231,7 @@ export default function MobileMenu({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
+								className={`block w-full rounded-lg border-t px-3 py-2 text-left text-sm font-medium transition-colors ${isTransparent ? "border-white/20" : "border-gray-100"} ${menuItemVariant}`}
 							>
 								{t("nav.signOut")}
 							</button>

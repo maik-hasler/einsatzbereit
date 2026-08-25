@@ -96,7 +96,7 @@ export default function Header({
 	return (
 		<>
 			<header
-				className={`sticky top-0 z-40 transition-all duration-300 ${
+				className={`sticky top-0 z-40 motion-safe:transition-[background-color,box-shadow] motion-safe:duration-300 ${
 					isTransparent && mobileOpen
 						? "border-b-0 bg-brand-800"
 						: isTransparent
@@ -117,7 +117,7 @@ export default function Header({
 							<img
 								src="/logo.svg"
 								alt={t("brand.name")}
-								className={`h-8 w-auto max-w-none shrink-0 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+								className={`h-8 w-auto max-w-none shrink-0 motion-safe:transition-[filter] motion-safe:duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
 							/>
 						</Link>
 

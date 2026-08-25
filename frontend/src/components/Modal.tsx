@@ -89,8 +89,7 @@ export default function Modal({
 		<div className="fixed inset-0 z-2000 flex max-h-dvh items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4">
 			<button
 				type="button"
-
-				className={`fixed inset-0 ${backdropClassName}`}
+				className={`animate-fade-in fixed inset-0 z-0 ${backdropClassName}`}
 				onClick={closeDisabled ? undefined : onClose}
 				tabIndex={-1}
 				aria-hidden="true"
@@ -100,7 +99,7 @@ export default function Modal({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={labelledBy}
-				className={`relative z-10 w-full ${maxWidth} ${className}`}
+				className={`animate-fade-up relative z-10 w-full ${maxWidth} ${className}`}
 			>
 				{children}
 			</div>

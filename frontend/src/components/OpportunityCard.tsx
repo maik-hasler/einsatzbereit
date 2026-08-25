@@ -10,7 +10,7 @@ import {
 	pickLocalizedText,
 } from "../lib/format";
 import Chip, { type ChipTone } from "./Chip";
-import { getInitials } from "../lib/initials";
+import OrgAvatar from "./OrgAvatar";
 import {
 	FEW_SPOTS_THRESHOLD,
 	getOpportunityCapacity,
@@ -254,23 +254,12 @@ export default function OpportunityCard({
 								data-testid="opportunity-org-link"
 								className="group/org relative z-20 inline-flex items-center gap-2"
 							>
-								{item.organizationLogoUrl ? (
-									<img
-										src={item.organizationLogoUrl}
-										alt=""
-										width={28}
-										height={28}
-										loading="lazy"
-										className="h-7 w-7 shrink-0 rounded-full object-cover"
-									/>
-								) : (
-									<span
-										aria-hidden="true"
-										className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
-									>
-										{getInitials(item.organizationName ?? "")}
-									</span>
-								)}
+								<OrgAvatar
+									name={item.organizationName ?? ""}
+									logoUrl={item.organizationLogoUrl}
+									size="lg"
+									lazy
+								/>
 								<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 									{item.organizationName}
 								</span>
