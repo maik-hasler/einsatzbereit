@@ -170,6 +170,7 @@
       "nearMe": "In meiner Nähe",
       "nearMeDenied": "Standortzugriff verweigert - bitte manuell suchen.",
       "citySearching": "Wird gesucht…",
+      "cityKeepTyping": "Weitertippen…",
       "cityNoMatch": "Keine passende Stadt gefunden.",
       "cityError": "Suche nach dieser Stadt fehlgeschlagen. Bitte erneut versuchen.",
       "cityExactNameMatch": "Passt genau",

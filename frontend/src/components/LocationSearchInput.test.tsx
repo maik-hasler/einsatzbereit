@@ -33,6 +33,30 @@ function Harness({ onSelect }: { onSelect: (s: unknown) => void }) {
 	);
 }
 
+describe("LocationSearchInput empty-result messaging", () => {
+	it("hints to keep typing rather than asserting no match for a short, still-incomplete query", async () => {
+		api.searchCities.mockResolvedValue([]);
+
+		renderWithProviders(<Harness onSelect={() => {}} />);
+
+		await userEvent.type(screen.getByLabelText("City"), "Le");
+
+		expect(await screen.findByRole("status")).toHaveTextContent("Keep typing");
+	});
+
+	it("asserts no match once the query is long enough to be confident", async () => {
+		api.searchCities.mockResolvedValue([]);
+
+		renderWithProviders(<Harness onSelect={() => {}} />);
+
+		await userEvent.type(screen.getByLabelText("City"), "Xyz");
+
+		expect(await screen.findByRole("status")).toHaveTextContent(
+			"No matching city found.",
+		);
+	});
+});
+
 describe("LocationSearchInput exact-name match", () => {
 	it("captions the suggestion that is exactly what was typed", async () => {
 		api.searchCities.mockResolvedValue([place("Kiel"), place("Kiel-Holtenau")]);
