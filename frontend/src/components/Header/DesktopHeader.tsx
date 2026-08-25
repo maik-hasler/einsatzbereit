@@ -17,7 +17,6 @@ export default function DesktopHeader({
 	isAdmin,
 	activeOrg,
 	onSignOut,
-	onNotificationNavigate,
 	onSignIn,
 	onRegister,
 }: {
@@ -30,7 +29,6 @@ export default function DesktopHeader({
 
 	activeOrg: OrganizationSummaryDto | null | undefined;
 	onSignOut: () => void;
-	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 	onSignIn: () => void;
 	onRegister: () => void;
 }) {
@@ -114,7 +112,6 @@ export default function DesktopHeader({
 					initials={initials}
 					isAdmin={isAdmin}
 					onSignOut={onSignOut}
-					onNotificationNavigate={onNotificationNavigate}
 				/>
 			) : (
 				<div className="flex items-center gap-3">

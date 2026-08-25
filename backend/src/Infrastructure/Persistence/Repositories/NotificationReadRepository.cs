@@ -116,21 +116,24 @@ internal sealed class NotificationReadRepository(
 		var allOpportunityIds = opportunityIdsFromEngagements.Union(directOpportunityIds).ToHashSet();
 
 		Dictionary<Guid, string> opportunityTitles = [];
+		Dictionary<Guid, string?> opportunityTitlesEn = [];
 		Dictionary<Guid, Guid> opportunityOrganizations = [];
 		if (allOpportunityIds.Count > 0)
 		{
 			var opportunityIdVOs = allOpportunityIds.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow()).ToList();
 			var opportunityRows = await dbContext.VolunteerOpportunitiesQuery
 				.Where(o => opportunityIdVOs.Contains(o.Id))
-				.Select(o => new { o.Id, o.TitleDe, o.OrganizationId })
+				.Select(o => new { o.Id, o.TitleDe, o.TitleEn, o.OrganizationId })
 				.ToListAsync(cancellationToken);
 			opportunityTitles = opportunityRows.ToDictionary(x => x.Id.Value, x => x.TitleDe);
+			opportunityTitlesEn = opportunityRows.ToDictionary(x => x.Id.Value, x => x.TitleEn);
 			opportunityOrganizations = opportunityRows.ToDictionary(x => x.Id.Value, x => x.OrganizationId.Value);
 		}
 
 		return notifications.Select(n =>
 		{
 			string? relatedTitle = null;
+			string? relatedTitleEn = null;
 			string? actionUrl = null;
 
 			if (EngagementKinds.Contains(n.Kind) &&
@@ -138,6 +141,7 @@ internal sealed class NotificationReadRepository(
 			{
 				opportunityTitles.TryGetValue(opportunityId, out relatedTitle);
 				relatedTitle ??= n.TitleSnapshot;
+				opportunityTitlesEn.TryGetValue(opportunityId, out relatedTitleEn);
 
 				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn or NotificationKind.FeedbackSubmitted
 					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
@@ -148,6 +152,7 @@ internal sealed class NotificationReadRepository(
 			else if (InvitationKinds.Contains(n.Kind))
 			{
 				invitationOrganizationNames.TryGetValue(n.RelatedEntityId, out relatedTitle);
+				relatedTitleEn = relatedTitle;
 				actionUrl = n.Kind == NotificationKind.InvitationReceived
 
 					? "/my-signups"
@@ -159,6 +164,7 @@ internal sealed class NotificationReadRepository(
 			{
 				opportunityTitles.TryGetValue(n.RelatedEntityId, out relatedTitle);
 				relatedTitle ??= n.TitleSnapshot;
+				opportunityTitlesEn.TryGetValue(n.RelatedEntityId, out relatedTitleEn);
 
 				actionUrl = n.Kind == NotificationKind.OpportunityUpdated
 					? $"/volunteer-opportunities/{n.RelatedEntityId}"
@@ -171,7 +177,8 @@ internal sealed class NotificationReadRepository(
 				relatedTitle,
 				actionUrl,
 				n.IsRead,
-				n.CreatedOn);
+				n.CreatedOn,
+				relatedTitleEn);
 		}).ToList();
 	}
 

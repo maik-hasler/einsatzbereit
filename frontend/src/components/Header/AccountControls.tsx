@@ -17,7 +17,6 @@ export default function AccountControls({
 	initials,
 	isAdmin = false,
 	onSignOut,
-	onNotificationNavigate,
 }: {
 	transparent?: boolean;
 	menu: AccountMenuState;
@@ -25,7 +24,6 @@ export default function AccountControls({
 	initials: string;
 	isAdmin?: boolean;
 	onSignOut: () => void;
-	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 }) {
 	const { t } = useTranslation();
 	const { avatarUrl, notifRef, dropdownOpen, setDropdownOpen, dropdownRef } =
@@ -37,7 +35,6 @@ export default function AccountControls({
 				menu={menu}
 				transparent={transparent}
 				containerRef={notifRef}
-				onNavigate={onNotificationNavigate}
 			/>
 
 			<div className="relative" ref={dropdownRef}>

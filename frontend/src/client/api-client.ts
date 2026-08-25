@@ -6725,6 +6725,7 @@ export interface NotificationSummary {
     actionUrl: string | undefined;
     isRead: boolean;
     createdOn: Date;
+    relatedTitleEn?: string | undefined;
 
     [key: string]: any;
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, Link } from "react-router";
+import { useLocation, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
 import { useMyOrganizations } from "../../hooks/useMyOrganizations";
@@ -24,7 +24,6 @@ export default function Header({
 } = {}) {
 	const auth = useAuth();
 	const { t } = useTranslation();
-	const navigate = useNavigate();
 	const location = useLocation();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -68,10 +67,6 @@ export default function Header({
 	}, []);
 
 	const isTransparent = overlaysBand && !scrolled;
-
-	function handleNotificationNavigate(actionUrl: string | null | undefined) {
-		navigate(actionUrl ?? "/my-signups");
-	}
 
 	function handleSignIn() {
 		auth.signinRedirect({
@@ -142,7 +137,6 @@ export default function Header({
 							isAdmin={isAdmin}
 							activeOrg={navOrg}
 							onSignOut={handleSignOut}
-							onNotificationNavigate={handleNotificationNavigate}
 							onSignIn={handleSignIn}
 							onRegister={handleRegister}
 						/>
@@ -155,7 +149,6 @@ export default function Header({
 							menu={menu}
 							notifContainerRef={mobileNotifRef}
 							menuButtonRef={mobileMenuButtonRef}
-							onNotificationNavigate={handleNotificationNavigate}
 						/>
 					</div>
 				</div>
