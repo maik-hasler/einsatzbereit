@@ -8,7 +8,7 @@ import type {
 import { orgTabPath } from "../../lib/orgTabs";
 import { splitForMiddleTruncation } from "../../lib/middleTruncateSplit";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
-import OrgAvatar from "./OrgAvatar";
+import OrgAvatar from "../OrgAvatar";
 import ModalLoadingFallback from "../ModalLoadingFallback";
 import Skeleton from "../Skeleton";
 import { ChevronDownIcon, PlusIcon } from "../icons";

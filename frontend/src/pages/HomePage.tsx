@@ -209,7 +209,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-1)" }}
-						className="pointer-events-none absolute -top-2 -left-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+						className="pointer-events-none absolute -top-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
 					>
 						<img
 							src="/images/hero/volunteer-1.jpg"
@@ -225,7 +225,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-3)" }}
-						className="pointer-events-none absolute -bottom-2 -left-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:bottom-6 lg:left-28 lg:h-36 lg:w-36"
+						className="pointer-events-none absolute -bottom-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:bottom-6 lg:left-28 lg:h-36 lg:w-36"
 					>
 						<img
 							src="/images/hero/volunteer-3.jpg"
@@ -241,7 +241,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-5)" }}
-						className="pointer-events-none absolute -right-2 -bottom-2 hidden h-20 w-20 shadow-raised sm:block sm:h-24 sm:w-24 lg:-right-8 lg:bottom-2 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+						className="pointer-events-none absolute -right-2 -bottom-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-right-8 lg:bottom-2 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
 					>
 						<img
 							src="/images/hero/volunteer-2.jpg"
@@ -265,7 +265,7 @@ export default function HomePage() {
 							onSubmit={handleHeroSearch}
 							className="animate-fade-up-d3 mx-auto mt-8 max-w-2xl sm:mt-10"
 						>
-							<div className="flex flex-col gap-3 rounded-full bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch">
+							<div className="flex flex-col gap-3 rounded-3xl bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch sm:rounded-full">
 								<div className="flex-1 rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
 									<LocationSearchInput
 										id="hero-location-search"

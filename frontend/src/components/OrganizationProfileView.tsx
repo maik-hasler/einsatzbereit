@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { EnvelopeIcon, GlobeIcon, MapPinIcon, PhoneIcon } from "./icons";
 import { cardClass } from "../lib/surfaceClasses";
-import { getInitials } from "../lib/initials";
 import { pageTitleClass } from "../lib/headingClasses";
+import OrgAvatar from "./OrgAvatar";
 
 interface OrganizationAddress {
 	street: string;
@@ -108,19 +108,7 @@ export default function OrganizationProfileView({
 			{showHeader && (
 				<div className="mb-6 flex items-start justify-between gap-4">
 					<div className="flex items-center gap-4">
-						{logoUrl ? (
-							<img
-								src={logoUrl}
-								alt=""
-								width={64}
-								height={64}
-								className="h-16 w-16 rounded-full object-cover"
-							/>
-						) : (
-							<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-								{getInitials(name)}
-							</span>
-						)}
+						<OrgAvatar name={name} logoUrl={logoUrl} size="3xl" />
 						<div>
 							<NameTag
 								className={

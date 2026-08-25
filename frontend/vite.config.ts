@@ -38,7 +38,7 @@ const deManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#2d8a5e",
+	theme_color: "#226947",
 	icons: manifestIcons,
 
 	screenshots: [
@@ -119,7 +119,7 @@ const enManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#2d8a5e",
+	theme_color: "#226947",
 	icons: manifestIcons,
 	screenshots: [
 		{
