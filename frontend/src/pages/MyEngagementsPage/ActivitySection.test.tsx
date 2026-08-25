@@ -249,6 +249,33 @@ describe("my-signups withdraw success (#2148 core journey)", () => {
 	});
 });
 
+describe("my-signups engagement grid columns", () => {
+	it("caps at two columns rather than leaving a dangling cell for one card", async () => {
+		mockRows([engagement()]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		const list = card.closest("ul");
+		expect(list?.className).toContain("@sm:grid-cols-2");
+		expect(list?.className).not.toContain("@4xl:grid-cols-3");
+	});
+
+	it("allows three columns once there are enough cards to fill a row", async () => {
+		mockRows([
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000001" }),
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000002" }),
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000003" }),
+		]);
+
+		renderSection();
+
+		const cards = await screen.findAllByTestId("engagement-card");
+		expect(cards).toHaveLength(3);
+		expect(cards[0].closest("ul")?.className).toContain("@4xl:grid-cols-3");
+	});
+});
+
 describe("my-signups check-in affordance", () => {
 	const confirmed = (checkInMethod: string) =>
 		engagement({ status: "Confirmed", checkInMethod });
