@@ -20,6 +20,7 @@ export default function OpportunityResultsList({
 	loadMoreError,
 	loadMoreErrorIsOffline,
 	onRetryLoadMore,
+	keyword,
 }: {
 	loading: boolean;
 	error: string | null;
@@ -33,6 +34,7 @@ export default function OpportunityResultsList({
 	loadMoreError: string | null;
 	loadMoreErrorIsOffline: boolean;
 	onRetryLoadMore: () => void;
+	keyword?: string;
 }) {
 	const { t } = useTranslation();
 
@@ -114,7 +116,12 @@ export default function OpportunityResultsList({
 					) : (
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
-								<OpportunityCard key={item.id} item={item} headingLevel={3} />
+								<OpportunityCard
+									key={item.id}
+									item={item}
+									headingLevel={3}
+									keyword={keyword}
+								/>
 							))}
 						</ul>
 					)}

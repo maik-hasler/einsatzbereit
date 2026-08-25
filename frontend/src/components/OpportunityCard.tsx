@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
+	findCrossLocaleKeywordMatch,
 	formatDate,
 	formatDateTime,
 	formatOccurrence,
@@ -124,10 +125,13 @@ function dateLine(
 export default function OpportunityCard({
 	item,
 	headingLevel = 2,
+	keyword,
 }: {
 	item: OpportunityCardItem;
 
 	headingLevel?: 2 | 3;
+	/** The active search keyword, if this card is shown as a search result (#2242). */
+	keyword?: string;
 }) {
 	const { t, i18n } = useTranslation();
 	const Heading = headingLevel === 3 ? "h3" : "h2";
@@ -145,6 +149,19 @@ export default function OpportunityCard({
 		title.lang !== i18n.language ||
 		(description !== undefined && description.lang !== i18n.language);
 	const hasOrganization = !!item.organizationId && !!item.organizationName;
+
+	const crossLocaleMatch = keyword
+		? findCrossLocaleKeywordMatch(
+				item.titleDe,
+				item.titleEn,
+				item.descriptionDe,
+				item.descriptionEn,
+				item.organizationName ?? "",
+				keyword,
+				title,
+				description,
+			)
+		: undefined;
 
 	const showSignUpMechanismChip = item.participationType === "ScheduledSlots";
 
@@ -203,6 +220,19 @@ export default function OpportunityCard({
 					{isGermanFallback && (
 						<p className="mt-0.5 text-xs text-gray-500">
 							{t("opportunities.germanOnlyNotice")}
+						</p>
+					)}
+					{crossLocaleMatch && (
+						<p
+							data-testid="opportunity-cross-locale-match"
+							className="mt-0.5 text-xs text-gray-500"
+						>
+							{t("opportunities.crossLocaleMatchNotice", {
+								language: t(`language.${crossLocaleMatch.lang}`),
+							})}{" "}
+							<span lang={crossLocaleMatch.lang}>
+								&quot;{crossLocaleMatch.text}&quot;
+							</span>
 						</p>
 					)}
 

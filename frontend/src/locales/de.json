@@ -196,6 +196,7 @@
       "expressInterest": "Interesse bekunden",
       "notFound": "Nicht gefunden.",
       "germanOnlyNotice": "Nur auf Deutsch verfügbar",
+      "crossLocaleMatchNotice": "Trifft Ihre Suche auf {{language}} zu:",
       "flexibleDate": "Flexibler Termin",
       "applyBy": "Interesse bekunden bis {{date}}",
       "startsOn": "Beginnt am {{date}}",

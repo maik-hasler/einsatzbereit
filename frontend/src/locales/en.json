@@ -196,6 +196,7 @@
       "expressInterest": "Express interest",
       "notFound": "Not found.",
       "germanOnlyNotice": "Only available in German",
+      "crossLocaleMatchNotice": "Matches your search in {{language}}:",
       "flexibleDate": "Flexible date",
       "applyBy": "Express interest by {{date}}",
       "startsOn": "Starts {{date}}",

@@ -86,6 +86,45 @@ export function pickLocalizedText(
 	return textDe != null ? { text: textDe, lang: "de" } : undefined;
 }
 
+// Mirrors the backend's keyword search (title/description in both locales,
+// plus the organization name - see ApplyPubliclyListedFilters), so it can
+// tell whether a match the user can already see on the card explains a hit,
+// or whether the hit only exists in a locale the card isn't displaying (#2242).
+export function findCrossLocaleKeywordMatch(
+	titleDe: string,
+	titleEn: string | null | undefined,
+	descriptionDe: string | null | undefined,
+	descriptionEn: string | null | undefined,
+	organizationName: string,
+	keyword: string,
+	displayedTitle: LocalizedText,
+	displayedDescription: LocalizedText | undefined,
+): LocalizedText | undefined {
+	const needle = keyword.trim().toLowerCase();
+	if (!needle) return undefined;
+
+	const visibleTexts = [
+		displayedTitle.text,
+		displayedDescription?.text,
+		organizationName,
+	];
+	if (visibleTexts.some((text) => text?.toLowerCase().includes(needle))) {
+		return undefined;
+	}
+
+	const hiddenTexts: (LocalizedText | undefined)[] = [
+		{ text: titleDe, lang: "de" },
+		titleEn ? { text: titleEn, lang: "en" } : undefined,
+		descriptionDe ? { text: descriptionDe, lang: "de" } : undefined,
+		descriptionEn ? { text: descriptionEn, lang: "en" } : undefined,
+	];
+
+	return hiddenTexts.find(
+		(candidate): candidate is LocalizedText =>
+			candidate !== undefined && candidate.text.toLowerCase().includes(needle),
+	);
+}
+
 export function resolveDateLocale(lng: string): string {
 	return lng === "de" ? "de-DE" : "en-GB";
 }
