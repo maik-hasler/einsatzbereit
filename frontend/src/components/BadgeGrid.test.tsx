@@ -60,9 +60,7 @@ describe("BadgeGrid tooltip", () => {
 		);
 
 		const card = screen.getByRole("group", { name: "Trailblazer" });
-		expect(card).toHaveTextContent(
-			"Earned after your very first opportunity.",
-		);
+		expect(card).toHaveTextContent("Earned after your very first opportunity.");
 	});
 
 	it("dismisses the tooltip with Escape without moving focus away", () => {
