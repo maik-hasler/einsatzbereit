@@ -44,11 +44,13 @@ export default function DesktopHeader({
 			<ul className="mr-2 flex items-center gap-2">
 				{buildPrimaryNav(activeOrg).map((link) => {
 					const base =
-						"rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
+						"rounded-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";
-					const activeClass = isTransparent ? "text-white" : "text-brand-800";
+					const activeClass = isTransparent
+						? "border-white font-semibold text-white"
+						: "border-brand-700 font-semibold text-brand-800";
 
 					if (link.kind === "organization") {
 						return (

@@ -308,6 +308,26 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#main-content")).ToBeFocusedAsync();
 	}
 
+	// Edit mode is reached by one click ("Bearbeiten"/"Edit") and is otherwise
+	// unscanned by the resting-state check above - #2232 found three contrast
+	// failures here (widget content washed out by the tile-dimming treatment)
+	// that only show up once editing is active.
+	[Test]
+	public async Task OrgDashboardPage_AsOlaf_EditMode_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
