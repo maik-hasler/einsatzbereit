@@ -75,6 +75,18 @@ describe("OpportunityCard a11y", () => {
 		await expectNoA11yViolations();
 	});
 
+	it("has no violations for an interest-based opportunity, whose capacity chip is omitted (#2228)", async () => {
+		renderCard({
+			...base,
+			participationType: "IndividualContact",
+			nextTimeSlotStart: undefined,
+			validUntil: new Date(Date.UTC(2027, 0, 31)),
+			totalMaxParticipants: 0,
+			currentParticipantCount: 0,
+		});
+		await expectNoA11yViolations();
+	});
+
 	it("has no violations at heading level 3, under a section heading", async () => {
 		renderWithProviders(
 			<section aria-labelledby="latest">

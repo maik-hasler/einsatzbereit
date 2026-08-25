@@ -52,21 +52,24 @@ export interface OpportunityCardItem {
 	bannerImageUrl?: string;
 }
 
+/**
+ * Reports capacity only - how many spots exist and how many are taken.
+ * Returns undefined for "interest" opportunities, which have no capacity to
+ * count; their participation type is already stated by the always-shown
+ * sign-up mechanism chip below, so this position stays free of a category
+ * label standing in for a count (#2228).
+ */
 export function capacityChip(
 	capacity: OpportunityCapacity,
 	t: TFunction,
-): { tone: ChipTone; label: string } {
+): { tone: ChipTone; label: string } | undefined {
 	switch (capacity.kind) {
 		case "unlimited":
 			return { tone: "brand", label: t("opportunities.unlimitedSpots") };
 		case "notApplicable":
-			return {
-				tone: "neutral",
-				label:
-					capacity.reason === "interest"
-						? t("opportunities.byInterest")
-						: t("opportunities.noSpotsYet"),
-			};
+			return capacity.reason === "interest"
+				? undefined
+				: { tone: "neutral", label: t("opportunities.noSpotsYet") };
 		case "capped":
 			if (capacity.isFull) {
 				return { tone: "danger", label: t("opportunities.full") };
@@ -163,7 +166,11 @@ export default function OpportunityCard({
 			)
 		: undefined;
 
-	const showSignUpMechanismChip = item.participationType === "ScheduledSlots";
+	/** Always shown - the one place a card states its participation type (#2228). */
+	const signUpMechanismLabel = formatParticipationType(
+		item.participationType,
+		t,
+	);
 
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
@@ -199,16 +206,14 @@ export default function OpportunityCard({
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>
 
-						{showSignUpMechanismChip && (
-							<Chip
-								data-testid="opportunity-signup-mechanism"
-								tone="neutral"
-								size="sm"
-								className="ml-auto shrink-0"
-							>
-								{formatParticipationType(item.participationType, t)}
-							</Chip>
-						)}
+						<Chip
+							data-testid="opportunity-signup-mechanism"
+							tone="neutral"
+							size="sm"
+							className="ml-auto shrink-0"
+						>
+							{signUpMechanismLabel}
+						</Chip>
 					</div>
 
 					<Heading
@@ -245,14 +250,16 @@ export default function OpportunityCard({
 							<DateIcon className="h-4 w-4 shrink-0" />
 							<span>{date.label}</span>
 						</p>
-						<Chip
-							data-testid="opportunity-capacity"
-							tone={capacity.tone}
-							size="sm"
-							className="shrink-0"
-						>
-							{capacity.label}
-						</Chip>
+						{capacity && (
+							<Chip
+								data-testid="opportunity-capacity"
+								tone={capacity.tone}
+								size="sm"
+								className="shrink-0"
+							>
+								{capacity.label}
+							</Chip>
+						)}
 					</div>
 					{description && (
 						<p
