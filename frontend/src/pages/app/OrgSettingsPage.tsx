@@ -235,10 +235,9 @@ export default function OrgSettingsPage() {
 
 	return (
 		<div>
-			<div data-content-wrapper className="max-w-2xl">
+			<div>
 				{!editing && (
 					<OrganizationProfileView
-						layout="stacked"
 						name={org.name}
 						logoUrl={logoUrl}
 						description={org.description}
@@ -286,7 +285,7 @@ export default function OrgSettingsPage() {
 				)}
 
 				{editing && (
-					<>
+					<div data-content-wrapper className="max-w-2xl">
 						{settingsError && (
 							<ErrorBanner
 								ref={settingsErrorRef}
@@ -571,7 +570,7 @@ export default function OrgSettingsPage() {
 								</Button>
 							</div>
 						</form>
-					</>
+					</div>
 				)}
 			</div>
 

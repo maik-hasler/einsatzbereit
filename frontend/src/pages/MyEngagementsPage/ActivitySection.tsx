@@ -301,7 +301,11 @@ export default function ActivitySection() {
 					<SectionHeading>
 						{t("profileOverview.invitationsHeading")}
 					</SectionHeading>
-					<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
+					<ul
+						className={`grid grid-cols-1 gap-4 @sm:grid-cols-2 ${
+							invitations.length >= 3 ? "@4xl:grid-cols-3" : ""
+						}`}
+					>
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
@@ -429,7 +433,11 @@ export default function ActivitySection() {
 				))}
 
 			{!engagementsLoading && !engagementsError && engagements.length > 0 && (
-				<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
+				<ul
+					className={`grid grid-cols-1 gap-4 @sm:grid-cols-2 ${
+						engagements.length >= 3 ? "@4xl:grid-cols-3" : ""
+					}`}
+				>
 					{engagements.map((e) => (
 						<li
 							key={e.id}
