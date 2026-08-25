@@ -53,7 +53,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GotoAsync(detailUrl);
 
 		var signUpStatus = Page.GetByTestId("application-status")
-			.GetByText("Your sign-up", new() { Exact = true });
+			.GetByText("Your expression of interest", new() { Exact = true });
 
 		await Expect(signUpStatus).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
