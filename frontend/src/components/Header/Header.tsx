@@ -45,6 +45,24 @@ export default function Header({
 		error: orgsError,
 	} = useMyOrganizations();
 
+	// A member of more than one organization needs a way to switch between
+	// them from outside the org app too (#2226), not just once they're
+	// already inside /app/:orgId/*. Below lg:, that's the only org control
+	// in the collapsed header at all (the rest lives a tap deep in the
+	// hamburger menu), so the fallback switcher pill renders there; at lg:+
+	// the existing primary-nav "go to my org" entry already fills that role
+	// and there isn't room for both without overflowing the row (see the
+	// lg:hidden below), so the fallback stays mobile/tablet-only.
+	const effectiveOrgSwitcher =
+		orgSwitcher ??
+		(orgs.length > 1 && activeOrg
+			? { currentOrgId: activeOrg.id, currentTab: "dashboard" }
+			: undefined);
+	// Only the org app's own route context makes the primary-nav "go to my
+	// org" entry redundant (its own in-app navigation already covers that).
+	// Outside the app, keep it even once the switcher fallback above also
+	// renders - for a multi-org user it's still the one place the mobile
+	// menu offers direct links into the org's sub-tabs.
 	const navOrg = orgSwitcher ? null : activeOrg;
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -105,11 +123,11 @@ export default function Header({
 			>
 				<div className="mx-auto max-w-page px-4 sm:px-6 lg:px-8">
 					<div
-						className={`flex h-16 items-center justify-between ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
+						className={`flex h-16 items-center justify-between ${effectiveOrgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
 						<Link
 							to="/"
-							className={`flex shrink-0 items-center ${orgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}
+							className={`flex shrink-0 items-center ${effectiveOrgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}
 						>
 							<img
 								src="/logo.svg"
@@ -118,14 +136,17 @@ export default function Header({
 							/>
 						</Link>
 
-						{orgSwitcher && (
-							<div className="min-w-0 flex-1 sm:flex-none">
+						{effectiveOrgSwitcher && (
+							<div
+								className={`min-w-0 flex-1 sm:flex-none ${orgSwitcher ? "" : "lg:hidden"}`}
+							>
 								<OrganizationSwitcher
-									currentOrgId={orgSwitcher.currentOrgId}
-									currentTab={orgSwitcher.currentTab}
+									currentOrgId={effectiveOrgSwitcher.currentOrgId}
+									currentTab={effectiveOrgSwitcher.currentTab}
 									orgs={orgs}
 									loading={orgsLoading}
 									error={orgsError}
+									transparent={isTransparent}
 								/>
 							</div>
 						)}

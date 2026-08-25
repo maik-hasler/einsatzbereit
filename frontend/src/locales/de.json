@@ -405,6 +405,7 @@
     "organization": {
       "create": "Organisation erstellen",
       "switchLabel": "Organisation wechseln",
+      "switchLabelCurrent": "Organisation wechseln, aktuell {{name}}",
       "selectPlaceholder": "Organisation wählen",
       "loadError": "Deine Organisationen konnten nicht geladen werden.",
       "nameLabel": "Name",
