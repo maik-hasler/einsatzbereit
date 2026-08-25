@@ -2010,9 +2010,13 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await volunteerClient.WithdrawEngagementAsync(original.Id, cancellationToken);
 
+		// The opportunity's application deadline (30 days out) hasn't
+		// passed, so the withdrawn engagement stays "upcoming" (#2240) -
+		// only its status changes, not its bucket.
 		var whileWithdrawn = await volunteerClient.GetMyEngagementsAsync(
 			1, 10, upcoming: true, cancellationToken);
-		whileWithdrawn.Items.Should().BeEmpty();
+		whileWithdrawn.Items.Should().ContainSingle()
+			.Which.Status.Should().Be("Withdrawn");
 
 		var reactivated = await volunteerClient.CreateEngagementAsync(
 			opportunity.Id,

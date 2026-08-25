@@ -678,6 +678,8 @@
       "withdraw": "Zurückziehen",
       "withdrawError": "Anmeldung konnte nicht zurückgezogen werden. Bitte versuche es erneut.",
       "withdrawSuccess": "Anmeldung zurückgezogen.",
+      "reactivate": "Erneut anmelden",
+      "reactivationLimitReached": "Du hast das Limit fürs Zurückziehen und erneute Anmelden für diesen Einsatz erreicht.",
       "addToCalendar": "Zum Kalender hinzufügen",
       "addToCalendarGoogle": "Google Kalender",
       "addToCalendarOutlook": "Outlook.com",

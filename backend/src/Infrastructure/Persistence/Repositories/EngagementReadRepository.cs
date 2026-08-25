@@ -244,31 +244,38 @@ internal sealed class EngagementReadRepository(
 			where e.VolunteerId == volunteerId
 			join ts in dbContext.TimeSlotsQuery on e.TimeSlotId equals ts.Id into tsGroup
 			from ts in tsGroup.DefaultIfEmpty()
-			select new { Engagement = e, TimeSlotStart = (DateTimeOffset?)ts.StartDateTime, TimeSlotEnd = (DateTimeOffset?)ts.EndDateTime };
+			join o in dbContext.VolunteerOpportunitiesQuery on e.OpportunityId equals o.Id into oGroup
+			from o in oGroup.DefaultIfEmpty()
+			select new
+			{
+				Engagement = e,
+				TimeSlotStart = (DateTimeOffset?)ts.StartDateTime,
+				TimeSlotEnd = (DateTimeOffset?)ts.EndDateTime,
+				OpportunityExists = o != null,
+				OpportunityValidUntil = (DateTimeOffset?)o.ValidUntil,
+			};
 
-		var opportunityExists = dbContext.VolunteerOpportunitiesQuery.Select(o => o.Id);
-
+		// Bucketing depends only on the engagement's own timeframe - never on
+		// EngagementStatus - so a withdrawn or cancelled engagement whose
+		// timeframe is still open stays "upcoming" instead of being dumped
+		// into "past" purely because of its status (#2240). The timeframe is
+		// the time slot's end when there is one; for a slot-less individual
+		// contact engagement, check-in is the completion signal (there is no
+		// later timestamp to anchor to), otherwise the opportunity's
+		// application deadline; with none of those, it never ends on its own.
 		scopedQuery = upcoming
 			? scopedQuery.Where(x =>
-				opportunityExists.Contains(x.Engagement.OpportunityId)
-				&& (x.TimeSlotEnd == null || x.TimeSlotEnd >= now)
-				&& (x.Engagement.Status == EngagementStatus.Pending
-					|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn)
-					|| (x.Engagement.Status == EngagementStatus.Confirmed
-						&& x.Engagement.IsCheckedIn
-						&& x.TimeSlotEnd != null)))
+				x.OpportunityExists
+				&& ((x.TimeSlotEnd != null && x.TimeSlotEnd >= now)
+					|| (x.TimeSlotEnd == null
+						&& !x.Engagement.IsCheckedIn
+						&& (x.OpportunityValidUntil == null || x.OpportunityValidUntil >= now))))
 			: scopedQuery.Where(x =>
-				x.Engagement.Status == EngagementStatus.Cancelled
-				|| x.Engagement.Status == EngagementStatus.Withdrawn
-				|| (x.Engagement.Status == EngagementStatus.Confirmed
-					&& x.Engagement.IsCheckedIn
-					&& (!opportunityExists.Contains(x.Engagement.OpportunityId)
-						|| x.TimeSlotEnd == null
-						|| x.TimeSlotEnd < now))
-				|| ((x.Engagement.Status == EngagementStatus.Pending
-						|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn))
-					&& (!opportunityExists.Contains(x.Engagement.OpportunityId)
-						|| (x.TimeSlotEnd != null && x.TimeSlotEnd < now))));
+				!x.OpportunityExists
+				|| (x.TimeSlotEnd != null && x.TimeSlotEnd < now)
+				|| (x.TimeSlotEnd == null
+					&& (x.Engagement.IsCheckedIn
+						|| (x.OpportunityValidUntil != null && x.OpportunityValidUntil < now))));
 
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 

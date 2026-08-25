@@ -678,6 +678,8 @@
       "withdraw": "Withdraw",
       "withdrawError": "Could not withdraw your sign-up. Please try again.",
       "withdrawSuccess": "Sign-up withdrawn.",
+      "reactivate": "Sign up again",
+      "reactivationLimitReached": "You've reached the limit for withdrawing and re-signing up for this.",
       "addToCalendar": "Add to calendar",
       "addToCalendarGoogle": "Google Calendar",
       "addToCalendarOutlook": "Outlook.com",

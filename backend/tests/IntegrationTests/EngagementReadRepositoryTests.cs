@@ -502,7 +502,49 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetByVolunteerAsync_ShouldSplitPendingAndWithdrawn_AcrossUpcomingAndPast(
+	public async Task GetByVolunteerAsync_ShouldKeepWithdrawnEngagement_InUpcomingBucket_WhenApplicationDeadlineHasNotPassed(
+		CancellationToken cancellationToken)
+	{
+		// This is the exact scenario reported in #2240: withdrawing does not
+		// itself close the opportunity's application window, so the
+		// engagement's own timeframe is still open - it must stay
+		// "upcoming" with a "Withdrawn" status, not be dumped into "past"
+		// purely because of its status.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var organization = DomainOrganization.Create(
+			DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(26)).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var withdrawn = Engagement
+			.CreateIndividualContact(opportunity.Id, volunteerId, "About to withdraw.")
+			.GetValueOrThrow();
+		withdrawn.Withdraw().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(withdrawn, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(
+			volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().ContainSingle()
+			.Which.Id.Should().Be(withdrawn.Id.Value);
+		past.Items.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldMoveWithdrawnEngagement_ToPastBucket_OnceApplicationDeadlineHasPassed(
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
@@ -515,19 +557,14 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
-			status: OpportunityStatus.Draft).GetValueOrThrow();
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(-5)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		var stillPending = Engagement
-			.CreateIndividualContact(opportunity.Id, volunteerId, "Still pending.")
-			.GetValueOrThrow();
 		var withdrawn = Engagement
 			.CreateIndividualContact(opportunity.Id, volunteerId, "About to withdraw.")
 			.GetValueOrThrow();
 		withdrawn.Withdraw().ThrowIfFailure();
-
-		await dbContext.Engagements.AddAsync(stillPending, cancellationToken);
 		await dbContext.Engagements.AddAsync(withdrawn, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -538,8 +575,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		var past = await repository.GetByVolunteerAsync(
 			volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
 
-		upcoming.Items.Should().ContainSingle()
-			.Which.Id.Should().Be(stillPending.Id.Value);
+		upcoming.Items.Should().BeEmpty();
 		past.Items.Should().ContainSingle()
 			.Which.Id.Should().Be(withdrawn.Id.Value);
 	}
