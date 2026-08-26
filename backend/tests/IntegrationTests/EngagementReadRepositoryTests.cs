@@ -6,6 +6,7 @@ using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.VolunteerOpportunities;
+using Microsoft.EntityFrameworkCore;
 using TUnit.Core.Interfaces;
 
 using DomainAddress = Domain.Common.Address;
@@ -554,12 +555,26 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
 
+		// The domain factory requires the deadline to be in the future at
+		// creation time (VolunteerOpportunity.EnsureValidValidUntil), so this
+		// scenario cannot be seeded by constructing an already-past
+		// validUntil - that would fail with "Deadline must be in the
+		// future." instead of exercising the bucketing logic under test.
+		// Seed with a valid future deadline, then move it into the past
+		// directly on the row (bypassing the domain factory) to simulate
+		// time having passed since the opportunity was created.
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id, "Titel", null, "Beschreibung", null, false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
-			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(-5)).GetValueOrThrow();
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(5)).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
+
+		await dbContext.Set<VolunteerOpportunity>()
+			.Where(o => o.Id == opportunity.Id)
+			.ExecuteUpdateAsync(
+				s => s.SetProperty(o => o.ValidUntil, DateTimeOffset.UtcNow.AddDays(-5)),
+				cancellationToken);
 
 		var withdrawn = Engagement
 			.CreateIndividualContact(opportunity.Id, volunteerId, "About to withdraw.")
