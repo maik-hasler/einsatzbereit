@@ -84,6 +84,19 @@ public class OrgAppCompactHeaderTests(AspireFixture fixture) : VisualTestBase(fi
 		railBox!.Width.Should().BeLessThanOrEqualTo(375,
 			"the section rail scrolls inside itself instead of widening the page");
 
+		// The fade is driven by a 200ms CSS opacity transition (see OrgPageHeader.tsx),
+		// which the viewport resize above just triggered - a single immediate read can
+		// still catch it mid-transition, so use Playwright's auto-retrying CSS assertion
+		// instead of a one-shot EvaluateAsync read.
+		var fadeRight = Page.GetByTestId("org-tabs-fade-right");
+		await Expect(fadeRight).ToHaveCSSAsync("opacity", "1",
+			new() { Timeout = 5_000 });
+
+		var fadeLeft = Page.GetByTestId("org-tabs-fade-left");
+		var fadeLeftOpacity = await fadeLeft.EvaluateAsync<string>("el => getComputedStyle(el).opacity");
+		fadeLeftOpacity.Should().Be("0",
+			"the rail starts scrolled to its first tab, so there is nothing to scroll back to yet");
+
 		await Page.SetViewportSizeAsync(1280, 720);
 		await DeleteOrganizationAsync(backend, organizationId);
 	}

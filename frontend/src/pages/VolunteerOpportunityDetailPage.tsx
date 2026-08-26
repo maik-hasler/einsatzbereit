@@ -685,6 +685,7 @@ export default function VolunteerOpportunityDetailPage() {
 														: auth.signinRedirect(signinLocaleArgs())
 												}
 												data-testid="report-opportunity"
+												title={t("opportunities.report")}
 												aria-label={t("opportunities.reportOpportunity")}
 											>
 												<FlagIcon className="h-4 w-4" />

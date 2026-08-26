@@ -135,6 +135,75 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		await DeleteOrganizationAsync(backend, organizationId);
 	}
 
+	[Test]
+	public async Task AgendaView_AtMobileWidth_ShowsAScrollAffordance_ForTheClippedTable()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		var organizationId = await CreateOrganizationAsync($"Visual CalAgendaFade {Guid.NewGuid():N}");
+
+		using (var http = await CreateAuthenticatedHttpClientAsync(backend))
+		{
+			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				titleDe = "Agenda Fade Opportunity",
+				descriptionDe = "Seeded for calendar agenda scroll-fade coverage.",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "ScheduledSlots",
+				checkInMethod = "None",
+				isDraft = true,
+			});
+			oppResponse.EnsureSuccessStatusCode();
+			var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var opportunityId = opportunity.GetProperty("id").GetString();
+
+			var slotStart = DateTimeOffset.UtcNow.AddDays(2);
+			var slotResponse = await http.PostAsJsonAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+				new
+				{
+					startDateTime = slotStart,
+					endDateTime = slotStart.AddHours(2),
+					maxParticipants = 5,
+					recurrenceCount = 1,
+				});
+			slotResponse.EnsureSuccessStatusCode();
+
+			var publishResponse = await http.PostAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/publish", null);
+			publishResponse.EnsureSuccessStatusCode();
+		}
+
+		// The agenda view only defaults to the mobile "compact" widget size when the
+		// dashboard mounts under 1024px - resizing after a desktop-width load does not
+		// retroactively switch the calendar into agenda view.
+		await Page.SetViewportSizeAsync(375, 812);
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, Guid.Parse(organizationId));
+
+		var calendarWidget = Page.GetByTestId("widget-tile-Calendar");
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var agendaView = calendarWidget.Locator(".rbc-agenda-view");
+		await Expect(agendaView).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var overflows = await agendaView.EvaluateAsync<bool>(
+			"el => el.scrollWidth > el.clientWidth + 1");
+		overflows.Should().BeTrue(
+			"the agenda table is wider than the 375px card and must actually scroll horizontally");
+
+		var fadeRight = calendarWidget.GetByTestId("calendar-agenda-fade-right");
+		var opacity = await fadeRight.EvaluateAsync<string>("el => getComputedStyle(el).opacity");
+		opacity.Should().Be("1",
+			"nothing else hints that the clipped TERMIN column/event title is reachable by scrolling");
+
+		await DeleteOrganizationAsync(backend, organizationId);
+	}
+
 	private async Task<string> CreateOrganizationAsync(string name)
 	{
 		var backend = Fixture.GetEndpoint("backend");
