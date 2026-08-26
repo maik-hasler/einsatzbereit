@@ -848,16 +848,18 @@ export default function EngagementManagementPage() {
 													</Button>
 												)}
 												{e.isCheckedIn && (
-													<button
+													<Button
+														type="button"
+														variant="tertiary"
+														size="sm"
 														data-testid={`engagement-undo-checkin-${e.id}`}
 														onClick={() => handleUndoCheckIn(e.id)}
 														disabled={undoingCheckIn === e.id}
-														className="text-xs text-amber-700 hover:underline disabled:opacity-50"
 													>
 														{undoingCheckIn === e.id
 															? t("checkIn.undoingCheckIn")
 															: t("checkIn.undoCheckIn")}
-													</button>
+													</Button>
 												)}
 												<Button
 													type="button"

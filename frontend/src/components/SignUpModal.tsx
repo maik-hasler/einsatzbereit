@@ -10,12 +10,15 @@ import {
 } from "../lib/format";
 import { getApiErrorMessage, isApiErrorCode } from "../lib/apiError";
 import { getTextareaClass } from "../lib/formClasses";
+import CharCount from "./CharCount";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import Field from "./Field";
 import { RequiredFieldsLegend } from "./RequiredMark";
+
+const MESSAGE_MAX_LENGTH = 500;
 
 interface Props {
 	opportunityId: string;
@@ -199,10 +202,14 @@ export default function SignUpModal({
 									messageError ? "sign-up-message-error" : undefined
 								}
 								rows={4}
+								maxLength={MESSAGE_MAX_LENGTH}
 								placeholder={t("signUp.messagePlaceholder")}
 								className={getTextareaClass(Boolean(messageError))}
 							/>
 						</Field>
+						{!messageError && (
+							<CharCount current={message.length} max={MESSAGE_MAX_LENGTH} />
+						)}
 					</div>
 				)}
 

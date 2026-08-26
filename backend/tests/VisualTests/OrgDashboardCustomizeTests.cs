@@ -608,7 +608,10 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 				"""
 				(el, gripLabel) => {
 					const tileRect = el.getBoundingClientRect();
-					const grip = el.querySelector(`button[aria-label="${gripLabel}"]`);
+					// Starts-with, not exact: the grip's aria-label carries a trailing
+					// keyboard-alternative hint ("- drag, or press Enter and use arrow
+					// keys") after the widget name callers pass in here.
+					const grip = el.querySelector(`button[aria-label^="${gripLabel}"]`);
 					if (!grip || tileRect.width <= 0) return [0, 0, 0, 0];
 					const gripRect = grip.getBoundingClientRect();
 					return [tileRect.width, gripRect.x + gripRect.width / 2, gripRect.y + gripRect.height / 2, 1];

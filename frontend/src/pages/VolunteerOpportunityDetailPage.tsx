@@ -41,6 +41,7 @@ import PageHeaderBand from "../components/PageHeaderBand";
 import OpportunityCard from "../components/OpportunityCard";
 import RouteState from "../components/RouteState";
 import WarningBanner from "../components/WarningBanner";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isNetworkError } from "../lib/apiError";
@@ -64,6 +65,14 @@ const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
 const CreateVolunteerOpportunityModal = lazy(
 	() => import("../components/CreateVolunteerOpportunityModal"),
 );
+
+const MAX_META_DESCRIPTION_LENGTH = 160;
+
+function toMetaDescription(text: string): string {
+	const trimmed = text.trim();
+	if (trimmed.length <= MAX_META_DESCRIPTION_LENGTH) return trimmed;
+	return `${trimmed.slice(0, MAX_META_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
+}
 
 function describeCapacity(
 	capacity: OpportunityCapacity,
@@ -153,6 +162,16 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity &&
 			pickLocalizedText(opportunity.titleDe, opportunity.titleEn, i18n.language)
 				.text,
+	);
+	const opportunityDescription = opportunity
+		? pickLocalizedText(
+				opportunity.descriptionDe,
+				opportunity.descriptionEn,
+				i18n.language,
+			)?.text
+		: undefined;
+	usePageDescription(
+		opportunityDescription ? toMetaDescription(opportunityDescription) : null,
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

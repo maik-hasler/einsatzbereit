@@ -58,12 +58,12 @@ describe("HomePage hero organization CTA", () => {
 		expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
 	});
 
-	it("swaps the CTA for an organization-overview link once the visitor organizes one", async () => {
+	it("swaps the CTA for a dashboard link once the visitor organizes one", async () => {
 		api.getOrganizations.mockResolvedValue([org]);
 		renderWithProviders(<HomePage />, { auth: { isAuthenticated: true } });
 
 		const link = await screen.findByRole("link", {
-			name: "Organization overview",
+			name: "Go to dashboard",
 		});
 		expect(link).toHaveAttribute("href", `/app/${org.id}/dashboard`);
 		expect(
@@ -83,9 +83,7 @@ describe("HomePage hero organization CTA", () => {
 		expect(
 			screen.queryByRole("button", { name: "Create an organization" }),
 		).toBeNull();
-		expect(
-			screen.queryByRole("link", { name: "Organization overview" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Go to dashboard" })).toBeNull();
 	});
 });
 

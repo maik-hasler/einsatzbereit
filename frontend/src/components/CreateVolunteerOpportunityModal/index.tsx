@@ -1093,7 +1093,11 @@ export default function CreateVolunteerOpportunityModal({
 				<div className="border-t border-gray-100 bg-gray-50">
 					{canSaveDraft && draftTitleMissing && (
 						<p id="save-draft-hint" className="px-6 pt-3 text-xs text-gray-500">
-							{t("createOpportunity.saveDraftRequiresTitle")}
+							{t(
+								step === 1
+									? "createOpportunity.saveDraftRequiresTitleHere"
+									: "createOpportunity.saveDraftRequiresTitle",
+							)}
 						</p>
 					)}
 					<div className="flex items-center justify-between gap-3 px-6 py-4">
@@ -1122,7 +1126,11 @@ export default function CreateVolunteerOpportunityModal({
 									}
 									title={
 										draftTitleMissing
-											? t("createOpportunity.saveDraftRequiresTitle")
+											? t(
+													step === 1
+														? "createOpportunity.saveDraftRequiresTitleHere"
+														: "createOpportunity.saveDraftRequiresTitle",
+												)
 											: undefined
 									}
 									onClick={() => void submit(true)}

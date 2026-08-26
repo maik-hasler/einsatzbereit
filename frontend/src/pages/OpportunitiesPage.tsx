@@ -5,12 +5,14 @@ import { useSearchParams } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import PageHeaderBand from "../components/PageHeaderBand";
 import Button from "../components/Button";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { MagnifyingGlassIcon } from "../components/icons";
 
 export default function OpportunitiesPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("opportunitiesPage.title"));
+	usePageDescription(t("opportunitiesPage.lead"));
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const urlKeyword = searchParams.get("q") ?? "";

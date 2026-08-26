@@ -251,6 +251,9 @@ export default function HomePage() {
 					</div>
 
 					<div className="relative px-4 pt-24 pb-12 text-center sm:px-8 sm:pt-28 sm:pb-32 lg:px-10 lg:py-28">
+						<p className="animate-fade-up mb-3 text-xs font-semibold tracking-widest text-brand-100 uppercase">
+							{t("landing.heroLabel")}
+						</p>
 						<h1
 							id={heroTitleId}
 							className="animate-fade-up-d1 mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-8xl"
@@ -389,7 +392,7 @@ export default function HomePage() {
 										size="lg"
 										className="shadow-md"
 									>
-										{t("landing.heroCtaOrgOverview")}
+										{t("landing.heroCtaOrgDashboard")}
 									</Button>
 								) : orgsLoading ? (
 									<Skeleton className="mx-auto h-13 w-56 rounded-xl" />

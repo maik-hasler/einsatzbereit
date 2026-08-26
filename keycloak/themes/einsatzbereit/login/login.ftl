@@ -13,6 +13,12 @@
 
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
+				<#if messagesPerField.existsError('username','password')>
+					<div class="form-error-banner" role="alert">
+						<span id="input-error">${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}</span>
+					</div>
+				</#if>
+
 				<div class="form-group">
 					<div class="form-field">
 						<input
@@ -38,12 +44,6 @@
 							</#if>
 						</label>
 					</div>
-
-					<#if messagesPerField.existsError('username','password')>
-						<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-							${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
-						</span>
-					</#if>
 				</div>
 
 				<div class="form-group">

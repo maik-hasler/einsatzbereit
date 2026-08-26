@@ -13,6 +13,7 @@ import LoadMoreError from "../components/LoadMoreError";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -35,6 +36,7 @@ export default function OrganizationProfilePage() {
 	const [showReport, setShowReport] = useState(false);
 
 	usePageTitle(profile?.name ?? t("orgProfile.loading"));
+	usePageDescription(profile?.description || null);
 
 	function load() {
 		if (!organizationId) return;

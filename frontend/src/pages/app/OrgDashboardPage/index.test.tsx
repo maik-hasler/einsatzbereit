@@ -353,7 +353,9 @@ describe("OrgDashboardPage grid backdrop", () => {
 		const idleCells = screen.getAllByTestId("dashboard-grid-guide-cell").length;
 
 		await userEvent.click(
-			screen.getByRole("button", { name: "Move or resize Create opportunity" }),
+			screen.getByRole("button", {
+				name: "Move or resize Create opportunity - drag, or press Enter and use arrow keys",
+			}),
 		);
 
 		await waitFor(() =>
@@ -525,7 +527,9 @@ describe("OrgDashboardPage placement rejection", () => {
 		const before = tile.getAttribute("style");
 
 		await userEvent.click(
-			screen.getByRole("button", { name: "Move or resize Create opportunity" }),
+			screen.getByRole("button", {
+				name: "Move or resize Create opportunity - drag, or press Enter and use arrow keys",
+			}),
 		);
 		const cell = document.querySelector<HTMLElement>(
 			'[data-testid="dashboard-grid-guide-cell"][data-col="1"][data-row="1"]',
