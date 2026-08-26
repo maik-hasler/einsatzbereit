@@ -7,10 +7,9 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
-import { avatarColorClasses } from "../lib/avatarColor";
-import { getInitials } from "../lib/initials";
 import { cardClass } from "../lib/surfaceClasses";
 import EmptyState from "../components/EmptyState";
+import OrgAvatar from "../components/OrgAvatar";
 import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
@@ -204,7 +203,6 @@ export default function OrganizationsPage() {
 							</h2>
 							<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{items.map((org) => {
-									const avatarColor = avatarColorClasses(org.id);
 									return (
 										<li
 											key={org.id}
@@ -216,22 +214,12 @@ export default function OrganizationsPage() {
 												aria-label={org.name}
 											/>
 											<div className="flex items-center gap-3">
-												{org.logoUrl ? (
-													<img
-														src={org.logoUrl}
-														alt=""
-														width={48}
-														height={48}
-														loading="lazy"
-														className="h-12 w-12 shrink-0 rounded-full object-cover"
-													/>
-												) : (
-													<span
-														className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${avatarColor.bg} ${avatarColor.text}`}
-													>
-														{getInitials(org.name)}
-													</span>
-												)}
+												<OrgAvatar
+													name={org.name}
+													logoUrl={org.logoUrl}
+													size="2xl"
+													lazy
+												/>
 												<div className="flex min-w-0 flex-1 items-center gap-2">
 													<h3 className="block truncate text-sm font-semibold text-gray-900">
 														{org.name}
@@ -252,7 +240,10 @@ export default function OrganizationsPage() {
 											</div>
 											<div className="min-w-0 flex-1">
 												{org.description && (
-													<p className="line-clamp-2 text-sm text-gray-500">
+													<p
+														lang="de"
+														className="line-clamp-2 text-sm text-gray-500"
+													>
 														{org.description}
 													</p>
 												)}

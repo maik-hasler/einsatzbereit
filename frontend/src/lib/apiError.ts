@@ -39,3 +39,14 @@ export function isApiErrorCode(err: unknown, code: string): boolean {
 export function isApiForbiddenError(err: unknown): boolean {
 	return getApiErrorStatus(err) === 403;
 }
+
+// A rejection only counts as user-actionable when it carries an errorCode
+// this app has a specific, translated message for (see getApiErrorMessage) -
+// a bare status or a generic JS error gives the user nothing to act on and
+// should not be surfaced as a toast (#2241).
+export function hasActionableErrorCode(err: unknown): boolean {
+	if (!err || typeof err !== "object") return false;
+	const errorCode = (err as { errorCode?: unknown }).errorCode;
+	if (typeof errorCode !== "string" || !errorCode.trim()) return false;
+	return i18next.exists(`apiError.${errorCode}`);
+}

@@ -193,6 +193,59 @@ describe("opportunity list filters and the URL", () => {
 	});
 });
 
+describe("opportunity list result count", () => {
+	it("announces the total result count once loaded", async () => {
+		api.getVolunteerOpportunities.mockResolvedValue({
+			...page,
+			pageCount: 1,
+			totalItems: 1,
+		});
+
+		renderWithProviders(<VolunteerOpportunitiesList />);
+
+		await screen.findByTestId("opportunity-date-line");
+		expect(screen.getByTestId("opportunities-live-region")).toHaveTextContent(
+			"1 opportunity found.",
+		);
+	});
+
+	it("shows a loaded-of-total ratio near the load more button while more results remain", async () => {
+		api.getVolunteerOpportunities.mockResolvedValue({
+			items: page.items,
+			pageCount: 2,
+			totalItems: 2,
+		});
+
+		renderWithProviders(<VolunteerOpportunitiesList />);
+
+		await screen.findByTestId("opportunity-date-line");
+		expect(screen.getByTestId("opportunities-live-region")).toHaveTextContent(
+			"2 opportunities found.",
+		);
+		expect(
+			screen.getByTestId("opportunities-load-more-progress"),
+		).toHaveTextContent("1 of 2 loaded.");
+	});
+
+	it("does not show a result count while the initial page is still loading", async () => {
+		let resolvePage: (value: unknown) => void = () => {};
+		api.getVolunteerOpportunities.mockReturnValue(
+			new Promise((resolve) => {
+				resolvePage = resolve;
+			}),
+		);
+
+		renderWithProviders(<VolunteerOpportunitiesList />);
+
+		expect(screen.getByTestId("opportunities-live-region").textContent).toBe(
+			"",
+		);
+
+		resolvePage({ ...page, pageCount: 1, totalItems: 1 });
+		await screen.findByTestId("opportunity-date-line");
+	});
+});
+
 describe("opportunity list with a city-only deep link", () => {
 	beforeEach(() => {
 		api.getVolunteerOpportunities.mockResolvedValue(page);

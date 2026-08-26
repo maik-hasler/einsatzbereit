@@ -2,7 +2,11 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 
 export function buildOrganizationFormSchema(t: TFunction) {
-	const required = t("orgSettings.fieldRequired");
+	const nameRequired = t("orgSettings.nameRequired");
+	const streetRequired = t("orgSettings.streetRequired");
+	const houseNumberRequired = t("orgSettings.houseNumberRequired");
+	const zipRequired = t("orgSettings.zipRequired");
+	const cityRequired = t("orgSettings.cityRequired");
 	const invalidZip = t("orgSettings.zipInvalid");
 	const invalidWebsite = t("orgSettings.websiteInvalid");
 	const tooLong = (max: number) => t("orgSettings.fieldTooLong", { max });
@@ -21,7 +25,11 @@ export function buildOrganizationFormSchema(t: TFunction) {
 		})
 		.superRefine((data, ctx) => {
 			if (!data.name.trim())
-				ctx.addIssue({ code: "custom", path: ["name"], message: required });
+				ctx.addIssue({
+					code: "custom",
+					path: ["name"],
+					message: nameRequired,
+				});
 
 			const website = data.website.trim();
 			if (website) {
@@ -52,19 +60,19 @@ export function buildOrganizationFormSchema(t: TFunction) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["street"],
-						message: required,
+						message: streetRequired,
 					});
 				if (!data.houseNumber.trim())
 					ctx.addIssue({
 						code: "custom",
 						path: ["houseNumber"],
-						message: required,
+						message: houseNumberRequired,
 					});
 				if (!data.zipCode.trim())
 					ctx.addIssue({
 						code: "custom",
 						path: ["zipCode"],
-						message: required,
+						message: zipRequired,
 					});
 				else if (data.zipCode.trim().length !== 5)
 					ctx.addIssue({
@@ -73,7 +81,11 @@ export function buildOrganizationFormSchema(t: TFunction) {
 						message: invalidZip,
 					});
 				if (!data.city.trim())
-					ctx.addIssue({ code: "custom", path: ["city"], message: required });
+					ctx.addIssue({
+						code: "custom",
+						path: ["city"],
+						message: cityRequired,
+					});
 			}
 		});
 }

@@ -5,6 +5,10 @@ import {
 	textareaClass,
 	labelClass,
 	selectClass,
+	fieldBorderClass,
+	getInputClass,
+	getTextareaClass,
+	getLabelClass,
 } from "./formClasses";
 
 describe("formClasses", () => {
@@ -41,18 +45,42 @@ describe("formClasses", () => {
 		expect(labelClass).toContain("text-gray-600");
 	});
 
-	it("keeps the select chevron's data URI free of raw whitespace Tailwind can't parse (#2051)", () => {
-		const urlToken = selectClass.match(/bg-\[url\('([^']+)'\)\]/);
-		expect(urlToken).not.toBeNull();
-		const dataUri = urlToken?.[1] ?? "";
-		expect(dataUri).not.toBe("");
-		expect(/\s/.test(dataUri)).toBe(false);
+	it("never paints the select chevron as a data: background image (#2225)", () => {
+		// The deployed CSP's img-src has no `data:` - a `bg-[url('data:...')]` chevron
+		// is silently blocked while appearance-none has already removed the native
+		// arrow, leaving the control looking disabled. components/Select.tsx draws
+		// the chevron as an inline <svg> instead; this class must stay free of any
+		// background-image so that fix can't silently regress.
+		expect(selectClass).not.toContain("data:");
+		expect(selectClass).not.toContain("bg-[url(");
+		expect(selectClass).toContain("appearance-none");
+	});
 
-		const svgMarkup = decodeURIComponent(
-			dataUri.slice(dataUri.indexOf(",") + 1),
-		);
-		const doc = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
-		expect(doc.querySelector("parsererror")).toBeNull();
-		expect(doc.querySelector("svg")).not.toBeNull();
+	it("gives every invalid field the same red border/focus treatment (#2239)", () => {
+		expect(fieldBorderClass(true)).toContain("border-red-300");
+		expect(fieldBorderClass(true)).toContain("focus:border-red-400");
+		expect(fieldBorderClass(true)).not.toContain("border-gray-200");
+	});
+
+	it("keeps the pristine border/focus treatment when there is no error", () => {
+		expect(fieldBorderClass(false)).toContain("border-gray-200");
+		expect(fieldBorderClass(false)).toContain("focus:border-brand-400");
+		expect(fieldBorderClass(false)).not.toContain("border-red-300");
+	});
+
+	it("carries the invalid border into getInputClass/getTextareaClass", () => {
+		expect(getInputClass(true)).toContain("border-red-300");
+		expect(getTextareaClass(true)).toContain("border-red-300");
+		expect(getTextareaClass(true)).toContain("resize-y");
+	});
+
+	it("defaults getInputClass/getTextareaClass to the pristine treatment", () => {
+		expect(getInputClass()).toBe(inputClass);
+		expect(getTextareaClass()).toBe(textareaClass);
+	});
+
+	it("turns the label red on error, same as the field it labels", () => {
+		expect(getLabelClass(true)).toContain("text-red-600");
+		expect(getLabelClass(false)).toBe(labelClass);
 	});
 });

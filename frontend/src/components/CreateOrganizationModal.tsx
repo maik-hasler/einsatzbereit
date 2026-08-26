@@ -4,7 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
+import {
+	getInputClass,
+	getTextareaClass,
+	labelClass,
+} from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import {
@@ -24,7 +28,8 @@ import ConfirmDialog from "./ConfirmDialog";
 import ErrorBanner from "./ErrorBanner";
 import ImageCropModal from "./ImageCropModal";
 import FileUploadButton from "./FileUploadButton";
-import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
+import Field from "./Field";
+import { RequiredFieldsLegend } from "./RequiredMark";
 
 interface Props {
 	onClose: () => void;
@@ -200,41 +205,33 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					</div>
 
 					<div ref={nameFieldRef}>
-						<label htmlFor="create-org-name" className={`mb-1 ${labelClass}`}>
-							{t("organization.nameLabel")}
-							<RequiredMark />
-						</label>
-						<input
+						<Field
+							label={t("organization.nameLabel")}
 							id="create-org-name"
-							type="text"
-							maxLength={100}
-							placeholder={t("organization.namePlaceholder")}
-							aria-invalid={errors.name ? true : undefined}
-							aria-describedby={
-								errors.name ? "create-org-name-error" : undefined
-							}
-							aria-required="true"
-							className={inputClass}
-							{...register("name")}
-						/>
-						{errors.name && (
-							<p
-								id="create-org-name-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{errors.name.message}
-							</p>
-						)}
+							required
+							error={errors.name?.message}
+						>
+							<input
+								id="create-org-name"
+								type="text"
+								maxLength={100}
+								placeholder={t("organization.namePlaceholder")}
+								aria-invalid={errors.name ? true : undefined}
+								aria-describedby={
+									errors.name ? "create-org-name-error" : undefined
+								}
+								aria-required="true"
+								className={getInputClass(Boolean(errors.name))}
+								{...register("name")}
+							/>
+						</Field>
 					</div>
 
-					<div>
-						<label
-							htmlFor="create-org-description"
-							className={`mb-1 ${labelClass}`}
-						>
-							{t("orgSettings.fieldDescription")}
-						</label>
+					<Field
+						label={t("orgSettings.fieldDescription")}
+						id="create-org-description"
+						error={errors.description?.message}
+					>
 						<textarea
 							id="create-org-description"
 							rows={3}
@@ -243,27 +240,16 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							aria-describedby={
 								errors.description ? "create-org-description-error" : undefined
 							}
-							className={textareaClass}
+							className={getTextareaClass(Boolean(errors.description))}
 							{...register("description")}
 						/>
-						{errors.description && (
-							<p
-								id="create-org-description-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{errors.description.message}
-							</p>
-						)}
-					</div>
+					</Field>
 
-					<div>
-						<label
-							htmlFor="create-org-contact-email"
-							className={`mb-1 ${labelClass}`}
-						>
-							{t("orgSettings.fieldContactEmail")}
-						</label>
+					<Field
+						label={t("orgSettings.fieldContactEmail")}
+						id="create-org-contact-email"
+						error={errors.contactEmail?.message}
+					>
 						<input
 							id="create-org-contact-email"
 							type="email"
@@ -274,24 +260,16 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 									? "create-org-contact-email-error"
 									: undefined
 							}
-							className={inputClass}
+							className={getInputClass(Boolean(errors.contactEmail))}
 							{...register("contactEmail")}
 						/>
-						{errors.contactEmail && (
-							<p
-								id="create-org-contact-email-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{errors.contactEmail.message}
-							</p>
-						)}
-					</div>
+					</Field>
 
-					<div>
-						<label htmlFor="create-org-phone" className={`mb-1 ${labelClass}`}>
-							{t("orgSettings.fieldPhone")}
-						</label>
+					<Field
+						label={t("orgSettings.fieldPhone")}
+						id="create-org-phone"
+						error={errors.contactPhone?.message}
+					>
 						<input
 							id="create-org-phone"
 							type="tel"
@@ -300,27 +278,16 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							aria-describedby={
 								errors.contactPhone ? "create-org-phone-error" : undefined
 							}
-							className={inputClass}
+							className={getInputClass(Boolean(errors.contactPhone))}
 							{...register("contactPhone")}
 						/>
-						{errors.contactPhone && (
-							<p
-								id="create-org-phone-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{errors.contactPhone.message}
-							</p>
-						)}
-					</div>
+					</Field>
 
-					<div>
-						<label
-							htmlFor="create-org-website"
-							className={`mb-1 ${labelClass}`}
-						>
-							{t("orgSettings.fieldWebsite")}
-						</label>
+					<Field
+						label={t("orgSettings.fieldWebsite")}
+						id="create-org-website"
+						error={errors.website?.message}
+					>
 						<input
 							id="create-org-website"
 							type="url"
@@ -330,19 +297,10 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							aria-describedby={
 								errors.website ? "create-org-website-error" : undefined
 							}
-							className={inputClass}
+							className={getInputClass(Boolean(errors.website))}
 							{...register("website")}
 						/>
-						{errors.website && (
-							<p
-								id="create-org-website-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{errors.website.message}
-							</p>
-						)}
-					</div>
+					</Field>
 
 					<fieldset className="rounded-card border border-gray-200 p-4">
 						<legend className="px-1 text-sm font-medium text-gray-700">
@@ -350,102 +308,78 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						</legend>
 						<div className="mt-3 grid grid-cols-3 gap-3">
 							<div className="col-span-2">
-								<label htmlFor="create-org-street" className={labelClass}>
-									{t("orgSettings.fieldStreet")}
-								</label>
-								<input
+								<Field
+									label={t("orgSettings.fieldStreet")}
 									id="create-org-street"
-									maxLength={200}
-									aria-invalid={errors.street ? true : undefined}
-									aria-describedby={
-										errors.street ? "create-org-street-error" : undefined
-									}
-									className={inputClass}
-									{...register("street")}
-								/>
-								{errors.street && (
-									<p
-										id="create-org-street-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.street.message}
-									</p>
-								)}
+									error={errors.street?.message}
+								>
+									<input
+										id="create-org-street"
+										maxLength={200}
+										aria-invalid={errors.street ? true : undefined}
+										aria-describedby={
+											errors.street ? "create-org-street-error" : undefined
+										}
+										className={getInputClass(Boolean(errors.street))}
+										{...register("street")}
+									/>
+								</Field>
 							</div>
 							<div>
-								<label htmlFor="create-org-house-number" className={labelClass}>
-									{t("orgSettings.fieldHouseNumber")}
-								</label>
-								<input
+								<Field
+									label={t("orgSettings.fieldHouseNumber")}
 									id="create-org-house-number"
-									maxLength={20}
-									aria-invalid={errors.houseNumber ? true : undefined}
-									aria-describedby={
-										errors.houseNumber
-											? "create-org-house-number-error"
-											: undefined
-									}
-									className={inputClass}
-									{...register("houseNumber")}
-								/>
-								{errors.houseNumber && (
-									<p
-										id="create-org-house-number-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.houseNumber.message}
-									</p>
-								)}
+									error={errors.houseNumber?.message}
+								>
+									<input
+										id="create-org-house-number"
+										maxLength={20}
+										aria-invalid={errors.houseNumber ? true : undefined}
+										aria-describedby={
+											errors.houseNumber
+												? "create-org-house-number-error"
+												: undefined
+										}
+										className={getInputClass(Boolean(errors.houseNumber))}
+										{...register("houseNumber")}
+									/>
+								</Field>
 							</div>
 							<div>
-								<label htmlFor="create-org-zip" className={labelClass}>
-									{t("orgSettings.fieldZip")}
-								</label>
-								<input
+								<Field
+									label={t("orgSettings.fieldZip")}
 									id="create-org-zip"
-									maxLength={5}
-									aria-invalid={errors.zipCode ? true : undefined}
-									aria-describedby={
-										errors.zipCode ? "create-org-zip-error" : undefined
-									}
-									className={inputClass}
-									{...register("zipCode")}
-								/>
-								{errors.zipCode && (
-									<p
-										id="create-org-zip-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.zipCode.message}
-									</p>
-								)}
+									error={errors.zipCode?.message}
+								>
+									<input
+										id="create-org-zip"
+										maxLength={5}
+										aria-invalid={errors.zipCode ? true : undefined}
+										aria-describedby={
+											errors.zipCode ? "create-org-zip-error" : undefined
+										}
+										className={getInputClass(Boolean(errors.zipCode))}
+										{...register("zipCode")}
+									/>
+								</Field>
 							</div>
 							<div className="col-span-2">
-								<label htmlFor="create-org-city" className={labelClass}>
-									{t("orgSettings.fieldCity")}
-								</label>
-								<input
+								<Field
+									label={t("orgSettings.fieldCity")}
 									id="create-org-city"
-									maxLength={100}
-									aria-invalid={errors.city ? true : undefined}
-									aria-describedby={
-										errors.city ? "create-org-city-error" : undefined
-									}
-									className={inputClass}
-									{...register("city")}
-								/>
-								{errors.city && (
-									<p
-										id="create-org-city-error"
-										className="mt-1 text-xs text-red-600"
-										role="alert"
-									>
-										{errors.city.message}
-									</p>
-								)}
+									error={errors.city?.message}
+								>
+									<input
+										id="create-org-city"
+										maxLength={100}
+										aria-invalid={errors.city ? true : undefined}
+										aria-describedby={
+											errors.city ? "create-org-city-error" : undefined
+										}
+										className={getInputClass(Boolean(errors.city))}
+										{...register("city")}
+									/>
+								</Field>
 							</div>
 						</div>
 					</fieldset>

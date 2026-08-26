@@ -40,7 +40,6 @@ function render(isAdmin: boolean) {
 			initials={isAdmin ? "PA" : "VV"}
 			isAdmin={isAdmin}
 			onSignOut={() => {}}
-			onNotificationNavigate={() => {}}
 		/>,
 		{ auth: { isAuthenticated: true, roles: isAdmin ? ["admin"] : ["user"] } },
 	);
@@ -83,7 +82,6 @@ describe("account dropdown after navigating", () => {
 				initials="VV"
 				isAdmin={false}
 				onSignOut={() => {}}
-				onNotificationNavigate={() => {}}
 			/>,
 			{ auth: { isAuthenticated: true, roles: ["user"] } },
 		);

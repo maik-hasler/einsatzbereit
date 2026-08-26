@@ -8678,6 +8678,12 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "relatedTitleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

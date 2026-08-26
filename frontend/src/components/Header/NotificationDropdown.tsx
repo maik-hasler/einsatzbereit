@@ -15,14 +15,12 @@ export default function NotificationDropdown({
 	transparent = false,
 	mobile = false,
 	containerRef,
-	onNavigate,
 	onClose,
 }: {
 	menu: AccountMenuState;
 	transparent?: boolean;
 	mobile?: boolean;
 	containerRef: RefObject<HTMLDivElement | null>;
-	onNavigate: (actionUrl: string | null | undefined) => void;
 	onClose?: () => void;
 }) {
 	const { t } = useTranslation();
@@ -68,7 +66,6 @@ export default function NotificationDropdown({
 		}
 		setNotifOpen(false);
 		onClose?.();
-		onNavigate(n.actionUrl);
 	}
 
 	return (
@@ -169,7 +166,18 @@ export default function NotificationDropdown({
 								</li>
 							) : notifications.length === 0 ? (
 								<li className="px-4">
-									<EmptyState compact title={t("notifications.empty")} />
+									<EmptyState
+										compact
+										title={t("notifications.empty")}
+										action={{
+											label: t("notifications.emptyCta"),
+											to: "/opportunities",
+											onClick: () => {
+												setNotifOpen(false);
+												onClose?.();
+											},
+										}}
+									/>
 								</li>
 							) : (
 								<>

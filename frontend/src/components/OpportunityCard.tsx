@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
+	findCrossLocaleKeywordMatch,
 	formatDate,
 	formatDateTime,
 	formatOccurrence,
@@ -10,7 +11,7 @@ import {
 	pickLocalizedText,
 } from "../lib/format";
 import Chip, { type ChipTone } from "./Chip";
-import { getInitials } from "../lib/initials";
+import OrgAvatar from "./OrgAvatar";
 import {
 	FEW_SPOTS_THRESHOLD,
 	getOpportunityCapacity,
@@ -51,21 +52,24 @@ export interface OpportunityCardItem {
 	bannerImageUrl?: string;
 }
 
+/**
+ * Reports capacity only - how many spots exist and how many are taken.
+ * Returns undefined for "interest" opportunities, which have no capacity to
+ * count; their participation type is already stated by the always-shown
+ * sign-up mechanism chip below, so this position stays free of a category
+ * label standing in for a count (#2228).
+ */
 export function capacityChip(
 	capacity: OpportunityCapacity,
 	t: TFunction,
-): { tone: ChipTone; label: string } {
+): { tone: ChipTone; label: string } | undefined {
 	switch (capacity.kind) {
 		case "unlimited":
 			return { tone: "brand", label: t("opportunities.unlimitedSpots") };
 		case "notApplicable":
-			return {
-				tone: "neutral",
-				label:
-					capacity.reason === "interest"
-						? t("opportunities.byInterest")
-						: t("opportunities.noSpotsYet"),
-			};
+			return capacity.reason === "interest"
+				? undefined
+				: { tone: "neutral", label: t("opportunities.noSpotsYet") };
 		case "capped":
 			if (capacity.isFull) {
 				return { tone: "danger", label: t("opportunities.full") };
@@ -124,10 +128,13 @@ function dateLine(
 export default function OpportunityCard({
 	item,
 	headingLevel = 2,
+	keyword,
 }: {
 	item: OpportunityCardItem;
 
 	headingLevel?: 2 | 3;
+	/** The active search keyword, if this card is shown as a search result (#2242). */
+	keyword?: string;
 }) {
 	const { t, i18n } = useTranslation();
 	const Heading = headingLevel === 3 ? "h3" : "h2";
@@ -146,7 +153,24 @@ export default function OpportunityCard({
 		(description !== undefined && description.lang !== i18n.language);
 	const hasOrganization = !!item.organizationId && !!item.organizationName;
 
-	const showSignUpMechanismChip = item.participationType === "ScheduledSlots";
+	const crossLocaleMatch = keyword
+		? findCrossLocaleKeywordMatch(
+				item.titleDe,
+				item.titleEn,
+				item.descriptionDe,
+				item.descriptionEn,
+				item.organizationName ?? "",
+				keyword,
+				title,
+				description,
+			)
+		: undefined;
+
+	/** Always shown - the one place a card states its participation type (#2228). */
+	const signUpMechanismLabel = formatParticipationType(
+		item.participationType,
+		t,
+	);
 
 	return (
 		<li className="group relative flex h-full flex-col rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
@@ -182,16 +206,14 @@ export default function OpportunityCard({
 							{formatOccurrence(item.occurrence, t)}
 						</Chip>
 
-						{showSignUpMechanismChip && (
-							<Chip
-								data-testid="opportunity-signup-mechanism"
-								tone="neutral"
-								size="sm"
-								className="ml-auto shrink-0"
-							>
-								{formatParticipationType(item.participationType, t)}
-							</Chip>
-						)}
+						<Chip
+							data-testid="opportunity-signup-mechanism"
+							tone="neutral"
+							size="sm"
+							className="ml-auto shrink-0"
+						>
+							{signUpMechanismLabel}
+						</Chip>
 					</div>
 
 					<Heading
@@ -205,6 +227,19 @@ export default function OpportunityCard({
 							{t("opportunities.germanOnlyNotice")}
 						</p>
 					)}
+					{crossLocaleMatch && (
+						<p
+							data-testid="opportunity-cross-locale-match"
+							className="mt-0.5 text-xs text-gray-500"
+						>
+							{t("opportunities.crossLocaleMatchNotice", {
+								language: t(`language.${crossLocaleMatch.lang}`),
+							})}{" "}
+							<span lang={crossLocaleMatch.lang}>
+								&quot;{crossLocaleMatch.text}&quot;
+							</span>
+						</p>
+					)}
 
 					<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
 						<p
@@ -215,14 +250,16 @@ export default function OpportunityCard({
 							<DateIcon className="h-4 w-4 shrink-0" />
 							<span>{date.label}</span>
 						</p>
-						<Chip
-							data-testid="opportunity-capacity"
-							tone={capacity.tone}
-							size="sm"
-							className="shrink-0"
-						>
-							{capacity.label}
-						</Chip>
+						{capacity && (
+							<Chip
+								data-testid="opportunity-capacity"
+								tone={capacity.tone}
+								size="sm"
+								className="shrink-0"
+							>
+								{capacity.label}
+							</Chip>
+						)}
 					</div>
 					{description && (
 						<p
@@ -254,23 +291,12 @@ export default function OpportunityCard({
 								data-testid="opportunity-org-link"
 								className="group/org relative z-20 inline-flex items-center gap-2"
 							>
-								{item.organizationLogoUrl ? (
-									<img
-										src={item.organizationLogoUrl}
-										alt=""
-										width={28}
-										height={28}
-										loading="lazy"
-										className="h-7 w-7 shrink-0 rounded-full object-cover"
-									/>
-								) : (
-									<span
-										aria-hidden="true"
-										className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
-									>
-										{getInitials(item.organizationName ?? "")}
-									</span>
-								)}
+								<OrgAvatar
+									name={item.organizationName ?? ""}
+									logoUrl={item.organizationLogoUrl}
+									size="lg"
+									lazy
+								/>
 								<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 									{item.organizationName}
 								</span>

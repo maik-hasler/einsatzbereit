@@ -134,6 +134,24 @@ describe("opportunity detail page content language", () => {
 	});
 });
 
+describe("about this organization section", () => {
+	it("marks the organization's German description as German on an English page", async () => {
+		api.getPublicOrganizationProfile.mockResolvedValue({
+			id: details.organizationId,
+			name: details.organizationName,
+			description: "Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+			openOpportunities: [],
+		});
+
+		renderDetail("en");
+
+		const description = await screen.findByText(
+			"Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+		);
+		expect(description).toHaveAttribute("lang", "de");
+	});
+});
+
 const scheduledSlots = {
 	...details,
 	participationType: "ScheduledSlots",
@@ -383,6 +401,79 @@ describe("opportunity detail page withdraw failure", () => {
 	});
 });
 
+describe("opportunity detail page withdraw copy (#2228)", () => {
+	it("speaks of withdrawing interest, not releasing a seat, for an IndividualContact opportunity", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			currentUserEngagement: {
+				id: "44444444-4444-4444-4444-444444444444",
+				status: "Confirmed",
+				isCheckedIn: false,
+				remainingReactivations: 2,
+			},
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "Withdraw expression of interest?",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Your expression of interest for "English Title" will be withdrawn, and you\'ll be able to express interest again later.',
+			),
+		).toBeInTheDocument();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		expect(await screen.findByText("Interest withdrawn.")).toBeInTheDocument();
+	});
+
+	it("keeps the seat-release copy for a ScheduledSlots opportunity", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagement: {
+				id: "44444444-4444-4444-4444-444444444444",
+				status: "Confirmed",
+				isCheckedIn: false,
+				timeSlotId: scheduledSlots.timeSlots[0].id,
+				remainingReactivations: 2,
+			},
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Withdraw sign-up?" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Your spot for "English Title" will be released, and you\'ll be able to sign up again later.',
+			),
+		).toBeInTheDocument();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		expect(await screen.findByText("Sign-up withdrawn.")).toBeInTheDocument();
+	});
+});
+
 describe("opportunity detail page heading structure", () => {
 	it("leads with the opportunity, not a breadcrumb trail", async () => {
 		renderAs(VOLUNTEER_AUTH);
@@ -444,6 +535,8 @@ describe("opportunity detail page capacity", () => {
 });
 
 describe("opportunity detail page pending explanation", () => {
+	// `details` (the module-level fixture) is IndividualContact, so the status
+	// card must speak of interest, not a sign-up (#2228).
 	const withStatus = (status: "Pending" | "Confirmed") => ({
 		...details,
 		currentUserEngagement: {
@@ -454,7 +547,7 @@ describe("opportunity detail page pending explanation", () => {
 		},
 	});
 	const EXPLANATION =
-		"The organization is reviewing your sign-up. You'll get a message once it's confirmed.";
+		"The organization is reviewing your expression of interest. You'll get a message once it's confirmed.";
 
 	it("explains what pending means, next to the chip", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(withStatus("Pending"));
@@ -478,7 +571,7 @@ describe("opportunity detail page pending explanation", () => {
 		expect(screen.queryByText(EXPLANATION)).toBeNull();
 	});
 
-	it("shows the status card instead of the sign-up button, once already applied", async () => {
+	it("calls it an expression of interest, not a sign-up, for an IndividualContact opportunity (#2228)", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(
 			withStatus("Confirmed"),
 		);
@@ -486,7 +579,9 @@ describe("opportunity detail page pending explanation", () => {
 		renderAs(VOLUNTEER_AUTH);
 
 		const card = await screen.findByTestId("application-status");
-		expect(within(card).getByText("Your sign-up")).toBeInTheDocument();
+		expect(
+			within(card).getByText("Your expression of interest"),
+		).toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: "Express interest" }),
 		).toBeNull();

@@ -8,10 +8,12 @@ import { ToastProvider } from "../contexts/ToastContext";
 import { QuickActionsProvider } from "../contexts/QuickActionsContext";
 import { HeaderOverlayProvider } from "../contexts/HeaderOverlayContext";
 import { OrgBreadcrumbProvider } from "../contexts/OrgBreadcrumbContext";
+import { AuthStatusProvider } from "../contexts/AuthStatusContext";
 import { createTestI18n } from "./i18n";
 
 export interface TestAuth {
 	isAuthenticated?: boolean;
+	isLoading?: boolean;
 	roles?: string[];
 	sub?: string;
 	name?: string;
@@ -26,6 +28,7 @@ export interface TestAuth {
 function buildAuthValue(auth: TestAuth): AuthContextProps {
 	const {
 		isAuthenticated = false,
+		isLoading = false,
 		roles = [],
 		sub = "test-user",
 		name = "Test User",
@@ -38,7 +41,7 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 
 	return {
 		isAuthenticated,
-		isLoading: false,
+		isLoading,
 		activeNavigator: undefined,
 		error: undefined,
 		settings: {},
@@ -80,11 +83,17 @@ export interface RenderOptions {
 
 	route?: string;
 	auth?: TestAuth;
+	sessionExpired?: boolean;
 }
 
 export function renderWithProviders(
 	ui: ReactElement,
-	{ lng = "en", route = "/", auth = {} }: RenderOptions = {},
+	{
+		lng = "en",
+		route = "/",
+		auth = {},
+		sessionExpired = false,
+	}: RenderOptions = {},
 ): RenderResult {
 	const i18n = createTestI18n(lng);
 	const authValue = buildAuthValue(auth);
@@ -95,11 +104,13 @@ export function renderWithProviders(
 				<AuthContext.Provider value={authValue}>
 					<I18nextProvider i18n={i18n}>
 						<MemoryRouter initialEntries={[route]}>
-							<QuickActionsProvider>
-								<HeaderOverlayProvider>
-									<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>
-								</HeaderOverlayProvider>
-							</QuickActionsProvider>
+							<AuthStatusProvider initialSessionExpired={sessionExpired}>
+								<QuickActionsProvider>
+									<HeaderOverlayProvider>
+										<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>
+									</HeaderOverlayProvider>
+								</QuickActionsProvider>
+							</AuthStatusProvider>
 						</MemoryRouter>
 					</I18nextProvider>
 				</AuthContext.Provider>
