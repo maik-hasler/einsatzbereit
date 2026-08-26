@@ -569,6 +569,15 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (status is OpportunityStatus s)
 			orgQuery = orgQuery.Where(vo => vo.Status == s);
 
+		// Published doesn't mean still open - an opportunity whose only time slots have
+		// ended, or whose IndividualContact deadline has passed, must not keep surfacing
+		// on the organization's public profile (einsatzbereit#2212). Matches the predicate
+		// ApplyPubliclyListedFilters already applies to the browse listing.
+		if (status == OpportunityStatus.Published)
+			orgQuery = orgQuery.Where(vo =>
+				vo.TimeSlots.Any(ts => ts.EndDateTime >= now) ||
+				(!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
+
 		var rows = await orgQuery
 			.Join(
 				dbContext.OrganizationsQuery,

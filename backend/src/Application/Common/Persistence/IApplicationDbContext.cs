@@ -206,7 +206,7 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
-	Task<bool> HasOpenReportAsync(
+	Task<bool> HasDuplicateReportAsync(
 		ReportTargetType targetType,
 		Guid targetId,
 		UserId reporterId,
