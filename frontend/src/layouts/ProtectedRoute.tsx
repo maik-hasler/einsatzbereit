@@ -65,7 +65,13 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 		);
 	}
 
-	if (auth.isLoading || !auth.isAuthenticated) {
+	// isAuthenticated alone gates the spinner, deliberately ignoring isLoading
+	// once true - isLoading also flips true while an already-authenticated
+	// user has a background token refresh in flight (e.g. signinSilent()
+	// after a role grant, #2206), and treating that the same as "not yet
+	// signed in" would unmount the whole page under an in-progress
+	// interaction. Same class of bug #2263 fixed in useAuthDisplayStatus.
+	if (!auth.isAuthenticated) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
 				<Spinner label={t("auth.loading")} size="lg" />
