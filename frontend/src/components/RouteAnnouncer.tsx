@@ -13,12 +13,19 @@ export default function RouteAnnouncer() {
 		if (previousPathname.current === location.pathname) return;
 		previousPathname.current = location.pathname;
 
+		// A dialog (e.g. "create organization", opened from the header) can
+		// stay open across a pathname change it didn't cause - e.g. browser
+		// back/forward - so don't rip focus out of its trap.
+		if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+
 		window.scrollTo(0, 0);
 
 		let headingFocused = false;
+		let lastFocusTarget: HTMLElement | null = null;
 
 		const observer = new MutationObserver(() => {
 			if (headingFocused) return;
+			if (document.activeElement !== lastFocusTarget) return;
 			const lateHeading = document.querySelector<HTMLElement>("h1");
 			if (lateHeading) focusHeading(lateHeading);
 		});
@@ -30,6 +37,7 @@ export default function RouteAnnouncer() {
 				heading.setAttribute("tabindex", "-1");
 			}
 			heading.focus({ preventScroll: true });
+			lastFocusTarget = heading;
 			setAnnouncement(heading.textContent?.trim() || document.title);
 		}
 
@@ -37,7 +45,9 @@ export default function RouteAnnouncer() {
 		if (heading) {
 			focusHeading(heading);
 		} else {
-			document.getElementById("main-content")?.focus({ preventScroll: true });
+			const main = document.getElementById("main-content");
+			main?.focus({ preventScroll: true });
+			lastFocusTarget = main;
 			setAnnouncement(document.title);
 			observer.observe(document.body, { childList: true, subtree: true });
 		}
