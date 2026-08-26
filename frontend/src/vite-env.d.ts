@@ -7,6 +7,7 @@ interface ImportMetaEnv {
 	readonly VITE_KEYCLOAK_CLIENT_ID: string;
 	readonly VITE_API_URL: string;
 	readonly VITE_TOAST_LIFETIME_MS?: string;
+	readonly VITE_APP_VERSION?: string;
 }
 
 interface ImportMeta {

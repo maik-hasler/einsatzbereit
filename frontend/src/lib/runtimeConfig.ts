@@ -3,6 +3,7 @@ interface AppConfig {
 	KEYCLOAK_CLIENT_ID: string;
 	API_URL: string;
 	TOAST_LIFETIME_MS: string;
+	APP_VERSION: string;
 }
 
 declare global {
@@ -28,11 +29,16 @@ const keycloakClientId = resolve(
 	import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
 );
 const apiUrl = resolve("API_URL", import.meta.env.VITE_API_URL);
+const appVersion = resolve(
+	"APP_VERSION",
+	import.meta.env.VITE_APP_VERSION ?? "dev",
+);
 
 export const runtimeConfig = {
 	keycloakAuthorityUrl,
 	keycloakClientId,
 	apiUrl,
+	appVersion,
 
 	toastLifetimeMs: Number(
 		resolve(
