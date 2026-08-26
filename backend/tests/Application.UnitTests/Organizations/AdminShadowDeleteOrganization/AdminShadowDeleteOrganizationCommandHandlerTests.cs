@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.Organizations.AdminShadowDeleteOrganization.v1;
 using AwesomeAssertions;
@@ -14,6 +15,7 @@ using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.Organizations.AdminShadowDeleteOrganization;
 
@@ -32,6 +34,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
+	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly AdminShadowDeleteOrganizationCommandHandler _sut;
 
@@ -58,7 +61,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
 		_sut = new AdminShadowDeleteOrganizationCommandHandler(
-			_dbContext, _engagementReadRepository, NullLogger<AdminShadowDeleteOrganizationCommandHandler>.Instance);
+			_dbContext, _engagementReadRepository, _fileStorage, NullLogger<AdminShadowDeleteOrganizationCommandHandler>.Instance);
 	}
 
 	private static Organization CreateOrganization(Guid id) =>
@@ -206,5 +209,90 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.NotFound);
+	}
+
+	[Test]
+	public async Task Handle_ShouldQuarantineTheLogoObject_WhenOrganizationHasALogo(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/logo.png");
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/logo.png")
+			.Returns($"organization-logos/{orgId}.png");
+
+		// Act
+		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).QuarantineAsync($"organization-logos/{orgId}.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptQuarantine_WhenOrganizationHasNoLogo(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+
+		// Act
+		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().QuarantineAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenQuarantiningTheLogoObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/logo.png");
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/logo.png")
+			.Returns($"organization-logos/{orgId}.png");
+		_fileStorage
+			.QuarantineAsync($"organization-logos/{orgId}.png", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
+	}
+
+	[Test]
+	public async Task Handle_ShouldQuarantineTheBannerObject_OfACascadedOpportunity_WhenItHasOne(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(organizationId, cancellationToken).Returns(organization);
+
+		var opportunity = CreateOpportunity(organizationId);
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/banner.png");
+		_dbContext
+			.GetOpportunitiesForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([opportunity]);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/banner.png")
+			.Returns($"opportunity-banners/{opportunity.Id.Value}.png");
+
+		// Act
+		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).QuarantineAsync($"opportunity-banners/{opportunity.Id.Value}.png", cancellationToken);
 	}
 }

@@ -7,6 +7,7 @@ using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.Organizations.UploadOrganizationLogo;
 
@@ -78,5 +79,90 @@ public class UploadOrganizationLogoCommandHandlerTests
 		organization.LogoUrl.Should().BeNull();
 		await _fileStorage.DidNotReceive().UploadAsync(
 			Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteThePreviousLogoObject_WhenReuploadedWithADifferentExtension(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/old.jpg");
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/old.jpg")
+			.Returns($"organization-logos/{orgId}.jpg");
+		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _fileStorage.Received(1).DeleteAsync($"organization-logos/{orgId}.jpg", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotDeleteAnything_WhenReuploadedWithTheSameExtension(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/old.png");
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/old.png")
+			.Returns($"organization-logos/{orgId}.png");
+		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - re-uploading with the same extension overwrote the object at
+		// that key in place, so deleting it now would delete the file just uploaded.
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptDeletion_WhenOrganizationHadNoPreviousLogo(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenDeletingThePreviousLogoObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/old.jpg");
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/old.jpg")
+			.Returns($"organization-logos/{orgId}.jpg");
+		_fileStorage
+			.DeleteAsync($"organization-logos/{orgId}.jpg", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+		var command = new UploadOrganizationLogoCommand(orgId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
 	}
 }

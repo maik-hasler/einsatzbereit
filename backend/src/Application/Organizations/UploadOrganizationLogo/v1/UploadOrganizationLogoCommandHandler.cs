@@ -29,6 +29,8 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
+		var previousLogoUrl = organization.LogoUrl;
+
 		var ext = ImageUploadValidator.GetExtension(contentType);
 		var objectKey = $"organization-logos/{request.OrganizationId}{ext}";
 
@@ -37,6 +39,30 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 
 		organization.SetLogoUrl(url);
 
+		await DeletePreviousLogoIfOrphanedAsync(previousLogoUrl, objectKey, cancellationToken);
+
 		return true;
+	}
+
+	private async Task DeletePreviousLogoIfOrphanedAsync(string? previousLogoUrl, string newObjectKey, CancellationToken cancellationToken)
+	{
+		if (previousLogoUrl is null)
+			return;
+
+		var previousObjectKey = fileStorage.GetObjectKeyFromPublicUrl(previousLogoUrl);
+		// Extension unchanged - the previous upload lives at the same object key,
+		// so this new upload already overwrote it; deleting it now would delete
+		// the file just uploaded.
+		if (previousObjectKey is null || previousObjectKey == newObjectKey)
+			return;
+
+		try
+		{
+			await fileStorage.DeleteAsync(previousObjectKey, cancellationToken);
+		}
+		catch
+		{
+			// Object may already be gone or storage may be transiently unavailable; continue.
+		}
 	}
 }
