@@ -352,7 +352,10 @@ jobs:
 
       - name: Assert /health goes green
         run: |
-          for i in $(seq 1 60); do
+          # 90x2s=180s, not 60x2s - Database:MigrateOnStartup applies 70+ EF Core
+          # migrations to a brand-new database here, which is slower than the warm
+          # incremental case every other CI job hits.
+          for i in $(seq 1 90); do
             code=$(curl -fsS -o /tmp/health-body.txt -w "%{http_code}" http://localhost:18081/health || echo 000)
             if [ "$code" = "200" ]; then
               echo "Backend /health is green:"
