@@ -122,6 +122,8 @@ Container images are the release artifacts, pulled by tag from GHCR. The backend
 |Map tiles, proxied through the backend and cached in-process for 24h so the frontend never calls it directly (ADR-5)
 |===
 
+The exact environment variables the backend and frontend images accept - which are required versus optional, their defaults, and how they map to the services above - is documented as the operator-facing contract for this deployment shape, not repeated here: link:https://github.com/maik-hasler/einsatzbereit/blob/main/README.md#running-the-released-images[README.md's "Running the Released Images" section], modelled on the Keycloak image's own contract (`keycloak/README.md`).
+
 ==== CI/CD Pipeline
 
 .Deployment View - CI/CD (GitHub Actions)

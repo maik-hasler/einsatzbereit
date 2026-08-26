@@ -24,6 +24,7 @@
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
+- [Running the Released Images](#running-the-released-images)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -120,6 +121,89 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 | vera | vera123 | user | Volunteer Vera | Browse volunteer opportunities |
 | olaf | olaf123 | user, organisator | Organizer Olaf | Browse and create opportunities |
 | admin | admin123 | admin | Administrator | Full administration |
+
+---
+
+## Running the Released Images
+
+Three images are published to GHCR on every tagged release (see [Versioning & Releases](#versioning--releases)): `einsatzbereit-backend`, `einsatzbereit-frontend`, and `einsatzbereit-keycloak`. Each is configured entirely through environment variables at container start - none of them need a rebuild to point at a different environment. The Keycloak image's own variables are already documented in [`keycloak/README.md`](keycloak/README.md); this section covers the other two.
+
+### Backing services
+
+Bring your own:
+
+- **PostgreSQL** (18, or compatible) - the backend needs its own database, separate from Keycloak's own (see `keycloak/README.md`)
+- **An S3-compatible object store** (e.g. MinIO) - organization logos, user avatars, and opportunity banners
+- **An SMTP relay** - outgoing notification and reminder email
+- **Keycloak** - the `einsatzbereit-keycloak` image, or any Keycloak instance importing the same realm
+
+The backend and frontend both also make outbound HTTPS calls to OpenStreetMap Nominatim for geocoding - no configuration needed, but it must be reachable from wherever you run them.
+
+**Important:** leave `ASPNETCORE_ENVIRONMENT` unset (defaults to `Production`) or set it to `Production` explicitly. `Development` skips the required-configuration check below entirely and unconditionally runs the same seeding that `Database__SeedOnStartup` gates outside Development - a no-op once a database already has data, but not on a fresh one (see the `Database__SeedOnStartup` row further down for exactly what that seeds).
+
+### Backend (`ghcr.io/<owner>/einsatzbereit-backend`)
+
+Listens on port `8080` (plain HTTP - put a TLS-terminating reverse proxy in front of it; port `8081` is also exposed by the base image but unused unless you configure a certificate yourself).
+
+Array-valued settings (`Cors__Origins`, `Authentication__ValidIssuers`, `TrustedNetworks__Cidrs`) use ASP.NET Core's indexed environment-variable convention, not a comma-separated value - `Cors__Origins__0=https://app.example.com`, `Cors__Origins__1=https://admin.example.com`, and so on.
+
+Required variables crash the container at startup outside Development (`RequiredConfigurationValidator`); everything else ships with a working default and the container starts even if left unset. A few "No" rows are still needed for a specific feature to actually work (Keycloak connectivity, outbound email, file uploads) - left unset, the container starts fine and that feature fails at first use instead, rather than at boot (#2207).
+
+| Variable | Required | Purpose | Example |
+|---|---|---|---|
+| `ConnectionStrings__einsatzbereit` | Yes | PostgreSQL connection string for the application database | `Host=db;Database=einsatzbereit;Username=einsatzbereit;Password=secret` |
+| `Keycloak__ClientSecret` | Yes | Secret for the confidential `backend` service-account client - must match the Keycloak realm's resolved `KEYCLOAK_BACKEND_SECRET` (`keycloak/README.md`) | - |
+| `Authentication__Authority` | Yes | OIDC authority the backend validates access tokens against | `https://login.example.com/realms/einsatzbereit` |
+| `Cors__Origins__0` | Yes | Allowed CORS origin - the frontend's own origin; add `__1`, `__2`, ... for more | `https://app.example.com` |
+| `Keycloak__BaseUrl` | No | Base URL the backend calls Keycloak's API at | `https://login.example.com` |
+| `Keycloak__Realm` | No | Keycloak realm name | `einsatzbereit` |
+| `Keycloak__ClientId` | No | Keycloak client id for the backend's service account | `backend` |
+| `Authentication__ValidIssuers__0` | No | Acceptable JWT issuer(s) - needed in practice even though not startup-validated | `https://login.example.com/realms/einsatzbereit` |
+| `Smtp__Host` | No | SMTP relay hostname | `smtp.example.com` |
+| `Smtp__Port` | No | SMTP port | `587` |
+| `Smtp__FromAddress` | No | From-address for outgoing email | `noreply@example.com` |
+| `Smtp__FromName` | No | From-name for outgoing email | `Einsatzbereit` |
+| `Smtp__Username` | No | SMTP auth username | - |
+| `Smtp__Password` | No | SMTP auth password | - |
+| `Smtp__EnableSsl` | No | Use STARTTLS when connecting to the relay | `true` |
+| `Storage__Endpoint` | No | S3-compatible endpoint the backend writes to | `http://minio:9000` |
+| `Storage__AccessKey` | No | Access key for the bucket-scoped service account | - |
+| `Storage__SecretKey` | No | Secret key for the bucket-scoped service account | - |
+| `Storage__BucketName` | No | Bucket for avatars, logos, and opportunity banners | `einsatzbereit` |
+| `Storage__PublicEndpoint` | No | Public origin uploaded files are served from, if different from `Storage__Endpoint` (e.g. an internal vs. a public hostname) - must match the frontend's `STORAGE_PUBLIC_URL` below | `https://storage.example.com` |
+| `Api__PublicBaseUrl` | No | Reserved for the backend's own public base URL - bound at startup but not currently read by any request path | `https://api.example.com` |
+| `TrustedNetworks__Cidrs__0` | No | CIDR(s) trusted to set `X-Forwarded-For` - the reverse proxy in front of this image; defaults cover loopback and RFC1918 private ranges | `10.0.0.0/8` |
+| `Database__MigrateOnStartup` | No | Apply pending EF Core migrations automatically when the container starts | `true` |
+| `Database__SeedOnStartup` | No | **Never enable outside development.** Seeds demo data - ten fake volunteer opportunities at real Leipzig addresses onto the live public browse page, two fake organizations in your production Keycloak realm, and an organizer role grant to a hardcoded placeholder account (#2211) | `false` |
+| `NotificationRetention__ReadRetentionDays` | No | Days a read notification is kept before cleanup | `90` |
+| `NotificationRetention__UnreadRetentionDays` | No | Days an unread notification is kept | `180` |
+| `NotificationRetention__RetentionCheckIntervalHours` | No | How often the notification-retention job runs | `24` |
+| `AbuseReportRetention__RetentionDaysAfterTargetDeleted` | No | Days an abuse report is kept after its target is deleted | `180` |
+| `AbuseReportRetention__RetentionCheckIntervalHours` | No | How often the abuse-report retention job runs | `24` |
+| `RateLimiting__Read__AuthenticatedPermitLimit` | No | Read requests per window for authenticated users | `200` |
+| `RateLimiting__Read__AnonymousPermitLimit` | No | Read requests per window for anonymous users | `60` |
+| `RateLimiting__Read__WindowSeconds` | No | Read rate-limit window | `60` |
+| `RateLimiting__Write__PermitLimit` | No | Write requests per window | `100` |
+| `RateLimiting__Write__WindowSeconds` | No | Write rate-limit window | `60` |
+| `Outbox__BatchSize` | No | Domain events processed per outbox poll | `20` |
+| `Outbox__PollIntervalSeconds` | No | Outbox poll interval | `5` |
+| `EngagementReminder__MaxBatchSize` | No | Max engagement reminders sent per poll | `500` |
+| `EngagementReminder__PollIntervalHours` | No | Engagement reminder poll interval | `1` |
+| `OutputCaching__LongPublicReadSeconds` | No | Cache duration for long-lived public reads | `3600` |
+| `OutputCaching__ShortPublicReadSeconds` | No | Cache duration for short-lived public reads | `60` |
+
+### Frontend (`ghcr.io/<owner>/einsatzbereit-frontend`)
+
+Static SPA assets served by nginx on port `80` (plain HTTP - put a TLS-terminating reverse proxy in front of it, same as the backend). Unlike a typical Vite app, the three `VITE_` variables below are read at container start, not only baked in at build time: `docker-entrypoint.d/99-runtime-config.sh` substitutes them into `config.js` (read by the app at runtime as `window.__APP_CONFIG__`) and derives the Content-Security-Policy's allowed origins from the same values, so one built image runs anywhere.
+
+| Variable | Required | Purpose | Example |
+|---|---|---|---|
+| `VITE_API_URL` | Yes | Backend API origin the SPA calls; also the CSP's `connect-src` origin | `https://api.example.com` |
+| `VITE_KEYCLOAK_AUTHORITY_URL` | Yes | Keycloak realm issuer URL for the OIDC login flow; also the CSP's `connect-src`/`frame-src` origin | `https://login.example.com/realms/einsatzbereit` |
+| `VITE_KEYCLOAK_CLIENT_ID` | No | Public OIDC client id registered in Keycloak for the SPA | `frontend` |
+| `STORAGE_PUBLIC_URL` | No | Public origin uploaded avatars/logos/banners are served from - the CSP's `img-src` origin; must match the backend's `Storage__PublicEndpoint` above (or `Storage__Endpoint` if that isn't set) | `https://storage.example.com` |
+
+CORS must be configured on the backend (`Cors__Origins` above) to allow this image's own origin - API calls are cross-origin, there is no server-side proxy.
 
 ---
 
