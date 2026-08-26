@@ -216,6 +216,32 @@ describe("opportunity detail page anonymous visitor", () => {
 		expect(signIn).toHaveClass("bg-brand-700");
 	});
 
+	it("returns the visitor to this opportunity after signing in from the primary CTA", async () => {
+		const signinRedirect = vi.fn().mockResolvedValue(undefined);
+		renderAs({ isAuthenticated: false, signinRedirect });
+
+		await userEvent.click(await screen.findByTestId("opportunity-signin"));
+
+		expect(signinRedirect).toHaveBeenCalledWith(
+			expect.objectContaining({
+				state: { returnTo: `/volunteer-opportunities/${OPPORTUNITY_ID}` },
+			}),
+		);
+	});
+
+	it("returns the visitor to this opportunity after signing in from the report action", async () => {
+		const signinRedirect = vi.fn().mockResolvedValue(undefined);
+		renderAs({ isAuthenticated: false, signinRedirect });
+
+		await userEvent.click(await screen.findByTestId("report-opportunity"));
+
+		expect(signinRedirect).toHaveBeenCalledWith(
+			expect.objectContaining({
+				state: { returnTo: `/volunteer-opportunities/${OPPORTUNITY_ID}` },
+			}),
+		);
+	});
+
 	it("still lists the time slots, but none of them as a control", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 

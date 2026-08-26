@@ -18,4 +18,16 @@ describe("signinLocaleArgs", () => {
 		i18nMock.language = "de";
 		expect(signinLocaleArgs()).toEqual({ ui_locales: "de" });
 	});
+
+	it("omits state when no return path is given", () => {
+		expect(signinLocaleArgs()).not.toHaveProperty("state.returnTo");
+	});
+
+	it("carries the given return path in state.returnTo", () => {
+		i18nMock.language = "en";
+		expect(signinLocaleArgs("/opportunities/123")).toEqual({
+			ui_locales: "en",
+			state: { returnTo: "/opportunities/123" },
+		});
+	});
 });
