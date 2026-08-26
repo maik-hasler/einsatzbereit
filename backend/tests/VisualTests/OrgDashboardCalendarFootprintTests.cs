@@ -154,10 +154,9 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
-				participationType = "IndividualContact",
+				participationType = "ScheduledSlots",
 				checkInMethod = "None",
-				validUntil = DateTimeOffset.UtcNow.AddDays(30),
-				isDraft = false,
+				isDraft = true,
 			});
 			oppResponse.EnsureSuccessStatusCode();
 			var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -174,6 +173,10 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 					recurrenceCount = 1,
 				});
 			slotResponse.EnsureSuccessStatusCode();
+
+			var publishResponse = await http.PostAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/publish", null);
+			publishResponse.EnsureSuccessStatusCode();
 		}
 
 		// The agenda view only defaults to the mobile "compact" widget size when the
