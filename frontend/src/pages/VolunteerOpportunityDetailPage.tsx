@@ -390,13 +390,17 @@ export default function VolunteerOpportunityDetailPage() {
 		isTimeSlotEnded(ts),
 	);
 
+	// The API sends an absent time slot as JSON null, not an omitted field, so
+	// currentUserEngagements[].timeSlotId is `null` at runtime for an
+	// IndividualContact engagement even though the generated type claims
+	// `string | undefined` - truthiness catches both.
 	const engagementsBySlot = new Map(
 		opportunity.currentUserEngagements
-			.filter((e) => e.timeSlotId !== undefined)
+			.filter((e) => e.timeSlotId)
 			.map((e) => [e.timeSlotId as string, e]),
 	);
 	const individualContactEngagement = opportunity.currentUserEngagements.find(
-		(e) => e.timeSlotId === undefined,
+		(e) => !e.timeSlotId,
 	);
 
 	const canInteract = isAuthenticated && !isOwner && !isDraft;
