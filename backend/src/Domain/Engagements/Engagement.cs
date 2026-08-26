@@ -178,6 +178,12 @@ public sealed class Engagement
 		if (timeSlotId is null && string.IsNullOrWhiteSpace(message))
 			return Result.Failure(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."));
 
+		// Only a withdrawal is the volunteer's own action - an organizer-side Cancel()
+		// must not consume the same budget, or repeated unpublish/republish or bulk
+		// cancellation cycles by the organizer would eventually lock the volunteer out
+		// of a slot they never withdrew from (einsatzbereit#2212).
+		var wasWithdrawnByVolunteer = Status == EngagementStatus.Withdrawn;
+
 		TimeSlotId = timeSlotId;
 		TimeSlotStartDateTime = timeSlotId is null ? null : timeSlotStartDateTime;
 		TimeSlotEndDateTime = timeSlotId is null ? null : timeSlotEndDateTime;
@@ -189,7 +195,8 @@ public sealed class Engagement
 		FeedbackSubmittedAt = null;
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
-		ReactivationCount++;
+		if (wasWithdrawnByVolunteer)
+			ReactivationCount++;
 		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId, IsSlotSignUp: timeSlotId is not null));
 		return Result.Success();
 	}

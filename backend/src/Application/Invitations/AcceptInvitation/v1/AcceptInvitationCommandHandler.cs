@@ -23,6 +23,12 @@ internal sealed class AcceptInvitationCommandHandler(
 		if (invitation.InviteeId != request.UserId)
 			throw new ResultFailureException(Error.Forbidden("OrganizationInvitation.NotRecipient", "You are not the recipient of this invitation."));
 
+		// InvitationExpiryJob only sweeps Pending invitations to Expired periodically, so a
+		// Pending invitation past its ExpiresOn can still reach here in the gap before the
+		// next sweep - Accept() itself only checks Status, not the date (einsatzbereit#2212).
+		if (invitation.Status == InvitationStatus.Pending && invitation.ExpiresOn <= DateTimeOffset.UtcNow)
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.Expired", "This invitation has expired."));
+
 		// A double-accept (two in-flight requests for the same invitation) races
 		// on organization_membership's unique index - without this check both
 		// pass invitation.Accept() and both try to insert a membership row, and

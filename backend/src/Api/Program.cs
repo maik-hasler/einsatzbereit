@@ -3,6 +3,7 @@ using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
 using Api.Common.Health;
+using Api.Common.Logging;
 using Api.Common.Middleware;
 using Api.Common.Network;
 using Api.Common.OutputCaching;
@@ -117,6 +118,7 @@ builder.Services.AddHttpLogging(logging =>
 		| HttpLoggingFields.ResponseStatusCode
 		| HttpLoggingFields.Duration;
 });
+builder.Services.AddHttpLoggingInterceptor<TraceIdHttpLoggingInterceptor>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ResultFailureExceptionHandler>();
@@ -211,9 +213,6 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
 
 	await initializer.MigrateAsync();
-
-	if (app.Configuration.GetValue<bool>("Database:SeedOnStartup"))
-		await initializer.SeedAsync();
 }
 
 app.MapDefaultEndpoints(

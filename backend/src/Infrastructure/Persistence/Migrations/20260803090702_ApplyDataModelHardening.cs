@@ -145,15 +145,6 @@ namespace Infrastructure.Persistence.Migrations
 				columns: new[] { "user_id", "key" },
 				unique: true);
 
-			// #1200: supports the city filter's "lower(address_city) LIKE
-			// '%x%'" - a leading wildcard no plain btree index can serve. No
-			// EF Core Fluent API for an expression + gin_trgm_ops index, so
-			// this is raw SQL rather than a CreateIndex call above.
-			migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
-			migrationBuilder.Sql(@"
-				CREATE INDEX IF NOT EXISTS ix_volunteer_opportunity_address_city_trgm
-				ON volunteer_opportunity USING gin (lower(address_city) gin_trgm_ops);");
-
 			// #1191: clean up any existing orphans before constraining - an org
 			// whose blocking-opportunity check happened to pass (only draft/past
 			// opportunities, per GetBlockingOpportunitiesForOrganizationAsync)
@@ -224,8 +215,6 @@ namespace Infrastructure.Persistence.Migrations
 			migrationBuilder.DropForeignKey(
 				name: "fk_volunteer_opportunity_organization_organization_id",
 				table: "volunteer_opportunity");
-
-			migrationBuilder.Sql("DROP INDEX IF EXISTS ix_volunteer_opportunity_address_city_trgm;");
 
 			migrationBuilder.DropIndex(
 				name: "ix_volunteer_opportunity_address_latitude_address_longitude",

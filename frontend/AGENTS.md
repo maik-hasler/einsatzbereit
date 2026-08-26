@@ -224,6 +224,20 @@ even for lower-frequency "created on" timestamps.
   volunteer's own confirmed appointment. Keep this pairing when touching
   either surface; don't rename one into the other to "fix" the apparent
   inconsistency.
+- **"Anmelden" vs "eintragen"** (German copy, #2237): "Anmelden"/"Anmeldung"
+  is reserved for authentication - signing in, signing out, the Keycloak
+  login flow - and nothing else. Signing up to participate in a
+  `ScheduledSlots` Einsatz uses "eintragen" instead (`opportunities.joinWaitlist`
+  "Für Zeitslot eintragen", `signUp.submitWaitlist` "Verbindlich eintragen",
+  `opportunities.loginPrompt` "Trag dich ein, um mitzumachen."), and the
+  resulting record is an "Eintragung", not an "Anmeldung", through the
+  confirmation dialog, toasts, notifications and transactional emails
+  (`backend/src/Infrastructure/Email/Templates/de.json`). This does not
+  apply to `IndividualContact` opportunities, which already use their own
+  unambiguous "Interesse bekunden" / "Interessenbekundung" wording (#2228) -
+  don't fold that into "eintragen". Adding a new German string that says
+  "sich anmelden" for anything other than logging in reintroduces the exact
+  ambiguity #2237 fixed.
 
 ## Accessibility (a11y)
 

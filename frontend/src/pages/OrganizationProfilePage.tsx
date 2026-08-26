@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useLocation } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
@@ -26,6 +26,7 @@ export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	const api = useApiClient();
 	const auth = useAuth();
+	const location = useLocation();
 	const { t } = useTranslation();
 
 	const [profile, setProfile] =
@@ -152,7 +153,9 @@ export default function OrganizationProfilePage() {
 						onClick={() =>
 							auth.isAuthenticated
 								? setShowReport(true)
-								: auth.signinRedirect(signinLocaleArgs())
+								: auth.signinRedirect(
+										signinLocaleArgs(location.pathname + location.search),
+									)
 						}
 						data-testid="report-organization"
 						aria-label={t("orgProfile.reportOrganization")}

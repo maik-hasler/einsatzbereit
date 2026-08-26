@@ -70,6 +70,26 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task CreateEngagement_ShouldReturn409_WhenIndividualContactApplicationDeadlineHasPassed(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+		await SetExpiredValidUntilDirectlyAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
 	public async Task GetEngagements_ShouldReturnSignedUpVolunteer(
 		CancellationToken cancellationToken)
 	{
@@ -2195,6 +2215,19 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 			},
 			cancellationToken);
+	}
+
+	private async Task SetExpiredValidUntilDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
+		var aggregate = await dbContext.VolunteerOpportunities.FindAsync(opportunityId_, cancellationToken)
+			?? throw new InvalidOperationException($"Seeded opportunity '{opportunityId}' not found.");
+
+		var farPast = DateTimeOffset.UtcNow.AddDays(-30);
+		aggregate.SetValidUntil(farPast.AddDays(1), now: farPast).ThrowIfFailure();
+
+		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsOpportunityAsync(

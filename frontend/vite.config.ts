@@ -94,9 +94,9 @@ const deManifest = {
 			],
 		},
 		{
-			name: "Meine Anmeldungen",
-			short_name: "Anmeldungen",
-			description: "Deine Anmeldungen zu Einsätzen ansehen",
+			name: "Meine Einsätze",
+			short_name: "Meine Einsätze",
+			description: "Einsätze ansehen, für die du dich eingetragen hast",
 			url: "/my-signups",
 			icons: [
 				{

@@ -14,12 +14,17 @@ depends on those persisted coordinates. We need to decide where geocoding
 runs and how spatial filtering is implemented in PostgreSQL.
 
 === Decision
-Geocode addresses synchronously in the `CreateVolunteerOpportunity` /
-`UpdateVolunteerOpportunity` application command handlers via an
-`IGeocodingService` abstraction backed by OpenStreetMap Nominatim, and persist
-the coordinates on the `Address` value object. Reads never geocode. Spatial
-filtering uses a SQL bounding-box prefilter plus an in-memory Haversine
-refinement for radius queries. We do not adopt PostGIS.
+Geocode addresses in the `CreateVolunteerOpportunity` / `UpdateVolunteerOpportunity`
+application command handlers via an `IGeocodingService` abstraction backed by
+OpenStreetMap Nominatim, and persist the coordinates on the `Address` value
+object. Reads never geocode. Spatial filtering uses a SQL bounding-box
+prefilter plus an in-memory Haversine refinement for radius queries. We do not
+adopt PostGIS.
+
+[NOTE]
+====
+*How geocoding is triggered changed after this ADR was accepted - see the Amendment section at the end of this record.* The command handlers no longer call `IGeocodingService` synchronously; they raise a domain event handled asynchronously. The rest of this Decision (write-time only, no PostGIS, bbox + Haversine for search) is still accurate.
+====
 
 === Rationale
 * Geocoding once at write time keeps reads fast and deterministic, and avoids hammering Nominatim on every list request.
@@ -58,7 +63,17 @@ Raise `OpportunityCreated`, handle it asynchronously, update coordinates later.
 ** Eventual consistency for pin visibility complicates the UX
 ** Extra moving parts (outbox / worker) not warranted yet
 
+NOTE: Adopted after all, on 2026-08-18 - see the Amendment section at the end of this record. The "extra moving parts" already existed by then (the outbox shipped for #828); the eventual-consistency window this ADR worried about turned out to be the outbox's own poll interval (seconds), not something worth rejecting the alternative over.
+
 === Consequences
-* On-site opportunities created or updated while Nominatim is unreachable are persisted with null coordinates; they appear in the list but not on the map until a subsequent update succeeds.
-* Geocoding adds a per-request latency of up to one second plus network round-trip on create/update; acceptable for a low-write workload.
+* On-site opportunities created or updated while Nominatim is unreachable are persisted with null coordinates; they appear in the list but not on the map until `GeocodeVolunteerOpportunityAddressHandler` or `GeocodingRetryJob` fills them in - see the Amendment below; this is no longer conditioned on the organizer making a subsequent edit.
+* Geocoding no longer adds request latency to create/update - see the Amendment below.
 * If the platform scales or expands beyond Germany, or dense geographic filtering becomes a hotspot, record the scaling risk as a TDR and, if triggered, capture the PostGIS adoption in a new ADR that supersedes this one.
+
+=== Amendment (2026-08-18): Geocoding Moved to an Async Domain-Event Handler
+
+The Decision above no longer matches shipped code. `CreateVolunteerOpportunityCommandHandler` and `UpdateVolunteerOpportunityCommandHandler` (via `VolunteerOpportunity.Create` / `.Relocate`) do not call `IGeocodingService` at all; they raise `VolunteerOpportunityGeocodingRequestedDomainEvent`, which the transactional outbox (ADR-adjacent to #828) dispatches to `GeocodeVolunteerOpportunityAddressHandler` (`Application/VolunteerOpportunities/GeocodeVolunteerOpportunityAddress/v1/`) - normally within the outbox's own poll interval (5 seconds by default, `Outbox:PollIntervalSeconds`), not synchronously inside the write request. That handler calls `IGeocodingService.GeocodeAsync`, caches a non-transient result for 24h keyed on the address, and applies it via `VolunteerOpportunity.ApplyGeocodingResult(...)` on success or `MarkAddressGeocodingFailed()` on a definitive `NotFound`.
+
+A separate `GeocodingRetryJob` (`Infrastructure/BackgroundJobs/GeocodingRetryJob.cs`) backstops the one case the handler above leaves unresolved: a `TransientFailure` outcome (Nominatim unreachable or throttled at that moment), which the handler logs and otherwise ignores rather than retrying inline. `GeocodingRetryJob` is an `IHostedService` on a `PeriodicTimer` firing every hour; each tick it re-queries every `VolunteerOpportunity` with `Address.Latitude == null && !AddressGeocodingFailed && !IsRemote` and retries `IGeocodingService.GeocodeAsync` for each, applying the same `ApplyGeocodingResult` / `MarkAddressGeocodingFailed` outcomes. It shares `NominatimGeocodingService`'s process-wide throttle with every other Nominatim caller (ADR-5).
+
+Net effect on this ADR's own reasoning: the "Domain event + background geocoder" alternative in Considered Alternatives was adopted, not rejected. Its "eventual consistency complicates the UX" con did not materialize as feared, because the common path still resolves in the outbox's single-digit-second poll interval; only a Nominatim outage or rate-limit hit waits on the hourly retry job. Its "extra moving parts" con was already paid for by the outbox existing for other domain events. Write-time-only geocoding, no PostGIS, and the bbox-plus-Haversine search strategy are all unaffected and remain this ADR's decision.
