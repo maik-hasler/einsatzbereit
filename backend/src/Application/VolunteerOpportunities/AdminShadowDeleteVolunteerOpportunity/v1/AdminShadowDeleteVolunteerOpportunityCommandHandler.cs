@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
 using Domain.AuditLogs;
@@ -20,6 +21,7 @@ namespace Application.VolunteerOpportunities.AdminShadowDeleteVolunteerOpportuni
 internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
+	IFileStorageService fileStorage,
 	ILogger<AdminShadowDeleteVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<AdminShadowDeleteVolunteerOpportunityCommand, bool>
 {
@@ -36,6 +38,7 @@ internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 		await VolunteerOpportunityDeletionHelper.ShadowDeleteAsync(
 			dbContext,
 			engagementReadRepository,
+			fileStorage,
 			opportunity,
 			opportunityId,
 			request.AdminUserId,
