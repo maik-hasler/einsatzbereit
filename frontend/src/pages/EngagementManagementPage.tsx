@@ -17,6 +17,7 @@ import Chip from "../components/Chip";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
+import Select from "../components/Select";
 import NotFoundPage from "./NotFoundPage";
 import {
 	formatDate,
@@ -29,12 +30,7 @@ import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
-import {
-	inputClass,
-	labelClass,
-	textareaClass,
-	selectClass,
-} from "../lib/formClasses";
+import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import {
 	CheckIconSolid,
@@ -555,11 +551,10 @@ export default function EngagementManagementPage() {
 						<label htmlFor="engagement-status-filter" className={labelClass}>
 							{t("engagementManagement.filterLabelStatus")}
 						</label>
-						<select
+						<Select
 							id="engagement-status-filter"
 							value={statusFilter}
 							onChange={(e) => setStatusFilter(e.target.value)}
-							className={selectClass}
 						>
 							<option value="">{t("engagementManagement.allStatuses")}</option>
 							{Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -567,7 +562,7 @@ export default function EngagementManagementPage() {
 									{label}
 								</option>
 							))}
-						</select>
+						</Select>
 					</div>
 					{opportunity && opportunity.timeSlots.length > 1 && (
 						<div>
@@ -577,11 +572,10 @@ export default function EngagementManagementPage() {
 							>
 								{t("engagementManagement.filterLabelTimeSlot")}
 							</label>
-							<select
+							<Select
 								id="engagement-timeslot-filter"
 								value={timeSlotFilter}
 								onChange={(e) => setTimeSlotFilter(e.target.value)}
-								className={selectClass}
 							>
 								<option value="">
 									{t("engagementManagement.allTimeSlots")}
@@ -595,7 +589,7 @@ export default function EngagementManagementPage() {
 										)}
 									</option>
 								))}
-							</select>
+							</Select>
 						</div>
 					)}
 					<form

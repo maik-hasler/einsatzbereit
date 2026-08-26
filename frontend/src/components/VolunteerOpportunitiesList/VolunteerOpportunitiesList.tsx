@@ -161,6 +161,7 @@ export default function VolunteerOpportunitiesList() {
 		loadMoreError,
 		loadMoreErrorIsOffline,
 		retryLoadMore,
+		totalItems,
 	} = useVolunteerOpportunitiesData({
 		occurrence,
 		participationType,
@@ -649,7 +650,7 @@ export default function VolunteerOpportunitiesList() {
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="flex items-center gap-1.5 rounded-full border border-red-500 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:border-red-600 hover:bg-red-100"
+							className="flex items-center gap-1.5 rounded-full border border-brand-600 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100"
 						>
 							<BroomIcon />
 							{t("opportunities.clearFilters")}
@@ -663,6 +664,7 @@ export default function VolunteerOpportunitiesList() {
 				error={error}
 				errorIsOffline={errorIsOffline}
 				items={items}
+				totalItems={totalItems}
 				hasFilters={hasFilters}
 				onClearFilters={clearFilters}
 				hasMore={hasMore}
@@ -671,6 +673,7 @@ export default function VolunteerOpportunitiesList() {
 				loadMoreError={loadMoreError}
 				loadMoreErrorIsOffline={loadMoreErrorIsOffline}
 				onRetryLoadMore={retryLoadMore}
+				keyword={keyword}
 			/>
 		</div>
 	);

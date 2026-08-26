@@ -17,9 +17,9 @@ import {
 	formatDateTime,
 	isRecentlyCreatedOrganization,
 } from "../lib/format";
-import { avatarColorClasses } from "../lib/avatarColor";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Chip from "../components/Chip";
+import OrgAvatar from "../components/OrgAvatar";
 import PageHeaderBand from "../components/PageHeaderBand";
 import SubNavRail from "../components/SubNavRail";
 import Skeleton from "../components/Skeleton";
@@ -306,30 +306,17 @@ function OrganizationsSection() {
 				<>
 					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 						{rows.map((row) => {
-							const avatarColor = avatarColorClasses(row.id);
 							return (
 								<li
 									key={row.id}
 									className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
 								>
 									<div className="flex min-w-0 flex-1 items-center gap-3">
-										{row.logoUrl ? (
-											<img
-												src={row.logoUrl}
-												alt=""
-												width={40}
-												height={40}
-												loading="lazy"
-												className="h-10 w-10 shrink-0 rounded-full object-cover"
-											/>
-										) : (
-											<span
-												aria-hidden="true"
-												className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor.bg} ${avatarColor.text}`}
-											>
-												{row.name.charAt(0).toUpperCase()}
-											</span>
-										)}
+										<OrgAvatar
+											name={row.name}
+											logoUrl={row.logoUrl}
+											size="xl"
+										/>
 										<div className="min-w-0 flex-1">
 											<div className="flex flex-wrap items-center gap-2">
 												<Link

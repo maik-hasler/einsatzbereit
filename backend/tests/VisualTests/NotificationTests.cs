@@ -61,7 +61,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
+		await notificationItem.GetByRole(AriaRole.Link).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements",
@@ -109,7 +109,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var notificationItem = panel.Locator("li", new() { HasText = orgName }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
+		await notificationItem.GetByRole(AriaRole.Link).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/my-signups",
@@ -191,7 +191,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
+		await notificationItem.GetByRole(AriaRole.Link).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements",

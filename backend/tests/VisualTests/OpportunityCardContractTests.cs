@@ -89,7 +89,7 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 	}
 
 	[Test]
-	public async Task PublicGrid_AnInterestBasedCard_StillStatesItsCapacity()
+	public async Task PublicGrid_AnInterestBasedCard_StatesItsTypeInsteadOfACapacity()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -107,8 +107,12 @@ public class OpportunityCardContractTests(AspireFixture fixture) : VisualTestBas
 		var card = Page.Locator("li", new() { HasText = keyword }).First;
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Expect(card.GetByTestId("opportunity-capacity"))
+		// An interest-based opportunity has no capacity to count, so the capacity
+		// chip is omitted entirely; the always-shown sign-up-mechanism chip is the
+		// one place its participation type is stated (#2228).
+		await Expect(card.GetByTestId("opportunity-signup-mechanism"))
 			.ToHaveTextAsync("By expression of interest");
+		await Expect(card.GetByTestId("opportunity-capacity")).Not.ToBeAttachedAsync();
 	}
 
 	[Test]

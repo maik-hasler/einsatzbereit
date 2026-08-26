@@ -98,11 +98,17 @@ export default function EditableWidgetTile({
 					: editing
 						? "pointer-events-none"
 						: ""
-			} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
+			} ${
+				editing
+					? isPlacing
+						? "ring-2 ring-brand-500"
+						: "ring-1 ring-brand-600"
+					: ""
+			}`}
 		>
 			<div
 				inert={editing}
-				className={`h-full ${editing ? "opacity-60" : ""} ${
+				className={`h-full ${
 					// Reserves room for the grip button below (absolutely positioned,
 					// centered at the tile's top edge) instead of letting it sit on
 					// top of WidgetCard's own title - on a narrow tile the two used to

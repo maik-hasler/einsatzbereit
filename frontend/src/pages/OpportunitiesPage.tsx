@@ -51,7 +51,13 @@ export default function OpportunitiesPage() {
 								className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
 							/>
 						</div>
-						<Button type="submit" size="lg" pill className="shrink-0 shadow-md">
+						<Button
+							type="submit"
+							size="lg"
+							pill
+							variant="onDark"
+							className="shrink-0 shadow-md"
+						>
 							{t("landing.heroSearchButton")}
 						</Button>
 					</div>

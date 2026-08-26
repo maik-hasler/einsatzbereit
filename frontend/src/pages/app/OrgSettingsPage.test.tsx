@@ -131,6 +131,16 @@ describe("OrgSettingsPage edit form", () => {
 	});
 });
 
+describe("OrgSettingsPage profile preview", () => {
+	it("marks the organization's German description as German on an English page", () => {
+		renderPage();
+
+		expect(
+			screen.getByText("Wir helfen, wo Hilfe gebraucht wird."),
+		).toHaveAttribute("lang", "de");
+	});
+});
+
 describe("OrgSettingsPage danger zone", () => {
 	it("is headed by the action it performs, in sentence case matching its button", () => {
 		renderPage();

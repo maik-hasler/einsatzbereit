@@ -6,6 +6,7 @@ import { isNetworkError } from "../lib/apiError";
 export interface LoadMorePage<T> {
 	items: T[];
 	pageCount?: number;
+	totalItems?: number;
 }
 
 export type FetchPage<T> = (page: number) => Promise<LoadMorePage<T>>;
@@ -20,6 +21,7 @@ export interface UseLoadMoreResult<T> {
 	setItems: Dispatch<SetStateAction<T[]>>;
 	page: number;
 	pageCount: number;
+	totalItems: number | undefined;
 	loading: boolean;
 	loadingMore: boolean;
 
@@ -52,6 +54,7 @@ export function useLoadMore<T>(
 	const [items, setItems] = useState<T[]>([]);
 	const [page, setPage] = useState(1);
 	const [pageCount, setPageCount] = useState(1);
+	const [totalItems, setTotalItems] = useState<number | undefined>(undefined);
 	const [hasMore, setHasMore] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
@@ -100,6 +103,7 @@ export function useLoadMore<T>(
 				);
 				const newPageCount = result.pageCount ?? 1;
 				setPageCount(newPageCount);
+				setTotalItems(result.totalItems);
 
 				setHasMore(page < newPageCount);
 			})
@@ -153,6 +157,7 @@ export function useLoadMore<T>(
 		setLoadMoreError(null);
 		setLoadMoreErrorIsNetworkFailure(false);
 		setPage(1);
+		setTotalItems(undefined);
 		setHasMore(false);
 		setResetToken((n) => n + 1);
 	}, []);
@@ -162,6 +167,7 @@ export function useLoadMore<T>(
 		setItems,
 		page,
 		pageCount,
+		totalItems,
 		loading,
 		loadingMore,
 		error,

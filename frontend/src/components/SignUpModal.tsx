@@ -9,13 +9,14 @@ import {
 	isSlotFull,
 } from "../lib/format";
 import { getApiErrorMessage, isApiErrorCode } from "../lib/apiError";
-import { labelClass, textareaClass } from "../lib/formClasses";
+import { getTextareaClass } from "../lib/formClasses";
 import CharCount from "./CharCount";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
-import { RequiredFieldsLegend, RequiredMark } from "./RequiredMark";
+import Field from "./Field";
+import { RequiredFieldsLegend } from "./RequiredMark";
 
 const MESSAGE_MAX_LENGTH = 500;
 
@@ -181,37 +182,32 @@ export default function SignUpModal({
 				{!isScheduledSlots && (
 					<div>
 						<RequiredFieldsLegend className="mb-2" />
-						<label htmlFor="sign-up-message" className={`mb-1 ${labelClass}`}>
-							{t("signUp.message")}
-							<RequiredMark />
-						</label>
-						<textarea
+						<Field
+							label={t("signUp.message")}
 							id="sign-up-message"
-							ref={messageFieldRef}
-							value={message}
-							onChange={(e) => {
-								setMessage(e.target.value);
-								if (messageError) setMessageError(null);
-							}}
-							aria-required="true"
-							aria-invalid={messageError ? true : undefined}
-							aria-describedby={
-								messageError ? "sign-up-message-error" : undefined
-							}
-							rows={4}
-							maxLength={MESSAGE_MAX_LENGTH}
-							placeholder={t("signUp.messagePlaceholder")}
-							className={textareaClass}
-						/>
-						{messageError ? (
-							<p
-								id="sign-up-message-error"
-								className="mt-1 text-xs text-red-600"
-								role="alert"
-							>
-								{messageError}
-							</p>
-						) : (
+							required
+							error={messageError ?? undefined}
+						>
+							<textarea
+								id="sign-up-message"
+								ref={messageFieldRef}
+								value={message}
+								onChange={(e) => {
+									setMessage(e.target.value);
+									if (messageError) setMessageError(null);
+								}}
+								aria-required="true"
+								aria-invalid={messageError ? true : undefined}
+								aria-describedby={
+									messageError ? "sign-up-message-error" : undefined
+								}
+								rows={4}
+								maxLength={MESSAGE_MAX_LENGTH}
+								placeholder={t("signUp.messagePlaceholder")}
+								className={getTextareaClass(Boolean(messageError))}
+							/>
+						</Field>
+						{!messageError && (
 							<CharCount current={message.length} max={MESSAGE_MAX_LENGTH} />
 						)}
 					</div>
