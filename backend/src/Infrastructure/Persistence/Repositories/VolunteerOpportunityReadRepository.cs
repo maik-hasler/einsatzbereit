@@ -19,6 +19,13 @@ internal sealed class VolunteerOpportunityReadRepository(
 	ApplicationDbContext dbContext)
 	: IVolunteerOpportunityReadRepository
 {
+	// The date-availability window is already capped at 62 days (see
+	// GetVolunteerOpportunityDateAvailabilityEndpoint.MaxWindowDays), but the number of
+	// publicly-listed opportunities with slots inside that window has no ceiling - it grows
+	// with the platform's total published data. This bounds the raw row count regardless,
+	// ordered soonest-first so a cap that ever kicks in drops the least actionable slots.
+	private const int MaxDateAvailabilitySlotRows = 10_000;
+
 	public async ValueTask<IReadOnlyList<SitemapEntry>> GetPublishedForSitemapAsync(
 		CancellationToken cancellationToken = default)
 	{
@@ -225,6 +232,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 					Latitude = vo.Address != null ? vo.Address.Latitude : null,
 					Longitude = vo.Address != null ? vo.Address.Longitude : null,
 				}))
+			.OrderBy(s => s.StartDateTime)
+			.Take(MaxDateAvailabilitySlotRows)
 			.ToListAsync(cancellationToken);
 
 		var withinRadius = filter.HasRadius
