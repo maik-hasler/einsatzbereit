@@ -13,7 +13,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: null,
 			keycloakClientSecret: null,
 			authenticationAuthority: null,
-			corsOrigins: null);
+			corsOrigins: null,
+			smtpHost: null,
+			smtpPort: null);
 
 		missing.Should().BeEmpty();
 	}
@@ -26,7 +28,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: "Host=postgres;Database=einsatzbereit",
 			keycloakClientSecret: "real-secret",
 			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
-			corsOrigins: ["https://einsatzbereit.example.com"]);
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().BeEmpty();
 	}
@@ -42,7 +46,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: connectionString,
 			keycloakClientSecret: "real-secret",
 			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
-			corsOrigins: ["https://einsatzbereit.example.com"]);
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().ContainSingle().Which.Should().Be("ConnectionStrings:einsatzbereit");
 	}
@@ -58,7 +64,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: "Host=postgres;Database=einsatzbereit",
 			keycloakClientSecret: keycloakClientSecret,
 			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
-			corsOrigins: ["https://einsatzbereit.example.com"]);
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().ContainSingle().Which.Should().Be("Keycloak:ClientSecret");
 	}
@@ -74,7 +82,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: "Host=postgres;Database=einsatzbereit",
 			keycloakClientSecret: "real-secret",
 			authenticationAuthority: authenticationAuthority,
-			corsOrigins: ["https://einsatzbereit.example.com"]);
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().ContainSingle().Which.Should().Be("Authentication:Authority");
 	}
@@ -87,7 +97,9 @@ public class RequiredConfigurationValidatorTests
 			connectionString: "Host=postgres;Database=einsatzbereit",
 			keycloakClientSecret: "real-secret",
 			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
-			corsOrigins: null);
+			corsOrigins: null,
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().ContainSingle().Which.Should().Be("Cors:Origins");
 	}
@@ -100,9 +112,47 @@ public class RequiredConfigurationValidatorTests
 			connectionString: "Host=postgres;Database=einsatzbereit",
 			keycloakClientSecret: "real-secret",
 			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
-			corsOrigins: []);
+			corsOrigins: [],
+			smtpHost: "smtp.example.com",
+			smtpPort: "587");
 
 		missing.Should().ContainSingle().Which.Should().Be("Cors:Origins");
+	}
+
+	[Test]
+	[Arguments(null)]
+	[Arguments("")]
+	[Arguments("   ")]
+	public void FindMissing_ShouldFlagSmtpHost_WhenNotDevelopment_AndBlank(string? smtpHost)
+	{
+		var missing = RequiredConfigurationValidator.FindMissing(
+			isDevelopment: false,
+			connectionString: "Host=postgres;Database=einsatzbereit",
+			keycloakClientSecret: "real-secret",
+			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: smtpHost,
+			smtpPort: "587");
+
+		missing.Should().ContainSingle().Which.Should().Be("Smtp:Host");
+	}
+
+	[Test]
+	[Arguments(null)]
+	[Arguments("")]
+	[Arguments("   ")]
+	public void FindMissing_ShouldFlagSmtpPort_WhenNotDevelopment_AndBlank(string? smtpPort)
+	{
+		var missing = RequiredConfigurationValidator.FindMissing(
+			isDevelopment: false,
+			connectionString: "Host=postgres;Database=einsatzbereit",
+			keycloakClientSecret: "real-secret",
+			authenticationAuthority: "https://login.example.com/realms/einsatzbereit",
+			corsOrigins: ["https://einsatzbereit.example.com"],
+			smtpHost: "smtp.example.com",
+			smtpPort: smtpPort);
+
+		missing.Should().ContainSingle().Which.Should().Be("Smtp:Port");
 	}
 
 	[Test]
@@ -113,12 +163,16 @@ public class RequiredConfigurationValidatorTests
 			connectionString: null,
 			keycloakClientSecret: null,
 			authenticationAuthority: null,
-			corsOrigins: null);
+			corsOrigins: null,
+			smtpHost: null,
+			smtpPort: null);
 
 		missing.Should().BeEquivalentTo(
 			"ConnectionStrings:einsatzbereit",
 			"Keycloak:ClientSecret",
 			"Authentication:Authority",
-			"Cors:Origins");
+			"Cors:Origins",
+			"Smtp:Host",
+			"Smtp:Port");
 	}
 }
