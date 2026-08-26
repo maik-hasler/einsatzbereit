@@ -23,7 +23,7 @@ public sealed class GeocodeVolunteerOpportunityAddressHandlerTests : IDisposable
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly MemoryCache _cache = new(new MemoryCacheOptions());
+	private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
 	private readonly GeocodeVolunteerOpportunityAddressHandler _sut;
 
 	public GeocodeVolunteerOpportunityAddressHandlerTests()

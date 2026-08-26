@@ -52,6 +52,20 @@ The following table lists the relevant architecture decisions. Each decision lin
 |2026-08-25
 |link:ADRs/6_light_only_theme.html[Light-only theme]
 
+|7
+|Repository scope
+|Stop this repository's scope at building and publishing container images; deployment, staging/production and observability now live in a separate private repository.
+|Accepted
+|2026-08-22
+|link:ADRs/7_repository_scope_stops_at_image_publishing.html[Repository scope]
+
+|8
+|Distributed tracing (historical)
+|Add Grafana Tempo tracing to the (since-removed) deployed observability stack. Originally ADR-6; restored 2026-08-26 after being deleted instead of superseded - see ADR-7.
+|Superseded by ADR-7
+|2026-07-29
+|link:ADRs/8_distributed_tracing_via_tempo.html[Distributed tracing]
+
 |===
 
 See <<section-solution-strategy>> for how the key decisions map to the quality goals.

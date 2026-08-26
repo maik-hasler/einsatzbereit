@@ -28,6 +28,11 @@ internal sealed class CreateEngagementCommandHandler(
 		if (opportunity.Status != OpportunityStatus.Published)
 			throw new ResultFailureException(Error.Conflict("Engagement.OpportunityNotPublished", "Conflict: this opportunity is not open for sign-ups."));
 
+		if (opportunity.ParticipationType == ParticipationType.IndividualContact
+			&& opportunity.ValidUntil is { } validUntil
+			&& validUntil <= DateTimeOffset.UtcNow)
+			throw new ResultFailureException(Error.Conflict("Engagement.ApplicationDeadlinePassed", "Conflict: the application deadline for this opportunity has passed."));
+
 		if (opportunity.ParticipationType == ParticipationType.ScheduledSlots && request.TimeSlotId is null)
 			throw new ResultFailureException(Error.Validation("Engagement.TimeSlotRequired", "A time slot is required to sign up for this opportunity."));
 

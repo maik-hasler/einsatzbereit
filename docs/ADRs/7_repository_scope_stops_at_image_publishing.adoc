@@ -1,0 +1,50 @@
+== 7. Repository Scope Stops at Image Publishing
+
+=== Status
+Accepted
+
+=== Date
+2026-08-22
+
+=== Context
+Through 2026-08 this repository owned not just building the app but deploying and operating it: `docker-compose.yml` defined a shared staging/production host (TDR-3) running a Prometheus/Grafana/Loki/Tempo observability stack (ADR-6), `publish.yml` had `deploy-staging`/`deploy-production` jobs targeting that host, and `reset-staging.yml` could wipe its data. TDR-3's own 2026-08-21 update already recorded a first step away from that: the `deploy-staging`/`deploy-production` jobs had moved, largely unchanged, into a separate `mgmt-hetzner` repository's `deploy-einsatzbereit.yaml`, triggered by hand rather than automatically from this repo's `publish.yml`, specifically so no deploy credential needed to flow into `mgmt-hetzner` from here. Issue #2165 completed that separation the following day.
+
+=== Decision
+This repository's scope stops at `publish.yml` pushing versioned images to GitHub Container Registry (see chapter 7's "Image Publishing"). It does not describe, configure, or drive a deployed environment. Concretely, #2165:
+
+* Rewrote `07_deployment_view.adoc` to cover only the local Aspire stack and a generic deployed runtime (the three released images plus the PostgreSQL, S3 and SMTP services they consume) - no host, domain, reverse proxy, monitoring stack, backup sidecar, network segmentation, or staging/production split.
+* Deleted `reset-staging.yml`; stopped `publish.yml` tagging release-candidate images `staging` or baking a specific host's origins into the frontend image.
+* Removed the Prometheus exporter, the second metrics-port Kestrel listener and the `/metrics` scraping endpoint from the backend - they existed only to feed the now-external Prometheus. OTLP export itself stays, since it is inert until `OTEL_EXPORTER_OTLP_ENDPOINT` is set and costs nothing to leave wired up.
+* Deleted ADR-6 (Grafana Tempo tracing) and TDR-3 (shared staging/production host) outright rather than marking them superseded. That omission is corrected by this record: both are restored - ADR-6 as ADR-8 (its original number was reused before the omission was caught), TDR-3 at its original number - marked superseded/resolved by this ADR rather than left deleted.
+
+=== Rationale
+* Whoever runs the images decides how and where (their own infrastructure, a different cloud, a home lab); this repository does not need to encode one operator's choices as if they were the application's architecture.
+* Each released image is already configured entirely through environment variables at container start (see `keycloak/README.md` for that image's variables; the backend and frontend images follow the same pattern) - the images are self-describing, so a deploying operator does not need this repository's docs to run them.
+* Narrows what a contributor needs to reason about: this is a monorepo for one application shipped as three images, not also an infrastructure repository for one specific operator's host.
+* The deleted observability stack and shared host were specific to that one operator's deployment (a Hetzner box also running unrelated services), not properties of the application itself - unlike the backend's own OTLP export, which is generic and stays.
+
+=== Considered Alternatives
+
+==== Keep deployment in this repository, documented as one optional example
+Leave `docker-compose.yml`, the observability stack and the `deploy-*` jobs in place, framed as "one possible way to run this" rather than removed.
+
+* Pros
+** No information lost; a deploy-focused example stays available to anyone forking the project
+** No ADR-6/TDR-3 supersession bookkeeping needed
+* Cons
+** The docs (chapter 7, ADR-6, TDR-3, and the staging/observability references then still scattered across chapters 2-5, 8, 9, 11, 12) keep describing one specific operator's infrastructure as if it were part of the application's own architecture - exactly the kind of drift this ADR exists to stop
+** CI (`reset-staging.yml`, the `deploy-*` jobs) keeps depending on secrets and a host that belong to one operator, not the project, which is confusing for a fork or a new contributor reading `publish.yml`
+
+==== Move deployment out, but leave ADR-6/TDR-3 unedited as historical record
+Delete the docker-compose/CI/backend pieces but leave the two records exactly as originally accepted, without a status change.
+
+* Pros
+** Simplest possible edit
+* Cons
+** An ADR with `Status: Accepted` describing a Tempo container that no longer exists anywhere in this repository is actively misleading rather than merely stale - arc42's own convention is that a superseded decision is marked as such, not left to read as current
+
+=== Consequences
+* Chapter 7 (Deployment View) now documents only what this repository actually produces and controls: two runtime shapes (local Aspire, and a generic "the three images plus their consumed services") and the CI/CD pipeline that builds and publishes them.
+* Nothing in this repository can be used to stand up a real deployment end-to-end any more - that capability now lives entirely in the private `mgmt-hetzner` repository. That is the intended outcome (see Rationale), but it means this repository alone no longer answers "how is this hosted."
+* ADR-6 and TDR-3 are restored (as ADR-8 and TDR-3 respectively), marked Superseded/Resolved by this ADR instead of left deleted, so the reasoning behind both the original tracing/hosting decisions and this reversal stays in the record, per arc42's convention for superseded decisions.
+* Observability beyond what the local Aspire dashboard shows (traces, metrics, log aggregation) is now entirely the deploying operator's responsibility; this repository's contribution is limited to emitting OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, per <<section-concepts>>.

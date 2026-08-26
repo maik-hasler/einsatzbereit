@@ -44,7 +44,13 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache c
 					if (!cache.TryGetValue(cacheKey, out Task? existing) || existing is null)
 					{
 						recordTask = RecordLoginSafeAsync(sender, userId, today);
-						cache.Set(cacheKey, recordTask, NextServerMidnight());
+						// Nominal Size - the shared cache's SizeLimit budget is denominated in the
+						// tile bytes OpenStreetMapTileService caches, which dwarf this payload (#2215).
+						cache.Set(cacheKey, recordTask, new MemoryCacheEntryOptions
+						{
+							Size = 1,
+							AbsoluteExpiration = NextServerMidnight(),
+						});
 					}
 					else
 					{

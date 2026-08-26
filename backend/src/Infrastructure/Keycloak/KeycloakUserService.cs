@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Application.Common.Keycloak;
 using Application.Common.Pagination;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +13,7 @@ namespace Infrastructure.Keycloak;
 internal sealed class KeycloakUserService(
 	HttpClient httpClient,
 	KeycloakAdminTokenProvider tokenProvider,
+	IMemoryCache cache,
 	IOptions<KeycloakOptions> options,
 	ILogger<KeycloakUserService> logger)
 	: IKeycloakUserService
@@ -20,6 +22,11 @@ internal sealed class KeycloakUserService(
 	{
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 	};
+
+	// Keycloak's admin API has no bulk multi-id endpoint (only per-id GET or a
+	// realm-wide page scan), so this cache - not a single network call - is what
+	// keeps GetUserProfilesAsync/GetDisplayNamesAsync cheap on repeat page views.
+	private static readonly TimeSpan ProfileCacheDuration = TimeSpan.FromSeconds(45);
 
 	private const int RoleLookupConcurrency = 8;
 
@@ -31,6 +38,10 @@ internal sealed class KeycloakUserService(
 		Guid userId,
 		CancellationToken cancellationToken = default)
 	{
+		var cacheKey = ProfileCacheKey(userId);
+		if (cache.TryGetValue(cacheKey, out KeycloakUserProfile? cached) && cached is not null)
+			return cached;
+
 		var response = await SendAuthorizedAsync(
 			() => new HttpRequestMessage(
 				HttpMethod.Get, $"/admin/realms/{_options.Realm}/users/{userId}"),
@@ -42,12 +53,22 @@ internal sealed class KeycloakUserService(
 			JsonOptions, cancellationToken)
 			?? throw new InvalidOperationException("Keycloak returned null user.");
 
-		return new KeycloakUserProfile(
+		var profile = new KeycloakUserProfile(
 			Guid.Parse(user.Id),
 			user.Username,
 			NullIfEmpty(user.FirstName),
 			NullIfEmpty(user.LastName),
 			user.Email ?? string.Empty);
+
+		// Nominal Size - the shared cache's SizeLimit budget is denominated in the
+		// tile bytes OpenStreetMapTileService caches, which dwarf this payload (#2215).
+		cache.Set(cacheKey, profile, new MemoryCacheEntryOptions
+		{
+			Size = 1,
+			AbsoluteExpirationRelativeToNow = ProfileCacheDuration,
+		});
+
+		return profile;
 	}
 
 	public async Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(
@@ -136,6 +157,8 @@ internal sealed class KeycloakUserService(
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
+
+		cache.Remove(ProfileCacheKey(userId));
 	}
 
 	public async Task DeleteUserAsync(
@@ -148,6 +171,8 @@ internal sealed class KeycloakUserService(
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
+
+		cache.Remove(ProfileCacheKey(userId));
 	}
 
 	public async Task<PagedList<AdminUserListItem>> ListUsersAsync(
@@ -353,6 +378,8 @@ internal sealed class KeycloakUserService(
 
 	private static string? NullIfEmpty(string? value) =>
 		string.IsNullOrEmpty(value) ? null : value;
+
+	private static string ProfileCacheKey(Guid userId) => $"keycloak-user-profile:{userId}";
 
 	private async Task EnsureSuccessAsync(
 		HttpResponseMessage response,

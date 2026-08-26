@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useLocation } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -153,6 +153,7 @@ function describeHowFact(
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const auth = useAuth();
+	const location = useLocation();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 
@@ -588,7 +589,11 @@ export default function VolunteerOpportunityDetailPage() {
 							{t("opportunities.loginPrompt")}
 						</p>
 						<Button
-							onClick={() => auth.signinRedirect(signinLocaleArgs())}
+							onClick={() =>
+								auth.signinRedirect(
+									signinLocaleArgs(location.pathname + location.search),
+								)
+							}
 							data-testid={`opportunity-signin${testIdSuffix}`}
 							fullWidth
 							size="lg"
@@ -682,7 +687,11 @@ export default function VolunteerOpportunityDetailPage() {
 												onClick={() =>
 													isAuthenticated
 														? setShowReport(true)
-														: auth.signinRedirect(signinLocaleArgs())
+														: auth.signinRedirect(
+																signinLocaleArgs(
+																	location.pathname + location.search,
+																),
+															)
 												}
 												data-testid="report-opportunity"
 												title={t("opportunities.report")}

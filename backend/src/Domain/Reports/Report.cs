@@ -9,6 +9,12 @@ public sealed class Report
 {
 	public const int MaxDetailsLength = 1000;
 
+	// How long a resolved report keeps blocking the same reporter from re-filing against the
+	// same target. A Dismissed report blocks indefinitely regardless of this window (see
+	// IApplicationDbContext.HasDuplicateReportAsync) - this only bounds the cooldown after a
+	// report was Actioned, so a target that reoffends after being actioned can be re-reported.
+	public const int DuplicateWindowDays = 30;
+
 	public ReportTargetType TargetType { get; private set; }
 
 	public Guid TargetId { get; private set; }

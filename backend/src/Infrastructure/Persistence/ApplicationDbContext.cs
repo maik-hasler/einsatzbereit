@@ -394,6 +394,13 @@ internal sealed class ApplicationDbContext(
 			.Where(e => e.VolunteerId == volunteerId)
 			.ToListAsync(cancellationToken);
 
+	public async Task<List<Engagement>> GetEngagementsByIdsAsync(
+		IReadOnlyCollection<EngagementId> engagementIds,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.Where(e => engagementIds.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 	public async Task<int> CountConfirmedEngagementsForVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default) =>
@@ -407,6 +414,24 @@ internal sealed class ApplicationDbContext(
 			.CountAsync(e => e.TimeSlotId == timeSlotId
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
 				cancellationToken);
+
+	public async Task<Dictionary<TimeSlotId, int>> CountActiveEngagementsForTimeSlotsAsync(
+		IReadOnlyCollection<TimeSlotId> timeSlotIds,
+		CancellationToken cancellationToken = default)
+	{
+		var nullableIds = timeSlotIds.Select(id => (TimeSlotId?)id).ToList();
+
+		var activeTimeSlotIds = await Set<Engagement>()
+			.Where(e => nullableIds.Contains(e.TimeSlotId)
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.Select(e => e.TimeSlotId)
+			.ToListAsync(cancellationToken);
+
+		return activeTimeSlotIds
+			.Where(id => id.HasValue)
+			.GroupBy(id => id!.Value)
+			.ToDictionary(g => g.Key, g => g.Count());
+	}
 
 	public async Task LockTimeSlotForUpdateAsync(
 		TimeSlotId timeSlotId,
@@ -478,16 +503,26 @@ internal sealed class ApplicationDbContext(
 			.Where(vo => vo.OrganizationId == organizationId)
 			.ToListAsync(cancellationToken);
 
-	public async Task<bool> HasOpenReportAsync(
+	public async Task<bool> HasDuplicateReportAsync(
 		ReportTargetType targetType,
 		Guid targetId,
 		UserId reporterId,
-		CancellationToken cancellationToken = default) =>
-		await Set<Report>()
+		CancellationToken cancellationToken = default)
+	{
+		// Open always blocks (still under review); Dismissed blocks indefinitely so a
+		// reporter cannot force a moderator to re-adjudicate the same claim on a loop
+		// (einsatzbereit#2212); anything else (Actioned) only blocks for a cooldown window,
+		// so a target that reoffends after being actioned can still be re-reported later.
+		var cutoff = DateTimeOffset.UtcNow.AddDays(-Report.DuplicateWindowDays);
+
+		return await Set<Report>()
 			.AnyAsync(r => r.TargetType == targetType
 				&& r.TargetId == targetId
 				&& r.ReporterId == reporterId
-				&& r.Status == ReportStatus.Open, cancellationToken);
+				&& (r.Status == ReportStatus.Open
+					|| r.Status == ReportStatus.Dismissed
+					|| r.CreatedOn >= cutoff), cancellationToken);
+	}
 
 	public async Task<List<Report>> GetOpenReportsForTargetAsync(
 		ReportTargetType targetType,
