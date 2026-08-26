@@ -122,10 +122,14 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 		// 8 hex characters are a millisecond timestamp segment that only changes
 		// every ~65 seconds, so two sign-ups created back to back like this -
 		// exactly the burst-of-signups scenario this test models - reliably
-		// share a code without any special setup.
+		// share a code without any special setup. The two sign-ups need to be
+		// from different volunteers: CreateEngagementCommandHandler rejects a
+		// second sign-up from the same volunteer for the same IndividualContact
+		// opportunity (Engagement.AlreadySignedUp), so olaf - who holds both
+		// "organisator" and "user" roles - stands in as the second volunteer.
 		var first = await vera.CreateEngagementAsync(
 			opportunityId, new CreateEngagementRequest { Message = "I'd like to help!" }, cancellationToken);
-		var second = await vera.CreateEngagementAsync(
+		var second = await olaf.CreateEngagementAsync(
 			opportunityId, new CreateEngagementRequest { Message = "Me too!" }, cancellationToken);
 		await olaf.ConfirmEngagementAsync(first.Id, cancellationToken);
 		await olaf.ConfirmEngagementAsync(second.Id, cancellationToken);
