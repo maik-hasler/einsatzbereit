@@ -309,13 +309,20 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (!string.IsNullOrWhiteSpace(keyword))
 		{
-			var loweredKeyword = keyword.ToLower();
+			// Folds German umlauts/eszett the way people actually type them on a
+			// phone keyboard ("Muenchen", "Fussball") so a search matches the native
+			// spelling and vice versa (#2221). The fold is repeated inline on every
+			// column instead of factored into a shared method: EF Core translates
+			// ToLower/Replace/Contains calls to SQL individually, but can't look
+			// inside a call to a method of our own to do the same.
+			var normalizedKeyword = FoldGermanText(keyword);
 			query = query.Where(vo =>
-				vo.TitleDe.ToLower().Contains(loweredKeyword) ||
-				(vo.TitleEn != null && vo.TitleEn.ToLower().Contains(loweredKeyword)) ||
-				vo.DescriptionDe.ToLower().Contains(loweredKeyword) ||
-				(vo.DescriptionEn != null && vo.DescriptionEn.ToLower().Contains(loweredKeyword)) ||
-				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(loweredKeyword)));
+				vo.TitleDe.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword) ||
+				(vo.TitleEn != null && vo.TitleEn.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)) ||
+				vo.DescriptionDe.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword) ||
+				(vo.DescriptionEn != null && vo.DescriptionEn.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)) ||
+				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId &&
+					o.Name.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)));
 		}
 
 		if (boundingBox is GeoBoundingBox box)
@@ -327,6 +334,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		return query;
 	}
+
+	// Kept in sync by hand with the inline column fold in ApplyPubliclyListedFilters's
+	// keyword predicate above - EF Core can translate the same ToLower/Replace chain
+	// applied to a column, but not a call to this method itself, so it can't be shared.
+	private static string FoldGermanText(string value) =>
+		value.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue");
 
 	private static GeoBoundingBox? ResolveBoundingBox(double? centerLatitude, double? centerLongitude, double? radiusKm) =>
 		centerLatitude.HasValue && centerLongitude.HasValue && radiusKm is > 0
