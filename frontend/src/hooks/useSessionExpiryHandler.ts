@@ -5,13 +5,21 @@ import { useLocation } from "react-router";
 import { dispatchToast } from "../lib/toastBus";
 import { subscribeSessionExpired } from "../lib/sessionExpiryBus";
 import { signinLocaleArgs } from "../lib/authLocale";
-import { useSetSessionExpiredFlag } from "../contexts/AuthStatusContext";
+import {
+	recordAuthRecoveryAttempt,
+	AUTH_RECOVERY_REDIRECT_LIMIT,
+} from "../lib/authRecovery";
+import {
+	useSetSessionExpiredFlag,
+	useSetAuthRecoveryFailedFlag,
+} from "../contexts/AuthStatusContext";
 
 export function useSessionExpiryHandler() {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const location = useLocation();
 	const setSessionExpired = useSetSessionExpiredFlag();
+	const setAuthRecoveryFailed = useSetAuthRecoveryFailedFlag();
 	const handledRef = useRef(false);
 	const locationRef = useRef(location);
 	locationRef.current = location;
@@ -30,6 +38,16 @@ export function useSessionExpiryHandler() {
 
 			if (handledRef.current) return;
 			handledRef.current = true;
+
+			// Bounded recovery (#2208): a redirect through Keycloak only counts
+			// as "handled" once an authenticated API call actually succeeds
+			// (cleared in api-instance.ts) - so a second consecutive expiry
+			// without one in between means the redirect isn't fixing anything
+			// (e.g. a ValidIssuers mismatch) and would otherwise loop forever.
+			if (recordAuthRecoveryAttempt() > AUTH_RECOVERY_REDIRECT_LIMIT) {
+				setAuthRecoveryFailed(true);
+				return;
+			}
 
 			setSessionExpired(true);
 			dispatchToast("error", t("error.sessionExpired"));
@@ -53,5 +71,5 @@ export function useSessionExpiryHandler() {
 			unsubscribeSilentRenewError();
 			if (redirectTimer !== null) clearTimeout(redirectTimer);
 		};
-	}, [auth, t, setSessionExpired]);
+	}, [auth, t, setSessionExpired, setAuthRecoveryFailed]);
 }

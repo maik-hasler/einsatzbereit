@@ -960,7 +960,9 @@
     "auth": {
       "authError": "Authentication error: {{message}}",
       "completing": "Completing sign-in…",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "recoveryFailedTitle": "Sign-in isn't working",
+      "recoveryFailedMessage": "We couldn't restore your session after repeated attempts. Please sign out, then try signing in again. If this keeps happening, contact support."
     },
     "notFound": {
       "title": "Page not found",
@@ -1263,6 +1265,10 @@
     "error": {
       "forbidden": "You do not have permission to do this.",
       "sessionExpired": "Your session has expired. Please sign in again.",
+      "rateLimited": "Too many requests. Please wait {{count}} seconds and try again.",
+      "rateLimited_one": "Too many requests. Please wait {{count}} second and try again.",
+      "rateLimited_other": "Too many requests. Please wait {{count}} seconds and try again.",
+      "rateLimitedGeneric": "Too many requests. Please wait a moment and try again.",
       "serverError": "An unexpected error occurred. Please try again later.",
       "boundaryTitle": "Something went wrong",
       "boundaryMessage": "An unexpected error occurred. You can try going back or reloading the page.",
