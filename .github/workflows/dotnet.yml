@@ -3,18 +3,8 @@ name: Build and Test Backend
 on:
   push:
     branches: [main]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'keycloak/**'
-      - '.github/workflows/dotnet.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'keycloak/**'
-      - '.github/workflows/dotnet.yml'
   workflow_dispatch:
 
 permissions:
@@ -25,7 +15,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # This workflow used to gate on `paths:` in the triggers above, but GitHub never
+  # resolves a required status check whose *workflow* was skipped by a paths filter -
+  # it reports "Expected - waiting for status" forever on a PR that never touches
+  # backend/frontend/keycloak (#2204). The workflow now always triggers; this job
+  # decides which of the real jobs below are worth running, and `required` at the
+  # bottom always reports a result either way, so it - not any individual job here -
+  # is what branch protection should require.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'backend/**'
+              - 'frontend/**'
+              - 'keycloak/**'
+              - '.github/workflows/dotnet.yml'
+
   visual-test-shard-partition:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -53,7 +70,8 @@ jobs:
           echo "OK: $(wc -l < /tmp/discovered.txt) test classes, each in exactly one shard."
 
   format-check:
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -82,6 +100,8 @@ jobs:
         run: dotnet format --verify-no-changes --no-restore
 
   build:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -135,6 +155,16 @@ jobs:
         working-directory: backend
         run: dotnet build --no-restore
 
+      - name: Check for vulnerable NuGet packages
+        working-directory: backend
+        run: |
+          output=$(dotnet list package --vulnerable --include-transitive)
+          echo "$output"
+          if echo "$output" | grep -q "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet package(s) detected - see output above, and https://github.com/advisories for remediation."
+            exit 1
+          fi
+
       - name: Verify generated API client and OpenAPI doc are committed
         run: |
           if ! git diff --exit-code -- \
@@ -164,7 +194,8 @@ jobs:
           if-no-files-found: error
 
   fast-tests:
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -229,7 +260,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   integration-tests:
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -282,7 +314,8 @@ jobs:
         run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
   visual-tests:
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -373,3 +406,25 @@ jobs:
           path: backend/tests/VisualTests/bin/**/trace-artifacts/**
           if-no-files-found: ignore
           retention-days: 7
+
+  # The one job that always reports a result regardless of the paths filter above -
+  # configure this as the required status check in branch protection instead of any
+  # individual job's name (which may not run at all on a given PR, and in visual-tests'
+  # case is four matrix legs, not one - see the comment on the `changes` job).
+  required:
+    name: Required
+    if: always()
+    needs:
+      - changes
+      - visual-test-shard-partition
+      - build
+      - format-check
+      - fast-tests
+      - integration-tests
+      - visual-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

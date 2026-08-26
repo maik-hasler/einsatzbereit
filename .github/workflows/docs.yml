@@ -3,21 +3,36 @@ name: Build and Deploy Docs
 on:
   push:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  # See dotnet.yml's `changes`/`required` jobs for why this workflow no longer
+  # filters its triggers by `paths:` (#2204) - GitHub can't resolve a required
+  # status check for a workflow a paths filter skipped outright.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'docs/**'
+              - '.github/workflows/docs.yml'
+
   build:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     concurrency:
       group: docs-build-${{ github.ref }}
@@ -80,3 +95,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  # The always-running required status check - see dotnet.yml's `required` job.
+  # Deliberately excludes `deploy`: that job only ever runs on push (never on a PR,
+  # per its own `if:`), so it has nothing to say about whether a PR can merge.
+  required:
+    name: Required
+    if: always()
+    needs: [changes, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

@@ -121,10 +121,23 @@ var backend = builder.AddProject<Projects.Api>("backend")
 
 if (isTestEnv)
 {
-	backend.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+	// Every existing integration/visual test runs the backend as ASPNETCORE_ENVIRONMENT=
+	// Development (the default below), which skips RequiredConfigurationValidator entirely
+	// and always runs migrate+seed - the non-Development branch of Program.cs has never
+	// been exercised by a test (#2204). ProductionEnvironmentFixture opts a single, separate
+	// test class into "Production" here without touching that default for the other ~70.
+	backend.WithEnvironment("ASPNETCORE_ENVIRONMENT",
+		builder.Configuration["Testing:BackendAspNetCoreEnvironment"] ?? "Development");
 
 	backend.WithEnvironment("Geocoding__UseFakeService", "true");
 }
+
+// Outside Development, Program.cs only migrates when this is true (and never seeds) - see
+// the isTestEnv block above. Unconditional (not isTestEnv-gated) for the same reason
+// RateLimiting:Read:AnonymousPermitLimit above is: a config passthrough, not a test hook,
+// and a no-op in real Development usage since Program.cs never reads it there.
+if (builder.Configuration["Database:MigrateOnStartup"] is { } migrateOnStartup)
+	backend.WithEnvironment("Database__MigrateOnStartup", migrateOnStartup);
 
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()

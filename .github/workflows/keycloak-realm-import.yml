@@ -3,14 +3,8 @@ name: Keycloak Realm Import Check
 on:
   push:
     branches: [main]
-    paths:
-      - 'keycloak/**'
-      - '.github/workflows/keycloak-realm-import.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'keycloak/**'
-      - '.github/workflows/keycloak-realm-import.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,8 +15,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # See dotnet.yml's `changes`/`required` jobs for why this workflow no longer
+  # filters its triggers by `paths:` (#2204) - GitHub can't resolve a required
+  # status check for a workflow a paths filter skipped outright.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'keycloak/**'
+              - '.github/workflows/keycloak-realm-import.yml'
+
   import-check:
     name: Import realm on the released Keycloak version
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -122,3 +137,15 @@ jobs:
           fi
 
           echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION, with all client placeholders resolved and the 'frontend' client's redirectUris covering every URI main.tsx can send."
+
+  # The always-running required status check - see dotnet.yml's `required` job.
+  required:
+    name: Required
+    if: always()
+    needs: [changes, import-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

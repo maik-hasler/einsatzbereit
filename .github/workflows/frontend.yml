@@ -3,16 +3,8 @@ name: Build Frontend
 on:
   push:
     branches: [main]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend.yml'
-      - '.github/workflows/frontend-checks.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend.yml'
-      - '.github/workflows/frontend-checks.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +15,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # See dotnet.yml's `changes`/`required` jobs for why this workflow no longer
+  # filters its triggers by `paths:` (#2204) - GitHub can't resolve a required
+  # status check for a workflow a paths filter skipped outright.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'frontend/**'
+              - '.github/workflows/frontend.yml'
+              - '.github/workflows/frontend-checks.yml'
+
   checks:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     uses: ./.github/workflows/frontend-checks.yml
     with:
       vite_keycloak_authority_url: https://login.example.test/realms/einsatzbereit
@@ -31,3 +45,15 @@ jobs:
       keycloak_origin: https://login.example.test
       vite_api_url: https://api.example.test
       storage_public_url: https://storage.example.test
+
+  # The always-running required status check - see dotnet.yml's `required` job.
+  required:
+    name: Required
+    if: always()
+    needs: [changes, checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
