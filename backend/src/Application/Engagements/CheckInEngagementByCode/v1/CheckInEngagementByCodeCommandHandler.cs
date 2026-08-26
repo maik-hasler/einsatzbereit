@@ -40,8 +40,16 @@ internal sealed class CheckInEngagementByCodeCommandHandler(
 		// not 32 bits of randomness. A burst of sign-ups can legitimately share
 		// a code, so more than one match is an expected case to handle, not a
 		// defensive-programming edge case.
+		//
+		// GetActiveEngagementsForOpportunityAsync also returns Pending
+		// engagements (it's shaped for cascade-cancel, not check-in), but
+		// CheckIn() below only ever accepts Confirmed - narrowing to that here
+		// keeps a Pending sign-up that happens to share a code from a real
+		// Confirmed one from making an otherwise-unambiguous code look
+		// ambiguous.
 		var candidates = await dbContext.GetActiveEngagementsForOpportunityAsync(request.OpportunityId, cancellationToken);
 		var matches = candidates
+			.Where(e => e.Status == EngagementStatus.Confirmed)
 			.Where(e => e.Id.Value.ToString().StartsWith(code, StringComparison.OrdinalIgnoreCase))
 			.ToList();
 

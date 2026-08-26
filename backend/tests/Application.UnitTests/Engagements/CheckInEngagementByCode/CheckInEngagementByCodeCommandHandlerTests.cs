@@ -230,10 +230,21 @@ public class CheckInEngagementByCodeCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldPropagateDomainError_WhenMatchedEngagementIsNotConfirmed(
+	public async Task Handle_ShouldThrowNotFound_WhenTheOnlyMatchIsNotYetConfirmed(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange: a Pending engagement can never pass CheckIn(), and its code
+		// is never shown to its own volunteer either (CheckInModal only
+		// renders the QR/fallback code once an engagement is Confirmed) - the
+		// only way this code is ever tried in practice is a Pending sign-up
+		// coincidentally sharing a Confirmed one's UUIDv7-derived prefix.
+		// Excluding Pending from the candidate pool up front (alongside
+		// Handle_ShouldCheckInEngagement_WhenCodeMatchesExactlyOneActiveEngagement
+		// proving a Confirmed match still succeeds) is what lets that
+		// Confirmed sibling be found instead of the pair being reported as
+		// ambiguous. This test pins the resulting behaviour for a solitary
+		// Pending match on its own: not found, not the domain's "not
+		// confirmed" error.
 		var opportunity = CreateOpportunity();
 		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), TimeSlotId.New());
 		SetUpOpportunity(opportunity);
@@ -246,6 +257,28 @@ public class CheckInEngagementByCodeCommandHandlerTests
 
 		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
-			.Which.Error.Code.Should().Be("Engagement.NotConfirmed");
+			.Which.Error.Type.Should().Be(ErrorType.NotFound);
+		engagement.IsCheckedIn.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task Handle_ShouldPropagateDomainError_WhenTheConfirmedMatchIsAlreadyCheckedIn(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateOpportunity();
+		var engagement = CreateConfirmedEngagement(opportunity.Id);
+		engagement.CheckIn();
+		SetUpOpportunity(opportunity);
+		SetUpCandidates(opportunity.Id, engagement);
+
+		var command = new CheckInEngagementByCodeCommand(opportunity.Id, CodeFor(engagement), DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Code.Should().Be("Engagement.AlreadyCheckedIn");
 	}
 }
