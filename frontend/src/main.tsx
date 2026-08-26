@@ -5,7 +5,9 @@ import { AuthProvider } from "react-oidc-context";
 import { WebStorageStateStore, type User } from "oidc-client-ts";
 import { BrowserRouter } from "react-router";
 import App from "./App";
+import ConfigGate from "./components/ConfigGate";
 import ErrorBoundary from "./components/ErrorBoundary";
+import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
 import { dispatchToast } from "./lib/toastBus";
@@ -63,16 +65,19 @@ window.addEventListener("unhandledrejection", (event) => {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
+		<PwaUpdatePrompt />
 		<ErrorBoundary>
-			<Suspense fallback={null}>
-				<ToastProvider>
-					<AuthProvider {...oidcConfig}>
-						<BrowserRouter>
-							<App />
-						</BrowserRouter>
-					</AuthProvider>
-				</ToastProvider>
-			</Suspense>
+			<ConfigGate>
+				<Suspense fallback={null}>
+					<ToastProvider>
+						<AuthProvider {...oidcConfig}>
+							<BrowserRouter>
+								<App />
+							</BrowserRouter>
+						</AuthProvider>
+					</ToastProvider>
+				</Suspense>
+			</ConfigGate>
 		</ErrorBoundary>
 	</React.StrictMode>,
 );

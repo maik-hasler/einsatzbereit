@@ -1281,6 +1281,14 @@
         "message": "Dieser Bereich ist nur für Plattform-Administrator:innen. Dein Konto hat keine Admin-Rechte - wenn das anders sein sollte, bitte eine:n Administrator:in, dir die Rechte zu geben."
       }
     },
+    "pwaUpdate": {
+      "message": "Eine neue Version von Einsatzbereit ist verfügbar.",
+      "reloadLabel": "Neu laden, um die App zu aktualisieren"
+    },
+    "config": {
+      "unavailableTitle": "Konfiguration fehlt",
+      "unavailableMessage": "Einsatzbereit konnte die Konfiguration nicht laden und kann nicht starten. Bist du offline, versuchen wir es automatisch erneut, sobald du wieder online bist - andernfalls wende dich an die Person, die dieses Deployment betreibt."
+    },
     "userProfile": {
       "loading": "Profil wird geladen…",
       "notFound": "Nutzer:in nicht gefunden.",
