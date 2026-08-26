@@ -50,7 +50,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 - **Organizations post opportunities** with scheduled time slots (occurrences) and defined participation types.
 - **Organizer dashboard** with a customizable widget layout: upcoming opportunities, calendar, to-do list, quick check-in, and a create-opportunity shortcut.
 - **Organization management** covering membership, roles, a public directory of organizations, and multi-organization support with an org switcher.
-- **Platform administration** to verify organizations, manage users, and toggle admin/enabled status.
+- **Platform administration** to manage users and toggle admin/enabled status.
 - **Notifications and a language selector** (German by default, English as a secondary language).
 - **Keycloak-backed authentication** via OIDC/PKCE, with Keycloak Organizations powering org membership.
 - **Achievements and badges** awarded for volunteering milestones, shown on the profile.
@@ -108,9 +108,9 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 |---|---|---|
 | Frontend | http://localhost:4321 | - |
 | Backend API | *dynamic port - see the Aspire dashboard* | - |
-| Keycloak | http://localhost:8080 | admin / admin |
-| pgAdmin | http://localhost:5050 | admin@admin.com / admin |
-| PostgreSQL | localhost:5432 | postgres / postgres |
+| Keycloak | http://localhost:8080 | - (no master-realm admin console login is bootstrapped locally; sign in to the app itself with a test user below) |
+| pgAdmin | http://localhost:5050 | - (opens straight to the dashboard, no login prompt) |
+| PostgreSQL | localhost:5432 | postgres / *auto-generated per run - see the `postgres` resource in the Aspire dashboard* |
 | Mailpit | http://localhost:1080 | - (no auth, captures outgoing email) |
 
 ### Test users

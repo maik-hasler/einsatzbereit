@@ -116,7 +116,10 @@ Container images are the release artifacts, pulled by tag from GHCR. The backend
 |Outbound notification and reminder email
 
 |OpenStreetMap Nominatim
-|Address geocoding, called from both the backend and the frontend (ADR-4)
+|Address geocoding at write time and city-autocomplete search, both proxied through the backend so the frontend never calls it directly (ADR-4, ADR-5)
+
+|OpenStreetMap tile server
+|Map tiles, proxied through the backend and cached in-process for 24h so the frontend never calls it directly (ADR-5)
 |===
 
 ==== CI/CD Pipeline
