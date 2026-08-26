@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using Application.Common.Exceptions;
 using AwesomeAssertions;
+using Domain.VolunteerOpportunities;
 
 namespace IntegrationTests;
 
@@ -71,6 +73,35 @@ public class GetPublicOrganizationProfileTests(
 		summary.CurrentParticipantCount.Should().Be(0);
 	}
 
+	[Test]
+	public async Task GetPublicOrganizationProfile_ShouldExcludeOpportunity_WhenIndividualContactDeadlineHasPassed(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		var opportunity = await PublishInterestBasedOpportunityAsync(
+			client, organizationId, "Expired interest based", DateTimeOffset.UtcNow.AddDays(30), cancellationToken);
+		await SetExpiredValidUntilDirectlyAsync(opportunity.Id, cancellationToken);
+
+		var profile = await new EinsatzbereitApi(fixture.CreateHttpClient())
+			.GetPublicOrganizationProfileAsync(organizationId, cancellationToken);
+
+		profile.OpenOpportunities.Should().BeEmpty();
+	}
+
+	private async Task SetExpiredValidUntilDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
+		var aggregate = await dbContext.VolunteerOpportunities.FindAsync(opportunityId_, cancellationToken)
+			?? throw new InvalidOperationException($"Seeded opportunity '{opportunityId}' not found.");
+
+		var farPast = DateTimeOffset.UtcNow.AddDays(-30);
+		aggregate.SetValidUntil(farPast.AddDays(1), now: farPast).ThrowIfFailure();
+
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
 	private static async Task<Guid> CreateOrganizationAsync(
 		EinsatzbereitApi client, CancellationToken cancellationToken)
 	{
@@ -117,7 +148,7 @@ public class GetPublicOrganizationProfileTests(
 		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 	}
 
-	private static async Task PublishInterestBasedOpportunityAsync(
+	private static async Task<CreateVolunteerOpportunityResponse> PublishInterestBasedOpportunityAsync(
 		EinsatzbereitApi client,
 		Guid organizationId,
 		string title,
@@ -139,6 +170,7 @@ public class GetPublicOrganizationProfileTests(
 			}, cancellationToken);
 
 		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+		return opportunity;
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)

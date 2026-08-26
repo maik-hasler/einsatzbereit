@@ -148,7 +148,11 @@ public static class ServiceCollectionExtensions
 				.AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 1);
 		}
 
-		services.AddMemoryCache();
+		// SizeLimit makes the shared cache evict under pressure instead of growing without
+		// bound (#2215) - every cache.Set call site across the codebase must supply a Size
+		// once this is set, or MemoryCache.Set throws at runtime.
+		var memoryCacheSizeLimitBytes = configuration.GetValue("MemoryCache:SizeLimitBytes", 100L * 1024 * 1024);
+		services.AddMemoryCache(o => o.SizeLimit = memoryCacheSizeLimitBytes);
 		services.ConfigureOptions<MapTileOptionsSetup>();
 		services.AddHttpClient<IMapTileService, OpenStreetMapTileService>(
 			(sp, client) =>

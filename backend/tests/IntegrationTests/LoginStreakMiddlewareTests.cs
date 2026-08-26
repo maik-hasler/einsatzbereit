@@ -14,7 +14,7 @@ public class LoginStreakMiddlewareTests
 	public async Task InvokeAsync_ShouldRecordLogin_OnFirstRequestForUser()
 	{
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions()), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 
 		await sut.InvokeAsync(CreateAuthenticatedContext(Guid.NewGuid().ToString()), sender);
 
@@ -25,7 +25,7 @@ public class LoginStreakMiddlewareTests
 	public async Task InvokeAsync_ShouldNotRecordLoginAgain_OnSecondRequestSameDay()
 	{
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions()), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 		var subClaim = Guid.NewGuid().ToString();
 
 		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
@@ -38,7 +38,7 @@ public class LoginStreakMiddlewareTests
 	public async Task InvokeAsync_ShouldNotRecordLoginRepeatedly_WhenXTimezoneHeaderAlternatesAcrossRequests()
 	{
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions()), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 		var subClaim = Guid.NewGuid().ToString();
 
 		for (var i = 0; i < 10; i++)
@@ -56,7 +56,7 @@ public class LoginStreakMiddlewareTests
 	{
 		var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 6, 15, 10, 0, 0, TimeSpan.Zero));
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions()), timeProvider);
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), timeProvider);
 		var subClaim = Guid.NewGuid().ToString();
 
 		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
@@ -74,7 +74,7 @@ public class LoginStreakMiddlewareTests
 		var nextCallCount = 0;
 		var sut = new LoginStreakMiddleware(
 			_ => { Interlocked.Increment(ref nextCallCount); return Task.CompletedTask; },
-			new MemoryCache(new MemoryCacheOptions()),
+			new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }),
 			new FakeTimeProvider());
 		var subClaim = Guid.NewGuid().ToString();
 
@@ -101,7 +101,7 @@ public class LoginStreakMiddlewareTests
 	public async Task InvokeAsync_ShouldNotCallSender_WhenUserIsNotAuthenticated()
 	{
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions()), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 		var context = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity()) };
 
 		await sut.InvokeAsync(context, sender);
@@ -113,7 +113,7 @@ public class LoginStreakMiddlewareTests
 	public async Task InvokeAsync_ShouldAlwaysCallNext()
 	{
 		var nextCalled = false;
-		var sut = new LoginStreakMiddleware(_ => { nextCalled = true; return Task.CompletedTask; }, new MemoryCache(new MemoryCacheOptions()), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => { nextCalled = true; return Task.CompletedTask; }, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 
 		await sut.InvokeAsync(CreateAuthenticatedContext(Guid.NewGuid().ToString()), new RecordingSender());
 
