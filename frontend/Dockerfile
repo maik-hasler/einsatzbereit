@@ -2,10 +2,13 @@ FROM node:25.9.0-slim AS build
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 # Node 25 no longer bundles corepack (nodejs/corepack#783), so it needs an explicit
-# install first. corepack prepare then reads the pnpm version straight off this
-# package.json's "packageManager" field - one source of truth Renovate already
-# bumps, instead of a second pin duplicated here that can drift out of sync.
-RUN npm install -g corepack && corepack enable && corepack prepare --activate
+# install first. --force because this base image already ships /usr/local/bin/yarn,
+# and corepack's own package installs its own yarn/yarnpkg shims over the same path -
+# without it, npm refuses with EEXIST rather than overwrite it. corepack prepare then
+# reads the pnpm version straight off this package.json's "packageManager" field - one
+# source of truth Renovate already bumps, instead of a second pin duplicated here that
+# can drift out of sync.
+RUN npm install -g corepack --force && corepack enable && corepack prepare --activate
 RUN pnpm install --frozen-lockfile
 COPY . .
 
