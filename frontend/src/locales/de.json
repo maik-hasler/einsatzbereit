@@ -577,6 +577,8 @@
       "searchMinChars": "Mindestens 4 Zeichen eingeben",
       "noSearchResults": "Keine Nutzer:innen gefunden.",
       "noSearchResultsEmail": "Für diese E-Mail-Adresse existiert noch kein Konto – bitte die Person, sich zuerst zu registrieren, dann kannst du sie hier einladen.",
+      "searchResultAlreadyMember": "Bereits Mitglied",
+      "searchResultAlreadyInvited": "Bereits eingeladen",
       "memberSearchError": "Nutzer:innen konnten nicht gesucht werden.",
       "inviteLabel": "Mitglied einladen",
       "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",

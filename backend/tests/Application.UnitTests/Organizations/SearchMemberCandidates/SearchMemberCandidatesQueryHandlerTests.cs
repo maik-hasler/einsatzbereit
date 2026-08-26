@@ -25,8 +25,8 @@ public class SearchMemberCandidatesQueryHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_keycloakService
-			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-			.Returns([]);
+			.FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns((KeycloakOrganizationMember?)null);
 		_keycloakService
 			.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -37,19 +37,50 @@ public class SearchMemberCandidatesQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnCandidates_ExcludingExistingMembers(
+	public async Task Handle_ShouldReturnEmpty_WhenNoExactMatchExists(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "nosuchuser", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		result.Should().BeEmpty();
+		await _keycloakService.DidNotReceive().GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnAvailable_WhenMatchIsNotAMemberOrInvitee(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var candidate = Guid.NewGuid();
+		_keycloakService
+			.FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakOrganizationMember(candidate, "vera", "Vera", "Smith", "vera@test.de", false));
+
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "vera", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		var single = result.Should().ContainSingle().Which;
+		single.UserId.Should().Be(candidate);
+		single.Status.Should().Be(MemberCandidateStatus.Available.ToString());
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnAlreadyMember_WhenMatchIsAnExistingMember(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var existingMember = Guid.NewGuid();
-		var candidate = Guid.NewGuid();
 		_keycloakService
-			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
-			[
-				new KeycloakOrganizationMember(existingMember, "olaf", "Olaf", "Miller", "olaf@test.de", true),
-				new KeycloakOrganizationMember(candidate, "vera", "Vera", "Smith", "vera@test.de", false),
-			]);
+			.FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakOrganizationMember(existingMember, "olaf", "Olaf", "Miller", "olaf@test.de", true));
 		_keycloakService
 			.GetMembersAsync(DefaultOrgId, cancellationToken)
 			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
@@ -57,29 +88,24 @@ public class SearchMemberCandidatesQueryHandlerTests
 				new KeycloakOrganizationMember(existingMember, "olaf", "Olaf", "Miller", "olaf@test.de", true),
 			]);
 
-		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "olaf", DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		result.Should().ContainSingle(c => c.UserId == candidate);
+		result.Should().ContainSingle().Which.Status.Should().Be(MemberCandidateStatus.AlreadyMember.ToString());
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnCandidates_ExcludingUsersWithPendingInvitation(
+	public async Task Handle_ShouldReturnAlreadyInvited_WhenMatchHasAPendingInvitation(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var pendingInvitee = Guid.NewGuid();
-		var candidate = Guid.NewGuid();
 		_keycloakService
-			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
-			[
-				new KeycloakOrganizationMember(pendingInvitee, "olaf", "Olaf", "Miller", "olaf@test.de", false),
-				new KeycloakOrganizationMember(candidate, "vera", "Vera", "Smith", "vera@test.de", false),
-			]);
+			.FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakOrganizationMember(pendingInvitee, "vera", "Vera", "Smith", "vera@test.de", false));
 
 		var organizationId = OrganizationId.Create(DefaultOrgId).GetValueOrThrow();
 		var pendingInvitation = OrganizationInvitation.Create(
@@ -92,28 +118,24 @@ public class SearchMemberCandidatesQueryHandlerTests
 			.GetInvitationsForOrganizationAsync(organizationId, cancellationToken)
 			.Returns([pendingInvitation]);
 
-		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "vera", DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		result.Should().ContainSingle(c => c.UserId == candidate);
+		result.Should().ContainSingle().Which.Status.Should().Be(MemberCandidateStatus.AlreadyInvited.ToString());
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnCandidate_WhenInvitationIsNotPending(
+	public async Task Handle_ShouldReturnAvailable_WhenInvitationIsNotPending(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-
 		var declinedInvitee = Guid.NewGuid();
 		_keycloakService
-			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
-			[
-				new KeycloakOrganizationMember(declinedInvitee, "olaf", "Olaf", "Miller", "olaf@test.de", false),
-			]);
+			.FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakOrganizationMember(declinedInvitee, "olaf", "Olaf", "Miller", "olaf@test.de", false));
 
 		var organizationId = OrganizationId.Create(DefaultOrgId).GetValueOrThrow();
 		var declinedInvitation = OrganizationInvitation.Create(
@@ -127,24 +149,25 @@ public class SearchMemberCandidatesQueryHandlerTests
 			.GetInvitationsForOrganizationAsync(organizationId, cancellationToken)
 			.Returns([declinedInvitation]);
 
-		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "olaf", DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		result.Should().ContainSingle(c => c.UserId == declinedInvitee);
+		result.Should().ContainSingle().Which.Status.Should().Be(MemberCandidateStatus.Available.ToString());
 	}
 
 	[Test]
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
+		// Arrange
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
-		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "vera", DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
@@ -152,6 +175,6 @@ public class SearchMemberCandidatesQueryHandlerTests
 		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
-		await _keycloakService.DidNotReceive().SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+		await _keycloakService.DidNotReceive().FindUserByExactMatchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

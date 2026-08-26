@@ -6671,6 +6671,7 @@ export interface MemberCandidateDto {
     username: string;
     firstName: string | undefined;
     lastName: string | undefined;
+    status: string;
 
     [key: string]: any;
 }

@@ -8466,7 +8466,8 @@
           "userId",
           "username",
           "firstName",
-          "lastName"
+          "lastName",
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -8488,6 +8489,9 @@
               "null",
               "string"
             ]
+          },
+          "status": {
+            "type": "string"
           }
         }
       },
