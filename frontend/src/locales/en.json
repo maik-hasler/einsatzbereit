@@ -818,7 +818,8 @@
       "title": "Privacy Policy",
       "lastUpdated": "Last updated: August 7, 2026",
       "section1Title": "Responsible party",
-      "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg, Germany\nEmail: hallo@einsatzbereit.maik-hasler.de\nWebsite: https://einsatzbereit.maik-hasler.de",
+      "section1Body": "{{name}}\n{{address}}\nEmail: {{email}}\nWebsite: {{website}}",
+      "operatorNotConfigured": "This deployment's operator hasn't configured a responsible party for data protection yet.",
       "section2Title": "Collection and storage of personal data",
       "section2Body1": "When visiting this website, general technical information is automatically processed (e.g. IP address, browser type, time of access) to ensure secure and reliable operation. This data can constitute personal data - including your IP address, per the Court of Justice of the EU's Breyer ruling (C-582/14) - even though we do not otherwise link it to your identity.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
@@ -855,24 +856,22 @@
     "imprint": {
       "title": "Imprint",
       "section1Title": "Information according to § 5 DDG",
-      "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg, Germany",
       "section2Title": "Contact",
-      "section2Body": "Email: <emailLink>hallo@einsatzbereit.maik-hasler.de</emailLink>\nWebsite: https://einsatzbereit.maik-hasler.de",
+      "section2Body": "Email: <emailLink>{{email}}</emailLink>\nWebsite: {{website}}",
       "section3Title": "Responsible for content according to § 18 para. 2 MStV",
-      "section3Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg, Germany",
       "section4Title": "Disclaimer",
       "section4aTitle": "Liability for content",
       "section4aBody": "The contents of these pages have been created with the greatest care. However, we cannot guarantee the accuracy, completeness and timeliness of the content.",
       "section4bTitle": "Liability for links",
       "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages.",
-      "eyebrow": "Legal"
+      "eyebrow": "Legal",
+      "operatorNotConfigured": "This deployment's operator hasn't configured their legal contact details yet."
     },
     "contact": {
       "title": "Contact",
       "reportSectionTitle": "Reporting abusive content",
       "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
       "otherSectionTitle": "Other questions or concerns",
-      "email": "hallo@einsatzbereit.maik-hasler.de",
       "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint.",
       "eyebrow": "Support",
       "intro": "Report a problem, or find the right place to ask your question."
@@ -904,7 +903,7 @@
       "generalQ4": "Is the code really open to inspect?",
       "generalA4": "Yes, the entire source code is available on GitHub under the AGPL-3.0 license.",
       "contactTitle": "Still need help?",
-      "contactBody": "If something looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on the relevant <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. For anything else, visit our <contactLink>Contact page</contactLink>, or email us directly at <emailLink>hallo@einsatzbereit.maik-hasler.de</emailLink>.",
+      "contactBody": "If something looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on the relevant <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. For anything else, visit our <contactLink>Contact page</contactLink>.",
       "eyebrow": "Support"
     },
     "termsOfUse": {

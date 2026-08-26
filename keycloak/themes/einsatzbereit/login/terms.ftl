@@ -11,7 +11,7 @@
 
 	<#elseif section = "form">
 		<div id="kc-terms-text">
-			${kcSanitize(msg("termsDetails"))?no_esc}
+			${kcSanitize(msg("termsDetails", properties.siteUrl))?no_esc}
 		</div>
 
 		<form class="${properties.kcFormClass!}" action="${url.loginAction}" method="POST">

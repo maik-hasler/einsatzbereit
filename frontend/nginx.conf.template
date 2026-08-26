@@ -149,8 +149,8 @@ server {
 	# proxy rationale as /sitemap.xml below (einsatzbereit#1092).
 	location ~ ^/__meta/(volunteer-opportunities|organizations)/([0-9a-fA-F-]+)$ {
 		internal;
-		resolver 127.0.0.11 valid=10s;
-		set $backend_upstream http://backend:8080;
+		resolver ${DNS_RESOLVER} valid=10s;
+		set $backend_upstream ${BACKEND_UPSTREAM};
 		set $meta_entity_type $1;
 		set $meta_entity_id $2;
 		proxy_pass $backend_upstream/v1/meta/$meta_entity_type/$meta_entity_id;
@@ -163,17 +163,21 @@ server {
 	# (einsatzbereit#1092). Proxied instead, over the container network both
 	# already share.
 	#
-	# proxy_pass's target is a variable ($backend_upstream), not the literal
-	# "http://backend:8080" - with a literal, nginx resolves "backend" once at
-	# config load and caches that IP for the worker's lifetime, so a backend
-	# container restart (a new IP on the same Compose service name) would leave
-	# this location proxying to a dead address until nginx itself reloads. A
-	# variable forces re-resolution on every request instead, via the `resolver`
-	# below (127.0.0.11 is Docker's embedded DNS server, reachable from any
-	# container on a user-defined network).
+	# proxy_pass's target is a variable ($backend_upstream), not a literal
+	# hostname - with a literal, nginx resolves it once at config load and
+	# caches that IP for the worker's lifetime, so a backend container restart
+	# (a new IP on the same service name) would leave this location proxying
+	# to a dead address until nginx itself reloads. A variable forces
+	# re-resolution on every request instead, via the `resolver` below.
+	# $backend_upstream/$resolver default to a Compose/user-defined-network
+	# setup with a service named "backend" (127.0.0.11 is Docker's embedded
+	# DNS server) but are templated from BACKEND_UPSTREAM/DNS_RESOLVER at
+	# container start (99-runtime-config.sh) rather than hardcoded, since
+	# nothing guarantees that service name on every deployment
+	# (einsatzbereit#2196).
 	location = /sitemap.xml {
-		resolver 127.0.0.11 valid=10s;
-		set $backend_upstream http://backend:8080;
+		resolver ${DNS_RESOLVER} valid=10s;
+		set $backend_upstream ${BACKEND_UPSTREAM};
 		proxy_pass $backend_upstream/v1/sitemap.xml;
 	}
 }

@@ -196,7 +196,7 @@ Required variables crash the container at startup outside Development (`Required
 
 ### Frontend (`ghcr.io/<owner>/einsatzbereit-frontend`)
 
-Static SPA assets served by nginx on port `80` (plain HTTP - put a TLS-terminating reverse proxy in front of it, same as the backend). Unlike a typical Vite app, the three `VITE_` variables below are read at container start, not only baked in at build time: `docker-entrypoint.d/99-runtime-config.sh` substitutes them into `config.js` (read by the app at runtime as `window.__APP_CONFIG__`) and derives the Content-Security-Policy's allowed origins from the same values, so one built image runs anywhere.
+Static SPA assets served by nginx on port `80` (plain HTTP - put a TLS-terminating reverse proxy in front of it, same as the backend). Unlike a typical Vite app, the variables below are read at container start, not only baked in at build time: `docker-entrypoint.d/99-runtime-config.sh` substitutes the `VITE_`/`OPERATOR_` ones into `config.js` (read by the app at runtime as `window.__APP_CONFIG__`), derives the Content-Security-Policy's allowed origins from the same origin values, and substitutes `BACKEND_UPSTREAM`/`DNS_RESOLVER` into the nginx config itself - so one built image runs anywhere.
 
 | Variable | Required | Purpose | Example |
 |---|---|---|---|
@@ -204,6 +204,14 @@ Static SPA assets served by nginx on port `80` (plain HTTP - put a TLS-terminati
 | `VITE_KEYCLOAK_AUTHORITY_URL` | Yes | Keycloak realm issuer URL for the OIDC login flow; also the CSP's `connect-src`/`frame-src` origin | `https://login.example.com/realms/einsatzbereit` |
 | `VITE_KEYCLOAK_CLIENT_ID` | No | Public OIDC client id registered in Keycloak for the SPA | `frontend` |
 | `STORAGE_PUBLIC_URL` | No | Public origin uploaded avatars/logos/banners are served from - the CSP's `img-src` origin; must match the backend's `Storage__PublicEndpoint` above (or `Storage__Endpoint` if that isn't set) | `https://storage.example.com` |
+| `OPERATOR_NAME` | No | This deployment's legally responsible party (DDG §5 imprint, GDPR Art. 13 controller) | `Musterverein Rettungsdienst e.V.` |
+| `OPERATOR_ADDRESS` | No | The same party's postal address | `Musterstraße 1, 12345 Musterstadt, Germany` |
+| `OPERATOR_EMAIL` | No | Contact address shown on the imprint, privacy policy and contact pages | `legal@example.com` |
+| `OPERATOR_SITE_URL` | No | This deployment's own public URL, shown on the imprint and privacy policy | `https://example.com` |
+| `BACKEND_UPSTREAM` | No | Backend origin `/sitemap.xml` and the social-crawler meta routes proxy to - only needed if your backend isn't reachable as `http://backend:8080` on the frontend container's network | `http://backend:8080` |
+| `DNS_RESOLVER` | No | DNS resolver used to re-resolve `BACKEND_UPSTREAM` on every request - only needed outside a Docker user-defined network (whose embedded resolver is `127.0.0.11`) | `127.0.0.11` |
+
+`OPERATOR_NAME`/`OPERATOR_ADDRESS`/`OPERATOR_EMAIL`/`OPERATOR_SITE_URL` are all-or-nothing: the image ships with none of them set, and the imprint and privacy policy show a visible "operator not configured" notice instead of anyone else's details until all four are provided.
 
 CORS must be configured on the backend (`Cors__Origins` above) to allow this image's own origin - API calls are cross-origin, there is no server-side proxy.
 
