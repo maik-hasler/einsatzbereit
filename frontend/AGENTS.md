@@ -29,7 +29,7 @@ src/
 │   ├── PrivacyPolicyPage.tsx           Privacy policy (static)
 │   └── ImprintPage.tsx                 Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
-├── main.tsx                Entry point: AuthProvider + BrowserRouter + App
+├── main.tsx                Entry point: AuthProvider + BrowserRouter + App, gated by ConfigGate (refuses to render the app on invalid runtime config, see components/ConfigGate.tsx) and joined by PwaUpdatePrompt (SW update prompt, components/PwaUpdatePrompt.tsx)
 ├── App.tsx                 React Router route declarations
 └── vite-env.d.ts           ImportMetaEnv types for VITE_ variables
 ```

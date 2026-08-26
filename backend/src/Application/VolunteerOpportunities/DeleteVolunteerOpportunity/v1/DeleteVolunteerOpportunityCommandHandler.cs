@@ -2,6 +2,7 @@ using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
 using Domain.Primitives;
@@ -13,6 +14,7 @@ namespace Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 internal sealed class DeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
+	IFileStorageService fileStorage,
 	ILogger<DeleteVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<DeleteVolunteerOpportunityCommand, bool>
 {
@@ -35,6 +37,7 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 		await VolunteerOpportunityDeletionHelper.DeleteAsync(
 			dbContext,
 			engagementReadRepository,
+			fileStorage,
 			opportunity,
 			opportunityId,
 			request.RequestingUserId,

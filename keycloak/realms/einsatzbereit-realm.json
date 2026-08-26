@@ -20,6 +20,30 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 5,
+  "eventsEnabled": true,
+  "eventsExpiration": 15552000,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "RESET_PASSWORD",
+    "RESET_PASSWORD_ERROR",
+    "UPDATE_PASSWORD",
+    "UPDATE_PASSWORD_ERROR",
+    "UPDATE_PROFILE",
+    "UPDATE_EMAIL",
+    "VERIFY_EMAIL",
+    "DELETE_ACCOUNT",
+    "DELETE_ACCOUNT_ERROR"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
   "smtpServer": {
     "host": "${KC_SMTP_HOST}",
     "port": "${KC_SMTP_PORT}",
@@ -320,7 +344,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "vera",
-      "enabled": true,
+      "enabled": false,
       "emailVerified": true,
       "requiredActions": [],
       "email": "vera@example.com",
@@ -340,7 +364,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000001",
       "username": "olaf",
-      "enabled": true,
+      "enabled": false,
       "emailVerified": true,
       "requiredActions": [],
       "email": "olaf@example.com",
@@ -361,7 +385,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "admin",
-      "enabled": true,
+      "enabled": false,
       "emailVerified": true,
       "requiredActions": [],
       "email": "admin@example.com",

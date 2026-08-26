@@ -30,13 +30,16 @@ export function isSlotFull(
 	return spotsLeft !== null && spotsLeft <= 0;
 }
 
+export function isTimeSlotEnded(
+	ts: Pick<TimeSlotDetail, "endDateTime">,
+): boolean {
+	return new Date(ts.endDateTime as unknown as string).getTime() < Date.now();
+}
+
 export function findNextTimeSlot(
 	timeSlots: TimeSlotDetail[],
 ): TimeSlotDetail | undefined {
-	const now = Date.now();
-	return timeSlots.find(
-		(ts) => new Date(ts.endDateTime as unknown as string).getTime() >= now,
-	);
+	return timeSlots.find((ts) => !isTimeSlotEnded(ts));
 }
 
 export function formatSignUpCount(

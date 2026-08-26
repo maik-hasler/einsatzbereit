@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type {
 	EngagementSummary,
 	MyInvitationDto,
@@ -8,6 +9,7 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { refreshAccessTokenAfterRoleGrant } from "../../lib/authRefresh";
 import {
 	ENGAGEMENT_STATUS_COLORS,
 	isTerminalEngagementStatus,
@@ -49,6 +51,7 @@ function isInterestEngagement(e: EngagementSummary): boolean {
 
 export default function ActivitySection() {
 	const api = useApiClient();
+	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -258,6 +261,12 @@ export default function ActivitySection() {
 		setInvitationActionError(null);
 		try {
 			await api.acceptInvitation(invitationId);
+
+			// The invitation may have granted the organizer role - this DTO
+			// doesn't say which, so refresh unconditionally rather than 403 on
+			// the caller's next organizer action (#2206).
+			await refreshAccessTokenAfterRoleGrant(auth);
+
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 		} catch {
 			setInvitationActionError(t("invitations.acceptError"));

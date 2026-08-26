@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Domain.AuditLogs;
 using Domain.Primitives;
 using Domain.Reports;
@@ -8,7 +9,8 @@ using Domain.Reports;
 namespace Application.Users.AdminShadowDeleteUser.v1;
 
 internal sealed class AdminShadowDeleteUserCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	IFileStorageService fileStorage)
 	: ICommandHandler<AdminShadowDeleteUserCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -29,6 +31,24 @@ internal sealed class AdminShadowDeleteUserCommandHandler(
 		}
 
 		user.MarkDeleted(now).ThrowIfFailure();
+
+		if (user.AvatarUrl is not null)
+		{
+			var avatarObjectKey = fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl);
+			if (avatarObjectKey is not null)
+			{
+				try
+				{
+					await fileStorage.QuarantineAsync(avatarObjectKey, cancellationToken);
+				}
+				catch
+				{
+					// Object may already be gone, already quarantined, or storage may be
+					// transiently unavailable; continue - the DB-level shadow delete is
+					// what actually hides the user from all read paths.
+				}
+			}
+		}
 
 		var auditLog = AuditLog.Create(
 			request.AdminUserId,

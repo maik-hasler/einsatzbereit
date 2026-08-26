@@ -197,9 +197,9 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 			"the agenda table is wider than the 375px card and must actually scroll horizontally");
 
 		var fadeRight = calendarWidget.GetByTestId("calendar-agenda-fade-right");
-		var opacity = await fadeRight.EvaluateAsync<string>("el => getComputedStyle(el).opacity");
-		opacity.Should().Be("1",
-			"nothing else hints that the clipped TERMIN column/event title is reachable by scrolling");
+		// The fade element transitions its opacity in on mount, so a one-shot EvaluateAsync can
+		// observe it mid-transition (e.g. "0.996173") - ToHaveCSSAsync polls until it settles.
+		await Expect(fadeRight).ToHaveCSSAsync("opacity", "1");
 
 		await DeleteOrganizationAsync(backend, organizationId);
 	}

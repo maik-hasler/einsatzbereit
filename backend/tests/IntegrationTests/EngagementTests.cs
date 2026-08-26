@@ -295,6 +295,49 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task CreateEngagement_ShouldSucceedForBothSlots_WhenVolunteerSignsUpForTwoSlotsOfTheSameSeries(
+		CancellationToken cancellationToken)
+	{
+		// Regression test for einsatzbereit#2199: the backend must allow one
+		// engagement per (volunteer, opportunity, time slot) - signing up for
+		// an earlier occurrence of a recurring series must never block signing
+		// up for a later one.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var firstEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
+		var secondEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
+
+		firstEngagement.Status.Should().Be("Pending");
+		secondEngagement.Status.Should().Be("Pending");
+
+		var detailsForVera = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+
+		detailsForVera.CurrentUserEngagements.Should().HaveCount(2);
+		detailsForVera.CurrentUserEngagements.Should().Contain(e => e.Id == firstEngagement.Id && e.TimeSlotId == firstSlotId);
+		detailsForVera.CurrentUserEngagements.Should().Contain(e => e.Id == secondEngagement.Id && e.TimeSlotId == secondSlotId);
+	}
+
+	[Test]
 	public async Task GetEngagements_ShouldFilterBySearch_MatchingVolunteerUsername(
 		CancellationToken cancellationToken)
 	{
@@ -908,14 +951,14 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
 		var beforeCheckIn = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
-		beforeCheckIn.CurrentUserEngagement.Should().NotBeNull();
-		beforeCheckIn.CurrentUserEngagement!.IsCheckedIn.Should().BeFalse();
+		beforeCheckIn.CurrentUserEngagements.Should().ContainSingle();
+		beforeCheckIn.CurrentUserEngagements.Single().IsCheckedIn.Should().BeFalse();
 
 		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
 		var afterCheckIn = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
-		afterCheckIn.CurrentUserEngagement.Should().NotBeNull();
-		afterCheckIn.CurrentUserEngagement!.IsCheckedIn.Should().BeTrue();
+		afterCheckIn.CurrentUserEngagements.Should().ContainSingle();
+		afterCheckIn.CurrentUserEngagements.Single().IsCheckedIn.Should().BeTrue();
 
 		var act = () => veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
 		var exception = await act.Should().ThrowAsync<ApiException>();

@@ -144,6 +144,7 @@ function QuickCheckInWidget({
 					}
 				>
 					<QRScannerModal
+						opportunityId={selectedId}
 						onCheckedIn={() => {
 							dispatchToast("success", t("checkIn.success"));
 						}}

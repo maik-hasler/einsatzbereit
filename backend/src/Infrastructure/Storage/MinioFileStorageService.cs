@@ -11,6 +11,12 @@ internal sealed class MinioFileStorageService : IFileStorageService
 
 	private const string PublicPrefix = "public/";
 
+	// Not covered by the bucket policy set up in EnsureBucketReadyAsync (which
+	// only grants anonymous reads under PublicPrefix), so moving an object here
+	// makes it unreachable by its old public URL without discarding it - see
+	// einsatzbereit#2198.
+	private const string QuarantinePrefix = "quarantined/";
+
 	private readonly IMinioClient _minio;
 	private readonly StorageSettings _settings;
 	private static readonly SemaphoreSlim _initLock = new(1, 1);
@@ -71,6 +77,39 @@ internal sealed class MinioFileStorageService : IFileStorageService
 			new RemoveObjectArgs()
 				.WithBucket(_settings.BucketName)
 				.WithObject(PublicPrefix + objectKey),
+			cancellationToken);
+	}
+
+	public async Task QuarantineAsync(string objectKey, CancellationToken cancellationToken = default)
+	{
+		await EnsureBucketReadyAsync(cancellationToken);
+
+		await MoveAsync(PublicPrefix + objectKey, QuarantinePrefix + objectKey, cancellationToken);
+	}
+
+	public async Task UnquarantineAsync(string objectKey, CancellationToken cancellationToken = default)
+	{
+		await EnsureBucketReadyAsync(cancellationToken);
+
+		await MoveAsync(QuarantinePrefix + objectKey, PublicPrefix + objectKey, cancellationToken);
+	}
+
+	private async Task MoveAsync(string sourceKey, string destinationKey, CancellationToken cancellationToken)
+	{
+		await _minio.CopyObjectAsync(
+			new CopyObjectArgs()
+				.WithBucket(_settings.BucketName)
+				.WithObject(destinationKey)
+				.WithCopyObjectSource(
+					new CopySourceObjectArgs()
+						.WithBucket(_settings.BucketName)
+						.WithObject(sourceKey)),
+			cancellationToken);
+
+		await _minio.RemoveObjectAsync(
+			new RemoveObjectArgs()
+				.WithBucket(_settings.BucketName)
+				.WithObject(sourceKey),
 			cancellationToken);
 	}
 

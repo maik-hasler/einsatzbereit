@@ -227,5 +227,9 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 		public Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
 			string search, int max = 20, CancellationToken cancellationToken = default) =>
 			throw new NotSupportedException();
+
+		public Task<KeycloakOrganizationMember?> FindUserByExactMatchAsync(
+			string search, CancellationToken cancellationToken = default) =>
+			throw new NotSupportedException();
 	}
 }

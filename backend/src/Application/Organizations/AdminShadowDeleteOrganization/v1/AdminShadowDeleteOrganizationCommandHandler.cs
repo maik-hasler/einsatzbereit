@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
 using Domain.AuditLogs;
@@ -14,6 +15,7 @@ namespace Application.Organizations.AdminShadowDeleteOrganization.v1;
 internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
+	IFileStorageService fileStorage,
 	ILogger<AdminShadowDeleteOrganizationCommandHandler> logger)
 	: ICommandHandler<AdminShadowDeleteOrganizationCommand, bool>
 {
@@ -33,6 +35,7 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 			await VolunteerOpportunityDeletionHelper.ShadowDeleteAsync(
 				dbContext,
 				engagementReadRepository,
+				fileStorage,
 				opportunity,
 				opportunity.Id,
 				request.AdminUserId,
@@ -49,6 +52,24 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 		}
 
 		organization.MarkDeleted(now).ThrowIfFailure();
+
+		if (organization.LogoUrl is not null)
+		{
+			var logoObjectKey = fileStorage.GetObjectKeyFromPublicUrl(organization.LogoUrl);
+			if (logoObjectKey is not null)
+			{
+				try
+				{
+					await fileStorage.QuarantineAsync(logoObjectKey, cancellationToken);
+				}
+				catch
+				{
+					// Object may already be gone, already quarantined, or storage may be
+					// transiently unavailable; continue - the DB-level shadow delete is
+					// what actually hides the organization from all read paths.
+				}
+			}
+		}
 
 		var auditLog = AuditLog.Create(
 			request.AdminUserId,

@@ -905,13 +905,14 @@ export default function EngagementManagementPage() {
 					/>
 				))}
 
-			{qrScannerOpen && (
+			{qrScannerOpen && opportunityId && (
 				<Suspense
 					fallback={
 						<ModalLoadingFallback onClose={() => setQrScannerOpen(false)} />
 					}
 				>
 					<QRScannerModal
+						opportunityId={opportunityId}
 						onCheckedIn={(engagementId) => {
 							setEngagements((prev) =>
 								prev.map((e) =>

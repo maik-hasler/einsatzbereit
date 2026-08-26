@@ -73,16 +73,17 @@ a { color: inherit; }
 
 .auth-page {
 	position: relative;
+	display: flex;
+	flex-direction: column;
 	min-height: 100svh;
 }
 
 .auth-main {
 	display: flex;
-
+	flex: 1;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	min-height: 100svh;
 	padding: 5rem 1rem 3rem;
 }
 
@@ -585,6 +586,7 @@ textarea.form-input {
 }
 
 #kc-registration-terms-text p { margin: 0 0 0.5rem; }
+#kc-registration-terms-text > p > a { color: var(--brand-700); text-underline-offset: 3px; }
 
 .terms-details > summary {
 	display: flex;
@@ -655,6 +657,32 @@ textarea.form-input {
 }
 
 .auth-back a:hover {
+	color: var(--brand-700);
+	text-decoration: underline;
+}
+
+.auth-legal-footer {
+	padding: 1.5rem 1rem;
+	text-align: center;
+}
+
+.auth-legal-footer nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	color: var(--muted-fg);
+}
+
+.auth-legal-footer a {
+	color: var(--muted-fg);
+	text-decoration: none;
+	border-radius: 0.25rem;
+}
+
+.auth-legal-footer a:hover {
 	color: var(--brand-700);
 	text-decoration: underline;
 }

@@ -59,6 +59,20 @@ if (localRealm["clients"] is JsonArray realmClients)
 	}
 }
 
+if (localRealm["users"] is JsonArray realmUsers)
+{
+	foreach (var user in realmUsers)
+	{
+		if (user is not JsonObject userObject)
+			continue;
+
+		var username = userObject["username"]?.GetValue<string>();
+
+		if (username is "vera" or "olaf" or "admin")
+			userObject["enabled"] = true;
+	}
+}
+
 localRealm["bruteForceProtected"] = false;
 
 localRealm["accessTokenLifespan"] = 3600;

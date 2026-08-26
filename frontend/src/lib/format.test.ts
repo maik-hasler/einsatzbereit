@@ -12,6 +12,7 @@ import {
 	formatPostedAgo,
 	isRecentlyCreatedOrganization,
 	isSlotFull,
+	isTimeSlotEnded,
 	NEW_ORGANIZATION_THRESHOLD_DAYS,
 	findCrossLocaleKeywordMatch,
 	pickLocalizedText,
@@ -103,6 +104,32 @@ describe("isSlotFull", () => {
 
 	it("is full when bookings exceed capacity", () => {
 		expect(isSlotFull(5, 6)).toBe(true);
+	});
+});
+
+describe("isTimeSlotEnded", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("is false while a slot is still in progress", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-20T10:00:00Z"));
+		const inProgress = makeTimeSlot({
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		expect(isTimeSlotEnded(inProgress)).toBe(false);
+	});
+
+	it("is true once the end time has passed", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-03-20T12:00:01Z"));
+		const justEnded = makeTimeSlot({
+			startDateTime: "2026-03-20T09:00:00Z" as unknown as Date,
+			endDateTime: "2026-03-20T12:00:00Z" as unknown as Date,
+		});
+		expect(isTimeSlotEnded(justEnded)).toBe(true);
 	});
 });
 
