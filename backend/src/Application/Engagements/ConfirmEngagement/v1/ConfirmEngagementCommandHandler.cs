@@ -1,12 +1,10 @@
-using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Engagements.Common;
 using Domain.Engagements;
-using Domain.Notifications;
 using Domain.Primitives;
-using Domain.Users;
 
 namespace Application.Engagements.ConfirmEngagement.v1;
 
@@ -31,79 +29,9 @@ internal sealed class ConfirmEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		engagement.Confirm().ThrowIfFailure();
+		var result = await EngagementConfirmationHelper.ConfirmAsync(
+			dbContext, sender, engagement, request.Timezone, cancellationToken);
 
-		var volunteerId = engagement.VolunteerId!.Value;
-
-		var notification = Notification.Create(
-			volunteerId,
-			NotificationKind.EngagementConfirmed,
-			engagement.Id.Value);
-
-		await dbContext.Notifications.AddAsync(notification, cancellationToken);
-
-		var tz = ResolveTimeZone(request.Timezone);
-		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime;
-		var isoYear = System.Globalization.ISOWeek.GetYear(now);
-		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
-		var totalConfirmedEngagements = await RecordActivityStreakAndConfirmationAsync(
-			volunteerId, isoYear, isoWeek, cancellationToken);
-
-		await EvaluateMilestoneAchievementsAsync(volunteerId, totalConfirmedEngagements, cancellationToken);
-
-		return engagement;
-	}
-
-	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
-	{
-		if (string.IsNullOrWhiteSpace(ianaId))
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		try
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
-		}
-		catch
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		}
-	}
-
-	private async Task<int> RecordActivityStreakAndConfirmationAsync(
-		UserId volunteerId,
-		int isoYear,
-		int isoWeek,
-		CancellationToken cancellationToken)
-	{
-		var streak = await dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken);
-		streak.RecordActivity(isoYear, isoWeek);
-		streak.RecordConfirmedEngagement();
-
-		if (streak.ActivityStreak >= 4)
-		{
-			await sender.Send(new AwardAchievementCommand(volunteerId, "weekly-hero-4"), cancellationToken);
-		}
-
-		return streak.TotalConfirmedEngagements;
-	}
-
-	private static readonly (int Threshold, string Key)[] MilestoneThresholds =
-	[
-		(1, "first-step"),
-		(5, "dedicated-5"),
-		(100, "centurion-100"),
-	];
-
-	private async Task EvaluateMilestoneAchievementsAsync(
-		UserId volunteerId,
-		int totalConfirmedEngagements,
-		CancellationToken cancellationToken)
-	{
-		foreach (var (threshold, key) in MilestoneThresholds)
-		{
-			if (totalConfirmedEngagements >= threshold)
-			{
-				await sender.Send(new AwardAchievementCommand(volunteerId, key), cancellationToken);
-			}
-		}
+		return result.GetValueOrThrow();
 	}
 }

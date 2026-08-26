@@ -20,7 +20,7 @@ internal sealed class ReportVolunteerOpportunityCommandHandler(
 		_ = await dbContext.VolunteerOpportunities.FindAsync(opportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
-		var alreadyReported = await dbContext.HasOpenReportAsync(
+		var alreadyReported = await dbContext.HasDuplicateReportAsync(
 			ReportTargetType.VolunteerOpportunity, request.OpportunityId, request.ReporterId, cancellationToken);
 		if (alreadyReported)
 			throw new ResultFailureException(Error.Conflict("Report.AlreadyReported", "You have already reported this."));

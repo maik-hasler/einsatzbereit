@@ -105,12 +105,15 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			.OrderBy(ts => ts.StartDateTime)
 			.ToList();
 
+		var activeCountsBySlot = await dbContext.CountActiveEngagementsForTimeSlotsAsync(
+			affectedSlots.Select(ts => ts.Id).ToList(), cancellationToken);
+
 		var skipped = new List<Guid>();
 		var updatedCount = 0;
 
 		foreach (var slot in affectedSlots)
 		{
-			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(slot.Id, cancellationToken);
+			var activeCount = activeCountsBySlot.GetValueOrDefault(slot.Id);
 			if (request.MaxParticipants < activeCount)
 			{
 				skipped.Add(slot.Id.Value);

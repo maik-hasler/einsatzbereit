@@ -1,0 +1,70 @@
+== 8. Distributed Tracing via Grafana Tempo
+
+=== Status
+Superseded by ADR-7 (2026-08-22)
+
+=== Date
+2026-07-29
+
+[NOTE]
+====
+*Restored 2026-08-26 (issue #2214).* This record was originally filed and accepted as ADR-6 on 2026-07-29. Issue #2165 (2026-08-22) deleted it outright when deployment, staging and observability moved out of this repository's scope, instead of marking it superseded - the arc42 convention this repository otherwise follows. By the time that omission was caught, a later and unrelated decision (light-only theme) had already been accepted as the new ADR-6, so this record is restored under a new number, ADR-8, rather than reclaiming its original one. Everything below is otherwise unchanged from the original 2026-07-29 acceptance; see ADR-7 for why it no longer applies.
+====
+
+=== Context
+Issue #1352 (filed from the 2026-07-25 1.0 readiness audit) found that `Microsoft.AspNetCore: Warning` in `appsettings.json`'s `LogLevel` map was the longest matching prefix for the `Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware` category, so `Program.cs`'s `AddHttpLogging`/`UseHttpLogging` calls produced no output in any deployed environment - the middleware ran, but every Information-level entry it emitted was filtered out before reaching a provider. The same audit noted that `ServiceDefaults/Extensions.cs`'s `AddOpenTelemetryExporters` only calls `UseOtlpExporter()` when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, which `docker-compose.yml` never did, so distributed traces were never exported anywhere in staging/production - `08_concepts.adoc` had documented this as "any OTLP-compatible backend in production when `OTEL_EXPORTER_OTLP_ENDPOINT` is set", but no such backend was ever deployed to receive it.
+
+Metrics were not actually broken - `AddPrometheusExporter` plus the existing `prometheus`/`grafana` services already give a working metrics pipeline - and container stdout was already shipped to Loki via Alloy (ADR-adjacent addition, #1341-era). The gap was specifically: (1) HTTP request logs suppressed by log level, and (2) no destination at all for OTLP traces.
+
+=== Decision
+Add `"Microsoft.AspNetCore.HttpLogging": "Information"` to `Api/appsettings.json`'s `LogLevel` map, restoring HTTP request logs (they now reach stdout and, from there, Loki via the existing Alloy pipeline) without re-enabling the framework-noise categories `Microsoft.AspNetCore: Warning` was set to suppress.
+
+Add a `tempo` service (`grafana/tempo`, single-binary mode, local-disk storage, 48h block retention) to `docker-compose.yml`, on the same internal-only `monitoring` network as Prometheus/Loki, and point the backend's `OTEL_EXPORTER_OTLP_ENDPOINT` at it (`http://tempo:4317`, gRPC - the OTLP exporter's default protocol, so no separate `OTEL_EXPORTER_OTLP_PROTOCOL` override is needed). Add Tempo as a third Grafana datasource alongside Prometheus and Loki, so traces are queryable (TraceQL) from the same dashboard as metrics and logs.
+
+=== Rationale
+* The log-level fix is a one-line, zero-risk config change: it only widens what already-written, already-wired-up middleware is allowed to emit, and only for its own category.
+* Grafana, Prometheus, and Loki are already deployed and already the operational home for this app's metrics and logs; adding Tempo alongside them keeps all three observability signals in one place instead of introducing a second dashboard/vendor for traces only.
+* Tempo's single-binary mode (no separate ingester/querier/compactor processes) matches how Loki is already run in this stack - proportionate to this project's own trace volume, and consistent with the "self-hosting over SaaS" trade-off already made for the rest of the monitoring stack.
+* The backend already emits OTLP traces unconditionally (`ConfigureOpenTelemetry`'s `WithTracing(...)`); `AddOpenTelemetryExporters` already gates the exporter itself behind `OTEL_EXPORTER_OTLP_ENDPOINT` being set, so wiring this up is purely a `docker-compose.yml`/deployment change - no application code changes.
+* Pushing traces directly from the backend to Tempo over OTLP (rather than via a shipper, the way Alloy fronts Loki) needs no extra component: the backend already speaks OTLP natively, unlike its logs, which only reach Loki because Alloy tails container stdout.
+
+=== Considered Alternatives
+
+==== Log-level fix only, defer tracing
+Ship `"Microsoft.AspNetCore.HttpLogging": "Information"` and leave `OTEL_EXPORTER_OTLP_ENDPOINT` unset, as originally scoped for this "Minor" severity issue.
+
+* Pros
+** Smallest possible change; no new container, volume, or resource budget on a memory-constrained (4GB) staging VM
+** Matches the issue's own severity label and `08_concepts.adoc`'s previously-documented "not wired in by default" trade-off
+* Cons
+** Leaves distributed tracing permanently unusable in every deployed environment - the OTLP exporter code path exists and is unconditionally configured, but has nowhere to send data
+** A production incident spanning multiple services (backend -> Keycloak, backend -> Postgres) still has to be diagnosed from logs and metrics alone, with no request-scoped trace to tie them together
+
+==== Jaeger instead of Tempo
+Use Jaeger as the OTLP trace collector/store instead of Tempo.
+
+* Pros
+** Also a well-established, purpose-built distributed tracing backend with native OTLP support
+* Cons
+** Would be the only non-Grafana-family component in a monitoring stack otherwise entirely built on Prometheus/Loki/Grafana/Alloy, needing its own UI, its own datasource plugin for Grafana (extra config, worse integration than Tempo's first-party Grafana datasource), and its own storage/retention story to reason about
+** No material capability advantage for this project's scale that would justify the inconsistency
+
+==== Third-party observability SaaS (Grafana Cloud, Honeycomb, Datadog, etc.)
+Point `OTEL_EXPORTER_OTLP_ENDPOINT` at a hosted vendor instead of self-hosting a collector.
+
+* Pros
+** No new container to operate; vendor handles storage, retention, and scaling
+* Cons
+** Recurring cost and a new data-processing relationship with a third party, for a project whose staging environment is explicitly disposable demo/QA infrastructure (see root `AGENTS.md`)
+** Contradicts the "no third-party observability SaaS" trade-off `08_concepts.adoc` had already documented for metrics and logs; a self-hosted option (Tempo) achieves the same goal without reversing it
+
+=== Consequences
+* Tempo adds one more container to the staging host's resource budget (160m memory / 0.25 CPU limit, matching Loki's sizing) and one more named Docker volume (`tempo_data`) with a fixed 48h trace retention - old traces are not kept indefinitely, unlike metrics (Prometheus) or logs (Loki), which currently have no equivalent explicit retention cap.
+* Unlike Loki (fed by Alloy, which discovers and ships *any* container's stdout), Tempo only ever receives what the backend itself pushes over OTLP - if another service in this stack needs distributed tracing later, it must be wired up individually, there is no shared shipper for traces the way Alloy is for logs.
+* No Docker healthcheck is defined for the `tempo` service, since (unlike Loki, confirmed lacking wget/shell on staging) whether the `grafana/tempo` image ships either has not been verified; nothing currently depends on it via `condition: service_healthy`, so this does not block or gate any other service's startup.
+* `08_concepts.adoc`'s Logging and Observability section and `07_deployment_view.adoc`'s service table/diagram were updated to describe Tempo as the actual OTLP destination, replacing the previous "any OTLP-compatible backend... when set" phrasing that described a code path with nothing behind it.
+
+[NOTE]
+====
+*Mooted 2026-08-22 (ADR-7).* Every artifact this record's Decision and Consequences describe - `docker-compose.yml`, the `tempo` service, the staging host's Grafana/Prometheus/Loki stack - was removed when this repository stopped describing or driving any deployed environment. Whether a deployed instance of this application has distributed tracing today is a question for whichever repository now owns its deployment, not this one.
+====

@@ -312,6 +312,44 @@ public class EngagementTests
 	}
 
 	[Test]
+	public void Reactivate_ShouldNotIncrementReactivationCount_WhenPreviouslyCancelledByOrganizer()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Cancel();
+
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(0);
+	}
+
+	[Test]
+	public void Reactivate_ShouldNotHitReactivationLimit_WhenOrganizerRepeatedlyCancels()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		for (var i = 0; i < 10; i++)
+		{
+			engagement.Cancel();
+			engagement.Reactivate(AnyTimeSlotId(), message: null).IsSuccess.Should().BeTrue();
+		}
+
+		engagement.ReactivationCount.Should().Be(0);
+	}
+
+	[Test]
+	public void Reactivate_ShouldStillIncrementReactivationCount_WhenVolunteerWithdrawsAfterAnOrganizerCancellation()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Cancel();
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.Withdraw();
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(1);
+	}
+
+	[Test]
 	public void CheckIn_ShouldSetIsCheckedIn_WhenConfirmed()
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());

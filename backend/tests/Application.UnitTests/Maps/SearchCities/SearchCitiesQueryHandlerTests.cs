@@ -9,7 +9,7 @@ namespace Application.UnitTests.Maps.SearchCities;
 public sealed class SearchCitiesQueryHandlerTests : IDisposable
 {
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
-	private readonly MemoryCache _cache = new(new MemoryCacheOptions());
+	private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
 	private readonly SearchCitiesQueryHandler _sut;
 
 	public SearchCitiesQueryHandlerTests()
