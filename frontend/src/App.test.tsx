@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import App from "./App";
+import App, { AppRoutes } from "./App";
 import { renderWithProviders } from "./test/render";
+import { expectNoA11yViolations } from "./test/a11y";
 
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("./test/apiMock");
@@ -42,6 +43,28 @@ describe("retired routes", () => {
 		expect(
 			screen.getByRole("link", { name: "Back to home" }),
 		).toBeInTheDocument();
+	});
+});
+
+describe("the bounded auth-recovery terminal state (#2208)", () => {
+	it("replaces the route tree with a sign-in-failed page and can sign out", async () => {
+		const signoutRedirect = vi.fn();
+		// AppRoutes, not App: App wraps AppRoutes in its own AuthStatusProvider,
+		// which would shadow the initialAuthRecoveryFailed one below.
+		renderWithProviders(<AppRoutes />, {
+			route: "/",
+			auth: { isAuthenticated: true, signoutRedirect },
+			authRecoveryFailed: true,
+		});
+
+		expect(
+			await screen.findByRole("heading", { name: "Sign-in isn't working" }),
+		).toBeVisible();
+		expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+		await expectNoA11yViolations();
+
+		await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+		expect(signoutRedirect).toHaveBeenCalledTimes(1);
 	});
 });
 

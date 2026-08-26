@@ -178,7 +178,9 @@ if (!isDesignTimeToolInvocation)
 		app.Configuration.GetConnectionString("einsatzbereit"),
 		app.Configuration["Keycloak:ClientSecret"],
 		app.Configuration["Authentication:Authority"],
-		app.Configuration.GetSection("Cors:Origins").Get<string[]>());
+		app.Configuration.GetSection("Cors:Origins").Get<string[]>(),
+		app.Configuration["Smtp:Host"],
+		app.Configuration["Smtp:Port"]);
 
 	if (missingConfiguration.Count > 0)
 		throw new InvalidOperationException(

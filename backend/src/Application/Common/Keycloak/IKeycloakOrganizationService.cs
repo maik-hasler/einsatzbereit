@@ -47,6 +47,11 @@ public interface IKeycloakOrganizationService
 	Task<IReadOnlySet<Guid>> GetRealmOrganisatorUserIdsAsync(
 		CancellationToken cancellationToken = default);
 
+	Task<KeycloakOrganizationMember?> FindUserByExactMatchAsync(
+		string search,
+		CancellationToken cancellationToken = default);
+
+	// Realm-wide infix match - only for filtering results already scoped by another auth check; never return matches directly in a response (#2205).
 	Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
 		string search,
 		int max = 20,

@@ -3,6 +3,7 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
 using Domain.Organizations;
@@ -16,6 +17,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IEngagementReadRepository engagementReadRepository,
+	IFileStorageService fileStorage,
 	ILogger<DeleteOrganizationCommandHandler> logger)
 	: ICommandHandler<DeleteOrganizationCommand, bool>
 {
@@ -76,6 +78,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 			await VolunteerOpportunityDeletionHelper.DeleteAsync(
 				dbContext,
 				engagementReadRepository,
+				fileStorage,
 				opportunity,
 				opportunity.Id,
 				request.RequestingUserId,
@@ -89,6 +92,22 @@ internal sealed class DeleteOrganizationCommandHandler(
 		foreach (var report in openReports)
 		{
 			report.MarkActioned(request.RequestingUserId, DateTimeOffset.UtcNow).ThrowIfFailure();
+		}
+
+		if (organization.LogoUrl is not null)
+		{
+			var logoObjectKey = fileStorage.GetObjectKeyFromPublicUrl(organization.LogoUrl);
+			if (logoObjectKey is not null)
+			{
+				try
+				{
+					await fileStorage.DeleteAsync(logoObjectKey, cancellationToken);
+				}
+				catch
+				{
+					// Object may already be gone or storage may be transiently unavailable; continue.
+				}
+			}
 		}
 
 		organization.Delete();

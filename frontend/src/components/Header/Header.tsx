@@ -9,6 +9,7 @@ import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
 import { clearActiveOrgId } from "../../lib/activeOrg";
+import { clearAuthRecoveryAttempts } from "../../lib/authRecovery";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
 import { getInitials } from "../../lib/initials";
 import DesktopHeader from "./DesktopHeader";
@@ -105,6 +106,7 @@ export default function Header({
 	function handleSignOut() {
 		clearActiveOrgId();
 		clearSeenAchievements(user?.sub);
+		clearAuthRecoveryAttempts();
 		auth.signoutRedirect();
 	}
 

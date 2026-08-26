@@ -3,6 +3,8 @@ import { act, screen, waitFor } from "@testing-library/react";
 import { useSessionExpiryHandler } from "./useSessionExpiryHandler";
 import { useAuthDisplayStatus } from "./useAuthDisplayStatus";
 import { notifySessionExpired } from "../lib/sessionExpiryBus";
+import { clearAuthRecoveryAttempts } from "../lib/authRecovery";
+import { useAuthRecoveryFailedFlag } from "../contexts/AuthStatusContext";
 import { renderWithProviders } from "../test/render";
 
 function Harness() {
@@ -16,11 +18,18 @@ function StatusHarness() {
 	return <div data-testid="auth-display-status">{status}</div>;
 }
 
+function RecoveryHarness() {
+	useSessionExpiryHandler();
+	const recoveryFailed = useAuthRecoveryFailedFlag();
+	return <div data-testid="recovery-failed">{String(recoveryFailed)}</div>;
+}
+
 const signinRedirect = vi.fn();
 
 beforeEach(() => {
 	vi.useFakeTimers({ shouldAdvanceTime: true });
 	signinRedirect.mockReset().mockResolvedValue(undefined);
+	sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -100,5 +109,73 @@ describe("session expiry", () => {
 				"sessionExpired",
 			),
 		);
+	});
+});
+
+describe("bounded auth recovery (#2208)", () => {
+	it("still redirects on the first expiry of a fresh recovery episode", async () => {
+		renderWithProviders(<RecoveryHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+
+		act(() => notifySessionExpired());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2100);
+		});
+
+		expect(signinRedirect).toHaveBeenCalledTimes(1);
+		expect(screen.getByTestId("recovery-failed")).toHaveTextContent("false");
+	});
+
+	it("gives up instead of redirecting again on a second consecutive expiry across a reload", async () => {
+		// A real redirect round trip is a full-page navigation, which remounts
+		// the whole app - simulate that here by unmounting and rendering a
+		// fresh instance, while the sessionStorage-backed counter survives.
+		const first = renderWithProviders(<RecoveryHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+		act(() => notifySessionExpired());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2100);
+		});
+		expect(signinRedirect).toHaveBeenCalledTimes(1);
+		first.unmount();
+
+		renderWithProviders(<RecoveryHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+		act(() => notifySessionExpired());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2100);
+		});
+
+		expect(signinRedirect).toHaveBeenCalledTimes(1);
+		expect(screen.getByTestId("recovery-failed")).toHaveTextContent("true");
+	});
+
+	it("gets a fresh redirect attempt once a successful API call clears the counter", async () => {
+		const first = renderWithProviders(<RecoveryHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+		act(() => notifySessionExpired());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2100);
+		});
+		expect(signinRedirect).toHaveBeenCalledTimes(1);
+		first.unmount();
+
+		// Stands in for api-instance.ts's own clear-on-success call.
+		clearAuthRecoveryAttempts();
+
+		renderWithProviders(<RecoveryHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+		act(() => notifySessionExpired());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2100);
+		});
+
+		expect(signinRedirect).toHaveBeenCalledTimes(2);
+		expect(screen.getByTestId("recovery-failed")).toHaveTextContent("false");
 	});
 });

@@ -345,15 +345,31 @@ export default function OrgMembersPage() {
 														</p>
 													)}
 												</div>
-												<Button
-													type="button"
-													onClick={() => handleInviteMember(candidate.userId)}
-													disabled={invitingUserId === candidate.userId}
-													size="sm"
-													className="ml-3 shrink-0"
-												>
-													{t("orgSettings.invite")}
-												</Button>
+												{candidate.status === "Available" ? (
+													<Button
+														type="button"
+														onClick={() => handleInviteMember(candidate.userId)}
+														disabled={invitingUserId === candidate.userId}
+														size="sm"
+														className="ml-3 shrink-0"
+													>
+														{t("orgSettings.invite")}
+													</Button>
+												) : (
+													<Chip
+														tone={
+															candidate.status === "AlreadyInvited"
+																? "warning"
+																: "neutral"
+														}
+														size="sm"
+														className="ml-3 shrink-0"
+													>
+														{candidate.status === "AlreadyInvited"
+															? t("orgSettings.searchResultAlreadyInvited")
+															: t("orgSettings.searchResultAlreadyMember")}
+													</Chip>
+												)}
 											</li>
 										))}
 									</ul>

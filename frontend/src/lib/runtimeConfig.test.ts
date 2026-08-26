@@ -86,4 +86,29 @@ describe("runtimeConfig", () => {
 		const { runtimeConfig } = await import("./runtimeConfig");
 		expect(runtimeConfig.appVersion).toBe("1.2.3");
 	});
+
+	it("isConfigured is true once the API url and both keycloak values resolve to real values", async () => {
+		vi.stubEnv("VITE_API_URL", "https://api.example");
+		vi.stubEnv("VITE_KEYCLOAK_AUTHORITY_URL", "https://keycloak.example");
+		vi.stubEnv("VITE_KEYCLOAK_CLIENT_ID", "frontend");
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.isConfigured).toBe(true);
+	});
+
+	it("isConfigured is false when every source left the API url empty - the offline cold-start fallback (#2207)", async () => {
+		vi.stubEnv("VITE_API_URL", "");
+		vi.stubEnv("VITE_KEYCLOAK_AUTHORITY_URL", "https://keycloak.example");
+		vi.stubEnv("VITE_KEYCLOAK_CLIENT_ID", "frontend");
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.isConfigured).toBe(false);
+	});
+
+	it("isConfigured is false when only the runtime placeholder was ever provided for a value", async () => {
+		vi.stubEnv("VITE_API_URL", "");
+		vi.stubEnv("VITE_KEYCLOAK_AUTHORITY_URL", "https://keycloak.example");
+		vi.stubEnv("VITE_KEYCLOAK_CLIENT_ID", "frontend");
+		window.__APP_CONFIG__ = { API_URL: "${VITE_API_URL}" };
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.isConfigured).toBe(false);
+	});
 });

@@ -8,6 +8,7 @@ using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.VolunteerOpportunities.UploadOpportunityBanner;
 
@@ -87,5 +88,98 @@ public class UploadOpportunityBannerCommandHandlerTests
 		opportunity.BannerImageUrl.Should().BeNull();
 		await _fileStorage.DidNotReceive().UploadAsync(
 			Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteThePreviousBannerObject_WhenReuploadedWithADifferentExtension(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/old.jpg");
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/old.jpg")
+			.Returns($"opportunity-banners/{opportunityId}.jpg");
+		var command = new UploadOpportunityBannerCommand(opportunityId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _fileStorage.Received(1).DeleteAsync($"opportunity-banners/{opportunityId}.jpg", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotDeleteAnything_WhenReuploadedWithTheSameExtension(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/old.png");
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/old.png")
+			.Returns($"opportunity-banners/{opportunityId}.png");
+		var command = new UploadOpportunityBannerCommand(opportunityId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - re-uploading with the same extension overwrote the object at
+		// that key in place, so deleting it now would delete the file just uploaded.
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptDeletion_WhenOpportunityHadNoPreviousBanner(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		var command = new UploadOpportunityBannerCommand(opportunityId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenDeletingThePreviousBannerObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/old.jpg");
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/old.jpg")
+			.Returns($"opportunity-banners/{opportunityId}.jpg");
+		_fileStorage
+			.DeleteAsync($"opportunity-banners/{opportunityId}.jpg", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+		var command = new UploadOpportunityBannerCommand(opportunityId, PngBytes, "image/png", DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
 	}
 }

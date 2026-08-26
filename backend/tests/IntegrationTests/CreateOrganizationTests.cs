@@ -164,6 +164,64 @@ public class CreateOrganizationTests(
 		details.Address.Should().BeNull();
 	}
 
+	[Test]
+	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUsingTheTokenFromBeforeOrganizationCreation(
+		CancellationToken cancellationToken)
+	{
+		// Keycloak bakes role claims into the access token at issue time, so
+		// the very token that just created the organization - and so far has
+		// never held the organisator role - still doesn't hold it (einsatzbereit#2206).
+		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var client = await CreateAuthenticatedClientAsync(username, password);
+
+		var org = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = $"Stale Token Org {Guid.NewGuid()}" }, cancellationToken);
+
+		var act = () => client.CreateVolunteerOpportunityAsync(
+			BuildOpportunityRequest(org.Id.Value), cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task CreateVolunteerOpportunity_ShouldSucceed_WhenUsingATokenRefreshedAfterOrganizationCreation(
+		CancellationToken cancellationToken)
+	{
+		// Refreshing the token - what the frontend's auth.signinSilent() does
+		// right after organization creation - re-issues it with the
+		// organisator role Keycloak just granted, so the caller's very next
+		// request carries it (einsatzbereit#2206).
+		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var client = await CreateAuthenticatedClientAsync(username, password);
+
+		var org = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = $"Refreshed Token Org {Guid.NewGuid()}" }, cancellationToken);
+
+		client = await CreateAuthenticatedClientAsync(username, password);
+
+		var opportunity = await client.CreateVolunteerOpportunityAsync(
+			BuildOpportunityRequest(org.Id.Value), cancellationToken);
+
+		opportunity.Should().NotBeNull();
+	}
+
+	private static CreateVolunteerOpportunityRequest BuildOpportunityRequest(Guid organizationId) =>
+		new()
+		{
+			TitleDe = "Test Opportunity",
+			DescriptionDe = "Integration test opportunity",
+			OrganizationId = organizationId,
+			Street = "Test Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "Recurring",
+			ParticipationType = "ScheduledSlots",
+			CheckInMethod = "None",
+			IsDraft = true,
+		};
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
@@ -10,6 +11,7 @@ import {
 	labelClass,
 } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
+import { refreshAccessTokenAfterRoleGrant } from "../lib/authRefresh";
 import { dispatchToast } from "../lib/toastBus";
 import {
 	buildOrganizationFormSchema,
@@ -38,6 +40,7 @@ interface Props {
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const api = useApiClient();
+	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const schema = useMemo(() => buildOrganizationFormSchema(t), [t]);
 	const {
@@ -118,6 +121,12 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						}
 					: undefined,
 			});
+
+			// Founding an organization grants the organizer role server-side -
+			// refresh before the logo upload and the dashboard navigation that
+			// follow, both of which require it (#2206).
+			await refreshAccessTokenAfterRoleGrant(auth);
+
 			const organizationId = organization.id?.value;
 			if (logoFile && organizationId) {
 				try {

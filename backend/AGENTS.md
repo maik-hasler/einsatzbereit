@@ -127,7 +127,7 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 
 `Organization` aggregate fields: `Id`, `Name`, `Description?`, `ContactEmail?`, `ContactPhone?`, `Website?`, `Address?` (`Domain.Common.Address`), `CreatedOn`, `ModifiedOn`.
 
-`IKeycloakOrganizationService` methods: `CreateOrganizationAsync`, `AddMemberAsync`, `RemoveMemberAsync`, `AssignOrganizerRoleAsync`, `GetMembersAsync`, `SearchUsersAsync`, `DeleteOrganizationAsync`. Which organizations a user organizes is answered from the local `organization_membership` table (`IApplicationDbContext.GetOrganizerOrganizationsAsync`), not Keycloak.
+`IKeycloakOrganizationService` methods: `CreateOrganizationAsync`, `AddMemberAsync`, `RemoveMemberAsync`, `AssignOrganizerRoleAsync`, `GetMembersAsync`, `FindUserByExactMatchAsync`, `SearchUsersAsync`, `DeleteOrganizationAsync`. `FindUserByExactMatchAsync` is the only one safe to expose in an API response (exact email/username match, at most one result) - `SearchUsersAsync` is a realm-wide infix match, for internal filtering only (#2205). Which organizations a user organizes is answered from the local `organization_membership` table (`IApplicationDbContext.GetOrganizerOrganizationsAsync`), not Keycloak.
 
 ## Implemented endpoints (Organizations)
 

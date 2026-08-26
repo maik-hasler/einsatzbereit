@@ -10,8 +10,12 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import { useSilentSsoProbe } from "./hooks/useSilentSsoProbe";
-import { AuthStatusProvider } from "./contexts/AuthStatusContext";
+import {
+	AuthStatusProvider,
+	useAuthRecoveryFailedFlag,
+} from "./contexts/AuthStatusContext";
 import { signinLocaleArgs } from "./lib/authLocale";
+import { clearAuthRecoveryAttempts } from "./lib/authRecovery";
 import ErrorBanner from "./components/ErrorBanner";
 import Button from "./components/Button";
 import RouteAnnouncer from "./components/RouteAnnouncer";
@@ -110,9 +114,43 @@ function CallbackPage() {
 	);
 }
 
-function AppRoutes() {
+// The bounded-redirect-loop terminal state (#2208): useSessionExpiryHandler
+// gives up after a second consecutive session expiry with no successful API
+// call in between (e.g. a backend ValidIssuers mismatch that no amount of
+// re-authenticating can fix), rather than keep bouncing the visitor through
+// Keycloak. Rendered in place of the whole route tree - a page-scoped state
+// wouldn't be reachable if the failure happens before that page's own data
+// ever loads, and the user needs a guaranteed way out regardless of route.
+function AuthRecoveryFailedPage() {
+	const auth = useAuth();
+	const { t } = useTranslation();
+
+	function handleSignOut() {
+		clearAuthRecoveryAttempts();
+		auth.signoutRedirect();
+	}
+
+	return (
+		<main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+			<h1 className="text-xl font-semibold text-gray-900">
+				{t("auth.recoveryFailedTitle")}
+			</h1>
+			<ErrorBanner message={t("auth.recoveryFailedMessage")} />
+			<Button onClick={handleSignOut}>{t("nav.signOut")}</Button>
+		</main>
+	);
+}
+
+// Exported for App.test.tsx: rendering this directly (instead of <App/>)
+// avoids App's own <AuthStatusProvider> below shadowing the one
+// renderWithProviders sets up for the test.
+export function AppRoutes() {
 	useSessionExpiryHandler();
 	useSilentSsoProbe();
+	const authRecoveryFailed = useAuthRecoveryFailedFlag();
+
+	if (authRecoveryFailed) return <AuthRecoveryFailedPage />;
+
 	return (
 		<>
 			<RouteAnnouncer />
