@@ -107,6 +107,20 @@ describe("QRScannerModal when camera permission is denied", () => {
 	});
 });
 
+describe("QRScannerModal initial focus", () => {
+	it("focuses the close button on mount, not the fallback code input", async () => {
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: undefined,
+		});
+
+		renderScanner();
+
+		await screen.findByLabelText("Volunteer's check-in code");
+		expect(screen.getByTestId("qr-scanner-close-button")).toHaveFocus();
+	});
+});
+
 describe("QRScannerModal fallback code input", () => {
 	beforeEach(() => {
 		Object.defineProperty(navigator, "mediaDevices", {

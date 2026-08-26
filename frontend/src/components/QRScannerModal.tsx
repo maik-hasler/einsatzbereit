@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import jsQR from "jsqr";
 import { useApiClient } from "../hooks/useApiClient";
 import { getApiErrorMessage } from "../lib/apiError";
-import { inputClass, labelClass } from "../lib/formClasses";
+import { inputSurfaceClass, labelClass } from "../lib/formClasses";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
 import Button from "./Button";
@@ -253,6 +253,7 @@ export default function QRScannerModal({
 							type="text"
 							inputMode="text"
 							autoComplete="off"
+							data-skip-initial-focus
 							maxLength={FALLBACK_CODE_LENGTH}
 							value={fallbackCode}
 							onChange={(e) =>
@@ -261,7 +262,7 @@ export default function QRScannerModal({
 								)
 							}
 							placeholder={t("checkIn.qrFallbackCodePlaceholder")}
-							className={`${inputClass} mt-0 flex-1 font-mono`}
+							className={`${inputSurfaceClass} flex-1 font-mono`}
 						/>
 						<Button
 							type="submit"
