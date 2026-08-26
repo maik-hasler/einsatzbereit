@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import jsQR from "jsqr";
 import { useApiClient } from "../hooks/useApiClient";
 import { getApiErrorMessage } from "../lib/apiError";
+import { inputClass, labelClass } from "../lib/formClasses";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
 import Button from "./Button";
@@ -20,23 +22,66 @@ declare global {
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const FALLBACK_CODE_LENGTH = 8;
+
+// Native BarcodeDetector (Chromium only) is used when present since it's
+// typically hardware-accelerated; everywhere else - WebKit/Safari (all iOS
+// browsers, since they're WebKit shells) and Gecko/Firefox never implement
+// it - this falls back to decoding video frames with jsQR (#2219).
+async function detectRawValue(
+	video: HTMLVideoElement,
+	canvas: HTMLCanvasElement,
+): Promise<string | null> {
+	if (typeof BarcodeDetector !== "undefined") {
+		const detector = new BarcodeDetector({ formats: ["qr_code"] });
+		const barcodes = await detector.detect(video);
+		return barcodes[0]?.rawValue ?? null;
+	}
+
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return null;
+	canvas.width = video.videoWidth;
+	canvas.height = video.videoHeight;
+	ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+	const { data, width, height } = ctx.getImageData(
+		0,
+		0,
+		canvas.width,
+		canvas.height,
+	);
+	return (
+		jsQR(data, width, height, { inversionAttempts: "dontInvert" })?.data ?? null
+	);
+}
+
 interface QRScannerModalProps {
+	opportunityId: string;
 	onCheckedIn: (engagementId: string) => void;
 	onClose: () => void;
 }
 
 export default function QRScannerModal({
+	opportunityId,
 	onCheckedIn,
 	onClose,
 }: QRScannerModalProps) {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const videoRef = useRef<HTMLVideoElement>(null);
+	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	if (canvasRef.current === null) {
+		canvasRef.current = document.createElement("canvas");
+	}
 	const streamRef = useRef<MediaStream | null>(null);
 	const [supported, setSupported] = useState<boolean | null>(null);
 	const [cameraError, setCameraError] = useState<string | null>(null);
 	const [scanError, setScanError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
+	const [fallbackCode, setFallbackCode] = useState("");
+	const [fallbackCodeSubmitting, setFallbackCodeSubmitting] = useState(false);
+	const [fallbackCodeError, setFallbackCodeError] = useState<string | null>(
+		null,
+	);
 
 	useEffect(() => {
 		if (!success) return;
@@ -50,10 +95,7 @@ export default function QRScannerModal({
 	}, [success]);
 
 	useEffect(() => {
-		const ok =
-			typeof BarcodeDetector !== "undefined" &&
-			!!navigator.mediaDevices?.getUserMedia;
-		setSupported(ok);
+		setSupported(!!navigator.mediaDevices?.getUserMedia);
 	}, []);
 
 	useEffect(() => {
@@ -80,6 +122,13 @@ export default function QRScannerModal({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [supported]);
 
+	function completeCheckIn(engagementId: string) {
+		streamRef.current?.getTracks().forEach((tr) => tr.stop());
+		streamRef.current = null;
+		setSuccess(true);
+		onCheckedIn(engagementId);
+	}
+
 	useEffect(() => {
 		if (supported !== true) return;
 		let alive = true;
@@ -88,23 +137,15 @@ export default function QRScannerModal({
 		const loop = async () => {
 			if (!alive) return;
 			const video = videoRef.current;
-			if (video && video.readyState >= video.HAVE_ENOUGH_DATA) {
+			const canvas = canvasRef.current;
+			if (video && canvas && video.readyState >= video.HAVE_ENOUGH_DATA) {
 				try {
-					const detector = new BarcodeDetector({ formats: ["qr_code"] });
-					const barcodes = await detector.detect(video);
-					let matched = false;
-					for (const barcode of barcodes) {
-						const raw = barcode.rawValue.trim();
-						if (!UUID_RE.test(raw)) continue;
-
-						matched = true;
+					const raw = (await detectRawValue(video, canvas))?.trim();
+					if (raw && UUID_RE.test(raw)) {
 						alive = false;
 						try {
 							await api.checkInEngagement(raw);
-							streamRef.current?.getTracks().forEach((tr) => tr.stop());
-							streamRef.current = null;
-							setSuccess(true);
-							onCheckedIn(raw);
+							completeCheckIn(raw);
 						} catch (err) {
 							setScanError(
 								getApiErrorMessage(err, t("checkIn.qrCheckInError")),
@@ -112,9 +153,9 @@ export default function QRScannerModal({
 
 							alive = true;
 						}
-						break;
+					} else {
+						setScanError(null);
 					}
-					if (!matched) setScanError(null);
 				} catch {
 					// detection failure - retry on next tick
 				}
@@ -129,6 +170,24 @@ export default function QRScannerModal({
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [supported]);
+
+	async function handleFallbackCodeSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setFallbackCodeSubmitting(true);
+		setFallbackCodeError(null);
+		try {
+			const result = await api.checkInEngagementByCode(opportunityId, {
+				code: fallbackCode,
+			});
+			completeCheckIn(result.id);
+		} catch (err) {
+			setFallbackCodeError(
+				getApiErrorMessage(err, t("checkIn.qrCheckInError")),
+			);
+		} finally {
+			setFallbackCodeSubmitting(false);
+		}
+	}
 
 	return (
 		<Modal onClose={onClose} labelledBy="qr-scanner-title" maxWidth="max-w-sm">
@@ -178,6 +237,48 @@ export default function QRScannerModal({
 						</p>
 					)}
 				</>
+			)}
+
+			{!success && (
+				<div className="mt-5 border-t border-gray-200 pt-4">
+					<label htmlFor="qr-fallback-code-input" className={labelClass}>
+						{t("checkIn.qrFallbackCodeInputLabel")}
+					</label>
+					<form
+						onSubmit={(e) => void handleFallbackCodeSubmit(e)}
+						className="mt-1 flex gap-2"
+					>
+						<input
+							id="qr-fallback-code-input"
+							type="text"
+							inputMode="text"
+							autoComplete="off"
+							maxLength={FALLBACK_CODE_LENGTH}
+							value={fallbackCode}
+							onChange={(e) =>
+								setFallbackCode(
+									e.target.value.replace(/[^0-9a-fA-F]/g, "").toLowerCase(),
+								)
+							}
+							placeholder={t("checkIn.qrFallbackCodePlaceholder")}
+							className={`${inputClass} mt-0 flex-1 font-mono`}
+						/>
+						<Button
+							type="submit"
+							disabled={
+								fallbackCodeSubmitting ||
+								fallbackCode.length !== FALLBACK_CODE_LENGTH
+							}
+						>
+							{fallbackCodeSubmitting
+								? t("checkIn.submitting")
+								: t("checkIn.qrFallbackCodeSubmit")}
+						</Button>
+					</form>
+					{fallbackCodeError && (
+						<ErrorBanner message={fallbackCodeError} className="mt-2" />
+					)}
+				</div>
 			)}
 
 			<p
