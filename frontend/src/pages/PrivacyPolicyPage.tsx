@@ -143,6 +143,7 @@ export default function PrivacyPolicyPage() {
 						title={t("privacyPolicy.section7Title")}
 					>
 						<p>{t("privacyPolicy.section7Body")}</p>
+						<p>{t("privacyPolicy.section7Body2")}</p>
 					</DocumentSection>
 
 					<DocumentSection

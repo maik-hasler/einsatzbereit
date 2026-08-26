@@ -140,6 +140,7 @@
 
 			<div class="form-group">
 				<div id="kc-registration-terms-text">
+					<p>${kcSanitize(msg("privacyNotice"))?no_esc}</p>
 					<p>${msg("termsIntro")}</p>
 					<details class="terms-details">
 						<summary>
