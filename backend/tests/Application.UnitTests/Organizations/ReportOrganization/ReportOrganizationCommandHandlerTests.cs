@@ -26,7 +26,7 @@ public class ReportOrganizationCommandHandlerTests
 		_dbContext.Organizations.Returns(_organizationRepo);
 		_dbContext.Reports.Returns(_reportRepo);
 		_dbContext
-			.HasOpenReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.HasDuplicateReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 		_sut = new ReportOrganizationCommandHandler(_dbContext);
 	}
@@ -93,7 +93,7 @@ public class ReportOrganizationCommandHandlerTests
 			.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken)
 			.Returns(organization);
 		_dbContext
-			.HasOpenReportAsync(ReportTargetType.Organization, orgId, DefaultReporterId, cancellationToken)
+			.HasDuplicateReportAsync(ReportTargetType.Organization, orgId, DefaultReporterId, cancellationToken)
 			.Returns(true);
 
 		var command = new ReportOrganizationCommand(orgId, DefaultReporterId, ReportReason.Fraud, null);

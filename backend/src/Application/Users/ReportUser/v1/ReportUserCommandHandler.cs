@@ -22,7 +22,7 @@ internal sealed class ReportUserCommandHandler(
 		_ = await dbContext.Users.FindAsync(targetUserId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("User.NotFound", $"User '{request.UserId}' not found."));
 
-		var alreadyReported = await dbContext.HasOpenReportAsync(
+		var alreadyReported = await dbContext.HasDuplicateReportAsync(
 			ReportTargetType.User, request.UserId, request.ReporterId, cancellationToken);
 		if (alreadyReported)
 			throw new ResultFailureException(Error.Conflict("Report.AlreadyReported", "You have already reported this."));

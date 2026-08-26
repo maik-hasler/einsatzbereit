@@ -25,7 +25,7 @@ public class ReportUserCommandHandlerTests
 		_dbContext.Users.Returns(_userRepo);
 		_dbContext.Reports.Returns(_reportRepo);
 		_dbContext
-			.HasOpenReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.HasDuplicateReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 		_sut = new ReportUserCommandHandler(_dbContext);
 	}
@@ -108,7 +108,7 @@ public class ReportUserCommandHandlerTests
 			.FindAsync(UserId.Create(targetUserGuid).GetValueOrThrow(), cancellationToken)
 			.Returns(targetUser);
 		_dbContext
-			.HasOpenReportAsync(ReportTargetType.User, targetUserGuid, DefaultReporterId, cancellationToken)
+			.HasDuplicateReportAsync(ReportTargetType.User, targetUserGuid, DefaultReporterId, cancellationToken)
 			.Returns(true);
 
 		var command = new ReportUserCommand(targetUserGuid, DefaultReporterId, ReportReason.Spam, null);
