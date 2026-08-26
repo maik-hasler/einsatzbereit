@@ -153,13 +153,15 @@ Tests are organized by what they need to run, which is also how CI parallelizes 
 
 === Logging and Observability
 
-The backend uses the .NET built-in `ILogger<T>` abstraction. Every request runs inside a logging scope that enriches its entries with the OpenTelemetry trace ID and the authenticated user ID.
+The backend uses the .NET built-in `ILogger<T>` abstraction. Console output is structured JSON (`Logging:Console:FormatterName` in `appsettings.json`), not freeform text, so every log line is machine-parseable straight off stdout with no collector required in front of it.
 
-Observability is built on OpenTelemetry (via the Aspire service defaults in `backend/src/Aspire/ServiceDefaults/`): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP, collected by the Aspire dashboard in development. Anywhere else, the exporter stays inert unless `OTEL_EXPORTER_OTLP_ENDPOINT` names a collector.
+The trace ID reaches log entries two ways, because HTTP request logging and the rest of the pipeline run at different points relative to authentication: an `IHttpLoggingInterceptor` stamps it directly onto the built-in HTTP request-summary log as it's produced, while a logging scope wrapping everything downstream of authentication enriches endpoint and background-job log entries with both the trace ID and the authenticated user ID (surfaced as a `Scopes` array in the JSON via `IncludeScopes`). Between the two, an operator reading stdout can correlate every log line for a request, not only the ones an exception handler happens to log.
+
+Metrics (ASP.NET Core, HTTP client, runtime) and distributed traces have no such fallback - they exist only via OpenTelemetry (the Aspire service defaults in `backend/src/Aspire/ServiceDefaults/`), exported over OTLP and collected by the Aspire dashboard in local development. Outside of that, the exporter stays inert unless `OTEL_EXPORTER_OTLP_ENDPOINT` names a collector - which today is everywhere the images are actually deployed, now that #2165 removed the only stack in this repository that ran one. Point that variable at an OTLP collector (e.g. an OpenTelemetry Collector or Grafana Alloy instance) to get metrics and traces in a deployed environment; logs need nothing extra - they are always on stdout for the container runtime's own log driver to collect.
 
 Key logged events:
 
-* HTTP request logs (method, path, status, duration) - the `Microsoft.AspNetCore.HttpLogging` category has its own `LogLevel` override so these survive the broader `Microsoft.AspNetCore: Warning` filter (#1352)
+* HTTP request logs (method, path, status, duration, trace ID) - the `Microsoft.AspNetCore.HttpLogging` category has its own `LogLevel` override so these survive the broader `Microsoft.AspNetCore: Warning` filter (#1352)
 * Unhandled exceptions (with trace ID)
 * Slow requests (flagged by the performance pipeline behavior)
 

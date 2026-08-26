@@ -19,3 +19,11 @@ COPY realms /opt/keycloak/data/import
 # image's baked copy instead - see keycloak/AGENTS.md for the resolved
 # semantics and why.
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]
+
+# This image has neither curl nor wget (security hardening on the UBI9-micro base),
+# so the check speaks raw HTTP over bash's /dev/tcp instead - the same recipe
+# Keycloak's own docs recommend for containers built this way. Port 9000 is the
+# management interface KC_HEALTH_ENABLED=true above exposes /health/ready on,
+# separate from the app's own HTTP(S) port.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+	CMD bash -c '{ printf "HEAD /health/ready HTTP/1.0\r\n\r\n" >&0; grep -q "HTTP/1.0 200"; } 0<>/dev/tcp/127.0.0.1/9000'
