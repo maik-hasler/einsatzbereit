@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreateOrganizationModal from "./CreateOrganizationModal";
-import { renderWithProviders } from "../test/render";
+import { renderWithProviders, type TestAuth } from "../test/render";
 
 const { api } = vi.hoisted(() => ({
 	api: { createOrganization: vi.fn(), uploadOrganizationLogo: vi.fn() },
@@ -18,11 +18,12 @@ beforeEach(() => {
 	});
 });
 
-function open() {
+function open(auth: TestAuth = {}) {
 	const onClose = vi.fn();
 	const onSuccess = vi.fn();
 	const result = renderWithProviders(
 		<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />,
+		{ auth },
 	);
 	return { ...result, onClose, onSuccess };
 }
@@ -148,5 +149,34 @@ describe("CreateOrganizationModal submission", () => {
 		expect(api.createOrganization).toHaveBeenCalledWith(
 			expect.objectContaining({ name: "Name Only Org", address: undefined }),
 		);
+	});
+});
+
+describe("CreateOrganizationModal auth refresh (#2206)", () => {
+	it("refreshes the access token before reporting success, since creating an organization grants the organizer role server-side", async () => {
+		const callOrder: string[] = [];
+		const signinSilent = vi.fn().mockImplementation(async () => {
+			callOrder.push("signinSilent");
+			return null;
+		});
+		const { container, onSuccess } = open({ signinSilent });
+		onSuccess.mockImplementation(() => callOrder.push("onSuccess"));
+
+		await userEvent.type(field(container, "create-org-name"), "Fresh Org");
+		await userEvent.click(screen.getByTestId("modal-submit"));
+
+		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+		expect(signinSilent).toHaveBeenCalledTimes(1);
+		expect(callOrder).toEqual(["signinSilent", "onSuccess"]);
+	});
+
+	it("still reports success when the silent refresh itself fails", async () => {
+		const signinSilent = vi.fn().mockRejectedValue(new Error("no SSO session"));
+		const { container, onSuccess } = open({ signinSilent });
+
+		await userEvent.type(field(container, "create-org-name"), "Fresh Org");
+		await userEvent.click(screen.getByTestId("modal-submit"));
+
+		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
 	});
 });

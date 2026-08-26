@@ -469,3 +469,52 @@ describe("my-signups check-in affordance", () => {
 		).toBeInTheDocument();
 	});
 });
+
+describe("my-signups invitations (#2206)", () => {
+	const invitation = (extra: Record<string, unknown> = {}) => ({
+		id: "77777777-7777-7777-7777-777777777777",
+		organizationId: "11111111-1111-1111-1111-111111111111",
+		organizationName: "Malteser Kiel",
+		createdOn: new Date(Date.UTC(2026, 7, 1)),
+		...extra,
+	});
+
+	it("refreshes the access token after accepting, since the invitation may have granted the organizer role", async () => {
+		api.getMyInvitations.mockResolvedValue([invitation()]);
+		api.acceptInvitation.mockResolvedValue(undefined);
+		const signinSilent = vi.fn().mockResolvedValue(null);
+
+		renderWithProviders(<ActivitySection />, {
+			route: "/my-signups",
+			auth: { isAuthenticated: true, signinSilent },
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Accept" }),
+		);
+
+		await waitFor(() =>
+			expect(api.acceptInvitation).toHaveBeenCalledWith(invitation().id),
+		);
+		expect(signinSilent).toHaveBeenCalledTimes(1);
+	});
+
+	it("still removes the invitation from the list when the silent refresh itself fails", async () => {
+		api.getMyInvitations.mockResolvedValue([invitation()]);
+		api.acceptInvitation.mockResolvedValue(undefined);
+		const signinSilent = vi.fn().mockRejectedValue(new Error("no SSO session"));
+
+		renderWithProviders(<ActivitySection />, {
+			route: "/my-signups",
+			auth: { isAuthenticated: true, signinSilent },
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Accept" }),
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByRole("button", { name: "Accept" })).toBeNull(),
+		);
+	});
+});
