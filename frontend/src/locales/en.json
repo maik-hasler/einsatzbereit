@@ -23,7 +23,8 @@
       "primaryLabel": "Main navigation",
       "home": "Home",
       "findOpportunities": "Find opportunities",
-      "forOrganizations": "For organizations",
+      "organizations": "Organizations",
+      "forOrganizations": "Create an organization",
       "help": "Help",
       "userMenu": "User menu",
       "myProfile": "My profile",
@@ -44,7 +45,7 @@
       "ctaButton": "Find opportunities",
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
-      "forOrganizations": "For organizations",
+      "forOrganizations": "Create an organization",
       "browseOrganizations": "Browse organizations",
       "support": "Support",
       "legal": "Legal",
@@ -576,6 +577,8 @@
       "searchMinChars": "Enter at least 4 characters",
       "noSearchResults": "No users found.",
       "noSearchResultsEmail": "No account exists for this email yet - ask the person to sign up first, then you can invite them here.",
+      "searchResultAlreadyMember": "Already a member",
+      "searchResultAlreadyInvited": "Already invited",
       "memberSearchError": "Could not search for users.",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",
@@ -650,6 +653,9 @@
       "qrInstruction": "Show this QR code to the organizer to check in.",
       "qrCodeAlt": "QR code for checking in to this opportunity",
       "qrFallbackLabel": "If the scan doesn't work, tell the organizer this code:",
+      "qrFallbackCodeInputLabel": "Volunteer's check-in code",
+      "qrFallbackCodePlaceholder": "e.g. abcd1234",
+      "qrFallbackCodeSubmit": "Check in",
       "pinInstruction": "Enter the PIN provided by the organizer.",
       "pinLabel": "PIN",
       "pinPlaceholder": "4-digit PIN",
@@ -674,7 +680,7 @@
       "qrScanTitle": "Scan volunteer QR code",
       "qrScanHint": "Point the camera at the volunteer's QR code.",
       "qrVideoLabel": "Camera view for QR code scanning",
-      "qrNotSupported": "QR scanning is not supported in this browser. Please use Chrome or Edge, or switch to a manual check-in method.",
+      "qrNotSupported": "QR scanning isn't available on this device or browser. Enter the volunteer's check-in code below instead.",
       "qrCameraError": "Camera access denied. Please allow camera access and try again.",
       "qrCheckInError": "Check-in failed. Please try again.",
       "qrSuccess": "Volunteer checked in successfully!",
@@ -814,7 +820,7 @@
       "section2Body1": "When visiting this website, general technical information is automatically processed (e.g. IP address, browser type, time of access) to ensure secure and reliable operation. This data can constitute personal data - including your IP address, per the Court of Justice of the EU's Breyer ruling (C-582/14) - even though we do not otherwise link it to your identity.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
       "section2Body3": "You may also voluntarily add further details to your profile, such as a phone number organizations can reach you on, a profile picture, a short bio, and your skills and languages. Who this information is shared with or visible to is described in the following sections.",
-      "section2Body4": "The legal basis for the technical access information described above is our legitimate interest (Art. 6(1)(f) GDPR) in secure and reliable operation; your IP address is used only transiently, in memory, to enforce request rate limits, and is never stored. The legal basis for your registration and account data, including any optional profile fields you choose to add, is performance of the usage agreement with you (Art. 6(1)(b) GDPR). We retain your account and profile data for as long as your account exists; deleting your account, which you can do at any time from your profile settings, erases or anonymizes this data immediately. Notifications are deleted automatically 90 days after being read, or after 180 days if never read. Reports you file against content or other users (see \"Reporting abusive content\" on our Contact page) are retained as moderation history for as long as the reported account exists, and for up to 180 days afterwards; a report you filed yourself is deleted immediately together with the rest of your account data if you delete your own account. Audit logs of security-relevant actions (see below) are retained without an automatic deletion period.",
+      "section2Body4": "The legal basis for the technical access information described above is our legitimate interest (Art. 6(1)(f) GDPR) in secure and reliable operation; your IP address is used only transiently, in memory, to enforce request rate limits, and is never stored. The legal basis for your registration and account data, including any optional profile fields you choose to add, is performance of the usage agreement with you (Art. 6(1)(b) GDPR). We retain your account and profile data for as long as your account exists; deleting your account, which you can do at any time from your profile settings, erases or anonymizes this data immediately. If we remove your account for violating our Terms of Use, your account and profile data is retained instead as moderation history, without an automatic deletion period. Notifications are deleted automatically 90 days after being read, or after 180 days if never read. Reports you file against content or other users (see \"Reporting abusive content\" on our Contact page) are retained as moderation history for as long as the reported account exists, and for up to 180 days afterwards; a report you filed yourself is deleted immediately together with the rest of your account data if you delete your own account. Audit logs of security-relevant actions (see below) are retained without an automatic deletion period.",
       "section3Title": "Data sharing",
       "section3Body": "Personal data is only shared with third parties or made publicly accessible in the cases described in this section and its subsections below: when you sign up for an opportunity, as part of your public profile, and through the embedded third-party services for map display and location search. Any transfer beyond that only takes place if you have expressly consented or we are legally required to do so.",
       "section3aTitle": "Signing up for an opportunity",
@@ -961,7 +967,9 @@
     "auth": {
       "authError": "Authentication error: {{message}}",
       "completing": "Completing sign-in…",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "recoveryFailedTitle": "Sign-in isn't working",
+      "recoveryFailedMessage": "We couldn't restore your session after repeated attempts. Please sign out, then try signing in again. If this keeps happening, contact support."
     },
     "notFound": {
       "title": "Page not found",
@@ -1196,6 +1204,7 @@
     "notificationPreferences": {
       "title": "Email notifications",
       "description": "Choose which transactional emails you want to receive. Every email also includes an unsubscribe link for the type it belongs to.",
+      "inAppNotice": "These settings control email only. You'll always see this and other activity - like opportunity changes or organization invitations - as notifications in the bell menu; that can't be turned off.",
       "organizerGroupLabel": "As an organizer",
       "volunteerGroupLabel": "As a volunteer",
       "newSignUp": "New sign-ups for opportunities you organize",
@@ -1264,6 +1273,10 @@
     "error": {
       "forbidden": "You do not have permission to do this.",
       "sessionExpired": "Your session has expired. Please sign in again.",
+      "rateLimited": "Too many requests. Please wait {{count}} seconds and try again.",
+      "rateLimited_one": "Too many requests. Please wait {{count}} second and try again.",
+      "rateLimited_other": "Too many requests. Please wait {{count}} seconds and try again.",
+      "rateLimitedGeneric": "Too many requests. Please wait a moment and try again.",
       "serverError": "An unexpected error occurred. Please try again later.",
       "boundaryTitle": "Something went wrong",
       "boundaryMessage": "An unexpected error occurred. You can try going back or reloading the page.",
@@ -1281,6 +1294,14 @@
         "title": "Admin rights required",
         "message": "This area is for platform administrators. Your account does not have admin rights - if you think it should, ask an administrator to grant them."
       }
+    },
+    "pwaUpdate": {
+      "message": "A new version of Einsatzbereit is available.",
+      "reloadLabel": "Reload to update the app"
+    },
+    "config": {
+      "unavailableTitle": "Configuration missing",
+      "unavailableMessage": "Einsatzbereit could not load its configuration and cannot start. If you are offline, reconnecting will retry automatically - otherwise, please let the person running this deployment know."
     },
     "userProfile": {
       "loading": "Loading profile…",
@@ -1623,7 +1644,10 @@
         "AlreadyCheckedIn": "Sign-up is already checked in.",
         "Anonymized": "This sign-up's volunteer has deleted their account and can no longer be acted on.",
         "CheckInMethodNotPin": "This opportunity does not use PIN check-in.",
+        "CheckInMethodNotQrCode": "This opportunity does not use QR code check-in.",
         "PinRequired": "PIN is required.",
+        "InvalidCheckInCode": "Check-in code must be 8 hexadecimal characters.",
+        "CheckInCodeAmbiguous": "Multiple sign-ups match this code. Use the QR scanner instead.",
         "ReactivationLimitReached": "This sign-up has been withdrawn and re-applied for too many times. Please contact the organizer directly.",
         "TimeSlotEnded": "This time slot has already ended.",
         "TimeSlotNotAllowed": "This opportunity does not use time slots.",

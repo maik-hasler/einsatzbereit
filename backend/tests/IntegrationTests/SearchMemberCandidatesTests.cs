@@ -29,7 +29,7 @@ public class SearchMemberCandidatesTests(
 	}
 
 	[Test]
-	public async Task SearchMemberCandidates_ShouldFindTheUser_WhenQueryReachesFourCharacters(
+	public async Task SearchMemberCandidates_ShouldFindTheUser_WhenQueryIsTheExactUsername(
 		CancellationToken cancellationToken)
 	{
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -38,8 +38,73 @@ public class SearchMemberCandidatesTests(
 		var candidates = await client.SearchMemberCandidatesAsync(
 			organizationId, "vera", cancellationToken);
 
-		candidates.Should().ContainSingle()
-			.Which.Username.Should().Be("vera");
+		var candidate = candidates.Should().ContainSingle().Which;
+		candidate.Username.Should().Be("vera");
+		candidate.Status.Should().Be("Available");
+	}
+
+	[Test]
+	public async Task SearchMemberCandidates_ShouldFindTheUser_WhenQueryIsTheExactEmail(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+
+		var candidates = await client.SearchMemberCandidatesAsync(
+			organizationId, $"{username}@example.com", cancellationToken);
+
+		candidates.Should().ContainSingle(c => c.UserId == userId);
+	}
+
+	[Test]
+	public async Task SearchMemberCandidates_ShouldFindNobody_WhenQueryIsOnlyAPrefixOfTheUsername(
+		CancellationToken cancellationToken)
+	{
+		// This is the regression test for the realm-wide enumeration this endpoint used to allow
+		// (#2205): a query that used to match dozens of users via Keycloak's infix `search` must
+		// now match nobody unless it names one user's full username or email exactly.
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		var (_, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var prefix = username[..^1];
+
+		var candidates = await client.SearchMemberCandidatesAsync(
+			organizationId, prefix, cancellationToken);
+
+		candidates.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task SearchMemberCandidates_ShouldReportAlreadyMember_WhenTheExactMatchIsAlreadyInTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		await fixture.AddPlainMemberDirectlyAsync(organizationId, userId, cancellationToken);
+
+		var candidates = await client.SearchMemberCandidatesAsync(
+			organizationId, username, cancellationToken);
+
+		candidates.Should().ContainSingle().Which.Status.Should().Be("AlreadyMember");
+	}
+
+	[Test]
+	public async Task SearchMemberCandidates_ShouldReportAlreadyInvited_WhenTheExactMatchHasAPendingInvitation(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+
+		await client.CreateInvitationAsync(
+			organizationId, new CreateInvitationRequest { InviteeId = userId, Role = "Member" }, cancellationToken);
+
+		var candidates = await client.SearchMemberCandidatesAsync(
+			organizationId, username, cancellationToken);
+
+		candidates.Should().ContainSingle().Which.Status.Should().Be("AlreadyInvited");
 	}
 
 	[Test]
@@ -57,7 +122,7 @@ public class SearchMemberCandidatesTests(
 		typeof(MemberCandidateDto).GetProperties()
 			.Select(property => property.Name)
 			.Should().BeEquivalentTo(
-				"UserId", "Username", "FirstName", "LastName", "AdditionalProperties");
+				"UserId", "Username", "FirstName", "LastName", "Status", "AdditionalProperties");
 
 		candidate.AdditionalProperties.Should().BeEmpty();
 

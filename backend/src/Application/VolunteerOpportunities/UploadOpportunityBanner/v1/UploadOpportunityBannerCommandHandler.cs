@@ -29,6 +29,8 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
+		var previousBannerUrl = opportunity.BannerImageUrl;
+
 		var ext = ImageUploadValidator.GetExtension(contentType);
 		var objectKey = $"opportunity-banners/{request.OpportunityId}{ext}";
 
@@ -37,6 +39,30 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 
 		opportunity.SetBannerImageUrl(url).ThrowIfFailure();
 
+		await DeletePreviousBannerIfOrphanedAsync(previousBannerUrl, objectKey, cancellationToken);
+
 		return true;
+	}
+
+	private async Task DeletePreviousBannerIfOrphanedAsync(string? previousBannerUrl, string newObjectKey, CancellationToken cancellationToken)
+	{
+		if (previousBannerUrl is null)
+			return;
+
+		var previousObjectKey = fileStorage.GetObjectKeyFromPublicUrl(previousBannerUrl);
+		// Extension unchanged - the previous upload lives at the same object key,
+		// so this new upload already overwrote it; deleting it now would delete
+		// the file just uploaded.
+		if (previousObjectKey is null || previousObjectKey == newObjectKey)
+			return;
+
+		try
+		{
+			await fileStorage.DeleteAsync(previousObjectKey, cancellationToken);
+		}
+		catch
+		{
+			// Object may already be gone or storage may be transiently unavailable; continue.
+		}
 	}
 }

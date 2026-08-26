@@ -6505,6 +6505,97 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/engagements/check-in-by-code": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInEngagementByCode",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInEngagementByCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/check-in": {
       "post": {
         "tags": [
@@ -7478,6 +7569,17 @@
         "type": "object",
         "properties": {
           "role": {
+            "type": "string"
+          }
+        }
+      },
+      "CheckInEngagementByCodeRequest": {
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
             "type": "string"
           }
         }
@@ -8466,7 +8568,8 @@
           "userId",
           "username",
           "firstName",
-          "lastName"
+          "lastName",
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -8488,6 +8591,9 @@
               "null",
               "string"
             ]
+          },
+          "status": {
+            "type": "string"
           }
         }
       },

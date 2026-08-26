@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.Organizations.DeleteOrganization.v1;
 using AwesomeAssertions;
@@ -10,6 +11,7 @@ using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.Organizations.DeleteOrganization;
 
@@ -22,6 +24,7 @@ public class DeleteOrganizationCommandHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
+	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly DeleteOrganizationCommandHandler _sut;
 
@@ -51,7 +54,7 @@ public class DeleteOrganizationCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Guid>());
 		_sut = new DeleteOrganizationCommandHandler(
-			_dbContext, _keycloakService, _engagementReadRepository, NullLogger<DeleteOrganizationCommandHandler>.Instance);
+			_dbContext, _keycloakService, _engagementReadRepository, _fileStorage, NullLogger<DeleteOrganizationCommandHandler>.Instance);
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>
@@ -287,5 +290,104 @@ public class DeleteOrganizationCommandHandlerTests
 
 		// Assert
 		await _keycloakService.DidNotReceive().RevokeOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteTheLogoObject_WhenOrganizationHasALogo(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/logo.png");
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/logo.png")
+			.Returns($"organization-logos/{orgId}.png");
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).DeleteAsync($"organization-logos/{orgId}.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptDeletion_WhenOrganizationHasNoLogo(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenDeletingTheLogoObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		organization.SetLogoUrl("https://example.com/organization-logos/logo.png");
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/organization-logos/logo.png")
+			.Returns($"organization-logos/{orgId}.png");
+		_fileStorage
+			.DeleteAsync($"organization-logos/{orgId}.png", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteTheBannerObject_OfACascadedOpportunity_WhenItHasOne(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		var finishedOpportunity = VolunteerOpportunity.Create(
+			organizationId, "Finished Opportunity", null, "Beschreibung", null, true, null, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Published, validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
+		finishedOpportunity.SetBannerImageUrl("https://example.com/opportunity-banners/banner.png");
+		_dbContext
+			.GetOpportunitiesForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([finishedOpportunity]);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/banner.png")
+			.Returns($"opportunity-banners/{finishedOpportunity.Id.Value}.png");
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).DeleteAsync($"opportunity-banners/{finishedOpportunity.Id.Value}.png", cancellationToken);
 	}
 }

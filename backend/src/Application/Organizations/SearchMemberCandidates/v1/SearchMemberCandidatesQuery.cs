@@ -9,8 +9,16 @@ public sealed record SearchMemberCandidatesQuery(
 	UserId RequestingUserId)
 	: IQuery<IReadOnlyList<MemberCandidateDto>>;
 
+public enum MemberCandidateStatus
+{
+	Available,
+	AlreadyMember,
+	AlreadyInvited,
+}
+
 public sealed record MemberCandidateDto(
 	Guid UserId,
 	string Username,
 	string? FirstName,
-	string? LastName);
+	string? LastName,
+	string Status);

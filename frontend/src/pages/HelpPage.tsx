@@ -92,7 +92,7 @@ export default function HelpPage() {
 									),
 
 									organizationsLink: (
-										<Link to="/opportunities" className={linkClass} />
+										<Link to="/organizations" className={linkClass} />
 									),
 									contactLink: <Link to="/contact" className={linkClass} />,
 

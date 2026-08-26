@@ -1,13 +1,15 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Domain.AuditLogs;
 using Domain.Primitives;
 
 namespace Application.Users.AdminRestoreUser.v1;
 
 internal sealed class AdminRestoreUserCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	IFileStorageService fileStorage)
 	: ICommandHandler<AdminRestoreUserCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -20,6 +22,25 @@ internal sealed class AdminRestoreUserCommandHandler(
 			?? throw new ResultFailureException(Error.NotFound("User.NotFound", $"User '{request.UserId}' not found."));
 
 		user.Restore().ThrowIfFailure();
+
+		if (user.AvatarUrl is not null)
+		{
+			var avatarObjectKey = fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl);
+			if (avatarObjectKey is not null)
+			{
+				try
+				{
+					await fileStorage.UnquarantineAsync(avatarObjectKey, cancellationToken);
+				}
+				catch
+				{
+					// Object may already be public (never actually quarantined, e.g. a
+					// row shadow-deleted before this existed) or storage may be
+					// transiently unavailable; continue - the DB-level restore is what
+					// actually makes the user visible again.
+				}
+			}
+		}
 
 		var auditLog = AuditLog.Create(
 			request.AdminUserId,

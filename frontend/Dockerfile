@@ -12,9 +12,17 @@ RUN npm install -g corepack --force && corepack enable && corepack prepare --act
 RUN pnpm install --frozen-lockfile
 COPY . .
 
-ARG VITE_KEYCLOAK_AUTHORITY_URL=http://localhost:8080/realms/einsatzbereit
-ARG VITE_KEYCLOAK_CLIENT_ID=frontend
-ARG VITE_API_URL=http://localhost:5000
+# No defaults (#2207): the runtime values in docker-entrypoint.d/99-runtime-
+# config.sh are what every deployment actually uses (see frontend/AGENTS.md's
+# "Released image"); these build-time ARGs only seed the bundle's offline
+# fallback (see src/lib/runtimeConfig.ts) for the rare cold start where the
+# PWA cannot reach /config.js at all. A localhost default there silently
+# pointed that fallback at the visitor's own machine instead of failing
+# loudly, so an unset ARG is left to build empty rather than a value that
+# looks plausible while being wrong for every deployment but one.
+ARG VITE_KEYCLOAK_AUTHORITY_URL
+ARG VITE_KEYCLOAK_CLIENT_ID
+ARG VITE_API_URL
 
 RUN VITE_KEYCLOAK_AUTHORITY_URL=$VITE_KEYCLOAK_AUTHORITY_URL \
 	VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID \
