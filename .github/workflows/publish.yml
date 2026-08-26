@@ -250,6 +250,7 @@ jobs:
     outputs:
       prerelease: ${{ steps.version.outputs.prerelease }}
       version: ${{ steps.version.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -281,6 +282,7 @@ jobs:
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: backend
@@ -288,6 +290,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
 
   frontend-checks:
     name: Frontend Checks
@@ -307,6 +311,8 @@ jobs:
     timeout-minutes: 15
     env:
       IMAGE_NAME: ${{ github.repository }}-frontend
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -338,12 +344,15 @@ jobs:
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: frontend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
 
   publish-keycloak:
     name: Publish Keycloak
@@ -352,6 +361,8 @@ jobs:
     timeout-minutes: 10
     env:
       IMAGE_NAME: ${{ github.repository }}-keycloak
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -391,6 +402,7 @@ jobs:
             org.opencontainers.image.base.version=${{ steps.keycloak.outputs.upstream_version }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: keycloak
@@ -465,6 +477,21 @@ jobs:
               echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}"
             fi
           } > release-notes.md
+
+          cat release-notes.md
+
+      - name: Append image digests to release notes
+        run: |
+          {
+            echo
+            echo "## Images"
+            echo
+            echo "| Component | Image |"
+            echo "| --- | --- |"
+            echo "| Backend | \`${{ env.REGISTRY }}/${{ github.repository }}-backend@${{ needs.publish-backend.outputs.digest }}\` |"
+            echo "| Frontend | \`${{ env.REGISTRY }}/${{ github.repository }}-frontend@${{ needs.publish-frontend.outputs.digest }}\` |"
+            echo "| Keycloak | \`${{ env.REGISTRY }}/${{ github.repository }}-keycloak@${{ needs.publish-keycloak.outputs.digest }}\` |"
+          } >> release-notes.md
 
           cat release-notes.md
 

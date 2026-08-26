@@ -10,6 +10,7 @@ using Application.Common.Persistence;
 using Application.Common.RateLimiting;
 using Application.Common.Storage;
 using Application.Engagements;
+using Application.Meta;
 using Application.Notifications;
 using Application.Organizations;
 using Application.Reports;
@@ -22,6 +23,7 @@ using Infrastructure.Geocoding;
 using Infrastructure.Geocoding.GermanCities;
 using Infrastructure.Keycloak;
 using Infrastructure.Maps;
+using Infrastructure.Meta;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
@@ -53,6 +55,8 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IPinGenerator, RandomPinGenerator>();
 
 		services.AddSingleton<ICheckInAttemptLimiter, CheckInAttemptLimiter>();
+
+		services.AddSingleton<IVersionProvider, VersionProvider>();
 
 		services.AddDbContext<ApplicationDbContext>((sp, options) =>
 		{

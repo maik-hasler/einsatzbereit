@@ -5,7 +5,7 @@ config="/usr/share/nginx/html/config.js"
 
 if [ -f "$config" ]; then
 	tmp="$(mktemp)"
-	envsubst '${VITE_KEYCLOAK_AUTHORITY_URL} ${VITE_KEYCLOAK_CLIENT_ID} ${VITE_API_URL}' < "$config" > "$tmp"
+	envsubst '${VITE_KEYCLOAK_AUTHORITY_URL} ${VITE_KEYCLOAK_CLIENT_ID} ${VITE_API_URL} ${VITE_APP_VERSION}' < "$config" > "$tmp"
 	mv "$tmp" "$config"
 	chmod 644 "$config"
 fi

@@ -5292,6 +5292,36 @@
         }
       }
     },
+    "/v1/meta/version": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "operationId": "GetVersion",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/meta/organizations/{organizationId}": {
       "get": {
         "tags": [

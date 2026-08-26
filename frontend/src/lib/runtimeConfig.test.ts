@@ -61,4 +61,29 @@ describe("runtimeConfig", () => {
 		const { runtimeConfig } = await import("./runtimeConfig");
 		expect(runtimeConfig.toastLifetimeMs).toBe(0);
 	});
+
+	it("defaults appVersion to 'dev' when neither the build-time env var nor runtime config is set", async () => {
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.appVersion).toBe("dev");
+	});
+
+	it("resolves appVersion from the build-time env var", async () => {
+		vi.stubEnv("VITE_APP_VERSION", "1.2.3");
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.appVersion).toBe("1.2.3");
+	});
+
+	it("prefers window.__APP_CONFIG__'s APP_VERSION once it has been substituted by the container", async () => {
+		vi.stubEnv("VITE_APP_VERSION", "1.2.3");
+		window.__APP_CONFIG__ = { APP_VERSION: "1.2.3-rc.1" };
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.appVersion).toBe("1.2.3-rc.1");
+	});
+
+	it("falls back to the build-time value when the runtime APP_VERSION placeholder was never substituted", async () => {
+		vi.stubEnv("VITE_APP_VERSION", "1.2.3");
+		window.__APP_CONFIG__ = { APP_VERSION: "${VITE_APP_VERSION}" };
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.appVersion).toBe("1.2.3");
+	});
 });

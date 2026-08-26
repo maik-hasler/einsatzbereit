@@ -26,6 +26,12 @@ Every component receives the same version tag:
 | Frontend  | `ghcr.io/<owner>/einsatzbereit-frontend`     |
 | Keycloak  | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
 
+## Platform Support
+
+Images are built for `linux/amd64` only. Running them on an arm64 host (e.g. Hetzner
+CAX, AWS Graviton, or Apple Silicon via Docker Desktop's emulation) is not tested and
+may fail with `exec format error`.
+
 ## Versioning Scheme
 
 Standard [SemVer](https://semver.org/) for all components:
@@ -47,6 +53,22 @@ The upstream version in use can be read directly from `keycloak/Dockerfile` (fir
 When upgrading Keycloak, the upstream version is automatically extracted from the Dockerfile
 and written into the image labels.
 
+## Version Identity
+
+Beyond the image tag itself, the version is stamped into each running instance so a
+bug report or a log line can be tied back to a release:
+
+- **Backend**: `publish.yml` passes the tag as the `APP_VERSION` build arg, which the
+  Dockerfile forwards to `dotnet publish` as `/p:Version`. This becomes the assembly's
+  informational version, returned by `GET /v1/meta/version`.
+- **Frontend**: `publish.yml` passes the tag as the `VITE_APP_VERSION` build arg. It is
+  exposed through the existing `config.js` runtime-config mechanism
+  (`window.__APP_CONFIG__.APP_VERSION`, resolved by `runtimeConfig.ts`) and shown in
+  the footer.
+
+A local build without either build arg falls back to `1.0.0` (backend, matching the
+.NET SDK's own default) or `dev` (frontend).
+
 ## Prerelease Tags
 
 See the Tag Format table and Examples above for the `-rc.<n>` suffix. Unlike stable tags, prerelease tags produce Docker images that are **not** tagged as `latest`.
@@ -65,6 +87,8 @@ Publishing the images is where this repository's release process ends. What runs
 Every tag (stable and `-rc.N`) gets a [GitHub Release](https://github.com/maik-hasler/einsatzbereit/releases)
 with auto-generated notes grouped by Conventional Commit type (Features, Bug
 Fixes, Performance, Refactoring, Documentation, Reverts, and any `!`-marked
-Breaking Changes) since the previous tag. Release candidates are marked as
-prereleases. This is the canonical human-readable record of what shipped in
-each version - there is no separate `CHANGELOG.md` file to keep in sync.
+Breaking Changes) since the previous tag, followed by an Images table listing
+each component's `image@digest` reference for pinning by digest. Release
+candidates are marked as prereleases. This is the canonical human-readable
+record of what shipped in each version - there is no separate `CHANGELOG.md`
+file to keep in sync.
