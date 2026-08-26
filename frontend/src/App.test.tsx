@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App, { AppRoutes } from "./App";
 import { renderWithProviders } from "./test/render";
+import { expectNoA11yViolations } from "./test/a11y";
 
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("./test/apiMock");
@@ -60,6 +61,7 @@ describe("the bounded auth-recovery terminal state (#2208)", () => {
 			await screen.findByRole("heading", { name: "Sign-in isn't working" }),
 		).toBeVisible();
 		expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+		await expectNoA11yViolations();
 
 		await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 		expect(signoutRedirect).toHaveBeenCalledTimes(1);
