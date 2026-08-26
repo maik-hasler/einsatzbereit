@@ -39,9 +39,9 @@ export default function DesktopHeader({
 	return (
 		<nav
 			aria-label={t("nav.primaryLabel")}
-			className="hidden items-center gap-3 lg:flex"
+			className="hidden items-center gap-2 lg:flex"
 		>
-			<ul className="mr-2 flex items-center gap-2">
+			<ul className="mr-1 flex items-center gap-1.5">
 				{buildPrimaryNav(activeOrg).map((link) => {
 					const base =
 						"rounded-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
