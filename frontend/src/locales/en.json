@@ -36,6 +36,7 @@
       "checkingSignIn": "Checking sign-in status…",
       "sessionExpired": "Session expired - sign in again",
       "openMenu": "Open menu",
+      "closeMenu": "Close menu",
       "menu": "Menu"
     },
     "footer": {
@@ -269,6 +270,7 @@
       "fieldTitle": "Title",
       "fieldDescription": "Description",
       "contentLanguageGroup": "Content language",
+      "contentLanguageHasError": "Contains errors",
       "contentLanguageEnglishHint": "Optional. Volunteers viewing the site in English see this instead of the German version below - leave it blank to show the German text to everyone.",
       "fieldStreet": "Street",
       "fieldNumber": "House number",

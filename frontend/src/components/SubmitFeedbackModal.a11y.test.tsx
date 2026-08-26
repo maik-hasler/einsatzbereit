@@ -53,7 +53,7 @@ describe("SubmitFeedbackModal a11y", () => {
 			/>,
 		);
 
-		const stars = screen.getAllByRole("button", { pressed: false });
+		const stars = screen.getAllByRole("radio");
 		await userEvent.click(stars[stars.length - 1]);
 		await userEvent.click(
 			screen.getByRole("button", { name: "Submit feedback" }),
@@ -63,7 +63,7 @@ describe("SubmitFeedbackModal a11y", () => {
 		await expectNoA11yViolations();
 	});
 
-	it("names the rating group and reflects the chosen star with aria-pressed", async () => {
+	it("names the rating radiogroup and reflects the chosen star with aria-checked", async () => {
 		renderWithProviders(
 			<SubmitFeedbackModal
 				engagementId="eng-1"
@@ -73,9 +73,30 @@ describe("SubmitFeedbackModal a11y", () => {
 				onClose={() => {}}
 			/>,
 		);
-		const group = screen.getByRole("group");
+		const group = screen.getByRole("radiogroup");
 		expect(group).toHaveAccessibleName();
 		expect(group).not.toHaveAttribute("aria-required");
-		expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(1);
+		expect(screen.getAllByRole("radio", { checked: true })).toHaveLength(1);
+	});
+
+	it("moves selection with arrow keys, keeping a single tab stop", async () => {
+		renderWithProviders(
+			<SubmitFeedbackModal
+				engagementId="eng-1"
+				opportunityTitle="Beach cleanup"
+				initialRating={2}
+				onSubmitted={() => {}}
+				onClose={() => {}}
+			/>,
+		);
+		const stars = screen.getAllByRole("radio");
+		expect(stars.filter((s) => s.tabIndex === 0)).toHaveLength(1);
+
+		stars[1].focus();
+		await userEvent.keyboard("{ArrowRight}");
+
+		expect(stars[2]).toHaveFocus();
+		expect(stars[2]).toHaveAttribute("aria-checked", "true");
+		expect(stars[1]).toHaveAttribute("aria-checked", "false");
 	});
 });

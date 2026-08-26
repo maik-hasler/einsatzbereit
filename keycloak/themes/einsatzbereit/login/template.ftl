@@ -15,11 +15,13 @@
 
 	<div class="top-controls">
 		<#if realm.internationalizationEnabled && locale.supported?has_content>
+		<#assign currentLangCode = (locale.currentLanguageTag!'de')>
+		<#assign currentLangName = msg("locale_" + currentLangCode)>
 
 		<details class="lang-switcher">
-			<summary class="lang-trigger" aria-label="${msg("switchLanguage")}">
+			<summary class="lang-trigger" aria-label="${msg("switchLanguageCurrent", currentLangCode?upper_case, currentLangName)}">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-				<span>${(locale.currentLanguageTag!'de')?upper_case}</span>
+				<span>${currentLangCode?upper_case}</span>
 				<svg class="lang-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
 			</summary>
 			<ul class="lang-menu" aria-label="${msg("switchLanguage")}">

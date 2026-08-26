@@ -205,7 +205,7 @@ export default function Footer({
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="GitHub"
-								className="inline-flex text-gray-600 transition-colors hover:text-brand-700"
+								className="-m-1.5 inline-flex p-1.5 text-gray-600 transition-colors hover:text-brand-700"
 							>
 								<svg
 									className="h-5 w-5"
