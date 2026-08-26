@@ -209,7 +209,7 @@ public static class AuthHelper
 	public static async Task GoToOrgAppDashboardViaCtaAsync(IPage page, Uri frontendUrl)
 	{
 		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
-		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
+		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Go to dashboard" });
 		await cta.First.WaitForAsync(new() { Timeout = 45_000 });
 		await cta.First.ClickAsync();
 

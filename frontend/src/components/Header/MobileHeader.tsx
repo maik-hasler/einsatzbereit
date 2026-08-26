@@ -39,7 +39,7 @@ export default function MobileHeader({
 				type="button"
 				onClick={() => setMobileOpen((o) => !o)}
 				className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
-				aria-label={t("nav.openMenu")}
+				aria-label={t(mobileOpen ? "nav.closeMenu" : "nav.openMenu")}
 				aria-expanded={mobileOpen}
 			>
 				<MenuToggleIcon className="h-6 w-6" open={mobileOpen} />

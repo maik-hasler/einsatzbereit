@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type {
 	AchievementSummary,
@@ -164,6 +165,19 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 	const cardRef = useRef<HTMLDivElement>(null);
 
 	const [tooltipShift, setTooltipShift] = useState(0);
+	const [tooltipVisible, setTooltipVisible] = useState(false);
+
+	function showTooltip() {
+		setTooltipVisible(true);
+	}
+
+	function hideTooltip() {
+		setTooltipVisible(false);
+	}
+
+	function handleCardKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+		if (e.key === "Escape" && tooltipVisible) hideTooltip();
+	}
 
 	useLayoutEffect(() => {
 		function updatePosition() {
@@ -189,7 +203,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 		<div
 			ref={cardRef}
 
-			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
+			className={`relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
 				showsEarnedTreatment
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"
 					: "border-dashed border-gray-200 bg-transparent"
@@ -198,6 +212,11 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 			role={isHidden ? undefined : "group"}
 			aria-labelledby={!isHidden ? nameId : undefined}
 			aria-describedby={!isHidden ? tooltipId : undefined}
+			onMouseEnter={isHidden ? undefined : showTooltip}
+			onMouseLeave={isHidden ? undefined : hideTooltip}
+			onFocus={isHidden ? undefined : showTooltip}
+			onBlur={isHidden ? undefined : hideTooltip}
+			onKeyDown={isHidden ? undefined : handleCardKeyDown}
 		>
 			<div
 				className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full ${
@@ -235,6 +254,13 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 							earned.unlockedAt as unknown as string,
 							i18n.language,
 						),
+					})}
+				</p>
+			)}
+			{isEarned && (
+				<p className="mt-1 text-xs text-gray-500">
+					{t(`achievements.badges.${catalog.key}.description`, {
+						defaultValue: catalog.description,
 					})}
 				</p>
 			)}
@@ -278,7 +304,9 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 					id={tooltipId}
 					role="tooltip"
 					style={{ transform: `translateX(calc(-50% + ${tooltipShift}px))` }}
-					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block group-focus:block"
+					onMouseEnter={showTooltip}
+					onMouseLeave={hideTooltip}
+					className={`absolute bottom-full left-1/2 z-10 mb-2 w-48 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg ${tooltipVisible ? "block" : "hidden"}`}
 				>
 					<p className="font-semibold">
 						{t(`achievements.badges.${catalog.key}.name`, {

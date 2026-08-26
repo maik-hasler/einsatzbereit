@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -58,8 +58,9 @@ export default function ActivitySection() {
 		Withdrawn: t("myEngagements.status.Withdrawn"),
 	};
 
-	const [engagementsScope, setEngagementsScope] =
-		useState<EngagementsScope>("upcoming");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const engagementsScope: EngagementsScope =
+		searchParams.get("scope") === "past" ? "past" : "upcoming";
 	const {
 		items: engagements,
 		setItems: setEngagements,
@@ -70,7 +71,6 @@ export default function ActivitySection() {
 		hasMore: hasMoreEngagements,
 		loadMore: loadMoreEngagements,
 		retryLoadMore: retryLoadMoreEngagements,
-		reset: resetEngagements,
 	} = useLoadMore<EngagementSummary>(
 		(pageNumber) =>
 			api.getMyEngagements(
@@ -79,6 +79,7 @@ export default function ActivitySection() {
 				engagementsScope === "upcoming",
 			),
 		{
+			deps: [engagementsScope],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
 		},
 	);
@@ -110,8 +111,15 @@ export default function ActivitySection() {
 
 	function switchEngagementsScope(scope: EngagementsScope) {
 		if (scope === engagementsScope) return;
-		setEngagementsScope(scope);
-		resetEngagements();
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				if (scope === "past") next.set("scope", "past");
+				else next.delete("scope");
+				return next;
+			},
+			{ replace: true },
+		);
 	}
 
 	useEffect(() => {
@@ -134,12 +142,13 @@ export default function ActivitySection() {
 		try {
 			const updated = await api.withdrawEngagement(confirmWithdrawId);
 
+			// Withdrawing changes status only, not the engagement's own
+			// timeframe, so it no longer moves the card to a different
+			// bucket (#2240) - just reflect the new status in place.
 			setEngagements((prev) =>
-				engagementsScope === "upcoming"
-					? prev.filter((e) => e.id !== confirmWithdrawId)
-					: prev.map((e) =>
-							e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
-						),
+				prev.map((e) =>
+					e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
+				),
 			);
 			dispatchToast(
 				"success",
@@ -616,7 +625,9 @@ export default function ActivitySection() {
 								{e.status === "Confirmed" &&
 									e.timeSlotId &&
 									e.timeSlotStartDateTime &&
-									e.timeSlotEndDateTime && (
+									e.timeSlotEndDateTime &&
+									new Date(e.timeSlotEndDateTime as unknown as string) >
+										new Date() && (
 										<AddToCalendarMenu
 											engagementId={e.id}
 											title={
@@ -638,6 +649,36 @@ export default function ActivitySection() {
 										>
 											{t("myEngagements.withdraw")}
 										</Button>
+									)}
+								{isTerminalEngagementStatus(e.status) &&
+									engagementsScope === "upcoming" &&
+									e.opportunityTitle &&
+									(e.remainingReactivations === undefined ||
+										e.remainingReactivations > 0) && (
+										<Button
+											to={`/volunteer-opportunities/${e.opportunityId}`}
+											variant="outline"
+											size="sm"
+										>
+											{t("myEngagements.reactivate")}
+										</Button>
+									)}
+								{isTerminalEngagementStatus(e.status) &&
+									engagementsScope === "upcoming" &&
+									e.opportunityTitle &&
+									e.remainingReactivations !== undefined &&
+									e.remainingReactivations <= 0 && (
+										<span className="text-xs text-gray-500">
+											{t("myEngagements.reactivationLimitReached")}{" "}
+											{e.organizationId && (
+												<Link
+													to={`/organizations/${e.organizationId}`}
+													className="text-brand-700 underline-offset-2 hover:underline"
+												>
+													{t("common.contactOrganization")}
+												</Link>
+											)}
+										</span>
 									)}
 							</div>
 						</li>

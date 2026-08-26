@@ -164,6 +164,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .rbc-agenda-view {
+	position: relative;
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
 	overflow-x: auto;
@@ -222,6 +223,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .rbc-off-range {
 	color: rgb(107 114 128);
+}
+
+.rbc-button-link {
+	display: inline-flex;
+	min-width: 1.5rem;
+	min-height: 1.5rem;
+	align-items: center;
+	justify-content: center;
 }
 
 .rbc-date-cell {

@@ -22,6 +22,8 @@
 						class="${properties.kcInputClass!}"
 						name="email"
 						value="${(register.formData.email!'')}"
+						required
+						aria-required="true"
 						aria-invalid="<#if messagesPerField.existsError('email')>true</#if>"
 						autocomplete="email"
 						placeholder=" "
@@ -44,6 +46,8 @@
 							class="${properties.kcInputClass!}"
 							name="username"
 							value="${(register.formData.username!'')}"
+							required
+							aria-required="true"
 							aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
 							autocomplete="username"
 							placeholder=" "
@@ -66,6 +70,8 @@
 							id="password"
 							class="${properties.kcInputClass!}"
 							name="password"
+							required
+							aria-required="true"
 							aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
 							autocomplete="new-password"
 							placeholder=" "
@@ -101,6 +107,8 @@
 							id="password-confirm"
 							class="${properties.kcInputClass!}"
 							name="password-confirm"
+							required
+							aria-required="true"
 							aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
 							autocomplete="new-password"
 							placeholder=" "

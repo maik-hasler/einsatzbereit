@@ -73,6 +73,28 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 		details.Status.Should().Be("Published");
 	}
 
+	[Test]
+	public async Task GetVolunteerOpportunityDetails_ShouldExcludeViewerFromParticipantCount_WhenViewerHasSignedUp(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var detailsForVera = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+		var detailsForOlaf = await olafClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+
+		detailsForVera.CurrentParticipantCount.Should().Be(0);
+		detailsForOlaf.CurrentParticipantCount.Should().Be(1);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{

@@ -81,7 +81,8 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		var trigger = Page.Locator(".lang-trigger");
-		await Expect(trigger).ToHaveAttributeAsync("aria-label", "Switch language");
+		await Expect(trigger).ToHaveAttributeAsync(
+			"aria-label", "EN - Switch language, currently English");
 
 		await trigger.ClickAsync();
 		var menu = Page.Locator(".lang-menu");
@@ -202,6 +203,19 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#password")).ToHaveCountAsync(0);
 		await Expect(Page.Locator(".card-lead"))
 			.ToContainTextAsync("set your password right after");
+	}
+
+	[Test]
+	public async Task Register_EmailAndUsername_AreMarkedRequiredForAssistiveTech()
+	{
+		await Page.GotoAsync(AuthUrl("registrations", locale: "en"));
+		await Expect(Page.Locator("#email")).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		foreach (var id in new[] { "#email", "#username" })
+		{
+			await Expect(Page.Locator(id)).ToHaveAttributeAsync("required", "");
+			await Expect(Page.Locator(id)).ToHaveAttributeAsync("aria-required", "true");
+		}
 	}
 
 	[Test]

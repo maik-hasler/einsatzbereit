@@ -396,6 +396,24 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task NotFoundPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/this-route-does-not-exist");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Scoped to #main-content: "Find opportunities" also appears in the header nav and the
+		// footer (CTA button + link), so an unscoped GetByRole resolves to multiple elements.
+		var mainContent = Page.Locator("#main-content");
+		await Expect(mainContent.GetByRole(AriaRole.Link, new() { Name = "Find opportunities" })).ToBeVisibleAsync();
+		await Expect(mainContent.GetByRole(AriaRole.Link, new() { Name = "Back to home" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	[Retry(2)]
 	[Arguments("organizations")]
 	[Arguments("users")]

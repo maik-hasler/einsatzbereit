@@ -404,6 +404,16 @@ a { color: inherit; }
 	padding-left: 0.125rem;
 }
 
+.form-error-banner {
+	background: rgb(220 38 38 / 0.06);
+	border: 1px solid rgb(220 38 38 / 0.25);
+	border-radius: var(--radius-ctl);
+	padding: 0.75rem 1rem;
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	color: #b91c1c;
+}
+
 .form-options {
 	display: flex;
 	align-items: center;

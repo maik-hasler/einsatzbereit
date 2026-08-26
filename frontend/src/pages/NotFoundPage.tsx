@@ -29,9 +29,14 @@ export default function NotFoundPage() {
 				{t("notFound.description")}
 			</p>
 
-			<Button to="/" size="lg" className="mt-8 shadow-md">
-				{t("notFound.backHome")}
-			</Button>
+			<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+				<Button to="/opportunities" size="lg" className="shadow-md">
+					{t("nav.findOpportunities")}
+				</Button>
+				<Button to="/" variant="secondary" size="lg">
+					{t("notFound.backHome")}
+				</Button>
+			</div>
 		</div>
 	);
 }

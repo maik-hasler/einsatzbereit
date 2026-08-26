@@ -202,7 +202,7 @@ describe("OrgMembersPage last-organizer guard", () => {
 		const hint = container.ownerDocument.getElementById(describedBy ?? "");
 		expect(hint).not.toBeNull();
 		expect(hint).toHaveTextContent(
-			"Remove the other members first, then you can delete the organization in settings.",
+			"You are the only organizer of this organization - promote another member first, or delete the organization in settings.",
 		);
 		expect(
 			within(hint as HTMLElement).getByRole("link", { name: "settings" }),

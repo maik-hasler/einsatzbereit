@@ -386,11 +386,11 @@ export default function ProfileOverviewPage() {
 													<p className="text-xs text-gray-500">
 														{t("achievements.activityStreak", {
 															count: streaks.activityStreak,
-															badge: t(
-																"achievements.badges.weekly-hero-4.name",
-															),
 														})}
 													</p>
+													<Chip tone="brand" size="sm" className="mt-1">
+														{t("achievements.badges.weekly-hero-4.name")}
+													</Chip>
 												</div>
 											</div>
 										)}
@@ -409,9 +409,11 @@ export default function ProfileOverviewPage() {
 													<p className="text-xs text-gray-500">
 														{t("achievements.loginStreakLabel", {
 															count: streaks.loginStreak,
-															badge: t("achievements.badges.on-a-roll-7.name"),
 														})}
 													</p>
+													<Chip tone="brand" size="sm" className="mt-1">
+														{t("achievements.badges.on-a-roll-7.name")}
+													</Chip>
 												</div>
 											</div>
 										)}

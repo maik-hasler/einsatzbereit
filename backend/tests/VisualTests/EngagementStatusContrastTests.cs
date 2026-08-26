@@ -35,8 +35,9 @@ public class EngagementStatusContrastTests(AspireFixture fixture) : VisualTestBa
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
-
+		// The opportunity's application deadline is still open, so the
+		// withdrawn engagement stays under the default "upcoming" scope
+		// (#2240) - no need to switch to "past" to find it.
 		await Expect(Page.GetByText("Withdrawn").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var result = await Page.RunAxe();
