@@ -116,6 +116,8 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 
 ### Test users
 
+Local development only - these accounts ship disabled in the released Keycloak image and are re-enabled only in the dev-only realm copy the Aspire AppHost writes before import. See [`keycloak/README.md`](keycloak/README.md) for creating a real administrator against a deployed instance.
+
 | Username | Password | Roles | Persona | Can |
 |---|---|---|---|---|
 | vera | vera123 | user | Volunteer Vera | Browse volunteer opportunities |
