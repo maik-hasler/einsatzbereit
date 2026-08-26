@@ -59,7 +59,9 @@ describe("create-opportunity wizard: focus on the first invalid field (#2077)", 
 		await userEvent.click(screen.getByTestId("modal-next"));
 
 		await waitFor(() =>
-			expect(titleError()).toHaveTextContent("Please fill this in."),
+			expect(titleError()).toHaveTextContent(
+				"Enter a title - it appears in search.",
+			),
 		);
 		expect(title()).toHaveFocus();
 	});
@@ -70,7 +72,9 @@ describe("create-opportunity wizard: focus on the first invalid field (#2077)", 
 		await userEvent.click(screen.getByTestId("modal-next"));
 
 		await waitFor(() =>
-			expect(descriptionError()).toHaveTextContent("Please fill this in."),
+			expect(descriptionError()).toHaveTextContent(
+				"Describe briefly what volunteers can expect.",
+			),
 		);
 		expect(description()).toHaveFocus();
 		expect(titleError()).toBeNull();
@@ -182,9 +186,13 @@ describe("create-opportunity wizard: live revalidation (#1928)", () => {
 		await userEvent.click(screen.getByTestId("modal-next"));
 
 		await waitFor(() =>
-			expect(titleError()).toHaveTextContent("Please fill this in."),
+			expect(titleError()).toHaveTextContent(
+				"Enter a title - it appears in search.",
+			),
 		);
-		expect(descriptionError()).toHaveTextContent("Please fill this in.");
+		expect(descriptionError()).toHaveTextContent(
+			"Describe briefly what volunteers can expect.",
+		);
 		expect(title()).toHaveAttribute("aria-invalid", "true");
 
 		await userEvent.type(title(), "Erste-Hilfe-Kurs fuer Anfaenger");
@@ -192,7 +200,9 @@ describe("create-opportunity wizard: live revalidation (#1928)", () => {
 		await waitFor(() => expect(titleError()).toBeNull());
 		expect(title()).not.toHaveAttribute("aria-invalid");
 
-		expect(descriptionError()).toHaveTextContent("Please fill this in.");
+		expect(descriptionError()).toHaveTextContent(
+			"Describe briefly what volunteers can expect.",
+		);
 	});
 });
 

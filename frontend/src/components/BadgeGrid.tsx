@@ -152,6 +152,14 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 		progressTarget && progress
 			? Math.min(progress[progressTarget.metric], progressTarget.target)
 			: null;
+	// Requirement met but the backend hasn't granted the award yet - keep the
+	// filled bar, but don't render it in the locked style (#2229).
+	const isPendingGrant =
+		!isEarned &&
+		!isHidden &&
+		progressTarget !== undefined &&
+		currentProgress === progressTarget.target;
+	const showsEarnedTreatment = isEarned || isPendingGrant;
 	const tooltipId = `badge-tooltip-${catalog.key}`;
 	const nameId = `badge-name-${catalog.key}`;
 	const cardRef = useRef<HTMLDivElement>(null);
@@ -196,7 +204,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 			ref={cardRef}
 
 			className={`relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
-				isEarned
+				showsEarnedTreatment
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"
 					: "border-dashed border-gray-200 bg-transparent"
 			}`}
@@ -212,7 +220,7 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 		>
 			<div
 				className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full ${
-					isEarned ? "bg-brand-50" : "bg-gray-50"
+					showsEarnedTreatment ? "bg-brand-50" : "bg-gray-50"
 				}`}
 			>
 				{isHidden ? (
@@ -223,14 +231,14 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 					<AchievementTypeIcon
 						badgeKey={catalog.key}
 						type={typeName}
-						className={`h-7 w-7 ${isEarned ? "text-brand-600" : "text-gray-400"}`}
+						className={`h-7 w-7 ${showsEarnedTreatment ? "text-brand-600" : "text-gray-400"}`}
 					/>
 				)}
 			</div>
 			<p
 				id={nameId}
 				className={`text-sm leading-snug font-semibold ${
-					isEarned ? "text-gray-900" : "text-gray-500"
+					showsEarnedTreatment ? "text-gray-900" : "text-gray-500"
 				}`}
 			>
 				{isHidden
@@ -277,10 +285,12 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 						/>
 					</div>
 					<p className="mt-1 text-xs font-medium text-brand-700">
-						{t("achievements.badgeProgress", {
-							current: currentProgress,
-							target: progressTarget.target,
-						})}
+						{isPendingGrant
+							? t("achievements.pendingUnlock")
+							: t("achievements.badgeProgress", {
+									current: currentProgress,
+									target: progressTarget.target,
+								})}
 					</p>
 				</div>
 			)}
@@ -310,10 +320,12 @@ function BadgeCard({ catalog, earned, progress }: BadgeCardProps) {
 					</p>
 					{!isEarned && progressTarget && currentProgress !== null && (
 						<p className="mt-1 text-brand-300">
-							{t("achievements.badgeProgress", {
-								current: currentProgress,
-								target: progressTarget.target,
-							})}
+							{isPendingGrant
+								? t("achievements.pendingUnlock")
+								: t("achievements.badgeProgress", {
+										current: currentProgress,
+										target: progressTarget.target,
+									})}
 						</p>
 					)}
 					{isEarned && (

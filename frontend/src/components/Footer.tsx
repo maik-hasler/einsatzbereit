@@ -76,7 +76,7 @@ export default function Footer({
 					}
 				>
 					{showCta && (
-						<div className="relative isolate overflow-hidden rounded-card bg-accent-400/50 p-8 shadow-resting sm:p-10 lg:col-span-1">
+						<div className="relative isolate overflow-hidden rounded-card bg-brand-100 p-8 shadow-resting sm:p-10 lg:col-span-1">
 							<div
 								aria-hidden="true"
 								className="pointer-events-none absolute -top-10 -right-14 h-40 w-40 rounded-full bg-white/30"

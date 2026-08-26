@@ -12,7 +12,6 @@ export default function MobileHeader({
 	menu,
 	notifContainerRef,
 	menuButtonRef,
-	onNotificationNavigate,
 }: {
 	isLoggedIn: boolean;
 	isTransparent: boolean;
@@ -21,7 +20,6 @@ export default function MobileHeader({
 	menu: AccountMenuState;
 	notifContainerRef: RefObject<HTMLDivElement | null>;
 	menuButtonRef: RefObject<HTMLButtonElement | null>;
-	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 }) {
 	const { t } = useTranslation();
 
@@ -33,7 +31,6 @@ export default function MobileHeader({
 					transparent={isTransparent}
 					mobile
 					containerRef={notifContainerRef}
-					onNavigate={onNotificationNavigate}
 					onClose={() => setMobileOpen(false)}
 				/>
 			)}

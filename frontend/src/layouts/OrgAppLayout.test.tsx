@@ -174,7 +174,9 @@ describe("OrgAppLayout shell", () => {
 		renderOrgApp();
 
 		expect(
-			await screen.findByRole("button", { name: "Switch organization" }),
+			await screen.findByRole("button", {
+				name: "Switch organization, currently Freiwillige Feuerwehr Kiel",
+			}),
 		).toBeInTheDocument();
 		const rail = screen.getByRole("navigation", {
 			name: "Organization sections",

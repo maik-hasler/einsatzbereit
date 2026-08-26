@@ -95,7 +95,7 @@ describe("buildOrganizationFormSchema", () => {
 		const zipIssue = result.error?.issues.find(
 			(issue) => issue.path[0] === "zipCode",
 		);
-		expect(zipIssue?.message).toBe("orgSettings.fieldRequired");
+		expect(zipIssue?.message).toBe("orgSettings.zipRequired");
 	});
 
 	it("rejects a name longer than 100 characters with a translated message", () => {

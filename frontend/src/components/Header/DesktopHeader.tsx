@@ -2,14 +2,16 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
-import OrgAvatar from "./OrgAvatar";
+import OrgAvatar from "../OrgAvatar";
 import Button from "../Button";
+import { SpinnerIcon } from "../Spinner";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
+import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { buildPrimaryNav } from "../../lib/headerNav";
 
 export default function DesktopHeader({
-	isLoggedIn,
+	authStatus,
 	isTransparent,
 	menu,
 	displayName,
@@ -17,11 +19,10 @@ export default function DesktopHeader({
 	isAdmin,
 	activeOrg,
 	onSignOut,
-	onNotificationNavigate,
 	onSignIn,
 	onRegister,
 }: {
-	isLoggedIn: boolean;
+	authStatus: AuthDisplayStatus;
 	isTransparent: boolean;
 	menu: AccountMenuState;
 	displayName: string;
@@ -30,7 +31,6 @@ export default function DesktopHeader({
 
 	activeOrg: OrganizationSummaryDto | null | undefined;
 	onSignOut: () => void;
-	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 	onSignIn: () => void;
 	onRegister: () => void;
 }) {
@@ -44,11 +44,13 @@ export default function DesktopHeader({
 			<ul className="mr-2 flex items-center gap-2">
 				{buildPrimaryNav(activeOrg).map((link) => {
 					const base =
-						"rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
+						"rounded-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";
-					const activeClass = isTransparent ? "text-white" : "text-brand-800";
+					const activeClass = isTransparent
+						? "border-white font-semibold text-white"
+						: "border-brand-700 font-semibold text-brand-800";
 
 					if (link.kind === "organization") {
 						return (
@@ -104,7 +106,7 @@ export default function DesktopHeader({
 				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
 			/>
 
-			{isLoggedIn ? (
+			{authStatus === "signedIn" && (
 				<AccountControls
 					transparent={isTransparent}
 					menu={menu}
@@ -112,9 +114,10 @@ export default function DesktopHeader({
 					initials={initials}
 					isAdmin={isAdmin}
 					onSignOut={onSignOut}
-					onNotificationNavigate={onNotificationNavigate}
 				/>
-			) : (
+			)}
+
+			{authStatus === "signedOut" && (
 				<div className="flex items-center gap-3">
 					<Button
 						type="button"
@@ -131,6 +134,25 @@ export default function DesktopHeader({
 						{t("nav.register")}
 					</Button>
 				</div>
+			)}
+
+			{authStatus === "pending" && (
+				<div className="flex items-center px-2" role="status">
+					<SpinnerIcon
+						className={`h-5 w-5 ${isTransparent ? "brightness-0 invert" : ""}`}
+					/>
+					<span className="sr-only">{t("nav.checkingSignIn")}</span>
+				</div>
+			)}
+
+			{authStatus === "sessionExpired" && (
+				<Button
+					type="button"
+					onClick={onSignIn}
+					variant={isTransparent ? "onDark" : "primary"}
+				>
+					{t("nav.sessionExpired")}
+				</Button>
 			)}
 			<div
 				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}

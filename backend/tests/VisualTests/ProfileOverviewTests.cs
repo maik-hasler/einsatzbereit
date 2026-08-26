@@ -238,7 +238,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		var updatedComment = $"Updated comment {Guid.NewGuid():N}";
 		await dialog.Locator("#feedback-comment").FillAsync(updatedComment);
-		await dialog.GetByRole(AriaRole.Button, new() { Name = "5 stars" }).ClickAsync();
+		await dialog.GetByRole(AriaRole.Radio, new() { Name = "5 stars" }).ClickAsync();
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Save changes" }).ClickAsync();
 		await Expect(dialog).Not.ToBeVisibleAsync();
 

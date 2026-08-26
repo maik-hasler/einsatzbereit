@@ -69,7 +69,13 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		await Page.GotoAsync(frontend.ToString());
 
-		var toggle = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First;
+		// The toggle's accessible name swaps with its open/close state, so a
+		// locator scoped to a single name would stop matching as soon as it
+		// clicks - match either name so `toggle` keeps resolving to the same
+		// button across the whole open/close cycle (#2234).
+		var toggle = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" })
+			.Or(Page.GetByRole(AriaRole.Button, new() { Name = "Close menu" }))
+			.First;
 		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await toggle.ClickAsync();

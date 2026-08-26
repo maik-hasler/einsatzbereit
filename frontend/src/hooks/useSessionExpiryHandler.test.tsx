@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, screen, waitFor } from "@testing-library/react";
 import { useSessionExpiryHandler } from "./useSessionExpiryHandler";
+import { useAuthDisplayStatus } from "./useAuthDisplayStatus";
 import { notifySessionExpired } from "../lib/sessionExpiryBus";
 import { renderWithProviders } from "../test/render";
 
 function Harness() {
 	useSessionExpiryHandler();
 	return <div>App body</div>;
+}
+
+function StatusHarness() {
+	useSessionExpiryHandler();
+	const status = useAuthDisplayStatus();
+	return <div data-testid="auth-display-status">{status}</div>;
 }
 
 const signinRedirect = vi.fn();
@@ -75,5 +82,23 @@ describe("session expiry", () => {
 		});
 		await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
 		expect(signinRedirect).not.toHaveBeenCalled();
+	});
+
+	it("flips the shared auth display status to sessionExpired instead of signedOut (#2224)", async () => {
+		renderWithProviders(<StatusHarness />, {
+			auth: { isAuthenticated: true, signinRedirect },
+		});
+
+		expect(screen.getByTestId("auth-display-status")).toHaveTextContent(
+			"signedIn",
+		);
+
+		act(() => notifySessionExpired());
+
+		await waitFor(() =>
+			expect(screen.getByTestId("auth-display-status")).toHaveTextContent(
+				"sessionExpired",
+			),
+		);
 	});
 });

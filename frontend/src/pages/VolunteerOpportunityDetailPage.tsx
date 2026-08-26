@@ -292,12 +292,26 @@ export default function VolunteerOpportunityDetailPage() {
 		setWithdrawError(null);
 		try {
 			await api.withdrawEngagement(opportunity.currentUserEngagement.id);
-			dispatchToast("success", t("myEngagements.withdrawSuccess"));
+			dispatchToast(
+				"success",
+				t(
+					isInterestBased
+						? "myEngagements.withdrawSuccessInterest"
+						: "myEngagements.withdrawSuccess",
+				),
+			);
 			setShowWithdrawConfirm(false);
 			load();
 		} catch (err) {
 			setWithdrawError(
-				getApiErrorMessage(err, t("myEngagements.withdrawError")),
+				getApiErrorMessage(
+					err,
+					t(
+						isInterestBased
+							? "myEngagements.withdrawErrorInterest"
+							: "myEngagements.withdrawError",
+					),
+				),
 			);
 		} finally {
 			setWithdrawing(false);
@@ -359,6 +373,9 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.participationType,
 	);
 	const isFull = capacity.kind === "capped" && capacity.isFull;
+	/** No seat is ever released by withdrawing this - it's an expression of interest, not a sign-up (#2228). */
+	const isInterestBased =
+		capacity.kind === "notApplicable" && capacity.reason === "interest";
 	const {
 		label: capacityLabel,
 		tone: capacityTone,
@@ -448,7 +465,9 @@ export default function VolunteerOpportunityDetailPage() {
 						<div className="flex items-center justify-between gap-4">
 							<div>
 								<p className="mb-1 text-xs text-gray-500">
-									{t("opportunities.yourApplication")}
+									{isInterestBased
+										? t("opportunities.yourInterest")
+										: t("opportunities.yourApplication")}
 								</p>
 								<Chip
 									tone={cue.status === "Confirmed" ? "success" : "warning"}
@@ -459,7 +478,11 @@ export default function VolunteerOpportunityDetailPage() {
 
 								{cue.status === "Pending" && (
 									<p className="mt-1.5 text-xs text-gray-600">
-										{t("myEngagements.pendingExplanation")}
+										{t(
+											isInterestBased
+												? "myEngagements.pendingExplanationInterest"
+												: "myEngagements.pendingExplanation",
+										)}
 									</p>
 								)}
 								{registeredTimeSlot && (
@@ -614,7 +637,7 @@ export default function VolunteerOpportunityDetailPage() {
 					</aside>
 
 					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
-						<div className="max-w-2xl">
+						<div>
 							{hasActionRow && (
 								<div
 									className="mb-4 flex items-center gap-3"
@@ -814,10 +837,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 						{opportunity.participationType === "ScheduledSlots" &&
 							opportunity.timeSlots.length > 0 && (
-								<div
-									className="mb-6 max-w-2xl"
-									data-testid="opportunity-time-slots"
-								>
+								<div className="mb-6" data-testid="opportunity-time-slots">
 									<SectionHeading>
 										{t("opportunities.availableTimeSlots")}
 									</SectionHeading>
@@ -871,7 +891,7 @@ export default function VolunteerOpportunityDetailPage() {
 									</ul>
 								</div>
 							)}
-						<div className="max-w-2xl">
+						<div>
 							{orgProfileError && !orgProfile && (
 								<div className="mb-6" data-testid="about-organization">
 									<SectionHeading>
@@ -895,7 +915,10 @@ export default function VolunteerOpportunityDetailPage() {
 											{t("opportunities.aboutOrganization")}
 										</SectionHeading>
 										{orgProfile.description && (
-											<p className="mb-3 leading-relaxed text-gray-600">
+											<p
+												lang="de"
+												className="mb-3 leading-relaxed text-gray-600"
+											>
 												{orgProfile.description}
 											</p>
 										)}
@@ -904,7 +927,7 @@ export default function VolunteerOpportunityDetailPage() {
 											orgProfile.website ||
 											orgProfile.address) && (
 											<div
-												className={`space-y-2.5 ${cardClass} text-sm text-gray-700`}
+												className={`max-w-md space-y-2.5 ${cardClass} text-sm text-gray-700`}
 											>
 												{orgProfile.contactEmail && (
 													<div className="flex items-center gap-3">
@@ -956,22 +979,26 @@ export default function VolunteerOpportunityDetailPage() {
 										)}
 									</div>
 								)}
+
+							{otherOrgOpportunities.length > 0 && (
+								<div className="mb-6" data-testid="more-from-organization">
+									<SectionHeading>
+										{t("opportunities.moreFromOrganization")}
+									</SectionHeading>
+									<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+										{otherOrgOpportunities.map((opp) => (
+											<OpportunityCard
+												key={opp.id}
+												item={opp}
+												headingLevel={3}
+											/>
+										))}
+									</ul>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
-
-				{otherOrgOpportunities.length > 0 && (
-					<div className="mb-6 max-w-2xl" data-testid="more-from-organization">
-						<SectionHeading>
-							{t("opportunities.moreFromOrganization")}
-						</SectionHeading>
-						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							{otherOrgOpportunities.map((opp) => (
-								<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
-							))}
-						</ul>
-					</div>
-				)}
 				{showSignUp && (
 					<SignUpModal
 						opportunityId={opportunity.id}
@@ -986,7 +1013,12 @@ export default function VolunteerOpportunityDetailPage() {
 						onSuccess={() => {
 							setShowSignUp(false);
 							setPreselectedSlotId(undefined);
-							dispatchToast("success", t("signUp.success"));
+							dispatchToast(
+								"success",
+								t(
+									isInterestBased ? "signUp.successInterest" : "signUp.success",
+								),
+							);
 							load();
 						}}
 					/>
@@ -994,11 +1026,19 @@ export default function VolunteerOpportunityDetailPage() {
 
 				{showWithdrawConfirm && cue && (
 					<ConfirmDialog
-						title={t("confirmDialog.withdraw.title")}
+						title={t(
+							isInterestBased
+								? "confirmDialog.withdraw.titleInterest"
+								: "confirmDialog.withdraw.title",
+						)}
 						message={t(
 							cue.remainingReactivations === 0
-								? "confirmDialog.withdraw.messageLimitReached"
-								: "confirmDialog.withdraw.message",
+								? isInterestBased
+									? "confirmDialog.withdraw.messageLimitReachedInterest"
+									: "confirmDialog.withdraw.messageLimitReached"
+								: isInterestBased
+									? "confirmDialog.withdraw.messageInterest"
+									: "confirmDialog.withdraw.message",
 							{ title: headerTitle.text },
 						)}
 						confirmLabel={t("confirmDialog.withdraw.confirm")}
@@ -1023,7 +1063,11 @@ export default function VolunteerOpportunityDetailPage() {
 								ref={withdrawLimitWarningRef}
 								tabIndex={-1}
 								className="focus:outline-none"
-								message={t("confirmDialog.withdraw.limitWarning")}
+								message={t(
+									isInterestBased
+										? "confirmDialog.withdraw.limitWarningInterest"
+										: "confirmDialog.withdraw.limitWarning",
+								)}
 							/>
 						)}
 					</ConfirmDialog>

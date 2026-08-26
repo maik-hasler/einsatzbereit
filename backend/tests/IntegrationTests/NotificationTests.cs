@@ -35,6 +35,31 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_EngagementCreated_HasRelatedTitleEn_WhenOpportunityHasEnglishTitle(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitleDe = "Notification Deep-Link Test (DE)";
+		const string opportunityTitleEn = "Notification Deep-Link Test (EN)";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(
+			olafClient, orgId, opportunityTitleDe, cancellationToken, opportunityTitleEn);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+		notification.RelatedTitle.Should().Be(opportunityTitleDe);
+		notification.RelatedTitleEn.Should().Be(opportunityTitleEn);
+	}
+
+	[Test]
 	public async Task GetMyNotifications_EngagementCreated_DropsTitleAndDeepLink_AfterOpportunityDeleted(
 		CancellationToken cancellationToken)
 	{
@@ -666,12 +691,13 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
-		EinsatzbereitApi client, Guid orgId, string title, CancellationToken cancellationToken)
+		EinsatzbereitApi client, Guid orgId, string title, CancellationToken cancellationToken, string? titleEn = null)
 	{
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
 				TitleDe = title,
+				TitleEn = titleEn,
 				DescriptionDe = "Integration test opportunity for notifications",
 				OrganizationId = orgId,
 				Street = "Test Street",

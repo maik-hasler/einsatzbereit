@@ -24,10 +24,18 @@ const base: OpportunityCardItem = {
 	nextTimeSlotStart: new Date(Date.UTC(2026, 7, 27, 9, 0)),
 };
 
-function renderCard(item: OpportunityCardItem, headingLevel: 2 | 3 = 2) {
+function renderCard(
+	item: OpportunityCardItem,
+	keyword?: string,
+	headingLevel: 2 | 3 = 2,
+) {
 	return renderWithProviders(
 		<ul>
-			<OpportunityCard item={item} headingLevel={headingLevel} />
+			<OpportunityCard
+				item={item}
+				headingLevel={headingLevel}
+				keyword={keyword}
+			/>
 		</ul>,
 	);
 }
@@ -67,6 +75,18 @@ describe("OpportunityCard a11y", () => {
 		await expectNoA11yViolations();
 	});
 
+	it("has no violations for an interest-based opportunity, whose capacity chip is omitted (#2228)", async () => {
+		renderCard({
+			...base,
+			participationType: "IndividualContact",
+			nextTimeSlotStart: undefined,
+			validUntil: new Date(Date.UTC(2027, 0, 31)),
+			totalMaxParticipants: 0,
+			currentParticipantCount: 0,
+		});
+		await expectNoA11yViolations();
+	});
+
 	it("has no violations at heading level 3, under a section heading", async () => {
 		renderWithProviders(
 			<section aria-labelledby="latest">
@@ -76,6 +96,11 @@ describe("OpportunityCard a11y", () => {
 				</ul>
 			</section>,
 		);
+		await expectNoA11yViolations();
+	});
+
+	it("has no violations with a cross-locale search match notice (#2242)", async () => {
+		renderCard(base, "Strandreinigung");
 		await expectNoA11yViolations();
 	});
 
