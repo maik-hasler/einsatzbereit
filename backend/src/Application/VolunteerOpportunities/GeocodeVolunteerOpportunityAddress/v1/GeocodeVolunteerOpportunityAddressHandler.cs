@@ -52,7 +52,15 @@ internal sealed class GeocodeVolunteerOpportunityAddressHandler(
 			}
 
 			if (result.Outcome != GeocodingOutcome.TransientFailure)
-				cache.Set(cacheKey, result, CacheDuration);
+			{
+				// Nominal Size - the shared cache's SizeLimit budget is denominated in the
+				// tile bytes OpenStreetMapTileService caches, which dwarf this payload (#2215).
+				cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+				{
+					Size = 1,
+					AbsoluteExpirationRelativeToNow = CacheDuration,
+				});
+			}
 		}
 
 		switch (result.Outcome)

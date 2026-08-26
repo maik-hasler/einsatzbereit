@@ -224,6 +224,41 @@ public class CreateEngagementCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenIndividualContactApplicationDeadlineHasPassed(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var farPast = DateTimeOffset.UtcNow.AddDays(-30);
+		var opportunity = VolunteerOpportunity.Create(
+			OrganizationId.New(),
+			"Test Opportunity",
+			null,
+			"Description",
+			null,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			_pinGenerator,
+			status: OpportunityStatus.Draft,
+			validUntil: farPast.AddDays(1),
+			now: farPast).Value;
+		opportunity.Publish().ThrowIfFailure();
+		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>()).Returns(opportunity);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "Ich helfe gerne!");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldCreateScheduledSlotsEngagement_WhenTimeSlotIdIsProvided(
 		CancellationToken cancellationToken)
 	{

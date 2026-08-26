@@ -68,6 +68,33 @@ describe("the bounded auth-recovery terminal state (#2208)", () => {
 	});
 });
 
+describe("the callback error retry", () => {
+	it("never sends a successful retry back to the callback route itself", async () => {
+		const signinRedirect = vi.fn().mockResolvedValue(undefined);
+		renderWithProviders(<App />, {
+			route: "/callback",
+			auth: {
+				isAuthenticated: false,
+				error: new Error("token exchange failed"),
+				signinRedirect,
+			},
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Try again" }),
+		);
+
+		expect(signinRedirect).toHaveBeenCalledTimes(1);
+		const args = signinRedirect.mock.calls[0][0] as
+			{ state?: { returnTo?: string } } | undefined;
+		// /callback has no route-away for "authenticated, no error, no code in
+		// the URL" (see App.tsx), so returning here would strand the user on
+		// the completing-signin screen forever - unlike the other signin call
+		// sites, this one must NOT default returnTo to the current location.
+		expect(args?.state?.returnTo).not.toBe("/callback");
+	});
+});
+
 describe("the legal pages", () => {
 	it.each([
 		["/imprint", "Imprint"],

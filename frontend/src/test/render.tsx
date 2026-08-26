@@ -19,6 +19,7 @@ export interface TestAuth {
 	name?: string;
 	email?: string;
 	accessToken?: string;
+	error?: Error;
 
 	signinRedirect?: () => Promise<void>;
 	signoutRedirect?: () => Promise<void>;
@@ -34,6 +35,7 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		name = "Test User",
 		email = "test.user@example.test",
 		accessToken = "test-token",
+		error = undefined,
 		signinRedirect = async () => {},
 		signoutRedirect = async () => {},
 		removeUser = async () => {},
@@ -43,7 +45,7 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		isAuthenticated,
 		isLoading,
 		activeNavigator: undefined,
-		error: undefined,
+		error,
 		settings: {},
 
 		events: {

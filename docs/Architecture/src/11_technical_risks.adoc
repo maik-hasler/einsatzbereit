@@ -20,10 +20,18 @@ The following table lists the relevant risks and technical debts. Each risk or t
 
 |2
 |CI Pipeline Performance
-|Steadily growing backend CI pipeline dominated by end-to-end tests; critical path cut from ~10 min to ~6 min by splitting into parallel jobs (#773), full resolution still pending.
-|Low-Medium
+|Steadily growing backend CI pipeline dominated by end-to-end tests; a 2026-08-20 re-measurement found a 21 min 58 s median wall-clock and a 36.4% completion rate (53% of `visual-tests` runs failing). Sharding `visual-tests` across four jobs (#2145) and rebalancing the test pyramid (#2148) since cut wall-clock back to roughly 7-10 min, but severity stays High until the failure rate is confirmed back under 20% - runtime was only ever half of what made this debt expensive.
+|High
 |In Progress
-|2026-07-18
+|2026-08-20
 |link:TDRs/2_slow_ci_pipeline.html[Slow CI Pipeline]
+
+|3
+|Shared Staging/Production Host
+|Staging and production shared one host with no isolation between a release-candidate deploy and real traffic. Overtaken by #2165 (ADR-7) moving all deployment out of this repository's scope entirely, so the underlying risk is no longer this repository's to track.
+|Medium
+|Resolved
+|2026-08-22
+|link:TDRs/3_shared_staging_production_host.html[Shared Staging/Production Host]
 
 |===

@@ -155,7 +155,7 @@ dotnet build
 ### Frontend (TypeScript)
 - Named exports preferred over default exports
 - Explicit return types on functions
-- Feature folders mirroring the backend structure
+- Cut by artifact kind, not by feature - the opposite of the backend: pages, components, hooks and helpers live in their own top-level folders (`pages/`, `components/`, `hooks/`, `lib/`) and are shared across domains; see chapter 5 of the arc42 docs
 
 ### General
 - Comments explain *why*, not *what*
