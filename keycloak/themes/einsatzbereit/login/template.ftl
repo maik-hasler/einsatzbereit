@@ -93,6 +93,14 @@
 		</#if>
 	</main>
 
+	<footer class="auth-legal-footer">
+		<nav aria-label="${msg("legalFooterLabel")}">
+			<a href="${properties.siteUrl}/imprint">${msg("legalFooterImprint")}</a>
+			<a href="${properties.siteUrl}/privacy-policy">${msg("legalFooterPrivacyPolicy")}</a>
+			<a href="${properties.siteUrl}/terms-of-use">${msg("legalFooterTermsOfUse")}</a>
+		</nav>
+	</footer>
+
 </div>
 
 <#if properties.scripts?has_content>
