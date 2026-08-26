@@ -4,17 +4,16 @@ import userEvent from "@testing-library/user-event";
 import HelpPage from "./HelpPage";
 import { renderWithProviders } from "../test/render";
 
-const SUPPORT_EMAIL = "hallo@einsatzbereit.maik-hasler.de";
-
 describe("HelpPage", () => {
-	it("reaches support through a mailto: link and promises no reply SLA", () => {
+	it("points to the Contact page for anything not covered by the FAQ, with no reply SLA promised", () => {
 		renderWithProviders(<HelpPage />);
 
-		expect(screen.getByRole("link", { name: SUPPORT_EMAIL })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Contact page" })).toHaveAttribute(
 			"href",
-			`mailto:${SUPPORT_EMAIL}`,
+			"/contact",
 		);
 		expect(screen.queryByText(/24 hours/)).toBeNull();
+		expect(screen.queryByText(/maikhslr/)).toBeNull();
 	});
 
 	it("keeps a split German compound word inside one link label", () => {

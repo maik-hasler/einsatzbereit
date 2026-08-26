@@ -3,9 +3,16 @@ set -eu
 
 config="/usr/share/nginx/html/config.js"
 
+# OPERATOR_NAME/ADDRESS/EMAIL/SITE_URL carry this deployment's legal identity
+# (Impressum, GDPR controller, contact) - templated the same way as the origins
+# above rather than baked in at build time, so a self-hosting operator is never
+# silently stuck with somebody else's name and address (einsatzbereit#2196).
+# Unset here means empty after envsubst, not a leftover ${...} placeholder -
+# the frontend renders a visible "operator not configured" notice in that case
+# instead of falling back to anyone's real details.
 if [ -f "$config" ]; then
 	tmp="$(mktemp)"
-	envsubst '${VITE_KEYCLOAK_AUTHORITY_URL} ${VITE_KEYCLOAK_CLIENT_ID} ${VITE_API_URL}' < "$config" > "$tmp"
+	envsubst '${VITE_KEYCLOAK_AUTHORITY_URL} ${VITE_KEYCLOAK_CLIENT_ID} ${VITE_API_URL} ${OPERATOR_NAME} ${OPERATOR_ADDRESS} ${OPERATOR_EMAIL} ${OPERATOR_SITE_URL}' < "$config" > "$tmp"
 	mv "$tmp" "$config"
 	chmod 644 "$config"
 fi
@@ -21,6 +28,16 @@ fi
 : "${VITE_KEYCLOAK_AUTHORITY_URL:=http://localhost:8080/realms/einsatzbereit}"
 : "${STORAGE_PUBLIC_URL:=http://localhost:9000}"
 
+# BACKEND_UPSTREAM/DNS_RESOLVER back the /sitemap.xml and social-crawler proxy
+# targets below. Defaulted to the values a Docker Compose/user-defined-network
+# setup with a "backend" service already gets for free, so this stays a no-op
+# for that shape - but templated rather than hardcoded, since nothing else
+# guarantees a service named exactly "backend" on the frontend's network
+# (einsatzbereit#2196; the compose file that used to guarantee that name was
+# deleted in #2165).
+: "${BACKEND_UPSTREAM:=http://backend:8080}"
+: "${DNS_RESOLVER:=127.0.0.11}"
+
 url_origin() {
 	proto="${1%%://*}"
 	rest="${1#*://}"
@@ -31,8 +48,8 @@ url_origin() {
 CSP_API_ORIGIN="$(url_origin "$VITE_API_URL")"
 CSP_KEYCLOAK_ORIGIN="$(url_origin "$VITE_KEYCLOAK_AUTHORITY_URL")"
 CSP_STORAGE_ORIGIN="$(url_origin "$STORAGE_PUBLIC_URL")"
-export CSP_API_ORIGIN CSP_KEYCLOAK_ORIGIN CSP_STORAGE_ORIGIN
+export CSP_API_ORIGIN CSP_KEYCLOAK_ORIGIN CSP_STORAGE_ORIGIN BACKEND_UPSTREAM DNS_RESOLVER
 
-envsubst '${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} ${CSP_STORAGE_ORIGIN}' \
+envsubst '${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} ${CSP_STORAGE_ORIGIN} ${BACKEND_UPSTREAM} ${DNS_RESOLVER}' \
 	< /etc/nginx/nginx.conf.template \
 	> /etc/nginx/conf.d/default.conf

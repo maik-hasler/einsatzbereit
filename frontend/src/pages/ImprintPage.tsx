@@ -1,7 +1,9 @@
 import { Trans, useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
+import WarningBanner from "../components/WarningBanner";
 import { cardClass } from "../lib/surfaceClasses";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
 export default function ImprintPage() {
 	const { t } = useTranslation();
@@ -10,15 +12,17 @@ export default function ImprintPage() {
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
+	const operatorRecord = `${runtimeConfig.operatorName}\n${runtimeConfig.operatorAddress}`;
+
 	const records = [
-		{ title: t("imprint.section1Title"), body: t("imprint.section1Body") },
+		{ title: t("imprint.section1Title"), body: operatorRecord },
 		{
 			title: t("imprint.section2Title"),
-			body: t("imprint.section2Body"),
+			body: operatorRecord,
 
 			isContact: true,
 		},
-		{ title: t("imprint.section3Title"), body: t("imprint.section3Body") },
+		{ title: t("imprint.section3Title"), body: operatorRecord },
 	];
 
 	return (
@@ -35,24 +39,34 @@ export default function ImprintPage() {
 							<h2 className="text-xs font-semibold tracking-widest text-brand-700 uppercase">
 								{title}
 							</h2>
-							<p className="mt-3 leading-7 whitespace-pre-line text-gray-700">
-								{isContact ? (
-									<Trans
-										i18nKey="imprint.section2Body"
-										components={{
-											emailLink: (
-												// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
-												<a
-													href={`mailto:${t("contact.email")}`}
-													className={linkClass}
-												/>
-											),
-										}}
-									/>
+							<div className="mt-3">
+								{!runtimeConfig.operatorConfigured ? (
+									<WarningBanner message={t("imprint.operatorNotConfigured")} />
+								) : isContact ? (
+									<p className="leading-7 whitespace-pre-line text-gray-700">
+										<Trans
+											i18nKey="imprint.section2Body"
+											values={{
+												email: runtimeConfig.operatorEmail,
+												website: runtimeConfig.operatorSiteUrl,
+											}}
+											components={{
+												emailLink: (
+													// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
+													<a
+														href={`mailto:${runtimeConfig.operatorEmail}`}
+														className={linkClass}
+													/>
+												),
+											}}
+										/>
+									</p>
 								) : (
-									body
+									<p className="leading-7 whitespace-pre-line text-gray-700">
+										{body}
+									</p>
 								)}
-							</p>
+							</div>
 						</section>
 					))}
 				</div>

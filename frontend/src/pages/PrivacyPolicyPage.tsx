@@ -4,6 +4,8 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
 import DocumentSection from "../components/DocumentSection";
+import WarningBanner from "../components/WarningBanner";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
 export default function PrivacyPolicyPage() {
 	const { t } = useTranslation();
@@ -47,9 +49,20 @@ export default function PrivacyPolicyPage() {
 						number={1}
 						title={t("privacyPolicy.section1Title")}
 					>
-						<p className="whitespace-pre-line">
-							{t("privacyPolicy.section1Body")}
-						</p>
+						{runtimeConfig.operatorConfigured ? (
+							<p className="whitespace-pre-line">
+								{t("privacyPolicy.section1Body", {
+									name: runtimeConfig.operatorName,
+									address: runtimeConfig.operatorAddress,
+									email: runtimeConfig.operatorEmail,
+									website: runtimeConfig.operatorSiteUrl,
+								})}
+							</p>
+						) : (
+							<WarningBanner
+								message={t("privacyPolicy.operatorNotConfigured")}
+							/>
+						)}
 					</DocumentSection>
 
 					<DocumentSection

@@ -61,4 +61,46 @@ describe("runtimeConfig", () => {
 		const { runtimeConfig } = await import("./runtimeConfig");
 		expect(runtimeConfig.toastLifetimeMs).toBe(0);
 	});
+
+	it("defaults the operator identity to empty strings, and reports not configured, when nothing was injected", async () => {
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.operatorName).toBe("");
+		expect(runtimeConfig.operatorAddress).toBe("");
+		expect(runtimeConfig.operatorEmail).toBe("");
+		expect(runtimeConfig.operatorSiteUrl).toBe("");
+		expect(runtimeConfig.operatorConfigured).toBe(false);
+	});
+
+	it("falls back to empty operator fields when the runtime placeholder was never substituted", async () => {
+		window.__APP_CONFIG__ = { OPERATOR_NAME: "${OPERATOR_NAME}" };
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.operatorName).toBe("");
+		expect(runtimeConfig.operatorConfigured).toBe(false);
+	});
+
+	it("resolves the operator identity from window.__APP_CONFIG__ once substituted by the container", async () => {
+		window.__APP_CONFIG__ = {
+			OPERATOR_NAME: "ACME Rescue",
+			OPERATOR_ADDRESS: "1 Example Street, 12345 Example City",
+			OPERATOR_EMAIL: "legal@acme-rescue.example",
+			OPERATOR_SITE_URL: "https://acme-rescue.example",
+		};
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.operatorName).toBe("ACME Rescue");
+		expect(runtimeConfig.operatorAddress).toBe(
+			"1 Example Street, 12345 Example City",
+		);
+		expect(runtimeConfig.operatorEmail).toBe("legal@acme-rescue.example");
+		expect(runtimeConfig.operatorSiteUrl).toBe("https://acme-rescue.example");
+		expect(runtimeConfig.operatorConfigured).toBe(true);
+	});
+
+	it("is not configured when only some of the operator fields are set", async () => {
+		window.__APP_CONFIG__ = {
+			OPERATOR_NAME: "ACME Rescue",
+			OPERATOR_EMAIL: "legal@acme-rescue.example",
+		};
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.operatorConfigured).toBe(false);
+	});
 });

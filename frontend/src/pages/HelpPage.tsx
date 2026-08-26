@@ -95,14 +95,6 @@ export default function HelpPage() {
 										<Link to="/opportunities" className={linkClass} />
 									),
 									contactLink: <Link to="/contact" className={linkClass} />,
-
-									emailLink: (
-										// eslint-disable-next-line jsx-a11y/anchor-has-content
-										<a
-											href={`mailto:${t("contact.email")}`}
-											className={linkClass}
-										/>
-									),
 								}}
 							/>
 						</p>

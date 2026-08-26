@@ -809,7 +809,8 @@
       "title": "Datenschutzerklärung",
       "lastUpdated": "Stand: 7. August 2026",
       "section1Title": "Verantwortliche Stelle",
-      "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg\nE-Mail: hallo@einsatzbereit.maik-hasler.de\nWebsite: https://einsatzbereit.maik-hasler.de",
+      "section1Body": "{{name}}\n{{address}}\nE-Mail: {{email}}\nWebsite: {{website}}",
+      "operatorNotConfigured": "Der Betreiber dieser Instanz hat noch keine verantwortliche Stelle für den Datenschutz hinterlegt.",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
       "section2Body1": "Beim Besuch dieser Website werden automatisch allgemeine technische Informationen verarbeitet (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs), um einen sicheren und zuverlässigen Betrieb sicherzustellen. Auch wenn wir diese Daten nicht anderweitig mit deiner Identität verknüpfen, können sie personenbezogene Daten darstellen – einschließlich deiner IP-Adresse, entsprechend dem Breyer-Urteil des EuGH (C-582/14).",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von dir eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um dir die Nutzung der Plattform zu ermöglichen.",
@@ -845,24 +846,22 @@
     "imprint": {
       "title": "Impressum",
       "section1Title": "Angaben gemäß § 5 DDG",
-      "section1Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg",
       "section2Title": "Kontakt",
-      "section2Body": "E-Mail: <emailLink>hallo@einsatzbereit.maik-hasler.de</emailLink>\nWebsite: https://einsatzbereit.maik-hasler.de",
+      "section2Body": "E-Mail: <emailLink>{{email}}</emailLink>\nWebsite: {{website}}",
       "section3Title": "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV",
-      "section3Body": "Maik Hasler\nAmmerländer Heerstraße 76\n26129 Oldenburg",
       "section4Title": "Haftungsausschluss",
       "section4aTitle": "Haftung für Inhalte",
       "section4aBody": "Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.",
       "section4bTitle": "Haftung für Links",
       "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich.",
-      "eyebrow": "Rechtliches"
+      "eyebrow": "Rechtliches",
+      "operatorNotConfigured": "Der Betreiber dieser Instanz hat seine rechtlichen Kontaktdaten noch nicht hinterlegt."
     },
     "contact": {
       "title": "Kontakt",
       "reportSectionTitle": "Missbräuchliche Inhalte melden",
       "reportSectionBody": "Wenn dir ein Einsatz oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatzseite</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
       "otherSectionTitle": "Andere Fragen oder Anliegen",
-      "email": "hallo@einsatzbereit.maik-hasler.de",
       "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform.",
       "eyebrow": "Support",
       "intro": "Melde ein Problem oder finde die richtige Stelle für deine Frage."
@@ -894,7 +893,7 @@
       "generalQ4": "Ist der Code wirklich offen einsehbar?",
       "generalA4": "Ja, der komplette Quellcode ist auf GitHub unter der AGPL-3.0-Lizenz verfügbar.",
       "contactTitle": "Noch Hilfe nötig?",
-      "contactBody": "Wenn dir etwas wie Spam, Betrug oder anderweitig illegale Inhalte auffällt, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatzseite</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Für alles andere besuche unsere <contactLink>Kontaktseite</contactLink> oder schreibe uns direkt an <emailLink>hallo@einsatzbereit.maik-hasler.de</emailLink>.",
+      "contactBody": "Wenn dir etwas wie Spam, Betrug oder anderweitig illegale Inhalte auffällt, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatzseite</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Für alles andere besuche unsere <contactLink>Kontaktseite</contactLink>.",
       "eyebrow": "Support"
     },
     "termsOfUse": {

@@ -4,6 +4,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import { FlagIcon, EnvelopeIcon, ArrowRightIcon } from "../components/icons";
 import { cardClass } from "../lib/surfaceClasses";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
 export default function ContactPage() {
 	const { t } = useTranslation();
@@ -76,14 +77,16 @@ export default function ContactPage() {
 						{t("contact.otherSectionBody")}
 					</p>
 
-					<a
-						href={`mailto:${t("contact.email")}`}
-						data-testid="contact-email"
-						className={`mt-5 inline-flex items-center gap-2 ${linkClass}`}
-					>
-						<EnvelopeIcon className="h-4 w-4 shrink-0" />
-						{t("contact.email")}
-					</a>
+					{runtimeConfig.operatorEmail && (
+						<a
+							href={`mailto:${runtimeConfig.operatorEmail}`}
+							data-testid="contact-email"
+							className={`mt-5 inline-flex items-center gap-2 ${linkClass}`}
+						>
+							<EnvelopeIcon className="h-4 w-4 shrink-0" />
+							{runtimeConfig.operatorEmail}
+						</a>
+					)}
 					<Link
 						to="/imprint"
 						className="mt-4 flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-brand-800"

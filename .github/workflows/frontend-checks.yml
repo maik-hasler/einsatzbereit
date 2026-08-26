@@ -159,6 +159,7 @@ jobs:
             -e VITE_KEYCLOAK_CLIENT_ID=${{ inputs.vite_keycloak_client_id }} \
             -e VITE_API_URL=${{ inputs.vite_api_url }} \
             -e STORAGE_PUBLIC_URL=${{ inputs.storage_public_url }} \
+            -e OPERATOR_NAME="CI Smoke Test Operator" \
             frontend-smoke-test
 
           for i in $(seq 1 30); do
@@ -185,6 +186,7 @@ jobs:
             exit 1
           fi
           echo "$body" | grep -q "${{ inputs.vite_api_url }}" || { echo "::error::config.js does not contain the expected API_URL"; exit 1; }
+          echo "$body" | grep -q "CI Smoke Test Operator" || { echo "::error::config.js does not contain the runtime-injected OPERATOR_NAME"; exit 1; }
 
       - name: Content-Security-Policy header reflects runtime origins
         run: |
