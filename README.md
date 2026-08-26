@@ -139,7 +139,7 @@ Bring your own:
 
 The backend and frontend both also make outbound HTTPS calls to OpenStreetMap Nominatim for geocoding - no configuration needed, but it must be reachable from wherever you run them.
 
-**Important:** leave `ASPNETCORE_ENVIRONMENT` unset (defaults to `Production`) or set it to `Production` explicitly. `Development` skips the required-configuration check below entirely and reseeds the database on every restart - see the `Database__SeedOnStartup` warning further down for exactly what that seeds into a live database.
+**Important:** leave `ASPNETCORE_ENVIRONMENT` unset (defaults to `Production`) or set it to `Production` explicitly. `Development` skips the required-configuration check below entirely and unconditionally runs the same seeding that `Database__SeedOnStartup` gates outside Development - a no-op once a database already has data, but not on a fresh one (see the `Database__SeedOnStartup` row further down for exactly what that seeds).
 
 ### Backend (`ghcr.io/<owner>/einsatzbereit-backend`)
 
@@ -171,7 +171,7 @@ Required variables crash the container at startup outside Development (`Required
 | `Storage__SecretKey` | No | Secret key for the bucket-scoped service account | - |
 | `Storage__BucketName` | No | Bucket for avatars, logos, and opportunity banners | `einsatzbereit` |
 | `Storage__PublicEndpoint` | No | Public origin uploaded files are served from, if different from `Storage__Endpoint` (e.g. an internal vs. a public hostname) - must match the frontend's `STORAGE_PUBLIC_URL` below | `https://storage.example.com` |
-| `Api__PublicBaseUrl` | No | Public base URL of the backend API | `https://api.example.com` |
+| `Api__PublicBaseUrl` | No | Reserved for the backend's own public base URL - bound at startup but not currently read by any request path | `https://api.example.com` |
 | `TrustedNetworks__Cidrs__0` | No | CIDR(s) trusted to set `X-Forwarded-For` - the reverse proxy in front of this image; defaults cover loopback and RFC1918 private ranges | `10.0.0.0/8` |
 | `Database__MigrateOnStartup` | No | Apply pending EF Core migrations automatically when the container starts | `true` |
 | `Database__SeedOnStartup` | No | **Never enable outside development.** Seeds demo data - ten fake volunteer opportunities at real Leipzig addresses onto the live public browse page, two fake organizations in your production Keycloak realm, and an organizer role grant to a hardcoded placeholder account (#2211) | `false` |
