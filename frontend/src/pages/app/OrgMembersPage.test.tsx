@@ -454,4 +454,28 @@ describe("OrgMembersPage invite search result states", () => {
 		expect(screen.queryByText("Already a member")).toBeNull();
 		expect(screen.queryByText("Already invited")).toBeNull();
 	});
+
+	it("has no a11y violations across the Available/AlreadyMember/AlreadyInvited states", async () => {
+		api.searchMemberCandidates.mockResolvedValue([
+			candidate,
+			{
+				...candidate,
+				userId: "77777777-7777-7777-7777-777777777777",
+				status: "AlreadyMember",
+			},
+			{
+				...candidate,
+				userId: "88888888-8888-8888-8888-888888888888",
+				status: "AlreadyInvited",
+			},
+		]);
+		renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+		await screen.findByRole("button", { name: "Invite" });
+		await screen.findByText("Already a member");
+		await screen.findByText("Already invited");
+
+		await expectNoA11yViolations();
+	});
 });

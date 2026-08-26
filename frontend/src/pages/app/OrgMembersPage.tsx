@@ -363,7 +363,6 @@ export default function OrgMembersPage() {
 																: "neutral"
 														}
 														size="sm"
-														role="status"
 														className="ml-3 shrink-0"
 													>
 														{candidate.status === "AlreadyInvited"
