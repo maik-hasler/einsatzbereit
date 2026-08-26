@@ -13093,6 +13093,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
         public string? LastName { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Status { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

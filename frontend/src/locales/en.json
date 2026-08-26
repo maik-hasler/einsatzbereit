@@ -576,6 +576,8 @@
       "searchMinChars": "Enter at least 4 characters",
       "noSearchResults": "No users found.",
       "noSearchResultsEmail": "No account exists for this email yet - ask the person to sign up first, then you can invite them here.",
+      "searchResultAlreadyMember": "Already a member",
+      "searchResultAlreadyInvited": "Already invited",
       "memberSearchError": "Could not search for users.",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",

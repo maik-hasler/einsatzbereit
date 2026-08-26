@@ -207,6 +207,52 @@ internal sealed class KeycloakOrganizationService(
 		return users.Select(u => Guid.Parse(u.Id)).ToHashSet();
 	}
 
+	public async Task<KeycloakOrganizationMember?> FindUserByExactMatchAsync(
+		string search,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var trimmed = search.Trim();
+		var isEmail = trimmed.Contains('@');
+		var field = isEmail ? "email" : "username";
+		var encoded = Uri.EscapeDataString(trimmed);
+
+		HttpResponseMessage response;
+		try
+		{
+			response = await httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users?{field}={encoded}&exact=true",
+				cancellationToken);
+		}
+		catch (ExecutionRejectedException ex)
+		{
+			throw new HttpRequestException(
+				$"Keycloak exact user lookup was rejected by the resilience pipeline: {ex.Message}",
+				ex);
+		}
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		// Belt-and-suspenders: don't trust Keycloak's `exact` flag alone for the no-enumeration guarantee.
+		var match = users.FirstOrDefault(u => isEmail
+			? string.Equals(u.Email, trimmed, StringComparison.OrdinalIgnoreCase)
+			: string.Equals(u.Username, trimmed, StringComparison.OrdinalIgnoreCase));
+
+		return match is null
+			? null
+			: new KeycloakOrganizationMember(
+				Guid.Parse(match.Id),
+				match.Username,
+				match.FirstName,
+				match.LastName,
+				match.Email ?? string.Empty,
+				false);
+	}
+
 	public async Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
 		string search,
 		int max = 20,

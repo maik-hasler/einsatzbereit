@@ -241,6 +241,7 @@ const candidate = {
 	username: "ingo",
 	firstName: "Ingo",
 	lastName: "Invitee",
+	status: "Available",
 };
 
 function renderManage(members: unknown[], invitations: unknown[] = []) {
@@ -413,5 +414,44 @@ describe("OrgMembersPage inviting rather than adding", () => {
 		expect(list).toHaveTextContent(invitation.inviteeName);
 
 		expect(api.addOrganizationMember).not.toHaveBeenCalled();
+	});
+});
+
+describe("OrgMembersPage invite search result states", () => {
+	it("shows Already a member instead of an Invite button", async () => {
+		api.searchMemberCandidates.mockResolvedValue([
+			{ ...candidate, status: "AlreadyMember" },
+		]);
+		renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+
+		expect(await screen.findByText("Already a member")).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Invite" })).toBeNull();
+	});
+
+	it("shows Already invited instead of an Invite button", async () => {
+		api.searchMemberCandidates.mockResolvedValue([
+			{ ...candidate, status: "AlreadyInvited" },
+		]);
+		renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+
+		expect(await screen.findByText("Already invited")).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Invite" })).toBeNull();
+	});
+
+	it("still offers Invite for an available candidate", async () => {
+		api.searchMemberCandidates.mockResolvedValue([candidate]);
+		renderManage([olaf]);
+
+		await userEvent.type(await screen.findByLabelText("Invite member"), "ingo");
+
+		expect(
+			await screen.findByRole("button", { name: "Invite" }),
+		).toBeInTheDocument();
+		expect(screen.queryByText("Already a member")).toBeNull();
+		expect(screen.queryByText("Already invited")).toBeNull();
 	});
 });
