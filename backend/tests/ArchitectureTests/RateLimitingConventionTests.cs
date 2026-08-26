@@ -23,7 +23,12 @@ public sealed class RateLimitingConventionTests
 	[Test]
 	public void AllEndpoints_ShouldUseOnlyKnownRateLimitingPolicies()
 	{
-		var knownPolicies = new[] { RateLimitingPolicies.Read, RateLimitingPolicies.Write };
+		var knownPolicies = new[]
+		{
+			RateLimitingPolicies.Read,
+			RateLimitingPolicies.Write,
+			RateLimitingPolicies.MapTiles
+		};
 
 		var app = EndpointTestHelper.BuildMinimalAppWithAllEndpoints();
 
@@ -34,7 +39,8 @@ public sealed class RateLimitingConventionTests
 			.ToList();
 
 		endpointsWithUnknownPolicy.Should().BeEmpty(
-			$"endpoints may only use the policies '{RateLimitingPolicies.Read}' or '{RateLimitingPolicies.Write}'");
+			$"endpoints may only use the policies '{RateLimitingPolicies.Read}', " +
+			$"'{RateLimitingPolicies.Write}', or '{RateLimitingPolicies.MapTiles}'");
 	}
 
 	private static string? GetRateLimitingPolicyName(RouteEndpoint endpoint)

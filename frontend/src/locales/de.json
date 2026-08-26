@@ -961,7 +961,9 @@
     "auth": {
       "authError": "Authentifizierungsfehler: {{message}}",
       "completing": "Anmeldung wird abgeschlossen…",
-      "loading": "Wird geladen…"
+      "loading": "Wird geladen…",
+      "recoveryFailedTitle": "Anmeldung nicht möglich",
+      "recoveryFailedMessage": "Deine Sitzung konnte trotz mehrerer Versuche nicht wiederhergestellt werden. Bitte melde dich ab und versuche anschließend erneut, dich anzumelden. Falls das Problem weiterhin besteht, wende dich an den Support."
     },
     "notFound": {
       "title": "Seite nicht gefunden",
@@ -1265,6 +1267,10 @@
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
       "sessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+      "rateLimited": "Zu viele Anfragen. Bitte warte {{count}} Sekunden und versuche es erneut.",
+      "rateLimited_one": "Zu viele Anfragen. Bitte warte {{count}} Sekunde und versuche es erneut.",
+      "rateLimited_other": "Zu viele Anfragen. Bitte warte {{count}} Sekunden und versuche es erneut.",
+      "rateLimitedGeneric": "Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.",
       "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
       "boundaryTitle": "Etwas ist schiefgelaufen",
       "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zurück navigieren oder die Seite neu laden.",

@@ -14,7 +14,7 @@ internal sealed class GetMapTileEndpoint : IEndpoint
 			.Produces(StatusCodes.Status200OK, contentType: "image/png")
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.AllowAnonymous()
-			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.RequireRateLimiting(RateLimitingPolicies.MapTiles)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetMapTileAsync(

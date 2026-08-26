@@ -86,6 +86,7 @@ export interface RenderOptions {
 	route?: string;
 	auth?: TestAuth;
 	sessionExpired?: boolean;
+	authRecoveryFailed?: boolean;
 }
 
 export function renderWithProviders(
@@ -95,6 +96,7 @@ export function renderWithProviders(
 		route = "/",
 		auth = {},
 		sessionExpired = false,
+		authRecoveryFailed = false,
 	}: RenderOptions = {},
 ): RenderResult {
 	const i18n = createTestI18n(lng);
@@ -106,7 +108,10 @@ export function renderWithProviders(
 				<AuthContext.Provider value={authValue}>
 					<I18nextProvider i18n={i18n}>
 						<MemoryRouter initialEntries={[route]}>
-							<AuthStatusProvider initialSessionExpired={sessionExpired}>
+							<AuthStatusProvider
+								initialSessionExpired={sessionExpired}
+								initialAuthRecoveryFailed={authRecoveryFailed}
+							>
 								<QuickActionsProvider>
 									<HeaderOverlayProvider>
 										<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>

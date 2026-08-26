@@ -17,15 +17,28 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", TestIp);
 
 		var statusCodes = new List<HttpStatusCode>();
+		HttpResponseMessage? rejected = null;
 
 		for (var i = 0; i < 65; i++)
 		{
 			var response = await httpClient.GetAsync(
 				"/v1/volunteer-opportunities?pageNumber=1&pageSize=1", cancellationToken);
 			statusCodes.Add(response.StatusCode);
+			rejected ??= response.StatusCode == HttpStatusCode.TooManyRequests ? response : null;
 		}
 
 		statusCodes.Should().Contain(HttpStatusCode.TooManyRequests);
+
+		// #2208: a rejected request must say how long to wait, so a well-behaved
+		// client (and the frontend's own backoff) doesn't have to guess and
+		// retry blind - which would only deepen the limit.
+		rejected.Should().NotBeNull();
+		var retryAfter = rejected!.Headers.RetryAfter;
+		retryAfter.Should().NotBeNull();
+		retryAfter!.Delta.Should().NotBeNull();
+		retryAfter.Delta!.Value.Should()
+			.BeGreaterThan(TimeSpan.Zero)
+			.And.BeLessThanOrEqualTo(TimeSpan.FromSeconds(60));
 	}
 
 	[Test]
