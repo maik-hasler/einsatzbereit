@@ -49,7 +49,7 @@ export default function ContactPage() {
 								),
 
 								organizationsLink: (
-									<Link to="/opportunities" className={linkClass} />
+									<Link to="/organizations" className={linkClass} />
 								),
 							}}
 						/>

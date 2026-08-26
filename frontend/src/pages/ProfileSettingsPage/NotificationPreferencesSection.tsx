@@ -162,8 +162,11 @@ export default function NotificationPreferencesSection() {
 			<PageSectionHeading>
 				{t("notificationPreferences.title")}
 			</PageSectionHeading>
-			<p className="mb-4 text-sm text-gray-600">
+			<p className="mb-2 text-sm text-gray-600">
 				{t("notificationPreferences.description")}
+			</p>
+			<p className="mb-4 text-sm text-gray-600">
+				{t("notificationPreferences.inAppNotice")}
 			</p>
 
 			{loading && (
