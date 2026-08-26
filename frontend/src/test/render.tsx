@@ -22,6 +22,7 @@ export interface TestAuth {
 	error?: Error;
 
 	signinRedirect?: () => Promise<void>;
+	signinSilent?: () => Promise<unknown>;
 	signoutRedirect?: () => Promise<void>;
 	removeUser?: () => Promise<void>;
 }
@@ -37,6 +38,7 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		accessToken = "test-token",
 		error = undefined,
 		signinRedirect = async () => {},
+		signinSilent = async () => null,
 		signoutRedirect = async () => {},
 		removeUser = async () => {},
 	} = auth;
@@ -67,7 +69,7 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 		removeUser,
 		signinRedirect,
 		signinPopup: async () => {},
-		signinSilent: async () => null,
+		signinSilent,
 		signinResourceOwnerCredentials: async () => {},
 		signoutRedirect,
 		signoutPopup: async () => {},
