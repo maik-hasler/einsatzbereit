@@ -14,6 +14,7 @@ import { AuthStatusProvider } from "./contexts/AuthStatusContext";
 import { signinLocaleArgs } from "./lib/authLocale";
 import ErrorBanner from "./components/ErrorBanner";
 import Button from "./components/Button";
+import RouteAnnouncer from "./components/RouteAnnouncer";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
@@ -107,94 +108,97 @@ function AppRoutes() {
 	useSessionExpiryHandler();
 	useSilentSsoProbe();
 	return (
-		<Routes>
-			<Route path="/callback" element={<CallbackPage />} />
-			<Route
-				path="/app/:organizationId"
-				element={
-					<ProtectedRoute>
-						<OrgAppLayout />
-					</ProtectedRoute>
-				}
-			>
-				<Route index element={<Navigate to="dashboard" replace />} />
-
-				<Route path="dashboard" element={<OrgAppOutletRelay />}>
-					<Route index element={<OrgDashboardPage />} />
-					<Route path="opportunities" element={<OrgOpportunitiesPage />} />
-					<Route
-						path="opportunities/:opportunityId/engagements"
-						element={<EngagementManagementPage />}
-					/>
-					<Route path="engagements" element={<OrgEngagementsPage />} />
-					<Route path="members" element={<OrgMembersPage />} />
-					<Route path="settings" element={<OrgSettingsPage />} />
-				</Route>
-			</Route>
-			<Route element={<AppLayout />}>
-				<Route path="/" element={<HomePage />} />
-
-				<Route path="/opportunities" element={<OpportunitiesPage />} />
-				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-				<Route path="/imprint" element={<ImprintPage />} />
-				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
-				<Route path="/contact" element={<ContactPage />} />
-				<Route path="/help" element={<HelpPage />} />
-				<Route path="/unsubscribe" element={<UnsubscribeConfirmPage />} />
-				<Route path="/unsubscribed" element={<UnsubscribePage />} />
+		<>
+			<RouteAnnouncer />
+			<Routes>
+				<Route path="/callback" element={<CallbackPage />} />
 				<Route
-					path="/volunteer-opportunities/:opportunityId"
-					element={<VolunteerOpportunityDetailPage />}
-				/>
-				<Route path="/organizations" element={<OrganizationsPage />} />
-				<Route
-					path="/organizations/:organizationId"
-					element={<OrganizationProfilePage />}
-				/>
-
-				<Route
-					path="/my-signups"
+					path="/app/:organizationId"
 					element={
 						<ProtectedRoute>
-							<MyEngagementsPage />
-						</ProtectedRoute>
-					}
-				/>
-				<Route
-					path="/profile"
-					element={
-						<ProtectedRoute>
-							<ProfileOverviewPage />
-						</ProtectedRoute>
-					}
-				/>
-				<Route
-					path="/profile/settings"
-					element={
-						<ProtectedRoute>
-							<ProfileSettingsPage />
-						</ProtectedRoute>
-					}
-				/>
-				<Route path="/users/:userId" element={<UserProfilePage />} />
-
-				<Route
-					path="/administration"
-					element={
-						<ProtectedRoute requiredRole="admin">
-							<AdministrationPage />
+							<OrgAppLayout />
 						</ProtectedRoute>
 					}
 				>
-					<Route index element={<Navigate to="organizations" replace />} />
-					<Route path="organizations" element={<AdminOrganizationsPage />} />
-					<Route path="users" element={<AdminUsersPage />} />
-					<Route path="reports" element={<AdminReportsPage />} />
-					<Route path="audit-log" element={<AdminAuditLogPage />} />
+					<Route index element={<Navigate to="dashboard" replace />} />
+
+					<Route path="dashboard" element={<OrgAppOutletRelay />}>
+						<Route index element={<OrgDashboardPage />} />
+						<Route path="opportunities" element={<OrgOpportunitiesPage />} />
+						<Route
+							path="opportunities/:opportunityId/engagements"
+							element={<EngagementManagementPage />}
+						/>
+						<Route path="engagements" element={<OrgEngagementsPage />} />
+						<Route path="members" element={<OrgMembersPage />} />
+						<Route path="settings" element={<OrgSettingsPage />} />
+					</Route>
 				</Route>
-				<Route path="*" element={<NotFoundPage />} />
-			</Route>
-		</Routes>
+				<Route element={<AppLayout />}>
+					<Route path="/" element={<HomePage />} />
+
+					<Route path="/opportunities" element={<OpportunitiesPage />} />
+					<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+					<Route path="/imprint" element={<ImprintPage />} />
+					<Route path="/terms-of-use" element={<TermsOfUsePage />} />
+					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/help" element={<HelpPage />} />
+					<Route path="/unsubscribe" element={<UnsubscribeConfirmPage />} />
+					<Route path="/unsubscribed" element={<UnsubscribePage />} />
+					<Route
+						path="/volunteer-opportunities/:opportunityId"
+						element={<VolunteerOpportunityDetailPage />}
+					/>
+					<Route path="/organizations" element={<OrganizationsPage />} />
+					<Route
+						path="/organizations/:organizationId"
+						element={<OrganizationProfilePage />}
+					/>
+
+					<Route
+						path="/my-signups"
+						element={
+							<ProtectedRoute>
+								<MyEngagementsPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/profile"
+						element={
+							<ProtectedRoute>
+								<ProfileOverviewPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/profile/settings"
+						element={
+							<ProtectedRoute>
+								<ProfileSettingsPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route path="/users/:userId" element={<UserProfilePage />} />
+
+					<Route
+						path="/administration"
+						element={
+							<ProtectedRoute requiredRole="admin">
+								<AdministrationPage />
+							</ProtectedRoute>
+						}
+					>
+						<Route index element={<Navigate to="organizations" replace />} />
+						<Route path="organizations" element={<AdminOrganizationsPage />} />
+						<Route path="users" element={<AdminUsersPage />} />
+						<Route path="reports" element={<AdminReportsPage />} />
+						<Route path="audit-log" element={<AdminAuditLogPage />} />
+					</Route>
+					<Route path="*" element={<NotFoundPage />} />
+				</Route>
+			</Routes>
+		</>
 	);
 }
 
