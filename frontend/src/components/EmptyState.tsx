@@ -53,6 +53,7 @@ export default function EmptyState({
 				(action.to ? (
 					<Button
 						to={action.to}
+						onClick={action.onClick}
 						size={compact ? "sm" : "md"}
 						className={compact ? "mt-3" : "mt-4"}
 						data-testid={action.testId}

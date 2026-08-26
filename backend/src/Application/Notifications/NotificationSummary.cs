@@ -6,4 +6,5 @@ public sealed record NotificationSummary(
 	string? RelatedTitle,
 	string? ActionUrl,
 	bool IsRead,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	string? RelatedTitleEn = null);

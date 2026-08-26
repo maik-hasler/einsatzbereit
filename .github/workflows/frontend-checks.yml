@@ -79,6 +79,9 @@ jobs:
       - name: Check PWA manifest completeness
         run: pnpm check:pwa-manifest
 
+      - name: Check PWA offline caching
+        run: pnpm check:pwa-offline-caching
+
       - name: Type check
         run: pnpm check
 

@@ -25,6 +25,30 @@ describe("form field a11y", () => {
 		await expectNoA11yViolations();
 	});
 
+	it("has no violations for a field showing an inline error, and wires it up correctly", async () => {
+		renderWithProviders(
+			<Field
+				label="Name"
+				id="org-name"
+				required
+				error="Enter an organization name."
+			>
+				<input
+					id="org-name"
+					className={inputClass}
+					required
+					aria-invalid="true"
+					aria-describedby="org-name-error"
+				/>
+			</Field>,
+		);
+		await expectNoA11yViolations();
+
+		const alert = screen.getByRole("alert");
+		expect(alert).toHaveAttribute("id", "org-name-error");
+		expect(alert).toHaveTextContent("Enter an organization name.");
+	});
+
 	it("keeps the required marker out of the control's accessible name", async () => {
 		renderWithProviders(
 			<Field label="Name" id="org-name" required>

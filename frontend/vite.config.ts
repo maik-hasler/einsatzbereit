@@ -21,7 +21,7 @@ const manifestIcons = [
 		type: "image/png",
 	},
 	{
-		src: "/icons/icon-512.png",
+		src: "/icons/icon-512-maskable.png",
 		sizes: "512x512",
 		type: "image/png",
 		purpose: "maskable",
@@ -38,7 +38,7 @@ const deManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#2d8a5e",
+	theme_color: "#226947",
 	icons: manifestIcons,
 
 	screenshots: [
@@ -119,7 +119,7 @@ const enManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#2d8a5e",
+	theme_color: "#226947",
 	icons: manifestIcons,
 	screenshots: [
 		{
@@ -261,6 +261,72 @@ export default defineConfig({
 								maxEntries: 60,
 								maxAgeSeconds: 30 * 24 * 60 * 60,
 							},
+						},
+					},
+					// Opportunity list responses (VolunteerOpportunitiesList,
+					// LatestOpportunitiesSection) - #2233. Matched by pathname alone,
+					// never by origin: the API is served from a separate host that is
+					// only known at container start (config.js, see #2207), not at
+					// service-worker build time. NetworkFirst prefers a fresh answer
+					// whenever the network responds within networkTimeoutSeconds, and
+					// only falls back to the last cached page once it doesn't - so a
+					// volunteer standing at a meeting point with poor signal still
+					// gets the list they already loaded instead of an empty state.
+					{
+						urlPattern: ({ url }: { url: URL }) =>
+							/^\/v1\/volunteer-opportunities$/.test(url.pathname),
+						handler: "NetworkFirst",
+						options: {
+							cacheName: "opportunity-list",
+							networkTimeoutSeconds: 3,
+							cacheableResponse: { statuses: [0, 200] },
+							expiration: {
+								maxEntries: 40,
+								maxAgeSeconds: 24 * 60 * 60,
+							},
+						},
+					},
+					// Opportunity detail responses (VolunteerOpportunityDetailPage) -
+					// #2233. Scoped to the bare "/{id}" path so sibling sub-resources
+					// (engagements, check-in-pin, date-availability) are never cached -
+					// those are either per-user write-adjacent or security-sensitive,
+					// unlike the detail payload itself which is AllowAnonymous.
+					// GetVolunteerOpportunityDetails still personalizes that payload
+					// with the caller's own CurrentUserEngagement, so the cache key is
+					// widened with the request's Authorization header (or "anonymous")
+					// - without it, two accounts signed in on the same shared/public
+					// device would silently read back each other's sign-up/check-in
+					// status once the network fetch stopped winning the race.
+					{
+						urlPattern: ({ url }: { url: URL }) =>
+							/^\/v1\/volunteer-opportunities\/[0-9a-fA-F-]+$/.test(
+								url.pathname,
+							),
+						handler: "NetworkFirst",
+						options: {
+							cacheName: "opportunity-detail",
+							networkTimeoutSeconds: 3,
+							cacheableResponse: { statuses: [0, 200] },
+							expiration: {
+								maxEntries: 50,
+								maxAgeSeconds: 24 * 60 * 60,
+							},
+							plugins: [
+								{
+									cacheKeyWillBeUsed: async ({
+										request,
+									}: {
+										request: Request;
+									}) => {
+										const cacheUrl = new URL(request.url);
+										cacheUrl.searchParams.set(
+											"__eb-auth",
+											request.headers.get("Authorization") ?? "anonymous",
+										);
+										return cacheUrl.href;
+									},
+								},
+							],
 						},
 					},
 				],

@@ -1,6 +1,7 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import type { NotificationSummary } from "../../client/api-client";
-import { formatDateTime } from "../../lib/format";
+import { formatDateTime, pickLocalizedText } from "../../lib/format";
 import { EyeSlashIcon, TrashIcon } from "../icons";
 
 export default function NotificationItem({
@@ -16,16 +17,26 @@ export default function NotificationItem({
 }) {
 	const { t, i18n } = useTranslation();
 	const n = notification;
+	const localizedTitle = pickLocalizedText(
+		n.relatedTitle,
+		n.relatedTitleEn,
+		i18n.language,
+	);
+	const titleText =
+		localizedTitle?.text ?? t("notifications.deletedOpportunityPlaceholder");
+	// kinds.* strings wrap {{title}} in <titleSpan> for the Trans render below;
+	// t() doesn't parse that markup, so strip it for the plain-text aria-labels.
 	const text = t(`notifications.kinds.${n.kind}` as Parameters<typeof t>[0], {
-		title: n.relatedTitle ?? t("notifications.deletedOpportunityPlaceholder"),
+		title: titleText,
 		defaultValue: n.kind,
-	});
+	}).replace(/<\/?titleSpan>/g, "");
+	const href = n.actionUrl ?? "/my-signups";
 
 	return (
 		<li className="relative">
-			<button
-				type="button"
-				className={`w-full cursor-pointer px-4 py-3 pr-16 text-left text-sm transition-colors hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+			<Link
+				to={href}
+				className={`block w-full px-4 py-3 pr-16 text-sm transition-colors hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
 				onClick={() => void onSelect(n)}
 			>
 				<span className="flex items-start gap-2">
@@ -39,14 +50,19 @@ export default function NotificationItem({
 						</>
 					)}
 					<span className={!n.isRead ? "" : "pl-4"}>
-						{text}
+						<Trans
+							i18nKey={`notifications.kinds.${n.kind}`}
+							values={{ title: titleText }}
+							components={{ titleSpan: <span lang={localizedTitle?.lang} /> }}
+							defaults={n.kind}
+						/>
 						<br />
 						<span className="text-xs text-gray-500">
 							{formatDateTime(n.createdOn as unknown as string, i18n.language)}
 						</span>
 					</span>
 				</span>
-			</button>
+			</Link>
 			<span className="absolute top-2 right-2 z-10 flex gap-1">
 				{n.isRead && (
 					<button

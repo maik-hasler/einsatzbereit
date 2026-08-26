@@ -12,6 +12,7 @@ export default function OpportunityResultsList({
 	error,
 	errorIsOffline,
 	items,
+	totalItems,
 	hasFilters,
 	onClearFilters,
 	hasMore,
@@ -20,11 +21,13 @@ export default function OpportunityResultsList({
 	loadMoreError,
 	loadMoreErrorIsOffline,
 	onRetryLoadMore,
+	keyword,
 }: {
 	loading: boolean;
 	error: string | null;
 	errorIsOffline: boolean;
 	items: VolunteerOpportunitySummary[];
+	totalItems: number | undefined;
 	hasFilters: boolean;
 	onClearFilters: () => void;
 	hasMore: boolean;
@@ -33,20 +36,31 @@ export default function OpportunityResultsList({
 	loadMoreError: string | null;
 	loadMoreErrorIsOffline: boolean;
 	onRetryLoadMore: () => void;
+	keyword?: string;
 }) {
 	const { t } = useTranslation();
+
+	const isInitialLoad = loading && items.length === 0;
+	const countMessage =
+		!error && !isInitialLoad && typeof totalItems === "number"
+			? t("opportunities.resultCount", { count: totalItems })
+			: "";
 
 	const liveMessage =
 		error && errorIsOffline
 			? `${t("routeState.offline.title")}. ${t("opportunities.offline")}`
-			: "";
+			: countMessage;
 
 	return (
 		<>
 			<p
 				role="status"
 				data-testid="opportunities-live-region"
-				className="sr-only"
+				className={
+					!error && items.length > 0
+						? "mb-4 text-center text-sm text-gray-600"
+						: "sr-only"
+				}
 			>
 				{liveMessage}
 			</p>
@@ -114,7 +128,12 @@ export default function OpportunityResultsList({
 					) : (
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
-								<OpportunityCard key={item.id} item={item} headingLevel={3} />
+								<OpportunityCard
+									key={item.id}
+									item={item}
+									headingLevel={3}
+									keyword={keyword}
+								/>
 							))}
 						</ul>
 					)}
@@ -139,12 +158,26 @@ export default function OpportunityResultsList({
 								/>
 							)
 						) : (
-							<LoadMoreButton
-								loading={loadingMore}
-								label={t("opportunities.loadMore")}
-								loadingLabel={t("opportunities.loading")}
-								onClick={onLoadMore}
-							/>
+							<>
+								{typeof totalItems === "number" && (
+									<p
+										role="status"
+										data-testid="opportunities-load-more-progress"
+										className="mb-2 text-center text-sm text-gray-600"
+									>
+										{t("opportunities.loadedOfTotal", {
+											loaded: items.length,
+											total: totalItems,
+										})}
+									</p>
+								)}
+								<LoadMoreButton
+									loading={loadingMore}
+									label={t("opportunities.loadMore")}
+									loadingLabel={t("opportunities.loading")}
+									onClick={onLoadMore}
+								/>
+							</>
 						))}
 				</>
 			)}

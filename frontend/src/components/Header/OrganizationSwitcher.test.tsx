@@ -38,7 +38,9 @@ function renderSwitcher(currentTab: string) {
 async function openAndPick(currentTab: string, name: string) {
 	renderSwitcher(currentTab);
 	await userEvent.click(
-		screen.getByRole("button", { name: "Switch organization" }),
+		screen.getByRole("button", {
+			name: "Switch organization, currently Freiwillige Feuerwehr Kiel",
+		}),
 	);
 	const list = screen.getByRole("list");
 	await userEvent.click(within(list).getByRole("button", { name }));
@@ -59,5 +61,39 @@ describe("OrganizationSwitcher", () => {
 		expect(await openAndPick("members", "Freiwillige Feuerwehr Kiel")).toBe(
 			`/app/${ORG_A}/dashboard/members`,
 		);
+	});
+
+	it("falls back to the plain trigger label when the organizations failed to load", () => {
+		renderWithProviders(
+			<OrganizationSwitcher
+				currentOrgId={ORG_A}
+				currentTab="dashboard"
+				orgs={[]}
+				loading={false}
+				error="Couldn't load your organizations."
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Switch organization" }),
+		).toBeInTheDocument();
+	});
+
+	it("names the trigger after the select placeholder when no organization is resolved yet", () => {
+		renderWithProviders(
+			<OrganizationSwitcher
+				currentOrgId={ORG_A}
+				currentTab="dashboard"
+				orgs={[]}
+				loading={false}
+				error={null}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Select organization" }),
+		).toBeInTheDocument();
 	});
 });

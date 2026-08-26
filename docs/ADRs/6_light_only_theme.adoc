@@ -1,0 +1,34 @@
+== 6. Light-Only Theme
+
+=== Status
+Accepted
+
+=== Date
+2026-08-25
+
+=== Context
+Issue #2244 (a live frontend/UX review) found that `index.html` pins `<meta name="color-scheme" content="light" />` and `global.css` pins `:root { color-scheme: light; }`, so the app forces a light UI on a visitor whose OS/browser is set to dark - and flagged that this should be an explicit, recorded decision rather than an unreviewed default. The rest of #2244 is a set of visual design-system consistency fixes (scrim, danger-red misuse, brand color drift, avatar treatment, hero responsiveness, motion) that assume a single, deliberately-light palette; deciding dark mode alongside them keeps that palette decision in one place instead of it staying an implicit accident of what nobody got around to.
+
+=== Decision
+Stay light-only for now. `color-scheme: light` in both `index.html` and `global.css` is deliberate, not an oversight - the app does not offer a dark theme, automatic or user-toggled, at this time.
+
+=== Rationale
+* The color system was designed and contrast-checked (see `frontend/AGENTS.md`'s Accessibility section, and issue #2232's AA contrast pass) against light surfaces only - `brand-50`/`brand-100` panel backgrounds with `gray-900`/`brand-800` text, white cards, etc. A real dark theme is a second, independently contrast-checked palette (surface colors, text colors, border colors, and re-tuned brand/accent/semantic tones for a dark background), not a mechanical color inversion - `prefers-color-scheme: dark` support without that work would ship a theme nobody has verified meets the same AA floor.
+* Every hardcoded surface in the app today (`bg-white`, `text-gray-900`, hundreds of call sites across `src/pages/` and `src/components/`) would need a dark-mode counterpart - either a second value per call site or a token-based rework (CSS custom properties swapped per `color-scheme`, or Tailwind `dark:` variants throughout). That is a project-wide effort disproportionate to a design-system-consistency chore, and belongs in its own scoped implementation, not bundled into #2244's other eight fixes.
+* Forcing light is a visible, disclosed choice (`color-scheme: light` is not hidden or accidental) rather than a silent gap - the problem #2244 raised was the absence of a *decision*, not the absence of dark mode itself.
+
+=== Considered Alternatives
+
+==== Implement `prefers-color-scheme: dark` support now
+Switch `color-scheme` to `light dark` and add a parallel dark palette (surface/text/border tokens, re-tuned brand/accent/semantic colors) so the app follows the visitor's OS setting.
+
+* Pros
+** Respects visitor preference; avoids forcing a bright UI on a dark-mode visitor, which is the actual complaint the live review raised
+* Cons
+** No dark palette exists yet, and none of the app's ~200 pages/components have been visually reviewed against one - shipping `prefers-color-scheme: dark` without that review risks contrast failures and low-effort inverted colors that read worse than the current light-only UI
+** Far larger in scope than the rest of #2244's fixes (which are single-token/single-component corrections); deserves its own issue and its own review pass rather than being folded into a consistency chore
+
+=== Consequences
+* `color-scheme: light` in `index.html` and `global.css` stays as-is - no code change from this decision alone.
+* A future "add dark mode" issue can point at this ADR for why it wasn't silently skipped, and should scope a real dark palette (contrast-checked per `frontend/AGENTS.md`'s Accessibility conventions) rather than a mechanical `dark:` pass over existing classes.
+* Until then, `prefers-color-scheme: dark` visitors continue to see the light UI - a known, disclosed limitation rather than an untracked one.

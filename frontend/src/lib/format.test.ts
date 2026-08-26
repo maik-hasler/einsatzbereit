@@ -13,6 +13,7 @@ import {
 	isRecentlyCreatedOrganization,
 	isSlotFull,
 	NEW_ORGANIZATION_THRESHOLD_DAYS,
+	findCrossLocaleKeywordMatch,
 	pickLocalizedText,
 	resolveDateLocale,
 } from "./format";
@@ -190,6 +191,150 @@ describe("pickLocalizedText", () => {
 	it("returns undefined when no German text is available either", () => {
 		expect(pickLocalizedText(undefined, undefined, "en")).toBeUndefined();
 		expect(pickLocalizedText(null, "English Title", "de")).toBeUndefined();
+	});
+});
+
+describe("findCrossLocaleKeywordMatch", () => {
+	it("finds a keyword that only matches the hidden-locale title (#2242)", () => {
+		const title = pickLocalizedText(
+			"Erste-Hilfe-Kurs",
+			"First Aid Course",
+			"en",
+		);
+		const description = pickLocalizedText(
+			"Grundkurs fuer Erwachsene.",
+			"Basic course for adults.",
+			"en",
+		);
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Erste-Hilfe-Kurs",
+				"First Aid Course",
+				"Grundkurs fuer Erwachsene.",
+				"Basic course for adults.",
+				"DRK Kiel",
+				"Erste",
+				title,
+				description,
+			),
+		).toEqual({ text: "Erste-Hilfe-Kurs", lang: "de" });
+	});
+
+	it("returns undefined when the keyword already appears in the displayed title", () => {
+		const title = pickLocalizedText(
+			"Deutscher Titel",
+			"First Aid Course",
+			"en",
+		);
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Deutscher Titel",
+				"First Aid Course",
+				undefined,
+				undefined,
+				"DRK Kiel",
+				"First Aid",
+				title,
+				undefined,
+			),
+		).toBeUndefined();
+	});
+
+	it("returns undefined when the keyword only matches the visible organization name", () => {
+		const title = pickLocalizedText("Deutscher Titel", "English Title", "en");
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Deutscher Titel",
+				"English Title",
+				undefined,
+				undefined,
+				"DRK Kiel",
+				"DRK",
+				title,
+				undefined,
+			),
+		).toBeUndefined();
+	});
+
+	it("returns undefined for a blank keyword", () => {
+		const title = pickLocalizedText("Deutscher Titel", "English Title", "en");
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Deutscher Titel",
+				"English Title",
+				undefined,
+				undefined,
+				"DRK Kiel",
+				"   ",
+				title,
+				undefined,
+			),
+		).toBeUndefined();
+	});
+
+	it("matches case-insensitively", () => {
+		const title = pickLocalizedText(
+			"Erste-Hilfe-Kurs",
+			"First Aid Course",
+			"en",
+		);
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Erste-Hilfe-Kurs",
+				"First Aid Course",
+				undefined,
+				undefined,
+				"DRK Kiel",
+				"ERSTE",
+				title,
+				undefined,
+			),
+		).toEqual({ text: "Erste-Hilfe-Kurs", lang: "de" });
+	});
+
+	it("finds a keyword that only matches the hidden-locale description", () => {
+		const title = pickLocalizedText(
+			"Erste-Hilfe-Kurs",
+			"First Aid Course",
+			"en",
+		);
+		const description = pickLocalizedText(
+			"Fuer Anfaenger geeignet.",
+			"Suitable for beginners.",
+			"en",
+		);
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Erste-Hilfe-Kurs",
+				"First Aid Course",
+				"Fuer Anfaenger geeignet.",
+				"Suitable for beginners.",
+				"DRK Kiel",
+				"Anfaenger",
+				title,
+				description,
+			),
+		).toEqual({ text: "Fuer Anfaenger geeignet.", lang: "de" });
+	});
+
+	it("mirrors the case: an English-only match is hidden on a German-displayed card", () => {
+		const title = pickLocalizedText(
+			"Erste-Hilfe-Kurs",
+			"First Aid Course",
+			"de",
+		);
+		expect(
+			findCrossLocaleKeywordMatch(
+				"Erste-Hilfe-Kurs",
+				"First Aid Course",
+				undefined,
+				undefined,
+				"DRK Kiel",
+				"First Aid",
+				title,
+				undefined,
+			),
+		).toEqual({ text: "First Aid Course", lang: "en" });
 	});
 });
 

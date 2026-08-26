@@ -57,7 +57,6 @@ function open(menu: AccountMenuState) {
 		<NotificationDropdown
 			menu={menu}
 			containerRef={createRef<HTMLDivElement>()}
-			onNavigate={() => {}}
 			onClose={() => {}}
 		/>,
 		{ auth: { isAuthenticated: true } },
