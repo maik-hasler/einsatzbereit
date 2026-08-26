@@ -4,6 +4,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type {
+	CurrentUserEngagementInfo,
 	PublicOrganizationProfileResponse,
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
@@ -19,6 +20,7 @@ import {
 	formatParticipationType,
 	formatPostedAgo,
 	isSlotFull,
+	isTimeSlotEnded,
 	pickLocalizedText,
 } from "../lib/format";
 import {
@@ -186,7 +188,8 @@ export default function VolunteerOpportunityDetailPage() {
 		string | undefined
 	>(undefined);
 	const [showReport, setShowReport] = useState(false);
-	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+	const [withdrawTarget, setWithdrawTarget] =
+		useState<CurrentUserEngagementInfo | null>(null);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 	const [showEditModal, setShowEditModal] = useState(false);
@@ -194,11 +197,10 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const withdrawLimitWarningRef = useRef<HTMLParagraphElement>(null);
 	const withdrawLimitWarningActive =
-		showWithdrawConfirm &&
-		opportunity?.currentUserEngagement?.remainingReactivations === 1;
+		withdrawTarget !== null && withdrawTarget.remainingReactivations === 1;
 	useEffect(() => {
 		if (withdrawLimitWarningActive) withdrawLimitWarningRef.current?.focus();
-	}, [showWithdrawConfirm, withdrawLimitWarningActive]);
+	}, [withdrawTarget, withdrawLimitWarningActive]);
 
 	const isAuthenticated = auth.isAuthenticated;
 	const roles = (
@@ -307,11 +309,11 @@ export default function VolunteerOpportunityDetailPage() {
 	}
 
 	async function handleWithdrawConfirm() {
-		if (!opportunity?.currentUserEngagement) return;
+		if (!withdrawTarget) return;
 		setWithdrawing(true);
 		setWithdrawError(null);
 		try {
-			await api.withdrawEngagement(opportunity.currentUserEngagement.id);
+			await api.withdrawEngagement(withdrawTarget.id);
 			dispatchToast(
 				"success",
 				t(
@@ -320,7 +322,7 @@ export default function VolunteerOpportunityDetailPage() {
 						: "myEngagements.withdrawSuccess",
 				),
 			);
-			setShowWithdrawConfirm(false);
+			setWithdrawTarget(null);
 			load();
 		} catch (err) {
 			setWithdrawError(
@@ -381,11 +383,27 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const hasActionRow = isDraft || !isOwner;
 
-	const cue = opportunity.currentUserEngagement;
+	const upcomingTimeSlots = opportunity.timeSlots.filter(
+		(ts) => !isTimeSlotEnded(ts),
+	);
+	const pastTimeSlots = opportunity.timeSlots.filter((ts) =>
+		isTimeSlotEnded(ts),
+	);
 
-	const registeredTimeSlot = cue
-		? opportunity.timeSlots.find((ts) => ts.id === cue.timeSlotId)
-		: undefined;
+	const engagementsBySlot = new Map(
+		opportunity.currentUserEngagements
+			.filter((e) => e.timeSlotId !== undefined)
+			.map((e) => [e.timeSlotId as string, e]),
+	);
+	const individualContactEngagement = opportunity.currentUserEngagements.find(
+		(e) => e.timeSlotId === undefined,
+	);
+
+	const canInteract = isAuthenticated && !isOwner && !isDraft;
+	const canSignUpForMore =
+		opportunity.participationType === "IndividualContact"
+			? !individualContactEngagement
+			: upcomingTimeSlots.some((ts) => !engagementsBySlot.has(ts.id));
 
 	const capacity = getCapacityFromTimeSlots(
 		opportunity.timeSlots,
@@ -425,13 +443,13 @@ export default function VolunteerOpportunityDetailPage() {
 			.filter((opp) => opp.id !== opportunity.id)
 			.slice(0, 3) ?? [];
 
+	const showSignUpCta = canInteract && canSignUpForMore;
 	const showDeadlineCard =
 		opportunity.participationType === "IndividualContact" &&
 		!!opportunity.validUntil &&
-		!(isAuthenticated && !isOwner && !cue && !isDraft);
+		!showSignUpCta;
 	const showApplicationStatus =
-		isAuthenticated && !isOwner && !!cue && !isDraft;
-	const showSignUpCta = isAuthenticated && !isOwner && !cue && !isDraft;
+		canInteract && opportunity.currentUserEngagements.length > 0;
 	const showLoginPrompt = !isAuthenticated && !isDraft;
 
 	const showOwnerNotice = isOwner && !isDraft;
@@ -477,69 +495,83 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-				{showApplicationStatus && cue && (
+				{showApplicationStatus && (
 					<div
 						data-testid={`application-status${testIdSuffix}`}
-						className={`${cardClass} sm:p-5`}
+						className={`space-y-4 ${cardClass} sm:p-5`}
 					>
-						<div className="flex items-center justify-between gap-4">
-							<div>
-								<p className="mb-1 text-xs text-gray-500">
-									{isInterestBased
-										? t("opportunities.yourInterest")
-										: t("opportunities.yourApplication")}
-								</p>
-								<Chip
-									tone={cue.status === "Confirmed" ? "success" : "warning"}
-									size="sm"
+						{opp.currentUserEngagements.map((engagement) => {
+							const engagementTimeSlot = opp.timeSlots.find(
+								(ts) => ts.id === engagement.timeSlotId,
+							);
+							return (
+								<div
+									key={engagement.id}
+									className="flex items-center justify-between gap-4"
 								>
-									{t(`myEngagements.status.${cue.status}`)}
-								</Chip>
+									<div>
+										<p className="mb-1 text-xs text-gray-500">
+											{isInterestBased
+												? t("opportunities.yourInterest")
+												: t("opportunities.yourApplication")}
+										</p>
+										<Chip
+											tone={
+												engagement.status === "Confirmed"
+													? "success"
+													: "warning"
+											}
+											size="sm"
+										>
+											{t(`myEngagements.status.${engagement.status}`)}
+										</Chip>
 
-								{cue.status === "Pending" && (
-									<p className="mt-1.5 text-xs text-gray-600">
-										{t(
-											isInterestBased
-												? "myEngagements.pendingExplanationInterest"
-												: "myEngagements.pendingExplanation",
+										{engagement.status === "Pending" && (
+											<p className="mt-1.5 text-xs text-gray-600">
+												{t(
+													isInterestBased
+														? "myEngagements.pendingExplanationInterest"
+														: "myEngagements.pendingExplanation",
+												)}
+											</p>
 										)}
-									</p>
-								)}
-								{registeredTimeSlot && (
-									<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-										<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-										<span>
-											{t("myEngagements.scheduledFor", {
-												range: formatDateTimeRange(
-													registeredTimeSlot.startDateTime as unknown as string,
-													registeredTimeSlot.endDateTime as unknown as string,
-													i18n.language,
-												),
-											})}
-										</span>
-									</p>
-								)}
-								{cue.isCheckedIn && (
-									<Chip tone="success" size="sm" className="mt-2">
-										<CheckIconSolid className="h-3 w-3" />
-										{t("checkIn.checkedInLabel")}
-									</Chip>
-								)}
-							</div>
+										{engagementTimeSlot && (
+											<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+												<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+												<span>
+													{t("myEngagements.scheduledFor", {
+														range: formatDateTimeRange(
+															engagementTimeSlot.startDateTime as unknown as string,
+															engagementTimeSlot.endDateTime as unknown as string,
+															i18n.language,
+														),
+													})}
+												</span>
+											</p>
+										)}
+										{engagement.isCheckedIn && (
+											<Chip tone="success" size="sm" className="mt-2">
+												<CheckIconSolid className="h-3 w-3" />
+												{t("checkIn.checkedInLabel")}
+											</Chip>
+										)}
+									</div>
 
-							{!cue.isCheckedIn && (
-								<Button
-									type="button"
-									variant="dangerOutline"
-									size="sm"
-									className="shrink-0"
-									onClick={() => setShowWithdrawConfirm(true)}
-									disabled={withdrawing}
-								>
-									{t("myEngagements.withdraw")}
-								</Button>
-							)}
-						</div>
+									{!engagement.isCheckedIn && (
+										<Button
+											type="button"
+											variant="dangerOutline"
+											size="sm"
+											className="shrink-0"
+											onClick={() => setWithdrawTarget(engagement)}
+											disabled={withdrawing}
+										>
+											{t("myEngagements.withdraw")}
+										</Button>
+									)}
+								</div>
+							);
+						})}
 					</div>
 				)}
 
@@ -865,59 +897,94 @@ export default function VolunteerOpportunityDetailPage() {
 						</div>
 
 						{opportunity.participationType === "ScheduledSlots" &&
-							opportunity.timeSlots.length > 0 && (
+							(upcomingTimeSlots.length > 0 || pastTimeSlots.length > 0) && (
 								<div className="mb-6" data-testid="opportunity-time-slots">
-									<SectionHeading>
-										{t("opportunities.availableTimeSlots")}
-									</SectionHeading>
-									<ul className="space-y-2">
-										{opportunity.timeSlots.map((ts) => {
-											const clickable =
-												showSignUpCta &&
-												!isSlotFull(ts.maxParticipants, ts.bookedCount);
-											const rowContent = (
-												<>
-													<span>
-														{formatDateTimeRange(
-															ts.startDateTime as unknown as string,
-															ts.endDateTime as unknown as string,
-															i18n.language,
-														)}
-													</span>
+									{upcomingTimeSlots.length > 0 && (
+										<>
+											<SectionHeading>
+												{t("opportunities.availableTimeSlots")}
+											</SectionHeading>
+											<ul className="space-y-2">
+												{upcomingTimeSlots.map((ts) => {
+													const clickable =
+														canInteract &&
+														!engagementsBySlot.has(ts.id) &&
+														!isSlotFull(ts.maxParticipants, ts.bookedCount);
+													const rowContent = (
+														<>
+															<span>
+																{formatDateTimeRange(
+																	ts.startDateTime as unknown as string,
+																	ts.endDateTime as unknown as string,
+																	i18n.language,
+																)}
+															</span>
 
-													<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
-														{slotCapacityLabel(ts, t)}
-														{clickable && (
-															<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
-														)}
-													</span>
-												</>
-											);
-											return (
-												<li key={ts.id}>
-													{clickable ? (
-														<button
-															type="button"
-															onClick={() => {
-																setPreselectedSlotId(ts.id);
-																setShowSignUp(true);
-															}}
-															data-testid="opportunity-time-slot-row"
-															className={`flex w-full items-center justify-between ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
-														>
-															{rowContent}
-														</button>
-													) : (
+															<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
+																{slotCapacityLabel(ts, t)}
+																{clickable && (
+																	<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
+																)}
+															</span>
+														</>
+													);
+													return (
+														<li key={ts.id}>
+															{clickable ? (
+																<button
+																	type="button"
+																	onClick={() => {
+																		setPreselectedSlotId(ts.id);
+																		setShowSignUp(true);
+																	}}
+																	data-testid="opportunity-time-slot-row"
+																	className={`flex w-full items-center justify-between ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
+																>
+																	{rowContent}
+																</button>
+															) : (
+																<div
+																	className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+																>
+																	{rowContent}
+																</div>
+															)}
+														</li>
+													);
+												})}
+											</ul>
+										</>
+									)}
+
+									{pastTimeSlots.length > 0 && (
+										<details
+											className="mt-3"
+											data-testid="opportunity-past-time-slots"
+										>
+											<summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-800">
+												{t("opportunities.pastTimeSlots", {
+													count: pastTimeSlots.length,
+												})}
+											</summary>
+											<ul className="mt-2 space-y-2">
+												{pastTimeSlots.map((ts) => (
+													<li key={ts.id}>
 														<div
-															className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+															className={`flex items-center justify-between ${cardClass} text-sm text-gray-500`}
 														>
-															{rowContent}
+															<span>
+																{formatDateTimeRange(
+																	ts.startDateTime as unknown as string,
+																	ts.endDateTime as unknown as string,
+																	i18n.language,
+																)}
+															</span>
 														</div>
-													)}
-												</li>
-											);
-										})}
-									</ul>
+													</li>
+												))}
+											</ul>
+										</details>
+									)}
 								</div>
 							)}
 						<div>
@@ -1033,7 +1100,7 @@ export default function VolunteerOpportunityDetailPage() {
 						opportunityId={opportunity.id}
 						organizationId={opportunity.organizationId}
 						participationType={opportunity.participationType}
-						timeSlots={opportunity.timeSlots}
+						timeSlots={upcomingTimeSlots}
 						preselectedTimeSlotId={preselectedSlotId}
 						onClose={() => {
 							setShowSignUp(false);
@@ -1053,7 +1120,7 @@ export default function VolunteerOpportunityDetailPage() {
 					/>
 				)}
 
-				{showWithdrawConfirm && cue && (
+				{withdrawTarget && (
 					<ConfirmDialog
 						title={t(
 							isInterestBased
@@ -1061,7 +1128,7 @@ export default function VolunteerOpportunityDetailPage() {
 								: "confirmDialog.withdraw.title",
 						)}
 						message={t(
-							cue.remainingReactivations === 0
+							withdrawTarget.remainingReactivations === 0
 								? isInterestBased
 									? "confirmDialog.withdraw.messageLimitReachedInterest"
 									: "confirmDialog.withdraw.messageLimitReached"
@@ -1073,13 +1140,13 @@ export default function VolunteerOpportunityDetailPage() {
 						confirmLabel={t("confirmDialog.withdraw.confirm")}
 						onConfirm={handleWithdrawConfirm}
 						onClose={() => {
-							setShowWithdrawConfirm(false);
+							setWithdrawTarget(null);
 							setWithdrawError(null);
 						}}
 						loading={withdrawing}
 						error={withdrawError}
 					>
-						{cue.remainingReactivations === 0 && (
+						{withdrawTarget.remainingReactivations === 0 && (
 							<Link
 								to={`/organizations/${opportunity.organizationId}`}
 								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"

@@ -34,7 +34,7 @@ const details = {
 	status: "Published",
 	timeSlots: [],
 	tags: [],
-	currentUserEngagement: undefined,
+	currentUserEngagements: [],
 	validUntil: undefined,
 	createdOn: new Date(Date.UTC(2026, 7, 1, 9, 0)),
 };
@@ -371,12 +371,14 @@ describe("opportunity detail page tag chips", () => {
 describe("opportunity detail page withdraw failure", () => {
 	const pending = {
 		...details,
-		currentUserEngagement: {
-			id: "44444444-4444-4444-4444-444444444444",
-			status: "Pending",
-			isCheckedIn: false,
-			remainingReactivations: 2,
-		},
+		currentUserEngagements: [
+			{
+				id: "44444444-4444-4444-4444-444444444444",
+				status: "Pending",
+				isCheckedIn: false,
+				remainingReactivations: 2,
+			},
+		],
 	};
 
 	it("states the specific reason rather than the generic fallback", async () => {
@@ -431,12 +433,14 @@ describe("opportunity detail page withdraw copy (#2228)", () => {
 	it("speaks of withdrawing interest, not releasing a seat, for an IndividualContact opportunity", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
-			currentUserEngagement: {
-				id: "44444444-4444-4444-4444-444444444444",
-				status: "Confirmed",
-				isCheckedIn: false,
-				remainingReactivations: 2,
-			},
+			currentUserEngagements: [
+				{
+					id: "44444444-4444-4444-4444-444444444444",
+					status: "Confirmed",
+					isCheckedIn: false,
+					remainingReactivations: 2,
+				},
+			],
 		});
 
 		renderAs(VOLUNTEER_AUTH);
@@ -467,13 +471,15 @@ describe("opportunity detail page withdraw copy (#2228)", () => {
 	it("keeps the seat-release copy for a ScheduledSlots opportunity", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...scheduledSlots,
-			currentUserEngagement: {
-				id: "44444444-4444-4444-4444-444444444444",
-				status: "Confirmed",
-				isCheckedIn: false,
-				timeSlotId: scheduledSlots.timeSlots[0].id,
-				remainingReactivations: 2,
-			},
+			currentUserEngagements: [
+				{
+					id: "44444444-4444-4444-4444-444444444444",
+					status: "Confirmed",
+					isCheckedIn: false,
+					timeSlotId: scheduledSlots.timeSlots[0].id,
+					remainingReactivations: 2,
+				},
+			],
 		});
 
 		renderAs(VOLUNTEER_AUTH);
@@ -565,12 +571,14 @@ describe("opportunity detail page pending explanation", () => {
 	// card must speak of interest, not a sign-up (#2228).
 	const withStatus = (status: "Pending" | "Confirmed") => ({
 		...details,
-		currentUserEngagement: {
-			id: "44444444-4444-4444-4444-444444444444",
-			status,
-			isCheckedIn: false,
-			remainingReactivations: 2,
-		},
+		currentUserEngagements: [
+			{
+				id: "44444444-4444-4444-4444-444444444444",
+				status,
+				isCheckedIn: false,
+				remainingReactivations: 2,
+			},
+		],
 	});
 	const EXPLANATION =
 		"The organization is reviewing your expression of interest. You'll get a message once it's confirmed.";
@@ -635,13 +643,15 @@ describe("opportunity detail page status card time slot", () => {
 					currentParticipantCount: 0,
 				},
 			],
-			currentUserEngagement: {
-				id: "44444444-4444-4444-4444-444444444444",
-				status: "Confirmed",
-				isCheckedIn: false,
-				timeSlotId: "slot-2",
-				remainingReactivations: 2,
-			},
+			currentUserEngagements: [
+				{
+					id: "44444444-4444-4444-4444-444444444444",
+					status: "Confirmed",
+					isCheckedIn: false,
+					timeSlotId: "slot-2",
+					remainingReactivations: 2,
+				},
+			],
 		});
 
 		renderAs(VOLUNTEER_AUTH);
@@ -719,6 +729,154 @@ describe("opportunity detail page slot rows", () => {
 			expect.objectContaining({
 				timeSlotId: scheduledSlots.timeSlots[1].id,
 			}),
+		);
+	});
+});
+
+describe("opportunity detail page per-slot sign-up gating (#2199)", () => {
+	beforeEach(() => {
+		api.createEngagement.mockResolvedValue({
+			id: "55555555-5555-5555-5555-555555555555",
+		});
+	});
+
+	it("keeps the other slot clickable, and lets the volunteer sign up for it, after they've already signed up for one slot of the series", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagements: [
+				{
+					id: "44444444-4444-4444-4444-444444444444",
+					status: "Confirmed",
+					isCheckedIn: false,
+					timeSlotId: scheduledSlots.timeSlots[0].id,
+					remainingReactivations: 2,
+				},
+			],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		expect(await screen.findByTestId("signup-cta")).toBeInTheDocument();
+		const rows = screen.getAllByTestId("opportunity-time-slot-row");
+		expect(rows).toHaveLength(1);
+
+		await userEvent.click(rows[0]);
+		await screen.findByTestId("sign-up-confirmed-slot");
+		await userEvent.click(
+			screen.getByRole("button", { name: "Confirm sign-up" }),
+		);
+
+		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
+		expect(api.createEngagement).toHaveBeenCalledWith(
+			OPPORTUNITY_ID,
+			expect.objectContaining({
+				timeSlotId: scheduledSlots.timeSlots[1].id,
+			}),
+		);
+	});
+
+	it("hides the sign-up CTA and every slot row once the volunteer has signed up for all of them", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagements: scheduledSlots.timeSlots.map((ts, index) => ({
+				id: `engagement-${index}`,
+				status: "Confirmed",
+				isCheckedIn: false,
+				timeSlotId: ts.id,
+				remainingReactivations: 2,
+			})),
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		await screen.findByTestId("application-status");
+		expect(screen.queryByTestId("signup-cta")).toBeNull();
+		expect(screen.queryAllByTestId("opportunity-time-slot-row")).toHaveLength(
+			0,
+		);
+	});
+});
+
+describe("opportunity detail page past time slots (#2199)", () => {
+	const withPastSlot = {
+		...scheduledSlots,
+		timeSlots: [
+			{
+				id: "past-slot",
+				startDateTime: new Date(Date.UTC(2020, 0, 14, 9, 0)),
+				endDateTime: new Date(Date.UTC(2020, 0, 14, 12, 0)),
+				maxParticipants: 5,
+				bookedCount: 5,
+			},
+			...scheduledSlots.timeSlots,
+		],
+	};
+
+	it("excludes a past slot from the available list, moving it into a collapsed past time slots section", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(withPastSlot);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		await screen.findByTestId("opportunity-time-slots");
+		expect(screen.getAllByTestId("opportunity-time-slot-row")).toHaveLength(2);
+
+		const pastSection = screen.getByTestId("opportunity-past-time-slots");
+		expect(
+			within(pastSection).getByText("1 past time slot"),
+		).toBeInTheDocument();
+		expect(within(pastSection).queryAllByRole("button")).toHaveLength(0);
+	});
+
+	it("excludes the past slot from the sign-up dialog's options", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(withPastSlot);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const cta = await screen.findByTestId("signup-cta");
+		await userEvent.click(within(cta).getByRole("button"));
+		await userEvent.click(await screen.findByRole("combobox"));
+
+		expect(screen.getAllByRole("option")).toHaveLength(2);
+	});
+});
+
+describe("opportunity detail page multiple sign-ups in one series (#2199)", () => {
+	it("lists each active sign-up separately and withdraws them independently", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagements: [
+				{
+					id: "engagement-1",
+					status: "Confirmed",
+					isCheckedIn: false,
+					timeSlotId: scheduledSlots.timeSlots[0].id,
+					remainingReactivations: 2,
+				},
+				{
+					id: "engagement-2",
+					status: "Pending",
+					isCheckedIn: false,
+					timeSlotId: scheduledSlots.timeSlots[1].id,
+					remainingReactivations: 2,
+				},
+			],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		const withdrawButtons = within(card).getAllByRole("button", {
+			name: /Withdraw/,
+		});
+		expect(withdrawButtons).toHaveLength(2);
+
+		await userEvent.click(withdrawButtons[1]);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Yes, withdraw" }),
+		);
+
+		await waitFor(() =>
+			expect(api.withdrawEngagement).toHaveBeenCalledWith("engagement-2"),
 		);
 	});
 });

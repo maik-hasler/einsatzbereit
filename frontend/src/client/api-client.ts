@@ -7183,7 +7183,7 @@ export interface VolunteerOpportunityDetails {
     currentParticipantCount: number;
     status: string;
     bannerImageUrl: string | undefined;
-    currentUserEngagement?: CurrentUserEngagementInfo | undefined;
+    currentUserEngagements: CurrentUserEngagementInfo[];
 
     [key: string]: any;
 }

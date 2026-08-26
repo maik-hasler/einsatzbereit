@@ -527,25 +527,26 @@ internal sealed class VolunteerOpportunityReadRepository(
 				(viewerId == null || e.VolunteerId != viewerId),
 				cancellationToken);
 
-		CurrentUserEngagementInfo? currentUserEngagement = null;
+		IReadOnlyList<CurrentUserEngagementInfo> currentUserEngagements = [];
 		if (viewerId is UserId userId_)
 		{
-			var engagement = await dbContext.EngagementsQuery
+			var engagements = await dbContext.EngagementsQuery
 				.Where(e =>
 					e.OpportunityId == opportunityId_ &&
 					e.VolunteerId == userId_ &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
-				.OrderByDescending(e => e.CreatedOn)
+				.OrderBy(e => e.CreatedOn)
 				.Select(e => new { e.Id, e.Status, e.TimeSlotId, e.IsCheckedIn, e.ReactivationCount })
-				.FirstOrDefaultAsync(cancellationToken);
+				.ToListAsync(cancellationToken);
 
-			if (engagement is not null)
-				currentUserEngagement = new CurrentUserEngagementInfo(
-					engagement.Id.Value,
-					engagement.Status.ToString(),
-					engagement.TimeSlotId?.Value,
-					engagement.IsCheckedIn,
-					Engagement.MaxReactivationCount - engagement.ReactivationCount);
+			currentUserEngagements = engagements
+				.Select(e => new CurrentUserEngagementInfo(
+					e.Id.Value,
+					e.Status.ToString(),
+					e.TimeSlotId?.Value,
+					e.IsCheckedIn,
+					Engagement.MaxReactivationCount - e.ReactivationCount))
+				.ToList();
 		}
 
 		return new VolunteerOpportunityDetails(
@@ -574,7 +575,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			currentParticipantCount,
 			result.Status.ToString(),
 			result.BannerImageUrl,
-			currentUserEngagement);
+			currentUserEngagements);
 	}
 
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
