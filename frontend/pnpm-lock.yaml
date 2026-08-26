@@ -59,6 +59,9 @@ importers:
       react-router:
         specifier: 8.3.0
         version: 8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      workbox-window:
+        specifier: 7.4.1
+        version: 7.4.1
       zod:
         specifier: 4.4.3
         version: 4.4.3

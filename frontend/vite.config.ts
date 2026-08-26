@@ -238,7 +238,17 @@ export default defineConfig({
 			threshold: 1024,
 		}),
 		VitePWA({
-			registerType: "autoUpdate",
+			// "prompt", not "autoUpdate" (#2207): autoUpdate swaps the service
+			// worker and its caches the instant a new build is detected, with no
+			// reload and no notice - an open tab keeps running the old JS against
+			// whatever the new API version expects. "prompt" waits for
+			// PwaUpdatePrompt (src/components/PwaUpdatePrompt.tsx) to call
+			// updateServiceWorker() from an explicit user action instead.
+			registerType: "prompt",
+			// PwaUpdatePrompt registers the service worker itself via
+			// virtual:pwa-register/react's useRegisterSW - the default injected
+			// registration script would otherwise register it a second time.
+			injectRegister: false,
 			workbox: {
 				globPatterns: [
 					"index.html",

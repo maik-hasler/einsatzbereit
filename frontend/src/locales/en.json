@@ -1289,6 +1289,14 @@
         "message": "This area is for platform administrators. Your account does not have admin rights - if you think it should, ask an administrator to grant them."
       }
     },
+    "pwaUpdate": {
+      "message": "A new version of Einsatzbereit is available.",
+      "reloadLabel": "Reload to update the app"
+    },
+    "config": {
+      "unavailableTitle": "Configuration missing",
+      "unavailableMessage": "Einsatzbereit could not load its configuration and cannot start. If you are offline, reconnecting will retry automatically - otherwise, please let the person running this deployment know."
+    },
     "userProfile": {
       "loading": "Loading profile…",
       "notFound": "User not found.",
