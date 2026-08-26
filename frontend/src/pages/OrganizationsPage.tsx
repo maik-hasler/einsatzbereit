@@ -28,7 +28,7 @@ export default function OrganizationsPage() {
 	const auth = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const search = searchParams.get("search") ?? "";
+	const search = searchParams.get("q") ?? "";
 	const [searchInput, setSearchInput] = useState(search);
 	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -65,8 +65,8 @@ export default function OrganizationsPage() {
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev);
-				if (value) next.set("search", value);
-				else next.delete("search");
+				if (value) next.set("q", value);
+				else next.delete("q");
 				return next;
 			},
 			{ replace: true },

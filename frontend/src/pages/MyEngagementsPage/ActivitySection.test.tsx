@@ -133,6 +133,29 @@ describe("my-signups scope toggle", () => {
 			false,
 		);
 	});
+
+	it("reads the initial segment from the URL, so it survives a reload (#2240)", async () => {
+		mockRows([engagement({ status: "Withdrawn" })]);
+
+		renderWithProviders(<ActivitySection />, {
+			route: "/my-signups?scope=past",
+			auth: { isAuthenticated: true },
+		});
+
+		const past = await screen.findByTestId("engagements-scope-past");
+		expect(past).toHaveAttribute("aria-pressed", "true");
+		expect(screen.getByTestId("engagements-scope-upcoming")).toHaveAttribute(
+			"aria-pressed",
+			"false",
+		);
+		await waitFor(() =>
+			expect(api.getMyEngagements).toHaveBeenLastCalledWith(
+				expect.anything(),
+				expect.anything(),
+				false,
+			),
+		);
+	});
 });
 
 describe("my-signups cancellation reason", () => {
@@ -218,8 +241,8 @@ describe("my-signups scheduled time slot", () => {
 	});
 });
 
-describe("my-signups withdraw success (#2148 core journey)", () => {
-	it("removes the card from upcoming and shows it withdrawn under past", async () => {
+describe("my-signups withdraw success (#2240)", () => {
+	it("keeps the card under upcoming, now withdrawn with a way back in", async () => {
 		const target = engagement({ status: "Confirmed" });
 		mockRows([target]);
 		api.withdrawEngagement.mockResolvedValue({
@@ -238,14 +261,95 @@ describe("my-signups withdraw success (#2148 core journey)", () => {
 		);
 
 		await waitFor(() =>
-			expect(screen.queryByTestId("engagement-card")).toBeNull(),
+			expect(within(card).getByText("Withdrawn")).toBeInTheDocument(),
 		);
+		expect(screen.getByTestId("engagements-scope-upcoming")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		expect(
+			within(card).getByRole("link", { name: "Sign up again" }),
+		).toHaveAttribute(
+			"href",
+			`/volunteer-opportunities/${target.opportunityId}`,
+		);
+	});
+});
 
-		mockRows([{ ...target, status: "Withdrawn" }]);
-		await userEvent.click(screen.getByTestId("engagements-scope-past"));
+describe("my-signups reactivate action (#2240)", () => {
+	it("offers a way to sign up again for a withdrawn, still-open engagement", async () => {
+		mockRows([engagement({ status: "Withdrawn", remainingReactivations: 2 })]);
 
-		const pastCard = await screen.findByTestId("engagement-card");
-		expect(within(pastCard).getByText("Withdrawn")).toBeInTheDocument();
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).getByRole("link", { name: "Sign up again" }),
+		).toHaveAttribute(
+			"href",
+			"/volunteer-opportunities/22222222-2222-2222-2222-222222222222",
+		);
+	});
+
+	it("shows the reactivation limit message instead, once it's reached", async () => {
+		mockRows([engagement({ status: "Withdrawn", remainingReactivations: 0 })]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).queryByRole("link", { name: "Sign up again" }),
+		).toBeNull();
+		expect(within(card).getByText(/reached the limit/)).toBeInTheDocument();
+	});
+
+	it("hides the reactivate action once the sign-up has moved to past", async () => {
+		mockRows([engagement({ status: "Withdrawn", remainingReactivations: 2 })]);
+
+		renderSection();
+		await userEvent.click(await screen.findByTestId("engagements-scope-past"));
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).queryByRole("link", { name: "Sign up again" }),
+		).toBeNull();
+	});
+});
+
+describe("my-signups calendar button (#2240)", () => {
+	const timeSlotId = "66666666-6666-6666-6666-666666666666";
+
+	it("hides Add to calendar once the time slot has ended", async () => {
+		mockRows([
+			engagement({
+				status: "Confirmed",
+				timeSlotId,
+				timeSlotStartDateTime: new Date(Date.UTC(2020, 0, 14, 9, 0)),
+				timeSlotEndDateTime: new Date(Date.UTC(2020, 0, 14, 12, 0)),
+			}),
+		]);
+
+		renderSection();
+
+		await screen.findByTestId("engagement-card");
+		expect(screen.queryByText("Add to calendar")).toBeNull();
+	});
+
+	it("offers Add to calendar while the time slot has not ended", async () => {
+		const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
+		const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+		mockRows([
+			engagement({
+				status: "Confirmed",
+				timeSlotId,
+				timeSlotStartDateTime: start,
+				timeSlotEndDateTime: end,
+			}),
+		]);
+
+		renderSection();
+
+		expect(await screen.findByText("Add to calendar")).toBeInTheDocument();
 	});
 });
 

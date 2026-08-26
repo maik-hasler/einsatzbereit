@@ -703,6 +703,8 @@
       "withdrawErrorInterest": "Could not withdraw your interest. Please try again.",
       "withdrawSuccess": "Sign-up withdrawn.",
       "withdrawSuccessInterest": "Interest withdrawn.",
+      "reactivate": "Sign up again",
+      "reactivationLimitReached": "You've reached the limit for withdrawing and re-signing up for this.",
       "addToCalendar": "Add to calendar",
       "addToCalendarGoogle": "Google Calendar",
       "addToCalendarOutlook": "Outlook.com",
