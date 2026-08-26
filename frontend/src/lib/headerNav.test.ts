@@ -8,10 +8,11 @@ function org(id: string, name: string): OrganizationSummaryDto {
 }
 
 describe("buildPrimaryNav", () => {
-	it("returns the four static destinations for a viewer with no organization", () => {
+	it("returns the five static destinations for a viewer with no organization", () => {
 		expect(buildPrimaryNav(null).map((link) => link.key)).toEqual([
 			"home",
 			"findOpportunities",
+			"organizations",
 			"forOrganizations",
 			"help",
 		]);
@@ -19,6 +20,7 @@ describe("buildPrimaryNav", () => {
 
 	it("treats undefined (organizations not loaded yet) like no membership", () => {
 		expect(buildPrimaryNav(undefined).map((link) => link.kind)).toEqual([
+			"static",
 			"static",
 			"static",
 			"static",
@@ -34,6 +36,7 @@ describe("buildPrimaryNav", () => {
 		expect(links.map((link) => link.key)).toEqual([
 			"home",
 			"findOpportunities",
+			"organizations",
 			"organization",
 			"help",
 		]);
@@ -43,7 +46,7 @@ describe("buildPrimaryNav", () => {
 		const links = buildPrimaryNav(
 			org("org-1", "Lindenauer Nachbarschaftshilfe e.V."),
 		);
-		const entry = links[2];
+		const entry = links[3];
 
 		expect(entry.kind).toBe("organization");
 		expect(entry.to).toBe(orgTabPath("org-1", "dashboard"));
@@ -51,16 +54,16 @@ describe("buildPrimaryNav", () => {
 
 	it("carries the organization itself, so the entry can be labelled with its name", () => {
 		const activeOrg = org("org-1", "Lindenauer Tierschutzverein e.V.");
-		const entry = buildPrimaryNav(activeOrg)[2];
+		const entry = buildPrimaryNav(activeOrg)[3];
 
 		expect(entry.kind === "organization" && entry.org).toBe(activeOrg);
 	});
 
-	it("leaves the other three destinations untouched", () => {
+	it("leaves the other four destinations untouched", () => {
 		const withOrg = buildPrimaryNav(org("org-1", "Some Org"));
 		const withoutOrg = buildPrimaryNav(null);
 
-		for (const index of [0, 1, 3]) {
+		for (const index of [0, 1, 2, 4]) {
 			expect(withOrg[index]).toEqual(withoutOrg[index]);
 		}
 	});
