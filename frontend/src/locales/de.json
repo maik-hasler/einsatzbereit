@@ -23,7 +23,8 @@
       "primaryLabel": "Hauptnavigation",
       "home": "Startseite",
       "findOpportunities": "Einsätze finden",
-      "forOrganizations": "Für Organisationen",
+      "organizations": "Organisationen",
+      "forOrganizations": "Organisation erstellen",
       "help": "Hilfe",
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
@@ -44,7 +45,7 @@
       "ctaButton": "Einsätze finden",
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
-      "forOrganizations": "Für Organisationen",
+      "forOrganizations": "Organisation erstellen",
       "browseOrganizations": "Organisationen finden",
       "support": "Support",
       "legal": "Rechtliches",
@@ -200,6 +201,9 @@
       "slotCount": "{{count}} Zeitslots",
       "slotCount_one": "{{count}} Zeitslot",
       "slotCount_other": "{{count}} Zeitslots",
+      "pastTimeSlots": "{{count}} vergangene Zeitslots",
+      "pastTimeSlots_one": "{{count}} vergangener Zeitslot",
+      "pastTimeSlots_other": "{{count}} vergangene Zeitslots",
       "mapLabel": "Karte mit dem Standort von {{location}}",
       "getDirections": "Route planen",
       "joinWaitlist": "Für Zeitslot eintragen",
@@ -576,6 +580,8 @@
       "searchMinChars": "Mindestens 4 Zeichen eingeben",
       "noSearchResults": "Keine Nutzer:innen gefunden.",
       "noSearchResultsEmail": "Für diese E-Mail-Adresse existiert noch kein Konto – bitte die Person, sich zuerst zu registrieren, dann kannst du sie hier einladen.",
+      "searchResultAlreadyMember": "Bereits Mitglied",
+      "searchResultAlreadyInvited": "Bereits eingeladen",
       "memberSearchError": "Nutzer:innen konnten nicht gesucht werden.",
       "inviteLabel": "Mitglied einladen",
       "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",
@@ -650,6 +656,9 @@
       "qrInstruction": "Zeige diesen QR-Code dem:der Organisator:in zum Einchecken.",
       "qrCodeAlt": "QR-Code zum Einchecken bei diesem Einsatz",
       "qrFallbackLabel": "Falls der Scan nicht klappt, nenne diesen Code:",
+      "qrFallbackCodeInputLabel": "Check-in-Code des:der Freiwilligen",
+      "qrFallbackCodePlaceholder": "z.B. abcd1234",
+      "qrFallbackCodeSubmit": "Einchecken",
       "pinInstruction": "Gib die PIN des:der Organisator:in ein.",
       "pinLabel": "PIN",
       "pinPlaceholder": "4-stellige PIN",
@@ -674,7 +683,7 @@
       "qrScanTitle": "Freiwilligen-QR-Code scannen",
       "qrScanHint": "Halte die Kamera auf den QR-Code des Freiwilligen.",
       "qrVideoLabel": "Kamerabild zum Scannen von QR-Codes",
-      "qrNotSupported": "QR-Scanning wird in diesem Browser nicht unterstützt. Bitte Chrome oder Edge verwenden oder zur manuellen Eincheck-Methode wechseln.",
+      "qrNotSupported": "QR-Scanning ist auf diesem Gerät oder in diesem Browser nicht verfügbar. Bitte stattdessen den Check-in-Code des:der Freiwilligen unten eingeben.",
       "qrCameraError": "Kamerazugriff verweigert. Bitte Kamerazugriff erlauben und erneut versuchen.",
       "qrCheckInError": "Einchecken fehlgeschlagen. Bitte erneut versuchen.",
       "qrSuccess": "Freiwillige:r erfolgreich eingecheckt!",
@@ -814,7 +823,7 @@
       "section2Body1": "Beim Besuch dieser Website werden automatisch allgemeine technische Informationen verarbeitet (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs), um einen sicheren und zuverlässigen Betrieb sicherzustellen. Auch wenn wir diese Daten nicht anderweitig mit deiner Identität verknüpfen, können sie personenbezogene Daten darstellen – einschließlich deiner IP-Adresse, entsprechend dem Breyer-Urteil des EuGH (C-582/14).",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von dir eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um dir die Nutzung der Plattform zu ermöglichen.",
       "section2Body3": "Darüber hinaus kannst du in deinem Profil freiwillig weitere Angaben hinterlegen, etwa eine Telefonnummer, unter der Organisationen dich erreichen können, ein Profilbild, einen Text im Feld „Über mich“ sowie Fähigkeiten und Sprachen. An wen diese Angaben weitergegeben oder für wen sie sichtbar werden, ist in den folgenden Abschnitten beschrieben.",
-      "section2Body4": "Rechtsgrundlage für die oben beschriebenen technischen Zugriffsinformationen ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einem sicheren und zuverlässigen Betrieb; deine IP-Adresse wird dabei ausschließlich vorübergehend im Arbeitsspeicher zur Durchsetzung von Anfragebegrenzungen verwendet und nicht gespeichert. Rechtsgrundlage für deine Registrierungs- und Kontodaten, einschließlich optionaler Angaben, die du freiwillig in deinem Profil hinterlegst, ist die Erfüllung des Nutzungsvertrags mit dir (Art. 6 Abs. 1 lit. b DSGVO). Wir speichern deine Konto- und Profildaten, solange dein Konto besteht; löschst du dein Konto – das kannst du jederzeit in deinen Profileinstellungen tun -, werden diese Daten unmittelbar gelöscht oder anonymisiert. Benachrichtigungen werden automatisch 90 Tage nach dem Lesen gelöscht, ungelesene nach 180 Tagen. Meldungen, die du gegen Inhalte oder andere Nutzer einreichst (siehe „Missbräuchliche Inhalte melden“ auf unserer Kontaktseite), werden als Moderationshistorie aufbewahrt, solange das gemeldete Konto besteht, und danach für bis zu 180 weitere Tage; eine von dir selbst eingereichte Meldung wird zusammen mit deinen übrigen Kontodaten sofort gelöscht, wenn du dein eigenes Konto löschst. Protokolle sicherheitsrelevanter Aktionen (siehe unten) werden ohne automatische Löschfrist aufbewahrt.",
+      "section2Body4": "Rechtsgrundlage für die oben beschriebenen technischen Zugriffsinformationen ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an einem sicheren und zuverlässigen Betrieb; deine IP-Adresse wird dabei ausschließlich vorübergehend im Arbeitsspeicher zur Durchsetzung von Anfragebegrenzungen verwendet und nicht gespeichert. Rechtsgrundlage für deine Registrierungs- und Kontodaten, einschließlich optionaler Angaben, die du freiwillig in deinem Profil hinterlegst, ist die Erfüllung des Nutzungsvertrags mit dir (Art. 6 Abs. 1 lit. b DSGVO). Wir speichern deine Konto- und Profildaten, solange dein Konto besteht; löschst du dein Konto – das kannst du jederzeit in deinen Profileinstellungen tun -, werden diese Daten unmittelbar gelöscht oder anonymisiert. Entfernen wir dein Konto wegen eines Verstoßes gegen unsere Nutzungsbedingungen, werden deine Konto- und Profildaten stattdessen als Moderationshistorie ohne automatische Löschfrist aufbewahrt. Benachrichtigungen werden automatisch 90 Tage nach dem Lesen gelöscht, ungelesene nach 180 Tagen. Meldungen, die du gegen Inhalte oder andere Nutzer einreichst (siehe „Missbräuchliche Inhalte melden“ auf unserer Kontaktseite), werden als Moderationshistorie aufbewahrt, solange das gemeldete Konto besteht, und danach für bis zu 180 weitere Tage; eine von dir selbst eingereichte Meldung wird zusammen mit deinen übrigen Kontodaten sofort gelöscht, wenn du dein eigenes Konto löschst. Protokolle sicherheitsrelevanter Aktionen (siehe unten) werden ohne automatische Löschfrist aufbewahrt.",
       "section3Title": "Weitergabe von Daten",
       "section3Body": "Personenbezogene Daten werden nur in den in diesem Abschnitt und den folgenden Unterabschnitten beschriebenen Fällen an Dritte weitergegeben oder öffentlich zugänglich gemacht: bei deiner Eintragung zu einem Einsatz, im Rahmen deines öffentlichen Profils sowie im Rahmen der eingebundenen Drittdienste zur Kartendarstellung und Ortssuche. Eine darüber hinausgehende Übermittlung findet nur statt, wenn du ausdrücklich eingewilligt hast oder wir gesetzlich dazu verpflichtet sind.",
       "section3aTitle": "Eintragung zu einem Einsatz",
@@ -834,6 +843,7 @@
       "section6Body": "Diese Plattform – einschließlich Datenbank und Objektspeicher – wird auf einem Server der Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Deutschland, betrieben. Datenbank und Objektspeicher werden zusätzlich täglich lokal gesichert; diese Sicherungen werden zur Wiederherstellbarkeit im Fall eines Ausfalls oder Verlusts des Servers zusätzlich in einen separaten Objektspeicher-Bucket der Hetzner Online GmbH gespiegelt. Hetzner verarbeitet diese Daten als unser Auftragsverarbeiter im Sinne von Art. 28 DSGVO; mit Hetzner besteht ein entsprechender Auftragsverarbeitungsvertrag (AVV). Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) am zuverlässigen Betrieb und an der Ausfallsicherheit der Plattform.",
       "section7Title": "Protokollierung sicherheitsrelevanter Aktionen",
       "section7Body": "Bestimmte administrative Maßnahmen – etwa die Vergabe oder der Entzug von Administratorrechten, das Sperren oder Entsperren eines Kontos, das Entfernen oder Wiederherstellen von Inhalten sowie das administrative Absagen einer Eintragung – werden mit der ausführenden Nutzer-ID, der Art der Maßnahme, dem betroffenen Objekt, einem optionalen Grund und dem Zeitpunkt protokolliert. Dieses Protokoll ist ausschließlich für Administratorinnen und Administratoren einsehbar und dient der Nachvollziehbarkeit von Verwaltungsmaßnahmen sowie dem Schutz vor Missbrauch. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an der Sicherheit und Integrität der Plattform.",
+      "section7Body2": "Unser Authentifizierungsdienst (Keycloak) protokolliert zusätzlich eigenständig Authentifizierungsereignisse - Anmeldungen, fehlgeschlagene Anmeldeversuche, Abmeldungen, Passwortänderungen und Kontolöschungen - jeweils mit der verwendeten IP-Adresse und dem Zeitpunkt, sowie administrative Maßnahmen, die direkt in dessen eigener Administrationsoberfläche vorgenommen werden (etwa das Zurücksetzen von Passwörtern oder Rollenänderungen). Dieses Protokoll ermöglicht es uns nachzuvollziehen, wer wann von wo aus auf ein Konto zugegriffen hat, was wir benötigen, um im Fall einer Verletzung des Schutzes personenbezogener Daten deren Umfang nach Art. 33 DSGVO zu bewerten und zu melden. Es wird 180 Tage aufbewahrt und danach automatisch gelöscht. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO) an der Sicherheit der Plattform und an der Erfüllung unserer Meldepflichten bei Datenschutzverletzungen.",
       "section8Title": "Cookies und Speicherung im Browser",
       "section8Body1": "Diese Website verwendet ein technisch notwendiges Cookie für die Authentifizierung (ein Session-Cookie, gesetzt von unserem Authentifizierungsdienst Keycloak) sowie ein weiteres Cookie, active-org, das sich merkt, welche Organisation du zuletzt geöffnet hast, damit du zum richtigen Dashboard zurückkehrst; es dient nicht der Authentifizierung und wird für bis zu ein Jahr gespeichert. Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
       "section8Body2": "Darüber hinaus speichern wir einige Werte im lokalen Speicher (Local Storage) deines Browsers: deine gewählte Oberflächensprache, ob du diese Sprache bewusst selbst gewählt hast statt sie automatisch erkennen zu lassen, sowie welche Erfolgs-Benachrichtigungen du bereits gesehen hast (kontobezogen gespeichert). Die Zugriffs-, ID- und Refresh-Token deiner Sitzung werden getrennt davon im Sitzungsspeicher (Session Storage) deines Browsers abgelegt; dies ist technisch notwendig, um dich angemeldet zu halten, und wird automatisch gelöscht, sobald du den Browser-Tab schließt. Diese Werte verlassen deinen Browser nie. Das active-org-Cookie sowie diese lokalen Speicher- und Sitzungsspeicherwerte werden bei der Abmeldung gelöscht.",
@@ -960,7 +970,9 @@
     "auth": {
       "authError": "Authentifizierungsfehler: {{message}}",
       "completing": "Anmeldung wird abgeschlossen…",
-      "loading": "Wird geladen…"
+      "loading": "Wird geladen…",
+      "recoveryFailedTitle": "Anmeldung nicht möglich",
+      "recoveryFailedMessage": "Deine Sitzung konnte trotz mehrerer Versuche nicht wiederhergestellt werden. Bitte melde dich ab und versuche anschließend erneut, dich anzumelden. Falls das Problem weiterhin besteht, wende dich an den Support."
     },
     "notFound": {
       "title": "Seite nicht gefunden",
@@ -1195,6 +1207,7 @@
     "notificationPreferences": {
       "title": "E-Mail-Benachrichtigungen",
       "description": "Wähle aus, welche transaktionalen E-Mails du erhalten möchtest. Jede E-Mail enthält außerdem einen Abmeldelink für den jeweiligen Typ.",
+      "inAppNotice": "Diese Einstellungen betreffen nur E-Mails. Du siehst diese und weitere Aktivitäten - etwa Änderungen an Einsätzen oder Organisationseinladungen - immer als Benachrichtigungen im Glockenmenü; das lässt sich nicht abschalten.",
       "organizerGroupLabel": "Als Organisator:in",
       "volunteerGroupLabel": "Als Freiwillige:r",
       "newSignUp": "Neue Eintragungen für Einsätze, die du organisierst",
@@ -1263,6 +1276,10 @@
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
       "sessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+      "rateLimited": "Zu viele Anfragen. Bitte warte {{count}} Sekunden und versuche es erneut.",
+      "rateLimited_one": "Zu viele Anfragen. Bitte warte {{count}} Sekunde und versuche es erneut.",
+      "rateLimited_other": "Zu viele Anfragen. Bitte warte {{count}} Sekunden und versuche es erneut.",
+      "rateLimitedGeneric": "Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.",
       "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
       "boundaryTitle": "Etwas ist schiefgelaufen",
       "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zurück navigieren oder die Seite neu laden.",
@@ -1280,6 +1297,14 @@
         "title": "Admin-Rechte erforderlich",
         "message": "Dieser Bereich ist nur für Plattform-Administrator:innen. Dein Konto hat keine Admin-Rechte – wenn das anders sein sollte, bitte eine:n Administrator:in, dir die Rechte zu geben."
       }
+    },
+    "pwaUpdate": {
+      "message": "Eine neue Version von Einsatzbereit ist verfügbar.",
+      "reloadLabel": "Neu laden, um die App zu aktualisieren"
+    },
+    "config": {
+      "unavailableTitle": "Konfiguration fehlt",
+      "unavailableMessage": "Einsatzbereit konnte die Konfiguration nicht laden und kann nicht starten. Bist du offline, versuchen wir es automatisch erneut, sobald du wieder online bist - andernfalls wende dich an die Person, die dieses Deployment betreibt."
     },
     "userProfile": {
       "loading": "Profil wird geladen…",
@@ -1622,7 +1647,10 @@
         "AlreadyCheckedIn": "Eintragung ist bereits eingecheckt.",
         "Anonymized": "Der:die Freiwillige dieser Eintragung hat das eigene Konto gelöscht und kann nicht mehr bearbeitet werden.",
         "CheckInMethodNotPin": "Dieser Einsatz verwendet keinen PIN-Check-in.",
+        "CheckInMethodNotQrCode": "Dieser Einsatz verwendet keinen QR-Code-Check-in.",
         "PinRequired": "PIN ist erforderlich.",
+        "InvalidCheckInCode": "Der Check-in-Code muss aus 8 Hexadezimalzeichen bestehen.",
+        "CheckInCodeAmbiguous": "Mehrere Eintragungen passen zu diesem Code. Bitte stattdessen den QR-Scanner verwenden.",
         "ReactivationLimitReached": "Diese Eintragung wurde bereits zu oft zurückgezogen und erneut eingetragen. Bitte wende dich direkt an die Organisation.",
         "TimeSlotEnded": "Dieser Zeitslot ist bereits beendet.",
         "TimeSlotNotAllowed": "Dieser Einsatz verwendet keine Zeitslots.",

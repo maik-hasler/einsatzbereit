@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.VolunteerOpportunities.AdminRestoreVolunteerOpportunity.v1;
 using AwesomeAssertions;
 using Domain.AuditLogs;
@@ -9,6 +10,7 @@ using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.VolunteerOpportunities.AdminRestoreVolunteerOpportunity;
 
@@ -17,6 +19,7 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<AuditLog, AuditLogId> _auditLogRepo =
 		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
+	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly AdminRestoreVolunteerOpportunityCommandHandler _sut;
 
@@ -27,7 +30,7 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 	public AdminRestoreVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.AuditLogs.Returns(_auditLogRepo);
-		_sut = new AdminRestoreVolunteerOpportunityCommandHandler(_dbContext);
+		_sut = new AdminRestoreVolunteerOpportunityCommandHandler(_dbContext, _fileStorage);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -94,5 +97,73 @@ public class AdminRestoreVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not shadow-deleted*");
 		await _auditLogRepo.DidNotReceive().AddAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldUnquarantineTheBannerObject_WhenOpportunityHasABanner(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/banner.png");
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+		_dbContext
+			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/banner.png")
+			.Returns($"opportunity-banners/{opportunityId}.png");
+
+		// Act
+		await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).UnquarantineAsync($"opportunity-banners/{opportunityId}.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptUnquarantine_WhenOpportunityHasNoBanner(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+		_dbContext
+			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		// Act
+		await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().UnquarantineAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenUnquarantiningTheBannerObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		opportunity.SetBannerImageUrl("https://example.com/opportunity-banners/banner.png");
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+		_dbContext
+			.FindVolunteerOpportunityIncludingDeletedAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/opportunity-banners/banner.png")
+			.Returns($"opportunity-banners/{opportunityId}.png");
+		_fileStorage
+			.UnquarantineAsync($"opportunity-banners/{opportunityId}.png", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(new AdminRestoreVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
 	}
 }

@@ -471,6 +471,8 @@ jobs:
           cache-from: type=gha,scope=backend-image
           sbom: true
           provenance: mode=max
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
 
   frontend-checks:
     name: Frontend Checks
@@ -568,6 +570,8 @@ jobs:
           cache-from: type=gha,scope=frontend-image
           sbom: true
           provenance: mode=max
+          build-args: |
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
 
   publish-keycloak:
     name: Publish Keycloak

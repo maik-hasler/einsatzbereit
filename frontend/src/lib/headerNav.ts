@@ -2,7 +2,7 @@ import type { OrganizationSummaryDto } from "../client/api-client";
 import { orgTabPath } from "./orgTabs";
 
 export type StaticNavLinkKey =
-	"home" | "findOpportunities" | "forOrganizations" | "help";
+	"home" | "findOpportunities" | "organizations" | "forOrganizations" | "help";
 
 export type StaticNavLink = {
 	kind: "static";
@@ -27,6 +27,12 @@ const STATIC_LINKS: readonly StaticNavLink[] = [
 		kind: "static",
 		key: "findOpportunities",
 		to: "/opportunities",
+		hash: false,
+	},
+	{
+		kind: "static",
+		key: "organizations",
+		to: "/organizations",
 		hash: false,
 	},
 	{

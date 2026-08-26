@@ -22,32 +22,28 @@ internal sealed class SearchMemberCandidatesQueryHandler(
 			query.RequestingUserId,
 			cancellationToken);
 
-		var allResults = await keycloak.SearchUsersAsync(
-			query.Search,
-			cancellationToken: cancellationToken);
+		var match = await keycloak.FindUserByExactMatchAsync(query.Search, cancellationToken);
+		if (match is null)
+			return [];
 
-		var currentMembers = await keycloak.GetMembersAsync(
-			query.OrganizationId,
-			cancellationToken);
-
-		var memberIds = currentMembers.Select(m => m.UserId).ToHashSet();
+		var currentMembers = await keycloak.GetMembersAsync(query.OrganizationId, cancellationToken);
+		if (currentMembers.Any(m => m.UserId == match.UserId))
+			return [ToDto(match, MemberCandidateStatus.AlreadyMember)];
 
 		var invitations = await dbContext.GetInvitationsForOrganizationAsync(
 			OrganizationId.Create(query.OrganizationId).GetValueOrThrow(),
 			cancellationToken);
 
-		var pendingInviteeIds = invitations
-			.Where(i => i.Status == InvitationStatus.Pending)
-			.Select(i => i.InviteeId.Value)
-			.ToHashSet();
+		var hasPendingInvitation = invitations.Any(i =>
+			i.Status == InvitationStatus.Pending && i.InviteeId.Value == match.UserId);
 
-		return allResults
-			.Where(u => !memberIds.Contains(u.UserId) && !pendingInviteeIds.Contains(u.UserId))
-			.Select(u => new MemberCandidateDto(
-				u.UserId,
-				u.Username,
-				u.FirstName,
-				u.LastName))
-			.ToList();
+		var status = hasPendingInvitation
+			? MemberCandidateStatus.AlreadyInvited
+			: MemberCandidateStatus.Available;
+
+		return [ToDto(match, status)];
 	}
+
+	private static MemberCandidateDto ToDto(KeycloakOrganizationMember member, MemberCandidateStatus status) =>
+		new(member.UserId, member.Username, member.FirstName, member.LastName, status.ToString());
 }
