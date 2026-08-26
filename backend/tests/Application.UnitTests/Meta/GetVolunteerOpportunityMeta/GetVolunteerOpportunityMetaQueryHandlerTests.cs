@@ -47,7 +47,8 @@ public class GetVolunteerOpportunityMetaQueryHandlerTests
 			null,
 			0,
 			"Published",
-			bannerImageUrl);
+			bannerImageUrl,
+			[]);
 
 	[Test]
 	public async Task Handle_ShouldReturnNull_WhenOpportunityNotFound(CancellationToken cancellationToken)

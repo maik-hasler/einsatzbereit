@@ -15038,8 +15038,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("bannerImageUrl")]
         public string? BannerImageUrl { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("currentUserEngagement")]
-        public CurrentUserEngagementInfo? CurrentUserEngagement { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("currentUserEngagements")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<CurrentUserEngagementInfo> CurrentUserEngagements { get; set; } = new System.Collections.ObjectModel.Collection<CurrentUserEngagementInfo>();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

@@ -10527,7 +10527,8 @@
           "validUntil",
           "currentParticipantCount",
           "status",
-          "bannerImageUrl"
+          "bannerImageUrl",
+          "currentUserEngagements"
         ],
         "type": "object",
         "properties": {
@@ -10663,15 +10664,11 @@
               "string"
             ]
           },
-          "currentUserEngagement": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CurrentUserEngagementInfo"
-              }
-            ]
+          "currentUserEngagements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CurrentUserEngagementInfo"
+            }
           }
         }
       },
