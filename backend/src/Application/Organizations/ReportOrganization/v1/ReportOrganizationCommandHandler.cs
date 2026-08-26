@@ -20,7 +20,7 @@ internal sealed class ReportOrganizationCommandHandler(
 		_ = await dbContext.Organizations.FindAsync(organizationId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
-		var alreadyReported = await dbContext.HasOpenReportAsync(
+		var alreadyReported = await dbContext.HasDuplicateReportAsync(
 			ReportTargetType.Organization, request.OrganizationId, request.ReporterId, cancellationToken);
 		if (alreadyReported)
 			throw new ResultFailureException(Error.Conflict("Report.AlreadyReported", "You have already reported this."));

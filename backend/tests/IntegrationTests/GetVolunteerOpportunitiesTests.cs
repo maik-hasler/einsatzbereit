@@ -705,6 +705,30 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_NormalizingGermanUmlautsAndEszett(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Fußball", "A friendly match in München", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var asciiTranscriptionOfEszett = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "Fussball", cancellationToken: cancellationToken);
+		var asciiTranscriptionOfUmlaut = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "Muenchen", cancellationToken: cancellationToken);
+		var nativeSpelling = await sut.GetVolunteerOpportunitiesAsync(1, 10, keyword: "Fußball", cancellationToken: cancellationToken);
+
+		asciiTranscriptionOfEszett.TotalItems.Should().Be(1);
+		asciiTranscriptionOfEszett.Items.Single().TitleDe.Should().Be("Fußball");
+		asciiTranscriptionOfUmlaut.TotalItems.Should().Be(1);
+		asciiTranscriptionOfUmlaut.Items.Single().TitleDe.Should().Be("Fußball");
+		nativeSpelling.TotalItems.Should().Be(1);
+		nativeSpelling.Items.Single().TitleDe.Should().Be("Fußball");
+	}
+
+	[Test]
 	public async Task GetVolunteerOpportunities_ShouldFilterByRadius_AndOrderResultsByDistanceAscending(
 		CancellationToken cancellationToken)
 	{

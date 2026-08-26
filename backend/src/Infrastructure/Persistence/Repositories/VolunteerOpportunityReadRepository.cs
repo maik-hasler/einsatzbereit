@@ -19,6 +19,13 @@ internal sealed class VolunteerOpportunityReadRepository(
 	ApplicationDbContext dbContext)
 	: IVolunteerOpportunityReadRepository
 {
+	// The date-availability window is already capped at 62 days (see
+	// GetVolunteerOpportunityDateAvailabilityEndpoint.MaxWindowDays), but the number of
+	// publicly-listed opportunities with slots inside that window has no ceiling - it grows
+	// with the platform's total published data. This bounds the raw row count regardless,
+	// ordered soonest-first so a cap that ever kicks in drops the least actionable slots.
+	private const int MaxDateAvailabilitySlotRows = 10_000;
+
 	public async ValueTask<IReadOnlyList<SitemapEntry>> GetPublishedForSitemapAsync(
 		CancellationToken cancellationToken = default)
 	{
@@ -225,6 +232,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 					Latitude = vo.Address != null ? vo.Address.Latitude : null,
 					Longitude = vo.Address != null ? vo.Address.Longitude : null,
 				}))
+			.OrderBy(s => s.StartDateTime)
+			.Take(MaxDateAvailabilitySlotRows)
 			.ToListAsync(cancellationToken);
 
 		var withinRadius = filter.HasRadius
@@ -309,13 +318,20 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (!string.IsNullOrWhiteSpace(keyword))
 		{
-			var loweredKeyword = keyword.ToLower();
+			// Folds German umlauts/eszett the way people actually type them on a
+			// phone keyboard ("Muenchen", "Fussball") so a search matches the native
+			// spelling and vice versa (#2221). The fold is repeated inline on every
+			// column instead of factored into a shared method: EF Core translates
+			// ToLower/Replace/Contains calls to SQL individually, but can't look
+			// inside a call to a method of our own to do the same.
+			var normalizedKeyword = FoldGermanText(keyword);
 			query = query.Where(vo =>
-				vo.TitleDe.ToLower().Contains(loweredKeyword) ||
-				(vo.TitleEn != null && vo.TitleEn.ToLower().Contains(loweredKeyword)) ||
-				vo.DescriptionDe.ToLower().Contains(loweredKeyword) ||
-				(vo.DescriptionEn != null && vo.DescriptionEn.ToLower().Contains(loweredKeyword)) ||
-				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId && o.Name.ToLower().Contains(loweredKeyword)));
+				vo.TitleDe.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword) ||
+				(vo.TitleEn != null && vo.TitleEn.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)) ||
+				vo.DescriptionDe.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword) ||
+				(vo.DescriptionEn != null && vo.DescriptionEn.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)) ||
+				dbContext.OrganizationsQuery.Any(o => o.Id == vo.OrganizationId &&
+					o.Name.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Contains(normalizedKeyword)));
 		}
 
 		if (boundingBox is GeoBoundingBox box)
@@ -327,6 +343,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		return query;
 	}
+
+	// Kept in sync by hand with the inline column fold in ApplyPubliclyListedFilters's
+	// keyword predicate above - EF Core can translate the same ToLower/Replace chain
+	// applied to a column, but not a call to this method itself, so it can't be shared.
+	private static string FoldGermanText(string value) =>
+		value.ToLower().Replace("ß", "ss").Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue");
 
 	private static GeoBoundingBox? ResolveBoundingBox(double? centerLatitude, double? centerLongitude, double? radiusKm) =>
 		centerLatitude.HasValue && centerLongitude.HasValue && radiusKm is > 0
@@ -568,6 +590,15 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (status is OpportunityStatus s)
 			orgQuery = orgQuery.Where(vo => vo.Status == s);
+
+		// Published doesn't mean still open - an opportunity whose only time slots have
+		// ended, or whose IndividualContact deadline has passed, must not keep surfacing
+		// on the organization's public profile (einsatzbereit#2212). Matches the predicate
+		// ApplyPubliclyListedFilters already applies to the browse listing.
+		if (status == OpportunityStatus.Published)
+			orgQuery = orgQuery.Where(vo =>
+				vo.TimeSlots.Any(ts => ts.EndDateTime >= now) ||
+				(!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
 
 		var rows = await orgQuery
 			.Join(

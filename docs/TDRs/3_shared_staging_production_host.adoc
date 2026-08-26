@@ -1,0 +1,69 @@
+== 3. Shared Staging/Production Host
+
+- *Author:* @maik-hasler
+- *Version:* v1.0.0 (pre-release)
+- *Date:* 2026-08-03
+- *Status:* Resolved (out of this repository's scope - see Resolution below)
+
+[NOTE]
+====
+*Restored 2026-08-26 (issue #2214).* This record was deleted outright by issue #2165 (2026-08-22) when deployment, staging and observability moved out of this repository's scope, instead of being marked resolved - the arc42 convention this repository otherwise follows for a record that no longer applies. Its original content, through the 2026-08-21 "deploy ownership moved to mgmt-hetzner" update below, is unchanged; the Resolution section at the end is new.
+====
+
+=== Description
+
+Einsatzbereit has exactly one deployed host (`einsatzbereit.maik-hasler.de` and its `*.maik-hasler.de` siblings), and it is deliberately staging/demo infrastructure rather than a hardened production box - shared `vera`/`olaf`/`admin` test credentials with full admin access are intentionally public on it (see root `AGENTS.md`'s Test Users note). There is no second, separate production host.
+
+Before issue #1344, `publish.yml` only had a `deploy-staging` job, gated on release-candidate tags. A stable (non-RC) tag published images to GHCR and moved the `latest` tag, but nothing ever deployed them - the architecture docs claimed deployment was "release-driven" for both staging and production, which was not true for stable tags.
+
+=== Links
+
+- Resolves the deploy gap from issue #1344.
+- ADR-3 (Keycloak): the shared realm/test-credential model this TDR's host-sharing builds on.
+
+=== Impact
+
+==== Technical Impact
+
+- *Environment separation:* Staging and production share compute, database, and object storage. A bad RC deploy and a bad stable deploy are both one `docker compose up -d` away from affecting the same running site - there is no isolation between "testing a release candidate" and "serving real traffic." Unchanged by the capacity upgrade below - a bigger box is still one box.
+- *Blast radius:* `reset-staging.yml`'s destructive Postgres/MinIO wipe, if ever run after real users exist, would delete real data, not just demo data - the workflow's current framing ("wipes staging test data") assumes no real production data has accumulated yet.
+- *Capacity (updated 2026-08-05):* Moved to a Hetzner `cx43` (8 vCPU / 16 GB RAM / 40 GB disk - see `docs/Architecture/src/07_deployment_view.adoc`), well above the smaller box this stack had outgrown - the observability stack's (Prometheus/Grafana/Loki/Tempo/Alertmanager) resource limits, previously trimmed down for a memory-constrained box, have been removed now that headroom is no longer a concern. The host is now managed via Terraform (a separate, private infrastructure repository, brought in via `terraform import` rather than hand-clicked), and also runs Blogfolio and Traefik on the same box. The environment-separation and blast-radius concerns above are unchanged.
+
+==== Business Impact
+
+- *Cost:* A second host is an ongoing hosting cost the project does not yet carry; deferring it keeps the project's infrastructure spend at its current (minimal) level while pre-1.0.
+- *Risk exposure:* Once the site carries real user data, an RC deploy problem (bad migration, crash-looping container) directly risks that data, not just disposable demo state.
+
+=== Symptoms
+
+- *Docs/reality mismatch (pre-#1344):* `07_deployment_view.adoc` described a single release-driven deployment path; the actual `publish.yml` silently skipped deployment for stable tags.
+- *Naming mismatch:* A GitHub Environment and job named `production` currently target the same secrets/host as `staging` - anyone reading the workflow in isolation could assume a real second environment exists.
+
+=== Severity
+
+Medium, rising to High once the project is generally available and carries real user data (issue #1344's report was filed pre-1.0, before any stable tag existed).
+
+=== Proposed Solution
+
+- *Short term (implemented, #1344):* Split `deploy-staging`/`deploy-production` into separate jobs and GitHub Environments now, both currently pointed at the one existing host, so the *workflow* shape doesn't need to change again later - only the `production` Environment's secrets need to change once a real second host exists.
+- *Medium term:* Before or shortly after a real stable v1.0.0 release accumulates real user data, provision a genuinely separate production host (or at minimum, separate its database/object storage from staging's), and repoint mgmt-hetzner's `einsatzbereit-production` GitHub Environment secrets at it (see the "Update" note below for where this now lives).
+- *Longer term:* Reassess whether `reset-staging.yml`'s destructive reset should remain scoped to a shared host once staging and production diverge, and whether staging needs its own smaller, cheaper host once production is real.
+
+=== Consequences of Delay
+
+Acceptable pre-1.0: no stable tag has been cut yet, so no real user data exists on the host to put at risk. Once a stable release genuinely goes out to real users, delaying the host split further means every subsequent RC deploy (testing the *next* release) runs directly against production data, with no isolation and no cheap way to test destructively.
+
+=== Dependencies
+
+- *Hosting budget/capacity:* A second host requires the repo owner to provision and pay for it - not something achievable from within the repository alone.
+- *GitHub Environment secrets:* the SSH/app secrets for reaching the new host need to be updated when it exists. As of the mgmt-hetzner deploy split (below), these live in that repo's `einsatzbereit-staging`/`einsatzbereit-production` GitHub Environments, not here - see mgmt-hetzner's `README.md` and this repo's `.github/AGENTS.md` "Deployment moved to mgmt-hetzner" section.
+
+=== Update: deploy ownership moved to mgmt-hetzner (2026-08-21)
+
+The `deploy-staging`/`deploy-production` jobs this TDR describes no longer live in this repo's `publish.yml` - they moved, largely unchanged, to `maik-hasler/mgmt-hetzner`'s `deploy-einsatzbereit.yaml` (`einsatzbereit-staging`/`einsatzbereit-production` GitHub Environments there), triggered manually (`workflow_dispatch`, version + environment as inputs) rather than automatically from this repo's `publish.yml` - deliberately, so no credential needs to flow from this repo into mgmt-hetzner just to kick off a deploy. This is an ownership change, not a resolution of this TDR - the environment-separation and blast-radius analysis above is unchanged: staging and production still share the same single host, database, and object storage, just via a workflow in a different repository, triggered by hand.
+
+=== Resolution
+
+Issue #2165 (2026-08-22, ADR-7) completed the separation this TDR's 2026-08-21 update already saw coming: this repository no longer describes, configures, or drives any deployed environment at all, `mgmt-hetzner` included - it builds and publishes images and stops. `docker-compose.yml`, `reset-staging.yml` and every staging/production reference this repository carried are gone.
+
+Resolved here on that basis, specifically: whether staging and production still share one host, and whether the environment-separation and blast-radius risk this TDR documents still holds, is no longer something this repository's documentation is positioned to track or answer. That is now `mgmt-hetzner`'s question, not this one's - this TDR is not asserting the underlying infrastructure risk was actually fixed, only that it moved out of this repository's scope along with everything else deployment-related.

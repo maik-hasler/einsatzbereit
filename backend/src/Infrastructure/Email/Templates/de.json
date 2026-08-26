@@ -1,43 +1,43 @@
 {
   "EngagementRequestReceived": {
-    "subject": "Deine Anfrage für \"{OpportunityTitle}\" ist eingegangen",
-    "body": "Hallo {VolunteerName},\n\ndeine Anfrage zur Teilnahme an \"{OpportunityTitle}\" ist eingegangen. Der Organisator wird sich bei dir melden.\n\nEinsatzbereit"
+    "subject": "Deine Anfrage für „{OpportunityTitle}“ ist eingegangen",
+    "body": "Hallo {VolunteerName},\n\ndeine Anfrage zur Teilnahme an „{OpportunityTitle}“ ist eingegangen. Der Organisator wird sich bei dir melden.\n\nEinsatzbereit"
   },
   "EngagementWaitlisted": {
-    "subject": "Deine Anmeldung für \"{OpportunityTitle}\" ist eingegangen",
-    "body": "Hallo {VolunteerName},\n\ndeine Anmeldung für \"{OpportunityTitle}\" ist eingegangen. Ein Organisator wird deinen Zeitslot prüfen und bald bestätigen.\n\nEinsatzbereit"
+    "subject": "Deine Eintragung für „{OpportunityTitle}“ ist eingegangen",
+    "body": "Hallo {VolunteerName},\n\ndeine Eintragung für „{OpportunityTitle}“ ist eingegangen. Ein Organisator wird deinen Zeitslot prüfen und bald bestätigen.\n\nEinsatzbereit"
   },
   "EngagementSignupNotifyOrganizer": {
-    "subject": "Neue Anmeldung: {VolunteerName} für \"{OpportunityTitle}\"",
-    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich für \"{OpportunityTitle}\" angemeldet.\n\nEinsatzbereit"
+    "subject": "Neue Eintragung: {VolunteerName} für „{OpportunityTitle}“",
+    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich für „{OpportunityTitle}“ eingetragen.\n\nEinsatzbereit"
   },
   "EngagementConfirmed": {
     "subject": "Deine Teilnahme wurde bestätigt",
-    "body": "Hallo {VolunteerName},\n\ndeine Bewerbung für \"{OpportunityTitle}\" wurde bestätigt.\n\nWir freuen uns auf dich!\n\nEinsatzbereit"
+    "body": "Hallo {VolunteerName},\n\ndeine Bewerbung für „{OpportunityTitle}“ wurde bestätigt.\n\nWir freuen uns auf dich!\n\nEinsatzbereit"
   },
   "EngagementCancelled": {
     "subject": "Deine Teilnahme wurde abgesagt",
-    "body": "Hallo {VolunteerName},\n\nleider wurde deine Anmeldung für \"{OpportunityTitle}\" abgesagt.{ReasonBlock}\n\nWir hoffen, dich bei einer anderen Gelegenheit zu sehen.\n\nEinsatzbereit"
+    "body": "Hallo {VolunteerName},\n\nleider wurde deine Eintragung für „{OpportunityTitle}“ abgesagt.{ReasonBlock}\n\nWir hoffen, dich bei einer anderen Gelegenheit zu sehen.\n\nEinsatzbereit"
   },
   "EngagementCancelledReasonSuffix": {
     "subject": "",
     "body": "\n\nGrund: {Reason}"
   },
   "EngagementWithdrawnNotifyOrganizer": {
-    "subject": "{VolunteerName} hat sich von \"{OpportunityTitle}\" zurückgezogen",
-    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich von \"{OpportunityTitle}\" zurückgezogen.\n\nEinsatzbereit"
+    "subject": "{VolunteerName} hat sich von „{OpportunityTitle}“ zurückgezogen",
+    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich von „{OpportunityTitle}“ zurückgezogen.\n\nEinsatzbereit"
   },
   "EngagementReminder": {
     "subject": "Erinnerung: {OpportunityTitle} startet morgen",
-    "body": "Hallo {DisplayName},\n\ndies ist eine Erinnerung, dass du für \"{OpportunityTitle}\" angemeldet bist, das am {StartFormatted} beginnt.\n\nWir freuen uns auf dich!\n\nDein Einsatzbereit-Team"
+    "body": "Hallo {DisplayName},\n\ndies ist eine Erinnerung, dass du für „{OpportunityTitle}“ eingetragen bist, das am {StartFormatted} beginnt.\n\nWir freuen uns auf dich!\n\nDein Einsatzbereit-Team"
   },
   "InvitationReceived": {
     "subject": "Du wurdest eingeladen, einer Organisation beizutreten",
-    "body": "Hallo {InviteeName},\n\ndu wurdest eingeladen, der Organisation \"{OrganizationName}\" auf Einsatzbereit beizutreten.\n\nMelde dich in deinem Konto an, um die Einladung anzunehmen oder abzulehnen.\n\nEinsatzbereit"
+    "body": "Hallo {InviteeName},\n\ndu wurdest eingeladen, der Organisation „{OrganizationName}“ auf Einsatzbereit beizutreten.\n\nMelde dich in deinem Konto an, um die Einladung anzunehmen oder abzulehnen.\n\nEinsatzbereit"
   },
   "OpportunityUpdated": {
-    "subject": "Ein Einsatz, für den du dich angemeldet hast, hat sich geändert: \"{OpportunityTitle}\"",
-    "body": "Hallo {VolunteerName},\n\ndie Details für \"{OpportunityTitle}\" haben sich geändert. Bitte sieh in der App nach den aktuellen Informationen.\n\nEinsatzbereit"
+    "subject": "Ein Einsatz, für den du dich eingetragen hast, hat sich geändert: „{OpportunityTitle}“",
+    "body": "Hallo {VolunteerName},\n\ndie Details für „{OpportunityTitle}“ haben sich geändert. Bitte sieh in der App nach den aktuellen Informationen.\n\nEinsatzbereit"
   },
   "EmailFooter": {
     "subject": "",

@@ -26,7 +26,15 @@ internal sealed class SearchCitiesQueryHandler(
 		var results = await geocodingService.SearchCitiesAsync(request.Query, request.Language, cancellationToken);
 
 		if (results.Count > 0)
-			cache.Set(cacheKey, results, CacheDuration);
+		{
+			// Nominal Size - the shared cache's SizeLimit budget is denominated in the
+			// tile bytes OpenStreetMapTileService caches, which dwarf this payload (#2215).
+			cache.Set(cacheKey, results, new MemoryCacheEntryOptions
+			{
+				Size = 1,
+				AbsoluteExpirationRelativeToNow = CacheDuration,
+			});
+		}
 
 		return results;
 	}

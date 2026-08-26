@@ -38,7 +38,11 @@ internal sealed class OpenStreetMapTileService(
 
 			var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
 
-			cache.Set(cacheKey, content, TimeSpan.FromMinutes(_options.CacheDurationMinutes));
+			cache.Set(cacheKey, content, new MemoryCacheEntryOptions
+			{
+				Size = content.Length,
+				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CacheDurationMinutes),
+			});
 
 			return new MapTile(content, ContentType);
 		}

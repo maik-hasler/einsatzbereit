@@ -39,6 +39,14 @@ public class AcceptInvitationCommandHandlerTests
 		OrganizationMemberRole intendedRole = OrganizationMemberRole.Organizer) =>
 		OrganizationInvitation.Create(OrgId, InviteeId, InviterId, intendedRole, DateTimeOffset.UtcNow);
 
+	private static OrganizationInvitation CreateExpiredInvitation() =>
+		OrganizationInvitation.Create(
+			OrgId,
+			InviteeId,
+			InviterId,
+			OrganizationMemberRole.Organizer,
+			DateTimeOffset.UtcNow.AddDays(-(OrganizationInvitation.ExpiryWindowDays + 1)));
+
 	[Test]
 	public async Task Handle_ShouldGrantOrganizerCapability_OnAccept(
 		CancellationToken cancellationToken)
@@ -139,6 +147,26 @@ public class AcceptInvitationCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
+		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenInvitationHasExpired(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreateExpiredInvitation();
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
 		await _dbContext.DidNotReceive().DeleteInvitationReceivedNotificationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());

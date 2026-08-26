@@ -45,6 +45,9 @@ public class UpdateTimeSlotCommandHandlerTests
 		_dbContext
 			.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
+		_dbContext
+			.CountActiveEngagementsForTimeSlotsAsync(Arg.Any<IReadOnlyCollection<TimeSlotId>>(), Arg.Any<CancellationToken>())
+			.Returns([]);
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -416,8 +419,8 @@ public class UpdateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 		_dbContext
-			.CountActiveEngagementsForTimeSlotAsync(slot2.Id, Arg.Any<CancellationToken>())
-			.Returns(8);
+			.CountActiveEngagementsForTimeSlotsAsync(Arg.Any<IReadOnlyCollection<TimeSlotId>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<TimeSlotId, int> { [slot2.Id] = 8 });
 
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, slot1.Id.Value, null, null, 3, DefaultRequestingUserId, SeriesEditScope.EntireSeries);

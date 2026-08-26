@@ -29,7 +29,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Reports.Returns(_reportRepo);
 		_dbContext
-			.HasOpenReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.HasDuplicateReportAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 		_sut = new ReportVolunteerOpportunityCommandHandler(_dbContext);
 	}
@@ -97,7 +97,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 		_dbContext
-			.HasOpenReportAsync(ReportTargetType.VolunteerOpportunity, opportunityId, DefaultReporterId, cancellationToken)
+			.HasDuplicateReportAsync(ReportTargetType.VolunteerOpportunity, opportunityId, DefaultReporterId, cancellationToken)
 			.Returns(true);
 
 		var command = new ReportVolunteerOpportunityCommand(opportunityId, DefaultReporterId, ReportReason.Spam, null);

@@ -12,7 +12,7 @@ public sealed class GeocodeAddressQueryHandlerTests : IDisposable
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
 
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
-	private readonly MemoryCache _cache = new(new MemoryCacheOptions());
+	private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
 	private readonly GeocodeAddressQueryHandler _sut;
 
 	public GeocodeAddressQueryHandlerTests()

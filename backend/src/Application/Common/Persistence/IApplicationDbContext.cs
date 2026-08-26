@@ -178,12 +178,20 @@ public interface IApplicationDbContext
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 
+	Task<List<Engagement>> GetEngagementsByIdsAsync(
+		IReadOnlyCollection<EngagementId> engagementIds,
+		CancellationToken cancellationToken = default);
+
 	Task<int> CountConfirmedEngagementsForVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 
 	Task<int> CountActiveEngagementsForTimeSlotAsync(
 		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default);
+
+	Task<Dictionary<TimeSlotId, int>> CountActiveEngagementsForTimeSlotsAsync(
+		IReadOnlyCollection<TimeSlotId> timeSlotIds,
 		CancellationToken cancellationToken = default);
 
 	Task LockTimeSlotForUpdateAsync(
@@ -206,7 +214,7 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
-	Task<bool> HasOpenReportAsync(
+	Task<bool> HasDuplicateReportAsync(
 		ReportTargetType targetType,
 		Guid targetId,
 		UserId reporterId,
