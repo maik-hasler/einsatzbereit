@@ -88,6 +88,12 @@ function CallbackPage() {
 				<div className="flex gap-3">
 					<Button
 						variant="secondary"
+						// No returnTo here deliberately: we're on /callback, which is
+						// never a meaningful place to send the user back to - Keycloak
+						// always redirects here regardless of where signin started, and
+						// CallbackPage has no route-away for "authenticated, no error,
+						// no code in the URL", so a successful retry would strand the
+						// user on the completing-signin screen forever (#2223).
 						onClick={() => void auth.signinRedirect(signinLocaleArgs())}
 					>
 						{t("orgApp.retry")}
