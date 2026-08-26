@@ -60,8 +60,8 @@ internal sealed class KeycloakUserService(
 			NullIfEmpty(user.LastName),
 			user.Email ?? string.Empty);
 
-		// Nominal Size - the shared cache's SizeLimit budget is denominated in
-		// the tile bytes OpenStreetMapTileService caches, which dwarf this payload.
+		// Nominal Size - the shared cache's SizeLimit budget is denominated in the
+		// tile bytes OpenStreetMapTileService caches, which dwarf this payload (#2215).
 		cache.Set(cacheKey, profile, new MemoryCacheEntryOptions
 		{
 			Size = 1,
