@@ -25,6 +25,13 @@ public class ProductionEnvironmentFixture
 				"--environment", "Testing",
 				"--Testing:BackendAspNetCoreEnvironment=Production",
 				"--Database:MigrateOnStartup=true",
+				// This Aspire test network's Keycloak is always plain HTTP - no TLS
+				// termination in front of it, unlike a real deployment's Authority. Without
+				// this, JwtBearerHandler throws "MetadataAddress or Authority must use
+				// HTTPS" on every request (including anonymous ones, since authentication
+				// runs before endpoint routing), which crashed the whole app before it
+				// could answer /alive. See Program.cs's comment on RequireHttpsMetadata.
+				"--Authentication:RequireHttpsMetadata=false",
 			]);
 
 		_app = await appHost.BuildAsync();

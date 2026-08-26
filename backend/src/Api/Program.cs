@@ -54,7 +54,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	{
 		options.MapInboundClaims = false;
 		options.Authority = builder.Configuration["Authentication:Authority"];
-		options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+		// Real production Keycloak is always HTTPS, so this stays strict there by
+		// default. The override exists only for ProductionEnvironmentFixture, which
+		// boots the Production branch of this file against the Aspire test network's
+		// Keycloak - always plain HTTP there, with no TLS termination in front of it -
+		// to exercise RequiredConfigurationValidator/migrate-on-startup/HSTS without
+		// needing a genuinely HTTPS-secured IdP available in that environment.
+		options.RequireHttpsMetadata = builder.Configuration.GetValue<bool?>(
+			"Authentication:RequireHttpsMetadata") ?? !builder.Environment.IsDevelopment();
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
 			ValidateAudience = true,

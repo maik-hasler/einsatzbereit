@@ -163,6 +163,12 @@ if (isTestEnv)
 if (builder.Configuration["Database:MigrateOnStartup"] is { } migrateOnStartup)
 	backend.WithEnvironment("Database__MigrateOnStartup", migrateOnStartup);
 
+// Same passthrough shape as Database:MigrateOnStartup above, for the same reason - see
+// Program.cs's comment on RequireHttpsMetadata for why ProductionEnvironmentFixture is
+// the only caller that ever sets this.
+if (builder.Configuration["Authentication:RequireHttpsMetadata"] is { } requireHttpsMetadata)
+	backend.WithEnvironment("Authentication__RequireHttpsMetadata", requireHttpsMetadata);
+
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()
 	.WithReference(backend)
