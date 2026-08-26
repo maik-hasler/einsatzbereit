@@ -10,6 +10,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import { useSilentSsoProbe } from "./hooks/useSilentSsoProbe";
+import { AuthStatusProvider } from "./contexts/AuthStatusContext";
 import { signinLocaleArgs } from "./lib/authLocale";
 import ErrorBanner from "./components/ErrorBanner";
 import Button from "./components/Button";
@@ -102,7 +103,7 @@ function CallbackPage() {
 	);
 }
 
-export default function App() {
+function AppRoutes() {
 	useSessionExpiryHandler();
 	useSilentSsoProbe();
 	return (
@@ -194,5 +195,13 @@ export default function App() {
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>
+	);
+}
+
+export default function App() {
+	return (
+		<AuthStatusProvider>
+			<AppRoutes />
+		</AuthStatusProvider>
 	);
 }

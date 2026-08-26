@@ -45,4 +45,28 @@ describe("OrganizationsPage directory cards", () => {
 		expect(screen.getByText("FK")).toBeInTheDocument();
 		expect(screen.getByText("FH")).toBeInTheDocument();
 	});
+
+	it("marks an organization's German description as German on an English page", async () => {
+		api.getPublicOrganizations.mockResolvedValue({
+			items: [
+				{
+					...org("aaaa0001-0000-0000-0000-000000000001", "Nachbarschaftshilfe"),
+					description: "Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+				},
+			],
+			pageCount: 1,
+			totalCount: 1,
+			currentPage: 1,
+		});
+
+		renderWithProviders(<OrganizationsPage />, {
+			lng: "en",
+			route: "/organizations",
+		});
+
+		const description = await screen.findByText(
+			"Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+		);
+		expect(description).toHaveAttribute("lang", "de");
+	});
 });

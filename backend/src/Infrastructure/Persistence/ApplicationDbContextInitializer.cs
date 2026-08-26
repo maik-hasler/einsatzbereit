@@ -1,5 +1,7 @@
+using Application.Achievements.BadgeCatalog;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Domain.Achievements;
 using Domain.Common;
 using Domain.Engagements;
 using Domain.Organizations;
@@ -14,6 +16,7 @@ internal sealed class ApplicationDbContextInitializer(
 	ApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IPinGenerator pinGenerator,
+	IBadgeCatalogService badgeCatalogService,
 	ILogger<ApplicationDbContextInitializer> logger)
 	: IApplicationDbContextInitializer
 {
@@ -241,7 +244,40 @@ internal sealed class ApplicationDbContextInitializer(
 				"Ich würde beim nächsten Blutspendetermin gerne als Freiwillige mithelfen.").GetValueOrThrow(),
 			Engagement.CreateSlotSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
+		await SeedFirstStepAchievementAsync(veraUserId, cancellationToken);
+
 		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
+	// opp1PastEngagement above is seeded directly as Confirmed rather than through
+	// ConfirmEngagementCommandHandler, so it must also seed the streak/achievement
+	// state that handler would have produced - otherwise the profile shows 100%
+	// progress toward "first-step" while the achievement was never granted (#2229).
+	private async Task SeedFirstStepAchievementAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken)
+	{
+		var now = DateTimeOffset.UtcNow;
+
+		var streak = await dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken);
+		streak.RecordActivity(
+			System.Globalization.ISOWeek.GetYear(now.UtcDateTime),
+			System.Globalization.ISOWeek.GetWeekOfYear(now.UtcDateTime));
+		streak.RecordConfirmedEngagement();
+
+		var definition = badgeCatalogService.FindByKey("first-step");
+		if (definition is null)
+			return;
+
+		var achievement = Achievement.Create(
+			volunteerId,
+			definition.Type,
+			definition.Key,
+			definition.Name,
+			definition.Description,
+			now);
+
+		await dbContext.TryAwardAchievementAsync(achievement, cancellationToken);
 	}
 
 	private static DateTimeOffset DayAt(DateTimeOffset from, int daysAhead, int hourUtc) =>

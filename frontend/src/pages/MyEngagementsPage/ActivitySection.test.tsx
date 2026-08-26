@@ -353,6 +353,84 @@ describe("my-signups calendar button (#2240)", () => {
 	});
 });
 
+describe("my-signups withdraw copy (#2228)", () => {
+	it("speaks of withdrawing interest, not releasing a seat, for an interest-based sign-up", async () => {
+		mockRows([engagement({ status: "Confirmed" })]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "Withdraw expression of interest?",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Your expression of interest for "Deutscher Einsatz" will be withdrawn, and you\'ll be able to express interest again later.',
+			),
+		).toBeInTheDocument();
+	});
+
+	it("keeps the seat-release copy for a scheduled sign-up", async () => {
+		mockRows([
+			engagement({
+				status: "Confirmed",
+				timeSlotId: "66666666-6666-6666-6666-666666666666",
+				timeSlotStartDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+				timeSlotEndDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		await userEvent.click(
+			within(card).getByRole("button", { name: /Withdraw/ }),
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Withdraw sign-up?" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Your spot for "Deutscher Einsatz" will be released, and you\'ll be able to sign up again later.',
+			),
+		).toBeInTheDocument();
+	});
+});
+
+describe("my-signups engagement grid columns", () => {
+	it("caps at two columns rather than leaving a dangling cell for one card", async () => {
+		mockRows([engagement()]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		const list = card.closest("ul");
+		expect(list?.className).toContain("@sm:grid-cols-2");
+		expect(list?.className).not.toContain("@4xl:grid-cols-3");
+	});
+
+	it("allows three columns once there are enough cards to fill a row", async () => {
+		mockRows([
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000001" }),
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000002" }),
+			engagement({ id: "aaaaaaaa-0000-0000-0000-000000000003" }),
+		]);
+
+		renderSection();
+
+		const cards = await screen.findAllByTestId("engagement-card");
+		expect(cards).toHaveLength(3);
+		expect(cards[0].closest("ul")?.className).toContain("@4xl:grid-cols-3");
+	});
+});
+
 describe("my-signups check-in affordance", () => {
 	const confirmed = (checkInMethod: string) =>
 		engagement({ status: "Confirmed", checkInMethod });

@@ -42,6 +42,11 @@ type EngagementsScope = "upcoming" | "past";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 
+/** No time slot means this was an expression of interest, not a seat sign-up (#2228). */
+function isInterestEngagement(e: EngagementSummary): boolean {
+	return !e.timeSlotStartDateTime || !e.timeSlotEndDateTime;
+}
+
 export default function ActivitySection() {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
@@ -129,6 +134,9 @@ export default function ActivitySection() {
 
 	async function handleWithdrawConfirm() {
 		if (!confirmWithdrawId) return;
+		const isInterest = withdrawTarget
+			? isInterestEngagement(withdrawTarget)
+			: false;
 		setWithdrawing(true);
 		setWithdrawError(null);
 		try {
@@ -142,11 +150,25 @@ export default function ActivitySection() {
 					e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
 				),
 			);
-			dispatchToast("success", t("myEngagements.withdrawSuccess"));
+			dispatchToast(
+				"success",
+				t(
+					isInterest
+						? "myEngagements.withdrawSuccessInterest"
+						: "myEngagements.withdrawSuccess",
+				),
+			);
 			setConfirmWithdrawId(null);
 		} catch (err) {
 			setWithdrawError(
-				getApiErrorMessage(err, t("myEngagements.withdrawError")),
+				getApiErrorMessage(
+					err,
+					t(
+						isInterest
+							? "myEngagements.withdrawErrorInterest"
+							: "myEngagements.withdrawError",
+					),
+				),
 			);
 		} finally {
 			setWithdrawing(false);
@@ -263,6 +285,9 @@ export default function ActivitySection() {
 	const withdrawTargetTitle =
 		withdrawTarget?.opportunityTitle ??
 		t("myEngagements.deletedOpportunityTitle");
+	const withdrawTargetIsInterest = withdrawTarget
+		? isInterestEngagement(withdrawTarget)
+		: false;
 	const withdrawLimitReached = withdrawTarget?.remainingReactivations === 0;
 	const withdrawLimitWarning =
 		!withdrawLimitReached && withdrawTarget?.remainingReactivations === 1;
@@ -285,7 +310,11 @@ export default function ActivitySection() {
 					<SectionHeading>
 						{t("profileOverview.invitationsHeading")}
 					</SectionHeading>
-					<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
+					<ul
+						className={`grid grid-cols-1 gap-4 @sm:grid-cols-2 ${
+							invitations.length >= 3 ? "@4xl:grid-cols-3" : ""
+						}`}
+					>
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
@@ -413,7 +442,11 @@ export default function ActivitySection() {
 				))}
 
 			{!engagementsLoading && !engagementsError && engagements.length > 0 && (
-				<ul className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-3">
+				<ul
+					className={`grid grid-cols-1 gap-4 @sm:grid-cols-2 ${
+						engagements.length >= 3 ? "@4xl:grid-cols-3" : ""
+					}`}
+				>
 					{engagements.map((e) => (
 						<li
 							key={e.id}
@@ -531,7 +564,11 @@ export default function ActivitySection() {
 
 							{e.status === "Pending" && (
 								<p className="text-xs text-gray-600">
-									{t("myEngagements.pendingExplanation")}
+									{t(
+										isInterestEngagement(e)
+											? "myEngagements.pendingExplanationInterest"
+											: "myEngagements.pendingExplanation",
+									)}
 								</p>
 							)}
 							<div className="mt-auto flex flex-wrap items-center gap-2">
@@ -672,11 +709,19 @@ export default function ActivitySection() {
 
 			{confirmWithdrawId && (
 				<ConfirmDialog
-					title={t("confirmDialog.withdraw.title")}
+					title={t(
+						withdrawTargetIsInterest
+							? "confirmDialog.withdraw.titleInterest"
+							: "confirmDialog.withdraw.title",
+					)}
 					message={t(
 						withdrawLimitReached
-							? "confirmDialog.withdraw.messageLimitReached"
-							: "confirmDialog.withdraw.message",
+							? withdrawTargetIsInterest
+								? "confirmDialog.withdraw.messageLimitReachedInterest"
+								: "confirmDialog.withdraw.messageLimitReached"
+							: withdrawTargetIsInterest
+								? "confirmDialog.withdraw.messageInterest"
+								: "confirmDialog.withdraw.message",
 						{ title: withdrawTargetTitle },
 					)}
 					confirmLabel={t("confirmDialog.withdraw.confirm")}
@@ -698,7 +743,11 @@ export default function ActivitySection() {
 							ref={limitWarningRef}
 							tabIndex={-1}
 							className="focus:outline-none"
-							message={t("confirmDialog.withdraw.limitWarning")}
+							message={t(
+								withdrawTargetIsInterest
+									? "confirmDialog.withdraw.limitWarningInterest"
+									: "confirmDialog.withdraw.limitWarning",
+							)}
 						/>
 					)}
 				</ConfirmDialog>

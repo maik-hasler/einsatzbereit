@@ -3,15 +3,22 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Application.Common.Geocoding;
+using Infrastructure.Geocoding.GermanCities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Geocoding;
 
+// Address geocoding (GeocodeAsync) always goes to Nominatim. City search
+// (SearchCitiesAsync) tries Nominatim first for its postcode/exonym support,
+// then falls back to the local IGermanCityDirectory when that comes back
+// empty - Nominatim only matches complete words, so a still-being-typed
+// prefix would otherwise dead-end (#2227).
 internal sealed class NominatimGeocodingService(
 	HttpClient httpClient,
 	IOptions<GeocodingOptions> options,
-	ILogger<NominatimGeocodingService> logger)
+	ILogger<NominatimGeocodingService> logger,
+	IGermanCityDirectory cityDirectory)
 	: IGeocodingService
 {
 	private const int MaxCitySuggestions = 6;
@@ -68,6 +75,21 @@ internal sealed class NominatimGeocodingService(
 		if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < MinCitySearchQueryLength)
 			return [];
 
+		var remoteResults = await SearchCitiesRemoteAsync(query, language, cancellationToken);
+		if (remoteResults.Count > 0)
+			return remoteResults;
+
+		// Nominatim only matches complete words, so a still-being-typed prefix
+		// (e.g. "Leip") comes back empty even though "Leipzig" is a real city
+		// (#2227). Fall back to the bounded local directory for that case.
+		return cityDirectory.SearchByPrefix(query, MaxCitySuggestions);
+	}
+
+	private async Task<IReadOnlyList<CitySuggestion>> SearchCitiesRemoteAsync(
+		string query,
+		string language,
+		CancellationToken cancellationToken)
+	{
 		var requestUri = BuildCitySearchRequestUri(query);
 
 		try

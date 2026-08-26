@@ -28,6 +28,40 @@ describe("Header for an anonymous visitor", () => {
 	});
 });
 
+describe("Header while the silent-SSO probe is in flight (#2224)", () => {
+	it("holds a neutral state instead of offering to sign in", () => {
+		renderWithProviders(<Header />, {
+			auth: { isAuthenticated: false, isLoading: true },
+		});
+
+		expect(screen.queryAllByRole("button", { name: "Sign in" })).toHaveLength(
+			0,
+		);
+		expect(screen.queryByRole("button", { name: "Register" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "User menu" })).toBeNull();
+		expect(
+			screen.getAllByText("Checking sign-in status…")[0],
+		).toBeInTheDocument();
+	});
+});
+
+describe("Header after a failed token renewal (#2224)", () => {
+	it("surfaces an explicit expired state instead of reverting to the anonymous interface", () => {
+		renderWithProviders(<Header />, {
+			auth: { isAuthenticated: true },
+			sessionExpired: true,
+		});
+
+		expect(
+			screen.getAllByRole("button", {
+				name: "Session expired - sign in again",
+			})[0],
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "User menu" })).toBeNull();
+	});
+});
+
 const ORG = {
 	id: "77777777-7777-7777-7777-777777777777",
 	name: "Freiwillige Feuerwehr Kiel",
@@ -77,6 +111,34 @@ describe("Header organization entry", () => {
 
 		const entry = await screen.findByTestId("nav-organization");
 		expect(entry).toHaveAttribute("href", `/app/${ORG.id}/dashboard`);
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-forOrganizations"]',
+			),
+		).toBeNull();
+	});
+
+	it("offers a switcher alongside the direct link once a member belongs to more than one organization", async () => {
+		const ORG_B = {
+			id: "88888888-8888-8888-8888-888888888888",
+			name: "Foerderverein Hamburg",
+		};
+		api.getOrganizations.mockResolvedValue([ORG, ORG_B]);
+
+		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+
+		expect(
+			await screen.findByRole("button", {
+				name: "Switch organization, currently Foerderverein Hamburg",
+			}),
+		).toBeInTheDocument();
+		// The alphabetically-first org (ORG_B) is the resolved active one -
+		// the direct nav entry still points at it, same as a single-org
+		// member, so the mobile menu keeps offering direct sub-tab links.
+		expect(await screen.findByTestId("nav-organization")).toHaveAttribute(
+			"href",
+			`/app/${ORG_B.id}/dashboard`,
+		);
 		expect(
 			container.ownerDocument.querySelector(
 				'[data-testid="nav-forOrganizations"]',

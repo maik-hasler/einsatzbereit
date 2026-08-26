@@ -5,11 +5,13 @@ import { useLocation } from "react-router";
 import { dispatchToast } from "../lib/toastBus";
 import { subscribeSessionExpired } from "../lib/sessionExpiryBus";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { useSetSessionExpiredFlag } from "../contexts/AuthStatusContext";
 
 export function useSessionExpiryHandler() {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const location = useLocation();
+	const setSessionExpired = useSetSessionExpiredFlag();
 	const handledRef = useRef(false);
 	const locationRef = useRef(location);
 	locationRef.current = location;
@@ -29,6 +31,7 @@ export function useSessionExpiryHandler() {
 			if (handledRef.current) return;
 			handledRef.current = true;
 
+			setSessionExpired(true);
 			dispatchToast("error", t("error.sessionExpired"));
 
 			redirectTimer = setTimeout(() => {
@@ -50,5 +53,5 @@ export function useSessionExpiryHandler() {
 			unsubscribeSilentRenewError();
 			if (redirectTimer !== null) clearTimeout(redirectTimer);
 		};
-	}, [auth, t]);
+	}, [auth, t, setSessionExpired]);
 }
