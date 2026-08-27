@@ -1,7 +1,5 @@
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -14,10 +12,7 @@ namespace Application.VolunteerOpportunities.UpdateTimeSlot.v1;
 
 internal sealed class UpdateTimeSlotCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer)
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<UpdateTimeSlotCommand, UpdateTimeSlotResult>
 {
 	public async ValueTask<UpdateTimeSlotResult> Handle(
@@ -78,10 +73,9 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			NotificationKind.OpportunityUpdated,
 			cancellationToken,
 			timeSlotId,
-			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
 			opportunity.TitleDe);
+
+		opportunity.NotifyVolunteersOfUpdate(timeSlotId);
 
 		return new UpdateTimeSlotResult(1, []);
 	}

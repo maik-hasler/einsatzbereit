@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateTimeSlot.v1;
@@ -24,9 +22,6 @@ public class UpdateTimeSlotCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly UpdateTimeSlotCommandHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -51,19 +46,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService
-			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => callInfo.Arg<IReadOnlyList<Guid>>()!
-				.ToDictionary(id => id, id => new KeycloakUserProfile(id, "user", null, null, "user@example.com")));
-		_emailService
-			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private VolunteerOpportunity CreateScheduledSlotsOpportunity() =>
@@ -260,13 +243,13 @@ public class UpdateTimeSlotCommandHandlerTests
 		await _notifRepo.DidNotReceive().AddAsync(
 			Arg.Is<Notification>(n => n!.RecipientId.Value == otherSlotVolunteer),
 			cancellationToken);
-		await _emailService.Received(1).SendBatchAsync(
-			Arg.Is<IReadOnlyList<EmailMessage>>(messages => messages!.Count == 1 && messages[0].To == "user@example.com"),
-			cancellationToken);
+		opportunity.Events.OfType<VolunteerOpportunityUpdatedDomainEvent>()
+			.Should().ContainSingle()
+			.Which.TimeSlotId.Should().Be(editedSlot.Id);
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotEmail_WhenNoActiveVolunteersOnEditedSlot(
+	public async Task Handle_ShouldRaiseUpdatedDomainEvent_EvenWhenNoActiveVolunteersOnEditedSlot(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -285,9 +268,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(),
-			Arg.Any<CancellationToken>());
+		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
+		opportunity.Events.OfType<VolunteerOpportunityUpdatedDomainEvent>()
+			.Should().ContainSingle()
+			.Which.TimeSlotId.Should().Be(editedSlot.Id);
 	}
 
 	[Test]

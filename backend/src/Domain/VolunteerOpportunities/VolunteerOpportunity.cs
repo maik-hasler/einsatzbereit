@@ -528,6 +528,12 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
+	// Callers decide "material change" from a before/after snapshot the aggregate
+	// itself doesn't retain (see UpdateVolunteerOpportunityCommandHandler), so this is
+	// an explicit trigger rather than something raised from within a single mutator.
+	public void NotifyVolunteersOfUpdate(TimeSlotId? timeSlotId = null) =>
+		AddEvent(new VolunteerOpportunityUpdatedDomainEvent(Id, timeSlotId));
+
 	public Result<TimeSlot> AddTimeSlot(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
