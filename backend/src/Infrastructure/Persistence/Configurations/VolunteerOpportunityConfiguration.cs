@@ -143,6 +143,21 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasForeignKey(vo => vo.OrganizationId)
 			.OnDelete(DeleteBehavior.Cascade);
 
+		builder.HasIndex(vo => vo.CheckInPinTimeSlotId);
+
+		// Mirrors EngagementConfiguration's identical TimeSlotId relationship. Explicit
+		// SetNull (not the ClientSetNull default, which renders as ON DELETE NO ACTION in
+		// Postgres) matters here specifically: RemoveTimeSlot/SwitchParticipationType can
+		// delete the very TimeSlot this points to without clearing it first, and rely on
+		// this to keep that from ever producing a dangling reference or a save-time FK
+		// violation - EnsureCurrentCheckInPin already treats a stale value as "rotate",
+		// which is the same outcome this constraint additionally guarantees at the DB level.
+		builder.HasOne<TimeSlot>()
+			.WithMany()
+			.HasForeignKey(vo => vo.CheckInPinTimeSlotId)
+			.IsRequired(false)
+			.OnDelete(DeleteBehavior.SetNull);
+
 		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
 
 		builder.HasIndex(vo => vo.Tags)
