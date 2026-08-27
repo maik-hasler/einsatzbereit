@@ -68,13 +68,16 @@ internal static class OpportunityNotificationHelper
 			messages.Add(new EmailMessage(volunteer.Email, content.Subject, content.Body, volunteerId.ToString()));
 		}
 
+		// Unlike EngagementOrganizerNotificationHelper, every live caller here that supplies
+		// email params is a synchronous command handler running inside
+		// TransactionPipelineBehavior's transaction, not a post-commit outbox-dispatched
+		// handler - there's no retry infrastructure downstream to hand a failure to.
+		// Throwing here would roll back the (unrelated, already-valid) opportunity edit and,
+		// since a bad recipient address fails identically on every retry, could permanently
+		// block the organizer from editing this opportunity at all (#2201). SmtpEmailService
+		// already logs and records metrics for each failed send, so nothing is silently lost -
+		// only the "block the caller" part is deliberately not propagated here.
 		if (messages.Count > 0)
-		{
-			var results = await emailService.SendBatchAsync(messages, cancellationToken);
-			var failedCount = results.Count(succeeded => !succeeded);
-			if (failedCount > 0)
-				throw new InvalidOperationException(
-					$"Failed to send {failedCount} of {results.Count} opportunity notification email(s) for opportunity {opportunityId.Value}");
-		}
+			await emailService.SendBatchAsync(messages, cancellationToken);
 	}
 }

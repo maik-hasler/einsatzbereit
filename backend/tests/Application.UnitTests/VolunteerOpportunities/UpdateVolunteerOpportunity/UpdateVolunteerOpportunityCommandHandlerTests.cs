@@ -445,7 +445,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenVolunteerNotificationEmailFailsToSend(
+	public async Task Handle_ShouldStillUpdateOpportunity_WhenVolunteerNotificationEmailFailsToSend(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -469,11 +469,14 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>(
-			"a swallowed delivery failure here would let a volunteer never learn the opportunity's address changed (#2201)");
+		result.Should().BeTrue(
+			"a notification email failing to send must not block or roll back an otherwise-valid opportunity update - " +
+			"unlike an outbox-dispatched handler there is no retry path here, and a permanently bad recipient address " +
+			"would otherwise deterministically block every future edit to this opportunity (#2201)");
+		opportunity.TitleDe.Should().Be("Neues Thema");
 	}
 
 	[Test]
