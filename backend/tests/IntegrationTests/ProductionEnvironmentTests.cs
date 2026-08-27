@@ -1,6 +1,3 @@
-using System.Net.Http.Json;
-using Application.Common.Pagination;
-using Application.Organizations.GetPublicOrganizations.v1;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -48,13 +45,11 @@ public class ProductionEnvironmentTests(ProductionEnvironmentFixture fixture)
 	public async Task GetPublicOrganizationsDirectory_ShouldReturnSeededOrganizations_WhenSeedOnStartupIsEnabled(
 		CancellationToken cancellationToken)
 	{
-		using var client = fixture.CreateHttpClient();
+		var directory = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var response = await client.GetFromJsonAsync<PagedList<PublicOrganizationSummary>>(
-			"/v1/organizations/directory?PageNumber=1&PageSize=10", cancellationToken);
+		var page = await directory.GetPublicOrganizationsAsync(1, 10, cancellationToken: cancellationToken);
 
-		response.Should().NotBeNull();
-		response!.Items.Should().Contain(o => o.Name == "Lindenauer Nachbarschaftshilfe e.V.");
-		response.Items.Should().Contain(o => o.Name == "Lindenauer Tierschutzverein e.V.");
+		page.Items.Should().Contain(o => o.Name == "Lindenauer Nachbarschaftshilfe e.V.");
+		page.Items.Should().Contain(o => o.Name == "Lindenauer Tierschutzverein e.V.");
 	}
 }
