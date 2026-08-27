@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Pagination;
 using Application.Common.Sitemap;
+using Application.Common.Time;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
@@ -245,10 +246,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 					s.Longitude.Value) <= filter.RadiusKm!.Value)
 			: slots;
 
-		var offset = TimeSpan.FromMinutes(filter.UtcOffsetMinutes);
+		var timeZone = CanonicalTimeZone.Resolve(filter.Timezone);
 
 		return withinRadius
-			.GroupBy(s => DateOnly.FromDateTime(s.StartDateTime.ToOffset(offset).DateTime))
+			.GroupBy(s => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(s.StartDateTime, timeZone).DateTime))
 			.OrderBy(g => g.Key)
 			.Select(g => new VolunteerOpportunityAvailableDate(
 				g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),

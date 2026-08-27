@@ -1,7 +1,8 @@
 import type { TFunction } from "i18next";
-import { differenceInCalendarDays, isSameDay } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import type { TimeSlotDetail } from "../client/api-client";
 import type { OpportunityCapacity } from "./opportunityCapacity";
+import { CANONICAL_TIME_ZONE } from "./timezone";
 
 export function formatOccurrence(occurrence: string, t: TFunction): string {
 	return occurrence === "Recurring"
@@ -132,6 +133,33 @@ export function resolveDateLocale(lng: string): string {
 	return lng === "de" ? "de-DE" : "en-GB";
 }
 
+// Intl.DateTimeFormat rejects timeZoneName combined with dateStyle/timeStyle
+// (the "style" presets and individual field options - which timeZoneName is
+// one of - are mutually exclusive), so the zone name is always resolved via
+// its own field-only formatter and appended, never baked into a styled one.
+const zoneNameFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getZoneNameFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
+	let formatter = zoneNameFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			timeZone: CANONICAL_TIME_ZONE,
+			timeZoneName: "short",
+		});
+		zoneNameFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
+function formatZoneName(date: Date, lng: string): string {
+	return (
+		getZoneNameFormatter(lng)
+			.formatToParts(date)
+			.find((part) => part.type === "timeZoneName")?.value ?? ""
+	);
+}
+
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getDateTimeFormatter(lng: string): Intl.DateTimeFormat {
@@ -141,6 +169,7 @@ function getDateTimeFormatter(lng: string): Intl.DateTimeFormat {
 		formatter = new Intl.DateTimeFormat(resolvedLocale, {
 			dateStyle: "medium",
 			timeStyle: "short",
+			timeZone: CANONICAL_TIME_ZONE,
 		});
 		dateTimeFormatters.set(resolvedLocale, formatter);
 	}
@@ -148,7 +177,8 @@ function getDateTimeFormatter(lng: string): Intl.DateTimeFormat {
 }
 
 export function formatDateTime(dt: string, lng: string): string {
-	return getDateTimeFormatter(lng).format(new Date(dt));
+	const date = new Date(dt);
+	return `${getDateTimeFormatter(lng).format(date)} ${formatZoneName(date, lng)}`;
 }
 
 const timeFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -157,7 +187,10 @@ function getTimeFormatter(lng: string): Intl.DateTimeFormat {
 	const resolvedLocale = resolveDateLocale(lng);
 	let formatter = timeFormatters.get(resolvedLocale);
 	if (!formatter) {
-		formatter = new Intl.DateTimeFormat(resolvedLocale, { timeStyle: "short" });
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			timeStyle: "short",
+			timeZone: CANONICAL_TIME_ZONE,
+		});
 		timeFormatters.set(resolvedLocale, formatter);
 	}
 	return formatter;
@@ -170,13 +203,14 @@ export function formatDateTimeRange(
 ): string {
 	const start = new Date(startDt);
 	const end = new Date(endDt);
-	if (!isSameDay(start, end)) {
+	const startDatePart = getDateFormatter(lng).format(start);
+	const endDatePart = getDateFormatter(lng).format(end);
+	if (startDatePart !== endDatePart) {
 		return `${formatDateTime(startDt, lng)} - ${formatDateTime(endDt, lng)}`;
 	}
-	const datePart = getDateFormatter(lng).format(start);
 	const startTime = getTimeFormatter(lng).format(start);
 	const endTime = getTimeFormatter(lng).format(end);
-	return `${datePart}, ${startTime}-${endTime}`;
+	return `${startDatePart}, ${startTime}-${endTime} ${formatZoneName(start, lng)}`;
 }
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -187,6 +221,7 @@ function getDateFormatter(lng: string): Intl.DateTimeFormat {
 	if (!formatter) {
 		formatter = new Intl.DateTimeFormat(resolvedLocale, {
 			dateStyle: "medium",
+			timeZone: CANONICAL_TIME_ZONE,
 		});
 		dateFormatters.set(resolvedLocale, formatter);
 	}

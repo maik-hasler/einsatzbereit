@@ -13,7 +13,7 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityQueryHandler(
 		var filter = new VolunteerOpportunityDateAvailabilityFilter(
 			request.From,
 			request.To,
-			request.UtcOffsetMinutes,
+			request.Timezone,
 			request.Occurrence,
 			request.ParticipationType,
 			request.IsRemote,

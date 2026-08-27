@@ -10,7 +10,8 @@ namespace Application.Engagements.ConfirmEngagement.v1;
 
 internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
-	ISender sender)
+	ISender sender,
+	TimeProvider timeProvider)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -30,7 +31,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 			cancellationToken);
 
 		var result = await EngagementConfirmationHelper.ConfirmAsync(
-			dbContext, sender, engagement, request.Timezone, cancellationToken);
+			dbContext, sender, engagement, timeProvider, cancellationToken);
 
 		return result.GetValueOrThrow();
 	}

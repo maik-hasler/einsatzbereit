@@ -3,7 +3,7 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunityDateAvailabi
 public sealed record VolunteerOpportunityDateAvailabilityFilter(
 	DateTimeOffset From,
 	DateTimeOffset To,
-	int UtcOffsetMinutes,
+	string? Timezone,
 	string? Occurrence = null,
 	string? ParticipationType = null,
 	bool? IsRemote = null,

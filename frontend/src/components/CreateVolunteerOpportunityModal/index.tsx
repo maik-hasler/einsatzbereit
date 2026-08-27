@@ -13,6 +13,11 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
 import { validateImageUpload } from "../../lib/imageUpload";
+import {
+	CANONICAL_TIME_ZONE,
+	toZonedDatetimeLocalValue,
+	zonedDatetimeLocalToUtc,
+} from "../../lib/timezone";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
@@ -37,18 +42,33 @@ import type { OpportunityFormValues } from "./schema";
 
 const BLOCKED_JUMP_MESSAGE_ID = "create-opportunity-step-blocked";
 
+// Steps `origin` by whole weeks/months in Berlin wall-clock terms (not the
+// browser's own timezone), so an organizer outside Europe/Berlin previewing
+// a recurring series before it's saved sees the same occurrences the backend
+// would authoritatively generate (CreateTimeSlotCommandHandler.Advance, #2203).
 function advanceDate(
 	origin: Date,
 	frequency: string | undefined,
 	steps: number,
 ): Date {
-	const d = new Date(origin);
+	if (!frequency || steps === 0) return new Date(origin);
+
+	const local = toZonedDatetimeLocalValue(origin, CANONICAL_TIME_ZONE);
+	const [datePart, timePart] = local.split("T");
+	const [year, month, day] = datePart.split("-").map(Number);
+
+	const steppedDate = new Date(Date.UTC(year, month - 1, day));
 	if (frequency === "Weekly") {
-		d.setDate(d.getDate() + 7 * steps);
+		steppedDate.setUTCDate(steppedDate.getUTCDate() + 7 * steps);
 	} else if (frequency === "Monthly") {
-		d.setMonth(d.getMonth() + steps);
+		steppedDate.setUTCMonth(steppedDate.getUTCMonth() + steps);
 	}
-	return d;
+
+	const steppedDatePart = steppedDate.toISOString().slice(0, 10);
+	return zonedDatetimeLocalToUtc(
+		`${steppedDatePart}T${timePart}`,
+		CANONICAL_TIME_ZONE,
+	);
 }
 
 function resolveCheckInPin(
@@ -105,9 +125,7 @@ interface EditingSlot {
 
 function toDatetimeLocalValue(value: Date | string): string {
 	const date = value instanceof Date ? value : new Date(value);
-	return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-		.toISOString()
-		.slice(0, 16);
+	return toZonedDatetimeLocalValue(date, CANONICAL_TIME_ZONE);
 }
 
 function toDateInputValue(value: Date | string): string {
@@ -459,8 +477,14 @@ export default function CreateVolunteerOpportunityModal({
 	async function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
 		setSlotError(null);
-		const start = new Date(newSlot.startDateTime);
-		const end = new Date(newSlot.endDateTime);
+		const start = zonedDatetimeLocalToUtc(
+			newSlot.startDateTime,
+			CANONICAL_TIME_ZONE,
+		);
+		const end = zonedDatetimeLocalToUtc(
+			newSlot.endDateTime,
+			CANONICAL_TIME_ZONE,
+		);
 		if (end <= start) {
 			setSlotError(t("timeSlots.addError"));
 			return;
@@ -595,9 +619,13 @@ export default function CreateVolunteerOpportunityModal({
 		try {
 			const result = await api.updateTimeSlot(initialOpportunity.id, edit.id, {
 				startDateTime:
-					edit.scope === "Only" ? new Date(edit.startDateTime) : undefined,
+					edit.scope === "Only"
+						? zonedDatetimeLocalToUtc(edit.startDateTime, CANONICAL_TIME_ZONE)
+						: undefined,
 				endDateTime:
-					edit.scope === "Only" ? new Date(edit.endDateTime) : undefined,
+					edit.scope === "Only"
+						? zonedDatetimeLocalToUtc(edit.endDateTime, CANONICAL_TIME_ZONE)
+						: undefined,
 				maxParticipants: edit.maxParticipants ?? undefined,
 				scope: edit.scope,
 			});
@@ -607,8 +635,14 @@ export default function CreateVolunteerOpportunityModal({
 						s.id === edit.id
 							? {
 									...s,
-									startDateTime: new Date(edit.startDateTime),
-									endDateTime: new Date(edit.endDateTime),
+									startDateTime: zonedDatetimeLocalToUtc(
+										edit.startDateTime,
+										CANONICAL_TIME_ZONE,
+									),
+									endDateTime: zonedDatetimeLocalToUtc(
+										edit.endDateTime,
+										CANONICAL_TIME_ZONE,
+									),
 									maxParticipants: edit.maxParticipants ?? undefined,
 								}
 							: s,
@@ -644,8 +678,14 @@ export default function CreateVolunteerOpportunityModal({
 			return;
 		}
 		if (!editingSlot.startDateTime || !editingSlot.endDateTime) return;
-		const start = new Date(editingSlot.startDateTime);
-		const end = new Date(editingSlot.endDateTime);
+		const start = zonedDatetimeLocalToUtc(
+			editingSlot.startDateTime,
+			CANONICAL_TIME_ZONE,
+		);
+		const end = zonedDatetimeLocalToUtc(
+			editingSlot.endDateTime,
+			CANONICAL_TIME_ZONE,
+		);
 		if (end <= start) {
 			setSlotError(t("timeSlots.editError"));
 			return;

@@ -46,8 +46,6 @@ export function fetchVolunteerOpportunities(
 export interface FetchVolunteerOpportunityDateAvailabilityOptions {
 	from: Date;
 	to: Date;
-
-	utcOffsetMinutes: number;
 	occurrence?: string;
 	participationType?: string;
 	isRemote?: boolean;
@@ -67,7 +65,11 @@ export function fetchVolunteerOpportunityDateAvailability(
 	return api.getVolunteerOpportunityDateAvailability(
 		options.from,
 		options.to,
-		options.utcOffsetMinutes,
+		// The server derives the caller's zone from the X-Timezone header
+		// (sent on every request, see api-instance.ts) rather than this
+		// scalar offset - a single offset can't be right for every slot in
+		// a multi-week window once a DST transition falls inside it (#2203).
+		undefined,
 		options.occurrence,
 		options.participationType,
 		options.isRemote,

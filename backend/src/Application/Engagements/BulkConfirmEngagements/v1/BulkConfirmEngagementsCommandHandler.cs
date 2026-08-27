@@ -9,7 +9,8 @@ namespace Application.Engagements.BulkConfirmEngagements.v1;
 
 internal sealed class BulkConfirmEngagementsCommandHandler(
 	IApplicationDbContext dbContext,
-	ISender sender)
+	ISender sender,
+	TimeProvider timeProvider)
 	: ICommandHandler<BulkConfirmEngagementsCommand, BulkEngagementActionResult>
 {
 	public async ValueTask<BulkEngagementActionResult> Handle(
@@ -50,7 +51,7 @@ internal sealed class BulkConfirmEngagementsCommandHandler(
 			}
 
 			var result = await EngagementConfirmationHelper.ConfirmAsync(
-				dbContext, sender, engagement, request.Timezone, cancellationToken);
+				dbContext, sender, engagement, timeProvider, cancellationToken);
 
 			if (result.IsSuccess)
 				succeeded.Add(new BulkEngagementActionSuccess(result.Value.Id.Value, result.Value.Status.ToString()));

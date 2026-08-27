@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
+using Application.Common.Time;
 using Application.Users.RecordLogin.v1;
 using Domain.Users;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,22 +9,7 @@ namespace Api.Common.Middleware;
 
 internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache cache, TimeProvider timeProvider)
 {
-	private static readonly TimeZoneInfo ServerTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
 	private static readonly Lock _lock = new();
-
-	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
-	{
-		if (string.IsNullOrWhiteSpace(ianaId))
-			return ServerTimeZone;
-		try
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
-		}
-		catch
-		{
-			return ServerTimeZone;
-		}
-	}
 
 	public async Task InvokeAsync(HttpContext context, ISender sender)
 	{
@@ -33,10 +19,14 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache c
 			if (subClaim is not null && Guid.TryParse(subClaim, out var userId))
 			{
 				var tzHeader = context.Request.Headers["X-Timezone"].FirstOrDefault();
-				var tz = ResolveTimeZone(tzHeader);
+				var tz = CanonicalTimeZone.Resolve(tzHeader);
 				var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), tz).DateTime);
 
-				var cacheKey = $"login-streak-recorded:{subClaim}";
+				// The date is part of the key (not just the expiration) so that a client
+				// whose local day advances before the next cache rollover - e.g. a caller
+				// far enough ahead of tz's own midnight - still gets recorded for its new
+				// local day instead of being swallowed by yesterday's cached entry (#2203).
+				var cacheKey = $"login-streak-recorded:{subClaim}:{today:O}";
 
 				Task recordTask;
 				lock (_lock)
@@ -49,7 +39,7 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache c
 						cache.Set(cacheKey, recordTask, new MemoryCacheEntryOptions
 						{
 							Size = 1,
-							AbsoluteExpiration = NextServerMidnight(),
+							AbsoluteExpiration = NextMidnight(today, tz),
 						});
 					}
 					else
@@ -84,11 +74,10 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next, IMemoryCache c
 		}
 	}
 
-	private DateTimeOffset NextServerMidnight()
+	private static DateTimeOffset NextMidnight(DateOnly today, TimeZoneInfo tz)
 	{
-		var serverNow = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), ServerTimeZone);
-		var nextMidnight = serverNow.Date.AddDays(1);
+		var nextMidnight = today.AddDays(1).ToDateTime(TimeOnly.MinValue);
 
-		return new DateTimeOffset(nextMidnight, ServerTimeZone.GetUtcOffset(nextMidnight));
+		return new DateTimeOffset(nextMidnight, tz.GetUtcOffset(nextMidnight));
 	}
 }

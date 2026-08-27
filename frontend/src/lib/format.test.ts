@@ -376,44 +376,76 @@ describe("resolveDateLocale", () => {
 	});
 });
 
+// Intl.DateTimeFormat rejects timeZoneName alongside dateStyle/timeStyle, so
+// (like the production formatter) the base styled string and the zone name
+// are resolved by two separate formatters and joined - see format.ts.
+function expectedDateTimeWithZone(iso: string, locale: string): string {
+	const date = new Date(iso);
+	const base = date.toLocaleString(locale, {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone: "Europe/Berlin",
+	});
+	const zoneName = new Intl.DateTimeFormat(locale, {
+		timeZone: "Europe/Berlin",
+		timeZoneName: "short",
+	})
+		.formatToParts(date)
+		.find((part) => part.type === "timeZoneName")?.value;
+	return `${base} ${zoneName}`;
+}
+
 describe("formatDateTime", () => {
-	it("formats using en-GB style for en", () => {
+	it("formats using en-GB style for en, pinned to the Berlin zone with its name shown", () => {
 		const iso = "2024-03-15T14:30:00Z";
-		const expected = new Date(iso).toLocaleString("en-GB", {
-			dateStyle: "medium",
-			timeStyle: "short",
-		});
-		expect(formatDateTime(iso, "en")).toBe(expected);
+		expect(formatDateTime(iso, "en")).toBe(
+			expectedDateTimeWithZone(iso, "en-GB"),
+		);
 	});
 
-	it("formats using de-DE style when locale is de", () => {
+	it("formats using de-DE style when locale is de, pinned to the Berlin zone with its name shown", () => {
 		const iso = "2024-03-15T14:30:00Z";
-		const expected = new Date(iso).toLocaleString("de-DE", {
-			dateStyle: "medium",
-			timeStyle: "short",
-		});
-		expect(formatDateTime(iso, "de")).toBe(expected);
+		expect(formatDateTime(iso, "de")).toBe(
+			expectedDateTimeWithZone(iso, "de-DE"),
+		);
 	});
 
 	it("produces a different format for de than for en", () => {
 		const iso = "2024-03-15T14:30:00Z";
 		expect(formatDateTime(iso, "de")).not.toBe(formatDateTime(iso, "en"));
 	});
+
+	it("renders the same Berlin wall-clock time regardless of the viewer's own device timezone (#2203)", () => {
+		const iso = "2026-08-27T07:00:00Z"; // 09:00 in Berlin (CEST, UTC+2)
+
+		vi.stubEnv("TZ", "Pacific/Kiritimati");
+		const fromKiritimati = formatDateTime(iso, "de");
+
+		vi.stubEnv("TZ", "Europe/Lisbon");
+		const fromLisbon = formatDateTime(iso, "de");
+
+		vi.unstubAllEnvs();
+
+		expect(fromKiritimati).toBe(fromLisbon);
+		expect(fromKiritimati).toContain("09:00");
+	});
 });
 
 describe("formatDate", () => {
-	it("formats using en-GB style for en, with no time-of-day", () => {
+	it("formats using en-GB style for en, with no time-of-day, pinned to the Berlin zone", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString("en-GB", {
 			dateStyle: "medium",
+			timeZone: "Europe/Berlin",
 		});
 		expect(formatDate(iso, "en")).toBe(expected);
 	});
 
-	it("formats using de-DE style when locale is de", () => {
+	it("formats using de-DE style when locale is de, pinned to the Berlin zone", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString("de-DE", {
 			dateStyle: "medium",
+			timeZone: "Europe/Berlin",
 		});
 		expect(formatDate(iso, "de")).toBe(expected);
 	});
@@ -428,40 +460,51 @@ describe("formatDate", () => {
 });
 
 describe("formatDateTimeRange", () => {
-	it("collapses a same-day range to one date with a hyphen-joined time range", () => {
-		const start = new Date(2026, 7, 27, 9, 0);
-		const end = new Date(2026, 7, 27, 17, 0);
+	it("collapses a same-Berlin-day range to one date with a hyphen-joined time range and the zone name once", () => {
+		// 07:00-15:00 UTC is 09:00-17:00 Berlin (CEST, UTC+2) - the same calendar day there.
+		const startIso = "2026-08-27T07:00:00Z";
+		const endIso = "2026-08-27T15:00:00Z";
+		const start = new Date(startIso);
+		const end = new Date(endIso);
+		const options = { timeZone: "Europe/Berlin" } as const;
 		const datePart = new Intl.DateTimeFormat("de-DE", {
 			dateStyle: "medium",
+			...options,
 		}).format(start);
 		const startTime = new Intl.DateTimeFormat("de-DE", {
 			timeStyle: "short",
+			...options,
 		}).format(start);
 		const endTime = new Intl.DateTimeFormat("de-DE", {
 			timeStyle: "short",
+			...options,
 		}).format(end);
-		expect(
-			formatDateTimeRange(start.toISOString(), end.toISOString(), "de"),
-		).toBe(`${datePart}, ${startTime}-${endTime}`);
+		const zoneName = new Intl.DateTimeFormat("de-DE", {
+			...options,
+			timeZoneName: "short",
+		})
+			.formatToParts(start)
+			.find((part) => part.type === "timeZoneName")?.value;
+		expect(formatDateTimeRange(startIso, endIso, "de")).toBe(
+			`${datePart}, ${startTime}-${endTime} ${zoneName}`,
+		);
 	});
 
-	it("falls back to two full formatDateTime calls once the range crosses a calendar day", () => {
-		const start = new Date(2026, 7, 27, 23, 0);
-		const end = new Date(2026, 7, 28, 1, 0);
-		const startIso = start.toISOString();
-		const endIso = end.toISOString();
+	it("falls back to two full formatDateTime calls once the range crosses a Berlin calendar day", () => {
+		// 21:00-23:00 UTC on the same UTC day is 23:00 Berlin -> 01:00 Berlin the
+		// next day - a Berlin-day crossing that a UTC-day comparison would miss.
+		const startIso = "2026-08-27T21:00:00Z";
+		const endIso = "2026-08-27T23:00:00Z";
 		expect(formatDateTimeRange(startIso, endIso, "de")).toBe(
 			`${formatDateTime(startIso, "de")} - ${formatDateTime(endIso, "de")}`,
 		);
 	});
 
 	it("uses en-GB style time-of-day for en", () => {
-		const start = new Date(2026, 7, 27, 9, 0);
-		const end = new Date(2026, 7, 27, 17, 0);
-		expect(
-			formatDateTimeRange(start.toISOString(), end.toISOString(), "en"),
-		).not.toBe(
-			formatDateTimeRange(start.toISOString(), end.toISOString(), "de"),
+		const startIso = "2026-08-27T07:00:00Z";
+		const endIso = "2026-08-27T15:00:00Z";
+		expect(formatDateTimeRange(startIso, endIso, "en")).not.toBe(
+			formatDateTimeRange(startIso, endIso, "de"),
 		);
 	});
 });

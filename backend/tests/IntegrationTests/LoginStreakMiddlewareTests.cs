@@ -35,8 +35,14 @@ public class LoginStreakMiddlewareTests
 	}
 
 	[Test]
-	public async Task InvokeAsync_ShouldNotRecordLoginRepeatedly_WhenXTimezoneHeaderAlternatesAcrossRequests()
+	public async Task InvokeAsync_ShouldRecordOncePerDistinctLocalDay_WhenXTimezoneHeaderAlternatesBetweenExtremeZones()
 	{
+		// Pacific/Kiritimati (UTC+14) and Pacific/Niue (UTC-11) are 25 hours apart, so at
+		// any single instant they always disagree about the calendar date, regardless of
+		// what that instant is - so this can safely use the real clock (no historical
+		// FakeTimeProvider value to fight IMemoryCache's own real-time expiration check).
+		// The cache must still collapse repeats of the SAME local day down to one send
+		// each (#2203) - it must not thrash into more than the 2 distinct days implied.
 		var sender = new RecordingSender();
 		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
 		var subClaim = Guid.NewGuid().ToString();
@@ -47,20 +53,61 @@ public class LoginStreakMiddlewareTests
 			await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, tzHeader), sender);
 		}
 
-		sender.SentRequests.Should().ContainSingle(
-			"X-Timezone must only shape the streak's local date, never thrash the shared dedup cache");
+		sender.SentRequests.Should().HaveCount(2,
+			"exactly the 2 distinct local days the alternating header genuinely implies at this instant - one send each, not one per request and not a single shared one");
+	}
+
+	[Test]
+	public async Task InvokeAsync_ShouldRecordBothVisits_WhenTheClientsLocalDayAdvancesBeforeServerMidnight()
+	{
+		// A caller in Asia/Tokyo (UTC+9, no DST) can cross into their own next local day
+		// well before Berlin's own midnight. Anchored to the real clock (not a hardcoded
+		// date) so the computed cache expiration is always ahead of whatever IMemoryCache's
+		// own real clock reads. The advance is derived from the current Tokyo time-of-day
+		// so it always lands just past midnight the next calendar day - exactly one day
+		// boundary crossed - no matter what time this test actually runs (#2203).
+		var tokyo = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tokyo");
+		var firstVisit = DateTimeOffset.UtcNow;
+		var hoursUntilNextTokyoMidnight = 24 - TimeZoneInfo.ConvertTime(firstVisit, tokyo).TimeOfDay.TotalHours;
+		var secondVisit = firstVisit.AddHours(hoursUntilNextTokyoMidnight + 1);
+		var firstDay = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(firstVisit, tokyo).DateTime);
+		var secondDay = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(secondVisit, tokyo).DateTime);
+		secondDay.Should().Be(firstDay.AddDays(1),
+			"the chosen advance must cross exactly one Tokyo local day for this test to mean anything");
+
+		var timeProvider = new FakeTimeProvider(firstVisit);
+		var sender = new RecordingSender();
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), timeProvider);
+		var subClaim = Guid.NewGuid().ToString();
+
+		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, "Asia/Tokyo"), sender);
+		timeProvider.Advance(TimeSpan.FromHours(hoursUntilNextTokyoMidnight + 1));
+		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, "Asia/Tokyo"), sender);
+
+		sender.SentRequests.Should().HaveCount(2,
+			"the caller's own local day had already advanced by the second visit, even though Berlin's midnight had not");
+		sender.SentRequests.OfType<RecordLoginCommand>().Select(r => r.Date).Should().Equal(firstDay, secondDay);
 	}
 
 	[Test]
 	public async Task InvokeAsync_ShouldRecordLoginAgain_AfterServerMidnightRollover()
 	{
-		var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 6, 15, 10, 0, 0, TimeSpan.Zero));
+		// No X-Timezone header means the middleware falls back to the canonical
+		// Europe/Berlin zone. The advance is derived from the current Berlin time-of-day
+		// so it always lands just past midnight the next calendar day - exactly one day
+		// boundary crossed - no matter what time this test actually runs, and always
+		// safely ahead of IMemoryCache's own real clock (#2203).
+		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		var firstVisit = DateTimeOffset.UtcNow;
+		var hoursUntilNextBerlinMidnight = 24 - TimeZoneInfo.ConvertTime(firstVisit, berlin).TimeOfDay.TotalHours;
+
+		var timeProvider = new FakeTimeProvider(firstVisit);
 		var sender = new RecordingSender();
 		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), timeProvider);
 		var subClaim = Guid.NewGuid().ToString();
 
 		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
-		timeProvider.Advance(TimeSpan.FromHours(13));
+		timeProvider.Advance(TimeSpan.FromHours(hoursUntilNextBerlinMidnight + 1));
 		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim), sender);
 
 		sender.SentRequests.Should().HaveCount(2);

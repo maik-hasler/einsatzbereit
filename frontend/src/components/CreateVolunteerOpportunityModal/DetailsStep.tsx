@@ -8,6 +8,10 @@ import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
 import { formatDateTimeRange } from "../../lib/format";
 import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
+import {
+	CANONICAL_TIME_ZONE,
+	toZonedDatetimeLocalValue,
+} from "../../lib/timezone";
 import type { OpportunityFormValues } from "./schema";
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
@@ -433,11 +437,10 @@ export default function DetailsStep({
 									value={newSlot.startDateTime}
 									min={
 										!isEditMode
-											? new Date(
-													Date.now() - new Date().getTimezoneOffset() * 60000,
+											? toZonedDatetimeLocalValue(
+													new Date(),
+													CANONICAL_TIME_ZONE,
 												)
-													.toISOString()
-													.slice(0, 16)
 											: undefined
 									}
 									onChange={(e) =>

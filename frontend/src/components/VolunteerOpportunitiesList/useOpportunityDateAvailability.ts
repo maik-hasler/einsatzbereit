@@ -63,8 +63,6 @@ export function useOpportunityDateAvailability(
 			{
 				from,
 				to,
-
-				utcOffsetMinutes: -from.getTimezoneOffset(),
 				occurrence: occurrence || undefined,
 				participationType: participationType || undefined,
 				isRemote:

@@ -14,8 +14,6 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 {
 	private const int MaxWindowDays = 62;
 
-	private const int MaxUtcOffsetMinutes = 14 * 60;
-
 	public void MapEndpoint(
 		IEndpointRouteBuilder app)
 	{
@@ -27,12 +25,13 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
 
-			.CacheOutput(OutputCachingPolicies.VolunteerOpportunityListing)
+			.CacheOutput(OutputCachingPolicies.VolunteerOpportunityDateAvailability)
 			.MapToApiVersion(1);
 	}
 
 	private static async Task<IResult> GetVolunteerOpportunityDateAvailabilityAsync(
 		[AsParameters] GetVolunteerOpportunityDateAvailabilityRequest request,
+		HttpRequest httpRequest,
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
@@ -41,10 +40,6 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 
 		if (request.To - request.From > TimeSpan.FromDays(MaxWindowDays))
 			return Results.Problem($"The requested window must not exceed {MaxWindowDays} days.", statusCode: StatusCodes.Status400BadRequest);
-
-		var utcOffsetMinutes = request.UtcOffsetMinutes ?? 0;
-		if (Math.Abs(utcOffsetMinutes) > MaxUtcOffsetMinutes)
-			return Results.Problem($"UtcOffsetMinutes must be between -{MaxUtcOffsetMinutes} and {MaxUtcOffsetMinutes}.", statusCode: StatusCodes.Status400BadRequest);
 
 		var filterProblem = VolunteerOpportunityFilterValidation.Validate(
 			request.CenterLatitude,
@@ -58,10 +53,12 @@ internal sealed class GetVolunteerOpportunityDateAvailabilityEndpoint
 		if (filterProblem is not null)
 			return filterProblem;
 
+		var timezone = httpRequest.Headers["X-Timezone"].FirstOrDefault();
+
 		var query = new GetVolunteerOpportunityDateAvailabilityQuery(
 			request.From,
 			request.To,
-			utcOffsetMinutes,
+			timezone,
 			request.Occurrence,
 			request.ParticipationType,
 			request.IsRemote,

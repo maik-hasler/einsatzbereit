@@ -30,6 +30,14 @@ internal static class OutputCachingExtensions
 			cache.AddPolicy(OutputCachingPolicies.VolunteerOpportunityListing, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds))
 					.Tag(OutputCachingPolicies.VolunteerOpportunityListingTag));
+
+			// Its own policy rather than reusing VolunteerOpportunityListing above - the
+			// result here depends on the caller's X-Timezone, which the plain listing
+			// doesn't vary by and shouldn't start fragmenting its cache over (#2203).
+			cache.AddPolicy(OutputCachingPolicies.VolunteerOpportunityDateAvailability, policy =>
+				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds))
+					.SetVaryByHeader("X-Timezone")
+					.Tag(OutputCachingPolicies.VolunteerOpportunityListingTag));
 		});
 	}
 

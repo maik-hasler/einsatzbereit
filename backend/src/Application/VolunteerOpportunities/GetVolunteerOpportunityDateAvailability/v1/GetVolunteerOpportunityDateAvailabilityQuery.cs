@@ -5,7 +5,7 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunityDateAvailabi
 public sealed record GetVolunteerOpportunityDateAvailabilityQuery(
 	DateTimeOffset From,
 	DateTimeOffset To,
-	int UtcOffsetMinutes,
+	string? Timezone,
 	string? Occurrence,
 	string? ParticipationType,
 	bool? IsRemote,
