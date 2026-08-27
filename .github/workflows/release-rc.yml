@@ -38,6 +38,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Verify branch content is an ancestor of main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::HEAD ($(git rev-parse HEAD)) is not an ancestor of origin/main - refusing to promote a release branch whose commit never merged into main."
+            exit 1
+          fi
+
       - name: Create and push tag
         run: |
           TAG="${{ steps.tag.outputs.name }}"

@@ -10,16 +10,26 @@ var isTestEnv = builder.Environment.EnvironmentName == "Testing";
 if (!isTestEnv)
 	postgres.WithDataVolume();
 
+// Fixed host ports below are for local dev convenience (predictable URLs like
+// localhost:8080/9000/1025) - nothing in IntegrationTests/VisualTests depends
+// on a specific port, they all resolve endpoints dynamically via
+// _app.GetEndpoint(...)/_app.CreateHttpClient(...). CI runs many of these test
+// jobs on the same runner in sequence, and a fixed host port left bound by a
+// container DCP couldn't clean up in time (or another job's leftover
+// container) fails every subsequent bind attempt the same way, which turned
+// one transient hiccup into an unrecoverable "port is already allocated"
+// retry storm (#2204). Passing port: null here lets Docker pick a free
+// ephemeral port instead, so isTestEnv runs can never collide on a fixed one.
 var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "v1.31.0")
-	.WithHttpEndpoint(port: 1080, targetPort: 8025, name: "webui", isProxied: false)
-	.WithEndpoint(port: 1025, targetPort: 1025, name: "smtp", scheme: "tcp", isProxied: false);
+	.WithHttpEndpoint(port: isTestEnv ? null : 1080, targetPort: 8025, name: "webui", isProxied: false)
+	.WithEndpoint(port: isTestEnv ? null : 1025, targetPort: 1025, name: "smtp", scheme: "tcp", isProxied: false);
 
 var minio = builder.AddContainer("minio", "quay.io/minio/minio", "RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772")
 	.WithArgs("server", "/data", "--console-address", ":9001")
 	.WithEnvironment("MINIO_ROOT_USER", "minio")
 	.WithEnvironment("MINIO_ROOT_PASSWORD", "minio123")
-	.WithHttpEndpoint(port: 9000, targetPort: 9000, name: "api", isProxied: false)
-	.WithHttpEndpoint(port: 9001, targetPort: 9001, name: "console", isProxied: false);
+	.WithHttpEndpoint(port: isTestEnv ? null : 9000, targetPort: 9000, name: "api", isProxied: false)
+	.WithHttpEndpoint(port: isTestEnv ? null : 9001, targetPort: 9001, name: "console", isProxied: false);
 
 var minioApiEndpoint = minio.GetEndpoint("api");
 
@@ -100,7 +110,7 @@ var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26
 	.WithBindMount(keycloakRealmImportPath, "/opt/keycloak/data/import", isReadOnly: true)
 	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
 	.WithArgs("start-dev", "--import-realm")
-	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false)
+	.WithHttpEndpoint(port: isTestEnv ? null : 8080, targetPort: 8080, isProxied: false)
 
 	.WithHttpHealthCheck("/realms/einsatzbereit/.well-known/openid-configuration");
 
@@ -135,10 +145,29 @@ var backend = builder.AddProject<Projects.Api>("backend")
 
 if (isTestEnv)
 {
-	backend.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+	// Every existing integration/visual test runs the backend as ASPNETCORE_ENVIRONMENT=
+	// Development (the default below), which skips RequiredConfigurationValidator entirely
+	// and always runs migrate+seed - the non-Development branch of Program.cs has never
+	// been exercised by a test (#2204). ProductionEnvironmentFixture opts a single, separate
+	// test class into "Production" here without touching that default for the other ~70.
+	backend.WithEnvironment("ASPNETCORE_ENVIRONMENT",
+		builder.Configuration["Testing:BackendAspNetCoreEnvironment"] ?? "Development");
 
 	backend.WithEnvironment("Geocoding__UseFakeService", "true");
 }
+
+// Outside Development, Program.cs only migrates when this is true (and never seeds) - see
+// the isTestEnv block above. Unconditional (not isTestEnv-gated) for the same reason
+// RateLimiting:Read:AnonymousPermitLimit above is: a config passthrough, not a test hook,
+// and a no-op in real Development usage since Program.cs never reads it there.
+if (builder.Configuration["Database:MigrateOnStartup"] is { } migrateOnStartup)
+	backend.WithEnvironment("Database__MigrateOnStartup", migrateOnStartup);
+
+// Same passthrough shape as Database:MigrateOnStartup above, for the same reason - see
+// Program.cs's comment on RequireHttpsMetadata for why ProductionEnvironmentFixture is
+// the only caller that ever sets this.
+if (builder.Configuration["Authentication:RequireHttpsMetadata"] is { } requireHttpsMetadata)
+	backend.WithEnvironment("Authentication__RequireHttpsMetadata", requireHttpsMetadata);
 
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()

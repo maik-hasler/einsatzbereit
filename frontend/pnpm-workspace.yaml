@@ -1,0 +1,8 @@
+# pnpm 10+ moved settings that used to live under package.json's "pnpm" field here.
+# auditConfig.ignoreGhsas below is a pnpm audit setting - see the "Audit dependencies"
+# step in .github/workflows/frontend-checks.yml for the rationale.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-v2hh-gcrm-f6hx
+    - GHSA-7p8r-x3mc-p8w7
+    - GHSA-4c8g-83qw-93j6

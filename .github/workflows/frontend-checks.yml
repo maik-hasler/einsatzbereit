@@ -49,6 +49,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Audit dependencies
+        # Fails on any high/critical advisory in a *production* dependency. The three
+        # fast-uri (GHSA-v2hh-gcrm-f6hx, GHSA-7p8r-x3mc-p8w7, GHSA-4c8g-83qw-93j6)
+        # advisories are recorded as accepted in package.json's pnpm.auditConfig.ignoreGhsas:
+        # fast-uri is reachable only via @hookform/resolvers/ajv, a subpath nothing in this
+        # app imports (the three real imports are all .../zod), and a production build of
+        # the bundle confirms it is tree-shaken out entirely (#2204). Re-verify that before
+        # ever adding another ignoreGhsas entry - it is not a blanket exemption for fast-uri.
+        run: pnpm audit --prod --audit-level high
+
       - name: Lint
         run: pnpm lint
 
