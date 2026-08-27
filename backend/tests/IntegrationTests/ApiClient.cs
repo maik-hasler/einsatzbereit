@@ -499,7 +499,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<EngagementStatusResponse> CheckInEngagementAsync(System.Guid engagementId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<EngagementStatusResponse> CheckInEngagementAsync(System.Guid opportunityId, System.Guid engagementId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -11100,8 +11100,11 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<EngagementStatusResponse> CheckInEngagementAsync(System.Guid engagementId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<EngagementStatusResponse> CheckInEngagementAsync(System.Guid opportunityId, System.Guid engagementId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
+            if (opportunityId == null)
+                throw new System.ArgumentNullException("opportunityId");
+
             if (engagementId == null)
                 throw new System.ArgumentNullException("engagementId");
 
@@ -11117,8 +11120,10 @@ namespace IntegrationTests
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "v1/engagements/{engagementId}/check-in"
-                    urlBuilder_.Append("v1/engagements/");
+                    // Operation Path: "v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in"
+                    urlBuilder_.Append("v1/volunteer-opportunities/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/engagements/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(engagementId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/check-in");
 

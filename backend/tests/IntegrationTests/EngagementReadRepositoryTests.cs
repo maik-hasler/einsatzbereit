@@ -616,7 +616,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, futureSlot.Id);
 		engagement.Confirm().ThrowIfFailure();
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -651,7 +651,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, endedSlot.Id);
 		engagement.Confirm().ThrowIfFailure();
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -683,7 +683,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var engagement = Engagement.CreateIndividualContact(opportunity.Id, volunteerId, "Please let me help.").GetValueOrThrow();
 		engagement.Confirm().ThrowIfFailure();
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -720,7 +720,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var checkedIn = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, slot.Id);
 		checkedIn.Confirm().ThrowIfFailure();
-		checkedIn.CheckIn().ThrowIfFailure();
+		checkedIn.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 		var confirmedNotCheckedIn = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, otherSlot.Id);
 		confirmedNotCheckedIn.Confirm().ThrowIfFailure();
 		var pending = Engagement.CreateIndividualContact(opportunity.Id, volunteerId, "Please let me help.").GetValueOrThrow();

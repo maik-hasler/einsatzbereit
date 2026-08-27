@@ -204,7 +204,7 @@ public class WithdrawEngagementCommandHandlerTests
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 

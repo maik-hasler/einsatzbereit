@@ -787,7 +787,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		var result = await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		var result = await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		result.Status.Should().Be("Confirmed");
 
@@ -809,7 +809,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var act = () => olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		var act = () => olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(400);
@@ -954,7 +954,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		beforeCheckIn.CurrentUserEngagements.Should().ContainSingle();
 		beforeCheckIn.CurrentUserEngagements.Single().IsCheckedIn.Should().BeFalse();
 
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var afterCheckIn = await veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
 		afterCheckIn.CurrentUserEngagements.Should().ContainSingle();
@@ -1224,7 +1224,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		var act = () => veraClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -1255,7 +1255,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id)).Should().Be(0);
 
-		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		var act = () => veraClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(404);
@@ -1451,7 +1451,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id,
 			new SubmitFeedbackRequest { Rating = 4, Comment = "Great experience" },
@@ -1476,14 +1476,14 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var veraEngagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "Vera helps" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(veraEngagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(veraEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, veraEngagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			veraEngagement.Id, new SubmitFeedbackRequest { Rating = 5, Comment = "Vera's feedback" }, cancellationToken);
 
 		var olafEngagement = await olafClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "Olaf helps too" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(olafEngagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(olafEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, olafEngagement.Id, cancellationToken);
 		await olafClient.SubmitFeedbackAsync(
 			olafEngagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Olaf's feedback" }, cancellationToken);
 
@@ -1535,7 +1535,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1571,7 +1571,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1594,7 +1594,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var act = () => veraClient.UpdateFeedbackAsync(
 			engagement.Id, new UpdateFeedbackRequest { Rating = 5, Comment = null }, cancellationToken);
@@ -1615,7 +1615,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1646,7 +1646,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1668,7 +1668,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 		await veraClient.DeleteFeedbackAsync(engagement.Id, cancellationToken);
@@ -1704,7 +1704,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1726,7 +1726,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Okay" }, cancellationToken);
 
@@ -1914,8 +1914,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			opportunity.Id,
 			new CreateTimeSlotRequest
 			{
-				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
-				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				StartDateTime = DateTimeOffset.UtcNow.AddMinutes(5),
+				EndDateTime = DateTimeOffset.UtcNow.AddMinutes(5).AddHours(2),
 				MaxParticipants = 10,
 				RecurrenceFrequency = "Weekly",
 				RecurrenceCount = 2,
@@ -1930,7 +1930,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(firstEngagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(firstEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, firstEngagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			firstEngagement.Id,
 			new SubmitFeedbackRequest { Rating = 5, Comment = "Great first session" },

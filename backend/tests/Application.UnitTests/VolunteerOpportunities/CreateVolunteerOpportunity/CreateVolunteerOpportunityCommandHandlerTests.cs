@@ -145,13 +145,13 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			[],
 			OpportunityStatus.Draft,
 			DefaultRequestingUserId,
-			CheckInPin: "13579");
+			CheckInPin: "135790");
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.CheckInPin.Should().Be("13579");
+		result.CheckInPin.Should().Be("135790");
 	}
 
 	[Test]

@@ -213,7 +213,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		var engagement = await ephemeralClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 

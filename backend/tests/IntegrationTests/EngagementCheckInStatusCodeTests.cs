@@ -26,7 +26,7 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I'd like to help!" },
 			cancellationToken);
 
-		var act = () => olaf.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		var act = () => olaf.CheckInEngagementAsync(opportunityId, engagement.Id, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(400,

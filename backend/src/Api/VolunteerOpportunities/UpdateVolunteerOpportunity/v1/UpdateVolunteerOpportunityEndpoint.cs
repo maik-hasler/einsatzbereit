@@ -41,10 +41,10 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (request.CheckInPin is { Length: > 0 } pin && (pin.Length < 4 || pin.Length > 6 || !pin.All(char.IsAsciiDigit)))
+		if (request.CheckInPin is { Length: > 0 } pin && (pin.Length != 6 || !pin.All(char.IsAsciiDigit)))
 		{
 			return Results.Problem(
-				"Check-in PIN must be 4 to 6 digits.",
+				"Check-in PIN must be 6 digits.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 

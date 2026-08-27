@@ -144,7 +144,7 @@ export default function QRScannerModal({
 					if (raw && UUID_RE.test(raw)) {
 						alive = false;
 						try {
-							await api.checkInEngagement(raw);
+							await api.checkInEngagement(opportunityId, raw);
 							completeCheckIn(raw);
 						} catch (err) {
 							setScanError(

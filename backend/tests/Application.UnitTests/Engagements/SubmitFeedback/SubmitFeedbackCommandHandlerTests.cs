@@ -31,7 +31,7 @@ public class SubmitFeedbackCommandHandlerTests
 			volunteerId,
 			TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		return (engagement, volunteerId);
 	}
 

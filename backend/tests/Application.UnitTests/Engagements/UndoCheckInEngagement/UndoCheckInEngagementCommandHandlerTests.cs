@@ -43,7 +43,7 @@ public class UndoCheckInEngagementCommandHandlerTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(opportunityId, UserId.New(), TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		return engagement;
 	}
 

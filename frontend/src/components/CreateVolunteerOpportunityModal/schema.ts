@@ -81,7 +81,7 @@ export function buildOpportunityFormSchema(t: TFunction) {
 			if (
 				data.checkInMethod === "PINCode" &&
 				data.checkInPin &&
-				!/^\d{4,6}$/.test(data.checkInPin)
+				!/^\d{6}$/.test(data.checkInPin)
 			)
 				ctx.addIssue({
 					code: "custom",

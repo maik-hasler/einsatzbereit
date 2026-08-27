@@ -24,7 +24,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		var checkInStatuses = new List<int>();
 		Page.Response += (_, response) =>
 		{
-			if (response.Url.Contains($"/v1/engagements/{engagementId}/check-in", StringComparison.Ordinal))
+			if (response.Url.Contains($"/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in", StringComparison.Ordinal))
 				checkInStatuses.Add(response.Status);
 		};
 
@@ -71,7 +71,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		var checkInStatuses = new List<int>();
 		Page.Response += (_, response) =>
 		{
-			if (response.Url.Contains($"/v1/engagements/{unknownId}/check-in", StringComparison.Ordinal))
+			if (response.Url.Contains($"/v1/volunteer-opportunities/{opportunityId}/engagements/{unknownId}/check-in", StringComparison.Ordinal))
 				checkInStatuses.Add(response.Status);
 		};
 
@@ -172,7 +172,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		var checkInStatuses = new List<int>();
 		Page.Response += (_, response) =>
 		{
-			if (response.Url.Contains($"/v1/engagements/{engagementId}/check-in", StringComparison.Ordinal))
+			if (response.Url.Contains($"/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in", StringComparison.Ordinal))
 				checkInStatuses.Add(response.Status);
 		};
 

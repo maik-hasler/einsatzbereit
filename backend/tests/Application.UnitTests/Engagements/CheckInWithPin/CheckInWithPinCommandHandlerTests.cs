@@ -33,7 +33,7 @@ public class CheckInWithPinCommandHandlerTests
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_sut = new CheckInWithPinCommandHandler(_dbContext, _attemptLimiter);
+		_sut = new CheckInWithPinCommandHandler(_dbContext, _attemptLimiter, _pinGenerator);
 	}
 
 	[Test]
@@ -55,7 +55,7 @@ public class CheckInWithPinCommandHandlerTests
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*own engagement*");
 		await _opportunityRepo.DidNotReceive().FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
-		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -89,7 +89,7 @@ public class CheckInWithPinCommandHandlerTests
 		var engagement = Engagement.CreateSlotSignUp(opportunityId, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		_attemptLimiter.IsLockedOutAsync(engagementId, cancellationToken).Returns(true);
+		_attemptLimiter.IsLockedOutAsync(owner, opportunityId, cancellationToken).Returns(true);
 
 		var command = new CheckInWithPinCommand(engagementId, CorrectPin, owner);
 
@@ -117,7 +117,7 @@ public class CheckInWithPinCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Invalid PIN*");
-		await _attemptLimiter.Received(1).RegisterFailedAttemptAsync(engagementId, cancellationToken);
+		await _attemptLimiter.Received(1).RegisterFailedAttemptAsync(owner, opportunity.Id, cancellationToken);
 	}
 
 	[Test]
@@ -138,8 +138,8 @@ public class CheckInWithPinCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		result.IsCheckedIn.Should().BeTrue();
-		await _attemptLimiter.Received(1).ResetAsync(engagementId, cancellationToken);
-		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+		await _attemptLimiter.Received(1).ResetAsync(owner, opportunity.Id, cancellationToken);
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -178,7 +178,7 @@ public class CheckInWithPinCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*does not use PIN check-in*");
-		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -222,7 +222,39 @@ public class CheckInWithPinCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*PIN is required*");
-		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRotatePin_WhenSubmittedAgainstAnOccurrenceThatHasMovedOn(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = EngagementId.New();
+		var owner = UserId.New();
+		var opportunity = CreatePinOpportunity();
+		var now = DateTimeOffset.UtcNow;
+
+		// Ties CorrectPin to a slot that has already ended - standing in for a
+		// volunteer who attended that occurrence and still remembers this PIN.
+		opportunity.AddTimeSlot(now.AddDays(-10), now.AddDays(-10).AddHours(2), 10, now.AddDays(-11));
+		_pinGenerator.GeneratePin().Returns(CorrectPin);
+		opportunity.EnsureCurrentCheckInPin(now.AddDays(-10), _pinGenerator);
+
+		var futureSlot = opportunity.AddTimeSlot(now.AddDays(1), now.AddDays(1).AddHours(2), 10, now).Value;
+		_pinGenerator.GeneratePin().Returns("111222");
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, futureSlot.Id, futureSlot.StartDateTime, futureSlot.EndDateTime);
+		engagement.Confirm();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+
+		var command = new CheckInWithPinCommand(engagementId, CorrectPin, owner);
+
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Invalid PIN*");
+		opportunity.CheckInPinTimeSlotId.Should().Be(futureSlot.Id);
+		opportunity.CheckInPin.Should().Be("111222");
 	}
 
 	private VolunteerOpportunity CreateNonPinOpportunity(CheckInMethod checkInMethod) =>

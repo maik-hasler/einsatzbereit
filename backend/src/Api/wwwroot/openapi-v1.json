@@ -6626,13 +6626,22 @@
         }
       }
     },
-    "/v1/engagements/{engagementId}/check-in": {
+    "/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in": {
       "post": {
         "tags": [
           "Engagements"
         ],
         "operationId": "CheckInEngagement",
         "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
           {
             "name": "engagementId",
             "in": "path",

@@ -54,7 +54,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		opportunity.Relocate(request.IsRemote, request.Address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);
 		opportunity.Recategorize(request.Category, request.Tags).ThrowIfFailure();
-		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();
+		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, DateTimeOffset.UtcNow, request.CheckInPin).ThrowIfFailure();
 		opportunity.SwitchParticipationType(request.ParticipationType);
 		opportunity.SetValidUntil(request.ValidUntil, DateTimeOffset.UtcNow).ThrowIfFailure();
 

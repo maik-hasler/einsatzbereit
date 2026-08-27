@@ -32,7 +32,7 @@ public class DeleteFeedbackCommandHandlerTests
 			volunteerId,
 			TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.SubmitFeedback(3, "Okay", submittedAt ?? DateTimeOffset.UtcNow.AddDays(-1));
 		return (engagement, volunteerId);
 	}
@@ -148,7 +148,7 @@ public class DeleteFeedbackCommandHandlerTests
 			volunteerId,
 			TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 

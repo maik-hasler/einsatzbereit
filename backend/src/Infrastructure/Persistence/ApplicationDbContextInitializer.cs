@@ -233,7 +233,7 @@ internal sealed class ApplicationDbContextInitializer(
 
 		var opp1PastEngagement = Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1PastSlot.Id);
 		opp1PastEngagement.Confirm().ThrowIfFailure();
-		opp1PastEngagement.CheckIn().ThrowIfFailure();
+		opp1PastEngagement.CheckIn(now).ThrowIfFailure();
 
 		dbContext.Set<Engagement>().AddRange(
 			Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),

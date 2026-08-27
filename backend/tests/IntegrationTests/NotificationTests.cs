@@ -391,7 +391,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 		await veraClient.SubmitFeedbackAsync(
 			engagement.Id, new SubmitFeedbackRequest { Rating = 5, Comment = "Great experience" }, cancellationToken);
 
