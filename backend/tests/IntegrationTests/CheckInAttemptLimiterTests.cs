@@ -15,13 +15,13 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	public Task ResetAsync() => fixture.ResetAsync();
 
 	[Test]
-	public async Task IsLockedOutAsync_ShouldReturnFalse_ForEngagementWithNoAttempts(
+	public async Task IsLockedOutAsync_ShouldReturnFalse_ForPairWithNoAttempts(
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
 
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, Guid.NewGuid(), now, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, Guid.NewGuid(), Guid.NewGuid(), now, cancellationToken);
 
 		isLockedOut.Should().BeFalse();
 	}
@@ -31,13 +31,14 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts - 1; i++)
-			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
 		isLockedOut.Should().BeFalse();
 	}
@@ -47,13 +48,14 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
-			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
 		isLockedOut.Should().BeTrue();
 	}
@@ -63,14 +65,15 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
-			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
 		var afterLockoutWindow = now.Add(CheckInAttemptLimiter.LockoutDuration).AddSeconds(1);
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, afterLockoutWindow, cancellationToken);
 
 		isLockedOut.Should().BeFalse();
 	}
@@ -80,16 +83,17 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
-			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
-		await CheckInAttemptLimiter.ResetAsync(dbContext, engagementId, cancellationToken);
-		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+		await CheckInAttemptLimiter.ResetAsync(dbContext, volunteerId, opportunityId, cancellationToken);
+		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
 
 		isLockedOut.Should().BeFalse("Reset must clear the prior failure count, not just the lock");
 	}
@@ -99,21 +103,22 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
-			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
-		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken))
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, now, cancellationToken);
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, now, cancellationToken))
 			.Should().BeTrue("5 failures trip the lockout");
 
 		var afterLockoutWindow = now.Add(CheckInAttemptLimiter.LockoutDuration).AddSeconds(1);
-		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken))
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, afterLockoutWindow, cancellationToken))
 			.Should().BeFalse("the lockout has now elapsed");
 
-		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken);
+		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, volunteerId, opportunityId, afterLockoutWindow, cancellationToken);
 
-		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken))
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, volunteerId, opportunityId, afterLockoutWindow, cancellationToken))
 			.Should().BeFalse();
 	}
 
@@ -121,39 +126,41 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	public async Task RegisterFailedAttemptAsync_PersistsAcrossIndependentDbContexts(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		await using (var writeContext = fixture.CreateApplicationDbContext())
 		{
 			for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
-				await CheckInAttemptLimiter.RegisterFailedAttemptAsync(writeContext, engagementId, now, cancellationToken);
+				await CheckInAttemptLimiter.RegisterFailedAttemptAsync(writeContext, volunteerId, opportunityId, now, cancellationToken);
 		}
 
 		await using var readContext = fixture.CreateApplicationDbContext();
-		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(readContext, engagementId, now, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(readContext, volunteerId, opportunityId, now, cancellationToken);
 
 		isLockedOut.Should().BeTrue();
 	}
 
 	[Test]
-	public async Task RegisterFailedAttemptAsync_TwoConcurrentFirstAttemptsForTheSameEngagement_BothCount(
+	public async Task RegisterFailedAttemptAsync_TwoConcurrentFirstAttemptsForTheSamePair_BothCount(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		var now = DateTimeOffset.UtcNow;
 
 		await using var contextA = fixture.CreateApplicationDbContext();
 		await using var contextB = fixture.CreateApplicationDbContext();
 
 		await Task.WhenAll(
-			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextA, engagementId, now, cancellationToken),
-			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextB, engagementId, now, cancellationToken));
+			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextA, volunteerId, opportunityId, now, cancellationToken),
+			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextB, volunteerId, opportunityId, now, cancellationToken));
 
 		await using var readContext = fixture.CreateApplicationDbContext();
 		var failedAttempts = await readContext.Set<CheckInAttempt>()
 			.AsNoTracking()
-			.Where(a => a.EngagementId == engagementId)
+			.Where(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId)
 			.Select(a => a.FailedAttempts)
 			.SingleAsync(cancellationToken);
 

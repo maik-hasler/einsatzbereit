@@ -31,7 +31,7 @@ public class OutboxTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var outboxMessageCount = await fixture.CountOutboxMessagesOfTypeAsync(EngagementCheckedInDomainEventType);
 
@@ -53,7 +53,7 @@ public class OutboxTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
 
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
 			EngagementCheckedInDomainEventType, TimeSpan.FromSeconds(45));

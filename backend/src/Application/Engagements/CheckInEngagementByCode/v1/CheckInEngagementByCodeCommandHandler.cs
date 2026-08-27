@@ -63,7 +63,7 @@ internal sealed class CheckInEngagementByCodeCommandHandler(
 			: throw new ResultFailureException(Error.NotFound(
 				"Engagement.NotFound", $"No engagement matching code '{code}' was found."));
 
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 
 		return engagement;
 	}

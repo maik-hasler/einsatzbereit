@@ -2,7 +2,9 @@ namespace Infrastructure.Persistence.RateLimiting;
 
 internal sealed class CheckInAttempt
 {
-	public Guid EngagementId { get; set; }
+	public Guid VolunteerId { get; set; }
+
+	public Guid OpportunityId { get; set; }
 
 	public int FailedAttempts { get; set; }
 

@@ -21,7 +21,7 @@ public class CheckInAttemptPruneJobTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
-		var engagementId = await SeedAttemptAsync(
+		var (volunteerId, opportunityId) = await SeedAttemptAsync(
 			dbContext, lastAttemptOn: now.Add(-CheckInAttemptLimiter.LockoutDuration).AddMinutes(-1), cancellationToken);
 
 		var pruned = await CheckInAttemptPruneJob.PruneExpiredAttemptsAsync(dbContext, now, cancellationToken);
@@ -29,7 +29,7 @@ public class CheckInAttemptPruneJobTests(IntegrationTestFixture fixture)
 		pruned.Should().Be(1);
 		var stillExists = await dbContext.Set<CheckInAttempt>()
 			.AsNoTracking()
-			.AnyAsync(a => a.EngagementId == engagementId, cancellationToken);
+			.AnyAsync(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId, cancellationToken);
 		stillExists.Should().BeFalse();
 	}
 
@@ -39,32 +39,34 @@ public class CheckInAttemptPruneJobTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var now = DateTimeOffset.UtcNow;
-		var engagementId = await SeedAttemptAsync(dbContext, lastAttemptOn: now.AddMinutes(-1), cancellationToken);
+		var (volunteerId, opportunityId) = await SeedAttemptAsync(dbContext, lastAttemptOn: now.AddMinutes(-1), cancellationToken);
 
 		var pruned = await CheckInAttemptPruneJob.PruneExpiredAttemptsAsync(dbContext, now, cancellationToken);
 
 		pruned.Should().Be(0);
 		var stillExists = await dbContext.Set<CheckInAttempt>()
 			.AsNoTracking()
-			.AnyAsync(a => a.EngagementId == engagementId, cancellationToken);
+			.AnyAsync(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId, cancellationToken);
 		stillExists.Should().BeTrue();
 	}
 
-	private static async Task<Guid> SeedAttemptAsync(
+	private static async Task<(Guid VolunteerId, Guid OpportunityId)> SeedAttemptAsync(
 		ApplicationDbContext dbContext,
 		DateTimeOffset lastAttemptOn,
 		CancellationToken cancellationToken)
 	{
-		var engagementId = Guid.NewGuid();
+		var volunteerId = Guid.NewGuid();
+		var opportunityId = Guid.NewGuid();
 		dbContext.Set<CheckInAttempt>().Add(new CheckInAttempt
 		{
-			EngagementId = engagementId,
+			VolunteerId = volunteerId,
+			OpportunityId = opportunityId,
 			FailedAttempts = 1,
 			LastAttemptOn = lastAttemptOn,
 		});
 
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		return engagementId;
+		return (volunteerId, opportunityId);
 	}
 }

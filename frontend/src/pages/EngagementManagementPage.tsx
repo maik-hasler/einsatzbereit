@@ -422,9 +422,10 @@ export default function EngagementManagementPage() {
 	}
 
 	async function handleCheckIn(engagementId: string) {
+		if (!opportunityId) return;
 		setCheckingIn(engagementId);
 		try {
-			await api.checkInEngagement(engagementId);
+			await api.checkInEngagement(opportunityId, engagementId);
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId ? { ...e, isCheckedIn: true } : e,

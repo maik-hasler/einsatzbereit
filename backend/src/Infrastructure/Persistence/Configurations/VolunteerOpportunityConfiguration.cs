@@ -113,6 +113,11 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.Property(vo => vo.CheckInPin);
 
+		builder.Property(vo => vo.CheckInPinTimeSlotId)
+			.HasConversion(
+				id => id.HasValue ? id.Value.Value : (Guid?)null,
+				guid => guid.HasValue ? TimeSlotId.Create(guid.Value).GetValueOrThrow() : null);
+
 		builder.Property(vo => vo.ValidUntil);
 
 		builder.Property(vo => vo.CreatedOn);

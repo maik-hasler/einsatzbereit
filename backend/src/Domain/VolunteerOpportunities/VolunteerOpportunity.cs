@@ -57,6 +57,14 @@ public sealed class VolunteerOpportunity
 
 	public string? CheckInPin { get; private set; }
 
+	// Which occurrence CheckInPin currently covers, for ScheduledSlots opportunities -
+	// null for IndividualContact (single ongoing arrangement, no occurrences to rotate
+	// across) and for a ScheduledSlots series with no remaining slot to protect.
+	// EnsureCurrentCheckInPin compares this against the occurrence `now` resolves to
+	// and rotates the PIN whenever they differ, so one attended occurrence's PIN does
+	// not double as a working credential for the rest of the series (einsatzbereit#2202).
+	public TimeSlotId? CheckInPinTimeSlotId { get; private set; }
+
 	public DateTimeOffset? ValidUntil { get; private set; }
 
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
@@ -114,8 +122,11 @@ public sealed class VolunteerOpportunity
 
 	private static Result EnsureValidPin(string pin)
 	{
-		if (pin.Length is < 4 or > 6 || !pin.All(char.IsAsciiDigit))
-			return Result.Failure(Error.Validation("VolunteerOpportunity.InvalidCheckInPin", "Check-in PIN must be 4 to 6 digits."));
+		// Exactly 6, matching RandomPinGenerator's fixed-width output - a shorter
+		// custom PIN would carry less entropy than the auto-generated default while
+		// sharing the same ICheckInAttemptLimiter attempt budget (einsatzbereit#2202).
+		if (pin.Length != 6 || !pin.All(char.IsAsciiDigit))
+			return Result.Failure(Error.Validation("VolunteerOpportunity.InvalidCheckInPin", "Check-in PIN must be 6 digits."));
 
 		if (CheckInPinPolicy.IsTrivial(pin))
 			return Result.Failure(Error.Validation("VolunteerOpportunity.WeakCheckInPin", "This PIN is too easy to guess - choose a less predictable one."));
@@ -482,7 +493,7 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
-	public Result ChangeCheckInMethod(CheckInMethod checkInMethod, IPinGenerator pinGenerator, string? checkInPin = null)
+	public Result ChangeCheckInMethod(CheckInMethod checkInMethod, IPinGenerator pinGenerator, DateTimeOffset now, string? checkInPin = null)
 	{
 		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
 		{
@@ -495,16 +506,62 @@ public sealed class VolunteerOpportunity
 		if (checkInMethod == CheckInMethod.PINCode)
 		{
 			if (checkInPin is not null)
+			{
+				// Binds the organizer's own choice to the occurrence it's current for -
+				// without this, EnsureCurrentCheckInPin would see this pin as belonging to
+				// no occurrence (or a stale one) and silently replace it with a random one
+				// the moment anyone next opens the check-in screen or tries a check-in.
 				CheckInPin = checkInPin;
+				CheckInPinTimeSlotId = CurrentCheckInTimeSlotId(now);
+			}
 			else if (CheckInPin is null)
+			{
 				CheckInPin = pinGenerator.GeneratePin();
+				CheckInPinTimeSlotId = CurrentCheckInTimeSlotId(now);
+			}
 		}
 		else
 		{
 			CheckInPin = null;
+			CheckInPinTimeSlotId = null;
 		}
 
 		return Result.Success();
+	}
+
+	// Called from both the organizer's check-in-screen read (GetOpportunityCheckInPinQuery)
+	// and the volunteer's PIN submission (CheckInWithPinCommandHandler) - whichever happens
+	// first for a newly-current occurrence rotates the PIN, so a volunteer replaying a PIN
+	// they learned at an earlier occurrence always lands on a value that has already moved
+	// on. Returns whether it actually rotated, so a read-only query knows whether it has
+	// something new to persist.
+	public bool EnsureCurrentCheckInPin(DateTimeOffset now, IPinGenerator pinGenerator)
+	{
+		if (CheckInMethod != CheckInMethod.PINCode)
+			return false;
+
+		var currentTimeSlotId = CurrentCheckInTimeSlotId(now);
+		if (CheckInPin is not null && currentTimeSlotId == CheckInPinTimeSlotId)
+			return false;
+
+		CheckInPin = pinGenerator.GeneratePin();
+		CheckInPinTimeSlotId = currentTimeSlotId;
+		return true;
+	}
+
+	// The earliest slot whose check-in window (TimeSlot.CheckInWindowAfter past its end)
+	// has not yet closed - the occurrence the PIN should currently be protecting. Null for
+	// IndividualContact (no slots to key off) and once every slot's window has closed.
+	private TimeSlotId? CurrentCheckInTimeSlotId(DateTimeOffset now)
+	{
+		if (ParticipationType != ParticipationType.ScheduledSlots)
+			return null;
+
+		return _timeSlots
+			.Where(ts => now <= ts.EndDateTime + TimeSlot.CheckInWindowAfter)
+			.OrderBy(ts => ts.StartDateTime)
+			.FirstOrDefault()
+			?.Id;
 	}
 
 	public void SwitchParticipationType(ParticipationType participationType)

@@ -10,9 +10,11 @@ internal sealed class CheckInAttemptConfiguration
 	public void Configure(
 		EntityTypeBuilder<CheckInAttempt> builder)
 	{
-		builder.HasKey(a => a.EngagementId);
+		builder.HasKey(a => new { a.VolunteerId, a.OpportunityId });
 
-		builder.Property(a => a.EngagementId).ValueGeneratedNever();
+		builder.Property(a => a.VolunteerId).ValueGeneratedNever();
+
+		builder.Property(a => a.OpportunityId).ValueGeneratedNever();
 
 		builder.Property(a => a.FailedAttempts).IsRequired();
 

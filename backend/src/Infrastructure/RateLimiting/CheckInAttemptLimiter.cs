@@ -1,5 +1,6 @@
 using Application.Common.RateLimiting;
-using Domain.Engagements;
+using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -16,44 +17,48 @@ internal sealed class CheckInAttemptLimiter(
 	internal static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
 	public async Task<bool> IsLockedOutAsync(
-		EngagementId engagementId,
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default)
 	{
 		await using var scope = scopeFactory.CreateAsyncScope();
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-		return await IsLockedOutAsync(dbContext, engagementId.Value, DateTimeOffset.UtcNow, cancellationToken);
+		return await IsLockedOutAsync(dbContext, volunteerId.Value, opportunityId.Value, DateTimeOffset.UtcNow, cancellationToken);
 	}
 
 	public async Task RegisterFailedAttemptAsync(
-		EngagementId engagementId,
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default)
 	{
 		await using var scope = scopeFactory.CreateAsyncScope();
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-		await RegisterFailedAttemptAsync(dbContext, engagementId.Value, DateTimeOffset.UtcNow, cancellationToken);
+		await RegisterFailedAttemptAsync(dbContext, volunteerId.Value, opportunityId.Value, DateTimeOffset.UtcNow, cancellationToken);
 	}
 
 	public async Task ResetAsync(
-		EngagementId engagementId,
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default)
 	{
 		await using var scope = scopeFactory.CreateAsyncScope();
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-		await ResetAsync(dbContext, engagementId.Value, cancellationToken);
+		await ResetAsync(dbContext, volunteerId.Value, opportunityId.Value, cancellationToken);
 	}
 
 	internal static async Task<bool> IsLockedOutAsync(
 		ApplicationDbContext dbContext,
-		Guid engagementId,
+		Guid volunteerId,
+		Guid opportunityId,
 		DateTimeOffset now,
 		CancellationToken cancellationToken = default)
 	{
 		var lockedUntil = await dbContext.Set<CheckInAttempt>()
 			.AsNoTracking()
-			.Where(a => a.EngagementId == engagementId)
+			.Where(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId)
 			.Select(a => a.LockedUntil)
 			.FirstOrDefaultAsync(cancellationToken);
 
@@ -62,17 +67,18 @@ internal sealed class CheckInAttemptLimiter(
 
 	internal static async Task RegisterFailedAttemptAsync(
 		ApplicationDbContext dbContext,
-		Guid engagementId,
+		Guid volunteerId,
+		Guid opportunityId,
 		DateTimeOffset now,
 		CancellationToken cancellationToken = default)
 	{
 		var attempt = await dbContext.Set<CheckInAttempt>()
-			.FirstOrDefaultAsync(a => a.EngagementId == engagementId, cancellationToken);
+			.FirstOrDefaultAsync(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId, cancellationToken);
 
 		var isNew = attempt is null;
 		if (attempt is null)
 		{
-			attempt = new CheckInAttempt { EngagementId = engagementId };
+			attempt = new CheckInAttempt { VolunteerId = volunteerId, OpportunityId = opportunityId };
 			dbContext.Set<CheckInAttempt>().Add(attempt);
 		}
 
@@ -93,7 +99,7 @@ internal sealed class CheckInAttemptLimiter(
 			dbContext.Entry(attempt).State = EntityState.Detached;
 
 			attempt = await dbContext.Set<CheckInAttempt>()
-				.SingleAsync(a => a.EngagementId == engagementId, cancellationToken);
+				.SingleAsync(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId, cancellationToken);
 
 			ApplyFailedAttempt(attempt, now);
 
@@ -119,7 +125,8 @@ internal sealed class CheckInAttemptLimiter(
 
 	internal static async Task ResetAsync(
 		ApplicationDbContext dbContext,
-		Guid engagementId,
+		Guid volunteerId,
+		Guid opportunityId,
 		CancellationToken cancellationToken = default)
 	{
 		// A tracked fetch-then-Remove, not ExecuteDeleteAsync: ExecuteDelete
@@ -127,10 +134,10 @@ internal sealed class CheckInAttemptLimiter(
 		// would leave a CheckInAttempt instance a caller already tracked on this
 		// same DbContext (e.g. from a prior RegisterFailedAttemptAsync call)
 		// stale - believing the now-deleted row still exists - and throw an
-		// "already tracked" conflict the next time this engagement's row is
-		// looked up on that DbContext.
+		// "already tracked" conflict the next time this pair's row is looked up
+		// on that DbContext.
 		var attempt = await dbContext.Set<CheckInAttempt>()
-			.FirstOrDefaultAsync(a => a.EngagementId == engagementId, cancellationToken);
+			.FirstOrDefaultAsync(a => a.VolunteerId == volunteerId && a.OpportunityId == opportunityId, cancellationToken);
 
 		if (attempt is null)
 			return;

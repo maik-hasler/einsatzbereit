@@ -201,7 +201,7 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public Result CheckIn()
+	public Result CheckIn(DateTimeOffset now)
 	{
 		if (IsAnonymized)
 			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
@@ -211,6 +211,23 @@ public sealed class Engagement
 
 		if (IsCheckedIn)
 			return Result.Failure(Error.Conflict("Engagement.AlreadyCheckedIn", "Engagement is already checked in."));
+
+		// Individual-contact engagements carry no slot window (TimeSlotStartDateTime/
+		// EndDateTime are always null for them) and are exempt - there is no single
+		// occurrence for "around" to mean anything. A ScheduledSlots engagement always
+		// has both, denormalized onto it at sign-up time (CreateEngagementCommandHandler),
+		// so this is the one check that actually closes einsatzbereit#2202: without it,
+		// CheckIn had no time constraint at all and a volunteer could check themselves
+		// into (and then leave feedback for) an occurrence months in the future.
+		if (TimeSlotStartDateTime.HasValue && TimeSlotEndDateTime.HasValue)
+		{
+			var opensAt = TimeSlotStartDateTime.Value - TimeSlot.CheckInWindowBefore;
+			var closesAt = TimeSlotEndDateTime.Value + TimeSlot.CheckInWindowAfter;
+			if (now < opensAt || now > closesAt)
+				return Result.Failure(Error.Validation(
+					"Engagement.CheckInOutsideWindow",
+					"Check-in is only possible shortly before, during, or shortly after the scheduled time."));
+		}
 
 		IsCheckedIn = true;
 		AddEvent(new EngagementCheckedInDomainEvent(Id, VolunteerId!.Value, OpportunityId));

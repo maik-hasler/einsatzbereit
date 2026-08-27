@@ -58,7 +58,7 @@ public class CheckInEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 
-		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
+		var command = new CheckInEngagementCommand(opportunity.Id, engagementId, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -82,7 +82,7 @@ public class CheckInEngagementCommandHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
-		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
+		var command = new CheckInEngagementCommand(opportunity.Id, engagementId, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -106,7 +106,7 @@ public class CheckInEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
 
-		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
+		var command = new CheckInEngagementCommand(opportunityId, engagementId, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -118,5 +118,29 @@ public class CheckInEngagementCommandHandlerTests
 		await _dbContext
 			.DidNotReceive()
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowNotFound_WhenEngagementBelongsToADifferentOpportunity(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var actualOpportunity = CreateOpportunity();
+		var selectedOpportunity = CreateOpportunity();
+		var engagement = CreateConfirmedEngagement(actualOpportunity.Id);
+		var engagementId = engagement.Id;
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(actualOpportunity.Id, cancellationToken).Returns(actualOpportunity);
+
+		var command = new CheckInEngagementCommand(selectedOpportunity.Id, engagementId, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.NotFound);
+		engagement.IsCheckedIn.Should().BeFalse();
 	}
 }

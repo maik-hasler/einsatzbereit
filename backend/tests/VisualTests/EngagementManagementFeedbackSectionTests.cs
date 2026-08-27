@@ -21,7 +21,7 @@ public class EngagementManagementFeedbackSectionTests(AspireFixture fixture) : V
 		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+		(await olafHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
 
 		var veraSession = await Fixture.SignInAsync("vera", "vera123");
 		using var veraHttp = new HttpClient { BaseAddress = backend };

@@ -268,7 +268,7 @@ public class CheckInEngagementByCodeCommandHandlerTests
 		// Arrange
 		var opportunity = CreateOpportunity();
 		var engagement = CreateConfirmedEngagement(opportunity.Id);
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		SetUpOpportunity(opportunity);
 		SetUpCandidates(opportunity.Id, engagement);
 

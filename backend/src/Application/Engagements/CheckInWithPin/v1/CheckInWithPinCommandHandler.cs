@@ -12,7 +12,8 @@ namespace Application.Engagements.CheckInWithPin.v1;
 
 internal sealed class CheckInWithPinCommandHandler(
 	IApplicationDbContext dbContext,
-	ICheckInAttemptLimiter attemptLimiter)
+	ICheckInAttemptLimiter attemptLimiter,
+	IPinGenerator pinGenerator)
 	: ICommandHandler<CheckInWithPinCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -28,7 +29,7 @@ internal sealed class CheckInWithPinCommandHandler(
 		if (engagement.VolunteerId!.Value.Value != request.RequestingUserId.Value)
 			throw new ResultFailureException(Error.Validation("Engagement.NotOwner", "You can only check in your own engagement."));
 
-		if (await attemptLimiter.IsLockedOutAsync(request.EngagementId, cancellationToken))
+		if (await attemptLimiter.IsLockedOutAsync(engagement.VolunteerId.Value, engagement.OpportunityId, cancellationToken))
 			throw new ResultFailureException(Error.Forbidden(
 				"Engagement.CheckInLocked",
 				"Too many failed PIN attempts. Try again later."));
@@ -42,15 +43,22 @@ internal sealed class CheckInWithPinCommandHandler(
 		if (string.IsNullOrWhiteSpace(request.Pin))
 			throw new ResultFailureException(Error.Validation("Engagement.PinRequired", "PIN is required."));
 
+		var now = DateTimeOffset.UtcNow;
+
+		// Rotates the opportunity's PIN onto whichever occurrence is current before
+		// comparing, so a PIN learned from a past occurrence never matches here even if
+		// nobody has looked at the organizer's check-in screen since (einsatzbereit#2202).
+		opportunity.EnsureCurrentCheckInPin(now, pinGenerator);
+
 		if (!PinsMatch(opportunity.CheckInPin, request.Pin))
 		{
-			await attemptLimiter.RegisterFailedAttemptAsync(request.EngagementId, cancellationToken);
+			await attemptLimiter.RegisterFailedAttemptAsync(engagement.VolunteerId.Value, engagement.OpportunityId, cancellationToken);
 			throw new ResultFailureException(Error.Validation("Engagement.InvalidPin", "Invalid PIN."));
 		}
 
-		await attemptLimiter.ResetAsync(request.EngagementId, cancellationToken);
+		await attemptLimiter.ResetAsync(engagement.VolunteerId.Value, engagement.OpportunityId, cancellationToken);
 
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(now).ThrowIfFailure();
 
 		return engagement;
 	}

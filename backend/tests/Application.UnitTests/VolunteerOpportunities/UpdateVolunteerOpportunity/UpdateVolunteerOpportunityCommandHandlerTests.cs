@@ -103,13 +103,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
-			CheckInPin: "13579");
+			CheckInPin: "135790");
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		opportunity.CheckInPin.Should().Be("13579");
+		opportunity.CheckInPin.Should().Be("135790");
 	}
 
 	[Test]

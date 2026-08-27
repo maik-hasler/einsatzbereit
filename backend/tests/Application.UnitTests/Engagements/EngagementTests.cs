@@ -223,7 +223,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		var result = engagement.Withdraw();
 
@@ -355,7 +355,7 @@ public class EngagementTests
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		engagement.IsCheckedIn.Should().BeTrue();
 	}
@@ -365,7 +365,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
-		var result = engagement.CheckIn();
+		var result = engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*Only confirmed*");
@@ -376,12 +376,90 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 
-		var result = engagement.CheckIn();
+		var result = engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*already checked in*");
+	}
+
+	private static Engagement CreateConfirmedSlotEngagement(DateTimeOffset start, DateTimeOffset end)
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId(), start, end);
+		engagement.Confirm();
+		return engagement;
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenBeforeTheCheckInWindowOpens()
+	{
+		var start = DateTimeOffset.UtcNow.AddHours(3);
+		var engagement = CreateConfirmedSlotEngagement(start, start.AddHours(2));
+
+		var result = engagement.CheckIn(start - TimeSlot.CheckInWindowBefore - TimeSpan.FromMinutes(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*only possible shortly before*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldSucceed_AtTheCheckInWindowOpenBoundary()
+	{
+		var start = DateTimeOffset.UtcNow.AddHours(3);
+		var engagement = CreateConfirmedSlotEngagement(start, start.AddHours(2));
+
+		var result = engagement.CheckIn(start - TimeSlot.CheckInWindowBefore);
+
+		result.IsFailure.Should().BeFalse();
+	}
+
+	[Test]
+	public void CheckIn_ShouldSucceed_AtTheCheckInWindowCloseBoundary()
+	{
+		var start = DateTimeOffset.UtcNow.AddHours(-3);
+		var end = start.AddHours(2);
+		var engagement = CreateConfirmedSlotEngagement(start, end);
+
+		var result = engagement.CheckIn(end + TimeSlot.CheckInWindowAfter);
+
+		result.IsFailure.Should().BeFalse();
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_AfterTheCheckInWindowCloses()
+	{
+		var start = DateTimeOffset.UtcNow.AddHours(-3);
+		var end = start.AddHours(2);
+		var engagement = CreateConfirmedSlotEngagement(start, end);
+
+		var result = engagement.CheckIn(end + TimeSlot.CheckInWindowAfter + TimeSpan.FromMinutes(1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*only possible shortly before*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_ForAFutureOccurrenceMonthsAhead()
+	{
+		var start = DateTimeOffset.UtcNow.AddMonths(3);
+		var engagement = CreateConfirmedSlotEngagement(start, start.AddHours(2));
+
+		var result = engagement.CheckIn(DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*only possible shortly before*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldSucceed_ForIndividualContactEngagement_RegardlessOfNow()
+	{
+		var engagement = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Nachricht").Value;
+		engagement.Confirm();
+
+		var result = engagement.CheckIn(DateTimeOffset.UtcNow.AddYears(1));
+
+		result.IsFailure.Should().BeFalse();
 	}
 
 	[Test]
@@ -399,7 +477,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.SubmitFeedback(5, "Great!", DateTimeOffset.UtcNow);
 
 		engagement.Anonymize();
@@ -466,7 +544,7 @@ public class EngagementTests
 		engagement.Confirm();
 		engagement.Anonymize();
 
-		var result = engagement.CheckIn();
+		var result = engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*deleted their account*");
@@ -477,7 +555,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.Anonymize();
 
 		var result = engagement.UndoCheckIn();
@@ -491,7 +569,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.Anonymize();
 
 		var result = engagement.SubmitFeedback(5, "Great shift", DateTimeOffset.UtcNow);
@@ -504,7 +582,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.SubmitFeedback(rating, comment, submittedAt);
 		return engagement;
 	}
@@ -538,7 +616,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		var result = engagement.UpdateFeedback(5, "Great!", DateTimeOffset.UtcNow);
 
@@ -645,7 +723,7 @@ public class EngagementTests
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 
 		var result = engagement.DeleteFeedback(DateTimeOffset.UtcNow);
 
