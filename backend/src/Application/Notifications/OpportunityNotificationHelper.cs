@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Domain.Notifications;

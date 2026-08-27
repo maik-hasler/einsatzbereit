@@ -1,4 +1,5 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Localization;
 using Application.Common.Messaging;
