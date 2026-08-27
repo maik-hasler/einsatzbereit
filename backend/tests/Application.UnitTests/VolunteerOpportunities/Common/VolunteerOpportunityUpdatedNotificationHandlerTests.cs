@@ -87,6 +87,28 @@ public class VolunteerOpportunityUpdatedNotificationHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenAnyNotificationEmailFailsToSend(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var activeVolunteer = Guid.NewGuid();
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(opportunityId, Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([activeVolunteer]);
+		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
+			.Returns([false]);
+		var notification = new VolunteerOpportunityUpdatedDomainEvent(opportunityId, null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(notification, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>(
+			"a swallowed delivery failure here would let the outbox believe the notification was delivered when it never left the process");
+	}
+
+	[Test]
 	public async Task Handle_ShouldFilterVolunteers_ByGivenTimeSlot(
 		CancellationToken cancellationToken)
 	{

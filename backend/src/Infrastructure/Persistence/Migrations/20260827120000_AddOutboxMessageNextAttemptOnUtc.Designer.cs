@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260827120000_AddOutboxMessageNextAttemptOnUtc")]
+	partial class AddOutboxMessageNextAttemptOnUtc
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -867,10 +870,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("text")
 						.HasColumnName("check_in_pin");
 
-					b.Property<Guid?>("CheckInPinTimeSlotId")
-						.HasColumnType("uuid")
-						.HasColumnName("check_in_pin_time_slot_id");
-
 					b.Property<string>("Color")
 						.HasColumnType("text")
 						.HasColumnName("color");
@@ -956,9 +955,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasKey("Id")
 						.HasName("pk_volunteer_opportunity");
 
-					b.HasIndex("CheckInPinTimeSlotId")
-						.HasDatabaseName("ix_volunteer_opportunity_check_in_pin_time_slot_id");
-
 					b.HasIndex("OrganizationId")
 						.HasDatabaseName("ix_volunteer_opportunity_organization_id");
 
@@ -1043,13 +1039,9 @@ namespace Infrastructure.Persistence.Migrations
 
 			modelBuilder.Entity("Infrastructure.Persistence.RateLimiting.CheckInAttempt", b =>
 				{
-					b.Property<Guid>("VolunteerId")
+					b.Property<Guid>("EngagementId")
 						.HasColumnType("uuid")
-						.HasColumnName("volunteer_id");
-
-					b.Property<Guid>("OpportunityId")
-						.HasColumnType("uuid")
-						.HasColumnName("opportunity_id");
+						.HasColumnName("engagement_id");
 
 					b.Property<int>("FailedAttempts")
 						.HasColumnType("integer")
@@ -1063,7 +1055,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("locked_until");
 
-					b.HasKey("VolunteerId", "OpportunityId")
+					b.HasKey("EngagementId")
 						.HasName("pk_check_in_attempt");
 
 					b.HasIndex("LastAttemptOn")
@@ -1183,12 +1175,6 @@ namespace Infrastructure.Persistence.Migrations
 
 			modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
 				{
-					b.HasOne("Domain.VolunteerOpportunities.TimeSlot", null)
-						.WithMany()
-						.HasForeignKey("CheckInPinTimeSlotId")
-						.OnDelete(DeleteBehavior.SetNull)
-						.HasConstraintName("fk_volunteer_opportunity_time_slot_check_in_pin_time_slot_id");
-
 					b.HasOne("Domain.Organizations.Organization", null)
 						.WithMany()
 						.HasForeignKey("OrganizationId")

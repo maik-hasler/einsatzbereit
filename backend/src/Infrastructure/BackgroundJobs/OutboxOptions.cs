@@ -10,6 +10,8 @@ internal sealed class OutboxOptions
 
 	public int ClaimTimeoutSeconds { get; init; } = 300;
 
+	public int RetryBackoffBaseSeconds { get; init; } = 300;
+
 	public int RetentionDays { get; init; } = 30;
 
 	public int RetentionCheckIntervalHours { get; init; } = 24;

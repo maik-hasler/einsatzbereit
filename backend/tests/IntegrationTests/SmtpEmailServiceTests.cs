@@ -33,7 +33,7 @@ public class SmtpEmailServiceTests
 	}
 
 	[Test]
-	public async Task SendAsync_ServerUnreachable_RecordsFailedMetricAndDoesNotThrow()
+	public async Task SendAsync_ServerUnreachable_RecordsFailedMetricAndRethrows()
 	{
 		var unusedPort = GetUnusedLoopbackPort();
 		using var meterFactory = new TestMeterFactory();
@@ -43,7 +43,8 @@ public class SmtpEmailServiceTests
 		var sut = CreateService(unusedPort, metrics);
 		var act = () => sut.SendAsync("volunteer@example.com", "Test subject", "Test body", "test-correlation-id");
 
-		await act.Should().NotThrowAsync();
+		await act.Should().ThrowAsync<Exception>(
+			"a swallowed failure here would let the outbox believe a notification was delivered when it never left the process");
 
 		recorded.Should().ContainSingle(m => m.Status == "failed" && m.Value == 1);
 	}
@@ -57,7 +58,8 @@ public class SmtpEmailServiceTests
 		var logger = new FakeLogger<SmtpEmailService>();
 
 		var sut = CreateService(unusedPort, metrics, logger);
-		await sut.SendAsync("volunteer@example.com", "New sign-up: Vera joined \"Beach Cleanup\"", "Test body", "engagement-correlation-id");
+		var act = () => sut.SendAsync("volunteer@example.com", "New sign-up: Vera joined \"Beach Cleanup\"", "Test body", "engagement-correlation-id");
+		await act.Should().ThrowAsync<Exception>();
 
 		var record = logger.Collector.GetSnapshot().Should().ContainSingle(r => r.Level == LogLevel.Error).Subject;
 		record.Message.Should().Contain("engagement-correlation-id");

@@ -86,6 +86,32 @@ public class EngagementCreatedDomainEventHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenOrganizerEmailFailsToSend(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var organizationId = OrganizationId.New();
+		var opportunity = CreateOpportunity(organizationId);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		var organizerId = Guid.NewGuid();
+		_keycloakService.GetMembersAsync(organizationId.Value, cancellationToken)
+			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
+		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
+			.Returns("https://example.com/unsubscribe");
+		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
+			.Returns([false]);
+
+		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>(
+			"a swallowed delivery failure here would let the outbox believe the organizer alert was delivered when it never left the process");
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
 		CancellationToken cancellationToken)
 	{
