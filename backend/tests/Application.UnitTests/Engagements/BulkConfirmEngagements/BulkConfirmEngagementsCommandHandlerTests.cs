@@ -46,7 +46,7 @@ public class BulkConfirmEngagementsCommandHandlerTests
 		_dbContext
 			.GetEngagementsByIdsAsync(Arg.Any<IReadOnlyCollection<EngagementId>>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new BulkConfirmEngagementsCommandHandler(_dbContext, _sender);
+		_sut = new BulkConfirmEngagementsCommandHandler(_dbContext, _sender, TimeProvider.System);
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

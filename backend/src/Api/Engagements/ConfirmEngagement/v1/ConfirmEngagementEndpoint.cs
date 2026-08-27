@@ -34,12 +34,10 @@ internal sealed class ConfirmEngagementEndpoint
 		[FromRoute] Guid engagementId,
 		[FromServices] ISender sender,
 		ClaimsPrincipal user,
-		HttpRequest request,
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
-		var timezone = request.Headers["X-Timezone"].FirstOrDefault();
-		var command = new ConfirmEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId, timezone);
+		var command = new ConfirmEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
 		var engagement = await sender.Send(command, cancellationToken);
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 	}

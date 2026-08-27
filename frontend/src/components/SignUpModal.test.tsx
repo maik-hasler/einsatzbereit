@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import SignUpModal from "./SignUpModal";
 import type { TimeSlotDetail } from "../client/api-client";
 import { renderWithProviders } from "../test/render";
+import { formatDateTimeRange } from "../lib/format";
 
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../test/apiMock");
@@ -49,11 +50,18 @@ beforeEach(() => {
 
 describe("SignUpModal time-slot preselection (#657)", () => {
 	it("preselects the only available slot", () => {
-		open([slot("only", 9)]);
+		const only = slot("only", 9);
+		open([only]);
 
 		const trigger = screen.getByRole("combobox");
 		expect(trigger).not.toHaveTextContent("Please select");
-		expect(trigger).toHaveTextContent("09:00-13:00");
+		expect(trigger).toHaveTextContent(
+			formatDateTimeRange(
+				only.startDateTime as unknown as string,
+				only.endDateTime as unknown as string,
+				"en",
+			),
+		);
 	});
 
 	it("leaves the dropdown empty when there is a real choice to make", () => {

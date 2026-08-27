@@ -115,20 +115,23 @@ describe("fetchVolunteerOpportunities", () => {
 });
 
 describe("fetchVolunteerOpportunityDateAvailability", () => {
-	it("forwards the window and offset, leaving every filter undefined", async () => {
+	it("forwards the window and leaves every filter (including the unused timezone slot) undefined", async () => {
 		const api = fakeAvailabilityApi();
 		const from = new Date("2026-08-01T00:00:00");
 		const to = new Date("2026-08-31T23:59:59.999");
 
 		await fetchVolunteerOpportunityDateAvailability(
 			api as unknown as EinsatzbereitApi,
-			{ from, to, utcOffsetMinutes: 120 },
+			{ from, to },
 		);
 
+		// The 3rd positional slot is the generated client's legacy utcOffsetMinutes
+		// param - always undefined now that the server derives the caller's zone
+		// from the X-Timezone header instead (see volunteerOpportunities.ts, #2203).
 		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
 			from,
 			to,
-			120,
+			undefined,
 			undefined,
 			undefined,
 			undefined,
@@ -153,7 +156,6 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 			{
 				from,
 				to,
-				utcOffsetMinutes: -60,
 				occurrence: "Recurring",
 				participationType: "ScheduledSlots",
 				isRemote: false,
@@ -170,7 +172,7 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
 			from,
 			to,
-			-60,
+			undefined,
 			"Recurring",
 			"ScheduledSlots",
 			false,
@@ -196,7 +198,6 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 			{
 				from: new Date("2026-08-01T00:00:00"),
 				to: new Date("2026-08-31T23:59:59.999"),
-				utcOffsetMinutes: 0,
 			},
 		);
 

@@ -10,6 +10,7 @@ public static class OutputCachingPolicies
 	public const string HealthCheck = "output-cache-health-check";
 
 	public const string VolunteerOpportunityListing = "output-cache-volunteer-opportunity-listing";
+	public const string VolunteerOpportunityDateAvailability = "output-cache-volunteer-opportunity-date-availability";
 
 	public const string VolunteerOpportunityListingTag = "volunteer-opportunity-listing";
 }

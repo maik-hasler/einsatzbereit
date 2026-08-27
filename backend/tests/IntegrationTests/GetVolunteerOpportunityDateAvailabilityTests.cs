@@ -74,19 +74,69 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var authenticatedClient = await CreateAuthenticatedClientAsync();
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
+		// Asia/Kolkata (UTC+5:30, no DST) rather than Europe/Berlin here - this test is
+		// about the caller's zone shifting the day at all, not about a DST boundary
+		// specifically (the dedicated DST tests below cover that).
 		var slotStart = UtcDayAt(daysFromToday: 7, hour: 23, minute: 30);
 		await CreateOpportunityWithTimeSlotAsync(authenticatedClient, orgId, "Late night shift", slotStart, cancellationToken);
 
-		var sut = CreateAnonymousClient("10.0.3.3");
+		var sut = CreateAnonymousClient("10.0.3.3", timezone: "Asia/Kolkata");
 
 		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(30),
-			utcOffsetMinutes: 120,
 			cancellationToken: cancellationToken);
 
 		result.Should().ContainSingle()
-			.Which.Date.Should().Be(slotStart.AddHours(2).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+			.Which.Date.Should().Be(slotStart.AddHours(5).AddMinutes(30).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+	}
+
+	[Test]
+	public async Task GetDateAvailability_ShouldBucketByBerlinDay_ForASlotJustAfterTheSpringForwardTransition(
+		CancellationToken cancellationToken)
+	{
+		// Germany's 2027 DST starts 2027-03-28 (clocks 02:00 -> 03:00 CEST); by
+		// 2027-03-31 Berlin is at UTC+2. A single offset computed earlier in March
+		// (still UTC+1) would shift this slot into the wrong, earlier day (#2203).
+		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotStart = new DateTimeOffset(2027, 3, 31, 0, 30, 0, TimeSpan.FromHours(2));
+		await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Post-spring-forward shift", slotStart, cancellationToken);
+
+		var sut = CreateAnonymousClient("10.0.3.11", timezone: "Europe/Berlin");
+
+		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
+			new DateTimeOffset(2027, 3, 25, 0, 0, 0, TimeSpan.Zero),
+			new DateTimeOffset(2027, 4, 5, 0, 0, 0, TimeSpan.Zero),
+			cancellationToken: cancellationToken);
+
+		result.Should().ContainSingle().Which.Date.Should().Be("2027-03-31");
+	}
+
+	[Test]
+	public async Task GetDateAvailability_ShouldBucketByBerlinDay_ForASlotJustBeforeTheFallBackTransitionEnds(
+		CancellationToken cancellationToken)
+	{
+		// Germany's 2026 DST ends 2026-10-25 (clocks 03:00 -> 02:00 CET); by
+		// 2026-10-31 Berlin is back at UTC+1. A single offset computed earlier in
+		// October (still UTC+2) would shift this slot into November instead (#2203).
+		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotStart = new DateTimeOffset(2026, 10, 31, 23, 30, 0, TimeSpan.FromHours(1));
+		await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Pre-november shift", slotStart, cancellationToken);
+
+		var sut = CreateAnonymousClient("10.0.3.12", timezone: "Europe/Berlin");
+
+		var result = await sut.GetVolunteerOpportunityDateAvailabilityAsync(
+			new DateTimeOffset(2026, 10, 25, 0, 0, 0, TimeSpan.Zero),
+			new DateTimeOffset(2026, 11, 5, 0, 0, 0, TimeSpan.Zero),
+			cancellationToken: cancellationToken);
+
+		result.Should().ContainSingle().Which.Date.Should().Be("2026-10-31");
 	}
 
 	[Test]
@@ -268,10 +318,12 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			.AddHours(hour)
 			.AddMinutes(minute);
 
-	private EinsatzbereitApi CreateAnonymousClient(string clientIp)
+	private EinsatzbereitApi CreateAnonymousClient(string clientIp, string? timezone = null)
 	{
 		var httpClient = fixture.CreateHttpClient();
 		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", clientIp);
+		if (timezone is not null)
+			httpClient.DefaultRequestHeaders.Add("X-Timezone", timezone);
 		return new EinsatzbereitApi(httpClient);
 	}
 

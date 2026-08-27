@@ -2,6 +2,7 @@ using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Time;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
@@ -33,7 +34,7 @@ internal sealed class CreateTimeSlotCommandHandler(
 		var duration = request.EndDateTime - request.StartDateTime;
 		var slots = new List<TimeSlot>(count);
 		var now = DateTimeOffset.UtcNow;
-		var timeZone = ResolveTimeZone(request.Timezone);
+		var timeZone = CanonicalTimeZone.Resolve(request.Timezone);
 
 		Guid? seriesId = count > 1 ? Guid.CreateVersion7() : null;
 
@@ -63,19 +64,5 @@ internal sealed class CreateTimeSlotCommandHandler(
 		};
 
 		return new DateTimeOffset(advancedLocal, timeZone.GetUtcOffset(advancedLocal)).ToUniversalTime();
-	}
-
-	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
-	{
-		if (string.IsNullOrWhiteSpace(ianaId))
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		try
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
-		}
-		catch
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		}
 	}
 }

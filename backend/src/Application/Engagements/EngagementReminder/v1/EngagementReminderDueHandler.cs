@@ -4,6 +4,7 @@ using Application.Common.Keycloak;
 using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Time;
 using Domain.Engagements;
 using Domain.Users;
 using Microsoft.Extensions.Logging;
@@ -85,7 +86,7 @@ internal sealed class EngagementReminderDueHandler(
 
 	private static string FormatStart(DateTimeOffset startDateTime, string language)
 	{
-		var berlinTime = TimeZoneInfo.ConvertTime(startDateTime, TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin"));
+		var berlinTime = TimeZoneInfo.ConvertTime(startDateTime, CanonicalTimeZone.Value);
 		var culture = CultureInfo.GetCultureInfo(language == "de" ? "de-DE" : "en-GB");
 		var pattern = language == "de" ? "dddd, d. MMMM yyyy 'um' HH:mm" : "dddd, d. MMMM yyyy 'at' HH:mm";
 		return berlinTime.ToString(pattern, culture);

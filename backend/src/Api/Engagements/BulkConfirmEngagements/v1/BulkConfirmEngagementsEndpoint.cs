@@ -37,7 +37,6 @@ internal sealed class BulkConfirmEngagementsEndpoint
 		[FromBody] BulkConfirmEngagementsRequest? body,
 		[FromServices] ISender sender,
 		ClaimsPrincipal user,
-		HttpRequest request,
 		CancellationToken cancellationToken)
 	{
 		if (body is null || body.EngagementIds.Count == 0)
@@ -47,13 +46,11 @@ internal sealed class BulkConfirmEngagementsEndpoint
 			return Results.Problem($"Cannot process more than {MaxBatchSize} engagements in a single request.", statusCode: StatusCodes.Status400BadRequest);
 
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
-		var timezone = request.Headers["X-Timezone"].FirstOrDefault();
 
 		var command = new BulkConfirmEngagementsCommand(
 			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(),
 			body.EngagementIds.Select(id => EngagementId.Create(id).GetValueOrThrow()).ToList(),
-			userId,
-			timezone);
+			userId);
 
 		var result = await sender.Send(command, cancellationToken);
 

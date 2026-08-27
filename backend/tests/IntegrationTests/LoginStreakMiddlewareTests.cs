@@ -35,10 +35,15 @@ public class LoginStreakMiddlewareTests
 	}
 
 	[Test]
-	public async Task InvokeAsync_ShouldNotRecordLoginRepeatedly_WhenXTimezoneHeaderAlternatesAcrossRequests()
+	public async Task InvokeAsync_ShouldRecordOncePerDistinctLocalDay_WhenXTimezoneHeaderAlternatesBetweenExtremeZones()
 	{
+		// Pacific/Kiritimati (UTC+14) and Pacific/Niue (UTC-11) are 25 hours apart, so at
+		// any single instant they always disagree about the calendar date. The cache must
+		// still collapse repeats of the SAME local day down to one send each (#2203) -
+		// it must not thrash into more than the 2 distinct days actually implied.
+		var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 6, 15, 12, 0, 0, TimeSpan.Zero));
 		var sender = new RecordingSender();
-		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), new FakeTimeProvider());
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), timeProvider);
 		var subClaim = Guid.NewGuid().ToString();
 
 		for (var i = 0; i < 10; i++)
@@ -47,8 +52,30 @@ public class LoginStreakMiddlewareTests
 			await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, tzHeader), sender);
 		}
 
-		sender.SentRequests.Should().ContainSingle(
-			"X-Timezone must only shape the streak's local date, never thrash the shared dedup cache");
+		sender.SentRequests.Should().HaveCount(2,
+			"exactly the 2 distinct local days the alternating header genuinely implies at this instant - one send each, not one per request and not a single shared one");
+	}
+
+	[Test]
+	public async Task InvokeAsync_ShouldRecordBothVisits_WhenTheClientsLocalDayAdvancesBeforeServerMidnight()
+	{
+		// A caller in Asia/Tokyo (UTC+9, no DST) visiting at 10:00 and 20:00 Berlin time
+		// (both well before the next Berlin midnight) has already crossed into their own
+		// next local day by the second visit - the memo must not swallow it just because
+		// Berlin's own midnight hasn't passed yet (#2203).
+		var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 15, 9, 0, 0, TimeSpan.Zero)); // 10:00 CET
+		var sender = new RecordingSender();
+		var sut = new LoginStreakMiddleware(_ => Task.CompletedTask, new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 }), timeProvider);
+		var subClaim = Guid.NewGuid().ToString();
+
+		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, "Asia/Tokyo"), sender);
+		timeProvider.Advance(TimeSpan.FromHours(10)); // 19:00 UTC = 20:00 CET, still the same Berlin day
+		await sut.InvokeAsync(CreateAuthenticatedContext(subClaim, "Asia/Tokyo"), sender);
+
+		sender.SentRequests.Should().HaveCount(2,
+			"the caller's own local day had already advanced by the second visit, even though Berlin's midnight had not");
+		sender.SentRequests.OfType<RecordLoginCommand>().Select(r => r.Date).Should().Equal(
+			new DateOnly(2026, 1, 15), new DateOnly(2026, 1, 16));
 	}
 
 	[Test]

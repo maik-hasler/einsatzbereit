@@ -4,5 +4,5 @@ using Domain.Users;
 
 namespace Application.Engagements.ConfirmEngagement.v1;
 
-public sealed record ConfirmEngagementCommand(EngagementId EngagementId, UserId RequestingUserId, string? Timezone = null)
+public sealed record ConfirmEngagementCommand(EngagementId EngagementId, UserId RequestingUserId)
 	: ICommand<Engagement>;

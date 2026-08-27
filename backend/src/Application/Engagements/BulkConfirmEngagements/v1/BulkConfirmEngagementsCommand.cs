@@ -9,6 +9,5 @@ namespace Application.Engagements.BulkConfirmEngagements.v1;
 public sealed record BulkConfirmEngagementsCommand(
 	VolunteerOpportunityId OpportunityId,
 	IReadOnlyList<EngagementId> EngagementIds,
-	UserId RequestingUserId,
-	string? Timezone = null)
+	UserId RequestingUserId)
 	: ICommand<BulkEngagementActionResult>;

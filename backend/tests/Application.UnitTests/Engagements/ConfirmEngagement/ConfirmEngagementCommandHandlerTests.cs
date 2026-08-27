@@ -48,7 +48,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_dbContext
 			.GetOrCreateUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => UserStreak.Create(callInfo.Arg<UserId>()));
-		_sut = new ConfirmEngagementCommandHandler(_dbContext, _sender);
+		_sut = new ConfirmEngagementCommandHandler(_dbContext, _sender, TimeProvider.System);
 	}
 
 	[Test]
@@ -307,6 +307,35 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		engagement.Events.Should().ContainSingle(e => e is EngagementConfirmedDomainEvent);
+	}
+
+	[Test]
+	public async Task Handle_ShouldBucketActivityByTheBerlinIsoWeek_NotAWallClockDayEarlierInUtc(
+		CancellationToken cancellationToken)
+	{
+		// 2026-11-01 23:30 UTC is still Sunday in UTC (ISO week 44) but is already
+		// Monday 2026-11-02 00:30 in Europe/Berlin (CET, UTC+1) - the start of ISO
+		// week 45. There is no longer any per-request timezone input that could
+		// move this result (#2203) - it must always resolve via Berlin.
+		var pinnedNow = new DateTimeOffset(2026, 11, 1, 23, 30, 0, TimeSpan.Zero);
+		var sut = new ConfirmEngagementCommandHandler(_dbContext, _sender, new FakeTimeProvider(pinnedNow));
+
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		var streak = UserStreak.Create(volunteerId);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+
+		await sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		streak.LastActiveIsoYear.Should().Be(2026);
+		streak.LastActiveIsoWeek.Should().Be(45);
+	}
+
+	private sealed class FakeTimeProvider(DateTimeOffset utcNow) : TimeProvider
+	{
+		public override DateTimeOffset GetUtcNow() => utcNow;
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

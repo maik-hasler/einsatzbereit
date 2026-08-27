@@ -1,6 +1,7 @@
 using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Common.Time;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Primitives;
@@ -24,7 +25,7 @@ internal static class EngagementConfirmationHelper
 		IApplicationDbContext dbContext,
 		ISender sender,
 		Engagement engagement,
-		string? timezone,
+		TimeProvider timeProvider,
 		CancellationToken cancellationToken)
 	{
 		var confirmResult = engagement.Confirm();
@@ -40,8 +41,10 @@ internal static class EngagementConfirmationHelper
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
-		var tz = ResolveTimeZone(timezone);
-		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime;
+		// Bucketed by the platform's canonical zone, not whichever organizer happens to
+		// confirm the engagement - the volunteer whose ActivityStreak this affects has no
+		// say in and no visibility into the confirming organizer's own device zone (#2203).
+		var now = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), CanonicalTimeZone.Value).DateTime;
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		var totalConfirmedEngagements = await RecordActivityStreakAndConfirmationAsync(
@@ -50,20 +53,6 @@ internal static class EngagementConfirmationHelper
 		await EvaluateMilestoneAchievementsAsync(sender, volunteerId, totalConfirmedEngagements, cancellationToken);
 
 		return Result.Success(engagement);
-	}
-
-	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
-	{
-		if (string.IsNullOrWhiteSpace(ianaId))
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		try
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
-		}
-		catch
-		{
-			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		}
 	}
 
 	private static async Task<int> RecordActivityStreakAndConfirmationAsync(

@@ -26,7 +26,7 @@ public class GetVolunteerOpportunityDateAvailabilityQueryHandlerTests
 		new(
 			From,
 			To,
-			120,
+			"America/New_York",
 			"Recurring",
 			"ScheduledSlots",
 			true,
@@ -59,7 +59,7 @@ public class GetVolunteerOpportunityDateAvailabilityQueryHandlerTests
 
 		filter.From.Should().Be(From);
 		filter.To.Should().Be(To);
-		filter.UtcOffsetMinutes.Should().Be(120);
+		filter.Timezone.Should().Be("America/New_York");
 		filter.Occurrence.Should().Be("Recurring");
 		filter.ParticipationType.Should().Be("ScheduledSlots");
 		filter.IsRemote.Should().BeTrue();
@@ -82,7 +82,7 @@ public class GetVolunteerOpportunityDateAvailabilityQueryHandlerTests
 	[Test]
 	public void Filter_ShouldNotReportRadiusFiltering_WhenTheRadiusIsMissing()
 	{
-		var filter = new VolunteerOpportunityDateAvailabilityFilter(From, To, 0, CenterLatitude: 52.5, CenterLongitude: 13.4);
+		var filter = new VolunteerOpportunityDateAvailabilityFilter(From, To, null, CenterLatitude: 52.5, CenterLongitude: 13.4);
 
 		filter.HasRadius.Should().BeFalse(
 			"a center without a radius describes no circle to filter by");
