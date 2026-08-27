@@ -9,6 +9,7 @@
 ├── frontend-checks.yml         Reusable (workflow_call): lint → test/build/container-smoke-test - shared by frontend.yml and publish.yml so the release path can't skip checks the PR gate runs (#1733)
 ├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
 ├── keycloak-realm-import.yml   Verifies the committed realm still imports on the Keycloak version the released image is built from, and that its ${VAR} placeholders actually resolve
+├── codeql.yml                  CodeQL advanced setup (csharp + javascript-typescript), report-only findings in the Security tab - see "CodeQL" below
 ├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, create a GitHub Release - see "Publish Workflows" below
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── mutation-tests.yml          Manual (workflow_dispatch): Stryker.NET over Domain + Application and StrykerJS over frontend src/lib, report-only
@@ -37,6 +38,10 @@ workflows now always triggers, and:
 GitHub UI, job id `required`), not any individual job - an individual job may not run at all
 on a given PR, and in `visual-tests`' case is four matrix legs, not one. This is a one-time
 manual change in Settings → Branches this repository's tooling cannot make on its own.
+
+`codeql.yml` has no `paths:` filter and needs no sentinel - both languages scan the whole
+repository on every run regardless of which half changed, so there's no "skip when
+irrelevant" case to gate.
 
 ## CI Workflows (run on push/PR to main)
 
@@ -79,9 +84,21 @@ Publishing is where this repository's involvement ends. Nothing here runs, hosts
 1. Run full test suite - three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend`, `publish-frontend`, and `publish-keycloak` all wait on via `needs:` before building anything, so a test failure blocks every image, not just the backend's. `publish-frontend` additionally `needs:` the `frontend-checks` job, which calls the reusable `frontend-checks.yml` workflow (lint/format/i18n/nginx-header checks + type-check + unit tests + a container smoke test) - see that workflow's own header comment for what `publish-frontend` skipped before #1733; keycloak has no additional test gate beyond the shared backend suite. `publish-backend` additionally `needs:` `backend-image-health-check` (#2204): a job that builds the real backend image, boots Postgres/Keycloak/MinIO containers on a Docker network, runs the image against them with `ASPNETCORE_ENVIRONMENT=Production` and `Database__MigrateOnStartup=true`, and asserts `/health` goes green before any image is allowed to publish - this is the only place the released image itself (not `dotnet run`) is ever booted before it ships, and the only place the backend's Production startup path runs against real backing services
 2. Login to GHCR
 3. Extract version from tag (strips leading `v`)
-4. **Build and push.** Each `publish-*` job builds and pushes its image in a single step (cached via `cache-from`/`cache-to: type=gha` - the backend image reuses the cache warmed by `backend-image-health-check`'s own build) with `sbom: true` and `provenance: mode=max`, so every pushed image still carries an SBOM and a max-mode provenance attestation. No vulnerability scan gates this step (dropped - see `SECURITY.md`'s "Scope" section for the current state of container image scanning); nothing here uploads to the Security tab.
+4. **Build (no push) -> Trivy scan (report-only) -> build and push.** Each `publish-*` job builds its image once with `push: false, load: true` (cached via `cache-from`/`cache-to: type=gha`, reused from `backend-image-health-check` for the backend image), scans it with `aquasecurity/trivy-action` (`severity: CRITICAL,HIGH`), uploads the SARIF results to the Security tab (`github/codeql-action/upload-sarif`, `category: <component>-image`, `if: always()` so a failing scan's findings still land there), then builds again with `push: true` plus `sbom: true` and `provenance: mode=max` so every pushed image carries an SBOM and a max-mode provenance attestation. The second build reuses the first's cache, so this costs one cold build, not two. **Report-only, not a gate:** the scan step sets `continue-on-error: true`, so a CRITICAL/HIGH finding is uploaded and visible in the Security tab but never fails the job or blocks the push - see `SECURITY.md`'s "Scope" section. This was previously a hard `exit-code: 1` gate (#2305); the Keycloak image in particular can carry a CVE with no available fix path (UBI9-micro base layer, no newer Keycloak patch, no package manager to patch in place), which blocked every release with no actionable next step from this repo alone.
 5. Tag with version, plus `latest` if the tag is not an RC. Each `publish-*` job's final push step declares `id: push` and the job exposes its `outputs.digest`; `publish-backend` also still declares `outputs.version`/`outputs.prerelease`, consumed by `github-release`'s image table below (`github-release` also re-derives its own copy of the version from the tag directly)
 6. `github-release` job (`needs: [publish-backend, publish-frontend, publish-keycloak]`, so it runs for both stable and RC tags, and is the last job in this workflow) creates a GitHub Release for the tag via `gh release create`, using the default `GITHUB_TOKEN` (job-scoped `permissions: contents: write`, no `RELEASE_TOKEN` needed - creating a release doesn't push a ref, so it doesn't hit the "tags pushed with `GITHUB_TOKEN` don't trigger workflows" restriction that `release-rc.yml` works around). Notes are generated from commit subjects since the previous tag (found by semver sort across both stable and RC tags, via `git tag --sort=-v:refname`), grouped by Conventional Commit type - a `!` after the type/scope (e.g. `feat!:`) surfaces under a "Breaking Changes" section, followed by an Images table (component, image ref, digest) built from the three `publish-*` jobs' `outputs.digest` (#2204) - pin by digest straight from the release notes instead of a separate registry lookup. See [VERSIONING.md](../VERSIONING.md)'s "Release Notes" section - GitHub Releases is the canonical record, there is no `CHANGELOG.md` file.
+
+### `codeql.yml`
+CodeQL **advanced setup** (a workflow file), not GitHub's zero-config "default setup" -
+default setup is a Settings -> Code security -> Code scanning toggle, not something a commit
+can express, and the two are mutually exclusive (#2204). A maintainer who prefers default
+setup can enable it in Settings and delete this file instead. `analyze` is a two-language
+matrix (`csharp`, `javascript-typescript`), both with `build-mode: none` (no-build/interpreted
+extraction - simpler and faster than teaching CodeQL to build the whole Aspire solution, and
+the modern recommended mode where a language supports it). No `paths:` filter - see "Required
+status checks" above for why that's fine here specifically. Runs on push/PR to main plus a
+weekly `schedule:`; findings land in the Security tab, same as the Trivy scans above. Never a
+required check, so it cannot block a merge or a release either way.
 
 ## Cutting a release from Claude Code on the web
 
