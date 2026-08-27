@@ -205,7 +205,7 @@
       "pastTimeSlots_one": "{{count}} vergangener Zeitslot",
       "pastTimeSlots_other": "{{count}} vergangene Zeitslots",
       "mapLabel": "Karte mit dem Standort von {{location}}",
-      "getDirections": "Route planen",
+      "getDirections": "Route über Google Maps planen",
       "joinWaitlist": "Für Zeitslot eintragen",
       "expressInterest": "Interesse bekunden",
       "notFound": "Nicht gefunden.",

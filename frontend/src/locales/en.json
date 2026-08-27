@@ -205,7 +205,7 @@
       "pastTimeSlots_one": "{{count}} past time slot",
       "pastTimeSlots_other": "{{count}} past time slots",
       "mapLabel": "Map showing the location of {{location}}",
-      "getDirections": "Get directions",
+      "getDirections": "Get directions via Google Maps",
       "joinWaitlist": "Sign up for a slot",
       "expressInterest": "Express interest",
       "notFound": "Not found.",

@@ -51,6 +51,7 @@ import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
 import {
 	ArrowTopRightOnSquareIcon,
+	BuildingOfficeIcon,
 	CalendarIcon,
 	CheckIconSolid,
 	ChevronRightIcon,
@@ -872,19 +873,30 @@ export default function VolunteerOpportunityDetailPage() {
 							{!opportunity.isRemote && (
 								<div className="mb-6">
 									{opportunity.latitude != null &&
-										opportunity.longitude != null && (
-											<div className="overflow-hidden rounded-card border border-gray-100 shadow-resting">
-												<Suspense
-													fallback={<Skeleton className="h-64 w-full" />}
-												>
-													<SingleMarkerMap
-														latitude={opportunity.latitude}
-														longitude={opportunity.longitude}
-														label={address}
-													/>
-												</Suspense>
-											</div>
-										)}
+									opportunity.longitude != null ? (
+										<div
+											className="overflow-hidden rounded-card border border-gray-100 shadow-resting"
+											data-testid="opportunity-map"
+										>
+											<Suspense fallback={<Skeleton className="h-64 w-full" />}>
+												<SingleMarkerMap
+													latitude={opportunity.latitude}
+													longitude={opportunity.longitude}
+													label={address}
+												/>
+											</Suspense>
+										</div>
+									) : (
+										<div
+											className={`flex items-center gap-3 ${cardClass}`}
+											data-testid="opportunity-location-fallback"
+										>
+											<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
+											<span className="text-sm font-medium text-gray-900">
+												{address}
+											</span>
+										</div>
+									)}
 
 									<a
 										href={directionsUrl}
@@ -1066,7 +1078,7 @@ export default function VolunteerOpportunityDetailPage() {
 												)}
 												{orgProfile.address && (
 													<div className="flex items-center gap-3">
-														<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
+														<BuildingOfficeIcon className="h-4 w-4 shrink-0 text-brand-700" />
 														<span>
 															{orgProfile.address.street}{" "}
 															{orgProfile.address.houseNumber},{" "}

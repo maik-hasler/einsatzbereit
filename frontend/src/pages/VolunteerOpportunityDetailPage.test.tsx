@@ -257,7 +257,7 @@ describe("opportunity detail page anonymous visitor", () => {
 });
 
 describe("opportunity detail page without coordinates", () => {
-	it("collapses the map and offers directions by address instead", async () => {
+	it("shows an address fallback instead of the map, and offers directions by address", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			isRemote: false,
@@ -269,6 +269,9 @@ describe("opportunity detail page without coordinates", () => {
 
 		await screen.findByTestId("opportunity-detail-when");
 		expect(screen.queryByTestId("opportunity-map")).toBeNull();
+		expect(
+			screen.getByTestId("opportunity-location-fallback"),
+		).toHaveTextContent("Teststrasse 1, 24103 Kiel");
 
 		const directions = screen.getByTestId("opportunity-directions-link");
 		const href = directions.getAttribute("href") ?? "";
