@@ -69,7 +69,11 @@ public static class ServiceCollectionExtensions
 				{
 					npg.MigrationsAssembly("Infrastructure");
 
-					npg.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+					// No EnableRetryOnFailure: ExecuteInTransactionAsync (ApplicationDbContext)
+					// wraps a manual BeginTransactionAsync around the whole command handler,
+					// including any non-idempotent I/O it performs (Keycloak calls, SMTP sends).
+					// A retrying execution strategy would replay all of that on a transient
+					// error instead of just the DB write.
 				});
 
 			options.UseSnakeCaseNamingConvention();
@@ -173,6 +177,7 @@ public static class ServiceCollectionExtensions
 		{
 			var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
 			client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+			client.Timeout = TimeSpan.FromSeconds(keycloakOptions.TimeoutSeconds);
 		});
 
 		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
@@ -180,6 +185,7 @@ public static class ServiceCollectionExtensions
 			{
 				var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
 				client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+				client.Timeout = TimeSpan.FromSeconds(keycloakOptions.TimeoutSeconds);
 			});
 
 		services.AddHttpClient<IKeycloakUserService, KeycloakUserService>(
@@ -187,6 +193,7 @@ public static class ServiceCollectionExtensions
 			{
 				var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
 				client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+				client.Timeout = TimeSpan.FromSeconds(keycloakOptions.TimeoutSeconds);
 			});
 
 		return services;

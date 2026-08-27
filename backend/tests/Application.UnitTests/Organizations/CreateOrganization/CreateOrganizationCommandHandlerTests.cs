@@ -4,6 +4,7 @@ using Application.Common.Persistence;
 using Application.Organizations.CreateOrganization.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
@@ -14,6 +15,7 @@ public class CreateOrganizationCommandHandlerTests
 {
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IAggregateRepository<OrganizationMembership, OrganizationMembershipId> _membershipRepo =
 		Substitute.For<IAggregateRepository<OrganizationMembership, OrganizationMembershipId>>();
 	private readonly CreateOrganizationCommandHandler _sut;
@@ -23,7 +25,9 @@ public class CreateOrganizationCommandHandlerTests
 		_dbContext.OrganizationMemberships.Returns(_membershipRepo);
 		_sut = new CreateOrganizationCommandHandler(
 			_keycloakService,
-			_dbContext);
+			_dbContext,
+			_unitOfWork,
+			NullLogger<CreateOrganizationCommandHandler>.Instance);
 	}
 
 	[Test]
@@ -186,6 +190,9 @@ public class CreateOrganizationCommandHandlerTests
 		await act.Should().ThrowAsync<HttpRequestException>();
 		await _dbContext.Organizations.DidNotReceive().AddAsync(
 			Arg.Any<Organization>(), Arg.Any<CancellationToken>());
+		// No Keycloak organization was ever created, so there is nothing to compensate.
+		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(
+			Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -263,6 +270,85 @@ public class CreateOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
+		await act.Should().ThrowAsync<HttpRequestException>()
+			.WithMessage("*User does not exist*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldCompensateByDeletingKeycloakOrganization_WhenAddMemberFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		_keycloakService
+			.AddMemberAsync(keycloakId, userId, cancellationToken)
+			.ThrowsAsync(new HttpRequestException("User does not exist"));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		await act.Should().ThrowAsync<HttpRequestException>();
+
+		// Assert
+		await _keycloakService.Received(1).DeleteOrganizationAsync(keycloakId, Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldCompensateByDeletingKeycloakOrganization_WhenDbSaveFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		_unitOfWork
+			.SaveChangesAsync(cancellationToken)
+			.ThrowsAsync(new InvalidOperationException("Unique constraint violated"));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>();
+		await _keycloakService.Received(1).DeleteOrganizationAsync(keycloakId, Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldPropagateOriginalException_WhenCompensationAlsoFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		_keycloakService
+			.AddMemberAsync(keycloakId, userId, cancellationToken)
+			.ThrowsAsync(new HttpRequestException("User does not exist"));
+
+		_keycloakService
+			.DeleteOrganizationAsync(keycloakId, Arg.Any<CancellationToken>())
+			.ThrowsAsync(new HttpRequestException("Keycloak is down"));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert - the original failure surfaces, not the cleanup failure.
 		await act.Should().ThrowAsync<HttpRequestException>()
 			.WithMessage("*User does not exist*");
 	}

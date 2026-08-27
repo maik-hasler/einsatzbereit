@@ -9,4 +9,6 @@ internal sealed class KeycloakOptions
 	public string ClientId { get; set; } = string.Empty;
 
 	public string ClientSecret { get; set; } = string.Empty;
+
+	public int TimeoutSeconds { get; set; } = 10;
 }

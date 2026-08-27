@@ -77,5 +77,7 @@ public class OutboxMessageSerializationTests
 			VolunteerOpportunityId.New(), CoreOrganizationId.New());
 		yield return new VolunteerOpportunityUnpublishedDomainEvent(
 			VolunteerOpportunityId.New(), CoreOrganizationId.New());
+		yield return new VolunteerOpportunityUpdatedDomainEvent(
+			VolunteerOpportunityId.New(), TimeSlotId: null);
 	}
 }
