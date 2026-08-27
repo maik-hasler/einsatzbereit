@@ -101,7 +101,10 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var authenticatedClient = await CreateAuthenticatedClientAsync();
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		var slotStart = new DateTimeOffset(2027, 3, 31, 0, 30, 0, TimeSpan.FromHours(2));
+		// 2027-03-31 00:30 Berlin (CEST, UTC+2) as its UTC instant - Npgsql's
+		// timestamptz mapping rejects DateTimeOffset values with a non-zero
+		// offset, so every persisted instant in these tests is UTC already.
+		var slotStart = new DateTimeOffset(2027, 3, 30, 22, 30, 0, TimeSpan.Zero);
 		await CreateOpportunityWithTimeSlotAsync(
 			authenticatedClient, orgId, "Post-spring-forward shift", slotStart, cancellationToken);
 
@@ -125,7 +128,9 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		var authenticatedClient = await CreateAuthenticatedClientAsync();
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		var slotStart = new DateTimeOffset(2026, 10, 31, 23, 30, 0, TimeSpan.FromHours(1));
+		// 2026-10-31 23:30 Berlin (CET, UTC+1) as its UTC instant - see the
+		// comment in the spring-forward test above for why this must be UTC.
+		var slotStart = new DateTimeOffset(2026, 10, 31, 22, 30, 0, TimeSpan.Zero);
 		await CreateOpportunityWithTimeSlotAsync(
 			authenticatedClient, orgId, "Pre-november shift", slotStart, cancellationToken);
 
