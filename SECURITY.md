@@ -33,7 +33,11 @@ frontend, or the Keycloak realm configuration) as well as in a dependency -
 there is currently no automated dependency vulnerability scan, so a report
 is the only way a dependency CVE affecting this project gets noticed.
 
-Known gaps, not yet covered by any workflow: dependency vulnerability
-scanning (no NuGet/npm audit step), static application security testing (no
-CodeQL or equivalent SAST scan), and container image scanning (no
-Trivy/Grype step in `publish.yml` before images are pushed to GHCR).
+Static application security testing (CodeQL, `.github/workflows/codeql.yml`)
+and container image scanning (Trivy, in `publish.yml`) both run, but neither
+gates anything - a finding is uploaded to the [Security tab](../../security)
+and nothing else, so a report is still the fastest way to get a vulnerability
+looked at rather than waiting on either scan to surface it.
+
+Known gap, not yet covered by any workflow: dependency vulnerability scanning
+(no NuGet/npm audit step).
