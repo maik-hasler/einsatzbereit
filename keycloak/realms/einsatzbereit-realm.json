@@ -344,7 +344,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "vera",
-      "enabled": false,
+      "enabled": true,
       "emailVerified": true,
       "requiredActions": [],
       "email": "vera@example.com",
@@ -364,7 +364,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000001",
       "username": "olaf",
-      "enabled": false,
+      "enabled": true,
       "emailVerified": true,
       "requiredActions": [],
       "email": "olaf@example.com",
@@ -385,7 +385,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "admin",
-      "enabled": false,
+      "enabled": true,
       "emailVerified": true,
       "requiredActions": [],
       "email": "admin@example.com",

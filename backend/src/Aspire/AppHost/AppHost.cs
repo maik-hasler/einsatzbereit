@@ -156,12 +156,21 @@ if (isTestEnv)
 	backend.WithEnvironment("Geocoding__UseFakeService", "true");
 }
 
-// Outside Development, Program.cs only migrates when this is true (and never seeds) - see
-// the isTestEnv block above. Unconditional (not isTestEnv-gated) for the same reason
+// Outside Development, Program.cs only migrates when this is true - see the isTestEnv
+// block above. Unconditional (not isTestEnv-gated) for the same reason
 // RateLimiting:Read:AnonymousPermitLimit above is: a config passthrough, not a test hook,
 // and a no-op in real Development usage since Program.cs never reads it there.
 if (builder.Configuration["Database:MigrateOnStartup"] is { } migrateOnStartup)
 	backend.WithEnvironment("Database__MigrateOnStartup", migrateOnStartup);
+
+// Same passthrough shape as Database:MigrateOnStartup above, for the same reason -
+// Program.cs only seeds outside Development when both this and MigrateOnStartup are
+// true, and ProductionEnvironmentFixture is the only caller that ever sets it. Without
+// this block the fixture's own --Database:SeedOnStartup=true only reaches the AppHost's
+// *own* configuration, never the backend project it launches - Aspire only forwards what
+// is explicitly passed via WithEnvironment.
+if (builder.Configuration["Database:SeedOnStartup"] is { } seedOnStartup)
+	backend.WithEnvironment("Database__SeedOnStartup", seedOnStartup);
 
 // Same passthrough shape as Database:MigrateOnStartup above, for the same reason - see
 // Program.cs's comment on RequireHttpsMetadata for why ProductionEnvironmentFixture is
