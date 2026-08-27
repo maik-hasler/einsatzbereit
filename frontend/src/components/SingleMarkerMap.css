@@ -5,8 +5,8 @@
 }
 
 /* This map is a fixed location snapshot (dragging/zoom disabled in SingleMarkerMap.tsx) -
-   pin the cursor to default so it never reads as pannable, regardless of which
-   interaction classes Leaflet itself decides to toggle. */
+pin the cursor to default so it never reads as pannable, regardless of which
+interaction classes Leaflet itself decides to toggle. */
 .leaflet-container {
 	cursor: default;
 }
