@@ -63,7 +63,7 @@ internal sealed class OutboxProcessorJob(
 				// must dispatch and persist every message before stopping, even if shutdown
 				// is requested mid-tick - otherwise an already-dispatched message whose
 				// processed/backoff write hasn't landed yet gets reclaimed and re-dispatched
-				// once its claim expires (#2201). The host's shutdown timeout still bounds
+				// once its claim expires. The host's shutdown timeout still bounds
 				// how long StopAsync waits for this to finish.
 				await ProcessPendingMessagesAsync(CancellationToken.None).ConfigureAwait(false);
 			}
@@ -145,7 +145,7 @@ internal sealed class OutboxProcessorJob(
 				}
 				else
 				{
-					// Exponential backoff instead of an immediate retry (#2201): a brief
+					// Exponential backoff instead of an immediate retry: a brief
 					// dependency outage (e.g. Keycloak restarting) must not exhaust the
 					// whole retry budget in the ~25s a fixed poll interval would otherwise allow.
 					var backoffSeconds = Math.Pow(2, message.AttemptCount) * retryBackoffBaseSeconds;
@@ -156,7 +156,7 @@ internal sealed class OutboxProcessorJob(
 			// Persisted per message rather than batched after the loop: a mid-batch crash
 			// or SIGTERM must not lose the processed/backoff state of messages already
 			// dispatched earlier in this same batch, which would otherwise have their
-			// side effects (e.g. a sent email) repeated on redelivery (#2201).
+			// side effects (e.g. a sent email) repeated on redelivery.
 			await dbContext.SaveChangesAsync(cancellationToken);
 		}
 

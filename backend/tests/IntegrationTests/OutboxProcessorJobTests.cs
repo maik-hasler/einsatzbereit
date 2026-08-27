@@ -180,7 +180,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var realAttempts = 0;
 		for (var round = 0; round < maxAttempts * 5 && realAttempts < maxAttempts; round++)
 		{
-			// A real failure now backs off NextAttemptOnUtc into the future (#2201) - force
+			// A real failure now backs off NextAttemptOnUtc into the future - force
 			// it back into the past between rounds so this test can drive every attempt
 			// without waiting out the real backoff delay.
 			await dbContext.Set<OutboxMessage>()
@@ -259,7 +259,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		// The second message's dispatch is still gated (simulating the process being
 		// killed before ProcessBatchAsync returns) - a separate connection must already
 		// see the first message's processed state durably committed, proving it was not
-		// deferred to a single SaveChangesAsync at the end of the whole batch (#2201).
+		// deferred to a single SaveChangesAsync at the end of the whole batch.
 		await using var verifyContext = fixture.CreateApplicationDbContext();
 		var firstMessageState = await verifyContext.Set<OutboxMessage>()
 			.AsNoTracking()

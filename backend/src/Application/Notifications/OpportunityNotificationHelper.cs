@@ -74,7 +74,7 @@ internal static class OpportunityNotificationHelper
 		// handler - there's no retry infrastructure downstream to hand a failure to.
 		// Throwing here would roll back the (unrelated, already-valid) opportunity edit and,
 		// since a bad recipient address fails identically on every retry, could permanently
-		// block the organizer from editing this opportunity at all (#2201). SmtpEmailService
+		// block the organizer from editing this opportunity at all. SmtpEmailService
 		// already logs and records metrics for each failed send, so nothing is silently lost -
 		// only the "block the caller" part is deliberately not propagated here.
 		if (messages.Count > 0)

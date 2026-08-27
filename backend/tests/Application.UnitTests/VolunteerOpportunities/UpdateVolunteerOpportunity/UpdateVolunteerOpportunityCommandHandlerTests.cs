@@ -475,7 +475,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		result.Should().BeTrue(
 			"a notification email failing to send must not block or roll back an otherwise-valid opportunity update - " +
 			"unlike an outbox-dispatched handler there is no retry path here, and a permanently bad recipient address " +
-			"would otherwise deterministically block every future edit to this opportunity (#2201)");
+			"would otherwise deterministically block every future edit to this opportunity");
 		opportunity.TitleDe.Should().Be("Neues Thema");
 	}
 

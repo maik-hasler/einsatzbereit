@@ -108,7 +108,7 @@ public class EngagementCreatedDomainEventHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>(
-			"a swallowed delivery failure here would let the outbox believe the organizer alert was delivered when it never left the process (#2201)");
+			"a swallowed delivery failure here would let the outbox believe the organizer alert was delivered when it never left the process");
 	}
 
 	[Test]

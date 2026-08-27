@@ -103,7 +103,7 @@ internal sealed class EngagementReminderJob(
 		// outage, a backlog bigger than maxBatchSize, or (before this fix) a slot that
 		// never fell inside the old fixed [-23h, -25h] scan window. Mark those claimed
 		// without sending, so they stop lingering as pending reminders instead of
-		// getting a reminder for a shift that has already begun (#2201).
+		// getting a reminder for a shift that has already begun.
 		await dbContext.Set<Engagement>()
 			.Where(e =>
 				e.Status == EngagementStatus.Confirmed &&
