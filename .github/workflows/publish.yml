@@ -695,6 +695,14 @@ jobs:
         run: |
           CURRENT_TAG="${{ steps.version.outputs.tag }}"
 
+          # git's default version sort has no semver prerelease concept, so a "-rc.N"
+          # suffix sorts *above* the bare version it precedes - the first stable tag
+          # (e.g. v1.0.0) sorts below all its own RCs and lands last in the descending
+          # list below, so PREV_TAG comes back empty and RANGE falls back to the entire
+          # repo history (einsatzbereit#1679). This tells git "-rc" is a prerelease
+          # marker instead, so v1.0.0 sorts above v1.0.0-rc.N as expected.
+          git config versionsort.suffix "-rc"
+
           PREV_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --list 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*' --sort=-v:refname \
             | grep -A1 -x -F "$CURRENT_TAG" | tail -n1)
           if [ "$PREV_TAG" = "$CURRENT_TAG" ]; then
