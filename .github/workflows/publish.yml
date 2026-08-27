@@ -334,6 +334,10 @@ jobs:
 
       - name: Run backend image against the test stack
         run: |
+          # Smtp__Host/Smtp__Port are dummy values (no SMTP server on this network) -
+          # RequiredConfigurationValidator (#2285) fails startup outside Development if
+          # they're blank, but this smoke test never triggers an email send, so nothing
+          # ever dials them.
           docker run -d --name smoke-backend --network backend-smoke-test -p 18081:8080 \
             -e ASPNETCORE_ENVIRONMENT=Production \
             -e ConnectionStrings__einsatzbereit="Host=smoke-postgres;Database=einsatzbereit;Username=einsatzbereit;Password=einsatzbereit" \
@@ -343,6 +347,8 @@ jobs:
             -e Authentication__Authority=http://smoke-keycloak:8080/realms/einsatzbereit \
             -e Authentication__ValidIssuers__0=http://smoke-keycloak:8080/realms/einsatzbereit \
             -e Cors__Origins__0=http://localhost \
+            -e Smtp__Host=localhost \
+            -e Smtp__Port=1025 \
             -e Storage__Endpoint=http://smoke-minio:9000 \
             -e Storage__AccessKey=minio \
             -e Storage__SecretKey=minio123 \
