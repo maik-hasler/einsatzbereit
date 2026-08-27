@@ -32,6 +32,12 @@ RUN VITE_KEYCLOAK_AUTHORITY_URL=$VITE_KEYCLOAK_AUTHORITY_URL \
 	pnpm run build
 
 FROM nginx:1.31-alpine AS runtime
+# nginx:1.31-alpine is a floating tag - it already tracks the newest build of
+# that line, but a fresh Alpine security patch can land in the package index
+# before upstream rebuilds and re-publishes the image itself. This closes
+# that gap by re-resolving every package against the index at build time
+# instead of trusting whatever the image happened to bundle last.
+RUN apk --no-cache upgrade
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY docker-entrypoint.d/99-runtime-config.sh /docker-entrypoint.d/99-runtime-config.sh
