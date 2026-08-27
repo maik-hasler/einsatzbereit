@@ -1914,8 +1914,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			opportunity.Id,
 			new CreateTimeSlotRequest
 			{
-				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
-				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				StartDateTime = DateTimeOffset.UtcNow.AddMinutes(5),
+				EndDateTime = DateTimeOffset.UtcNow.AddMinutes(5).AddHours(2),
 				MaxParticipants = 10,
 				RecurrenceFrequency = "Weekly",
 				RecurrenceCount = 2,
