@@ -92,6 +92,9 @@ jobs:
       - name: Check PWA offline caching
         run: pnpm check:pwa-offline-caching
 
+      - name: Check PWA silent-renew navigate-fallback exclusion
+        run: pnpm check:pwa-silent-renew-fallback
+
       - name: Type check
         run: pnpm check
 

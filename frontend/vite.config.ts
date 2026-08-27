@@ -345,8 +345,17 @@ export default defineConfig({
 				// route - without this, the service worker's SPA-shell fallback
 				// would intercept the hidden iframe's navigation to it and serve
 				// index.html instead, booting the full app right back into the
-				// iframe it exists to avoid.
-				navigateFallbackDenylist: [/^\/v1\//, /^\/silent-renew\.html$/],
+				// iframe it exists to avoid. Workbox's NavigationRoute matches
+				// denylist patterns against pathname + search (its own docs and
+				// workbox-routing's NavigationRoute.ts _match()), and Keycloak's
+				// redirect back here always carries a query string
+				// (?code=...&state=... on success, ?error=login_required&state=...
+				// with no active session) - the un-anchored-for-query original
+				// pattern below only ever matched a bare, query-less request that
+				// this flow never actually sends, so the fallback intercepted every
+				// silent-renewal round trip and served index.html (with its
+				// frame-ancestors 'none') into the hidden iframe instead.
+				navigateFallbackDenylist: [/^\/v1\//, /^\/silent-renew\.html(\?.*)?$/],
 			},
 
 			manifest: deManifest,

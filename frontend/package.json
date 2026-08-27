@@ -27,7 +27,8 @@
     "check:nginx-permissions-policy": "node scripts/check-nginx-permissions-policy.js",
     "check:pwa-precache": "node scripts/check-pwa-precache.js",
     "check:pwa-manifest": "node scripts/check-pwa-manifest.js",
-    "check:pwa-offline-caching": "node scripts/check-pwa-offline-caching.js"
+    "check:pwa-offline-caching": "node scripts/check-pwa-offline-caching.js",
+    "check:pwa-silent-renew-fallback": "node scripts/check-pwa-silent-renew-fallback.js"
   },
   "dependencies": {
     "@fontsource-variable/source-sans-3": "5.3.0",
