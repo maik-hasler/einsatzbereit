@@ -100,6 +100,12 @@ internal static class EngagementOrganizerNotificationHelper
 		}
 
 		if (messages.Count > 0)
-			await emailService.SendBatchAsync(messages, cancellationToken);
+		{
+			var results = await emailService.SendBatchAsync(messages, cancellationToken);
+			var failedCount = results.Count(succeeded => !succeeded);
+			if (failedCount > 0)
+				throw new InvalidOperationException(
+					$"Failed to send {failedCount} of {results.Count} organizer notification email(s) for engagement {engagementId.Value}");
+		}
 	}
 }

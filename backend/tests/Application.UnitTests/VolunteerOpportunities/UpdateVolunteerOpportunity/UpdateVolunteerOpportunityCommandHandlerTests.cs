@@ -445,6 +445,38 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenVolunteerNotificationEmailFailsToSend(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([activeVolunteer]);
+
+		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
+			.Returns([false]);
+
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>(
+			"a swallowed delivery failure here would let a volunteer never learn the opportunity's address changed (#2201)");
+	}
+
+	[Test]
 	public async Task Handle_ShouldRenderOpportunityUpdatedEmail_InVolunteersPreferredLanguage(
 		CancellationToken cancellationToken)
 	{

@@ -59,7 +59,13 @@ internal sealed class OutboxProcessorJob(
 		{
 			try
 			{
-				await ProcessPendingMessagesAsync(ct).ConfigureAwait(false);
+				// Deliberately CancellationToken.None, not ct: once a batch is claimed it
+				// must dispatch and persist every message before stopping, even if shutdown
+				// is requested mid-tick - otherwise an already-dispatched message whose
+				// processed/backoff write hasn't landed yet gets reclaimed and re-dispatched
+				// once its claim expires (#2201). The host's shutdown timeout still bounds
+				// how long StopAsync waits for this to finish.
+				await ProcessPendingMessagesAsync(CancellationToken.None).ConfigureAwait(false);
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
@@ -82,7 +88,8 @@ internal sealed class OutboxProcessorJob(
 		var dispatcher = scope.ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
 
 		await ProcessBatchAsync(
-			dbContext, dispatcher, logger, metrics, _options.BatchSize, _options.MaxAttempts, _options.ClaimTimeoutSeconds, ct);
+			dbContext, dispatcher, logger, metrics, _options.BatchSize, _options.MaxAttempts, _options.ClaimTimeoutSeconds,
+			_options.RetryBackoffBaseSeconds, ct);
 	}
 
 	internal static async Task<int> ProcessBatchAsync(
@@ -93,6 +100,7 @@ internal sealed class OutboxProcessorJob(
 		int batchSize,
 		int maxAttempts = 5,
 		int claimTimeoutSeconds = 300,
+		int retryBackoffBaseSeconds = 300,
 		CancellationToken cancellationToken = default)
 	{
 		var messages = await ClaimBatchAsync(dbContext, batchSize, claimTimeoutSeconds, cancellationToken);
@@ -135,11 +143,22 @@ internal sealed class OutboxProcessorJob(
 						message.Type,
 						maxAttempts);
 				}
+				else
+				{
+					// Exponential backoff instead of an immediate retry (#2201): a brief
+					// dependency outage (e.g. Keycloak restarting) must not exhaust the
+					// whole retry budget in the ~25s a fixed poll interval would otherwise allow.
+					var backoffSeconds = Math.Pow(2, message.AttemptCount) * retryBackoffBaseSeconds;
+					message.NextAttemptOnUtc = DateTime.UtcNow.AddSeconds(backoffSeconds);
+				}
 			}
-		}
 
-		if (messages.Count > 0)
+			// Persisted per message rather than batched after the loop: a mid-batch crash
+			// or SIGTERM must not lose the processed/backoff state of messages already
+			// dispatched earlier in this same batch, which would otherwise have their
+			// side effects (e.g. a sent email) repeated on redelivery (#2201).
 			await dbContext.SaveChangesAsync(cancellationToken);
+		}
 
 		var pendingCount = await dbContext.Set<OutboxMessage>()
 			.AsNoTracking()
@@ -167,14 +186,16 @@ internal sealed class OutboxProcessorJob(
 			// waiting to double-process this one.
 			await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-			var staleCutoff = DateTime.UtcNow.AddSeconds(-claimTimeoutSeconds);
+			var now = DateTime.UtcNow;
+			var staleCutoff = now.AddSeconds(-claimTimeoutSeconds);
 
 			var messages = await dbContext.Set<OutboxMessage>()
 				.FromSqlInterpolated($@"
-					SELECT id, type, content, occurred_on_utc, processed_on_utc, error, attempt_count, claimed_on_utc
+					SELECT id, type, content, occurred_on_utc, processed_on_utc, error, attempt_count, claimed_on_utc, next_attempt_on_utc
 					FROM outbox_message
 					WHERE processed_on_utc IS NULL
 						AND (claimed_on_utc IS NULL OR claimed_on_utc <= {staleCutoff})
+						AND (next_attempt_on_utc IS NULL OR next_attempt_on_utc <= {now})
 					ORDER BY occurred_on_utc
 					LIMIT {batchSize}
 					FOR UPDATE SKIP LOCKED")

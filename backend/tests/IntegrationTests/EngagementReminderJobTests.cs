@@ -72,6 +72,59 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task ClaimAndQueueRemindersAsync_EngagementConfirmedLessThan23HoursBeforeSlot_StillQueuesReminder(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var now = DateTimeOffset.UtcNow;
+		var (engagementId, _, _) = await SeedConfirmedEngagementAsync(
+			dbContext, timeSlotStart: now.AddHours(2), reminderSentAt: null, cancellationToken);
+
+		var queued = await EngagementReminderJob.ClaimAndQueueRemindersAsync(dbContext, now, 500, cancellationToken);
+
+		queued.Should().Be(1, "a shift starting in under 23 hours still deserves a reminder, just later than the ideal 24h mark");
+
+		var reminderSentAt = await dbContext.Set<Engagement>()
+			.AsNoTracking()
+			.Where(e => e.Id == engagementId)
+			.Select(e => e.ReminderSentAt)
+			.SingleAsync(cancellationToken);
+		reminderSentAt.Should().NotBeNull();
+
+		(await fixture.CountOutboxMessagesOfTypeAsync(ReminderDueDomainEventType)).Should().Be(1);
+	}
+
+	[Test]
+	public async Task ClaimAndQueueRemindersAsync_SlotAlreadyStarted_MarksReminderSentWithoutQueuing(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var now = DateTimeOffset.UtcNow;
+		var (engagementId, _, timeSlotId) = await SeedConfirmedEngagementAsync(
+			dbContext, timeSlotStart: now.AddHours(2), reminderSentAt: null, cancellationToken);
+
+		// The domain forbids creating a time slot that starts in the past, so create it
+		// in the future and move it back afterward to simulate time having passed it.
+		await dbContext.Set<TimeSlot>()
+			.Where(ts => ts.Id == timeSlotId)
+			.ExecuteUpdateAsync(s => s.SetProperty(ts => ts.StartDateTime, now.AddHours(-1)), cancellationToken);
+
+		var queued = await EngagementReminderJob.ClaimAndQueueRemindersAsync(dbContext, now, 500, cancellationToken);
+
+		queued.Should().Be(0, "a shift that already started must not receive a reminder for something already underway");
+
+		var reminderSentAt = await dbContext.Set<Engagement>()
+			.AsNoTracking()
+			.Where(e => e.Id == engagementId)
+			.Select(e => e.ReminderSentAt)
+			.SingleAsync(cancellationToken);
+		reminderSentAt.Should().NotBeNull(
+			"it must still be marked so a long-passed shift doesn't linger forever as a pending reminder");
+
+		(await fixture.CountOutboxMessagesOfTypeAsync(ReminderDueDomainEventType)).Should().Be(0);
+	}
+
+	[Test]
 	public async Task ClaimAndQueueRemindersAsync_AlreadyReminded_DoesNotClaimAgain(
 		CancellationToken cancellationToken)
 	{

@@ -17,6 +17,8 @@ internal sealed class OutboxMessage
 
 	public DateTime? ClaimedOnUtc { get; set; }
 
+	public DateTime? NextAttemptOnUtc { get; set; }
+
 	public string? Error { get; set; }
 
 	public int AttemptCount { get; set; }

@@ -49,6 +49,7 @@ internal sealed class SmtpEmailService(
 		{
 			logger.LogError(ex, "Failed to send email (correlationId: {CorrelationId})", correlationId);
 			metrics.RecordFailed();
+			throw;
 		}
 	}
 

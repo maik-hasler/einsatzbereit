@@ -68,6 +68,75 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task ProcessBatchAsync_DispatchFails_SchedulesExponentialBackoffAndReleasesTheClaim(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var beforeAttempt = DateTime.UtcNow;
+		await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, new RecordingDispatcher { ThrowOnDispatch = true }, NullLogger.Instance, new OutboxMetrics(meterFactory),
+			batchSize: 20, retryBackoffBaseSeconds: 60, cancellationToken: cancellationToken);
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.AsNoTracking()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		message.ClaimedOnUtc.Should().BeNull("the claim must be released so a different replica can pick this message up once the backoff elapses");
+		message.NextAttemptOnUtc.Should().NotBeNull();
+		message.NextAttemptOnUtc!.Value.Should().BeCloseTo(beforeAttempt.AddSeconds(120), TimeSpan.FromSeconds(10),
+			"attempt 1 backs off 2^1 * retryBackoffBaseSeconds, not an immediate retry");
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MessageWithFutureNextAttempt_IsNotReclaimedBeforeItElapses(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		message.AttemptCount = 1;
+		message.NextAttemptOnUtc = DateTime.UtcNow.AddMinutes(10);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var dispatcher = new RecordingDispatcher();
+		var claimed = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
+
+		claimed.Should().Be(0, "a message backing off must not be reclaimed before its NextAttemptOnUtc elapses, even though ClaimedOnUtc is null");
+		dispatcher.DispatchedEvents.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MessageWithElapsedNextAttempt_IsReclaimedAndDispatched(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		message.AttemptCount = 1;
+		message.NextAttemptOnUtc = DateTime.UtcNow.AddSeconds(-1);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var dispatcher = new RecordingDispatcher();
+		var claimed = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
+
+		claimed.Should().Be(1, "the backoff has elapsed, so the message must be eligible for another attempt");
+		dispatcher.DispatchedEvents.Should().ContainSingle();
+	}
+
+	[Test]
 	public async Task ProcessBatchAsync_PoisonMessage_StillDispatchesTheOtherMessagesInTheBatch(
 		CancellationToken cancellationToken)
 	{
@@ -111,6 +180,13 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var realAttempts = 0;
 		for (var round = 0; round < maxAttempts * 5 && realAttempts < maxAttempts; round++)
 		{
+			// A real failure now backs off NextAttemptOnUtc into the future (#2201) - force
+			// it back into the past between rounds so this test can drive every attempt
+			// without waiting out the real backoff delay.
+			await dbContext.Set<OutboxMessage>()
+				.Where(m => m.Type == PoisonMessageType)
+				.ExecuteUpdateAsync(s => s.SetProperty(m => m.NextAttemptOnUtc, DateTime.UtcNow.AddSeconds(-1)), cancellationToken);
+
 			var claimed = await OutboxProcessorJob.ProcessBatchAsync(
 				dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
 				batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
@@ -153,6 +229,48 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		redispatched.EngagementId.Should().Be(domainEvent.EngagementId);
 		redispatched.VolunteerId.Should().Be(domainEvent.VolunteerId);
 		redispatched.OpportunityId.Should().Be(domainEvent.OpportunityId);
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MultipleMessages_PersistsEachMessageBeforeDispatchingTheNext(
+		CancellationToken cancellationToken)
+	{
+		await using var seedContext = fixture.CreateApplicationDbContext();
+		var firstEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		var secondEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		var baseTime = DateTime.UtcNow;
+		var firstMessage = OutboxMessage.FromDomainEvent(firstEvent, baseTime);
+		var secondMessage = OutboxMessage.FromDomainEvent(secondEvent, baseTime.AddMilliseconds(1));
+		seedContext.Set<OutboxMessage>().AddRange(firstMessage, secondMessage);
+		await seedContext.SaveChangesAsync(cancellationToken);
+
+		var secondDispatchStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var releaseSecondDispatch = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var dispatcher = new SequencedDispatcher(secondDispatchStarted, releaseSecondDispatch.Task);
+
+		await using var processingContext = fixture.CreateApplicationDbContext();
+		using var meterFactory = new TestMeterFactory();
+
+		var processTask = OutboxProcessorJob.ProcessBatchAsync(
+			processingContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
+
+		await secondDispatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+
+		// The second message's dispatch is still gated (simulating the process being
+		// killed before ProcessBatchAsync returns) - a separate connection must already
+		// see the first message's processed state durably committed, proving it was not
+		// deferred to a single SaveChangesAsync at the end of the whole batch (#2201).
+		await using var verifyContext = fixture.CreateApplicationDbContext();
+		var firstMessageState = await verifyContext.Set<OutboxMessage>()
+			.AsNoTracking()
+			.SingleAsync(m => m.Id == firstMessage.Id, cancellationToken);
+		firstMessageState.ProcessedOnUtc.Should().NotBeNull(
+			"the first message's processed state must be durably persisted before the batch moves on to dispatching the next message");
+
+		releaseSecondDispatch.SetResult();
+		var processed = await processTask;
+
+		processed.Should().Be(2);
 	}
 
 	[Test]
@@ -382,6 +500,20 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 			DispatchedEvents.AddRange(events);
 			return ValueTask.CompletedTask;
+		}
+	}
+
+	private sealed class SequencedDispatcher(TaskCompletionSource secondCallStarted, Task releaseSecondCall) : IDomainEventDispatcher
+	{
+		private int _callCount;
+
+		public async ValueTask DispatchAsync(IEnumerable<CoreDomainEvent> events, CancellationToken cancellationToken = default)
+		{
+			if (Interlocked.Increment(ref _callCount) == 2)
+			{
+				secondCallStarted.TrySetResult();
+				await releaseSecondCall;
+			}
 		}
 	}
 

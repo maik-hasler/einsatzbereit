@@ -97,8 +97,24 @@ internal sealed class EngagementReminderJob(
 		int maxBatchSize,
 		CancellationToken cancellationToken = default)
 	{
-		var windowStart = now.AddHours(23);
 		var windowEnd = now.AddHours(25);
+
+		// A shift's start can pass while its engagement is still unreminded - a long
+		// outage, a backlog bigger than maxBatchSize, or (before this fix) a slot that
+		// never fell inside the old fixed [-23h, -25h] scan window. Mark those claimed
+		// without sending, so they stop lingering as pending reminders instead of
+		// getting a reminder for a shift that has already begun (#2201).
+		await dbContext.Set<Engagement>()
+			.Where(e =>
+				e.Status == EngagementStatus.Confirmed &&
+				e.TimeSlotId != null &&
+				e.ReminderSentAt == null &&
+				dbContext.Set<TimeSlot>().Any(ts => ts.Id == e.TimeSlotId && ts.StartDateTime <= now))
+			.ExecuteUpdateAsync(
+				s => s
+					.SetProperty(e => e.ReminderSentAt, now)
+					.SetProperty(e => e.ModifiedOn, now),
+				cancellationToken);
 
 		var strategy = dbContext.Database.CreateExecutionStrategy();
 
@@ -116,7 +132,7 @@ internal sealed class EngagementReminderJob(
 					e => e.TimeSlotId,
 					ts => ts.Id,
 					(e, ts) => new { e.Id, e.VolunteerId, e.OpportunityId, e.TimeSlotId, ts.StartDateTime })
-				.Where(x => x.StartDateTime >= windowStart && x.StartDateTime <= windowEnd)
+				.Where(x => x.StartDateTime > now && x.StartDateTime <= windowEnd)
 				.OrderBy(x => x.StartDateTime)
 				.Take(maxBatchSize)
 				.ToListAsync(cancellationToken);

@@ -24,6 +24,8 @@ internal sealed class OutboxMessageConfiguration
 
 		builder.Property(m => m.ClaimedOnUtc);
 
+		builder.Property(m => m.NextAttemptOnUtc);
+
 		builder.HasIndex(m => m.OccurredOnUtc)
 			.HasFilter("processed_on_utc IS NULL");
 
