@@ -10,8 +10,8 @@ namespace IntegrationTests;
 // A separate, minimal Aspire boot from IntegrationTestFixture's - AppHost.cs pins the shared
 // fixture's backend to ASPNETCORE_ENVIRONMENT=Development for all of its ~70 test classes, and
 // that value is fixed for the lifetime of one Aspire boot. Testing the non-Development branch
-// of Program.cs (RequiredConfigurationValidator, Database:MigrateOnStartup, HSTS) genuinely
-// needs its own instance rather than a flag on the shared one (#2204).
+// of Program.cs (RequiredConfigurationValidator, Database:MigrateOnStartup, Database:SeedOnStartup,
+// HSTS) genuinely needs its own instance rather than a flag on the shared one (#2204).
 public class ProductionEnvironmentFixture
 	: IAsyncInitializer,
 	IAsyncDisposable
@@ -25,6 +25,7 @@ public class ProductionEnvironmentFixture
 				"--environment", "Testing",
 				"--Testing:BackendAspNetCoreEnvironment=Production",
 				"--Database:MigrateOnStartup=true",
+				"--Database:SeedOnStartup=true",
 				// This Aspire test network's Keycloak is always plain HTTP - no TLS
 				// termination in front of it, unlike a real deployment's Authority. Without
 				// this, JwtBearerHandler throws "MetadataAddress or Authority must use

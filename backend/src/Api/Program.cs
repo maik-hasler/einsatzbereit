@@ -220,6 +220,18 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
 
 	await initializer.MigrateAsync();
+
+	if (app.Configuration.GetValue<bool>("Database:SeedOnStartup"))
+	{
+		try
+		{
+			await initializer.SeedAsync();
+		}
+		catch (Exception ex)
+		{
+			app.Logger.LogError(ex, "An exception occurred while seeding the database");
+		}
+	}
 }
 
 app.MapDefaultEndpoints(
