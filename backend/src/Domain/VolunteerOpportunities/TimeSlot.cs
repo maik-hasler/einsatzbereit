@@ -6,6 +6,17 @@ public sealed class TimeSlot
 	: Entity<TimeSlotId>,
 		IAuditableEntity
 {
+	// How far around a slot's own window a check-in against it is honoured
+	// (Engagement.CheckIn) - and, for a PINCode opportunity, how long its
+	// current PIN keeps covering this slot before VolunteerOpportunity treats
+	// the next slot as due and rotates (einsatzbereit#2202). Before the start,
+	// so an organizer can check volunteers in as they arrive early; well past
+	// the end, since Manual/QRCode check-in commonly happens during a
+	// post-event wrap-up rather than the instant the slot ends.
+	public static readonly TimeSpan CheckInWindowBefore = TimeSpan.FromHours(1);
+
+	public static readonly TimeSpan CheckInWindowAfter = TimeSpan.FromHours(2);
+
 	public DateTimeOffset StartDateTime { get; private set; }
 
 	public DateTimeOffset EndDateTime { get; private set; }

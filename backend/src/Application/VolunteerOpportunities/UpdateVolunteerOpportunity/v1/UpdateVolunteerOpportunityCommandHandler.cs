@@ -1,7 +1,5 @@
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -16,10 +14,7 @@ namespace Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
-	IPinGenerator pinGenerator,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer)
+	IPinGenerator pinGenerator)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -59,7 +54,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		opportunity.Relocate(request.IsRemote, request.Address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);
 		opportunity.Recategorize(request.Category, request.Tags).ThrowIfFailure();
-		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();
+		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, DateTimeOffset.UtcNow, request.CheckInPin).ThrowIfFailure();
 		opportunity.SwitchParticipationType(request.ParticipationType);
 		opportunity.SetValidUntil(request.ValidUntil, DateTimeOffset.UtcNow).ThrowIfFailure();
 
@@ -69,16 +64,17 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			AddressTextChanged(prevAddress, request.Address);
 
 		if (materialChanged)
+		{
 			await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
 				dbContext,
 				engagementReadRepository,
 				opportunityId,
 				NotificationKind.OpportunityUpdated,
 				cancellationToken,
-				keycloakUserService: keycloakUserService,
-				emailService: emailService,
-				emailTemplateRenderer: emailTemplateRenderer,
 				opportunityTitle: opportunity.TitleDe);
+
+			opportunity.NotifyVolunteersOfUpdate();
+		}
 
 		return true;
 	}

@@ -17,7 +17,7 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken, checkInPin: "13579");
+		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken, checkInPin: "135790");
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		await CreateOrganizationAsync(veraClient, cancellationToken);

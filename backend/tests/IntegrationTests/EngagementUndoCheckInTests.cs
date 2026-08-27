@@ -22,7 +22,7 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		var engagementId = await CreateAndConfirmEngagementAsync(
 			vera, olaf, opportunityId, cancellationToken);
 
-		await olaf.CheckInEngagementAsync(engagementId, cancellationToken);
+		await olaf.CheckInEngagementAsync(opportunityId, engagementId, cancellationToken);
 
 		var undone = await olaf.UndoCheckInEngagementAsync(engagementId, cancellationToken);
 
@@ -64,7 +64,7 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		var engagementId = await CreateAndConfirmEngagementAsync(
 			vera, olaf, opportunityId, cancellationToken);
 
-		await olaf.CheckInEngagementAsync(engagementId, cancellationToken);
+		await olaf.CheckInEngagementAsync(opportunityId, engagementId, cancellationToken);
 		await olaf.CancelEngagementAsync(engagementId, body: null, cancellationToken);
 
 		var failure = await CaptureFailureAsync(
@@ -87,7 +87,7 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		var engagementId = await CreateAndConfirmEngagementAsync(
 			vera, olaf, opportunityId, cancellationToken);
 
-		await olaf.CheckInEngagementAsync(engagementId, cancellationToken);
+		await olaf.CheckInEngagementAsync(opportunityId, engagementId, cancellationToken);
 
 		var failure = await CaptureFailureAsync(
 			() => admin.UndoCheckInEngagementAsync(engagementId, cancellationToken));

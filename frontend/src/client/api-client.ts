@@ -5953,8 +5953,11 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    checkInEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
-        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/check-in";
+    checkInEngagement(opportunityId: string, engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
         if (engagementId === undefined || engagementId === null)
             throw new globalThis.Error("The parameter 'engagementId' must be defined.");
         url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));

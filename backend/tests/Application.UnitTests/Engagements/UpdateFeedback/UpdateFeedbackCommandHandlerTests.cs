@@ -32,7 +32,7 @@ public class UpdateFeedbackCommandHandlerTests
 			volunteerId,
 			TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		engagement.SubmitFeedback(rating, comment, submittedAt ?? DateTimeOffset.UtcNow.AddDays(-1));
 		return (engagement, volunteerId);
 	}
@@ -147,7 +147,7 @@ public class UpdateFeedbackCommandHandlerTests
 			volunteerId,
 			TimeSlotId.New());
 		engagement.Confirm();
-		engagement.CheckIn();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 

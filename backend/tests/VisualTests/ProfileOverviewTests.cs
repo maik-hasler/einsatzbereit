@@ -204,7 +204,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 			?? throw new InvalidOperationException("Created engagement had no id.");
 
 		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", null)).EnsureSuccessStatusCode();
-		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+		(await olafHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
 		(await veraHttp.PostAsJsonAsync($"/v1/engagements/{engagementId}/feedback", new { rating, comment }))
 			.EnsureSuccessStatusCode();
 

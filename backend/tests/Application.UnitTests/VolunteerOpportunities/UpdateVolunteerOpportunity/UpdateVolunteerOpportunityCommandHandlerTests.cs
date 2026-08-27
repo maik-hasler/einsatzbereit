@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
@@ -24,9 +22,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -46,29 +41,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_keycloakUserService
-			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => callInfo.Arg<IReadOnlyList<Guid>>()!
-				.ToDictionary(id => id, id => new KeycloakUserProfile(id, "user", null, null, "user@example.com")));
-		_emailService
-			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(callInfo =>
-			{
-				var placeholders = (IReadOnlyDictionary<string, string>)callInfo[2]!;
-				return new EmailContent("Test Subject", $"Test Body {string.Join(" ", placeholders.Values)}");
-			});
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
-			_pinGenerator,
-			_keycloakUserService,
-			_emailService,
-			_emailTemplateRenderer);
+			_pinGenerator);
 	}
 
 	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
@@ -103,13 +79,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
-			CheckInPin: "13579");
+			CheckInPin: "135790");
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		opportunity.CheckInPin.Should().Be("13579");
+		opportunity.CheckInPin.Should().Be("135790");
 	}
 
 	[Test]
@@ -438,81 +414,9 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
-		await _emailService.Received(1).SendBatchAsync(
-			Arg.Is<IReadOnlyList<EmailMessage>>(messages =>
-				messages!.Count == 1 && messages[0].To == "user@example.com" && messages[0].Body.Contains("Neues Thema")),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldStillUpdateOpportunity_WhenVolunteerNotificationEmailFailsToSend(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
-		var activeVolunteer = Guid.NewGuid();
-
-		_opportunityRepo
-			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
-			.Returns(opportunity);
-
-		_engagementReadRepository
-			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
-			.Returns([activeVolunteer]);
-
-		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
-			.Returns([false]);
-
-		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
-		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
-
-		// Act
-		var result = await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		result.Should().BeTrue(
-			"a notification email failing to send must not block or roll back an otherwise-valid opportunity update - " +
-			"unlike an outbox-dispatched handler there is no retry path here, and a permanently bad recipient address " +
-			"would otherwise deterministically block every future edit to this opportunity");
-		opportunity.TitleDe.Should().Be("Neues Thema");
-	}
-
-	[Test]
-	public async Task Handle_ShouldRenderOpportunityUpdatedEmail_InVolunteersPreferredLanguage(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
-		var activeVolunteerId = UserId.New();
-
-		_opportunityRepo
-			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
-			.Returns(opportunity);
-
-		_engagementReadRepository
-			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
-			.Returns([activeVolunteerId.Value]);
-
-		var activeVolunteer = User.Create(activeVolunteerId);
-		activeVolunteer.SetPreferredLanguage("en");
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([activeVolunteer]);
-
-		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
-		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.OpportunityUpdated,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
+		opportunity.Events.OfType<VolunteerOpportunityUpdatedDomainEvent>()
+			.Should().ContainSingle()
+			.Which.TimeSlotId.Should().BeNull();
 	}
 
 	[Test]
@@ -542,9 +446,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await _notifRepo.DidNotReceive().AddAsync(
 			Arg.Any<Notification>(),
 			cancellationToken);
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(),
-			Arg.Any<CancellationToken>());
+		opportunity.Events.Should().NotContain(e => e is VolunteerOpportunityUpdatedDomainEvent);
 	}
 
 	[Test]
@@ -569,44 +471,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*cannot have more than*");
-	}
-
-	[Test]
-	public async Task Handle_ShouldSkipVolunteer_WhenKeycloakProfileLookupFails(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-
-		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
-		var activeVolunteer = Guid.NewGuid();
-
-		_opportunityRepo
-			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
-			.Returns(opportunity);
-
-		_engagementReadRepository
-			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
-			.Returns([activeVolunteer]);
-
-		_keycloakUserService
-			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
-
-		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
-		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", null, "Neue Beschreibung", null, false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		await _notifRepo.Received(1).AddAsync(
-			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
-			cancellationToken);
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(),
-			Arg.Any<CancellationToken>());
 	}
 
 	[Test]

@@ -115,7 +115,7 @@ public class DeleteMyAccountCommandHandlerTests
 
 		var engagement = CreateEngagementFor(DefaultUserId);
 		engagement.Confirm().ThrowIfFailure();
-		engagement.CheckIn().ThrowIfFailure();
+		engagement.CheckIn(DateTimeOffset.UtcNow).ThrowIfFailure();
 		_dbContext
 			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
 			.Returns([engagement]);

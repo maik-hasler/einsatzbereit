@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260827053617_CheckInPinRotationAndVolunteerScopedAttempts")]
+	partial class CheckInPinRotationAndVolunteerScopedAttempts
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -956,9 +959,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasKey("Id")
 						.HasName("pk_volunteer_opportunity");
 
-					b.HasIndex("CheckInPinTimeSlotId")
-						.HasDatabaseName("ix_volunteer_opportunity_check_in_pin_time_slot_id");
-
 					b.HasIndex("OrganizationId")
 						.HasDatabaseName("ix_volunteer_opportunity_organization_id");
 
@@ -1010,10 +1010,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<string>("Error")
 						.HasColumnType("text")
 						.HasColumnName("error");
-
-					b.Property<DateTime?>("NextAttemptOnUtc")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("next_attempt_on_utc");
 
 					b.Property<DateTime>("OccurredOnUtc")
 						.HasColumnType("timestamp with time zone")
@@ -1183,12 +1179,6 @@ namespace Infrastructure.Persistence.Migrations
 
 			modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
 				{
-					b.HasOne("Domain.VolunteerOpportunities.TimeSlot", null)
-						.WithMany()
-						.HasForeignKey("CheckInPinTimeSlotId")
-						.OnDelete(DeleteBehavior.SetNull)
-						.HasConstraintName("fk_volunteer_opportunity_time_slot_check_in_pin_time_slot_id");
-
 					b.HasOne("Domain.Organizations.Organization", null)
 						.WithMany()
 						.HasForeignKey("OrganizationId")
