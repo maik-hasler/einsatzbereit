@@ -128,11 +128,7 @@ export default function OrganizationsPage() {
 			<p
 				role="status"
 				data-testid="organizations-result-count"
-				className={
-					!error && items.length > 0
-						? "mb-4 text-center text-sm text-gray-600"
-						: "sr-only"
-				}
+				className="sr-only"
 			>
 				{liveMessage}
 			</p>
