@@ -113,12 +113,12 @@ export default function MobileMenu({
 						<div className="absolute -top-8 -right-16 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl" />
 					</div>
 				)}
-				<div className="relative space-y-2 px-4 py-4">
+				<div className="relative space-y-1.5 px-3 py-3">
 					<div
-						className={`space-y-1 border-b pb-3 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
+						className={`space-y-0.5 border-b pb-2 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
 					>
 						{buildPrimaryNav(activeOrg).map((link) => {
-							const rowBase = `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`;
+							const rowBase = `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
 
 							if (link.kind === "organization") {
 								return (
@@ -138,7 +138,7 @@ export default function MobileMenu({
 										</Link>
 
 										<div
-											className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
+											className={`ml-3 space-y-0.5 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
 										>
 											{ORG_TABS.filter((tab) => tab.key !== "dashboard").map(
 												(tab) => (
@@ -146,7 +146,7 @@ export default function MobileMenu({
 														key={tab.key}
 														to={orgTabPath(link.org.id, tab.key)}
 														onClick={onClose}
-														className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
+														className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
 													>
 														{t(tab.labelKey)}
 													</Link>
@@ -180,23 +180,25 @@ export default function MobileMenu({
 							);
 						})}
 					</div>
-					<div className="pb-2">
+					<div className="pb-1.5">
 						<LanguageSelector transparent={isTransparent} />
 					</div>
 					{authStatus === "signedIn" && (
-						<div className="space-y-1">
-							<div className="flex items-center gap-3 px-3 py-2">
+						<div className="space-y-0.5">
+							<div
+								className={`mb-0.5 flex items-center gap-2.5 border-b px-3 pb-2 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
+							>
 								{avatarUrl ? (
 									<img
 										src={avatarUrl}
 										alt=""
-										width={36}
-										height={36}
+										width={32}
+										height={32}
 										loading="lazy"
-										className="h-9 w-9 rounded-full object-cover"
+										className="h-8 w-8 rounded-full object-cover"
 									/>
 								) : (
-									<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold tracking-widest text-white">
+									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold tracking-widest text-white">
 										{initials}
 									</div>
 								)}
@@ -209,21 +211,21 @@ export default function MobileMenu({
 							<Link
 								to="/profile"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myProfile")}
 							</Link>
 							<Link
 								to="/my-signups"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myEngagements")}
 							</Link>
 							<Link
 								to="/profile/settings"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.profileSettings")}
 							</Link>
@@ -231,7 +233,7 @@ export default function MobileMenu({
 								<Link
 									to="/administration"
 									onClick={onClose}
-									className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 								>
 									{t("nav.administration")}
 								</Link>
@@ -239,7 +241,7 @@ export default function MobileMenu({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className={`block w-full rounded-lg border-t px-3 py-2 text-left text-sm font-medium transition-colors ${isTransparent ? "border-white/20" : "border-gray-100"} ${menuItemVariant}`}
+								className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.signOut")}
 							</button>
