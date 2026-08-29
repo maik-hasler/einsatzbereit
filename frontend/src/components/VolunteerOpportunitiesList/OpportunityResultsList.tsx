@@ -56,11 +56,7 @@ export default function OpportunityResultsList({
 			<p
 				role="status"
 				data-testid="opportunities-live-region"
-				className={
-					!error && items.length > 0
-						? "mb-4 text-center text-sm text-gray-600"
-						: "sr-only"
-				}
+				className="sr-only"
 			>
 				{liveMessage}
 			</p>
@@ -163,7 +159,7 @@ export default function OpportunityResultsList({
 									<p
 										role="status"
 										data-testid="opportunities-load-more-progress"
-										className="mb-2 text-center text-sm text-gray-600"
+										className="sr-only"
 									>
 										{t("opportunities.loadedOfTotal", {
 											loaded: items.length,

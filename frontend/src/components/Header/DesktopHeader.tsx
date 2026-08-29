@@ -49,7 +49,7 @@ export default function DesktopHeader({
 						? "text-brand-100 hover:text-white"
 						: "text-gray-600 hover:text-brand-800";
 					const activeClass = isTransparent
-						? "border-white font-semibold text-white"
+						? "font-semibold text-white"
 						: "border-brand-700 font-semibold text-brand-800";
 
 					if (link.kind === "organization") {
