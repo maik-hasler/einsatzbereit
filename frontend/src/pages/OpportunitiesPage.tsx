@@ -38,7 +38,7 @@ export default function OpportunitiesPage() {
 				lead={t("opportunitiesPage.lead")}
 			>
 				<form onSubmit={handleSearch} className="max-w-xl">
-					<div className="flex flex-col gap-3 rounded-full bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch">
+					<div className="flex flex-col gap-3 rounded-3xl bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch sm:rounded-full">
 						<div className="relative flex-1 rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
 							<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
 							<input
