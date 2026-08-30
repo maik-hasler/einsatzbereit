@@ -188,4 +188,46 @@ public class TimeSlotTests
 		result.Error.Description.Should().Match("*Max participants must be greater than zero*");
 		timeSlot.MaxParticipants.Should().Be(10);
 	}
+
+	[Test]
+	public void Create_ShouldFail_WhenMaxParticipantsExceedsTheLimit()
+	{
+		var result = TimeSlot.Create(Tomorrow, DayAfterTomorrow, TimeSlot.MaxParticipantsLimit + 1, Now);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Code.Should().Be("TimeSlot.MaxParticipantsTooLarge");
+	}
+
+	[Test]
+	public void Create_ShouldAllowMaxParticipants_AtTheLimit()
+	{
+		var result = TimeSlot.Create(Tomorrow, DayAfterTomorrow, TimeSlot.MaxParticipantsLimit, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		result.Value.MaxParticipants.Should().Be(TimeSlot.MaxParticipantsLimit);
+	}
+
+	[Test]
+	public void Update_ShouldFail_WhenMaxParticipantsExceedsTheLimit()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, TimeSlot.MaxParticipantsLimit + 1, Now);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Code.Should().Be("TimeSlot.MaxParticipantsTooLarge");
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldFail_WhenMaxParticipantsExceedsTheLimit()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.UpdateCapacity(TimeSlot.MaxParticipantsLimit + 1);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Code.Should().Be("TimeSlot.MaxParticipantsTooLarge");
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
 }

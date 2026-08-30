@@ -39,6 +39,13 @@ import {
 	TOTAL_STEPS,
 } from "./schema";
 import type { OpportunityFormValues } from "./schema";
+import {
+	byStartDateTime,
+	capacityToInput,
+	MAX_PARTICIPANTS_LIMIT,
+	resolveCapacity,
+} from "./timeSlots";
+import type { CapacityInput, NewSlotField } from "./timeSlots";
 
 const BLOCKED_JUMP_MESSAGE_ID = "create-opportunity-step-blocked";
 
@@ -119,9 +126,17 @@ interface EditingSlot {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number | null;
+	maxParticipants: CapacityInput;
 	scope: SeriesEditScope;
 }
+
+/**
+ * An `EditingSlot` whose capacity box has been resolved to a value the API
+ * takes, so nothing past this point has to second-guess what was typed.
+ */
+type ValidatedSlotEdit = Omit<EditingSlot, "maxParticipants"> & {
+	maxParticipants: number | null;
+};
 
 function toDatetimeLocalValue(value: Date | string): string {
 	const date = value instanceof Date ? value : new Date(value);
@@ -203,6 +218,10 @@ export default function CreateVolunteerOpportunityModal({
 	const { t, i18n } = useTranslation();
 	const isEditMode = initialOpportunity !== undefined;
 
+	const capacityErrorMessage = t("timeSlots.capacityInvalid", {
+		max: MAX_PARTICIPANTS_LIMIT.toLocaleString(i18n.language),
+	});
+
 	const canSaveDraft =
 		!isEditMode ||
 		initialOpportunity.status === "Draft" ||
@@ -262,18 +281,26 @@ export default function CreateVolunteerOpportunityModal({
 	const [newSlot, setNewSlot] = useState<{
 		startDateTime: string;
 		endDateTime: string;
-		maxParticipants: number | null;
+		maxParticipants: CapacityInput;
 	}>({
 		startDateTime: "",
 		endDateTime: "",
-		maxParticipants: 1,
+		maxParticipants: "1",
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
-	// Marks the add form's start/end pair invalid, so the message points at the
-	// two inputs that produced it rather than floating under the row (#2320).
-	// Scoped to that form on purpose: an open edit row has its own pair of
-	// inputs, and the shared message renders down here either way.
-	const [newSlotFieldInvalid, setNewSlotFieldInvalid] = useState(false);
+	// Which of the add form's inputs the current message is about, so it points
+	// at the ones that produced it rather than floating under the row (#2320).
+	// A past start is the start box's alone, a bad capacity the spot box's;
+	// only "ends before it starts" implicates the pair (#2325). Scoped to that
+	// form on purpose: an open edit row has its own inputs, and the shared
+	// message renders down here either way.
+	const [invalidNewSlotFields, setInvalidNewSlotFields] = useState<
+		ReadonlySet<NewSlotField>
+	>(new Set());
+
+	function clearInvalidNewSlotFields() {
+		setInvalidNewSlotFields(new Set());
+	}
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 	const [pendingSlotDelete, setPendingSlotDelete] = useState<{
 		id: string;
@@ -290,7 +317,7 @@ export default function CreateVolunteerOpportunityModal({
 	const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
 	const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
 	const [pendingSlotEdit, setPendingSlotEdit] = useState<
-		(EditingSlot & { bookedCount: number }) | null
+		(ValidatedSlotEdit & { bookedCount: number }) | null
 	>(null);
 	const [pendingSeriesDelete, setPendingSeriesDelete] = useState<{
 		id: string;
@@ -504,7 +531,7 @@ export default function CreateVolunteerOpportunityModal({
 	async function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
 		setSlotError(null);
-		setNewSlotFieldInvalid(false);
+		clearInvalidNewSlotFields();
 		const start = zonedDatetimeLocalToUtc(
 			newSlot.startDateTime,
 			CANONICAL_TIME_ZONE,
@@ -513,11 +540,25 @@ export default function CreateVolunteerOpportunityModal({
 			newSlot.endDateTime,
 			CANONICAL_TIME_ZONE,
 		);
+		// The API rejects each of these, and while creating it does so only
+		// after the opportunity itself has been POSTed - so the slot never
+		// leaves the browser until it is one the API would take (#2325). The
+		// app already ships the precise message the server would send for each
+		// of the first two; a generic "could not add" said nothing (#2320).
+		if (start <= new Date()) {
+			setSlotError(t("apiError.TimeSlot.StartMustBeFuture"));
+			setInvalidNewSlotFields(new Set(["start"]));
+			return;
+		}
 		if (end <= start) {
-			// The app already ships the precise message the server would send
-			// for this; a generic "could not add" said nothing (#2320).
 			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
-			setNewSlotFieldInvalid(true);
+			setInvalidNewSlotFields(new Set(["start", "end"]));
+			return;
+		}
+		const maxParticipants = resolveCapacity(newSlot.maxParticipants);
+		if (maxParticipants === undefined) {
+			setSlotError(capacityErrorMessage);
+			setInvalidNewSlotFields(new Set(["max"]));
 			return;
 		}
 
@@ -528,7 +569,7 @@ export default function CreateVolunteerOpportunityModal({
 				const responses = await api.createTimeSlot(initialOpportunity.id, {
 					startDateTime: start,
 					endDateTime: end,
-					maxParticipants: newSlot.maxParticipants ?? undefined,
+					maxParticipants: maxParticipants ?? undefined,
 					recurrenceFrequency: isRecurring ? recurrenceFrequency : undefined,
 					recurrenceCount: isRecurring ? recurrenceCount : 1,
 				});
@@ -547,7 +588,11 @@ export default function CreateVolunteerOpportunityModal({
 				]);
 
 				setSlotChangesApplied(true);
-				setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
+				setNewSlot({
+					startDateTime: "",
+					endDateTime: "",
+					maxParticipants: "1",
+				});
 			} catch {
 				setSlotError(t("timeSlots.addError"));
 			} finally {
@@ -572,12 +617,12 @@ export default function CreateVolunteerOpportunityModal({
 						batchCount: count,
 						startDateTime: slotStart.toISOString(),
 						endDateTime: slotEnd.toISOString(),
-						maxParticipants: newSlot.maxParticipants,
+						maxParticipants,
 					};
 				},
 			);
 			setPendingSlots((prev) => [...prev, ...newSlots]);
-			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
+			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: "1" });
 		}
 	}
 
@@ -598,7 +643,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!initialOpportunity) return;
 		setRemovingSlotId(timeSlotId);
 		setSlotError(null);
-		setNewSlotFieldInvalid(false);
+		clearInvalidNewSlotFields();
 		setSlotDeleteError(null);
 		try {
 			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId, "Only");
@@ -649,21 +694,21 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: number | null;
 	}) {
 		setSlotError(null);
-		setNewSlotFieldInvalid(false);
+		clearInvalidNewSlotFields();
 		setEditingSlot({
 			id: slot.id,
 			startDateTime: toDatetimeLocalValue(slot.startDateTime),
 			endDateTime: toDatetimeLocalValue(slot.endDateTime),
-			maxParticipants: slot.maxParticipants,
+			maxParticipants: capacityToInput(slot.maxParticipants),
 			scope: "Only",
 		});
 	}
 
-	async function applySlotEdit(edit: EditingSlot) {
+	async function applySlotEdit(edit: ValidatedSlotEdit) {
 		if (!initialOpportunity) return;
 		setUpdatingSlotId(edit.id);
 		setSlotError(null);
-		setNewSlotFieldInvalid(false);
+		clearInvalidNewSlotFields();
 		try {
 			const result = await api.updateTimeSlot(initialOpportunity.id, edit.id, {
 				startDateTime:
@@ -721,31 +766,34 @@ export default function CreateVolunteerOpportunityModal({
 
 	function handleRequestSaveEditSlot(bookedCount: number) {
 		if (!editingSlot) return;
-		if (editingSlot.scope !== "Only") {
-			setSlotError(null);
-			setNewSlotFieldInvalid(false);
-			void applySlotEdit(editingSlot);
+		const maxParticipants = resolveCapacity(editingSlot.maxParticipants);
+		if (maxParticipants === undefined) {
+			setSlotError(capacityErrorMessage);
 			return;
 		}
-		if (!editingSlot.startDateTime || !editingSlot.endDateTime) return;
+		const edit: ValidatedSlotEdit = { ...editingSlot, maxParticipants };
+		if (edit.scope !== "Only") {
+			setSlotError(null);
+			clearInvalidNewSlotFields();
+			void applySlotEdit(edit);
+			return;
+		}
+		if (!edit.startDateTime || !edit.endDateTime) return;
 		const start = zonedDatetimeLocalToUtc(
-			editingSlot.startDateTime,
+			edit.startDateTime,
 			CANONICAL_TIME_ZONE,
 		);
-		const end = zonedDatetimeLocalToUtc(
-			editingSlot.endDateTime,
-			CANONICAL_TIME_ZONE,
-		);
+		const end = zonedDatetimeLocalToUtc(edit.endDateTime, CANONICAL_TIME_ZONE);
 		if (end <= start) {
 			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
 			return;
 		}
 		setSlotError(null);
-		setNewSlotFieldInvalid(false);
+		clearInvalidNewSlotFields();
 		if (bookedCount > 0) {
-			setPendingSlotEdit({ ...editingSlot, bookedCount });
+			setPendingSlotEdit({ ...edit, bookedCount });
 		} else {
-			void applySlotEdit(editingSlot);
+			void applySlotEdit(edit);
 		}
 	}
 
@@ -764,10 +812,20 @@ export default function CreateVolunteerOpportunityModal({
 		}
 
 		const values = getValues();
-		if (!asDraft && values.participationType === "ScheduledSlots") {
-			const totalSlots = pendingSlots.length + existingSlots.length;
-			if (totalSlots === 0) {
+		if (values.participationType === "ScheduledSlots") {
+			if (!asDraft && pendingSlots.length + existingSlots.length === 0) {
 				setError(t("timeSlots.requiredForPublish"));
+				setErrorToken((tk) => tk + 1);
+				setStep(4);
+				return;
+			}
+			// A slot that was in the future when it was added can have slipped
+			// into the past while the wizard was open. The opportunity is
+			// created before its slots are POSTed, so learning that from the
+			// API is what left an orphan draft behind (#2325).
+			const now = Date.now();
+			if (pendingSlots.some((s) => Date.parse(s.startDateTime) <= now)) {
+				setError(t("timeSlots.pastSlotsBeforePublish"));
 				setErrorToken((tk) => tk + 1);
 				setStep(4);
 				return;
@@ -1010,30 +1068,32 @@ export default function CreateVolunteerOpportunityModal({
 		}
 	}
 
-	const allTimeSlots = isEditMode
-		? existingSlots.map((s) => ({
-				id: s.id,
-				startDateTime:
-					s.startDateTime instanceof Date
-						? s.startDateTime.toISOString()
-						: String(s.startDateTime),
-				endDateTime:
-					s.endDateTime instanceof Date
-						? s.endDateTime.toISOString()
-						: String(s.endDateTime),
-				maxParticipants: s.maxParticipants ?? null,
-				bookedCount: s.bookedCount,
-				persisted: true as const,
-				seriesId: s.seriesId,
-				recurrenceFrequency: s.recurrenceFrequency,
-				recurrenceCount: s.recurrenceCount,
-				seriesPosition: s.seriesId ? seriesPositionById.get(s.id) : undefined,
-			}))
-		: pendingSlots.map((s) => ({
-				...s,
-				bookedCount: 0,
-				persisted: false as const,
-			}));
+	const allTimeSlots = (
+		isEditMode
+			? existingSlots.map((s) => ({
+					id: s.id,
+					startDateTime:
+						s.startDateTime instanceof Date
+							? s.startDateTime.toISOString()
+							: String(s.startDateTime),
+					endDateTime:
+						s.endDateTime instanceof Date
+							? s.endDateTime.toISOString()
+							: String(s.endDateTime),
+					maxParticipants: s.maxParticipants ?? null,
+					bookedCount: s.bookedCount,
+					persisted: true as const,
+					seriesId: s.seriesId,
+					recurrenceFrequency: s.recurrenceFrequency,
+					recurrenceCount: s.recurrenceCount,
+					seriesPosition: s.seriesId ? seriesPositionById.get(s.id) : undefined,
+				}))
+			: pendingSlots.map((s) => ({
+					...s,
+					bookedCount: 0,
+					persisted: false as const,
+				}))
+	).sort(byStartDateTime);
 
 	return (
 		<>
@@ -1163,7 +1223,6 @@ export default function CreateVolunteerOpportunityModal({
 							control={control}
 							isScheduledSlots={isScheduledSlots}
 							occurrence={occurrence}
-							isEditMode={isEditMode}
 							allTimeSlots={allTimeSlots}
 							removingSlotId={removingSlotId}
 							onRemoveExistingSlot={handleRequestRemoveExistingSlot}
@@ -1178,7 +1237,7 @@ export default function CreateVolunteerOpportunityModal({
 							newSlot={newSlot}
 							onNewSlotChange={setNewSlot}
 							slotError={slotError}
-							newSlotFieldInvalid={newSlotFieldInvalid}
+							invalidNewSlotFields={invalidNewSlotFields}
 							slotChangesAreImmediate={isEditMode}
 							addingSlot={addingSlot}
 							onAddSlot={() => void handleAddSlot()}
