@@ -33,9 +33,14 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 
 		var calendarBox = await calendar.BoundingBoxAsync();
 		calendarBox.Should().NotBeNull();
-		calendarBox!.Height.Should().BeLessThan(700,
-			"the Calendar must stay close to its own content/floor height, not balloon back toward the "
-				+ "~900px footprint #1795 fixed");
+		// 4 grid rows at 1440px is ~712px. The bound was 700 while view mode
+		// sized rows from their content and a tile's saved height was simply
+		// ignored (#2322 F2) - the Calendar now really does occupy the four
+		// rows the layout gives it. 800 still catches the regression this
+		// guards: five rows is ~894px and the six it shipped with ~1076px.
+		calendarBox!.Height.Should().BeLessThan(800,
+			"the Calendar must stay within its own four-row footprint, not balloon back toward the "
+				+ "~900px one #1795 fixed");
 
 		foreach (var testId in new[] { "CreateOpportunity", "ToDo", "UpcomingOpportunities" })
 		{

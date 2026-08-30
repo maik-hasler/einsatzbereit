@@ -7,6 +7,7 @@ import {
 	groupIntoRowBands,
 	isValidPlacement,
 	placeNewWidget,
+	settlePlacement,
 	sortByPosition,
 	type PlacedWidget,
 	type WidgetKey,
@@ -264,5 +265,123 @@ describe("placeNewWidget", () => {
 		for (const widget of existing) {
 			expect(rectsOverlap(placed, widget)).toBe(false);
 		}
+	});
+});
+
+describe("settlePlacement", () => {
+	// The layout #2322 F1 was reproduced against: a two-widget top row over a
+	// stack of full-width tiles, so a displaced widget's own column has no
+	// free path back up and compaction alone cannot rescue it.
+	const CROWDED_LAYOUT: PlacedWidget[] = [
+		{ widgetKey: "ToDo", x: 1, y: 1, width: 3, height: 1 },
+		{ widgetKey: "VolunteerStats", x: 4, y: 1, width: 2, height: 1 },
+		{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
+		{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
+		{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },
+		{ widgetKey: "CreateOpportunity", x: 1, y: 9, width: 4, height: 1 },
+		{ widgetKey: "QuickCheckIn", x: 5, y: 9, width: 4, height: 2 },
+	];
+
+	const settleInto = (rect: PlacedWidget, layout: PlacedWidget[]) =>
+		settlePlacement(
+			rect,
+			layout.filter((w) => w.widgetKey !== rect.widgetKey),
+		);
+
+	const positionOf = (layout: PlacedWidget[], key: WidgetKey) =>
+		layout.find((w) => w.widgetKey === key);
+
+	it("leaves a displaced neighbour in the row it was already in", () => {
+		const settled = settleInto(
+			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+			CROWDED_LAYOUT,
+		);
+
+		expect(positionOf(settled, "ToDo")).toMatchObject({ x: 4, y: 1 });
+		expect(positionOf(settled, "VolunteerStats")?.y).toBe(1);
+	});
+
+	it("keeps every other widget exactly where it was", () => {
+		const settled = settleInto(
+			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+			CROWDED_LAYOUT,
+		);
+
+		for (const key of [
+			"UpcomingOpportunities",
+			"Calendar",
+			"Settings",
+			"CreateOpportunity",
+			"QuickCheckIn",
+		] as const) {
+			expect({ key, ...positionOf(settled, key) }).toEqual({
+				key,
+				...positionOf(CROWDED_LAYOUT, key),
+			});
+		}
+	});
+
+	// A full-width tile cannot sit beside the widget that displaced it, so it
+	// has to drop - but only past the placement, not past the whole board.
+	it("keeps a widget that has to drop above the ones already below it", () => {
+		const settled = settleInto(
+			{ widgetKey: "VolunteerStats", x: 4, y: 1, width: 2, height: 3 },
+			CROWDED_LAYOUT,
+		);
+
+		const rowOf = (key: WidgetKey) => positionOf(settled, key)?.y ?? Infinity;
+
+		expect(rowOf("UpcomingOpportunities")).toBeGreaterThan(
+			rowOf("VolunteerStats"),
+		);
+		for (const below of ["Calendar", "Settings", "QuickCheckIn"] as const) {
+			expect({
+				key: below,
+				staysBelow: rowOf("UpcomingOpportunities") < rowOf(below),
+			}).toEqual({ key: below, staysBelow: true });
+		}
+	});
+
+	it("never overlaps the widget being placed, or anything else", () => {
+		for (const rect of [
+			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
+			{ widgetKey: "VolunteerStats", x: 4, y: 1, width: 2, height: 3 },
+			{ widgetKey: "Calendar", x: 1, y: 1, width: 8, height: 4 },
+			{ widgetKey: "SettingsIcon", x: 7, y: 2, width: 2, height: 1 },
+		] as PlacedWidget[]) {
+			const settled = settleInto(rect, CROWDED_LAYOUT);
+
+			expect(settled.map((w) => w.widgetKey).sort()).toEqual(
+				[
+					rect.widgetKey,
+					...CROWDED_LAYOUT.map((w) => w.widgetKey).filter(
+						(key) => key !== rect.widgetKey,
+					),
+				].sort(),
+			);
+			for (let i = 0; i < settled.length; i++) {
+				for (let j = i + 1; j < settled.length; j++) {
+					expect({
+						placed: rect.widgetKey,
+						pair: [settled[i].widgetKey, settled[j].widgetKey],
+						overlaps: rectsOverlap(settled[i], settled[j]),
+					}).toMatchObject({ overlaps: false });
+				}
+			}
+		}
+	});
+
+	it("keeps the placed widget exactly where it was asked to go", () => {
+		const rect: PlacedWidget = {
+			widgetKey: "Calendar",
+			x: 1,
+			y: 1,
+			width: 8,
+			height: 4,
+		};
+
+		expect(positionOf(settleInto(rect, CROWDED_LAYOUT), "Calendar")).toEqual(
+			rect,
+		);
 	});
 });

@@ -144,28 +144,112 @@ export function isValidPlacement(rect: PlacedWidget): boolean {
 	return true;
 }
 
-function resolveOverlaps(
+// Distance from a widget's current cell to a candidate one, used to pick
+// where a displaced widget lands. A row apart costs a full board width, so
+// "stay in this row band if anything there still fits" always beats "slide
+// sideways into the next band" - a widget nudged out of row 1 should settle
+// beside its neighbours, not below them.
+function placementDistance(from: PlacedWidget, toX: number, toY: number) {
+	return Math.abs(toY - from.y) * GRID_COLUMNS + Math.abs(toX - from.x);
+}
+
+// The free cell nearest to where `widget` sits now, never below its current
+// row - moving it down is what reorders the board, and is left to the push
+// below. Returns null when its own row band and everything above it is full.
+function nearestFreeSpotAtOrAbove(
+	widget: PlacedWidget,
+	obstacles: PlacedWidget[],
+): PlacedWidget | null {
+	let best: PlacedWidget | null = null;
+	let bestDistance = Infinity;
+	for (let y = 1; y <= widget.y; y++) {
+		for (let x = 1; x + widget.width - 1 <= GRID_COLUMNS; x++) {
+			const candidate = { ...widget, x, y };
+			if (obstacles.some((o) => rectsOverlap(candidate, o))) continue;
+			const distance = placementDistance(widget, x, y);
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				best = candidate;
+			}
+		}
+	}
+	return best;
+}
+
+// Resolves whatever overlaps are left by pushing widgets straight down, each
+// by the least it takes to clear what is already settled above it. Processing
+// top-to-bottom means a widget is only ever pushed past widgets that started
+// above it, so the board keeps its reading order instead of shuffling.
+function pushDownCollisions(
+	widgets: PlacedWidget[],
+	fixed: PlacedWidget[],
+): PlacedWidget[] {
+	const result = widgets.map((widget) => ({ ...widget }));
+	const order = result
+		.map((_, index) => index)
+		.sort((a, b) => result[a].y - result[b].y || result[a].x - result[b].x);
+
+	const settled = [...fixed];
+	for (const index of order) {
+		let widget = result[index];
+		let pushed = true;
+		while (pushed) {
+			pushed = false;
+			for (const other of settled) {
+				if (rectsOverlap(widget, other) && other.y + other.height > widget.y) {
+					widget = { ...widget, y: other.y + other.height };
+					pushed = true;
+				}
+			}
+		}
+		result[index] = widget;
+		settled.push(widget);
+	}
+	return result;
+}
+
+// Clears `rect`'s footprint by relocating only what it actually lands on.
+//
+// This used to push every overlapping widget straight down to just below
+// whatever it collided with, and repeat until nothing overlapped. Each push
+// landed the widget on the NEXT widget down, so a single sideways nudge in
+// row 1 cascaded through the whole board and exiled its neighbour to the very
+// bottom, past the calendar and everything else - and compaction could not
+// undo it, because compaction only pulls up and left, and the column the
+// widget started in no longer had a free path back up (#2322 F1).
+//
+// A displaced widget now looks for the nearest free space in its own row band
+// first, so nudging a card sideways moves its neighbour sideways too. Only a
+// widget with genuinely nowhere left to sit up there (a full-width tile, say)
+// drops below the placement - and then the push is minimal and ordered, so
+// what was under it stays under it.
+function relocateDisplaced(
 	rect: PlacedWidget,
 	others: PlacedWidget[],
 ): PlacedWidget[] {
 	const result = others.map((widget) => ({ ...widget }));
-	let changed = true;
-	while (changed) {
-		changed = false;
-		for (let i = 0; i < result.length; i++) {
-			const blockers = [rect, ...result.filter((_, j) => j !== i)];
-			for (const blocker of blockers) {
-				if (
-					rectsOverlap(result[i], blocker) &&
-					blocker.y + blocker.height > result[i].y
-				) {
-					result[i] = { ...result[i], y: blocker.y + blocker.height };
-					changed = true;
-				}
-			}
-		}
+
+	const displaced = result
+		.map((_, index) => index)
+		.filter((index) => rectsOverlap(result[index], rect))
+		.sort((a, b) => result[a].y - result[b].y || result[a].x - result[b].x);
+
+	// A widget still waiting to be moved is vacating its cells, so it must
+	// not block the one being placed right now.
+	const pending = new Set(displaced);
+	for (const index of displaced) {
+		pending.delete(index);
+		const obstacles = [
+			rect,
+			...result.filter((_, j) => j !== index && !pending.has(j)),
+		];
+		result[index] = nearestFreeSpotAtOrAbove(result[index], obstacles) ??
+			// Nowhere beside or above it: start just under the placement and
+			// let the push below settle it against whatever is already there.
+			{ ...result[index], y: rect.y + rect.height };
 	}
-	return result;
+
+	return pushDownCollisions(result, [rect]);
 }
 
 function compactAgainstObstacles(
@@ -217,8 +301,8 @@ export function settlePlacement(
 	rect: PlacedWidget,
 	others: PlacedWidget[],
 ): PlacedWidget[] {
-	const pushed = resolveOverlaps(rect, others);
-	return [rect, ...compactAgainstObstacles(pushed, [rect])];
+	const relocated = relocateDisplaced(rect, others);
+	return [rect, ...compactAgainstObstacles(relocated, [rect])];
 }
 
 export interface LayoutRowBand {

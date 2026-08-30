@@ -246,6 +246,18 @@ export function ArrowRightIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	);
 }
 
+export function ArrowUturnLeftIcon({ className = "h-4 w-4" }: IconProps) {
+	return (
+		<StrokeIcon className={className}>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
+			/>
+		</StrokeIcon>
+	);
+}
+
 export function EllipsisHorizontalIcon({ className = "h-4 w-4" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
