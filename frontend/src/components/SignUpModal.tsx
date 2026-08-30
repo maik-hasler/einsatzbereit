@@ -25,6 +25,8 @@ interface Props {
 	organizationId: string;
 	participationType: string;
 	timeSlots: TimeSlotDetail[];
+	/** Slots this volunteer already holds - offering them is a guaranteed 409 (#2323). */
+	engagedTimeSlotIds?: string[];
 
 	preselectedTimeSlotId?: string;
 	onClose: () => void;
@@ -36,6 +38,7 @@ export default function SignUpModal({
 	organizationId,
 	participationType,
 	timeSlots,
+	engagedTimeSlotIds = [],
 	preselectedTimeSlotId,
 	onClose,
 	onSuccess,
@@ -43,13 +46,20 @@ export default function SignUpModal({
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 
-	const confirmedTimeSlot = preselectedTimeSlotId
-		? timeSlots.find((ts) => ts.id === preselectedTimeSlotId)
-		: undefined;
+	function isAlreadySignedUp(timeSlotId: string): boolean {
+		return engagedTimeSlotIds.includes(timeSlotId);
+	}
+
+	const confirmedTimeSlot =
+		preselectedTimeSlotId && !isAlreadySignedUp(preselectedTimeSlotId)
+			? timeSlots.find((ts) => ts.id === preselectedTimeSlotId)
+			: undefined;
 	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>(() => {
 		if (confirmedTimeSlot) return confirmedTimeSlot.id;
 		const availableSlots = timeSlots.filter(
-			(ts) => !isSlotFull(ts.maxParticipants, ts.bookedCount),
+			(ts) =>
+				!isSlotFull(ts.maxParticipants, ts.bookedCount) &&
+				!isAlreadySignedUp(ts.id),
 		);
 		return availableSlots.length === 1 ? availableSlots[0].id : "";
 	});
@@ -157,19 +167,24 @@ export default function SignUpModal({
 											ts.maxParticipants,
 											ts.bookedCount,
 										);
+										const alreadySignedUp = isAlreadySignedUp(ts.id);
 										return {
 											value: ts.id,
-											disabled: slotFull,
+											disabled: slotFull || alreadySignedUp,
 											label: `${formatDateTimeRange(
 												ts.startDateTime as unknown as string,
 												ts.endDateTime as unknown as string,
 												i18n.language,
 											)} · ${
-												spotsLeft === null
-													? t("opportunities.unlimitedSpots")
-													: slotFull
-														? t("opportunities.full")
-														: t("opportunities.spotsLeft", { count: spotsLeft })
+												alreadySignedUp
+													? t("signUp.alreadySignedUpSlot")
+													: spotsLeft === null
+														? t("opportunities.unlimitedSpots")
+														: slotFull
+															? t("opportunities.full")
+															: t("opportunities.spotsLeft", {
+																	count: spotsLeft,
+																})
 											}`,
 										};
 									})}

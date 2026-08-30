@@ -578,6 +578,48 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*deleted their account*");
 	}
 
+	[Test]
+	public void SubmitFeedback_ShouldFail_WhenTheOccurrenceHasNotEndedYet()
+	{
+		// Check-in opens an hour before the start, so an early arrival used to
+		// unlock the rating for an occurrence that had not happened (#2323).
+		var start = DateTimeOffset.UtcNow.AddMinutes(30);
+		var end = start.AddHours(2);
+		var engagement = CreateConfirmedSlotEngagement(start, end);
+		engagement.CheckIn(start - TimeSlot.CheckInWindowBefore);
+
+		var result = engagement.SubmitFeedback(5, "Great!", start.AddMinutes(5));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Code.Should().Be("Engagement.FeedbackBeforeEvent");
+	}
+
+	[Test]
+	public void SubmitFeedback_ShouldSucceed_AtTheMomentTheOccurrenceEnds()
+	{
+		var start = DateTimeOffset.UtcNow.AddHours(-2);
+		var end = start.AddHours(2);
+		var engagement = CreateConfirmedSlotEngagement(start, end);
+		engagement.CheckIn(start);
+
+		var result = engagement.SubmitFeedback(5, "Great!", end);
+
+		result.IsFailure.Should().BeFalse();
+		engagement.FeedbackRating.Should().Be(5);
+	}
+
+	[Test]
+	public void SubmitFeedback_ShouldSucceed_ForIndividualContactEngagement_WhichHasNoOccurrence()
+	{
+		var engagement = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Nachricht").Value;
+		engagement.Confirm();
+		engagement.CheckIn(DateTimeOffset.UtcNow);
+
+		var result = engagement.SubmitFeedback(4, null, DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeFalse();
+	}
+
 	private static Engagement CreateCheckedInEngagementWithFeedback(int rating, string? comment, DateTimeOffset submittedAt)
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());

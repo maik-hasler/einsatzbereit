@@ -938,6 +938,99 @@ describe("opportunity detail page multiple sign-ups in one series (#2199)", () =
 	});
 });
 
+describe("opportunity detail page sign-up rail with several sign-ups (#2323)", () => {
+	it("heads the card once and dates each block, instead of repeating one label", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagements: scheduledSlots.timeSlots.map((ts, index) => ({
+				id: `engagement-${index}`,
+				status: "Confirmed",
+				isCheckedIn: false,
+				timeSlotId: ts.id,
+				remainingReactivations: 2,
+			})),
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		expect(within(card).getAllByText("Your sign-ups")).toHaveLength(1);
+		expect(within(card).queryByText("Your sign-up")).toBeNull();
+		expect(within(card).getAllByText(/^Scheduled:/)).toHaveLength(2);
+	});
+
+	it("points each withdraw button at the date it belongs to", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...scheduledSlots,
+			currentUserEngagements: scheduledSlots.timeSlots.map((ts, index) => ({
+				id: `engagement-${index}`,
+				status: "Confirmed",
+				isCheckedIn: false,
+				timeSlotId: ts.id,
+				remainingReactivations: 2,
+			})),
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const card = await screen.findByTestId("application-status");
+		const buttons = within(card).getAllByRole("button", { name: "Withdraw" });
+		const describedBy = buttons.map((b) => b.getAttribute("aria-describedby"));
+		expect(new Set(describedBy).size).toBe(2);
+		describedBy.forEach((id) => {
+			expect(id).not.toBeNull();
+			expect(document.getElementById(id as string)).toHaveTextContent(
+				/^Scheduled:/,
+			);
+		});
+	});
+});
+
+describe("opportunity detail page sign-up deep link (#2323)", () => {
+	it("reopens the sign-up dialog on the slot the withdrawn sign-up was for", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+		const targetSlot = scheduledSlots.timeSlots[1];
+
+		renderWithProviders(
+			<Routes>
+				<Route
+					path="/volunteer-opportunities/:opportunityId"
+					element={<VolunteerOpportunityDetailPage />}
+				/>
+			</Routes>,
+			{
+				route: `/volunteer-opportunities/${OPPORTUNITY_ID}?signUp=${targetSlot.id}`,
+				auth: VOLUNTEER_AUTH,
+			},
+		);
+
+		const confirmed = await screen.findByTestId("sign-up-confirmed-slot");
+		expect(confirmed).toHaveTextContent("You're signing up for");
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Confirm sign-up",
+		);
+	});
+
+	it("opens the interest dialog when there was no slot to carry", async () => {
+		renderWithProviders(
+			<Routes>
+				<Route
+					path="/volunteer-opportunities/:opportunityId"
+					element={<VolunteerOpportunityDetailPage />}
+				/>
+			</Routes>,
+			{
+				route: `/volunteer-opportunities/${OPPORTUNITY_ID}?signUp=interest`,
+				auth: VOLUNTEER_AUTH,
+			},
+		);
+
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Express interest",
+		);
+	});
+});
+
 describe("opportunity detail page missing opportunity", () => {
 	it("shows the not-found state with a way back instead of an endless retry", async () => {
 		api.getVolunteerOpportunityDetails.mockRejectedValue({ status: 404 });

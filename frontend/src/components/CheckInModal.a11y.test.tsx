@@ -99,6 +99,24 @@ describe("CheckInModal a11y", () => {
 		await expectNoA11yViolations();
 	});
 
+	it("has no violations with the check-in window notice shown (#2323)", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(details("PINCode"));
+		const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
+		renderWithProviders(
+			<CheckInModal
+				engagementId="8d3f5b21-0000-0000-0000-000000000000"
+				opportunityId="opp-1"
+				timeSlotStartDateTime={start}
+				timeSlotEndDateTime={new Date(start.getTime() + 2 * 60 * 60 * 1000)}
+				onCheckedIn={() => {}}
+				onClose={() => {}}
+			/>,
+		);
+
+		await screen.findByTestId("checkin-window-notice");
+		await expectNoA11yViolations();
+	});
+
 	it("has no violations for the manual and no-check-in instructions", async () => {
 		for (const method of ["Manual", "None"]) {
 			api.getVolunteerOpportunityDetails.mockResolvedValue(details(method));

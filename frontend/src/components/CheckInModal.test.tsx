@@ -99,3 +99,59 @@ describe("CheckInModal localized PIN error", () => {
 		expect(screen.queryByText("Invalid PIN. Please try again.")).toBeNull();
 	});
 });
+
+describe("CheckInModal check-in window and PIN length (#2323)", () => {
+	function renderWithWindow(start: Date, end: Date, checkInMethod = "PINCode") {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			id: OPPORTUNITY_ID,
+			checkInMethod,
+			titleDe: "Deutscher Titel",
+			status: "Published",
+			participationType: "ScheduledSlots",
+			timeSlots: [],
+		});
+		return renderWithProviders(
+			<CheckInModal
+				engagementId={ENGAGEMENT_ID}
+				opportunityId={OPPORTUNITY_ID}
+				timeSlotStartDateTime={start}
+				timeSlotEndDateTime={end}
+				onCheckedIn={() => {}}
+				onClose={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+	}
+
+	it("states the window before anything is typed, instead of only rejecting a valid PIN", async () => {
+		const start = new Date(Date.now() + 22 * 24 * 60 * 60 * 1000);
+		const end = new Date(start.getTime() + 4 * 60 * 60 * 1000);
+
+		renderWithWindow(start, end);
+
+		expect(
+			await screen.findByTestId("checkin-window-notice"),
+		).toHaveTextContent(/Check-in is possible/);
+	});
+
+	it("says nothing about a window for an expression of interest, which has none", async () => {
+		renderModal("PINCode");
+
+		await screen.findByLabelText(/PIN/i);
+		expect(screen.queryByTestId("checkin-window-notice")).toBeNull();
+	});
+
+	it("asks for a 6-digit PIN and keeps submit disabled until it has six", async () => {
+		renderModal("PINCode");
+
+		const input = await screen.findByLabelText(/PIN/i);
+		expect(input).toHaveAttribute("placeholder", "6-digit PIN");
+
+		const submit = screen.getByRole("button", { name: "Submit" });
+		await userEvent.type(input, "1234");
+		expect(submit).toBeDisabled();
+
+		await userEvent.type(input, "56");
+		expect(submit).toBeEnabled();
+	});
+});

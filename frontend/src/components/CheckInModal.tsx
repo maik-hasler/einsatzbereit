@@ -3,6 +3,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { getApiErrorMessage } from "../lib/apiError";
+import { getCheckInWindow, type SlotDateTime } from "../lib/engagementTiming";
+import { formatDateTimeRange } from "../lib/format";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
@@ -10,9 +12,15 @@ import Spinner from "./Spinner";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 
+/** Organizer PINs are 6 digits everywhere they are generated and validated (#2323). */
+const CHECK_IN_PIN_LENGTH = 6;
+
 interface CheckInModalProps {
 	engagementId: string;
 	opportunityId: string;
+	/** Slot window of this engagement; absent for an expression of interest. */
+	timeSlotStartDateTime?: SlotDateTime;
+	timeSlotEndDateTime?: SlotDateTime;
 	onCheckedIn: () => void;
 	onClose: () => void;
 }
@@ -20,11 +28,13 @@ interface CheckInModalProps {
 export default function CheckInModal({
 	engagementId,
 	opportunityId,
+	timeSlotStartDateTime,
+	timeSlotEndDateTime,
 	onCheckedIn,
 	onClose,
 }: CheckInModalProps) {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [details, setDetails] = useState<VolunteerOpportunityDetails | null>(
 		null,
 	);
@@ -69,6 +79,10 @@ export default function CheckInModal({
 	}
 
 	const checkInMethod = details?.checkInMethod;
+	const checkInWindow = getCheckInWindow(
+		timeSlotStartDateTime,
+		timeSlotEndDateTime,
+	);
 
 	return (
 		<Modal onClose={onClose} labelledBy="checkin-title" maxWidth="max-w-sm">
@@ -86,6 +100,23 @@ export default function CheckInModal({
 			)}
 
 			{loadError && <ErrorBanner message={t("checkIn.loadError")} />}
+
+			{/* The window is the rule volunteers used to only discover by having a
+			valid PIN rejected (#2323) - say it before they type anything. */}
+			{details && !success && checkInWindow && checkInMethod !== "None" && (
+				<p
+					data-testid="checkin-window-notice"
+					className="mb-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600"
+				>
+					{t("checkIn.windowNotice", {
+						range: formatDateTimeRange(
+							checkInWindow.opensAt.toISOString(),
+							checkInWindow.closesAt.toISOString(),
+							i18n.language,
+						),
+					})}
+				</p>
+			)}
 
 			{details && !success && checkInMethod === "QRCode" && (
 				<div className="flex flex-col items-center gap-4">
@@ -128,7 +159,7 @@ export default function CheckInModal({
 								type="text"
 								inputMode="numeric"
 								pattern="[0-9]*"
-								maxLength={6}
+								maxLength={CHECK_IN_PIN_LENGTH}
 								value={pin}
 								onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
 								placeholder={t("checkIn.pinPlaceholder")}
@@ -138,7 +169,7 @@ export default function CheckInModal({
 						{error && <ErrorBanner message={error} />}
 						<Button
 							type="submit"
-							disabled={submitting || pin.length < 4}
+							disabled={submitting || pin.length < CHECK_IN_PIN_LENGTH}
 							fullWidth
 						>
 							{submitting ? t("checkIn.submitting") : t("checkIn.submitPin")}

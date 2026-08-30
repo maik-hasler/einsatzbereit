@@ -42,8 +42,13 @@ internal sealed class CreateEngagementCommandHandler(
 		var alreadySignedUp = await dbContext.HasEngagementAsync(
 			request.VolunteerId, request.OpportunityId, request.TimeSlotId, cancellationToken);
 
+		// HasEngagementAsync matches on the time slot too, so a slot sign-up only
+		// clashes with the same slot - a second slot of the same opportunity is
+		// fine. Saying "this opportunity" there was simply wrong (einsatzbereit#2323).
 		if (alreadySignedUp)
-			throw new ResultFailureException(Error.Conflict("Engagement.AlreadySignedUp", "Conflict: you are already signed up for this opportunity."));
+			throw new ResultFailureException(request.TimeSlotId is not null
+				? Error.Conflict("Engagement.AlreadySignedUpForTimeSlot", "Conflict: you are already signed up for this time slot.")
+				: Error.Conflict("Engagement.AlreadySignedUp", "Conflict: you are already signed up for this opportunity."));
 
 		TimeSlot? timeSlot = null;
 		if (request.TimeSlotId is not null)

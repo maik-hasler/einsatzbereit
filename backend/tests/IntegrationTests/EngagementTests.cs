@@ -1931,6 +1931,13 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(firstEngagement.Id, cancellationToken);
 		await olafClient.CheckInEngagementAsync(opportunity.Id, firstEngagement.Id, cancellationToken);
+
+		// Feedback is only accepted once the occurrence is over (#2323), and a
+		// slot can only be signed up for while it is still ahead - so wind the
+		// engagement's denormalized window back rather than trying to sign up
+		// for a slot that has already ended.
+		await ElapseEngagementTimeSlotAsync(firstEngagement.Id, cancellationToken);
+
 		await veraClient.SubmitFeedbackAsync(
 			firstEngagement.Id,
 			new SubmitFeedbackRequest { Rating = 5, Comment = "Great first session" },
@@ -1956,6 +1963,46 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		secondAfter.Status.Should().Be("Pending");
 		secondAfter.TimeSlotId.Should().Be(secondSlotId);
 		secondAfter.Id.Should().NotBe(firstEngagement.Id);
+	}
+
+	[Test]
+	public async Task SubmitFeedback_ShouldReturn400_WhenTheOccurrenceHasNotEndedYet(
+		CancellationToken cancellationToken)
+	{
+		// Check-in opens an hour before the slot starts, so a volunteer who
+		// checks in early must not be able to rate an occurrence that has not
+		// happened (#2323).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddMinutes(5),
+				EndDateTime = DateTimeOffset.UtcNow.AddMinutes(5).AddHours(2),
+				MaxParticipants = 10,
+			},
+			cancellationToken);
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = timeSlots.ElementAt(0).Id },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(opportunity.Id, engagement.Id, cancellationToken);
+
+		var act = () => veraClient.SubmitFeedbackAsync(
+			engagement.Id,
+			new SubmitFeedbackRequest { Rating = 5, Comment = "Too early" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
 	}
 
 	[Test]
@@ -2257,6 +2304,20 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				CheckInMethod = checkInMethod,
 				ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 			},
+			cancellationToken);
+	}
+
+	/// <summary>
+	/// Moves an engagement's denormalized time slot window into the past, so the
+	/// occurrence counts as over for the guards that read it (#2323).
+	/// </summary>
+	private async Task ElapseEngagementTimeSlotAsync(Guid engagementId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var start = DateTimeOffset.UtcNow.AddHours(-3);
+		var end = DateTimeOffset.UtcNow.AddHours(-1);
+		await dbContext.Database.ExecuteSqlInterpolatedAsync(
+			$"UPDATE engagement SET time_slot_start_date_time = {start}, time_slot_end_date_time = {end} WHERE id = {engagementId}",
 			cancellationToken);
 	}
 

@@ -261,6 +261,15 @@ public sealed class Engagement
 		if (FeedbackSubmittedAt.HasValue)
 			return Result.Failure(Error.Conflict("Engagement.FeedbackAlreadySubmitted", "Feedback has already been submitted for this engagement."));
 
+		// Check-in opens TimeSlot.CheckInWindowBefore ahead of the start, so gating
+		// feedback on IsCheckedIn alone let a volunteer who checked in early rate an
+		// occurrence that had not happened yet (einsatzbereit#2323). Individual-contact
+		// engagements carry no slot window and stay exempt, same as CheckIn above.
+		if (TimeSlotEndDateTime.HasValue && now < TimeSlotEndDateTime.Value)
+			return Result.Failure(Error.Validation(
+				"Engagement.FeedbackBeforeEvent",
+				"Feedback can only be submitted once the scheduled time has ended."));
+
 		if (rating is < 1 or > 5)
 			return Result.Failure(Error.Validation("Engagement.RatingOutOfRange", "Rating must be between 1 and 5."));
 

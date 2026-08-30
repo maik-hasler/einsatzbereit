@@ -14,8 +14,21 @@ import {
 	ENGAGEMENT_STATUS_COLORS,
 	isTerminalEngagementStatus,
 } from "../../lib/engagementStatus";
-import { isFeedbackEditable } from "../../lib/feedback";
-import { formatDate, formatDateTimeRange } from "../../lib/format";
+import {
+	getCheckInWindow,
+	getCheckInWindowState,
+	hasSlotEnded,
+} from "../../lib/engagementTiming";
+import {
+	getFeedbackEditDeadline,
+	isFeedbackEditable,
+} from "../../lib/feedback";
+import {
+	formatDate,
+	formatDateTime,
+	formatDateTimeRange,
+} from "../../lib/format";
+import { buildSignUpLink } from "../../lib/signUpDeepLink";
 import { cardClass } from "../../lib/surfaceClasses";
 import { dispatchToast } from "../../lib/toastBus";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
@@ -26,6 +39,7 @@ import EmptyState from "../../components/EmptyState";
 import SectionHeading from "../../components/SectionHeading";
 import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
 import Skeleton from "../../components/Skeleton";
+import StarRating from "../../components/StarRating";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
@@ -300,6 +314,14 @@ export default function ActivitySection() {
 	const withdrawLimitReached = withdrawTarget?.remainingReactivations === 0;
 	const withdrawLimitWarning =
 		!withdrawLimitReached && withdrawTarget?.remainingReactivations === 1;
+	// At 5, 4, 3 or 2 left the dialog used to promise "you can sign up again
+	// later" without ever mentioning that the budget is finite (#2323); the
+	// last one before the limit gets the stronger withdrawLimitWarning above.
+	const withdrawRemainingReactivations =
+		withdrawTarget?.remainingReactivations !== undefined &&
+		withdrawTarget.remainingReactivations > 1
+			? withdrawTarget.remainingReactivations
+			: null;
 
 	const limitWarningRef = useRef<HTMLParagraphElement>(null);
 	useEffect(() => {
@@ -447,7 +469,14 @@ export default function ActivitySection() {
 						}}
 					/>
 				) : (
-					<EmptyState title={t("myEngagements.noPastEngagements")} />
+					<EmptyState
+						title={t("myEngagements.noPastEngagements")}
+						message={t("myEngagements.noPastEngagementsHint")}
+						action={{
+							label: t("myEngagements.exploreNeeds"),
+							to: "/opportunities",
+						}}
+					/>
 				))}
 
 			{!engagementsLoading && !engagementsError && engagements.length > 0 && (
@@ -456,230 +485,209 @@ export default function ActivitySection() {
 						engagements.length >= 3 ? "@4xl:grid-cols-3" : ""
 					}`}
 				>
-					{engagements.map((e) => (
-						<li
-							key={e.id}
-							data-testid="engagement-card"
-							data-engagement-id={e.id}
-							className={`flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
-						>
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0">
-									{e.opportunityTitle ? (
-										<Link
-											to={`/volunteer-opportunities/${e.opportunityId}`}
-
-											className="text-sm font-semibold text-gray-900 underline-offset-2 transition-colors hover:text-brand-700 hover:underline focus-visible:text-brand-700 focus-visible:underline"
-										>
-											{e.opportunityTitle}
-										</Link>
-									) : (
-										<span className="text-sm font-semibold text-gray-500 italic">
-											{t("myEngagements.deletedOpportunityTitle")}
-										</span>
-									)}
-									{e.organizationName && e.organizationId && (
-										<p className="mt-0.5 text-xs text-gray-500">
+					{engagements.map((e) => {
+						const isInterest = isInterestEngagement(e);
+						const checkInWindow = getCheckInWindow(
+							e.timeSlotStartDateTime,
+							e.timeSlotEndDateTime,
+						);
+						// An expression of interest carries no slot, so it has no
+						// window either - the backend exempts it from the time check
+						// and so do we.
+						const checkInWindowState = getCheckInWindowState(
+							e.timeSlotStartDateTime,
+							e.timeSlotEndDateTime,
+						);
+						const checkInOpen =
+							checkInWindowState === "open" ||
+							checkInWindowState === "unscheduled";
+						const needsVolunteerCheckIn =
+							e.checkInMethod === "QRCode" || e.checkInMethod === "PINCode";
+						const awaitingCheckIn =
+							e.status === "Confirmed" &&
+							!e.isCheckedIn &&
+							!!e.opportunityTitle;
+						const slotEnded = hasSlotEnded(e.timeSlotEndDateTime);
+						// Check-in opens an hour before the slot starts, so being
+						// checked in is not on its own a reason to offer a rating for
+						// something that has not happened yet (#2323).
+						const canRate = isInterest || slotEnded;
+						const feedbackEditDeadline = getFeedbackEditDeadline(
+							e.feedbackSubmittedAt,
+						);
+						return (
+							<li
+								key={e.id}
+								data-testid="engagement-card"
+								data-engagement-id={e.id}
+								className={`flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										{e.opportunityTitle ? (
 											<Link
-												to={`/organizations/${e.organizationId}`}
-												className="hover:underline"
-											>
-												{e.organizationName}
-											</Link>
-										</p>
-									)}
+												to={`/volunteer-opportunities/${e.opportunityId}`}
 
-									{e.timeSlotStartDateTime && e.timeSlotEndDateTime ? (
-										<p
-											data-testid="engagement-date"
-											data-date-kind="scheduled"
-											className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700"
-										>
-											<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-											<span>
-												{t("myEngagements.scheduledFor", {
-													range: formatDateTimeRange(
-														e.timeSlotStartDateTime as unknown as string,
-														e.timeSlotEndDateTime as unknown as string,
-														i18n.language,
-													),
-												})}
+												className="text-sm font-semibold text-gray-900 underline-offset-2 transition-colors hover:text-brand-700 hover:underline focus-visible:text-brand-700 focus-visible:underline"
+											>
+												{e.opportunityTitle}
+											</Link>
+										) : (
+											<span className="text-sm font-semibold text-gray-500 italic">
+												{t("myEngagements.deletedOpportunityTitle")}
 											</span>
-										</p>
-									) : (
-										<>
+										)}
+										{e.organizationName && e.organizationId && (
+											<p className="mt-0.5 text-xs text-gray-500">
+												<Link
+													to={`/organizations/${e.organizationId}`}
+													className="hover:underline"
+												>
+													{e.organizationName}
+												</Link>
+											</p>
+										)}
+
+										{e.timeSlotStartDateTime && e.timeSlotEndDateTime ? (
 											<p
 												data-testid="engagement-date"
-												data-date-kind="interest"
-												className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500"
+												data-date-kind="scheduled"
+												className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700"
 											>
-												<ArrowsRightLeftIcon className="h-3.5 w-3.5 shrink-0" />
-												<span>{t("myEngagements.noFixedDate")}</span>
+												<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+												<span>
+													{t("myEngagements.scheduledFor", {
+														range: formatDateTimeRange(
+															e.timeSlotStartDateTime as unknown as string,
+															e.timeSlotEndDateTime as unknown as string,
+															i18n.language,
+														),
+													})}
+												</span>
 											</p>
+										) : (
+											<>
+												<p
+													data-testid="engagement-date"
+													data-date-kind="interest"
+													className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500"
+												>
+													<ArrowsRightLeftIcon className="h-3.5 w-3.5 shrink-0" />
+													<span>{t("myEngagements.noFixedDate")}</span>
+												</p>
 
-											{!isTerminalEngagementStatus(e.status) &&
-												e.opportunityValidUntil && (
-													<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
-														<ClockIcon className="h-3.5 w-3.5 shrink-0" />
-														<span>
-															{t("opportunities.applyBy", {
-																date: formatDate(
-																	e.opportunityValidUntil as unknown as string,
-																	i18n.language,
-																),
-															})}
-														</span>
-													</p>
-												)}
-										</>
-									)}
-									{e.status === "Cancelled" && e.cancellationReason && (
-										<p className="mt-1 text-xs text-gray-500">
-											{t("myEngagements.cancellationReason", {
-												reason: e.cancellationReason,
+												{!isTerminalEngagementStatus(e.status) &&
+													e.opportunityValidUntil && (
+														<p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700">
+															<ClockIcon className="h-3.5 w-3.5 shrink-0" />
+															<span>
+																{t("opportunities.applyBy", {
+																	date: formatDate(
+																		e.opportunityValidUntil as unknown as string,
+																		i18n.language,
+																	),
+																})}
+															</span>
+														</p>
+													)}
+											</>
+										)}
+										{e.status === "Cancelled" && e.cancellationReason && (
+											<p className="mt-1 text-xs text-gray-500">
+												{t("myEngagements.cancellationReason", {
+													reason: e.cancellationReason,
+												})}
+											</p>
+										)}
+
+										{e.message && (
+											<p className="mt-1.5 line-clamp-2 text-xs text-gray-500">
+												<span className="font-medium">
+													{t("myEngagements.yourMessage")}
+												</span>{" "}
+												<span className="italic">
+													&ldquo;{e.message}&rdquo;
+												</span>
+											</p>
+										)}
+										<p className="mt-1.5 text-xs text-gray-500">
+											{t("myEngagements.registeredOn", {
+												date: formatDate(
+													e.createdOn as unknown as string,
+													i18n.language,
+												),
 											})}
 										</p>
-									)}
-
-									{e.message && (
-										<p className="mt-1.5 line-clamp-2 text-xs text-gray-500">
-											<span className="font-medium">
-												{t("myEngagements.yourMessage")}
-											</span>{" "}
-											<span className="italic">&ldquo;{e.message}&rdquo;</span>
-										</p>
-									)}
-									<p className="mt-1.5 text-xs text-gray-500">
-										{t("myEngagements.registeredOn", {
-											date: formatDate(
-												e.createdOn as unknown as string,
-												i18n.language,
-											),
-										})}
-									</p>
-									{e.isCheckedIn && (
-										<Chip tone="success" size="sm" className="mt-2">
-											<CheckIconSolid className="h-3 w-3" />
-											{t("checkIn.checkedInLabel")}
-										</Chip>
-									)}
+										{e.isCheckedIn && (
+											<Chip tone="success" size="sm" className="mt-2">
+												<CheckIconSolid className="h-3 w-3" />
+												{t("checkIn.checkedInLabel")}
+											</Chip>
+										)}
+									</div>
+									<span
+										className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
+									>
+										{STATUS_LABELS[e.status] ?? e.status}
+									</span>
 								</div>
-								<span
-									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
-								>
-									{STATUS_LABELS[e.status] ?? e.status}
-								</span>
-							</div>
 
-							{e.status === "Pending" && (
-								<p className="text-xs text-gray-600">
-									{t(
-										isInterestEngagement(e)
-											? "myEngagements.pendingExplanationInterest"
-											: "myEngagements.pendingExplanation",
-									)}
-								</p>
-							)}
-							<div className="mt-auto flex flex-wrap items-center gap-2">
-								{e.status === "Confirmed" &&
-									!e.isCheckedIn &&
-									e.opportunityTitle &&
-									(e.checkInMethod === "QRCode" ||
-										e.checkInMethod === "PINCode") && (
+								{e.status === "Pending" && (
+									<p className="text-xs text-gray-600">
+										{t(
+											isInterestEngagement(e)
+												? "myEngagements.pendingExplanationInterest"
+												: "myEngagements.pendingExplanation",
+										)}
+									</p>
+								)}
+								<div className="mt-auto flex flex-wrap items-center gap-2">
+									{awaitingCheckIn && needsVolunteerCheckIn && checkInOpen && (
 										<Button onClick={() => setCheckInEngagement(e)} size="sm">
 											{t("checkIn.buttonLabel")}
 										</Button>
 									)}
-								{e.status === "Confirmed" &&
-									!e.isCheckedIn &&
-									e.opportunityTitle &&
-									e.checkInMethod === "Manual" && (
-										<span className="text-xs text-gray-500">
-											{t("checkIn.manualInstruction")}
-										</span>
-									)}
-								{e.isCheckedIn && !e.hasFeedback && (
-									<button
-										onClick={() => setFeedbackEngagement(e)}
-										className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-medium text-gray-900 transition-colors hover:bg-yellow-600"
-									>
-										{t("feedback.buttonLabel")}
-									</button>
-								)}
-								{e.isCheckedIn && e.hasFeedback && (
-									<>
-										<Chip tone="warning" size="sm">
-											{t("feedback.submitted")}
-										</Chip>
-										{isFeedbackEditable(e.feedbackSubmittedAt) && (
-											<>
-												<button
-													type="button"
-													onClick={() => setFeedbackEngagement(e)}
-													className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-												>
-													{t("feedback.editButtonLabel")}
-												</button>
-												<button
-													type="button"
-													onClick={() => setConfirmDeleteFeedbackId(e.id)}
-													className="rounded-lg border border-red-200 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
-												>
-													{t("feedback.deleteButtonLabel")}
-												</button>
-											</>
+
+									{/* The button used to look identical three weeks out and
+									during the slot, and the window was only revealed by
+									submitting a valid PIN and having it rejected (#2323). */}
+									{awaitingCheckIn &&
+										needsVolunteerCheckIn &&
+										checkInWindowState === "notYetOpen" &&
+										checkInWindow && (
+											<span
+												data-testid="check-in-opens-at"
+												className="text-xs text-gray-500"
+											>
+												{t("checkIn.opensAt", {
+													datetime: formatDateTime(
+														checkInWindow.opensAt.toISOString(),
+														i18n.language,
+													),
+												})}
+											</span>
 										)}
-									</>
-								)}
-								{e.status === "Confirmed" &&
-									e.timeSlotId &&
-									e.timeSlotStartDateTime &&
-									e.timeSlotEndDateTime &&
-									new Date(e.timeSlotEndDateTime as unknown as string) >
-										new Date() && (
-										<AddToCalendarMenu
-											engagementId={e.id}
-											title={
-												e.opportunityTitle ??
-												t("myEngagements.deletedOpportunityTitle")
-											}
-											location={e.location}
-											start={e.timeSlotStartDateTime}
-											end={e.timeSlotEndDateTime}
-										/>
-									)}
-								{(e.status === "Pending" || e.status === "Confirmed") &&
-									!e.isCheckedIn && (
-										<Button
-											type="button"
-											variant="dangerOutline"
-											size="sm"
-											onClick={() => setConfirmWithdrawId(e.id)}
+
+									{awaitingCheckIn &&
+										e.checkInMethod === "Manual" &&
+										checkInWindowState !== "closed" && (
+											<span className="text-xs text-gray-500">
+												{t("checkIn.manualInstruction")}
+											</span>
+										)}
+
+									{/* Nobody checked this volunteer in and the window has
+									lapsed: without a word here the card dead-ends with no
+									rating and no reason given (#2323). */}
+									{awaitingCheckIn && checkInWindowState === "closed" && (
+										<p
+											data-testid="check-in-window-closed"
+											className="text-xs text-gray-500"
 										>
-											{t("myEngagements.withdraw")}
-										</Button>
-									)}
-								{isTerminalEngagementStatus(e.status) &&
-									engagementsScope === "upcoming" &&
-									e.opportunityTitle &&
-									(e.remainingReactivations === undefined ||
-										e.remainingReactivations > 0) && (
-										<Button
-											to={`/volunteer-opportunities/${e.opportunityId}`}
-											variant="outline"
-											size="sm"
-										>
-											{t("myEngagements.reactivate")}
-										</Button>
-									)}
-								{isTerminalEngagementStatus(e.status) &&
-									engagementsScope === "upcoming" &&
-									e.opportunityTitle &&
-									e.remainingReactivations !== undefined &&
-									e.remainingReactivations <= 0 && (
-										<span className="text-xs text-gray-500">
-											{t("myEngagements.reactivationLimitReached")}{" "}
-											{e.organizationId && (
+											{e.checkInMethod === "None"
+												? t("checkIn.noneInstruction")
+												: t("checkIn.windowClosedNotCheckedIn")}{" "}
+											{e.checkInMethod !== "None" && e.organizationId && (
 												<Link
 													to={`/organizations/${e.organizationId}`}
 													className="text-brand-700 underline-offset-2 hover:underline"
@@ -687,11 +695,130 @@ export default function ActivitySection() {
 													{t("common.contactOrganization")}
 												</Link>
 											)}
+										</p>
+									)}
+
+									{e.isCheckedIn && !e.hasFeedback && canRate && (
+										<Button onClick={() => setFeedbackEngagement(e)} size="sm">
+											{t("feedback.buttonLabel")}
+										</Button>
+									)}
+									{e.isCheckedIn && !e.hasFeedback && !canRate && (
+										<span
+											data-testid="feedback-after-event"
+											className="text-xs text-gray-500"
+										>
+											{t("feedback.availableAfterEvent")}
 										</span>
 									)}
-							</div>
-						</li>
-					))}
+									{e.isCheckedIn && e.hasFeedback && (
+										<>
+											<Chip tone="warning" size="sm">
+												{t("feedback.submitted")}
+											</Chip>
+											{typeof e.feedbackRating === "number" && (
+												<StarRating rating={e.feedbackRating} size="sm" />
+											)}
+											{isFeedbackEditable(e.feedbackSubmittedAt) && (
+												<>
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														onClick={() => setFeedbackEngagement(e)}
+													>
+														{t("feedback.editButtonLabel")}
+													</Button>
+													<Button
+														type="button"
+														variant="dangerOutline"
+														size="sm"
+														onClick={() => setConfirmDeleteFeedbackId(e.id)}
+													>
+														{t("feedback.deleteButtonLabel")}
+													</Button>
+													{feedbackEditDeadline && (
+														<p
+															data-testid="feedback-editable-until"
+															className="basis-full text-xs text-gray-500"
+														>
+															{t("feedback.editableUntil", {
+																date: formatDate(
+																	feedbackEditDeadline.toISOString(),
+																	i18n.language,
+																),
+															})}
+														</p>
+													)}
+												</>
+											)}
+										</>
+									)}
+									{e.status === "Confirmed" &&
+										e.timeSlotId &&
+										e.timeSlotStartDateTime &&
+										e.timeSlotEndDateTime &&
+										!slotEnded && (
+											<AddToCalendarMenu
+												engagementId={e.id}
+												title={
+													e.opportunityTitle ??
+													t("myEngagements.deletedOpportunityTitle")
+												}
+												location={e.location}
+												start={e.timeSlotStartDateTime}
+												end={e.timeSlotEndDateTime}
+											/>
+										)}
+									{/* Withdrawing from something that already happened
+									releases nothing and burns a reactivation - don't
+									offer it (#2323). */}
+									{(e.status === "Pending" || e.status === "Confirmed") &&
+										!e.isCheckedIn &&
+										!slotEnded && (
+											<Button
+												type="button"
+												variant="dangerOutline"
+												size="sm"
+												onClick={() => setConfirmWithdrawId(e.id)}
+											>
+												{t("myEngagements.withdraw")}
+											</Button>
+										)}
+									{isTerminalEngagementStatus(e.status) &&
+										engagementsScope === "upcoming" &&
+										e.opportunityTitle &&
+										(e.remainingReactivations === undefined ||
+											e.remainingReactivations > 0) && (
+											<Button
+												to={buildSignUpLink(e.opportunityId, e.timeSlotId)}
+												variant="outline"
+												size="sm"
+											>
+												{t("myEngagements.reactivate")}
+											</Button>
+										)}
+									{isTerminalEngagementStatus(e.status) &&
+										engagementsScope === "upcoming" &&
+										e.opportunityTitle &&
+										e.remainingReactivations !== undefined &&
+										e.remainingReactivations <= 0 && (
+											<span className="text-xs text-gray-500">
+												{t("myEngagements.reactivationLimitReached")}{" "}
+												{e.organizationId && (
+													<Link
+														to={`/organizations/${e.organizationId}`}
+														className="text-brand-700 underline-offset-2 hover:underline"
+													>
+														{t("common.contactOrganization")}
+													</Link>
+												)}
+											</span>
+										)}
+								</div>
+							</li>
+						);
+					})}
 				</ul>
 			)}
 
@@ -747,6 +874,19 @@ export default function ActivitySection() {
 							{t("common.contactOrganization")}
 						</Link>
 					)}
+					{withdrawRemainingReactivations !== null && (
+						<p
+							data-testid="withdraw-remaining-reactivations"
+							className="mt-1 text-sm text-gray-600"
+						>
+							{t(
+								withdrawTargetIsInterest
+									? "confirmDialog.withdraw.remainingReactivationsInterest"
+									: "confirmDialog.withdraw.remainingReactivations",
+								{ count: withdrawRemainingReactivations },
+							)}
+						</p>
+					)}
 					{withdrawLimitWarning && (
 						<WarningBanner
 							ref={limitWarningRef}
@@ -766,6 +906,8 @@ export default function ActivitySection() {
 				<CheckInModal
 					engagementId={checkInEngagement.id}
 					opportunityId={checkInEngagement.opportunityId}
+					timeSlotStartDateTime={checkInEngagement.timeSlotStartDateTime}
+					timeSlotEndDateTime={checkInEngagement.timeSlotEndDateTime}
 					onCheckedIn={handleCheckedIn}
 					onClose={() => setCheckInEngagement(null)}
 				/>

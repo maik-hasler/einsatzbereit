@@ -7,11 +7,17 @@ import { addDays } from "date-fns";
 // never bypass the real guard.
 export const FEEDBACK_EDIT_WINDOW_DAYS = 14;
 
+export function getFeedbackEditDeadline(
+	feedbackSubmittedAt: Date | string | null | undefined,
+): Date | null {
+	if (!feedbackSubmittedAt) return null;
+	return addDays(new Date(feedbackSubmittedAt), FEEDBACK_EDIT_WINDOW_DAYS);
+}
+
 export function isFeedbackEditable(
 	feedbackSubmittedAt: Date | string | null | undefined,
 	now: Date = new Date(),
 ): boolean {
-	if (!feedbackSubmittedAt) return false;
-	const submittedAt = new Date(feedbackSubmittedAt);
-	return now <= addDays(submittedAt, FEEDBACK_EDIT_WINDOW_DAYS);
+	const deadline = getFeedbackEditDeadline(feedbackSubmittedAt);
+	return deadline !== null && now <= deadline;
 }
