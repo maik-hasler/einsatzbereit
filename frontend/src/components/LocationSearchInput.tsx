@@ -31,15 +31,17 @@ export default function LocationSearchInput({
 }) {
 	const { t } = useTranslation();
 	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+	// Opening the list is a response to the user asking for it - typing, or focusing a
+	// field that already has matches - never to suggestions merely arriving. Letting the
+	// lookup itself open the list meant remounting this input with an already-committed
+	// city (reopening the filter panel, or loading a shared ?city= URL) popped a one-item
+	// dropdown over the "near me" button underneath it and swallowed clicks on it (#2319).
+	const [isListOpen, setIsListOpen] = useState(false);
 	const listboxId = `${id}-listbox`;
 
-	const {
-		suggestions,
-		show: showSuggestions,
-		setShow: setShowSuggestions,
-		loading,
-		error,
-	} = useCitySuggestions(value);
+	const { suggestions, searched, loading, error } = useCitySuggestions(value);
+
+	const showSuggestions = isListOpen && suggestions.length > 0;
 
 	const statusMessage = loading
 		? t("opportunities.citySearching")
@@ -47,7 +49,7 @@ export default function LocationSearchInput({
 			? error
 			: suggestions.length > 0
 				? ""
-				: value.length >= MIN_CONFIDENT_NO_MATCH_LENGTH
+				: searched && value.length >= MIN_CONFIDENT_NO_MATCH_LENGTH
 					? t("opportunities.cityNoMatch")
 					: value.length >= 2
 						? t("opportunities.cityKeepTyping")
@@ -58,7 +60,7 @@ export default function LocationSearchInput({
 	}, [suggestions]);
 
 	function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-		if (!showSuggestions || suggestions.length === 0) return;
+		if (!showSuggestions) return;
 		switch (e.key) {
 			case "ArrowDown":
 				e.preventDefault();
@@ -79,7 +81,7 @@ export default function LocationSearchInput({
 			case "Escape":
 				e.preventDefault();
 				e.stopPropagation();
-				setShowSuggestions(false);
+				setIsListOpen(false);
 				setActiveSuggestionIndex(-1);
 				break;
 		}
@@ -87,7 +89,7 @@ export default function LocationSearchInput({
 
 	function select(suggestion: CitySuggestion) {
 		onSelect(suggestion);
-		setShowSuggestions(false);
+		setIsListOpen(false);
 	}
 
 	return (
@@ -108,18 +110,22 @@ export default function LocationSearchInput({
 				}
 				placeholder={placeholder}
 				value={value}
-				onChange={(e) => onValueChange(e.target.value)}
-				onKeyDown={handleKeyDown}
-				onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-				onFocus={() => {
-					if (suggestions.length > 0) setShowSuggestions(true);
+				onChange={(e) => {
+					setIsListOpen(true);
+					onValueChange(e.target.value);
 				}}
+				onKeyDown={handleKeyDown}
+				onBlur={() => setTimeout(() => setIsListOpen(false), 150)}
+				onFocus={() => setIsListOpen(true)}
 				className={inputClassName}
 			/>
 			{value && (
 				<button
 					type="button"
-					onClick={() => onValueChange("")}
+					onClick={() => {
+						setIsListOpen(false);
+						onValueChange("");
+					}}
 					aria-label={t("opportunities.clearCity")}
 					className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-600 hover:text-gray-800"
 				>
@@ -131,7 +137,7 @@ export default function LocationSearchInput({
 					id={listboxId}
 					role="listbox"
 					aria-label={ariaLabel}
-					className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-modal"
+					className="absolute top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white text-left shadow-modal"
 				>
 					{suggestions.map((s, i) => {
 						const isExactTypedMatch =

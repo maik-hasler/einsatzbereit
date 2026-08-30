@@ -123,6 +123,65 @@ public class NominatimGeocodingServiceTests
 		results.Should().Contain(r => r.Label == "Leipzig");
 	}
 
+	[Test]
+	public async Task GeocodeAsync_StreetNominatimCannotMatch_FallsBackToTheCity()
+	{
+		// A structured query only answers when Nominatim can match the street and house
+		// number too. Reporting NotFound for a real address on a road OSM does not carry
+		// marked the opportunity permanently un-geocoded, so every radius search skipped
+		// it while its card still showed a city map pin (#2319).
+		var handler = new SequencedStubHandler(
+			JsonResponse("[]"),
+			JsonResponse("""[{"lat":"51.3396","lon":"12.3713"}]"""));
+		var sut = CreateService(handler);
+
+		var result = await sut.GeocodeAsync("Tierparkweg", "5", "04177", "Leipzig");
+
+		result.Outcome.Should().Be(GeocodingOutcome.Found);
+		result.Coordinates!.Latitude.Should().BeApproximately(51.3396, 0.0001);
+
+		handler.Requests.Should().HaveCount(2);
+		handler.Requests[1].RequestUri!.Query.Should()
+			.Contain("city=Leipzig").And.NotContain("street=");
+	}
+
+	[Test]
+	public async Task GeocodeAsync_ExactAddressMatch_DoesNotAskForTheCityAsWell()
+	{
+		var handler = new SequencedStubHandler(
+			JsonResponse("""[{"lat":"51.3396","lon":"12.3713"}]"""));
+		var sut = CreateService(handler);
+
+		var result = await sut.GeocodeAsync("Tierparkweg", "5", "04177", "Leipzig");
+
+		result.Outcome.Should().Be(GeocodingOutcome.Found);
+		handler.Requests.Should().ContainSingle("the exact address resolved, so there is nothing to fall back to");
+	}
+
+	[Test]
+	public async Task GeocodeAsync_NeitherAddressNorCityResolves_StaysNotFound()
+	{
+		var sut = CreateService(new StubHandler(_ => JsonResponse("[]")));
+
+		var result = await sut.GeocodeAsync("Nowhere Lane", "1", "00000", "Wolkenkuckucksheim");
+
+		result.Outcome.Should().Be(GeocodingOutcome.NotFound);
+	}
+
+	[Test]
+	public async Task GeocodeAsync_TransientFailureOnTheAddress_IsNotRetriedAsACityLookup()
+	{
+		// A transient failure is the retry job's business - swapping it for a coarser
+		// city-level hit would quietly downgrade an address that is merely unreachable.
+		var handler = new SequencedStubHandler(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+		var sut = CreateService(handler);
+
+		var result = await sut.GeocodeAsync("Tierparkweg", "5", "04177", "Leipzig");
+
+		result.Outcome.Should().Be(GeocodingOutcome.TransientFailure);
+		handler.Requests.Should().ContainSingle();
+	}
+
 	private static NominatimGeocodingService CreateService(HttpMessageHandler handler) =>
 		new(
 			new HttpClient(handler) { BaseAddress = new Uri("https://nominatim.example/") },
@@ -142,6 +201,22 @@ public class NominatimGeocodingServiceTests
 		{
 			LastRequest = request;
 			return Task.FromResult(respond(request));
+		}
+	}
+
+	private sealed class SequencedStubHandler(params HttpResponseMessage[] responses) : HttpMessageHandler
+	{
+		private int _index;
+
+		public List<HttpRequestMessage> Requests { get; } = [];
+
+		protected override Task<HttpResponseMessage> SendAsync(
+			HttpRequestMessage request, CancellationToken cancellationToken)
+		{
+			Requests.Add(request);
+			var response = _index < responses.Length ? responses[_index] : responses[^1];
+			_index++;
+			return Task.FromResult(response);
 		}
 	}
 }
