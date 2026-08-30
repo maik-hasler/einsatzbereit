@@ -175,6 +175,9 @@
       "radiusKmValue": "{{count}} km",
       "nearMe": "Near me",
       "nearMeDenied": "Location access denied - please search manually.",
+      "nearMeUnavailable": "Your location could not be determined - please search manually.",
+      "selectedLocation": "Selected location",
+      "cityUnresolved": "We couldn't find \"{{city}}\", so no location filter is applied.",
       "citySearching": "Searching…",
       "cityKeepTyping": "Keep typing…",
       "cityNoMatch": "No matching city found.",
@@ -223,6 +226,7 @@
       "noSpotsLeft": "This opportunity is currently full.",
       "unlimitedSpots": "Unlimited spots",
       "byInterest": "By expression of interest",
+      "noOpenSpots": "No open spots",
       "noSpotsYet": "No spots yet",
       "draftBadge": "Draft",
       "publish": "Publish",
@@ -335,6 +339,7 @@
       "saving": "Saving…",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
+"slotChangesKeptOnDiscard": "Your time slot changes were already saved and stay in place - only the other edits are discarded.",
       "discardChanges": "Discard changes",
       "addressUnresolvedField": "Check this entry"
     },
@@ -365,6 +370,7 @@
       "removeButton": "Remove",
       "removing": "…",
       "noSlots": "No time slots added yet.",
+      "immediateHint": "Time slot changes take effect immediately - Save and Cancel below do not cover them.",
       "requiredForPublish": "A Scheduled slots opportunity must have at least one time slot before it can be published.",
       "addError": "Could not add time slot.",
       "removeError": "Could not remove time slot.",
@@ -597,6 +603,9 @@
       "expiredInvitations": "Expired invitations",
       "dismissInvitation": "Dismiss",
       "dismissInvitationNamed": "Dismiss invitation for {{name}}",
+      "revokeInvitation": "Revoke",
+      "revokeInvitationNamed": "Revoke invitation for {{name}}",
+      "invitationRevoked": "Invitation revoked.",
       "dismissError": "Could not dismiss invitation.",
       "resendInvitation": "Resend",
       "resendInvitationNamed": "Resend invitation for {{name}}",
@@ -785,6 +794,9 @@
       }
     },
     "orgEngagements": {
+      "forbiddenTitle": "Organizers only",
+      "forbiddenMessage": "You are a member of this organization, not one of its organizers. Only organizers can see and handle the sign-ups across its opportunities.",
+      "forbiddenAction": "Go to the dashboard",
       "pageDescription": "Pending and processed sign-ups across every one of your organization's opportunities, in one place.",
       "loading": "Loading…",
       "error": "Error: {{message}}",
@@ -1063,6 +1075,11 @@
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let volunteers know why…"
       },
+      "removeTimeSlot": {
+        "title": "Remove time slot?",
+        "message": "This removes the time slot right away, independently of the Save button - it cannot be undone.",
+        "confirm": "Yes, remove"
+      },
       "editTimeSlot": {
         "title": "Edit time slot?",
         "message": "{{count}} people are signed up for this time slot and will be notified of the change so they can decide whether to still participate.",
@@ -1079,6 +1096,11 @@
         "title": "Remove member?",
         "message": "Are you sure you want to remove {{name}} from this organization?",
         "confirm": "Yes, remove"
+      },
+      "revokeInvitation": {
+        "title": "Revoke invitation?",
+        "message": "{{name}} will no longer be able to accept this invitation. You can invite them again later.",
+        "confirm": "Yes, revoke"
       },
       "deleteOrganization": {
         "title": "Delete organization?",
@@ -1564,7 +1586,7 @@
         "HasBlockingOpportunities": "This organization has opportunities with future time slots or active sign-ups. Resolve or cancel these first.",
         "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
         "SoleOrganizerDemote": "You cannot demote the only organizer of this organization. Promote another member first, or delete the organization.",
-        "NotOrganizer": "You do not have permission to modify this resource.",
+        "NotOrganizer": "Only this organization's organizers can do that.",
         "NotMember": "You do not have permission to view this resource.",
         "WebsiteInvalid": "Website must be a valid http or https URL.",
         "WebsiteTooLong": "Website must not exceed 500 characters.",

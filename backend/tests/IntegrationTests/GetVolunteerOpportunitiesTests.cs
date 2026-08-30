@@ -466,6 +466,106 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldExcludeSeries_WhoseSlotsStraddleTheRequestedWindow(
+		CancellationToken cancellationToken)
+	{
+		// DateFrom and DateTo used to be two independent existence tests, so a series with
+		// slots on either side of the window satisfied "has a slot >= from" and "has a slot
+		// <= to" with two *different* slots and matched a window it has no slot in (#2319).
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var straddling = await CreateOpportunityWithTimeSlotsAsync(
+			authenticatedClient,
+			orgId,
+			"Slots on both sides of the window",
+			[DateTimeOffset.UtcNow.AddDays(3), DateTimeOffset.UtcNow.AddDays(17)],
+			cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10,
+			dateFrom: DateTimeOffset.UtcNow.AddDays(8),
+			dateTo: DateTimeOffset.UtcNow.AddDays(12),
+			cancellationToken: cancellationToken);
+
+		result.Items.Select(i => i.Id).Should().NotContain(
+			straddling.Id,
+			"neither of its two slots falls inside the requested window");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldExcludeSlotlessOpportunity_WhenTheWindowIsEntirelyInThePast(
+		CancellationToken cancellationToken)
+	{
+		// A slot-less opportunity has no slot dates, but it is not dateless: it is only
+		// listed at all while its ValidUntil is in the future, so it is on offer over
+		// [now, ValidUntil]. Exempting it from every date filter let it match impossible
+		// windows - including ones that ended years ago (#2319).
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotless = await CreateSlotlessOpportunityAsync(
+			authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10,
+			dateTo: DateTimeOffset.UtcNow.AddYears(-5),
+			cancellationToken: cancellationToken);
+
+		result.Items.Select(i => i.Id).Should().NotContain(slotless.Id);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldExcludeSlotlessOpportunity_WhenTheWindowStartsAfterItExpires(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		// CreateSlotlessOpportunityAsync sets ValidUntil 30 days out.
+		var slotless = await CreateSlotlessOpportunityAsync(
+			authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10,
+			dateFrom: DateTimeOffset.UtcNow.AddDays(60),
+			cancellationToken: cancellationToken);
+
+		result.Items.Select(i => i.Id).Should().NotContain(
+			slotless.Id,
+			"it stops being on offer long before the requested window starts");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenTheWindowOverlapsItsValidity(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotless = await CreateSlotlessOpportunityAsync(
+			authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10,
+			dateFrom: DateTimeOffset.UtcNow.AddDays(3),
+			dateTo: DateTimeOffset.UtcNow.AddDays(7),
+			cancellationToken: cancellationToken);
+
+		result.Items.Select(i => i.Id).Should().Contain(
+			slotless.Id,
+			"it is still on offer across the requested window, it just has no slots to pin to a day");
+	}
+
+	[Test]
 	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
@@ -843,6 +943,43 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			CheckInMethod = "None",
 			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
+
+	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTimeSlotsAsync(
+		EinsatzbereitApi client, Guid orgId, string title, IReadOnlyList<DateTimeOffset> slotStarts, CancellationToken cancellationToken)
+	{
+		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			TitleDe = title,
+			DescriptionDe = "Scheduled slots opportunity with several time slots",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "Recurring",
+			ParticipationType = "ScheduledSlots",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		foreach (var slotStart in slotStarts)
+		{
+			await client.CreateTimeSlotAsync(
+				opportunity.Id,
+				new CreateTimeSlotRequest
+				{
+					StartDateTime = slotStart,
+					EndDateTime = slotStart.AddHours(2),
+					MaxParticipants = 10,
+					RecurrenceCount = 1,
+				},
+				cancellationToken);
+		}
+
+		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		return opportunity;
+	}
 
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTimeSlotAsync(
 		EinsatzbereitApi client, Guid orgId, string title, DateTimeOffset slotStart, CancellationToken cancellationToken)

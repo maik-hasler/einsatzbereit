@@ -22,7 +22,11 @@ export function useCitySuggestions(query: string) {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
-	const [show, setShow] = useState(false);
+	// Whether a lookup for the *current* query has actually resolved. Without it the
+	// "no match" helper line fires off an empty suggestion array the moment the third
+	// character lands - a full debounce interval before the request is even sent, so
+	// the field claimed the city did not exist before it had looked (#2319).
+	const [searched, setSearched] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
@@ -30,7 +34,7 @@ export function useCitySuggestions(query: string) {
 	useEffect(() => {
 		if (query.length < 2) {
 			setSuggestions([]);
-			setShow(false);
+			setSearched(false);
 			setLoading(false);
 			setError(null);
 			return;
@@ -39,7 +43,7 @@ export function useCitySuggestions(query: string) {
 		const cached = cityCache.get(cacheKeyFor(query));
 		if (cached) {
 			setSuggestions(cached);
-			setShow(cached.length > 0);
+			setSearched(true);
 			setLoading(false);
 			setError(null);
 			return;
@@ -48,6 +52,7 @@ export function useCitySuggestions(query: string) {
 		abortRef.current?.abort();
 		const controller = new AbortController();
 		abortRef.current = controller;
+		setSearched(false);
 		setError(null);
 		const timer = setTimeout(async () => {
 			setLoading(true);
@@ -68,11 +73,11 @@ export function useCitySuggestions(query: string) {
 					cityCache.set(cacheKeyFor(query), results);
 				}
 				setSuggestions(results);
-				setShow(results.length > 0);
+				setSearched(true);
 			} catch {
 				if (controller.signal.aborted) return;
 				setSuggestions([]);
-				setShow(false);
+				setSearched(true);
 				setError(t("opportunities.cityError"));
 			} finally {
 				if (!controller.signal.aborted) setLoading(false);
@@ -85,12 +90,5 @@ export function useCitySuggestions(query: string) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [query]);
 
-	function reset() {
-		setSuggestions([]);
-		setShow(false);
-		setLoading(false);
-		setError(null);
-	}
-
-	return { suggestions, show, setShow, reset, loading, error };
+	return { suggestions, searched, loading, error };
 }

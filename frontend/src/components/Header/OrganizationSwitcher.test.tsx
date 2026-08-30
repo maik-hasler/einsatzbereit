@@ -13,16 +13,30 @@ function LocationProbe() {
 	return <span data-testid="location-probe">{location.pathname}</span>;
 }
 
-function renderSwitcher(currentTab: string) {
+function orgs(targetRole: string) {
+	return [
+		{
+			id: ORG_A,
+			name: "Freiwillige Feuerwehr Kiel",
+			logoUrl: undefined,
+			role: "Organizer",
+		},
+		{
+			id: ORG_B,
+			name: "Foerderverein Hamburg",
+			logoUrl: undefined,
+			role: targetRole,
+		},
+	];
+}
+
+function renderSwitcher(currentTab: string, targetRole: string) {
 	return renderWithProviders(
 		<>
 			<OrganizationSwitcher
 				currentOrgId={ORG_A}
 				currentTab={currentTab}
-				orgs={[
-					{ id: ORG_A, name: "Freiwillige Feuerwehr Kiel", logoUrl: undefined },
-					{ id: ORG_B, name: "Foerderverein Hamburg", logoUrl: undefined },
-				]}
+				orgs={orgs(targetRole)}
 				loading={false}
 				error={null}
 			/>
@@ -35,8 +49,12 @@ function renderSwitcher(currentTab: string) {
 	);
 }
 
-async function openAndPick(currentTab: string, name: string) {
-	renderSwitcher(currentTab);
+async function openAndPick(
+	currentTab: string,
+	name: string,
+	targetRole = "Organizer",
+) {
+	renderSwitcher(currentTab, targetRole);
 	await userEvent.click(
 		screen.getByRole("button", {
 			name: "Switch organization, currently Freiwillige Feuerwehr Kiel",
@@ -56,6 +74,21 @@ describe("OrganizationSwitcher", () => {
 			);
 		},
 	);
+
+	// The tab the switcher carries over has to exist for your role in the
+	// organization you land in - a plain member has no sign-ups tab there
+	// (#2316), so carrying it over would drop them straight onto a 403.
+	it("carries the sign-ups tab over to an organization you organize", async () => {
+		expect(await openAndPick("engagements", "Foerderverein Hamburg")).toBe(
+			`/app/${ORG_B}/dashboard/engagements`,
+		);
+	});
+
+	it("lands on the dashboard when you are only a member of the organization picked", async () => {
+		expect(
+			await openAndPick("engagements", "Foerderverein Hamburg", "Member"),
+		).toBe(`/app/${ORG_B}/dashboard`);
+	});
 
 	it("stays put when the current organization is picked again", async () => {
 		expect(await openAndPick("members", "Freiwillige Feuerwehr Kiel")).toBe(

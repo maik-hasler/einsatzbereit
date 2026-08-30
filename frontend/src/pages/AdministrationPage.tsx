@@ -255,7 +255,7 @@ function OrganizationsSection() {
 							id="admin-org-flagged-only"
 							checked={flaggedOnly}
 							onChange={(e) => setFlaggedOnly(e.target.checked)}
-							className="h-4 w-4 accent-brand-600"
+							className="h-4 w-4 shrink-0 accent-brand-600"
 						/>
 						<span className="text-sm text-gray-800">
 							{t("administration.organizations.flaggedOnlyLabel")}
@@ -270,7 +270,7 @@ function OrganizationsSection() {
 							id="admin-org-deleted-only"
 							checked={deletedOnly}
 							onChange={(e) => setDeletedOnly(e.target.checked)}
-							className="h-4 w-4 accent-brand-600"
+							className="h-4 w-4 shrink-0 accent-brand-600"
 						/>
 						<span className="text-sm text-gray-800">
 							{t("administration.organizations.deletedOnlyLabel")}
@@ -652,69 +652,62 @@ function UsersSection() {
 												? t("administration.users.statusActive")
 												: t("administration.users.statusBlocked")}
 										</Chip>
-										<div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-											{isSelf ? (
-												<span
-													className="text-xs text-gray-500"
-													title={t(
-														"administration.users.selfActionDisabledHint",
-													)}
+										{isSelf ? (
+											<span className="min-w-0 text-xs text-gray-500">
+												{t("administration.users.selfActionDisabledHint")}
+											</span>
+										) : (
+											<div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={() =>
+														setConfirmAction({
+															row,
+															kind: row.enabled ? "block" : "unblock",
+														})
+													}
+													aria-label={
+														row.enabled
+															? t("administration.users.blockNamed", {
+																	name: displayName,
+																})
+															: t("administration.users.unblockNamed", {
+																	name: displayName,
+																})
+													}
 												>
-													{t("administration.users.selfActionDisabledHint")}
-												</span>
-											) : (
-												<>
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() =>
-															setConfirmAction({
-																row,
-																kind: row.enabled ? "block" : "unblock",
-															})
-														}
-														aria-label={
-															row.enabled
-																? t("administration.users.blockNamed", {
-																		name: displayName,
-																	})
-																: t("administration.users.unblockNamed", {
-																		name: displayName,
-																	})
-														}
-													>
-														{row.enabled
-															? t("administration.users.block")
-															: t("administration.users.unblock")}
-													</Button>
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() =>
-															setConfirmAction({
-																row,
-																kind: isAdmin ? "demote" : "promote",
-															})
-														}
-														aria-label={
-															isAdmin
-																? t("administration.users.demoteNamed", {
-																		name: displayName,
-																	})
-																: t("administration.users.promoteNamed", {
-																		name: displayName,
-																	})
-														}
-													>
-														{isAdmin
-															? t("administration.users.demote")
-															: t("administration.users.promote")}
-													</Button>
-												</>
-											)}
-										</div>
+													{row.enabled
+														? t("administration.users.block")
+														: t("administration.users.unblock")}
+												</Button>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={() =>
+														setConfirmAction({
+															row,
+															kind: isAdmin ? "demote" : "promote",
+														})
+													}
+													aria-label={
+														isAdmin
+															? t("administration.users.demoteNamed", {
+																	name: displayName,
+																})
+															: t("administration.users.promoteNamed", {
+																	name: displayName,
+																})
+													}
+												>
+													{isAdmin
+														? t("administration.users.demote")
+														: t("administration.users.promote")}
+												</Button>
+											</div>
+										)}
 									</div>
 								</li>
 							);

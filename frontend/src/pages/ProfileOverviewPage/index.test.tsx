@@ -257,32 +257,98 @@ describe("ProfileOverviewPage legacy tab deep links", () => {
 	});
 });
 
-describe("ProfileOverviewPage field limits", () => {
-	it("caps every free-text field at the limit the server enforces", async () => {
+describe("ProfileOverviewPage failed save", () => {
+	async function editAndFailSave() {
+		api.updateUserProfile.mockRejectedValue(new Error("400"));
 		renderWithProviders(<ProfileOverviewPage />, {
 			auth: { isAuthenticated: true },
 		});
 
 		await userEvent.click(await screen.findByTestId("profile-edit"));
-		await waitFor(() =>
-			expect(document.querySelector("#first-name")).not.toBeNull(),
-		);
+		const bio = screen.getByLabelText("Bio");
+		await userEvent.clear(bio);
+		await userEvent.type(bio, "Precious unsaved text.");
+		const phone = screen.getByLabelText("Phone");
+		await userEvent.type(phone, "+49 341 555 0100");
 
-		const limits: Record<string, number> = {
-			"#first-name": 100,
-			"#last-name": 100,
-			"#bio": 1000,
-			"#phone": 30,
-			"#skill-input": 100,
-			"#lang-input": 50,
-		};
-		for (const [selector, max] of Object.entries(limits)) {
-			expect(
-				document.querySelector<HTMLInputElement>(selector)?.maxLength,
-			).toBe(max);
-		}
+		await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+		expect(await screen.findByTestId("profile-save-error")).toHaveTextContent(
+			"Failed to save profile.",
+		);
+	}
+
+	it("reports the failure without offering a retry that reloads the profile", async () => {
+		await editAndFailSave();
+
+		// "Retry" here belonged to the load-error component: it re-fetched the
+		// profile and reset every field, so the button next to a failed save
+		// discarded the user's work instead of re-sending it (#2315).
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+		expect(api.getUserProfile).toHaveBeenCalledTimes(1);
 	});
 
+	it("leaves the typed values in place, ready to save again", async () => {
+		await editAndFailSave();
+
+		expect(screen.getByLabelText("Bio")).toHaveValue("Precious unsaved text.");
+		expect(screen.getByLabelText("Phone")).toHaveValue("+49 341 555 0100");
+
+		api.updateUserProfile.mockResolvedValue(undefined);
+		await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+
+		await waitFor(() =>
+			expect(api.updateUserProfile).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					bio: "Precious unsaved text.",
+					phone: "+49 341 555 0100",
+				}),
+			),
+		);
+		expect(screen.queryByTestId("profile-save-error")).toBeNull();
+	});
+
+	it("still offers the reloading retry when it is the load that failed", async () => {
+		api.getUserProfile.mockRejectedValue(new Error("500"));
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		expect(
+			await screen.findByText("Could not load profile.", {}, { timeout: 6000 }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+	}, 15000);
+});
+
+describe("ProfileOverviewPage field limits", () => {
+	it("bounds every field the server would reject as too long", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		expect(screen.getByLabelText("First name")).toHaveAttribute(
+			"maxlength",
+			"100",
+		);
+		expect(screen.getByLabelText("Last name")).toHaveAttribute(
+			"maxlength",
+			"100",
+		);
+		expect(screen.getByLabelText("Bio")).toHaveAttribute("maxlength", "1000");
+		expect(screen.getByLabelText("Phone")).toHaveAttribute("maxlength", "30");
+		expect(screen.getByLabelText("Skills & interests")).toHaveAttribute(
+			"maxlength",
+			"100",
+		);
+		expect(screen.getByLabelText("Languages")).toHaveAttribute(
+			"maxlength",
+			"50",
+		);
+	});
+});
+
+describe("ProfileOverviewPage bio counter", () => {
 	it("counts the bio's characters like the report dialog does", async () => {
 		renderWithProviders(<ProfileOverviewPage />, {
 			auth: { isAuthenticated: true },

@@ -20,7 +20,7 @@ public static class OwnershipGuard
 		if (!isOrganizer)
 			throw new ResultFailureException(Error.Forbidden(
 				"Organization.NotOrganizer",
-				"You do not have permission to modify this resource."));
+				"You do not have permission to do this - only organizers of this organization can."));
 	}
 
 	public static async Task EnsureIsMemberAsync(

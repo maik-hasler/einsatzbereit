@@ -5,7 +5,7 @@ import type {
 	Organization,
 	OrganizationSummaryDto,
 } from "../../client/api-client";
-import { orgTabPath } from "../../lib/orgTabs";
+import { canViewOrgTab, orgTabPath } from "../../lib/orgTabs";
 import { splitForMiddleTruncation } from "../../lib/middleTruncateSplit";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import OrgAvatar from "../OrgAvatar";
@@ -48,7 +48,14 @@ export default function OrganizationSwitcher({
 		: ["", ""];
 
 	function orgPath(org: OrganizationSummaryDto) {
-		return orgTabPath(org.id, currentTab);
+		// Switching organizations keeps you on the same section - unless that
+		// section does not exist for your role over there. A plain member of the
+		// target org has no sign-ups tab to land on (#2316), so they get its
+		// dashboard instead.
+		const tab = canViewOrgTab(currentTab, org.role === "Organizer")
+			? currentTab
+			: "dashboard";
+		return orgTabPath(org.id, tab);
 	}
 
 	function handleSwitch(org: OrganizationSummaryDto) {

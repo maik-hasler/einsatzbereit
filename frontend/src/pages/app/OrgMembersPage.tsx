@@ -120,6 +120,16 @@ export default function OrgMembersPage() {
 		string | null
 	>(null);
 
+	// Revoking a *pending* invitation is destructive in the same way removing a
+	// member is - it takes something away from the invitee - so it gets the
+	// same confirm step, instead of firing on a single unguarded click (#2315).
+	const [revokeTarget, setRevokeTarget] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+	const [revokingInvitation, setRevokingInvitation] = useState(false);
+	const [revokeError, setRevokeError] = useState<string | null>(null);
+
 	useEffect(() => {
 		if (!isOrganizer) return;
 		api
@@ -197,10 +207,34 @@ export default function OrgMembersPage() {
 		try {
 			await api.dismissInvitation(org.id, invitationId);
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+
+			// Whatever the banner was still announcing (an invitation sent, one
+			// resent) no longer describes the list the user is looking at.
+			setSuccessMessage(null);
+			setSettingsError(null);
 		} catch {
+			setSuccessMessage(null);
 			setSettingsError(t("orgSettings.dismissError"));
 		} finally {
 			setDismissingInvitationId(null);
+		}
+	}
+
+	async function handleConfirmRevokeInvitation() {
+		if (!revokeTarget) return;
+		const invitationId = revokeTarget.id;
+		setRevokingInvitation(true);
+		setRevokeError(null);
+		try {
+			await api.dismissInvitation(org.id, invitationId);
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+			setSettingsError(null);
+			setSuccessMessage(t("orgSettings.invitationRevoked"));
+			setRevokeTarget(null);
+		} catch {
+			setRevokeError(t("orgSettings.dismissError"));
+		} finally {
+			setRevokingInvitation(false);
 		}
 	}
 
@@ -262,9 +296,7 @@ export default function OrgMembersPage() {
 	return (
 		<div>
 			<div data-content-wrapper className="max-w-6xl">
-				{successMessage && (
-					<SuccessBanner message={successMessage} className="mb-4" />
-				)}
+				<SuccessBanner message={successMessage} className="mb-4" />
 				{settingsError && (
 					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
@@ -426,14 +458,22 @@ export default function OrgMembersPage() {
 												</div>
 												<button
 													type="button"
-													onClick={() => handleDismissInvitation(invitation.id)}
-													disabled={dismissingInvitationId === invitation.id}
-													aria-label={t("orgSettings.dismissInvitationNamed", {
+													onClick={() =>
+														setRevokeTarget({
+															id: invitation.id,
+															name: invitation.inviteeName,
+														})
+													}
+													disabled={
+														revokingInvitation &&
+														revokeTarget?.id === invitation.id
+													}
+													aria-label={t("orgSettings.revokeInvitationNamed", {
 														name: invitation.inviteeName,
 													})}
 													className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 												>
-													{t("orgSettings.dismissInvitation")}
+													{t("orgSettings.revokeInvitation")}
 												</button>
 											</li>
 										))}
@@ -557,10 +597,13 @@ export default function OrgMembersPage() {
 									{members.map((member) => (
 										<li
 											key={member.userId}
-											className="flex items-center justify-between gap-4 px-4 py-4"
+											className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
 										>
 											<div className="min-w-0">
-												<p className="truncate text-sm font-medium text-gray-900">
+												<p
+													data-testid="org-member-name"
+													className="truncate text-sm font-medium text-gray-900"
+												>
 													{member.firstName && member.lastName
 														? `${member.firstName} ${member.lastName}`
 														: member.username}
@@ -580,7 +623,7 @@ export default function OrgMembersPage() {
 												</Chip>
 											</div>
 											{member.userId === currentUserId ? (
-												<div className="flex shrink-0 flex-col items-end gap-1">
+												<div className="flex flex-col gap-1 sm:shrink-0 sm:items-end">
 													<Button
 														type="button"
 														variant="dangerOutline"
@@ -598,7 +641,7 @@ export default function OrgMembersPage() {
 													{isLastOrganizer && (
 														<p
 															id="leave-organization-hint"
-															className="max-w-48 text-right text-xs text-gray-500"
+															className="text-xs text-gray-500 sm:max-w-48 sm:text-right"
 														>
 															<Trans
 																i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
@@ -615,7 +658,7 @@ export default function OrgMembersPage() {
 													)}
 												</div>
 											) : isOrganizer ? (
-												<div className="flex shrink-0 items-center gap-2">
+												<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 													{(() => {
 														const memberName =
 															member.firstName && member.lastName
@@ -707,6 +750,23 @@ export default function OrgMembersPage() {
 					onConfirm={handleLeaveOrganization}
 					onClose={() => setShowLeaveConfirm(false)}
 					loading={leaving}
+				/>
+			)}
+
+			{revokeTarget && (
+				<ConfirmDialog
+					title={t("confirmDialog.revokeInvitation.title")}
+					message={t("confirmDialog.revokeInvitation.message", {
+						name: revokeTarget.name,
+					})}
+					confirmLabel={t("confirmDialog.revokeInvitation.confirm")}
+					onConfirm={() => void handleConfirmRevokeInvitation()}
+					onClose={() => {
+						setRevokeTarget(null);
+						setRevokeError(null);
+					}}
+					loading={revokingInvitation}
+					error={revokeError}
 				/>
 			)}
 

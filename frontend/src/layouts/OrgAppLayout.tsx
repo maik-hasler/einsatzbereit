@@ -30,6 +30,14 @@ import RouteState from "../components/RouteState";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
+
+	/**
+	 * Pulls fresh organization details in the background. Deliberately does
+	 * NOT tear the shell down to a spinner: a page calls this right after a
+	 * mutation succeeded, and remounting the route would have thrown away
+	 * whatever else the user had open - an in-progress settings edit, a
+	 * just-set success banner (#2315).
+	 */
 	reloadOrg: () => void;
 
 	isOrganizer: boolean;
@@ -40,13 +48,13 @@ function OrgAppShell({
 	org,
 	activeTabKey,
 	activeTabLabel,
-	load,
+	reloadOrg,
 }: {
 	organizationId: string | undefined;
 	org: OrganizationDetailsResponse;
 	activeTabKey: string;
 	activeTabLabel: string;
-	load: () => void;
+	reloadOrg: () => void;
 }) {
 	useAchievementNotifier();
 	const { t } = useTranslation();
@@ -86,6 +94,7 @@ function OrgAppShell({
 					title={pageTitle}
 					titleLang={pageTitleLang}
 					activeTabKey={activeTabKey}
+					isOrganizer={isOrganizer}
 					back={back}
 				/>
 
@@ -118,9 +127,7 @@ function OrgAppShell({
 						}
 					>
 						<Outlet
-							context={
-								{ org, reloadOrg: load, isOrganizer } satisfies OrgAppContext
-							}
+							context={{ org, reloadOrg, isOrganizer } satisfies OrgAppContext}
 
 							key={org.id}
 						/>
@@ -150,10 +157,14 @@ export default function OrgAppLayout() {
 
 	const latestRequestRef = useRef(0);
 
-	function load() {
+	// `background` keeps whatever is already rendered on screen while the
+	// refetch is in flight, and leaves it there if the refetch fails - the
+	// mutation that asked for it already succeeded, so the data on screen is
+	// still valid and worth more than a fresher copy of it (#2315).
+	function load(background = false) {
 		if (!organizationId) return;
 		const requestId = ++latestRequestRef.current;
-		setStatus("loading");
+		if (!background) setStatus("loading");
 		api
 			.getOrganizationDetails(organizationId)
 			.then((data) => {
@@ -164,6 +175,7 @@ export default function OrgAppLayout() {
 			})
 			.catch((err) => {
 				if (requestId !== latestRequestRef.current) return;
+				if (background) return;
 
 				const httpStatus = getApiErrorStatus(err);
 				if (httpStatus === 403) {
@@ -234,7 +246,7 @@ export default function OrgAppLayout() {
 					variant="error"
 					title={t("error.boundaryTitle")}
 					message={errorMessage ?? t("error.serverError")}
-					onRetry={load}
+					onRetry={() => load()}
 					action={backToSite}
 				/>
 			) : (
@@ -242,7 +254,7 @@ export default function OrgAppLayout() {
 					variant="offline"
 					title={t("routeState.offline.title")}
 					message={t("routeState.offline.message")}
-					onRetry={load}
+					onRetry={() => load()}
 					action={backToSite}
 				/>
 			),
@@ -268,7 +280,7 @@ export default function OrgAppLayout() {
 					org={org}
 					activeTabKey={activeTabKey}
 					activeTabLabel={activeTabLabel}
-					load={load}
+					reloadOrg={() => load(true)}
 				/>
 			</QuickActionsProvider>
 		</OrgBreadcrumbProvider>

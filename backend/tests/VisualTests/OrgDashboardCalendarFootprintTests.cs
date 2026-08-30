@@ -136,7 +136,7 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 	}
 
 	[Test]
-	public async Task AgendaView_AtMobileWidth_ShowsAScrollAffordance_ForTheClippedTable()
+	public async Task AgendaView_AtMobileWidth_FitsTheCardInsteadOfScrollingSideways()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -191,15 +191,39 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		var agendaView = calendarWidget.Locator(".rbc-agenda-view");
 		await Expect(agendaView).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// This used to assert the opposite - that the table overflowed and the fade
+		// advertised the scroll. #2321 reclassified that as the defect: the table's
+		// 30rem floor was wider than the card, so DATE and TIME took their fixed
+		// widths first and the EVENT column - the only one whose content matters -
+		// was left with ~40px, sliced mid-word, header cell reading "TERM". The
+		// floor is now min(30rem, 100%), so the table fits the card and the event
+		// title truncates with a real ellipsis instead of hiding behind a scroll.
 		var overflows = await agendaView.EvaluateAsync<bool>(
 			"el => el.scrollWidth > el.clientWidth + 1");
-		overflows.Should().BeTrue(
-			"the agenda table is wider than the 375px card and must actually scroll horizontally");
+		overflows.Should().BeFalse(
+			"the agenda table must fall back to the card's own width at 375px rather than "
+			+ "putting its only meaningful column behind a horizontal scroll");
 
+		var eventCellFits = await agendaView.EvaluateAsync<bool>(@"el => {
+			const view = el.getBoundingClientRect();
+			return [...el.querySelectorAll('.rbc-agenda-event-cell')]
+				.every(cell => cell.getBoundingClientRect().right <= view.right + 1);
+		}");
+		eventCellFits.Should().BeTrue(
+			"every event cell must end inside the agenda box - a cell reaching past it is "
+			+ "the clipped-mid-word rendering again");
+
+		// Deliberately not asserted here: how much of the card the event column ends up
+		// with. The narrow-viewport padding/nowrap rule that widens it is worth pinning,
+		// but every threshold that separates it from the unfixed rendering sits within a
+		// few points of the line once the agenda renders in English (37% vs 30%), and the
+		// date/time strings depend on the runner's timezone - a guard that brittle costs
+		// more in false reds than it catches.
+
+		// The fade is driven by real overflow, so with nothing to scroll it must stay
+		// hidden rather than advertising a scroll that does not exist.
 		var fadeRight = calendarWidget.GetByTestId("calendar-agenda-fade-right");
-		// The fade element transitions its opacity in on mount, so a one-shot EvaluateAsync can
-		// observe it mid-transition (e.g. "0.996173") - ToHaveCSSAsync polls until it settles.
-		await Expect(fadeRight).ToHaveCSSAsync("opacity", "1");
+		await Expect(fadeRight).ToHaveCSSAsync("opacity", "0");
 
 		await DeleteOrganizationAsync(backend, organizationId);
 	}

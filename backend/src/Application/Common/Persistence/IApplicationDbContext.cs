@@ -103,7 +103,7 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
-	Task<List<Organization>> GetMemberOrganizationsAsync(
+	Task<List<MemberOrganization>> GetMemberOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
 

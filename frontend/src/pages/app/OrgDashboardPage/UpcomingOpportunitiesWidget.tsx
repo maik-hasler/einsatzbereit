@@ -9,7 +9,6 @@ import EmptyState from "../../../components/EmptyState";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
-import type { WidgetSizeClass } from "./widgetCatalog";
 import { formatDateTime, formatSignUpCount } from "../../../lib/format";
 import { getOpportunityCapacity } from "../../../lib/opportunityCapacity";
 import {
@@ -22,7 +21,6 @@ const OPPORTUNITY_PAGE_SIZE = 100;
 interface Props {
 	organizationId: string;
 	refreshKey: number;
-	size: WidgetSizeClass;
 	isOrganizer: boolean;
 	onOpportunityCreated: (createdDraftId?: string) => void;
 }
@@ -30,7 +28,6 @@ interface Props {
 function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
-	size,
 	isOrganizer,
 	onOpportunityCreated,
 }: Props) {
@@ -79,7 +76,7 @@ function UpcomingOpportunitiesWidget({
 							className="rounded-card border border-gray-100 p-3"
 						>
 							<Skeleton className="h-4 w-2/3" />
-							{size !== "compact" && <Skeleton className="mt-2 h-3 w-1/2" />}
+							<Skeleton className="mt-2 h-3 w-1/2" />
 						</div>
 					))}
 				</div>
@@ -114,10 +111,10 @@ function UpcomingOpportunitiesWidget({
 							<p className="truncate text-sm font-medium text-gray-900">
 								{item.title}
 							</p>
-							{size !== "compact" && (
-								<p className="mt-0.5 text-xs text-gray-500">
-									{formatDateTime(item.nextStart, i18n.language)}
-									<span className="mx-1.5">&middot;</span>
+							<p className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-xs text-gray-500">
+								<span>{formatDateTime(item.nextStart, i18n.language)}</span>
+								<span aria-hidden="true">&middot;</span>
+								<span>
 									{formatSignUpCount(
 										getOpportunityCapacity({
 											totalMaxParticipants: item.maxParticipants,
@@ -126,8 +123,8 @@ function UpcomingOpportunitiesWidget({
 										}),
 										t,
 									)}
-								</p>
-							)}
+								</span>
+							</p>
 						</li>
 					))}
 				</ul>

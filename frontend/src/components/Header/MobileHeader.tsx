@@ -5,6 +5,7 @@ import NotificationDropdown from "./NotificationDropdown";
 import { MenuToggleIcon } from "../icons";
 
 export default function MobileHeader({
+	className = "lg:hidden",
 	isLoggedIn,
 	isTransparent,
 	mobileOpen,
@@ -13,6 +14,7 @@ export default function MobileHeader({
 	notifContainerRef,
 	menuButtonRef,
 }: {
+	className?: string;
 	isLoggedIn: boolean;
 	isTransparent: boolean;
 	mobileOpen: boolean;
@@ -24,7 +26,7 @@ export default function MobileHeader({
 	const { t } = useTranslation();
 
 	return (
-		<div className="flex items-center gap-1 lg:hidden">
+		<div className={`flex items-center gap-1 ${className}`}>
 			{isLoggedIn && (
 				<NotificationDropdown
 					menu={menu}

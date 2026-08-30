@@ -261,11 +261,21 @@ input[type="number"]::-webkit-outer-spin-button {
 	color: rgb(107 114 128);
 }
 
+/* The 30rem floor is wider than the agenda box on a phone (252px of it is
+visible at a 320px viewport), so the whole table sat behind a horizontal
+scroll and the EVENT column - the one column whose content matters - was
+sliced mid-word, header cell included ("TERM"), with no ellipsis (#2321).
+`min(30rem, 100%)` keeps the floor wherever the box is wide enough for it and
+falls back to the box's own width where it isn't, which is also what the
+narrow "compact" widget tile needs on a wide desktop. Below 30rem the fixed
+DATE/TIME columns then give up their padding, and TIME its `nowrap`, so what
+is left over goes to the event title - which `.rbc-agenda-event-cell` below
+already makes truncate with a proper ellipsis once it has a real width. */
 .rbc-agenda-view table.rbc-agenda-table {
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
 
-	min-width: 30rem;
+	min-width: min(30rem, 100%);
 }
 
 .rbc-agenda-table thead > tr > th {
@@ -280,6 +290,17 @@ input[type="number"]::-webkit-outer-spin-button {
 .rbc-agenda-table tbody > tr > td {
 	padding: 0.5rem 0.75rem;
 	border-bottom: 1px solid rgb(243 244 246);
+}
+
+@media (max-width: 480px) {
+	.rbc-agenda-table thead > tr > th,
+	.rbc-agenda-table tbody > tr > td {
+		padding-inline: 0.5rem;
+	}
+
+	.rbc-agenda-view table.rbc-agenda-table .rbc-agenda-time-cell {
+		white-space: normal;
+	}
 }
 
 /* Without this, the browser's auto table-layout algorithm sizes the EVENT

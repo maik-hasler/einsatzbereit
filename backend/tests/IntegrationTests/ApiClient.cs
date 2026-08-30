@@ -13798,6 +13798,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("logoUrl")]
         public string? LogoUrl { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("role")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Role { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

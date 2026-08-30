@@ -14,6 +14,7 @@ const { api } = vi.hoisted(() => ({
 		uploadOpportunityBanner: vi.fn(),
 		getVolunteerOpportunityDetails: vi.fn(),
 		getOpportunityCheckInPin: vi.fn(),
+		deleteTimeSlot: vi.fn(),
 	},
 }));
 
@@ -462,5 +463,192 @@ describe("create-opportunity wizard: a time slot that ends before it starts (#23
 		expect(start).toHaveAttribute("aria-invalid", "true");
 		expect(end).toHaveAttribute("aria-invalid", "true");
 		expect(end).toHaveAttribute("aria-describedby", "time-slot-error");
+	});
+});
+
+describe("edit wizard: time slot changes are not staged (#2315)", () => {
+	const SLOT = {
+		id: "slot-1",
+		startDateTime: new Date(Date.UTC(2027, 5, 1, 7, 0)),
+		endDateTime: new Date(Date.UTC(2027, 5, 1, 9, 0)),
+		maxParticipants: 4,
+		bookedCount: 0,
+	};
+
+	function openEditWizard(slot: Record<string, unknown> = SLOT) {
+		return renderWithProviders(
+			<CreateVolunteerOpportunityModal
+				organizationId="org-1"
+				initialOpportunity={
+					{
+						id: "existing-opp-id",
+						organizationId: "org-1",
+						titleDe: "Bestehende Chance",
+						descriptionDe: "Beschreibung.",
+						isRemote: true,
+						occurrence: "OneTime",
+						participationType: "ScheduledSlots",
+						checkInMethod: "None",
+						category: undefined,
+						tags: [],
+						validUntil: undefined,
+						timeSlots: [slot],
+					} as unknown as Parameters<
+						typeof CreateVolunteerOpportunityModal
+					>[0]["initialOpportunity"]
+				}
+				onClose={() => {}}
+				onSuccess={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+	}
+
+	const IMMEDIATE_HINT =
+		"Time slot changes take effect immediately - Save and Cancel below do not cover them.";
+
+	it("says up front that slot changes do not wait for Save", async () => {
+		openEditWizard();
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		expect(await screen.findByText(IMMEDIATE_HINT)).toBeInTheDocument();
+	});
+
+	it("stays silent about that while creating, where slots really are staged", async () => {
+		openWizard();
+		await userEvent.type(title(), "Neue Chance");
+		await userEvent.type(description(), "Eine ausreichend lange Beschreibung.");
+		await userEvent.click(screen.getByTestId("wizard-stepper-2"));
+		await userEvent.click(
+			await screen.findByLabelText(/remote|Remote/i, { selector: "input" }),
+		);
+		await userEvent.click(screen.getByTestId("wizard-stepper-4"));
+
+		await screen.findByTestId("wizard-step-4");
+		expect(screen.queryByText(IMMEDIATE_HINT)).toBeNull();
+	});
+
+	it("asks before deleting a slot that is already on the server", async () => {
+		openEditWizard();
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove" }),
+		);
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Remove time slot?",
+		});
+		expect(api.deleteTimeSlot).not.toHaveBeenCalled();
+
+		await userEvent.click(within(dialog).getByRole("button", { name: "Keep" }));
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Remove time slot?" }),
+			).toBeNull(),
+		);
+		expect(api.deleteTimeSlot).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+	});
+
+	it("deletes the slot once the removal is confirmed", async () => {
+		api.deleteTimeSlot.mockResolvedValue({ deletedTimeSlotIds: ["slot-1"] });
+		openEditWizard();
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove" }),
+		);
+		await userEvent.click(
+			within(
+				await screen.findByRole("dialog", { name: "Remove time slot?" }),
+			).getByRole("button", { name: "Yes, remove" }),
+		);
+
+		await waitFor(() =>
+			expect(api.deleteTimeSlot).toHaveBeenCalledWith(
+				"existing-opp-id",
+				"slot-1",
+				"Only",
+			),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("button", { name: "Remove" })).toBeNull(),
+		);
+	});
+
+	it("keeps the dialog open, with the reason, when the delete fails", async () => {
+		api.deleteTimeSlot.mockRejectedValue(new Error("500"));
+		openEditWizard();
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove" }),
+		);
+		await userEvent.click(
+			within(
+				await screen.findByRole("dialog", { name: "Remove time slot?" }),
+			).getByRole("button", { name: "Yes, remove" }),
+		);
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Remove time slot?",
+		});
+		expect(
+			within(dialog).getByText("Could not remove time slot."),
+		).toBeInTheDocument();
+
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Understood" }),
+		);
+		expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+	});
+
+	it("spells out that volunteers lose their spot when the slot is booked", async () => {
+		openEditWizard({ ...SLOT, bookedCount: 2 });
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove" }),
+		);
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Remove time slot?",
+		});
+		expect(
+			within(dialog).getByText(
+				/Volunteers signed up for the affected occurrences/,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("tells the closing organizer which changes the discard does not cover", async () => {
+		api.deleteTimeSlot.mockResolvedValue({ deletedTimeSlotIds: ["slot-1"] });
+		openEditWizard();
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Remove" }),
+		);
+		await userEvent.click(
+			within(
+				await screen.findByRole("dialog", { name: "Remove time slot?" }),
+			).getByRole("button", { name: "Yes, remove" }),
+		);
+		await waitFor(() => expect(api.deleteTimeSlot).toHaveBeenCalled());
+
+		await userEvent.click(await screen.findByTestId("wizard-stepper-1"));
+		await waitFor(() => expect(title()).toBeInTheDocument());
+		await userEvent.type(title(), " geaendert");
+		await userEvent.click(screen.getByRole("button", { name: "Close" }));
+
+		const discard = await screen.findByRole("dialog", {
+			name: "Discard unsaved changes?",
+		});
+		expect(
+			within(discard).getByText(
+				"Your time slot changes were already saved and stay in place - only the other edits are discarded.",
+			),
+		).toBeInTheDocument();
 	});
 });

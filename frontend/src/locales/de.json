@@ -175,6 +175,9 @@
       "radiusKmValue": "{{count}} km",
       "nearMe": "In meiner Nähe",
       "nearMeDenied": "Standortzugriff verweigert – bitte manuell suchen.",
+      "nearMeUnavailable": "Dein Standort konnte nicht ermittelt werden – bitte manuell suchen.",
+      "selectedLocation": "Gewählter Standort",
+      "cityUnresolved": "„{{city}}“ konnte nicht gefunden werden – es ist kein Standortfilter aktiv.",
       "citySearching": "Wird gesucht…",
       "cityKeepTyping": "Weitertippen…",
       "cityNoMatch": "Keine passende Stadt gefunden.",
@@ -223,6 +226,7 @@
       "noSpotsLeft": "Dieser Einsatz ist aktuell ausgebucht.",
       "unlimitedSpots": "Unbegrenzt viele Plätze",
       "byInterest": "Interessenbekundung",
+      "noOpenSpots": "Keine offenen Plätze",
       "noSpotsYet": "Noch keine Plätze",
       "draftBadge": "Entwurf",
       "publish": "Veröffentlichen",
@@ -335,6 +339,7 @@
       "saving": "Wird gespeichert…",
       "unsavedChangesTitle": "Ungespeicherte Änderungen verwerfen?",
       "unsavedChangesMessage": "Du hast ungespeicherte Änderungen an diesem Einsatz. Wenn du jetzt schließt, gehen sie verloren.",
+"slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
       "discardChanges": "Änderungen verwerfen",
       "addressUnresolvedField": "Prüfe diese Angabe"
     },
@@ -365,6 +370,7 @@
       "removeButton": "Entfernen",
       "removing": "…",
       "noSlots": "Noch keine Zeitslots hinzugefügt.",
+      "immediateHint": "Änderungen an Zeitslots wirken sofort – „Speichern“ und „Abbrechen“ unten erfassen sie nicht.",
       "requiredForPublish": "Ein Zeitslots-Einsatz muss mindestens einen Zeitslot haben, bevor er veröffentlicht werden kann.",
       "addError": "Zeitslot konnte nicht hinzugefügt werden.",
       "removeError": "Zeitslot konnte nicht entfernt werden.",
@@ -597,6 +603,9 @@
       "expiredInvitations": "Abgelaufene Einladungen",
       "dismissInvitation": "Entfernen",
       "dismissInvitationNamed": "Einladung für {{name}} entfernen",
+      "revokeInvitation": "Zurückziehen",
+      "revokeInvitationNamed": "Einladung für {{name}} zurückziehen",
+      "invitationRevoked": "Einladung zurückgezogen.",
       "dismissError": "Einladung konnte nicht entfernt werden.",
       "resendInvitation": "Erneut senden",
       "resendInvitationNamed": "Einladung für {{name}} erneut senden",
@@ -785,6 +794,9 @@
       }
     },
     "orgEngagements": {
+      "forbiddenTitle": "Nur für Organisatoren",
+      "forbiddenMessage": "Du bist Mitglied dieser Organisation, aber kein:e Organisator:in. Nur Organisatoren können die Eintragungen aller Einsätze sehen und bearbeiten.",
+      "forbiddenAction": "Zum Dashboard",
       "pageDescription": "Ausstehende und bearbeitete Eintragungen über alle Einsätze deiner Organisation hinweg, an einem Ort.",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
@@ -1063,6 +1075,11 @@
         "reasonLabel": "Grund (optional)",
         "reasonPlaceholder": "Teile den Freiwilligen den Grund mit…"
       },
+      "removeTimeSlot": {
+        "title": "Zeitslot entfernen?",
+        "message": "Der Zeitslot wird sofort entfernt, unabhängig von der Schaltfläche „Speichern“ – das lässt sich nicht rückgängig machen.",
+        "confirm": "Ja, entfernen"
+      },
       "editTimeSlot": {
         "title": "Zeitslot bearbeiten?",
         "message": "{{count}} Personen sind für diesen Zeitslot eingetragen und werden über die Änderung benachrichtigt, damit sie entscheiden können, ob sie weiterhin teilnehmen möchten.",
@@ -1079,6 +1096,11 @@
         "title": "Mitglied entfernen?",
         "message": "Möchtest du {{name}} wirklich aus dieser Organisation entfernen?",
         "confirm": "Ja, entfernen"
+      },
+      "revokeInvitation": {
+        "title": "Einladung zurückziehen?",
+        "message": "{{name}} kann diese Einladung dann nicht mehr annehmen. Du kannst die Person später erneut einladen.",
+        "confirm": "Ja, zurückziehen"
       },
       "deleteOrganization": {
         "title": "Organisation löschen?",
@@ -1564,7 +1586,7 @@
         "HasBlockingOpportunities": "Diese Organisation hat noch Einsätze mit zukünftigen Zeitslots oder aktiven Eintragungen. Bitte löse das zuerst auf.",
         "SoleOrganizer": "Du bist der:die einzige Organisator:in dieser Organisation. Lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
         "SoleOrganizerDemote": "Der:die einzige Organisator:in dieser Organisation kann nicht zurückgestuft werden. Befördere zuerst ein anderes Mitglied oder lösche die Organisation.",
-        "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern.",
+        "NotOrganizer": "Das können nur die Organisatoren dieser Organisation.",
         "NotMember": "Du hast keine Berechtigung, diese Ressource einzusehen.",
         "WebsiteInvalid": "Die Website muss eine gültige http- oder https-URL sein.",
         "WebsiteTooLong": "Die Website darf 500 Zeichen nicht überschreiten.",

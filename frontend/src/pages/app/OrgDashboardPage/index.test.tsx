@@ -57,14 +57,14 @@ function QuickActionBar() {
 	);
 }
 
-function renderDashboard() {
+function renderDashboard(isOrganizer = true) {
 	return renderWithProviders(
 		<Routes>
 			<Route
 				element={
 					<>
 						<QuickActionBar />
-						<Outlet context={{ org, reloadOrg: () => {}, isOrganizer: true }} />
+						<Outlet context={{ org, reloadOrg: () => {}, isOrganizer }} />
 					</>
 				}
 			>
@@ -461,6 +461,25 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		expect(
 			screen.getByRole("link", { name: /View pending sign-ups/ }),
 		).toBeInTheDocument();
+	});
+
+	// A member may read the pending count - it comes from an endpoint they are
+	// allowed to call - but not the listing the link leads to, so the card
+	// keeps the number and drops the call to action (#2316).
+	it("keeps the count but drops the call to action for a plain member", async () => {
+		api.getOrganizationDashboard.mockResolvedValue({
+			pendingEngagements: 2,
+			confirmedEngagementsTotal: 0,
+		});
+
+		renderDashboard(false);
+
+		expect(
+			await screen.findByTestId("todo-widget-stat-pending"),
+		).toHaveTextContent("2");
+		expect(
+			screen.queryByRole("link", { name: /View pending sign-ups/ }),
+		).toBeNull();
 	});
 
 	it("states zero confirmed volunteers, an empty upcoming list and a singular member count", async () => {

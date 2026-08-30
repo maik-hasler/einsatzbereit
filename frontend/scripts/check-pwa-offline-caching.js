@@ -70,6 +70,48 @@ if (!runtimeCachingBlock) {
 
 const entries = runtimeCachingBlock ? topLevelObjects(runtimeCachingBlock) : [];
 
+// /config.js is the app's boot prerequisite: index.html loads it before the
+// bundle, lib/runtimeConfig.ts reads the API/Keycloak origins out of it, and
+// ConfigGate refuses to render anything without them (#2207). It is
+// deliberately excluded from the precache (its contents are templated at
+// container start, so a build-time revision would pin every deployment to the
+// image's own origins) - but for a long stretch it was excluded from
+// runtimeCaching too, which left it the single uncached file standing between
+// an offline reload and the fully warm cache behind it: every route, in both
+// locales, dead-ended on "configuration missing" (#2317). The pairing is the
+// invariant worth guarding, so both halves are checked here.
+const configJsPrecached =
+	workboxBlock && !/globIgnores:\s*\[[^\]]*["']config\.js["']/.test(workboxBlock);
+if (configJsPrecached) {
+	fail(
+		'vite.config.ts\'s workbox.globIgnores no longer excludes "config.js" - it is rendered ' +
+			"from environment variables at container start (docker-entrypoint.d/99-runtime-config.sh), " +
+			"so precaching it pins every deployment to whatever API/Keycloak origins the image was " +
+			"built against, served cache-first and keyed by a build-time revision (#2207).",
+	);
+}
+
+const configEntry = entries.find(
+	(entry) => /urlPattern:\s*\(/.test(entry) && /["']\/config\.js["']/.test(entry),
+);
+if (!configEntry) {
+	fail(
+		"vite.config.ts's workbox.runtimeCaching has no function-based `urlPattern` matching " +
+			'"/config.js" - excluded from the precache (correctly) and from runtimeCaching too, it is ' +
+			"never cached at all, so every offline reload and every cold start of the installed PWA " +
+			'dead-ends on the "configuration missing" screen while index.html, the bundles, the route ' +
+			"chunks and the API responses all sit warm in the cache (#2317).",
+	);
+} else if (
+	!/handler:\s*["'](NetworkFirst|StaleWhileRevalidate)["']/.test(configEntry)
+) {
+	fail(
+		'The /config.js runtime caching rule in vite.config.ts does not use "NetworkFirst" or ' +
+			'"StaleWhileRevalidate" - a cache-first strategy would keep booting the app against the ' +
+			"origins of a previous deployment long after they changed.",
+	);
+}
+
 // The API is served from a separate host that is only known at container
 // start (config.js, injected by docker-entrypoint.d/99-runtime-config.sh -
 // see #2207), not at service-worker build time. A bare RegExp `urlPattern`
@@ -160,7 +202,9 @@ if (ok) {
 	console.log(
 		"workbox.runtimeCaching has function-based (cross-origin-safe), bounded, NetworkFirst/" +
 			"StaleWhileRevalidate rules for both the opportunity list and detail API responses, and " +
-			"the detail rule's cache key accounts for per-user personalization.",
+			"the detail rule's cache key accounts for per-user personalization. /config.js is kept " +
+			"out of the precache and covered by a runtime rule instead, so an offline reload still " +
+			"boots.",
 	);
 } else {
 	process.exit(1);

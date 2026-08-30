@@ -56,14 +56,36 @@ internal sealed class VolunteerOpportunityReadRepository(
 			filter.Keyword,
 			ResolveBoundingBox(filter.CenterLatitude, filter.CenterLongitude, filter.RadiusKm));
 
+		// DateFrom/DateTo describe one window, so a slot has to satisfy both bounds at once.
+		// Testing them as two separate Any() calls let a series with slots on 03/10/17 match a
+		// 05-06 window (one slot clears the lower bound, a different one clears the upper) even
+		// though no single slot falls inside it (#2319).
+		//
 		// Opportunities without time slots (IndividualContact - see VolunteerOpportunity.AddTimeSlot)
-		// have no dates to compare against, so a date filter must not exclude them - matches the
-		// same "slot-less is never filtered out" convention already used for expiry above (#1059).
-		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+		// have no slot dates to compare against, but they are not dateless: ApplyPubliclyListedFilters
+		// only lists them while ValidUntil is still in the future, so they are on offer over
+		// [now, ValidUntil]. Keeping them for any window at all (the "slot-less is never filtered
+		// out" convention from #1059) let them match impossible ones - a window in 2020, or one
+		// years past their ValidUntil - so intersect against that window instead.
+		if (filter.DateFrom is not null || filter.DateTo is not null)
+		{
+			var dateFrom = filter.DateFrom;
+			var dateTo = filter.DateTo;
 
-		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			// [now, ValidUntil] intersects [DateFrom, DateTo] when DateTo is not already
+			// behind us and ValidUntil is not before DateFrom. The first half needs no
+			// column, so settle it here rather than making the database compare two
+			// parameters on every row.
+			var windowReachesToday = dateTo is null || dateTo >= now;
+
+			query = query.Where(vo =>
+				vo.TimeSlots.Any(ts =>
+					(dateFrom == null || ts.StartDateTime >= dateFrom) &&
+					(dateTo == null || ts.StartDateTime <= dateTo)) ||
+				(!vo.TimeSlots.Any() &&
+					windowReachesToday &&
+					(dateFrom == null || (vo.ValidUntil != null && vo.ValidUntil >= dateFrom))));
+		}
 
 		var baseQuery = query
 			.OrderByDescending(vo => vo.CreatedOn)
@@ -158,7 +180,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.ToListAsync(cancellationToken);
 
 			var pageGuids = page.Select(x => x.Id.Value).ToList();
-			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
+			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, includeEndedSlots: false, cancellationToken);
 			var orgMap = await LoadOrganizationSummariesAsync(page.Select(x => x.OrganizationId), cancellationToken);
 
 			var summaries = page
@@ -187,7 +209,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return new PagedList<VolunteerOpportunitySummary>([], total, filter.PageNumber, filter.PageSize);
 
 		var guids = rows.Select(x => x.Id.Value).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: false, cancellationToken);
 		var organizationSummaries = await LoadOrganizationSummariesAsync(rows.Select(x => x.OrganizationId), cancellationToken);
 
 		var result = rows
@@ -356,29 +378,43 @@ internal sealed class VolunteerOpportunityReadRepository(
 			? GeoMath.BoundingBoxFor(centerLatitude.Value, centerLongitude.Value, radiusKm.Value)
 			: null;
 
+	/// <param name="includeEndedSlots">
+	/// <c>true</c> for the organizer-facing lists, where the tally is a record of everything
+	/// that was ever signed up for. <c>false</c> for anything a volunteer reads as
+	/// "spots left": seats in a slot that has already ended can never be booked, so counting
+	/// them advertised capacity that does not exist (einsatzbereit#2318).
+	/// </param>
 	private async Task<(Dictionary<Guid, int?> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
 		LoadParticipantStatsAsync(
 			List<Guid> opportunityGuids,
+			bool includeEndedSlots,
 			CancellationToken cancellationToken)
 	{
 		var opportunityIds = opportunityGuids
 			.Select(g => VolunteerOpportunityId.Create(g).GetValueOrThrow())
 			.ToList();
 
+		// A cutoff rather than a conditional predicate, so both queries keep one shape EF
+		// can always translate.
+		var slotCutoff = includeEndedSlots ? DateTimeOffset.MinValue : DateTimeOffset.UtcNow;
+
 		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => opportunityIds.Contains(vo.Id))
 			.Select(vo => new
 			{
 				OpportunityId = vo.Id.Value,
-				MaxParticipants = vo.TimeSlots.Any(ts => ts.MaxParticipants == null)
+				MaxParticipants = vo.TimeSlots.Any(ts => ts.EndDateTime >= slotCutoff && ts.MaxParticipants == null)
 					? (int?)null
-					: vo.TimeSlots.Sum(ts => ts.MaxParticipants) ?? 0,
+					: vo.TimeSlots.Where(ts => ts.EndDateTime >= slotCutoff).Sum(ts => ts.MaxParticipants) ?? 0,
 			})
 			.ToListAsync(cancellationToken);
 
+		// An IndividualContact engagement has no time slot at all - it stays counted either way.
 		var participantCounts = await dbContext.EngagementsQuery
 			.Where(e => opportunityIds.Contains(e.OpportunityId) &&
-				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed) &&
+				(e.TimeSlotId == null || dbContext.TimeSlotsQuery
+					.Any(ts => ts.Id == e.TimeSlotId && ts.EndDateTime >= slotCutoff)))
 			.GroupBy(e => e.OpportunityId)
 			.Select(g => new { OpportunityId = g.Key.Value, Count = g.Count() })
 			.ToListAsync(cancellationToken);
@@ -521,6 +557,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 			? UserId.Create(requestingUserIdValue).GetValueOrThrow()
 			: (UserId?)null;
 
+		// Deliberately viewer-relative: "how many *others* have joined". It is therefore not
+		// a capacity figure - an absolute "spots left" label must be derived from the
+		// viewer-independent TimeSlotDetail.BookedCount above (einsatzbereit#2318).
 		var currentParticipantCount = await dbContext.EngagementsQuery
 			.CountAsync(e =>
 				e.OpportunityId == opportunityId_ &&
@@ -652,7 +691,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return [];
 
 		var guids = rows.Select(x => x.Id).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: false, cancellationToken);
 
 		return rows
 			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
@@ -731,7 +770,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return new PagedList<VolunteerOpportunitySummary>([], totalCount, pageNumber, pageSize);
 
 		var guids = rows.Select(x => x.Id).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: true, cancellationToken);
 
 		var items = rows
 			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,

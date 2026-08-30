@@ -9,11 +9,12 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Geocoding;
 
-// Address geocoding (GeocodeAsync) always goes to Nominatim. City search
-// (SearchCitiesAsync) tries Nominatim first for its postcode/exonym support,
-// then falls back to the local IGermanCityDirectory when that comes back
-// empty - Nominatim only matches complete words, so a still-being-typed
-// prefix would otherwise dead-end (#2227).
+// Address geocoding (GeocodeAsync) always goes to Nominatim, retrying at
+// postcode/city granularity when the full street address does not resolve
+// (#2319). City search (SearchCitiesAsync) tries Nominatim first for its
+// postcode/exonym support, then falls back to the local IGermanCityDirectory
+// when that comes back empty - Nominatim only matches complete words, so a
+// still-being-typed prefix would otherwise dead-end (#2227).
 internal sealed class NominatimGeocodingService(
 	HttpClient httpClient,
 	IOptions<GeocodingOptions> options,
@@ -36,8 +37,29 @@ internal sealed class NominatimGeocodingService(
 		string city,
 		CancellationToken cancellationToken = default)
 	{
-		var requestUri = BuildRequestUri(street, houseNumber, zipCode, city);
+		var exact = await LookupAsync(BuildRequestUri(street, houseNumber, zipCode, city), cancellationToken);
+		if (exact.Outcome != GeocodingOutcome.NotFound || string.IsNullOrWhiteSpace(city))
+			return exact;
 
+		// Nominatim only answers a structured query when it can match the street and house
+		// number too, so a real address on a road OSM does not carry ("Tierparkweg 5, 04177
+		// Leipzig") came back NotFound - which marks the opportunity permanently un-geocoded
+		// and makes every radius search silently skip it, while its card still shows a
+		// "Leipzig" map pin. Falling back to the postcode and city pins it at the granularity
+		// the card already advertises, so location search can find what the listing claims (#2319).
+		var cityOnly = await LookupAsync(BuildRequestUri(street: "", houseNumber: "", zipCode, city), cancellationToken);
+		if (cityOnly.Outcome == GeocodingOutcome.Found)
+		{
+			logger.LogInformation(
+				"Nominatim could not resolve the full address in {City}; falling back to its city-level coordinates.",
+				city);
+		}
+
+		return cityOnly;
+	}
+
+	private async Task<GeocodingResult> LookupAsync(string requestUri, CancellationToken cancellationToken)
+	{
 		try
 		{
 			return await ThrottledAsync(

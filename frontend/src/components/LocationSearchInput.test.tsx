@@ -18,8 +18,14 @@ beforeEach(() => {
 	api.__reset();
 });
 
-function Harness({ onSelect }: { onSelect: (s: unknown) => void }) {
-	const [value, setValue] = useState("");
+function Harness({
+	onSelect,
+	initialValue = "",
+}: {
+	onSelect: (s: unknown) => void;
+	initialValue?: string;
+}) {
+	const [value, setValue] = useState(initialValue);
 	return (
 		<LocationSearchInput
 			id="city"
@@ -44,15 +50,24 @@ describe("LocationSearchInput empty-result messaging", () => {
 		expect(await screen.findByRole("status")).toHaveTextContent("Keep typing");
 	});
 
-	it("asserts no match once the query is long enough to be confident", async () => {
+	it("asserts no match once the query is long enough to be confident - but only after searching", async () => {
 		api.searchCities.mockResolvedValue([]);
 
 		renderWithProviders(<Harness onSelect={() => {}} />);
 
 		await userEvent.type(screen.getByLabelText("City"), "Xyz");
 
-		expect(await screen.findByRole("status")).toHaveTextContent(
+		// The third character used to flip the helper line straight to "no match", a
+		// full debounce interval before the request was even sent - the field claimed
+		// the city did not exist before it had looked for it (#2319).
+		expect(await screen.findByRole("status")).not.toHaveTextContent(
 			"No matching city found.",
+		);
+
+		await vi.waitFor(() =>
+			expect(screen.getByRole("status")).toHaveTextContent(
+				"No matching city found.",
+			),
 		);
 	});
 });
@@ -83,5 +98,37 @@ describe("LocationSearchInput exact-name match", () => {
 		expect(onSelect).toHaveBeenCalledWith(
 			expect.objectContaining({ label: "Kiel", lat: 54.32, lng: 10.13 }),
 		);
+	});
+});
+
+describe("LocationSearchInput with an already-committed value", () => {
+	it("does not open the suggestion list until the user asks for it", async () => {
+		api.searchCities.mockResolvedValue([place("Leipzig")]);
+
+		renderWithProviders(<Harness onSelect={() => {}} initialValue="Leipzig" />);
+
+		// Mounting pre-filled is how reopening the location filter, or loading a
+		// shared ?city= URL, arrives here. The lookup still runs - it just must not
+		// pop a list over whatever sits beneath this field (#2319).
+		await vi.waitFor(() => expect(api.searchCities).toHaveBeenCalled());
+		expect(screen.queryByRole("listbox")).toBeNull();
+
+		await userEvent.type(screen.getByLabelText("City"), "z");
+		expect(await screen.findByRole("listbox")).toBeInTheDocument();
+	});
+
+	// A different city than the case above: useCitySuggestions caches by query at
+	// module scope, so reusing "Leipzig" here would serve a cache hit and never
+	// exercise the lookup.
+	it("reopens on focus, so the list is still one click away", async () => {
+		api.searchCities.mockResolvedValue([place("Bremen")]);
+
+		renderWithProviders(<Harness onSelect={() => {}} initialValue="Bremen" />);
+
+		await vi.waitFor(() => expect(api.searchCities).toHaveBeenCalled());
+		expect(screen.queryByRole("listbox")).toBeNull();
+
+		await userEvent.click(screen.getByLabelText("City"));
+		expect(await screen.findByRole("listbox")).toBeInTheDocument();
 	});
 });

@@ -23,13 +23,14 @@ import PageHeaderBand from "../../components/PageHeaderBand";
 import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
 import LoadMoreError from "../../components/LoadMoreError";
+import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
+import CharCount from "../../components/CharCount";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
-import CharCount from "../../components/CharCount";
-import Button from "../../components/Button";
 import { getInvalidFieldNames } from "../../lib/apiError";
+import Button from "../../components/Button";
 import { CalendarIcon, CheckIcon, PencilIcon } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
 import {
@@ -39,18 +40,20 @@ import {
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
 
-// Mirrors the server's own limits on Api.Users.UpdateUserProfile.v1's request
-// record and its MaxSkill/MaxLanguage constants. Enforced here so the user is
-// stopped at the boundary instead of losing the whole save to a 400 whose
-// per-field body the UI used to discard (#2320).
-export const PROFILE_FIELD_LIMITS = {
+// Keyed by the property names the API blames in its per-field 400, so a
+// rejection can name the limit the field actually broke (#2320).
+const FIELD_MAX_LENGTHS = {
 	firstName: 100,
 	lastName: 100,
 	bio: 1000,
 	phone: 30,
-	skill: 100,
-	language: 50,
 } as const;
+
+const NAME_MAX_LENGTH = 100;
+const BIO_MAX_LENGTH = 1000;
+const PHONE_MAX_LENGTH = 30;
+const SKILL_MAX_LENGTH = 100;
+const LANGUAGE_MAX_LENGTH = 50;
 
 const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
@@ -87,11 +90,11 @@ function ChipInput({
 	chips,
 	inputValue,
 	placeholder,
+	maxLength,
 	onInputChange,
 	onAdd,
 	onRemove,
 	removeLabel,
-	maxLength,
 	tone = "brand",
 }: {
 	inputRef: React.RefObject<HTMLInputElement | null>;
@@ -99,11 +102,11 @@ function ChipInput({
 	chips: string[];
 	inputValue: string;
 	placeholder: string;
+	maxLength: number;
 	onInputChange: (v: string) => void;
 	onAdd: (v: string) => void;
 	onRemove: (v: string) => void;
 	removeLabel: string;
-	maxLength: number;
 	tone?: ChipTone;
 }) {
 	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -133,9 +136,9 @@ function ChipInput({
 				ref={inputRef}
 				id={inputId}
 				type="text"
+				maxLength={maxLength}
 				value={inputValue}
 				placeholder={placeholder}
-				maxLength={maxLength}
 				onChange={(e) => onInputChange(e.target.value)}
 				onKeyDown={handleKeyDown}
 				onBlur={() => {
@@ -158,7 +161,14 @@ export default function ProfileOverviewPage() {
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [profileLoading, setProfileLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
-	const [profileError, setProfileError] = useState<string | null>(null);
+
+	// Load and save failures need separate slots. The load error renders a
+	// retry that re-fetches the profile and resets the form, so letting a
+	// failed save render it turned "Retry" into "throw away everything I just
+	// typed" (#2315).
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const [invalidFields, setInvalidFields] = useState<string[]>([]);
 
 	const [retryingProfileLoad, setRetryingProfileLoad] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -166,7 +176,6 @@ export default function ProfileOverviewPage() {
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const [engagementCount, setEngagementCount] = useState<number | null>(null);
-	const [invalidFields, setInvalidFields] = useState<string[]>([]);
 	const formRef = useRef<HTMLFormElement>(null);
 
 	const profileLoadCancelledRef = useRef(false);
@@ -183,12 +192,12 @@ export default function ProfileOverviewPage() {
 				setProfile(data);
 				form.reset(data);
 				setAvatarUrl(data.avatarUrl ?? null);
-				setProfileError(null);
+				setLoadError(null);
 				return;
 			} catch {
 				if (profileLoadCancelledRef.current) return;
 				if (attempt >= retryDelaysMs.length) {
-					setProfileError(t("profile.loadError"));
+					setLoadError(t("profile.loadError"));
 					return;
 				}
 				await new Promise<void>((resolve) =>
@@ -261,7 +270,7 @@ export default function ProfileOverviewPage() {
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
 		setSaving(true);
-		setProfileError(null);
+		setSaveError(null);
 		setInvalidFields([]);
 		setSuccessMessage(null);
 		const savedValues = {
@@ -285,7 +294,7 @@ export default function ProfileOverviewPage() {
 			// instead of dropping that into a bare "saving failed" (#2320).
 			const rejected = getInvalidFieldNames(err);
 			setInvalidFields(rejected);
-			setProfileError(
+			setSaveError(
 				rejected.length > 0
 					? t("profile.saveFieldError")
 					: t("profile.saveError"),
@@ -297,7 +306,7 @@ export default function ProfileOverviewPage() {
 
 	function handleCancel() {
 		form.reset(profile);
-		setProfileError(null);
+		setSaveError(null);
 		setInvalidFields([]);
 		setEditing(false);
 	}
@@ -311,12 +320,12 @@ export default function ProfileOverviewPage() {
 
 	// The server blames its own PascalCase property names, which
 	// getInvalidFieldNames lowercases - so match case-insensitively.
-	type LimitedField = keyof typeof PROFILE_FIELD_LIMITS;
+	type LimitedField = keyof typeof FIELD_MAX_LENGTHS;
 	const fieldRejected = (name: LimitedField) =>
 		invalidFields.includes(name.toLowerCase());
 	const fieldError = (name: LimitedField) =>
 		fieldRejected(name)
-			? t("profile.fieldTooLong", { max: PROFILE_FIELD_LIMITS[name] })
+			? t("profile.fieldTooLong", { max: FIELD_MAX_LENGTHS[name] })
 			: undefined;
 
 	const displayName =
@@ -354,11 +363,19 @@ export default function ProfileOverviewPage() {
 
 					{!profileLoading && (
 						<>
-							{profileError && (
+							{loadError && (
 								<LoadMoreError
-									message={profileError}
+									message={loadError}
 									retrying={retryingProfileLoad}
 									onRetry={handleRetryProfileLoad}
+								/>
+							)}
+
+							{saveError && (
+								<ErrorBanner
+									message={saveError}
+									className="mb-4"
+									data-testid="profile-save-error"
 								/>
 							)}
 
@@ -667,8 +684,8 @@ export default function ProfileOverviewPage() {
 													>
 														<input
 															id="first-name"
+															maxLength={NAME_MAX_LENGTH}
 															autoComplete="given-name"
-															maxLength={PROFILE_FIELD_LIMITS.firstName}
 															aria-invalid={
 																fieldRejected("firstName") || undefined
 															}
@@ -694,8 +711,8 @@ export default function ProfileOverviewPage() {
 													>
 														<input
 															id="last-name"
+															maxLength={NAME_MAX_LENGTH}
 															autoComplete="family-name"
-															maxLength={PROFILE_FIELD_LIMITS.lastName}
 															aria-invalid={
 																fieldRejected("lastName") || undefined
 															}
@@ -726,7 +743,7 @@ export default function ProfileOverviewPage() {
 												<textarea
 													id="bio"
 													rows={4}
-													maxLength={PROFILE_FIELD_LIMITS.bio}
+													maxLength={BIO_MAX_LENGTH}
 													aria-invalid={fieldRejected("bio") || undefined}
 													aria-describedby={
 														fieldRejected("bio") ? "bio-error" : undefined
@@ -738,7 +755,7 @@ export default function ProfileOverviewPage() {
 												/>
 												<CharCount
 													current={form.state.bio.length}
-													max={PROFILE_FIELD_LIMITS.bio}
+													max={BIO_MAX_LENGTH}
 												/>
 											</Field>
 
@@ -749,11 +766,11 @@ export default function ProfileOverviewPage() {
 													chips={form.state.skills}
 													inputValue={form.state.skillInput}
 													placeholder={t("profile.skillsPlaceholder")}
+													maxLength={SKILL_MAX_LENGTH}
 													onInputChange={form.setSkillInput}
 													onAdd={form.addSkill}
 													onRemove={form.removeSkill}
 													removeLabel={t("profile.removeChip")}
-													maxLength={PROFILE_FIELD_LIMITS.skill}
 												/>
 											</Field>
 
@@ -767,11 +784,11 @@ export default function ProfileOverviewPage() {
 													chips={form.state.languages}
 													inputValue={form.state.langInput}
 													placeholder={t("profile.languagesPlaceholder")}
+													maxLength={LANGUAGE_MAX_LENGTH}
 													onInputChange={form.setLangInput}
 													onAdd={form.addLanguage}
 													onRemove={form.removeLanguage}
 													removeLabel={t("profile.removeChip")}
-													maxLength={PROFILE_FIELD_LIMITS.language}
 													tone="neutral"
 												/>
 											</Field>
@@ -784,8 +801,8 @@ export default function ProfileOverviewPage() {
 												<input
 													id="phone"
 													type="tel"
+													maxLength={PHONE_MAX_LENGTH}
 													autoComplete="tel"
-													maxLength={PROFILE_FIELD_LIMITS.phone}
 													aria-invalid={fieldRejected("phone") || undefined}
 													aria-describedby={
 														fieldRejected("phone") ? "phone-error" : undefined

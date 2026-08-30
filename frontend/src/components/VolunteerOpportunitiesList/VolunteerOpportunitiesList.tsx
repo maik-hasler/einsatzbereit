@@ -51,6 +51,8 @@ const CATEGORY_VALUES = [
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 const DEFAULT_RADIUS_KM = "10";
+const NEAR_ME_TIMEOUT_MS = 10_000;
+const NEAR_ME_MAX_AGE_MS = 60_000;
 
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
@@ -76,11 +78,18 @@ export default function VolunteerOpportunitiesList() {
 		: [];
 	const hasLocation = !!(lat && lng && radius);
 
-	const hasLocationFilter = hasLocation || !!city;
-
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [locationCityInput, setLocationCityInput] = useState(city);
 	const [locationLoading, setLocationLoading] = useState(false);
+	// A ?city= the geocoder cannot place filters nothing, so it must not read as an
+	// applied filter - it used to render the same green chip (and summon "Reset") as a
+	// real one while the full unfiltered list sat underneath it (#2319).
+	const [cityUnresolved, setCityUnresolved] = useState(false);
+	// Only this session's own geolocation fix may be labelled "near me". A shared URL
+	// carries the sender's coordinates, and calling those the recipient's "near me" -
+	// in the sender's language, at that - told them a location was theirs when it was
+	// not (#2319).
+	const [isOwnPosition, setIsOwnPosition] = useState(false);
 
 	const filterBarRef = useDismissableOverlay<HTMLDivElement>(
 		openFilter !== null,
@@ -89,6 +98,7 @@ export default function VolunteerOpportunitiesList() {
 
 	useEffect(() => {
 		if (!city || lat || lng) return;
+		setCityUnresolved(false);
 		const controller = new AbortController();
 		(async () => {
 			try {
@@ -104,7 +114,10 @@ export default function VolunteerOpportunitiesList() {
 					),
 					city,
 				);
-				if (!best) return;
+				if (!best) {
+					setCityUnresolved(true);
+					return;
+				}
 				const params = new URLSearchParams(window.location.search);
 				params.set("city", best.label);
 				params.set("lat", String(best.lat));
@@ -112,10 +125,10 @@ export default function VolunteerOpportunitiesList() {
 				params.set("radius", radius || DEFAULT_RADIUS_KM);
 				setSearchParams(params, { replace: true });
 			} catch {
-				// A city that can't be resolved (typo, unmapped place, transient
-				// geocoder failure) leaves the "Standort" chip showing the typed
-				// city as an active-but-unresolved filter instead of reverting to
-				// the unfiltered list.
+				// A typo, an unmapped place or a transient geocoder failure: the city
+				// filters nothing, so say so in the location panel rather than leaving
+				// a chip that looks applied.
+				if (!controller.signal.aborted) setCityUnresolved(true);
 			}
 		})();
 		return () => controller.abort();
@@ -189,6 +202,9 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	function clearFilters() {
+		setCityUnresolved(false);
+		setIsOwnPosition(false);
+		setLocationCityInput("");
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev);
@@ -211,6 +227,9 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	function clearLocation() {
+		setCityUnresolved(false);
+		setIsOwnPosition(false);
+		setLocationCityInput("");
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev);
@@ -261,6 +280,8 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	function selectLocationSuggestion(suggestion: CitySuggestion) {
+		setCityUnresolved(false);
+		setIsOwnPosition(false);
 		const currentRadius = searchParams.get("radius") || DEFAULT_RADIUS_KM;
 		const params = new URLSearchParams(window.location.search);
 		params.set("city", suggestion.label);
@@ -274,7 +295,7 @@ export default function VolunteerOpportunitiesList() {
 
 	function handleNearMe() {
 		if (!navigator.geolocation) {
-			dispatchToast("error", t("opportunities.nearMeDenied"));
+			dispatchToast("error", t("opportunities.nearMeUnavailable"));
 			return;
 		}
 		setLocationLoading(true);
@@ -282,26 +303,39 @@ export default function VolunteerOpportunitiesList() {
 			(pos) => {
 				const { latitude, longitude } = pos.coords;
 				const currentRadius = radius || DEFAULT_RADIUS_KM;
-				const label = t("opportunities.nearMe");
 				const params = new URLSearchParams(window.location.search);
-				params.set("city", label);
+				// No city name to record - writing the translated "near me" label into
+				// ?city= made it look like a place, and shipped the sender's language
+				// and coordinates to whoever the URL was shared with (#2319).
+				params.delete("city");
 				params.set("lat", String(latitude));
 				params.set("lng", String(longitude));
 				params.set("radius", currentRadius);
 				setSearchParams(params, { replace: true });
-				setLocationCityInput(label);
+				setCityUnresolved(false);
+				setIsOwnPosition(true);
+				setLocationCityInput("");
 				setOpenFilter(null);
 				setLocationLoading(false);
 			},
-			() => {
-				dispatchToast("error", t("opportunities.nearMeDenied"));
+			(err) => {
+				// getCurrentPosition has no default timeout, so a prompt that is never
+				// answered used to leave the button disabled and spinning for good, with
+				// nothing to retry from until the panel was closed and reopened (#2319).
+				dispatchToast(
+					"error",
+					err.code === err.PERMISSION_DENIED
+						? t("opportunities.nearMeDenied")
+						: t("opportunities.nearMeUnavailable"),
+				);
 				setLocationLoading(false);
 			},
+			{ timeout: NEAR_ME_TIMEOUT_MS, maximumAge: NEAR_ME_MAX_AGE_MS },
 		);
 	}
 
 	const hasFilters = !!(
-		hasLocationFilter ||
+		hasLocation ||
 		occurrence ||
 		participationType ||
 		isRemoteParam ||
@@ -312,7 +346,19 @@ export default function VolunteerOpportunitiesList() {
 		keyword
 	);
 
-	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : city;
+	// A coordinate pair with no city name is either this session's own geolocation fix
+	// or a set of coordinates someone shared; only the first is honestly "near me".
+	const locationLabel =
+		city ||
+		(isOwnPosition
+			? t("opportunities.nearMe")
+			: t("opportunities.selectedLocation"));
+
+	// An unresolved city is deliberately not shown as an applied value: it filters
+	// nothing, so the chip stays inactive and the panel explains why.
+	const locationDisplayValue = hasLocation
+		? `${locationLabel} · ${radius} km`
+		: "";
 
 	const radiusDisabled = !lat || !lng;
 
@@ -357,6 +403,7 @@ export default function VolunteerOpportunitiesList() {
 						}}
 						onClear={clearLocation}
 						clearAriaLabel={t("opportunities.clearLocation")}
+						allowOverflow
 					>
 						<div className="w-72 p-4">
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
@@ -372,6 +419,15 @@ export default function VolunteerOpportunitiesList() {
 									ariaLabel={t("opportunities.filterLabelCity")}
 									inputClassName="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-600 focus:border-brand-400 focus:bg-white"
 								/>
+								{cityUnresolved && !hasLocation && (
+									<p
+										role="status"
+										data-testid="opportunities-city-unresolved"
+										className="mt-1.5 text-xs text-amber-700"
+									>
+										{t("opportunities.cityUnresolved", { city })}
+									</p>
+								)}
 							</div>
 
 							<button
