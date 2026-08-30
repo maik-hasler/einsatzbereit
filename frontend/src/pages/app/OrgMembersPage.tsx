@@ -464,7 +464,10 @@ export default function OrgMembersPage() {
 															name: invitation.inviteeName,
 														})
 													}
-													disabled={dismissingInvitationId === invitation.id}
+													disabled={
+														revokingInvitation &&
+														revokeTarget?.id === invitation.id
+													}
 													aria-label={t("orgSettings.revokeInvitationNamed", {
 														name: invitation.inviteeName,
 													})}
