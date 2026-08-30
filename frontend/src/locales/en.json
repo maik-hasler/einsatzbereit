@@ -784,6 +784,9 @@
       }
     },
     "orgEngagements": {
+      "forbiddenTitle": "Organizers only",
+      "forbiddenMessage": "You are a member of this organization, not one of its organizers. Only organizers can see and handle the sign-ups across its opportunities.",
+      "forbiddenAction": "Go to the dashboard",
       "pageDescription": "Pending and processed sign-ups across every one of your organization's opportunities, in one place.",
       "loading": "Loading…",
       "error": "Error: {{message}}",
@@ -1551,7 +1554,7 @@
         "HasBlockingOpportunities": "This organization has opportunities with future time slots or active sign-ups. Resolve or cancel these first.",
         "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
         "SoleOrganizerDemote": "You cannot demote the only organizer of this organization. Promote another member first, or delete the organization.",
-        "NotOrganizer": "You do not have permission to modify this resource.",
+        "NotOrganizer": "Only this organization's organizers can do that.",
         "NotMember": "You do not have permission to view this resource.",
         "WebsiteInvalid": "Website must be a valid http or https URL.",
         "WebsiteTooLong": "Website must not exceed 500 characters.",

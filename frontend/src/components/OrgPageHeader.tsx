@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
+import { visibleOrgTabs, orgTabPath } from "../lib/orgTabs";
 import { useQuickActionsList } from "../contexts/QuickActionsContext";
 import { useScrollFade } from "../hooks/useScrollFade";
 import Button from "./Button";
@@ -16,6 +16,8 @@ interface Props {
 	titleLang?: string;
 	activeTabKey: string;
 
+	isOrganizer: boolean;
+
 	back?: { href: string; label: string } | null;
 }
 
@@ -25,6 +27,7 @@ export default function OrgPageHeader({
 	title,
 	titleLang,
 	activeTabKey,
+	isOrganizer,
 	back,
 }: Props) {
 	const { t } = useTranslation();
@@ -101,7 +104,7 @@ export default function OrgPageHeader({
 					aria-label={t("orgApp.sectionsNavLabel")}
 					className="flex gap-1 overflow-x-auto border-b border-gray-200"
 				>
-					{ORG_TABS.map((tab) => {
+					{visibleOrgTabs(isOrganizer).map((tab) => {
 						const isActive = tab.key === activeTabKey;
 						return (
 							<Link

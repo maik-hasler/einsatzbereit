@@ -157,7 +157,7 @@ describe("OrgAppLayout shell", () => {
 		});
 		api.getMyAchievements.mockResolvedValue([]);
 		api.getOrganizations.mockResolvedValue([
-			{ id: ORG_ID, name: "Freiwillige Feuerwehr Kiel" },
+			{ id: ORG_ID, name: "Freiwillige Feuerwehr Kiel", role: "Organizer" },
 		]);
 	});
 
@@ -185,6 +185,41 @@ describe("OrgAppLayout shell", () => {
 			"aria-current",
 			"page",
 		);
+	});
+
+	it("gives an organizer all five sections", async () => {
+		renderOrgApp();
+
+		const rail = await screen.findByRole("navigation", {
+			name: "Organization sections",
+		});
+		expect(within(rail).getByTestId("org-tab-engagements")).toBeInTheDocument();
+	});
+
+	// The sign-ups listing is organizer-only: showing a plain member the tab
+	// only offers them a request that is guaranteed to 403 (#2316). Every
+	// other section reads an endpoint a member may call, so they stay.
+	it("hides the sign-ups section from a plain member", async () => {
+		api.getOrganizationDetails.mockResolvedValue({
+			id: ORG_ID,
+			name: "Freiwillige Feuerwehr Kiel",
+			members: [],
+			requestingUserRole: "Member",
+			membersUnavailable: false,
+			createdOn: new Date(Date.UTC(2026, 0, 1)),
+		});
+		renderOrgApp();
+
+		const rail = await screen.findByRole("navigation", {
+			name: "Organization sections",
+		});
+		expect(within(rail).queryByTestId("org-tab-engagements")).toBeNull();
+		expect(within(rail).getByTestId("org-tab-dashboard")).toBeInTheDocument();
+		expect(
+			within(rail).getByTestId("org-tab-opportunities"),
+		).toBeInTheDocument();
+		expect(within(rail).getByTestId("org-tab-settings")).toBeInTheDocument();
+		expect(within(rail).getByTestId("org-tab-members")).toBeInTheDocument();
 	});
 
 	it("runs its own achievements check on entry", async () => {

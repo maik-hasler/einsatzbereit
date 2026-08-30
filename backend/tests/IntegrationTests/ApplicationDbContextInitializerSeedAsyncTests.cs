@@ -265,9 +265,13 @@ public class ApplicationDbContextInitializerSeedAsyncTests(IntegrationTestFixtur
 		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 		var veraOrganizations = await dbContext.GetMemberOrganizationsAsync(veraUserId, cancellationToken);
 
-		veraOrganizations.Should().ContainSingle(o => o.Name == "Lindenauer Nachbarschaftshilfe e.V.",
+		veraOrganizations.Should().ContainSingle(o => o.Organization.Name == "Lindenauer Nachbarschaftshilfe e.V.",
 			"Vera is a real, Keycloak-confirmed member of this organization - her own \"my organizations\" query "
 			+ "must see the same membership the organization's own Members page shows for her (#1846)");
+
+		veraOrganizations.Single().Role.Should().Be(OrganizationMemberRole.Member,
+			"the role travels with each organization in this list so the header nav can hide organizer-only "
+			+ "sections outside the org app, where no organization details response is loaded (#2316)");
 
 		var veraMembership = await dbContext.Set<OrganizationMembership>()
 			.SingleAsync(m => m.UserId == veraUserId, cancellationToken);

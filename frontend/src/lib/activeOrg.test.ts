@@ -18,7 +18,7 @@ function clearCookies(): void {
 }
 
 function org(id: string, name: string): OrganizationSummaryDto {
-	return { id, name, logoUrl: undefined };
+	return { id, name, logoUrl: undefined, role: "Organizer" };
 }
 
 describe("getActiveOrgId / setActiveOrgId", () => {

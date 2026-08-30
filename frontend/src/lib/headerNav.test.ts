@@ -4,7 +4,7 @@ import { buildPrimaryNav } from "./headerNav";
 import { orgTabPath } from "./orgTabs";
 
 function org(id: string, name: string): OrganizationSummaryDto {
-	return { id, name, logoUrl: undefined };
+	return { id, name, logoUrl: undefined, role: "Organizer" };
 }
 
 describe("buildPrimaryNav", () => {

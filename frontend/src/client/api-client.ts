@@ -6939,6 +6939,7 @@ export interface OrganizationSummaryDto {
     id: string;
     name: string;
     logoUrl: string | undefined;
+    role: string;
 
     [key: string]: any;
 }

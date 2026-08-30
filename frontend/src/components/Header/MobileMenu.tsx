@@ -9,7 +9,7 @@ import OrgAvatar from "../OrgAvatar";
 import { SpinnerIcon } from "../Spinner";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
-import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
+import { visibleOrgTabs, orgTabPath } from "../../lib/orgTabs";
 import { buildPrimaryNav } from "../../lib/headerNav";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { lockScroll } from "../../lib/scrollLock";
@@ -138,10 +138,12 @@ export default function MobileMenu({
 										</Link>
 
 										<div
+											data-testid="mobile-nav-org-sections"
 											className={`ml-3 space-y-0.5 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
 										>
-											{ORG_TABS.filter((tab) => tab.key !== "dashboard").map(
-												(tab) => (
+											{visibleOrgTabs(link.org.role === "Organizer")
+												.filter((tab) => tab.key !== "dashboard")
+												.map((tab) => (
 													<Link
 														key={tab.key}
 														to={orgTabPath(link.org.id, tab.key)}
@@ -150,8 +152,7 @@ export default function MobileMenu({
 													>
 														{t(tab.labelKey)}
 													</Link>
-												),
-											)}
+												))}
 										</div>
 									</div>
 								);
