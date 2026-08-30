@@ -81,15 +81,22 @@ public class TargetSizeTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await burger.ClickAsync();
 
-		var navRow = Page.GetByTestId("mobile-nav-findOpportunities");
+		// Both headers are in the DOM at every width - the desktop one is only
+		// hidden by CSS - so the language switcher and the sign-in button each
+		// exist twice on the page. Address the drawer's copies through the drawer,
+		// or Playwright's strict mode rejects the locator.
+		var drawer = Page.GetByRole(AriaRole.Dialog, new() { Name = "Menu" });
+		await Expect(drawer).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var navRow = drawer.GetByTestId("mobile-nav-findOpportunities");
 		await Expect(navRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await AssertMinimumTargetAsync(navRow, 44, "a drawer navigation row");
 
-		var languageTrigger = Page.GetByTestId("language-selector-trigger");
+		var languageTrigger = drawer.GetByTestId("language-selector-trigger");
 		await Expect(languageTrigger).ToBeVisibleAsync();
 		await AssertMinimumTargetAsync(languageTrigger, 44, "the language switcher");
 
-		var signIn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" });
+		var signIn = drawer.GetByRole(AriaRole.Button, new() { Name = "Sign in" });
 		await Expect(signIn).ToBeVisibleAsync();
 		await AssertMinimumTargetAsync(signIn, 44, "the drawer sign-in button");
 	}
