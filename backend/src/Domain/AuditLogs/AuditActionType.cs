@@ -12,5 +12,6 @@ public enum AuditActionType
 	OrganizationRestored,
 	VolunteerOpportunityShadowDeleted,
 	VolunteerOpportunityRestored,
-	EngagementCancelled
+	EngagementCancelled,
+	ReportDismissed
 }

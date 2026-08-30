@@ -47,6 +47,7 @@ import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import WarningBanner from "../../components/WarningBanner";
+import { inlineLinkClass } from "../../lib/linkClasses";
 import {
 	ArrowsRightLeftIcon,
 	CalendarIcon,
@@ -706,7 +707,7 @@ export default function ActivitySection() {
 											{e.checkInMethod !== "None" && e.organizationId && (
 												<Link
 													to={`/organizations/${e.organizationId}`}
-													className="text-brand-700 underline-offset-2 hover:underline"
+													className={inlineLinkClass}
 												>
 													{t("common.contactOrganization")}
 												</Link>
@@ -824,7 +825,7 @@ export default function ActivitySection() {
 												{e.organizationId && (
 													<Link
 														to={`/organizations/${e.organizationId}`}
-														className="text-brand-700 underline-offset-2 hover:underline"
+														className={inlineLinkClass}
 													>
 														{t("common.contactOrganization")}
 													</Link>
@@ -885,7 +886,7 @@ export default function ActivitySection() {
 					{withdrawLimitReached && withdrawTarget?.organizationId && (
 						<Link
 							to={`/organizations/${withdrawTarget.organizationId}`}
-							className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+							className={`mt-1 inline-block text-sm ${inlineLinkClass}`}
 						>
 							{t("common.contactOrganization")}
 						</Link>

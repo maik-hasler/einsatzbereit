@@ -5,6 +5,26 @@ import Footer from "../components/Footer";
 import { renderWithProviders } from "../test/render";
 
 describe("TermsOfUsePage", () => {
+	// The ids were authored for an earlier section ordering and never renamed:
+	// #privacy landed on "Suspension and termination" (#2331).
+	it("gives every outline entry a fragment that resolves to its own section", () => {
+		const { container } = renderWithProviders(<TermsOfUsePage />);
+
+		const entries = Array.from(
+			container.querySelectorAll<HTMLAnchorElement>("nav a[href^='#']"),
+		);
+		expect(entries).toHaveLength(7);
+
+		for (const entry of entries) {
+			const id = entry.getAttribute("href")?.slice(1) ?? "";
+			// The first span is the aria-hidden ordinal; the second is the label.
+			const label = entry.querySelectorAll("span")[1]?.textContent;
+			expect(container.querySelector(`#${id} h2`)?.textContent).toContain(
+				label,
+			);
+		}
+	});
+
 	it("shows the core clauses in English", () => {
 		renderWithProviders(<TermsOfUsePage />);
 

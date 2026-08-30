@@ -6,14 +6,12 @@ import PageHeaderBand from "../components/PageHeaderBand";
 import { FlagIcon, EnvelopeIcon, ArrowRightIcon } from "../components/icons";
 import { cardClass } from "../lib/surfaceClasses";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function ContactPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("contact.title"));
 	usePageDescription(t("contact.intro"));
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	return (
 		<>
@@ -48,11 +46,11 @@ export default function ContactPage() {
 							i18nKey="contact.reportSectionBody"
 							components={{
 								opportunitiesLink: (
-									<Link to="/opportunities" className={linkClass} />
+									<Link to="/opportunities" className={inlineLinkClass} />
 								),
 
 								organizationsLink: (
-									<Link to="/organizations" className={linkClass} />
+									<Link to="/organizations" className={inlineLinkClass} />
 								),
 							}}
 						/>
@@ -83,7 +81,7 @@ export default function ContactPage() {
 						<a
 							href={`mailto:${runtimeConfig.operatorEmail}`}
 							data-testid="contact-email"
-							className={`mt-5 inline-flex items-center gap-2 ${linkClass}`}
+							className={`mt-5 inline-flex items-center gap-2 ${inlineLinkClass}`}
 						>
 							<EnvelopeIcon className="h-4 w-4 shrink-0" />
 							{runtimeConfig.operatorEmail}

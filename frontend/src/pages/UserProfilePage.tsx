@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type {
@@ -23,9 +23,15 @@ import {
 	type LoadFailureKind,
 } from "../lib/apiError";
 import { getInitials } from "../lib/initials";
+import {
+	reportIntentSigninArgs,
+	usePendingReportIntent,
+} from "../lib/reportIntent";
 
 export default function UserProfilePage() {
 	const { userId } = useParams<{ userId: string }>();
+	const location = useLocation();
+	const pendingReportTargetId = usePendingReportIntent();
 	const { t } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
@@ -146,17 +152,34 @@ export default function UserProfilePage() {
 							count: profile.engagementCount,
 						})}
 					</p>
-					{auth.isAuthenticated && auth.user?.profile.sub !== userId && (
+					{/* Offered to anonymous visitors too, routed through sign-in with the click
+					carried along - the same treatment every other report affordance gets
+					(#2326). Still hidden on your own profile. */}
+					{auth.user?.profile.sub !== userId && userId && (
 						<ReportFlagButton
 							targetLabel={profile.displayName}
 							ariaLabel={t("userProfile.reportUser")}
 							onReport={async (reason, details) => {
-								if (!userId) return;
 								await api.reportUser(userId, {
 									reason,
 									details: details || undefined,
 								});
 							}}
+							onRequireSignIn={
+								auth.isAuthenticated
+									? undefined
+									: () =>
+											void auth.signinRedirect(
+												reportIntentSigninArgs(
+													location.pathname,
+													location.search,
+													userId,
+												),
+											)
+							}
+							autoOpen={
+								auth.isAuthenticated && pendingReportTargetId === userId
+							}
 							className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
 						/>
 					)}

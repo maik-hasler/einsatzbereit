@@ -7,25 +7,23 @@ import DocumentOutline from "../components/DocumentOutline";
 import DocumentSection from "../components/DocumentSection";
 import WarningBanner from "../components/WarningBanner";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function PrivacyPolicyPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("privacyPolicy.title"));
 	usePageDescription(t("privacyPolicy.metaDescription"));
 
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
-
 	const sections = [
 		{ id: "controller", label: t("privacyPolicy.section1Title") },
 		{ id: "data-collected", label: t("privacyPolicy.section2Title") },
 		{ id: "third-parties", label: t("privacyPolicy.section3Title") },
-		{ id: "legal-basis", label: t("privacyPolicy.section4Title") },
-		{ id: "retention", label: t("privacyPolicy.section5Title") },
-		{ id: "your-rights", label: t("privacyPolicy.section6Title") },
-		{ id: "cookies", label: t("privacyPolicy.section7Title") },
-		{ id: "security", label: t("privacyPolicy.section8Title") },
-		{ id: "changes", label: t("privacyPolicy.section9Title") },
+		{ id: "uploaded-images", label: t("privacyPolicy.section4Title") },
+		{ id: "transactional-emails", label: t("privacyPolicy.section5Title") },
+		{ id: "hosting-and-backups", label: t("privacyPolicy.section6Title") },
+		{ id: "security-logging", label: t("privacyPolicy.section7Title") },
+		{ id: "cookies", label: t("privacyPolicy.section8Title") },
+		{ id: "your-rights", label: t("privacyPolicy.section9Title") },
 	];
 
 	return (
@@ -52,13 +50,35 @@ export default function PrivacyPolicyPage() {
 						title={t("privacyPolicy.section1Title")}
 					>
 						{runtimeConfig.operatorConfigured ? (
+							// Section 9 tells readers to write to this address to exercise
+							// their rights, and /imprint already makes it a mailto - here it
+							// was plain text, with no anchor in the section at all (#2331).
 							<p className="whitespace-pre-line">
-								{t("privacyPolicy.section1Body", {
-									name: runtimeConfig.operatorName,
-									address: runtimeConfig.operatorAddress,
-									email: runtimeConfig.operatorEmail,
-									website: runtimeConfig.operatorSiteUrl,
-								})}
+								<Trans
+									i18nKey="privacyPolicy.section1Body"
+									values={{
+										name: runtimeConfig.operatorName,
+										address: runtimeConfig.operatorAddress,
+										email: runtimeConfig.operatorEmail,
+										website: runtimeConfig.operatorSiteUrl,
+									}}
+									components={{
+										emailLink: (
+											// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
+											<a
+												href={`mailto:${runtimeConfig.operatorEmail}`}
+												className={linkClass}
+											/>
+										),
+										websiteLink: (
+											// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <websiteLink> tag content
+											<a
+												href={runtimeConfig.operatorSiteUrl}
+												className={linkClass}
+											/>
+										),
+									}}
+								/>
 							</p>
 						) : (
 							<WarningBanner
@@ -92,7 +112,9 @@ export default function PrivacyPolicyPage() {
 							<Trans
 								i18nKey="privacyPolicy.section3aBody"
 								components={{
-									termsLink: <Link to="/terms-of-use" className={linkClass} />,
+									termsLink: (
+										<Link to="/terms-of-use" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>
@@ -112,7 +134,7 @@ export default function PrivacyPolicyPage() {
 								href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
 								target="_blank"
 								rel="noopener noreferrer"
-								className={linkClass}
+								className={inlineLinkClass}
 							>
 								{t("privacyPolicy.section3cLinkOsm")}
 							</a>
@@ -121,7 +143,7 @@ export default function PrivacyPolicyPage() {
 								href="https://operations.osmfoundation.org/policies/nominatim/"
 								target="_blank"
 								rel="noopener noreferrer"
-								className={linkClass}
+								className={inlineLinkClass}
 							>
 								{t("privacyPolicy.section3cLinkNominatim")}
 							</a>
@@ -129,7 +151,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="legal-basis"
+						id="uploaded-images"
 						number={4}
 						title={t("privacyPolicy.section4Title")}
 					>
@@ -137,7 +159,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="retention"
+						id="transactional-emails"
 						number={5}
 						title={t("privacyPolicy.section5Title")}
 					>
@@ -145,7 +167,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="your-rights"
+						id="hosting-and-backups"
 						number={6}
 						title={t("privacyPolicy.section6Title")}
 					>
@@ -153,7 +175,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="cookies"
+						id="security-logging"
 						number={7}
 						title={t("privacyPolicy.section7Title")}
 					>
@@ -162,7 +184,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="security"
+						id="cookies"
 						number={8}
 						title={t("privacyPolicy.section8Title")}
 					>
@@ -171,7 +193,7 @@ export default function PrivacyPolicyPage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="changes"
+						id="your-rights"
 						number={9}
 						title={t("privacyPolicy.section9Title")}
 					>

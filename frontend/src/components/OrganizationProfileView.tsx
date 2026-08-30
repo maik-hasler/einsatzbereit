@@ -54,7 +54,12 @@ export default function OrganizationProfileView({
 	const { t, i18n } = useTranslation();
 	const NameTag = nameAs;
 	const hasContactInfo = !!(contactEmail || contactPhone || website || address);
-	const useSidebar = layout === "sidebar" && hasContactInfo;
+	// Deliberately not gated on `hasContactInfo`: dropping the second column for
+	// an organization with no contact details made the main column - and with it
+	// the "current needs" heading and its empty state - jump between 688px and
+	// 1024px between one profile and the next (#2331). The column is reserved
+	// either way; only the card inside it is conditional.
+	const useSidebar = layout === "sidebar";
 
 	const contactCard = (
 		<div className={`space-y-2.5 text-sm text-gray-700 ${cardClass}`}>
@@ -134,6 +139,28 @@ export default function OrganizationProfileView({
 			>
 				{beforeContent}
 
+				{/*
+				 * Above the grid rather than inside its first column, so the
+				 * single-column mobile layout reads description -> contact ->
+				 * content instead of pushing the contact card below everything.
+				 */}
+				{description && (
+					<div className="mb-6 max-w-2xl">
+						<p lang="de" className="leading-relaxed text-gray-700">
+							{description}
+						</p>
+						{/* Organizations have no descriptionEn to fall back
+						from, so unlike an opportunity this is always the
+						German original - say so rather than let it read as
+						untranslated chrome (#2328). */}
+						{i18n.language !== "de" && (
+							<p className="mt-1 text-xs text-gray-500">
+								{t("opportunities.germanOnlyNotice")}
+							</p>
+						)}
+					</div>
+				)}
+
 				<div
 					className={
 						useSidebar
@@ -141,30 +168,29 @@ export default function OrganizationProfileView({
 							: ""
 					}
 				>
-					<div className="min-w-0">
-						{description && (
-							<div className="mb-6 max-w-2xl">
-								<p lang="de" className="leading-relaxed text-gray-700">
-									{description}
-								</p>
-								{/* Organizations have no descriptionEn to fall back
-								from, so unlike an opportunity this is always the
-								German original - say so rather than let it read as
-								untranslated chrome (#2328). */}
-								{i18n.language !== "de" && (
-									<p className="mt-1 text-xs text-gray-500">
-										{t("opportunities.germanOnlyNotice")}
-									</p>
-								)}
-							</div>
-						)}
+					{/*
+					 * First in the DOM, and explicitly placed into the second column
+					 * from `lg` up. Stacked after the main column, contact details -
+					 * most of the reason a visitor opens a profile - landed under the
+					 * whole opportunity list and the report link, ~3,000px down a
+					 * mobile page (#2331). Reordering in the DOM rather than with
+					 * `order` keeps the single-column reading and focus sequence
+					 * matching what is on screen.
+					 */}
+					{useSidebar && hasContactInfo && (
+						<aside className="self-start lg:col-start-2 lg:row-start-1">
+							{contactCard}
+						</aside>
+					)}
+
+					<div
+						className={`min-w-0 ${useSidebar ? "lg:col-start-1 lg:row-start-1" : ""}`}
+					>
 						{!useSidebar && hasContactInfo && (
 							<div className="mb-6 max-w-md">{contactCard}</div>
 						)}
 						{children}
 					</div>
-
-					{useSidebar && <aside className="self-start">{contactCard}</aside>}
 				</div>
 			</div>
 		</>

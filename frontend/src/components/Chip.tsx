@@ -48,7 +48,12 @@ export default function Chip({
 		"inline-flex items-center gap-1 rounded-full font-medium",
 		TONE_CLASSES[tone],
 		SIZE_CLASSES[size],
-		to ? "transition-colors hover:brightness-95" : "",
+		// A chip that navigates is a pointer target, and the `sm` size alone renders
+		// 20px tall - axe `target-size` (serious) on the tag chips of every
+		// opportunity card. WCAG 2.5.8 sets the floor at 24x24 CSS px (#2327).
+		to
+			? "min-h-6 min-w-6 justify-center transition-colors hover:brightness-95"
+			: "",
 		className,
 	]
 		.filter(Boolean)

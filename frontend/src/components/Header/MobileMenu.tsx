@@ -120,7 +120,11 @@ export default function MobileMenu({
 						className={`space-y-0.5 border-b pb-2 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
 					>
 						{buildPrimaryNav(activeOrg).map((link) => {
-							const rowBase = `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
+							// 44px minimum: a drawer row is a phone's primary touch target and
+							// these were 32px tall, under every touch-target guideline going
+							// (#2327). The height comes from `min-h-11` rather than more padding
+							// so the rows keep their compact rhythm.
+							const rowBase = `flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
 
 							if (link.kind === "organization") {
 								return (
@@ -129,7 +133,7 @@ export default function MobileMenu({
 											to={link.to}
 											onClick={onClose}
 											data-testid={`mobile-nav-${link.key}`}
-											className={`${rowBase} flex items-center gap-2`}
+											className={`${rowBase} gap-2`}
 										>
 											<OrgAvatar
 												name={link.org.name}
@@ -150,7 +154,7 @@ export default function MobileMenu({
 														key={tab.key}
 														to={orgTabPath(link.org.id, tab.key)}
 														onClick={onClose}
-														className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
+														className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
 													>
 														{t(tab.labelKey)}
 													</Link>
@@ -168,7 +172,7 @@ export default function MobileMenu({
 									to={link.to}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={`${rowBase} block`}
+									className={rowBase}
 								>
 									{t(`nav.${link.key}`)}
 								</Link>
@@ -178,7 +182,7 @@ export default function MobileMenu({
 									to={link.to}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={`${rowBase} block`}
+									className={rowBase}
 								>
 									{t(`nav.${link.key}`)}
 								</Link>
@@ -216,21 +220,21 @@ export default function MobileMenu({
 							<Link
 								to="/profile"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myProfile")}
 							</Link>
 							<Link
 								to="/my-signups"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myEngagements")}
 							</Link>
 							<Link
 								to="/profile/settings"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.profileSettings")}
 							</Link>
@@ -238,7 +242,7 @@ export default function MobileMenu({
 								<Link
 									to="/administration"
 									onClick={onClose}
-									className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 								>
 									{t("nav.administration")}
 								</Link>
@@ -246,7 +250,7 @@ export default function MobileMenu({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 w-full items-center rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.signOut")}
 							</button>

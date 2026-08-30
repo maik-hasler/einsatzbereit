@@ -19,7 +19,7 @@ internal sealed class AuditLogConfiguration
 		{
 			t.HasCheckConstraint(
 				"ck_audit_log_action_type_valid",
-				"action_type IN ('UserPromotedToAdmin', 'UserDemotedFromAdmin', 'UserEnabled', 'UserDisabled', 'UserShadowDeleted', 'UserRestored', 'OrganizationShadowDeleted', 'OrganizationRestored', 'VolunteerOpportunityShadowDeleted', 'VolunteerOpportunityRestored', 'EngagementCancelled')");
+				"action_type IN ('UserPromotedToAdmin', 'UserDemotedFromAdmin', 'UserEnabled', 'UserDisabled', 'UserShadowDeleted', 'UserRestored', 'OrganizationShadowDeleted', 'OrganizationRestored', 'VolunteerOpportunityShadowDeleted', 'VolunteerOpportunityRestored', 'EngagementCancelled', 'ReportDismissed')");
 			t.HasCheckConstraint(
 				"ck_audit_log_subject_type_valid",
 				"subject_type IN ('User', 'Organization', 'VolunteerOpportunity', 'Engagement')");

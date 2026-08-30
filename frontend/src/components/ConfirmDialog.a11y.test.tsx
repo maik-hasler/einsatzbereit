@@ -76,4 +76,19 @@ describe("ConfirmDialog a11y", () => {
 			"Cancel this engagement?",
 		);
 	});
+
+	it("has no violations as a constructive confirmation", async () => {
+		renderWithProviders(
+			<ConfirmDialog
+				title="Restore this content?"
+				message="It will become visible again."
+				confirmLabel="Yes, restore"
+				tone="constructive"
+				cancelLabel="Cancel"
+				onConfirm={() => {}}
+				onClose={() => {}}
+			/>,
+		);
+		await expectNoA11yViolations();
+	});
 });

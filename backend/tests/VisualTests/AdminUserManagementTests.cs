@@ -98,7 +98,10 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
 			await Expect(dialog).ToBeVisibleAsync();
 			await Expect(dialog.GetByText(username)).ToBeVisibleAsync();
-			await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
+			// "Cancel", not the "Keep" the block dialog above uses: granting admin rights is
+			// constructive, so the dialog drops the label that only reads right against a
+			// removal - and with it the red confirm button (#2326).
+			await dialog.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
 			await Expect(dialog).Not.ToBeVisibleAsync();
 
 			await Expect(row.GetByText("Admin", new() { Exact = true })).Not.ToBeVisibleAsync();
