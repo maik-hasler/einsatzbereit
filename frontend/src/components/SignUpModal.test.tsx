@@ -30,6 +30,10 @@ function open(
 	timeSlots: TimeSlotDetail[],
 	lng: "de" | "en" = "en",
 	participationType = "ScheduledSlots",
+	extraProps: {
+		engagedTimeSlotIds?: string[];
+		preselectedTimeSlotId?: string;
+	} = {},
 ) {
 	return renderWithProviders(
 		<SignUpModal
@@ -39,6 +43,7 @@ function open(
 			timeSlots={timeSlots}
 			onClose={() => {}}
 			onSuccess={() => {}}
+			{...extraProps}
 		/>,
 		{ lng, auth: { isAuthenticated: true } },
 	);
@@ -160,5 +165,40 @@ describe("SignUpModal slot picker", () => {
 		expect(options).toHaveLength(2);
 		expect(options[0]).toHaveTextContent("4 spots left");
 		expect(options[1]).toHaveTextContent("1 spot left");
+	});
+});
+
+describe("SignUpModal slots the volunteer already holds (#2323)", () => {
+	it("disables them instead of offering an option that can only 409", async () => {
+		open([slot("held", 9), slot("free", 14)], "en", "ScheduledSlots", {
+			engagedTimeSlotIds: ["held"],
+		});
+
+		await userEvent.click(await screen.findByRole("combobox"));
+
+		const options = screen.getAllByRole("option");
+		expect(options[0]).toHaveTextContent("Already signed up");
+		expect(options[0]).toHaveAttribute("aria-disabled", "true");
+		expect(options[1]).not.toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("does not preselect one as the sole remaining choice", () => {
+		open([slot("held", 9), slot("free", 14)], "en", "ScheduledSlots", {
+			engagedTimeSlotIds: ["held"],
+		});
+
+		// One free slot left, so it is preselected - the held one must not count
+		// towards that "only one option" shortcut in either direction.
+		expect(screen.getByRole("combobox")).not.toHaveTextContent("Please select");
+	});
+
+	it("falls back to the picker when the deep-linked slot is one the volunteer already holds", () => {
+		open([slot("held", 9), slot("free", 14)], "en", "ScheduledSlots", {
+			engagedTimeSlotIds: ["held"],
+			preselectedTimeSlotId: "held",
+		});
+
+		expect(screen.queryByTestId("sign-up-confirmed-slot")).toBeNull();
+		expect(screen.getByRole("combobox")).toBeInTheDocument();
 	});
 });

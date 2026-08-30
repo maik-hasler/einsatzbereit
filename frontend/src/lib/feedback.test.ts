@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isFeedbackEditable, FEEDBACK_EDIT_WINDOW_DAYS } from "./feedback";
+import {
+	getFeedbackEditDeadline,
+	isFeedbackEditable,
+	FEEDBACK_EDIT_WINDOW_DAYS,
+} from "./feedback";
 
 describe("isFeedbackEditable", () => {
 	const now = new Date("2026-01-15T12:00:00Z");
@@ -28,5 +32,22 @@ describe("isFeedbackEditable", () => {
 
 	it("accepts an ISO date string as returned by the API client", () => {
 		expect(isFeedbackEditable(now.toISOString(), now)).toBe(true);
+	});
+});
+
+describe("getFeedbackEditDeadline", () => {
+	const submittedAt = new Date("2026-01-15T12:00:00Z");
+
+	it("is the submission date plus the edit window", () => {
+		const deadline = getFeedbackEditDeadline(submittedAt);
+
+		expect(deadline?.getTime()).toBe(
+			submittedAt.getTime() + FEEDBACK_EDIT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+		);
+	});
+
+	it("is null when feedback was never submitted", () => {
+		expect(getFeedbackEditDeadline(null)).toBeNull();
+		expect(getFeedbackEditDeadline(undefined)).toBeNull();
 	});
 });

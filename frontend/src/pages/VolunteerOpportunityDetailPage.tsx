@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useParams, Link, useLocation } from "react-router";
+import { useParams, Link, useLocation, useSearchParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -28,6 +28,7 @@ import {
 	getCapacityFromTimeSlots,
 	type OpportunityCapacity,
 } from "../lib/opportunityCapacity";
+import { SIGN_UP_INTEREST, SIGN_UP_PARAM } from "../lib/signUpDeepLink";
 import Chip from "../components/Chip";
 import SectionHeading from "../components/SectionHeading";
 import SignUpModal from "../components/SignUpModal";
@@ -193,6 +194,28 @@ export default function VolunteerOpportunityDetailPage() {
 	const [preselectedSlotId, setPreselectedSlotId] = useState<
 		string | undefined
 	>(undefined);
+
+	// "Sign up again" on a withdrawn engagement links here carrying the slot it
+	// was for, so the volunteer doesn't land on a bare page with no trace of
+	// their withdrawn sign-up (#2323). Consume it once and drop it from the URL
+	// so a reload or a Back doesn't reopen the dialog.
+	const [searchParams, setSearchParams] = useSearchParams();
+	const requestedSignUp = searchParams.get(SIGN_UP_PARAM);
+	useEffect(() => {
+		if (!requestedSignUp) return;
+		setPreselectedSlotId(
+			requestedSignUp === SIGN_UP_INTEREST ? undefined : requestedSignUp,
+		);
+		setShowSignUp(true);
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				next.delete(SIGN_UP_PARAM);
+				return next;
+			},
+			{ replace: true },
+		);
+	}, [requestedSignUp, setSearchParams]);
 	const [showReport, setShowReport] = useState(false);
 	const [withdrawTarget, setWithdrawTarget] =
 		useState<CurrentUserEngagementInfo | null>(null);
@@ -510,80 +533,99 @@ export default function VolunteerOpportunityDetailPage() {
 				{showApplicationStatus && (
 					<div
 						data-testid={`application-status${testIdSuffix}`}
-						className={`space-y-4 ${cardClass} sm:p-5`}
+						className={`${cardClass} sm:p-5`}
 					>
-						{opp.currentUserEngagements.map((engagement) => {
-							const engagementTimeSlot = opp.timeSlots.find(
-								(ts) => ts.id === engagement.timeSlotId,
-							);
-							return (
-								<div
-									key={engagement.id}
-									className="flex items-center justify-between gap-4"
-								>
-									<div>
-										<p className="mb-1 text-xs text-gray-500">
-											{isInterestBased
-												? t("opportunities.yourInterest")
-												: t("opportunities.yourApplication")}
-										</p>
-										<Chip
-											tone={
-												engagement.status === "Confirmed"
-													? "success"
-													: "warning"
-											}
-											size="sm"
-										>
-											{t(`myEngagements.status.${engagement.status}`)}
-										</Chip>
-
-										{engagement.status === "Pending" && (
-											<p className="mt-1.5 text-xs text-gray-600">
-												{t(
-													isInterestBased
-														? "myEngagements.pendingExplanationInterest"
-														: "myEngagements.pendingExplanation",
-												)}
-											</p>
-										)}
-										{engagementTimeSlot && (
-											<p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-												<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-												<span>
-													{t("myEngagements.scheduledFor", {
-														range: formatDateTimeRange(
-															engagementTimeSlot.startDateTime as unknown as string,
-															engagementTimeSlot.endDateTime as unknown as string,
-															i18n.language,
-														),
-													})}
-												</span>
-											</p>
-										)}
-										{engagement.isCheckedIn && (
-											<Chip tone="success" size="sm" className="mt-2">
-												<CheckIconSolid className="h-3 w-3" />
-												{t("checkIn.checkedInLabel")}
+						{/* One heading for the card, then one dated block per sign-up:
+						    repeating an identical "Your sign-up" label above every block
+						    left the withdraw buttons floating between two rows nobody
+						    could tell apart (#2323). */}
+						<p className="mb-2 text-xs text-gray-500">
+							{isInterestBased
+								? t("opportunities.yourInterest")
+								: opp.currentUserEngagements.length > 1
+									? t("opportunities.yourApplications")
+									: t("opportunities.yourApplication")}
+						</p>
+						<ul className="divide-y divide-gray-200">
+							{opp.currentUserEngagements.map((engagement) => {
+								const engagementTimeSlot = opp.timeSlots.find(
+									(ts) => ts.id === engagement.timeSlotId,
+								);
+								// Every block's button is named "Withdraw"; the date is
+								// what tells them apart, so point at it rather than
+								// folding it into the name (#2323). The rail renders
+								// twice (desktop rail + mobile), hence the suffix.
+								const slotHeadingId = `engagement-slot-${engagement.id}${testIdSuffix}`;
+								return (
+									<li
+										key={engagement.id}
+										className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
+									>
+										<div>
+											{engagementTimeSlot && (
+												<p
+													id={slotHeadingId}
+													className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-900"
+												>
+													<CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+													<span>
+														{t("myEngagements.scheduledFor", {
+															range: formatDateTimeRange(
+																engagementTimeSlot.startDateTime as unknown as string,
+																engagementTimeSlot.endDateTime as unknown as string,
+																i18n.language,
+															),
+														})}
+													</span>
+												</p>
+											)}
+											<Chip
+												tone={
+													engagement.status === "Confirmed"
+														? "success"
+														: "warning"
+												}
+												size="sm"
+											>
+												{t(`myEngagements.status.${engagement.status}`)}
 											</Chip>
-										)}
-									</div>
 
-									{!engagement.isCheckedIn && (
-										<Button
-											type="button"
-											variant="dangerOutline"
-											size="sm"
-											className="shrink-0"
-											onClick={() => setWithdrawTarget(engagement)}
-											disabled={withdrawing}
-										>
-											{t("myEngagements.withdraw")}
-										</Button>
-									)}
-								</div>
-							);
-						})}
+											{engagement.status === "Pending" && (
+												<p className="mt-1.5 text-xs text-gray-600">
+													{t(
+														isInterestBased
+															? "myEngagements.pendingExplanationInterest"
+															: "myEngagements.pendingExplanation",
+													)}
+												</p>
+											)}
+											{engagement.isCheckedIn && (
+												<Chip tone="success" size="sm" className="mt-2">
+													<CheckIconSolid className="h-3 w-3" />
+													{t("checkIn.checkedInLabel")}
+												</Chip>
+											)}
+										</div>
+
+										{!engagement.isCheckedIn && (
+											<Button
+												type="button"
+												variant="dangerOutline"
+												size="sm"
+												className="shrink-0"
+												aria-describedby={
+													engagementTimeSlot ? slotHeadingId : undefined
+												}
+												onClick={() => setWithdrawTarget(engagement)}
+												disabled={withdrawing}
+											>
+												{t("myEngagements.withdraw")}
+											</Button>
+										)}
+									</li>
+								);
+							})}
+						</ul>
 					</div>
 				)}
 
@@ -1124,6 +1166,7 @@ export default function VolunteerOpportunityDetailPage() {
 						organizationId={opportunity.organizationId}
 						participationType={opportunity.participationType}
 						timeSlots={upcomingTimeSlots}
+						engagedTimeSlotIds={[...engagementsBySlot.keys()]}
 						preselectedTimeSlotId={preselectedSlotId}
 						onClose={() => {
 							setShowSignUp(false);

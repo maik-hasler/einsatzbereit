@@ -271,7 +271,7 @@ describe("my-signups withdraw success (#2240)", () => {
 			within(card).getByRole("link", { name: "Sign up again" }),
 		).toHaveAttribute(
 			"href",
-			`/volunteer-opportunities/${target.opportunityId}`,
+			`/volunteer-opportunities/${target.opportunityId}?signUp=interest`,
 		);
 	});
 });
@@ -287,7 +287,7 @@ describe("my-signups reactivate action (#2240)", () => {
 			within(card).getByRole("link", { name: "Sign up again" }),
 		).toHaveAttribute(
 			"href",
-			"/volunteer-opportunities/22222222-2222-2222-2222-222222222222",
+			"/volunteer-opportunities/22222222-2222-2222-2222-222222222222?signUp=interest",
 		);
 	});
 
@@ -515,6 +515,224 @@ describe("my-signups invitations (#2206)", () => {
 
 		await waitFor(() =>
 			expect(screen.queryByRole("button", { name: "Accept" })).toBeNull(),
+		);
+	});
+});
+
+describe("my-signups check-in time window (#2323)", () => {
+	const hoursFromNow = (hours: number) =>
+		new Date(Date.now() + hours * 60 * 60 * 1000);
+
+	const slotSignUp = (startHours: number, endHours: number, extra = {}) =>
+		engagement({
+			status: "Confirmed",
+			checkInMethod: "PINCode",
+			timeSlotId: "33333333-3333-3333-3333-333333333333",
+			timeSlotStartDateTime: hoursFromNow(startHours),
+			timeSlotEndDateTime: hoursFromNow(endHours),
+			...extra,
+		});
+
+	it("offers check-in while the slot is running", async () => {
+		mockRows([slotSignUp(-1, 2)]);
+
+		renderSection();
+
+		expect(
+			await screen.findByRole("button", { name: "Check in" }),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("check-in-opens-at")).toBeNull();
+	});
+
+	it("names the opening time instead of a live button for a slot weeks away", async () => {
+		mockRows([slotSignUp(24 * 22, 24 * 22 + 4)]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(within(card).getByTestId("check-in-opens-at")).toHaveTextContent(
+			/Check-in possible from/,
+		);
+		expect(screen.queryByRole("button", { name: "Check in" })).toBeNull();
+	});
+
+	it("explains an ended slot nobody checked the volunteer in for, and drops the two dead controls", async () => {
+		mockRows([slotSignUp(-8, -6)]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).getByTestId("check-in-window-closed"),
+		).toHaveTextContent("The organization did not check you in for this date");
+		expect(
+			within(card).getByRole("link", { name: "Contact the organization" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Check in" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Withdraw" })).toBeNull();
+	});
+
+	it("still offers withdraw while the slot is in the future", async () => {
+		mockRows([slotSignUp(48, 52)]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).getByRole("button", { name: "Withdraw" }),
+		).toBeInTheDocument();
+	});
+});
+
+describe("my-signups rating entry point (#2323)", () => {
+	const hoursFromNow = (hours: number) =>
+		new Date(Date.now() + hours * 60 * 60 * 1000);
+
+	const checkedIn = (startHours: number, endHours: number, extra = {}) =>
+		engagement({
+			status: "Confirmed",
+			isCheckedIn: true,
+			checkInMethod: "PINCode",
+			timeSlotId: "33333333-3333-3333-3333-333333333333",
+			timeSlotStartDateTime: hoursFromNow(startHours),
+			timeSlotEndDateTime: hoursFromNow(endHours),
+			...extra,
+		});
+
+	it("withholds the rating from someone who checked in early, before the slot starts", async () => {
+		mockRows([checkedIn(0.5, 3)]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(within(card).getByTestId("feedback-after-event")).toHaveTextContent(
+			"You can rate this once the opportunity has ended.",
+		);
+		expect(screen.queryByRole("button", { name: "Leave feedback" })).toBeNull();
+	});
+
+	it("offers the rating once the slot is over", async () => {
+		mockRows([checkedIn(-4, -2)]);
+
+		renderSection();
+
+		expect(
+			await screen.findByRole("button", { name: "Leave feedback" }),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("feedback-after-event")).toBeNull();
+	});
+
+	it("shows the score that was given and when it stops being editable", async () => {
+		mockRows([
+			checkedIn(-4, -2, {
+				hasFeedback: true,
+				feedbackRating: 4,
+				feedbackSubmittedAt: new Date(),
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).getByRole("img", { name: "4 out of 5 stars" }),
+		).toBeInTheDocument();
+		expect(
+			within(card).getByTestId("feedback-editable-until"),
+		).toHaveTextContent(/You can edit or delete this until/);
+	});
+
+	it("drops the edit affordances and the deadline line once the edit window has passed", async () => {
+		mockRows([
+			checkedIn(-24 * 30, -24 * 30 + 2, {
+				hasFeedback: true,
+				feedbackRating: 5,
+				feedbackSubmittedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(within(card).getByText("Feedback given")).toBeInTheDocument();
+		expect(within(card).queryByTestId("feedback-editable-until")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+	});
+});
+
+describe("my-signups past empty state (#2323)", () => {
+	it("says what would show up there and offers a way to get there", async () => {
+		mockRows([]);
+
+		renderWithProviders(<ActivitySection />, {
+			route: "/my-signups?scope=past",
+			auth: { isAuthenticated: true },
+		});
+
+		expect(
+			await screen.findByText("No past sign-ups yet."),
+		).toBeInTheDocument();
+		expect(screen.getByText(/that's where you rate it/)).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Explore opportunities" }),
+		).toBeInTheDocument();
+	});
+});
+
+describe("my-signups withdraw dialog reactivation budget (#2323)", () => {
+	it("states how many sign-ups are left before the limit", async () => {
+		mockRows([engagement({ status: "Confirmed", remainingReactivations: 3 })]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		await userEvent.click(
+			within(card).getByRole("button", { name: "Withdraw" }),
+		);
+
+		expect(
+			await screen.findByTestId("withdraw-remaining-reactivations"),
+		).toHaveTextContent(
+			"After this you can express interest again 3 more times.",
+		);
+	});
+
+	it("leaves the last one to the stronger warning instead of double-counting it", async () => {
+		mockRows([engagement({ status: "Confirmed", remainingReactivations: 1 })]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		await userEvent.click(
+			within(card).getByRole("button", { name: "Withdraw" }),
+		);
+
+		await screen.findByRole("button", { name: "Yes, withdraw" });
+		expect(screen.queryByTestId("withdraw-remaining-reactivations")).toBeNull();
+		expect(screen.getByText(/only one more chance/)).toBeInTheDocument();
+	});
+});
+
+describe("my-signups reactivate deep link (#2323)", () => {
+	it("carries the slot the withdrawn sign-up was for", async () => {
+		mockRows([
+			engagement({
+				status: "Withdrawn",
+				remainingReactivations: 2,
+				timeSlotId: "33333333-3333-3333-3333-333333333333",
+				timeSlotStartDateTime: new Date(Date.now() + 48 * 60 * 60 * 1000),
+				timeSlotEndDateTime: new Date(Date.now() + 52 * 60 * 60 * 1000),
+			}),
+		]);
+
+		renderSection();
+
+		const card = await screen.findByTestId("engagement-card");
+		expect(
+			within(card).getByRole("link", { name: "Sign up again" }),
+		).toHaveAttribute(
+			"href",
+			"/volunteer-opportunities/22222222-2222-2222-2222-222222222222?signUp=33333333-3333-3333-3333-333333333333",
 		);
 	});
 });

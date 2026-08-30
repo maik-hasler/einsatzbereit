@@ -32,12 +32,8 @@ import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import {
-	CheckIconSolid,
-	QrCodeIcon,
-	StarIcon,
-	TrashIcon,
-} from "../components/icons";
+import { CheckIconSolid, QrCodeIcon, TrashIcon } from "../components/icons";
+import StarRating from "../components/StarRating";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -1011,19 +1007,8 @@ export default function EngagementManagementPage() {
 					<ul className="space-y-3">
 						{feedbackItems.map((item, idx) => (
 							<li key={idx} className={cardClass}>
-								<div
-									className="flex items-center gap-1"
-									role="img"
-									aria-label={t("feedback.itemRatingLabel", {
-										rating: item.rating,
-									})}
-								>
-									{[1, 2, 3, 4, 5].map((s) => (
-										<StarIcon
-											key={s}
-											className={`h-4 w-4 ${s <= item.rating ? "text-yellow-700" : "text-gray-500"}`}
-										/>
-									))}
+								<div className="flex items-center gap-1">
+									<StarRating rating={item.rating} />
 									<span className="ml-1 text-xs text-gray-500">
 										{formatDate(
 											item.submittedAt as unknown as string,

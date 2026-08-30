@@ -515,6 +515,48 @@ public class CreateEngagementCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldReportADuplicateSlotSignUp_AsScopedToTheTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		// The duplicate check matches on the time slot, so a second slot of the
+		// same opportunity is fine - saying "this opportunity" was wrong (#2323).
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		_dbContext.HasEngagementAsync(volunteerId, opportunityId, timeSlotId, Arg.Any<CancellationToken>())
+			.Returns(true);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Code.Should().Be("Engagement.AlreadySignedUpForTimeSlot");
+	}
+
+	[Test]
+	public async Task Handle_ShouldReportADuplicateInterestSignUp_AsScopedToTheOpportunity(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		SetupOpportunityExists(opportunityId);
+		_dbContext.HasEngagementAsync(volunteerId, opportunityId, null, Arg.Any<CancellationToken>())
+			.Returns(true);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Ich helfe gerne!");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Code.Should().Be("Engagement.AlreadySignedUp");
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotSendAnyEmailSynchronously_RegardlessOfHowManyOrganizersExist(
 		CancellationToken cancellationToken)
 	{
