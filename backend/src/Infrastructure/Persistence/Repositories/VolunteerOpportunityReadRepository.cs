@@ -56,14 +56,36 @@ internal sealed class VolunteerOpportunityReadRepository(
 			filter.Keyword,
 			ResolveBoundingBox(filter.CenterLatitude, filter.CenterLongitude, filter.RadiusKm));
 
+		// DateFrom/DateTo describe one window, so a slot has to satisfy both bounds at once.
+		// Testing them as two separate Any() calls let a series with slots on 03/10/17 match a
+		// 05-06 window (one slot clears the lower bound, a different one clears the upper) even
+		// though no single slot falls inside it (#2319).
+		//
 		// Opportunities without time slots (IndividualContact - see VolunteerOpportunity.AddTimeSlot)
-		// have no dates to compare against, so a date filter must not exclude them - matches the
-		// same "slot-less is never filtered out" convention already used for expiry above (#1059).
-		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+		// have no slot dates to compare against, but they are not dateless: ApplyPubliclyListedFilters
+		// only lists them while ValidUntil is still in the future, so they are on offer over
+		// [now, ValidUntil]. Keeping them for any window at all (the "slot-less is never filtered
+		// out" convention from #1059) let them match impossible ones - a window in 2020, or one
+		// years past their ValidUntil - so intersect against that window instead.
+		if (filter.DateFrom is not null || filter.DateTo is not null)
+		{
+			var dateFrom = filter.DateFrom;
+			var dateTo = filter.DateTo;
 
-		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			// [now, ValidUntil] intersects [DateFrom, DateTo] when DateTo is not already
+			// behind us and ValidUntil is not before DateFrom. The first half needs no
+			// column, so settle it here rather than making the database compare two
+			// parameters on every row.
+			var windowReachesToday = dateTo is null || dateTo >= now;
+
+			query = query.Where(vo =>
+				vo.TimeSlots.Any(ts =>
+					(dateFrom == null || ts.StartDateTime >= dateFrom) &&
+					(dateTo == null || ts.StartDateTime <= dateTo)) ||
+				(!vo.TimeSlots.Any() &&
+					windowReachesToday &&
+					(dateFrom == null || (vo.ValidUntil != null && vo.ValidUntil >= dateFrom))));
+		}
 
 		var baseQuery = query
 			.OrderByDescending(vo => vo.CreatedOn)

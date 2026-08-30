@@ -251,7 +251,7 @@ describe("opportunity list with a city-only deep link", () => {
 		api.getVolunteerOpportunities.mockResolvedValue(page);
 	});
 
-	it("reads a bare ?city= as an active location filter", async () => {
+	const renderDeepLink = () =>
 		renderWithProviders(
 			<>
 				<VolunteerOpportunitiesList />
@@ -260,30 +260,157 @@ describe("opportunity list with a city-only deep link", () => {
 			{ route: "/opportunities?city=Kiel" },
 		);
 
-		const chip = await screen.findByTestId("filter-location");
-		expect(chip).toHaveTextContent("Kiel");
-		expect(chip).not.toHaveTextContent("km");
+	it("resolves a bare ?city= into a real location filter", async () => {
+		api.searchCities.mockResolvedValue([
+			{ label: "Kiel", latitude: 54.3233, longitude: 10.1394 },
+		]);
 
+		renderDeepLink();
+
+		const chip = await screen.findByTestId("filter-location");
+		await vi.waitFor(() => expect(chip).toHaveTextContent("Kiel · 10 km"));
+
+		const params = new URLSearchParams(
+			screen.getByTestId("location-search").textContent ?? "",
+		);
+		expect(params.get("lat")).toBe("54.3233");
+		expect(params.get("lng")).toBe("10.1394");
+		expect(params.get("radius")).toBe("10");
+	});
+
+	it("does not present a city it could not resolve as an applied filter", async () => {
+		api.searchCities.mockResolvedValue([]);
+
+		renderDeepLink();
+
+		// The chip filters nothing, so it must not look like the applied one above -
+		// no radius, no clear button, and no "Reset" implying filters are in effect.
+		const chip = await screen.findByTestId("filter-location");
+		await vi.waitFor(() => expect(chip).toHaveTextContent("Location"));
+		expect(chip).not.toHaveTextContent("km");
 		expect(
-			screen.getByRole("button", { name: "Clear location filter" }),
-		).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
+			screen.queryByRole("button", { name: "Clear location filter" }),
+		).toBeNull();
+		expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+
+		// ...and the panel says why, rather than leaving it unexplained.
+		await userEvent.click(chip);
+		expect(
+			await screen.findByTestId("opportunities-city-unresolved"),
+		).toHaveTextContent("Kiel");
 	});
 
 	it("drops the city from the query string when the filter is cleared", async () => {
-		renderWithProviders(
-			<>
-				<VolunteerOpportunitiesList />
-				<LocationProbe />
-			</>,
-			{ route: "/opportunities?city=Kiel" },
-		);
+		api.searchCities.mockResolvedValue([
+			{ label: "Kiel", latitude: 54.3233, longitude: 10.1394 },
+		]);
+
+		renderDeepLink();
 
 		await userEvent.click(
 			await screen.findByRole("button", { name: "Clear location filter" }),
 		);
 
 		const search = screen.getByTestId("location-search").textContent ?? "";
-		expect(new URLSearchParams(search).get("city")).toBeNull();
+		const params = new URLSearchParams(search);
+		expect(params.get("city")).toBeNull();
+		expect(params.get("lat")).toBeNull();
+		expect(params.get("radius")).toBeNull();
+	});
+});
+
+describe('opportunity list "near me"', () => {
+	beforeEach(() => {
+		api.getVolunteerOpportunities.mockResolvedValue(page);
+	});
+
+	function stubGeolocation(
+		getCurrentPosition: (
+			success: PositionCallback,
+			error: PositionErrorCallback,
+			options?: PositionOptions,
+		) => void,
+	) {
+		Object.defineProperty(navigator, "geolocation", {
+			configurable: true,
+			value: { getCurrentPosition },
+		});
+	}
+
+	async function openNearMe() {
+		await userEvent.click(await screen.findByTestId("filter-location"));
+		return screen.getByRole("button", { name: "Near me" });
+	}
+
+	it("asks for a position with a timeout, so the control cannot spin forever", async () => {
+		const getCurrentPosition = vi.fn();
+		stubGeolocation(getCurrentPosition);
+
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route: "/opportunities",
+		});
+
+		await userEvent.click(await openNearMe());
+
+		// Called with no PositionOptions, an unanswered permission prompt left the
+		// button disabled and spinning indefinitely with nothing to retry from (#2319).
+		const options = getCurrentPosition.mock.calls[0][2];
+		expect(options?.timeout).toBeGreaterThan(0);
+	});
+
+	it("re-enables the control and explains itself when the position never arrives", async () => {
+		stubGeolocation((_success, error) =>
+			error({ code: 3, PERMISSION_DENIED: 1 } as GeolocationPositionError),
+		);
+
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route: "/opportunities",
+		});
+
+		const button = await openNearMe();
+		await userEvent.click(button);
+
+		await vi.waitFor(() => expect(button).toBeEnabled());
+	});
+
+	it("keeps its own position out of the shareable query string", async () => {
+		stubGeolocation((success) =>
+			success({
+				coords: { latitude: 51.34, longitude: 12.37 },
+			} as GeolocationPosition),
+		);
+
+		renderWithProviders(
+			<>
+				<VolunteerOpportunitiesList />
+				<LocationProbe />
+			</>,
+			{ route: "/opportunities" },
+		);
+
+		await userEvent.click(await openNearMe());
+
+		const params = new URLSearchParams(
+			screen.getByTestId("location-search").textContent ?? "",
+		);
+		expect(params.get("lat")).toBe("51.34");
+		// The translated "Near me" label used to be written into ?city=, so a shared
+		// URL told the recipient a place existed by that name, in the sender's
+		// language, at the sender's coordinates (#2319).
+		expect(params.get("city")).toBeNull();
+
+		expect(await screen.findByTestId("filter-location")).toHaveTextContent(
+			"Near me · 10 km",
+		);
+	});
+
+	it("does not call a shared coordinate pair the recipient's own position", async () => {
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route: "/opportunities?lat=51.34&lng=12.37&radius=10",
+		});
+
+		const chip = await screen.findByTestId("filter-location");
+		expect(chip).toHaveTextContent("Selected location · 10 km");
+		expect(chip).not.toHaveTextContent("Near me");
 	});
 });

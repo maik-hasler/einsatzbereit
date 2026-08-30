@@ -1,4 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
+import { resolveDropdownPlacement } from "../../lib/dropdownPlacement";
 import {
 	CheckIcon,
 	CheckIconSolid,
@@ -75,6 +76,7 @@ export default function FilterDropdown({
 	onToggle,
 	onClear,
 	clearAriaLabel,
+	allowOverflow = false,
 	children,
 }: {
 	testId?: string;
@@ -85,12 +87,20 @@ export default function FilterDropdown({
 	onToggle: () => void;
 	onClear: () => void;
 	clearAriaLabel: string;
+	/**
+	 * Lets a panel child escape the panel's bounds. The panel clips by default so that
+	 * an option list running edge to edge stays inside the rounded corners, but a child
+	 * that deliberately overflows - the city autocomplete's listbox - was sliced through
+	 * the middle of its last row instead, with nothing to hint the list continued (#2319).
+	 */
+	allowOverflow?: boolean;
 	children: React.ReactNode;
 }) {
 	const active = !!displayValue;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [panelLeft, setPanelLeft] = useState(0);
+	const [dropUp, setDropUp] = useState(false);
 	const panelId = useId();
 
 	useLayoutEffect(() => {
@@ -99,7 +109,8 @@ export default function FilterDropdown({
 		if (!isOpen || !container || !panel) return;
 
 		const containerRect = container.getBoundingClientRect();
-		const panelWidth = panel.getBoundingClientRect().width;
+		const panelRect = panel.getBoundingClientRect();
+		const panelWidth = panelRect.width;
 
 		const leftAligned = 0;
 		const rightAligned = containerRect.width - panelWidth;
@@ -111,6 +122,20 @@ export default function FilterDropdown({
 		const maxLeft =
 			window.innerWidth - EDGE_MARGIN - panelWidth - containerRect.left;
 		setPanelLeft(Math.min(Math.max(preferred, minLeft), maxLeft));
+
+		// The panel was only ever nudged sideways, so on a phone a tall one (the date
+		// picker is ~302px) opened past the bottom of the viewport with its last week
+		// row, legend and selected-range footer off-screen and nothing scrolling them
+		// into view (#2319). Flip it above the chip when that side has the room.
+		setDropUp(
+			resolveDropdownPlacement({
+				triggerTop: containerRect.top,
+				triggerBottom: containerRect.bottom,
+				panelHeight: panelRect.height,
+				viewportHeight: window.innerHeight,
+				edgeMargin: EDGE_MARGIN,
+			}) === "above",
+		);
 	}, [isOpen]);
 
 	return (
@@ -166,7 +191,9 @@ export default function FilterDropdown({
 					aria-label={label}
 					style={{ left: panelLeft }}
 
-					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-500 bg-white shadow-modal"
+					className={`absolute z-30 rounded-xl border border-gray-500 bg-white shadow-modal ${
+						dropUp ? "bottom-full mb-1.5" : "top-full mt-1.5"
+					} ${allowOverflow ? "" : "overflow-hidden"}`}
 				>
 					{children}
 				</div>
