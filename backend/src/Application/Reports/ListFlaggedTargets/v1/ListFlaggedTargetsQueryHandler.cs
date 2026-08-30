@@ -16,6 +16,10 @@ internal sealed class ListFlaggedTargetsQueryHandler(
 		var pageNumber = Math.Max(1, request.PageNumber);
 		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-		return await readRepository.GetFlaggedTargetsPagedAsync(pageNumber, pageSize, cancellationToken);
+		return await readRepository.GetFlaggedTargetsPagedAsync(
+			pageNumber,
+			pageSize,
+			request.IncludeResolved,
+			cancellationToken);
 	}
 }

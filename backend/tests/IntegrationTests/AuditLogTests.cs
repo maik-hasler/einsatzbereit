@@ -24,7 +24,7 @@ public class AuditLogTests(
 
 		await adminClient.AdminShadowDeleteOrganizationAsync(organization.Id.Value, cancellationToken);
 
-		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken);
+		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		result.Items.Should().ContainSingle(a => a.SubjectId == organization.Id.Value)
 			.Which.Should().BeEquivalentTo(new
@@ -51,7 +51,7 @@ public class AuditLogTests(
 
 		await adminClient.AdminRestoreOrganizationAsync(organization.Id.Value, cancellationToken);
 
-		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken);
+		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		result.Items.Should().ContainSingle(a => a.SubjectId == organization.Id.Value && a.ActionType == "OrganizationRestored")
 			.Which.ActorUserId.Should().Be(admin.Id);
@@ -94,7 +94,7 @@ public class AuditLogTests(
 			cancellationToken);
 
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
-		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken);
+		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		result.Items.Should().ContainSingle(a => a.SubjectId == engagement.Id && a.ActionType == "EngagementCancelled")
 			.Which.SubjectDisplayName.Should().Be(opportunityTitle);

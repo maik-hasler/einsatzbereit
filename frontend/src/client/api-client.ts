@@ -2484,9 +2484,10 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param includeResolved (optional) 
      * @return OK
      */
-    listFlaggedTargets(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfFlaggedTargetSummary> {
+    listFlaggedTargets(pageNumber: number, pageSize: number, includeResolved: boolean | undefined, signal?: AbortSignal): Promise<PagedListOfFlaggedTargetSummary> {
         let url_ = this.baseUrl + "/v1/admin/reports/targets?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -2496,6 +2497,10 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (includeResolved === null)
+            throw new globalThis.Error("The parameter 'includeResolved' cannot be null.");
+        else if (includeResolved !== undefined)
+            url_ += "includeResolved=" + encodeURIComponent("" + includeResolved) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -6319,9 +6324,15 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param actionType (optional) 
+     * @param subjectType (optional) 
+     * @param actorUserId (optional) 
+     * @param from (optional) 
+     * @param to (optional) 
+     * @param oldestFirst (optional) 
      * @return OK
      */
-    listAuditLogs(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfAuditLogEntry> {
+    listAuditLogs(pageNumber: number, pageSize: number, actionType: string | undefined, subjectType: string | undefined, actorUserId: string | undefined, from: Date | undefined, to: Date | undefined, oldestFirst: boolean | undefined, signal?: AbortSignal): Promise<PagedListOfAuditLogEntry> {
         let url_ = this.baseUrl + "/v1/admin/audit-logs?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -6331,6 +6342,30 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (actionType === null)
+            throw new globalThis.Error("The parameter 'actionType' cannot be null.");
+        else if (actionType !== undefined)
+            url_ += "actionType=" + encodeURIComponent("" + actionType) + "&";
+        if (subjectType === null)
+            throw new globalThis.Error("The parameter 'subjectType' cannot be null.");
+        else if (subjectType !== undefined)
+            url_ += "subjectType=" + encodeURIComponent("" + subjectType) + "&";
+        if (actorUserId === null)
+            throw new globalThis.Error("The parameter 'actorUserId' cannot be null.");
+        else if (actorUserId !== undefined)
+            url_ += "actorUserId=" + encodeURIComponent("" + actorUserId) + "&";
+        if (from === null)
+            throw new globalThis.Error("The parameter 'from' cannot be null.");
+        else if (from !== undefined)
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
+        if (to === null)
+            throw new globalThis.Error("The parameter 'to' cannot be null.");
+        else if (to !== undefined)
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
+        if (oldestFirst === null)
+            throw new globalThis.Error("The parameter 'oldestFirst' cannot be null.");
+        else if (oldestFirst !== undefined)
+            url_ += "oldestFirst=" + encodeURIComponent("" + oldestFirst) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -6354,6 +6389,12 @@ export class EinsatzbereitApi {
             let result200: any = null;
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfAuditLogEntry;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -6537,6 +6578,7 @@ export interface AuditLogEntry {
     subjectType: string;
     subjectId: string;
     subjectDisplayName: string;
+    subjectDisplayNameEn: string | undefined;
     reason: string | undefined;
     createdOn: Date;
 
@@ -6848,6 +6890,7 @@ export interface FlaggedTargetSummary {
     targetType: string;
     targetId: string;
     targetTitle: string;
+    targetTitleEn: string | undefined;
     openReportCount: number;
     totalReportCount: number;
     lastReportedOn: Date;

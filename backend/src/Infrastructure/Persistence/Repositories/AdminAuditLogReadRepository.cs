@@ -6,6 +6,7 @@ using Application.Common.Pagination;
 using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,14 +18,41 @@ internal sealed class AdminAuditLogReadRepository(
 	: IAdminAuditLogReadRepository
 {
 	public async ValueTask<PagedList<AuditLogEntry>> GetAuditLogsPagedAsync(
+		AuditLogFilter filter,
 		int pageNumber,
 		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
-		var totalItems = await dbContext.AuditLogsQuery.CountAsync(cancellationToken);
+		var query = dbContext.AuditLogsQuery;
 
-		var page = await dbContext.AuditLogsQuery
-			.OrderByDescending(a => a.CreatedOn)
+		if (filter.ActionType is { } actionType)
+			query = query.Where(a => a.ActionType == actionType);
+
+		if (filter.SubjectType is { } subjectType)
+			query = query.Where(a => a.SubjectType == subjectType);
+
+		if (filter.ActorUserId is { } actorUserId)
+		{
+			var actorId = UserId.Create(actorUserId).GetValueOrThrow();
+			query = query.Where(a => a.ActorUserId == actorId);
+		}
+
+		if (filter.From is { } from)
+			query = query.Where(a => a.CreatedOn >= from);
+
+		if (filter.To is { } to)
+			query = query.Where(a => a.CreatedOn < to);
+
+		var totalItems = await query.CountAsync(cancellationToken);
+
+		// Ties are broken by id, which is a v7 GUID and so already time-ordered: without it a
+		// page boundary that lands inside a batch of same-instant entries can repeat or drop
+		// rows between "Load more" calls.
+		var ordered = filter.OldestFirst
+			? query.OrderBy(a => a.CreatedOn).ThenBy(a => a.Id)
+			: query.OrderByDescending(a => a.CreatedOn).ThenByDescending(a => a.Id);
+
+		var page = await ordered
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
@@ -49,12 +77,11 @@ internal sealed class AdminAuditLogReadRepository(
 			.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow())
 			.ToList();
 		var opportunityTitles = opportunityIds.Count > 0
-
 			? await dbContext.VolunteerOpportunitiesQuery
 				.IgnoreQueryFilters()
 				.Where(vo => opportunityIds.Contains(vo.Id))
-				.ToDictionaryAsync(vo => vo.Id.Value, vo => vo.TitleDe, cancellationToken)
-			: new Dictionary<Guid, string>();
+				.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.TitleDe, vo.TitleEn }, cancellationToken)
+			: [];
 
 		var organizationIds = page
 			.Where(a => a.SubjectType == AuditSubjectType.Organization)
@@ -90,11 +117,21 @@ internal sealed class AdminAuditLogReadRepository(
 				{
 					AuditSubjectType.User => userDisplayNames.GetValueOrDefault(a.SubjectId, string.Empty),
 					AuditSubjectType.Organization => organizationNames.GetValueOrDefault(a.SubjectId, string.Empty),
-					AuditSubjectType.VolunteerOpportunity => opportunityTitles.GetValueOrDefault(a.SubjectId, string.Empty),
+					AuditSubjectType.VolunteerOpportunity => opportunityTitles.GetValueOrDefault(a.SubjectId)?.TitleDe ?? string.Empty,
 					AuditSubjectType.Engagement => engagementOpportunityIds.TryGetValue(a.SubjectId, out var opportunityId)
-						? opportunityTitles.GetValueOrDefault(opportunityId, string.Empty)
+						? opportunityTitles.GetValueOrDefault(opportunityId)?.TitleDe ?? string.Empty
 						: string.Empty,
 					_ => string.Empty,
+				},
+				// Only opportunity titles are authored twice; see the same note in
+				// AdminReportReadRepository for why both languages travel (#2326).
+				a.SubjectType switch
+				{
+					AuditSubjectType.VolunteerOpportunity => opportunityTitles.GetValueOrDefault(a.SubjectId)?.TitleEn,
+					AuditSubjectType.Engagement => engagementOpportunityIds.TryGetValue(a.SubjectId, out var engagementOpportunityId)
+						? opportunityTitles.GetValueOrDefault(engagementOpportunityId)?.TitleEn
+						: null,
+					_ => null,
 				},
 				a.Reason,
 				a.CreatedOn))

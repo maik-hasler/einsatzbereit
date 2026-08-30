@@ -225,7 +225,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfFlaggedTargetSummary> ListFlaggedTargetsAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfFlaggedTargetSummary> ListFlaggedTargetsAsync(int pageNumber, int pageSize, bool? includeResolved = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -525,7 +525,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfAuditLogEntry> ListAuditLogsAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfAuditLogEntry> ListAuditLogsAsync(int pageNumber, int pageSize, string? actionType = null, string? subjectType = null, System.Guid? actorUserId = null, System.DateTimeOffset? from = null, System.DateTimeOffset? to = null, bool? oldestFirst = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -4895,7 +4895,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfFlaggedTargetSummary> ListFlaggedTargetsAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfFlaggedTargetSummary> ListFlaggedTargetsAsync(int pageNumber, int pageSize, bool? includeResolved = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -4919,6 +4919,10 @@ namespace IntegrationTests
                     urlBuilder_.Append('?');
                     urlBuilder_.Append(System.Uri.EscapeDataString("pageNumber")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageNumber, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     urlBuilder_.Append(System.Uri.EscapeDataString("pageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    if (includeResolved != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("includeResolved")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(includeResolved, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
                     urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -11741,7 +11745,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfAuditLogEntry> ListAuditLogsAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfAuditLogEntry> ListAuditLogsAsync(int pageNumber, int pageSize, string? actionType = null, string? subjectType = null, System.Guid? actorUserId = null, System.DateTimeOffset? from = null, System.DateTimeOffset? to = null, bool? oldestFirst = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -11765,6 +11769,30 @@ namespace IntegrationTests
                     urlBuilder_.Append('?');
                     urlBuilder_.Append(System.Uri.EscapeDataString("pageNumber")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageNumber, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     urlBuilder_.Append(System.Uri.EscapeDataString("pageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    if (actionType != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("actionType")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(actionType, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (subjectType != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("subjectType")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(subjectType, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (actorUserId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("actorUserId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(actorUserId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (from != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("from")).Append('=').Append(System.Uri.EscapeDataString(from.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (to != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("to")).Append('=').Append(System.Uri.EscapeDataString(to.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (oldestFirst != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("oldestFirst")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(oldestFirst, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
                     urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -11798,6 +11826,16 @@ namespace IntegrationTests
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 401)
@@ -12368,6 +12406,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("subjectDisplayName")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string SubjectDisplayName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("subjectDisplayNameEn")]
+        public string? SubjectDisplayNameEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("reason")]
         public string? Reason { get; set; } = default!;
@@ -13403,6 +13444,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("targetTitle")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string TargetTitle { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("targetTitleEn")]
+        public string? TargetTitleEn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("openReportCount")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
