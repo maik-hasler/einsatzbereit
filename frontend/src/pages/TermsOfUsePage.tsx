@@ -4,13 +4,11 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
 import DocumentSection from "../components/DocumentSection";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function TermsOfUsePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("termsOfUse.title"));
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	const sections = [
 		{ id: "scope", label: t("termsOfUse.section1Title") },
@@ -73,7 +71,9 @@ export default function TermsOfUsePage() {
 							<Trans
 								i18nKey="termsOfUse.section4Body"
 								components={{
-									contactLink: <Link to="/contact" className={linkClass} />,
+									contactLink: (
+										<Link to="/contact" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>
@@ -97,7 +97,7 @@ export default function TermsOfUsePage() {
 								i18nKey="termsOfUse.section6Body"
 								components={{
 									privacyLink: (
-										<Link to="/privacy-policy" className={linkClass} />
+										<Link to="/privacy-policy" className={inlineLinkClass} />
 									),
 								}}
 							/>
@@ -113,7 +113,9 @@ export default function TermsOfUsePage() {
 							<Trans
 								i18nKey="termsOfUse.section7Body"
 								components={{
-									imprintLink: <Link to="/imprint" className={linkClass} />,
+									imprintLink: (
+										<Link to="/imprint" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>

@@ -5,6 +5,7 @@ import PageHeaderBand from "../components/PageHeaderBand";
 import FaqAccordion from "../components/FaqAccordion";
 import { HandRaisedIcon } from "../components/icons";
 import { cardClass } from "../lib/surfaceClasses";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function HelpPage() {
 	const { t } = useTranslation();
@@ -37,9 +38,6 @@ export default function HelpPage() {
 			],
 		},
 	];
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	return (
 		<>
@@ -90,13 +88,15 @@ export default function HelpPage() {
 								i18nKey="help.contactBody"
 								components={{
 									opportunitiesLink: (
-										<Link to="/opportunities" className={linkClass} />
+										<Link to="/opportunities" className={inlineLinkClass} />
 									),
 
 									organizationsLink: (
-										<Link to="/organizations" className={linkClass} />
+										<Link to="/organizations" className={inlineLinkClass} />
 									),
-									contactLink: <Link to="/contact" className={linkClass} />,
+									contactLink: (
+										<Link to="/contact" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>
