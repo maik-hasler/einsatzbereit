@@ -219,12 +219,14 @@ export default function OrganizationsPage() {
 													lazy
 												/>
 												<div className="flex min-w-0 flex-1 items-center gap-2">
-													{/* Two lines plus the full name in `title`: a single
-													    truncated line showed about a third of a 95-character
-													    name, with nothing but the stretched link's aria-label
-													    holding the rest, and empty card space right below it.
-													    `relative z-10` lifts the text out from under that
-													    link so it can still be selected and copied (#2331). */}
+													{/*
+													 * Two lines plus the full name in `title`: a single truncated
+													 * line showed about a third of a 95-character name, with nothing
+													 * but the stretched link's aria-label holding the rest, and empty
+													 * card space right below it. `relative z-10` lifts the text out
+													 * from under that link so it can still be selected and copied
+													 * (#2331).
+													 */}
 													<h3
 														title={org.name}
 														className="relative z-10 line-clamp-2 text-sm font-semibold break-words text-gray-900"
@@ -245,12 +247,13 @@ export default function OrganizationsPage() {
 													/>
 												)}
 											</div>
-											{/* Every line here used to be conditional, so an org with
-											    no description, no city and no open opportunities rendered
-											    a bordered card that was blank below the name - which reads
-											    as a failed render rather than a sparse organization
-											    (#2331). The description and the count now always say
-											    something. */}
+											{/*
+											 * Every line here used to be conditional, so an org with no
+											 * description, no city and no open opportunities rendered a
+											 * bordered card that was blank below the name - which reads as a
+											 * failed render rather than a sparse organization (#2331). The
+											 * description and the count now always say something.
+											 */}
 											<div className="min-w-0 flex-1">
 												{org.description ? (
 													<p

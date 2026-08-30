@@ -137,9 +137,11 @@ export default function OrganizationProfileView({
 			>
 				{beforeContent}
 
-				{/* Above the grid rather than inside its first column, so the
-				    single-column mobile layout reads description -> contact ->
-				    content instead of pushing the contact card below everything. */}
+				{/*
+				 * Above the grid rather than inside its first column, so the
+				 * single-column mobile layout reads description -> contact ->
+				 * content instead of pushing the contact card below everything.
+				 */}
 				{description && (
 					<p lang="de" className="mb-6 max-w-2xl leading-relaxed text-gray-700">
 						{description}
@@ -153,13 +155,15 @@ export default function OrganizationProfileView({
 							: ""
 					}
 				>
-					{/* First in the DOM, and explicitly placed into the second column
-					    from `lg` up. Stacked after the main column, contact details -
-					    most of the reason a visitor opens a profile - landed under the
-					    whole opportunity list and the report link, ~3,000px down a mobile
-					    page (#2331). Reordering in the DOM rather than with `order` keeps
-					    the single-column reading and focus sequence matching what is on
-					    screen. */}
+					{/*
+					 * First in the DOM, and explicitly placed into the second column
+					 * from `lg` up. Stacked after the main column, contact details -
+					 * most of the reason a visitor opens a profile - landed under the
+					 * whole opportunity list and the report link, ~3,000px down a
+					 * mobile page (#2331). Reordering in the DOM rather than with
+					 * `order` keeps the single-column reading and focus sequence
+					 * matching what is on screen.
+					 */}
 					{useSidebar && hasContactInfo && (
 						<aside className="self-start lg:col-start-2 lg:row-start-1">
 							{contactCard}
