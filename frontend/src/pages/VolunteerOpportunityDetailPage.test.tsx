@@ -1116,6 +1116,22 @@ describe("opportunity detail page description (#2330)", () => {
 		expect(screen.getAllByText("English description.")).toHaveLength(1);
 	});
 
+	it("does not repeat a one-liner whose only difference is collapsed whitespace", async () => {
+		const spaced = "English  description   with odd spacing.";
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			descriptionEn: spaced,
+			descriptionDe: spaced,
+		});
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		// `pre-line` collapses runs of spaces too, so a section here would be a
+		// visually identical second copy of the lead.
+		expect(screen.queryByTestId("opportunity-description")).toBeNull();
+	});
+
 	it("truncates a long single-paragraph description in the hero and gives it a section", async () => {
 		const long = `${"Wort ".repeat(120)}Ende.`;
 		api.getVolunteerOpportunityDetails.mockResolvedValue({

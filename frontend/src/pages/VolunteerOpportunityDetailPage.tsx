@@ -741,10 +741,15 @@ export default function VolunteerOpportunityDetailPage() {
 	const headerLead = description
 		? { ...description, text: toHeroLead(description.text) }
 		: undefined;
-	// A one-line description is said in full by the band already - only repeat
-	// it below when the band had to shorten it or drop its line breaks.
+	// A one-line description is said in full by the band already, so the
+	// section is for the two things the band cannot show: stored line breaks,
+	// and whatever the lead had to cut. Comparing the *collapsed* text against
+	// the lead keeps a description whose only difference is a double space
+	// from rendering a second, visually identical copy.
 	const showDescriptionSection =
-		!!descriptionText && descriptionText !== headerLead?.text;
+		!!descriptionText &&
+		(descriptionText.includes("\n") ||
+			descriptionText.replace(/\s+/g, " ") !== headerLead?.text);
 
 	const isGermanFallback =
 		headerTitle.lang !== i18n.language ||
