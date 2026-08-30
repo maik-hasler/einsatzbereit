@@ -9142,7 +9142,8 @@
         "required": [
           "id",
           "name",
-          "logoUrl"
+          "logoUrl",
+          "role"
         ],
         "type": "object",
         "properties": {
@@ -9158,6 +9159,9 @@
               "null",
               "string"
             ]
+          },
+          "role": {
+            "type": "string"
           }
         }
       },

@@ -34,6 +34,7 @@ describe("MobileMenu a11y", () => {
 					id: "org-1",
 					name: "Freiwillige Feuerwehr",
 					logoUrl: undefined,
+					role: "Organizer",
 				}}
 			/>,
 		);

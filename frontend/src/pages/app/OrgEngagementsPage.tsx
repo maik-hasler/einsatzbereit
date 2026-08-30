@@ -1,7 +1,10 @@
 import { useOutletContext, useSearchParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import type { EngagementSummary } from "../../client/api-client";
+import type {
+	EngagementSummary,
+	OrganizationDetailsResponse,
+} from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
@@ -11,6 +14,7 @@ import { formatDate } from "../../lib/format";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { cardClass } from "../../lib/surfaceClasses";
+import { orgTabPath } from "../../lib/orgTabs";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Skeleton from "../../components/Skeleton";
@@ -18,13 +22,47 @@ import Button from "../../components/Button";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import Select from "../../components/Select";
+import RouteState from "../../components/RouteState";
 import { TrashIcon } from "../../components/icons";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
 export default function OrgEngagementsPage() {
-	const { org } = useOutletContext<OrgAppContext>();
+	const { org, isOrganizer } = useOutletContext<OrgAppContext>();
+
+	// GET /v1/organizations/{id}/engagements is organizer-only, so a plain
+	// member gets the designed "not authorized" state instead of a full page
+	// of controls backed by a request that can only ever 403 (#2316). The tab
+	// bar already hides this section from them - this is what a bookmark, a
+	// link from an organizer, or a demotion mid-session lands on.
+	return isOrganizer ? (
+		<OrgEngagementsList org={org} />
+	) : (
+		<NotOrganizerState org={org} />
+	);
+}
+
+function NotOrganizerState({ org }: { org: OrganizationDetailsResponse }) {
+	const { t } = useTranslation();
+	usePageTitle(`${t("orgEngagements.forbiddenTitle")} - ${org.name}`);
+
+	return (
+		<RouteState
+			inline
+			variant="forbidden"
+			title={t("orgEngagements.forbiddenTitle")}
+			message={t("orgEngagements.forbiddenMessage")}
+			action={{
+				to: orgTabPath(org.id, "dashboard"),
+				label: t("orgEngagements.forbiddenAction"),
+			}}
+			data-testid="org-engagements-forbidden"
+		/>
+	);
+}
+
+function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;

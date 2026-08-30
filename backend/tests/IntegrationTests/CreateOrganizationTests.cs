@@ -95,7 +95,29 @@ public class CreateOrganizationTests(
 
 		var result = await client.GetOrganizationsAsync(cancellationToken);
 
-		result.Should().Contain(o => o.Name == "Test Organization");
+		result.Should().Contain(o => o.Name == "Test Organization" && o.Role == "Organizer");
+	}
+
+	// The header nav gates organizer-only sections outside the org app, where
+	// no organization details response is loaded - so this list is the only
+	// thing that can tell it a member is just a member (#2316).
+	[Test]
+	public async Task GetOrganizations_ShouldReportThePlainMemberRole_ForAnOrganizationTheUserOnlyBelongsTo(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Role In My Organizations Test Org" }, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		var result = await veraClient.GetOrganizationsAsync(cancellationToken);
+
+		result.Should().ContainSingle(o => o.Id == org.Id.Value)
+			.Which.Role.Should().Be("Member");
 	}
 
 	[Test]

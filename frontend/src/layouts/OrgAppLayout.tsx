@@ -86,6 +86,7 @@ function OrgAppShell({
 					title={pageTitle}
 					titleLang={pageTitleLang}
 					activeTabKey={activeTabKey}
+					isOrganizer={isOrganizer}
 					back={back}
 				/>
 

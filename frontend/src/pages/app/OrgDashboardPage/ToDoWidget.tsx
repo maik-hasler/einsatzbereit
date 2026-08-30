@@ -13,9 +13,11 @@ interface Props {
 
 	refreshKey: number;
 	size: WidgetSizeClass;
+
+	isOrganizer: boolean;
 }
 
-function ToDoWidget({ organizationId, refreshKey, size }: Props) {
+function ToDoWidget({ organizationId, refreshKey, size, isOrganizer }: Props) {
 	const { t } = useTranslation();
 	const { kpis, loading, failed } = useOrganizationDashboardKpis(
 		organizationId,
@@ -77,14 +79,19 @@ function ToDoWidget({ organizationId, refreshKey, size }: Props) {
 						</p>
 					</div>
 
-					<div className="mt-4">
-						<Link
-							to={`/app/${organizationId}/dashboard/engagements?status=Pending`}
-							className="text-sm font-medium text-brand-700 hover:underline"
-						>
-							{t("orgDashboard.viewPendingEngagements")}
-						</Link>
-					</div>
+					{/* The count is readable by every member, but the sign-ups listing
+					behind this link is organizer-only - offering it to a plain member
+					would route them into a guaranteed 403 (#2316). */}
+					{isOrganizer && (
+						<div className="mt-4">
+							<Link
+								to={`/app/${organizationId}/dashboard/engagements?status=Pending`}
+								className="text-sm font-medium text-brand-700 hover:underline"
+							>
+								{t("orgDashboard.viewPendingEngagements")}
+							</Link>
+						</div>
+					)}
 				</>
 			)}
 		</WidgetCard>

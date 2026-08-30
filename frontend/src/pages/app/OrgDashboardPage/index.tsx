@@ -263,6 +263,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						isOrganizer={isOrganizer}
 					/>
 				);
 			case "VolunteerStats":

@@ -783,6 +783,9 @@
       }
     },
     "orgEngagements": {
+      "forbiddenTitle": "Nur für Organisatoren",
+      "forbiddenMessage": "Du bist Mitglied dieser Organisation, aber kein:e Organisator:in. Nur Organisatoren können die Eintragungen aller Einsätze sehen und bearbeiten.",
+      "forbiddenAction": "Zum Dashboard",
       "pageDescription": "Ausstehende und bearbeitete Eintragungen über alle Einsätze deiner Organisation hinweg, an einem Ort.",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
@@ -1550,7 +1553,7 @@
         "HasBlockingOpportunities": "Diese Organisation hat noch Einsätze mit zukünftigen Zeitslots oder aktiven Eintragungen. Bitte löse das zuerst auf.",
         "SoleOrganizer": "Du bist der:die einzige Organisator:in dieser Organisation. Lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
         "SoleOrganizerDemote": "Der:die einzige Organisator:in dieser Organisation kann nicht zurückgestuft werden. Befördere zuerst ein anderes Mitglied oder lösche die Organisation.",
-        "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern.",
+        "NotOrganizer": "Das können nur die Organisatoren dieser Organisation.",
         "NotMember": "Du hast keine Berechtigung, diese Ressource einzusehen.",
         "WebsiteInvalid": "Die Website muss eine gültige http- oder https-URL sein.",
         "WebsiteTooLong": "Die Website darf 500 Zeichen nicht überschreiten.",

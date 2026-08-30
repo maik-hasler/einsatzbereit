@@ -243,19 +243,25 @@ internal sealed class ApplicationDbContext(
 			.OrderBy(o => o.Name)
 			.ToListAsync(cancellationToken);
 
-	public async Task<List<Organization>> GetMemberOrganizationsAsync(
+	public async Task<List<MemberOrganization>> GetMemberOrganizationsAsync(
 		UserId userId,
-		CancellationToken cancellationToken = default) =>
-		await Set<OrganizationMembership>()
+		CancellationToken cancellationToken = default)
+	{
+		var raw = await Set<OrganizationMembership>()
 			.AsNoTracking()
 			.Where(m => m.UserId == userId)
 			.Join(
 				Set<Organization>().AsNoTracking(),
 				m => m.OrganizationId,
 				o => o.Id,
-				(m, o) => o)
-			.OrderBy(o => o.Name)
+				(m, o) => new { Organization = o, m.Role })
+			.OrderBy(x => x.Organization.Name)
 			.ToListAsync(cancellationToken);
+
+		return raw
+			.Select(x => new MemberOrganization(x.Organization, x.Role))
+			.ToList();
+	}
 
 	public async Task<List<OrganizationMembershipSummary>> GetMembershipsForUserAsync(
 		UserId userId,
