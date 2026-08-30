@@ -147,9 +147,12 @@ export default function Header({
 					<div
 						className={`flex h-16 items-center justify-between ${effectiveOrgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
+						{/* The logo is 32px tall, so the link around it was a 32px tap
+						target; `min-h-11` adds hit area only - the mark itself does not
+						grow (#2327). */}
 						<Link
 							to="/"
-							className={`flex shrink-0 items-center ${effectiveOrgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}
+							className={`flex min-h-11 shrink-0 items-center ${effectiveOrgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}
 						>
 							<img
 								src="/logo.svg"

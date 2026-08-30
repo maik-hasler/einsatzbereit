@@ -8,6 +8,10 @@ interface Props {
 	eyebrow: ReactNode;
 	title: string;
 
+	// Rendered above the eyebrow, on the dark band - for a page whose subject
+	// has a picture of its own (an organization's logo), not for decoration.
+	avatar?: ReactNode;
+
 	titleLang?: string;
 
 	lead?: string;
@@ -24,6 +28,7 @@ interface Props {
 export default function PageHeaderBand({
 	eyebrow,
 	title,
+	avatar,
 	titleLang,
 	lead,
 	leadLang,
@@ -71,6 +76,11 @@ export default function PageHeaderBand({
 										<span className="hidden sm:inline">{action.label}</span>
 									</Button>
 								))}
+							</div>
+						)}
+						{avatar && (
+							<div className="animate-fade-up mb-4 w-fit rounded-full bg-white/10 p-1 ring-1 ring-white/30">
+								{avatar}
 							</div>
 						)}
 						<p className="animate-fade-up text-xs font-semibold tracking-widest text-brand-200 uppercase">

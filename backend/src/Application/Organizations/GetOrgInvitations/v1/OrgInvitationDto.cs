@@ -6,4 +6,5 @@ public sealed record OrgInvitationDto(
 	string InviteeName,
 	string IntendedRole,
 	string Status,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	DateTimeOffset ExpiresOn);

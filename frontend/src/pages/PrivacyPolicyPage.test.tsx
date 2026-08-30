@@ -101,6 +101,49 @@ describe("PrivacyPolicyPage", () => {
 		expect(screen.queryByText(/Available on request via email/)).toBeNull();
 	});
 
+	it("makes the controller's email and website reachable, not just readable", async () => {
+		await renderPrivacyPolicy();
+
+		expect(
+			screen.getByRole("link", { name: OPERATOR.OPERATOR_EMAIL }),
+		).toHaveAttribute("href", `mailto:${OPERATOR.OPERATOR_EMAIL}`);
+		expect(
+			screen.getByRole("link", { name: OPERATOR.OPERATOR_SITE_URL }),
+		).toHaveAttribute("href", OPERATOR.OPERATOR_SITE_URL);
+	});
+
+	// The ids were authored for an earlier section ordering and never renamed,
+	// so every deep link from the outline landed one or more sections short -
+	// "your rights" and "cookies" included (#2331).
+	it("gives every outline entry a fragment that resolves to its own section", async () => {
+		const { container } = await renderPrivacyPolicy();
+
+		const entries = Array.from(
+			container.querySelectorAll<HTMLAnchorElement>("nav a[href^='#']"),
+		);
+		expect(entries).toHaveLength(9);
+
+		for (const entry of entries) {
+			const id = entry.getAttribute("href")?.slice(1) ?? "";
+			// The first span is the aria-hidden ordinal; the second is the label.
+			const label = entry.querySelectorAll("span")[1]?.textContent;
+			expect(container.querySelector(`#${id} h2`)?.textContent).toContain(
+				label,
+			);
+		}
+	});
+
+	it("anchors the sections a reader is most likely to share", async () => {
+		const { container } = await renderPrivacyPolicy();
+
+		expect(container.querySelector("#your-rights h2")?.textContent).toContain(
+			"Your rights",
+		);
+		expect(container.querySelector("#cookies h2")?.textContent).toContain(
+			"Cookies and browser storage",
+		);
+	});
+
 	it("shows a not-configured notice instead of anyone's real details when the operator hasn't set a responsible party", async () => {
 		delete window.__APP_CONFIG__;
 		await renderPrivacyPolicy();

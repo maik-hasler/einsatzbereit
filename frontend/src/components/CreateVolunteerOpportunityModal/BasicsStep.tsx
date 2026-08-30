@@ -140,6 +140,22 @@ export default function BasicsStep({
 				<p className="mb-1.5 text-sm font-semibold text-gray-800">
 					{t("createOpportunity.fieldBanner")}
 				</p>
+				{/*
+				 * The picker stays mounted whether or not a banner is set: while
+				 * one was, it used to be absent from the DOM entirely, leaving
+				 * Entfernen-then-upload as the only way to swap an image (#2325).
+				 */}
+				<input
+					id="opportunity-banner"
+					type="file"
+					accept={IMAGE_UPLOAD_ACCEPT}
+					className="sr-only"
+					onChange={onBannerChange}
+					aria-invalid={bannerError ? true : undefined}
+					aria-describedby={
+						bannerError ? "opportunity-banner-error" : undefined
+					}
+				/>
 				{bannerPreview ? (
 					<div className="relative overflow-hidden rounded-xl">
 						<img
@@ -150,13 +166,21 @@ export default function BasicsStep({
 							loading="lazy"
 							className="h-36 w-full object-cover"
 						/>
-						<button
-							type="button"
-							onClick={onBannerRemove}
-							className="absolute top-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
-						>
-							{t("createOpportunity.bannerRemove")}
-						</button>
+						<div className="absolute top-2 right-2 flex items-center gap-2">
+							<label
+								htmlFor="opportunity-banner"
+								className="cursor-pointer rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
+							>
+								{t("createOpportunity.bannerReplace")}
+							</label>
+							<button
+								type="button"
+								onClick={onBannerRemove}
+								className="rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
+							>
+								{t("createOpportunity.bannerRemove")}
+							</button>
+						</div>
 					</div>
 				) : (
 					<label
@@ -170,17 +194,6 @@ export default function BasicsStep({
 						<span className="text-xs text-gray-500">
 							{getImageUploadHint(t, i18n.language)}
 						</span>
-						<input
-							id="opportunity-banner"
-							type="file"
-							accept={IMAGE_UPLOAD_ACCEPT}
-							className="sr-only"
-							onChange={onBannerChange}
-							aria-invalid={bannerError ? true : undefined}
-							aria-describedby={
-								bannerError ? "opportunity-banner-error" : undefined
-							}
-						/>
 					</label>
 				)}
 				{bannerError && (

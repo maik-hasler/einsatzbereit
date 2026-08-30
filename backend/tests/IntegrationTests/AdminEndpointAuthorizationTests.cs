@@ -121,7 +121,7 @@ public class AdminEndpointAuthorizationTests(
 	{
 		var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var act = () => client.ListAuditLogsAsync(1, 20, cancellationToken);
+		var act = () => client.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(401);
@@ -133,7 +133,7 @@ public class AdminEndpointAuthorizationTests(
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
-		var act = () => olafClient.ListAuditLogsAsync(1, 20, cancellationToken);
+		var act = () => olafClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);

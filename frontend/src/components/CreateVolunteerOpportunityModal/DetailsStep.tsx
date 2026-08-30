@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
@@ -15,8 +15,15 @@ import {
 import {
 	CANONICAL_TIME_ZONE,
 	toZonedDatetimeLocalValue,
+	zonedDatetimeLocalToUtc,
 } from "../../lib/timezone";
 import type { OpportunityFormValues } from "./schema";
+import {
+	findOverlappingSlotIds,
+	MAX_PARTICIPANTS_LIMIT,
+	overlapsAnySlot,
+} from "./timeSlots";
+import type { CapacityInput, NewSlotField } from "./timeSlots";
 
 const SLOT_ERROR_ID = "time-slot-error";
 
@@ -41,7 +48,7 @@ interface EditingSlot {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number | null;
+	maxParticipants: CapacityInput;
 	scope: SeriesEditScope;
 }
 
@@ -49,7 +56,6 @@ interface Props {
 	control: Control<OpportunityFormValues>;
 	isScheduledSlots: boolean;
 	occurrence: string;
-	isEditMode: boolean;
 	allTimeSlots: TimeSlotRow[];
 	removingSlotId: string | null;
 	onRemoveExistingSlot: (id: string, bookedCount: number) => void;
@@ -64,15 +70,15 @@ interface Props {
 	newSlot: {
 		startDateTime: string;
 		endDateTime: string;
-		maxParticipants: number | null;
+		maxParticipants: CapacityInput;
 	};
 	onNewSlotChange: (slot: {
 		startDateTime: string;
 		endDateTime: string;
-		maxParticipants: number | null;
+		maxParticipants: CapacityInput;
 	}) => void;
 	slotError: string | null;
-	newSlotFieldInvalid: boolean;
+	invalidNewSlotFields: ReadonlySet<NewSlotField>;
 
 	/**
 	 * True while editing an opportunity that already exists, where adding,
@@ -108,7 +114,6 @@ export default function DetailsStep({
 	control,
 	isScheduledSlots,
 	occurrence,
-	isEditMode,
 	allTimeSlots,
 	removingSlotId,
 	onRemoveExistingSlot,
@@ -123,7 +128,7 @@ export default function DetailsStep({
 	newSlot,
 	onNewSlotChange,
 	slotError,
-	newSlotFieldInvalid,
+	invalidNewSlotFields,
 	slotChangesAreImmediate,
 	addingSlot,
 	onAddSlot,
@@ -149,6 +154,36 @@ export default function DetailsStep({
 		errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
 		errorRef.current?.focus();
 	}, [error, errorToken]);
+
+	// Two slots covering the same hour let one volunteer sign up for both and
+	// be double-booked. Neither the list nor the add form used to say so, so
+	// both flag it now - the list for what is already there, the form before
+	// one more is added (#2325).
+	const overlappingSlotIds = useMemo(
+		() => findOverlappingSlotIds(allTimeSlots),
+		[allTimeSlots],
+	);
+
+	const newSlotOverlaps = useMemo(() => {
+		if (!newSlot.startDateTime || !newSlot.endDateTime) return false;
+		return overlapsAnySlot(
+			zonedDatetimeLocalToUtc(
+				newSlot.startDateTime,
+				CANONICAL_TIME_ZONE,
+			).getTime(),
+			zonedDatetimeLocalToUtc(
+				newSlot.endDateTime,
+				CANONICAL_TIME_ZONE,
+			).getTime(),
+			allTimeSlots,
+		);
+	}, [newSlot.startDateTime, newSlot.endDateTime, allTimeSlots]);
+
+	function capacityLabel(maxParticipants: number | null): string {
+		return maxParticipants === null
+			? t("timeSlots.capacityUnlimited")
+			: t("timeSlots.capacity", { count: maxParticipants });
+	}
 
 	return (
 		<div className="space-y-5" data-testid="wizard-step-4">
@@ -210,7 +245,7 @@ export default function DetailsStep({
 					{allTimeSlots.length === 0 ? (
 						<p className="text-xs text-gray-500">{t("timeSlots.noSlots")}</p>
 					) : (
-						<ul className="mb-3 space-y-2">
+						<ul className="mb-3 space-y-2" data-testid="time-slot-list">
 							{allTimeSlots.map((slot) =>
 								editingSlot?.id === slot.id ? (
 									<li
@@ -316,13 +351,13 @@ export default function DetailsStep({
 														id={`edit-slot-max-${slot.id}`}
 														type="number"
 														min={1}
+														max={MAX_PARTICIPANTS_LIMIT}
 														disabled={editingSlot.maxParticipants === null}
 														value={editingSlot.maxParticipants ?? ""}
 														onChange={(e) =>
 															onEditingSlotChange({
 																...editingSlot,
-																maxParticipants:
-																	parseInt(e.target.value, 10) || 1,
+																maxParticipants: e.target.value,
 															})
 														}
 														className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 disabled:bg-gray-100 disabled:text-gray-400"
@@ -338,7 +373,9 @@ export default function DetailsStep({
 															onChange={(e) =>
 																onEditingSlotChange({
 																	...editingSlot,
-																	maxParticipants: e.target.checked ? null : 1,
+																	maxParticipants: e.target.checked
+																		? null
+																		: "1",
 																})
 															}
 															className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
@@ -378,12 +415,16 @@ export default function DetailsStep({
 												slot.startDateTime,
 												slot.endDateTime,
 												i18n.language,
-											)}{" "}
-											(
-											{slot.maxParticipants === null
-												? t("timeSlots.unlimited")
-												: slot.maxParticipants}
-											)
+											)}
+											<span className="text-gray-500">
+												{" · "}
+												{capacityLabel(slot.maxParticipants)}
+											</span>
+											{overlappingSlotIds.has(slot.id) && (
+												<Chip tone="warning" size="sm" className="ml-2">
+													{t("timeSlots.overlapWarning")}
+												</Chip>
+											)}
 											{slot.seriesId && slot.recurrenceCount && (
 												<Chip tone="brand" size="sm" className="ml-2">
 													{t("timeSlots.seriesBadge", {
@@ -457,25 +498,25 @@ export default function DetailsStep({
 									id="slot-start"
 									type="datetime-local"
 									value={newSlot.startDateTime}
-									min={
-										!isEditMode
-											? toZonedDatetimeLocalValue(
-													new Date(),
-													CANONICAL_TIME_ZONE,
-												)
-											: undefined
-									}
+									min={toZonedDatetimeLocalValue(
+										new Date(),
+										CANONICAL_TIME_ZONE,
+									)}
 									onChange={(e) =>
 										onNewSlotChange({
 											...newSlot,
 											startDateTime: e.target.value,
 										})
 									}
-									aria-invalid={newSlotFieldInvalid || undefined}
+									aria-invalid={invalidNewSlotFields.has("start") || undefined}
 									aria-describedby={
-										newSlotFieldInvalid ? SLOT_ERROR_ID : undefined
+										invalidNewSlotFields.has("start")
+											? SLOT_ERROR_ID
+											: undefined
 									}
-									className={getInputSurfaceClass(newSlotFieldInvalid)}
+									className={getInputSurfaceClass(
+										invalidNewSlotFields.has("start"),
+									)}
 								/>
 							</div>
 							<div>
@@ -495,11 +536,13 @@ export default function DetailsStep({
 											endDateTime: e.target.value,
 										})
 									}
-									aria-invalid={newSlotFieldInvalid || undefined}
+									aria-invalid={invalidNewSlotFields.has("end") || undefined}
 									aria-describedby={
-										newSlotFieldInvalid ? SLOT_ERROR_ID : undefined
+										invalidNewSlotFields.has("end") ? SLOT_ERROR_ID : undefined
 									}
-									className={getInputSurfaceClass(newSlotFieldInvalid)}
+									className={getInputSurfaceClass(
+										invalidNewSlotFields.has("end"),
+									)}
 								/>
 							</div>
 						</div>
@@ -515,12 +558,17 @@ export default function DetailsStep({
 									id="slot-max"
 									type="number"
 									min={1}
+									max={MAX_PARTICIPANTS_LIMIT}
 									disabled={newSlot.maxParticipants === null}
+									aria-invalid={invalidNewSlotFields.has("max") || undefined}
+									aria-describedby={
+										invalidNewSlotFields.has("max") ? SLOT_ERROR_ID : undefined
+									}
 									value={newSlot.maxParticipants ?? ""}
 									onChange={(e) =>
 										onNewSlotChange({
 											...newSlot,
-											maxParticipants: parseInt(e.target.value, 10) || 1,
+											maxParticipants: e.target.value,
 										})
 									}
 									className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 disabled:bg-gray-100 disabled:text-gray-400"
@@ -536,7 +584,7 @@ export default function DetailsStep({
 										onChange={(e) =>
 											onNewSlotChange({
 												...newSlot,
-												maxParticipants: e.target.checked ? null : 1,
+												maxParticipants: e.target.checked ? null : "1",
 											})
 										}
 										className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
@@ -596,6 +644,11 @@ export default function DetailsStep({
 									/>
 								</div>
 							</div>
+						)}
+						{newSlotOverlaps && (
+							<p className="text-xs text-amber-700" role="status">
+								{t("timeSlots.overlapHint")}
+							</p>
 						)}
 						{slotError && (
 							<p

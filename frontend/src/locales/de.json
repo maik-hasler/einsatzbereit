@@ -118,6 +118,8 @@
       "resultCountPartial_one": "{{count}} Organisation geladen, weitere verfügbar.",
       "resultCountPartial_other": "{{count}} Organisationen geladen, weitere verfügbar.",
       "loadMore": "Mehr laden",
+      "noDescription": "Noch keine Beschreibung.",
+      "noOpenOpportunities": "Keine offenen Einsätze",
       "openOpportunities": "{{count}} offene Einsätze",
       "openOpportunities_one": "{{count}} offener Einsatz",
       "openOpportunities_other": "{{count}} offene Einsätze"
@@ -144,6 +146,7 @@
       "clearOccurrence": "Häufigkeitsfilter löschen",
       "clearType": "Typfilter löschen",
       "clearLocation": "Standortfilter löschen",
+      "clearRemote": "Formatfilter löschen",
       "clearCategory": "Kategoriefilter löschen",
       "clearTag": "Schlagwort-Filter löschen",
       "clearKeyword": "Suchbegriff-Filter löschen",
@@ -343,9 +346,10 @@
       "saving": "Wird gespeichert…",
       "unsavedChangesTitle": "Ungespeicherte Änderungen verwerfen?",
       "unsavedChangesMessage": "Du hast ungespeicherte Änderungen an diesem Einsatz. Wenn du jetzt schließt, gehen sie verloren.",
-"slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
+      "slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
       "discardChanges": "Änderungen verwerfen",
-      "addressUnresolvedField": "Prüfe diese Angabe"
+      "addressUnresolvedField": "Prüfe diese Angabe",
+      "bannerReplace": "Ersetzen"
     },
     "checkInMethod": {
       "none": "Automatisch (nach dem Einsatz)",
@@ -403,7 +407,15 @@
         "scopeEntireSeries": "Gesamte Serie",
         "cancelsEngagementsWarning": "Freiwillige, die für die betroffenen Termine eingetragen sind, werden ausgetragen und benachrichtigt.",
         "confirm": "Entfernen"
-      }
+      },
+      "capacity": "{{count}} Plätze",
+      "capacity_one": "{{count}} Platz",
+      "capacity_other": "{{count}} Plätze",
+      "capacityUnlimited": "Unbegrenzt viele Plätze",
+      "capacityInvalid": "Gib eine Platzzahl zwischen 1 und {{max}} ein.",
+      "overlapWarning": "Überschneidet sich mit einem anderen Zeitfenster",
+      "overlapHint": "Dies überschneidet sich mit einem Zeitfenster in der Liste – Freiwillige könnten sich für beide eintragen.",
+      "pastSlotsBeforePublish": "Einige Zeitfenster liegen inzwischen in der Vergangenheit. Korrigiere oder entferne sie vor dem Veröffentlichen."
     },
     "signUp": {
       "titleWaitlist": "Für Zeitslot eintragen",
@@ -623,6 +635,11 @@
       "resendError": "Einladung konnte nicht erneut gesendet werden.",
       "resendSent": "Einladung erneut gesendet.",
       "invitationSentOn": "Gesendet am {{date}}",
+      "invitationExpiresOn": "Läuft ab am {{date}}",
+      "invitationExpiredOn": "Abgelaufen am {{date}}",
+      "pendingInvitationsHint": "Eingeladene erhalten eine E-Mail und eine Benachrichtigung in der App und bleiben hier gelistet, bis sie annehmen oder ablehnen. Eine Einladung, die bis zum Ablaufdatum unbeantwortet bleibt, verfällt – sende sie erneut, um die Frist neu zu starten.",
+      "roleMemberDescription": "Mitglieder sehen die internen Seiten der Organisation und ihre Einsätze.",
+      "organisatorDescription": "Organisator:innen können alles, was Mitglieder können, und zusätzlich Einsätze veröffentlichen und verwalten, Freiwillige einchecken, Personen einladen, Rollen ändern und das Profil der Organisation bearbeiten.",
       "dangerZone": "Organisation löschen",
       "deleteOrganization": "Organisation löschen",
       "deleteOrganizationHint": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
@@ -848,7 +865,7 @@
       "title": "Datenschutzerklärung",
       "lastUpdated": "Stand: 7. August 2026",
       "section1Title": "Verantwortliche Stelle",
-      "section1Body": "{{name}}\n{{address}}\nE-Mail: {{email}}\nWebsite: {{website}}",
+      "section1Body": "{{name}}\n{{address}}\nE-Mail: <emailLink>{{email}}</emailLink>\nWebsite: <websiteLink>{{website}}</websiteLink>",
       "operatorNotConfigured": "Der Betreiber dieser Instanz hat noch keine verantwortliche Stelle für den Datenschutz hinterlegt.",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
       "section2Body1": "Beim Besuch dieser Website werden automatisch allgemeine technische Informationen verarbeitet (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs), um einen sicheren und zuverlässigen Betrieb sicherzustellen. Auch wenn wir diese Daten nicht anderweitig mit deiner Identität verknüpfen, können sie personenbezogene Daten darstellen – einschließlich deiner IP-Adresse, entsprechend dem Breyer-Urteil des EuGH (C-582/14).",
@@ -887,7 +904,7 @@
       "title": "Impressum",
       "section1Title": "Angaben gemäß § 5 DDG",
       "section2Title": "Kontakt",
-      "section2Body": "E-Mail: <emailLink>{{email}}</emailLink>\nWebsite: {{website}}",
+      "section2Body": "E-Mail: <emailLink>{{email}}</emailLink>\nWebsite: <websiteLink>{{website}}</websiteLink>",
       "section3Title": "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV",
       "section4Title": "Haftungsausschluss",
       "section4aTitle": "Haftung für Inhalte",
@@ -923,6 +940,10 @@
       "organizersA2": "Gehe im Dashboard deiner Organisation zu „Einsätze“ und klicke auf „Einsatz erstellen“. Fülle die Details und Zeitslots aus und veröffentliche den Einsatz, damit sich Freiwillige eintragen können.",
       "organizersQ3": "Wie verwalte ich Eintragungen von Freiwilligen?",
       "organizersA3": "Öffne einen Einsatz im Dashboard deiner Organisation, um alle Eingetragenen zu sehen, ihnen zu schreiben oder sie einzuchecken.",
+      "organizersQ4": "Was ist der Unterschied zwischen einem Mitglied und einer Organisator:in?",
+      "organizersA4": "Mitglieder sehen die internen Seiten der Organisation und ihre Einsätze. Organisator:innen können alles, was Mitglieder können, und zusätzlich Einsätze veröffentlichen und verwalten, Freiwillige einchecken, Personen einladen, Rollen ändern und das Profil der Organisation bearbeiten. Jede Organisation behält mindestens eine:n Organisator:in – die letzte Person in dieser Rolle kann daher weder zurückgestuft werden noch austreten.",
+      "organizersQ5": "Wie funktionieren Einladungen in meine Organisation?",
+      "organizersA5": "Lade Personen im Tab „Mitglieder“ im Dashboard deiner Organisation ein und wähle dabei die Rolle, die sie erhalten sollen. Sie bekommen eine E-Mail und eine Benachrichtigung in der App, und die Einladung bleibt als ausstehend gelistet, bis sie angenommen oder abgelehnt wird. Unbeantwortete Einladungen laufen nach 14 Tagen ab – die ausstehende Zeile zeigt das genaue Datum, und du kannst eine Einladung jederzeit erneut senden, um die Frist neu zu starten, oder sie zurückziehen.",
       "generalTitle": "Allgemein",
       "generalQ1": "Kostet die Nutzung von Einsatzbereit etwas?",
       "generalA1": "Nein. Einsatzbereit ist komplett kostenlos und open source – für Freiwillige und Organisationen.",
@@ -1049,7 +1070,7 @@
       "understood": "Verstanden",
       "delete": {
         "title": "Einsatz löschen?",
-        "message": "Möchtest du diesen Einsatz wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "message": "Willst du den Einsatz „{{title}}“ wirklich endgültig löschen? Das kann nicht rückgängig gemacht werden.",
         "confirm": "Ja, löschen"
       },
       "withdraw": {
@@ -1085,12 +1106,12 @@
       },
       "unpublish": {
         "title": "Veröffentlichung zurücknehmen?",
-        "message": "Dies entfernt ihn von der öffentlichen Liste und sagt alle ausstehenden oder bestätigten Eintragungen ab – Freiwillige werden informiert. Du kannst ihn später erneut veröffentlichen.",
+        "message": "Der Einsatz „{{title}}“ wird von der öffentlichen Liste entfernt, und alle ausstehenden oder bestätigten Eintragungen werden abgesagt – Freiwillige werden informiert. Du kannst ihn später erneut veröffentlichen.",
         "confirm": "Ja, zurücknehmen"
       },
       "cancelOpportunity": {
         "title": "Einsatz absagen?",
-        "message": "Dies sagt den Einsatz endgültig ab und alle ausstehenden oder bestätigten Eintragungen werden ebenfalls abgesagt – Freiwillige werden informiert. Dies kann nicht rückgängig gemacht werden.",
+        "message": "Der Einsatz „{{title}}“ wird endgültig abgesagt, und alle ausstehenden oder bestätigten Eintragungen werden abgesagt – Freiwillige werden informiert. Das kann nicht rückgängig gemacht werden.",
         "confirm": "Ja, Einsatz absagen",
         "reasonLabel": "Grund (optional)",
         "reasonPlaceholder": "Teile den Freiwilligen den Grund mit…"
@@ -1380,10 +1401,15 @@
       "reportsHeading": "Meldungen",
       "auditLogHeading": "Audit-Log",
       "loadingMore": "Weitere werden geladen…",
+      "clearFilters": "Filter zurücksetzen",
+      "clearSearch": "Suche zurücksetzen",
       "organizations": {
         "loading": "Organisationen werden geladen…",
         "error": "Organisationen konnten nicht geladen werden.",
         "noOrganizations": "Keine Organisationen gefunden.",
+        "noOrganizationsMessage": "Auf der Plattform wurde noch keine Organisation angelegt.",
+        "noMatchesTitle": "Keine Organisation passt zu diesen Filtern.",
+        "noMatchesMessage": "Nichts auf der Plattform passt zum aktuellen Suchbegriff und den gesetzten Filtern.",
         "loadMore": "Mehr laden",
         "searchLabel": "Organisationen durchsuchen",
         "searchPlaceholder": "Nach Name suchen",
@@ -1400,6 +1426,9 @@
         "loading": "Nutzer:innen werden geladen…",
         "error": "Nutzer:innen konnten nicht geladen werden.",
         "noUsers": "Keine Nutzer:innen gefunden.",
+        "noUsersMessage": "Auf der Plattform wurde noch kein Konto registriert.",
+        "noMatchesTitle": "Keine Person passt zu dieser Suche.",
+        "noMatchesMessage": "Nichts passt zu „{{search}}“. Setz die Suche zurück, um wieder alle Konten zu sehen.",
         "searchLabel": "Nutzer:innen suchen",
         "searchPlaceholder": "Nach Name, Benutzername oder E-Mail suchen",
         "searchButton": "Suchen",
@@ -1430,6 +1459,12 @@
         "loading": "Meldungen werden geladen…",
         "error": "Meldungen konnten nicht geladen werden.",
         "noReports": "Keine gemeldeten Inhalte. Alles erledigt.",
+        "noReportsMessage": "Aktuell wartet nichts auf eine Moderationsentscheidung.",
+        "noReportsEverTitle": "Es wurde noch nie etwas gemeldet.",
+        "noReportsEverMessage": "Auf dieser Plattform wurde noch keine Meldung eingereicht – es gibt also keinen Verlauf.",
+        "showResolved": "Erledigten Verlauf anzeigen",
+        "includeResolvedLabel": "Erledigte Ziele einbeziehen",
+        "includeResolvedHint": "Die Warteschlange zeigt, was noch eine Entscheidung braucht. Aktiviere dies, um auch Ziele zu sehen, deren Meldungen alle abgelehnt oder bearbeitet wurden.",
         "unknownTarget": "(gelöscht)",
         "dismiss": "Verwerfen",
         "dismissSuccess": "Meldung verworfen.",
@@ -1472,12 +1507,28 @@
         }
       },
       "auditLog": {
-        "scopeDescription": "Erfasst nur privilegierte Administrationsaktionen: Rollenänderungen, Sperren, Schattenlöschungen und Wiederherstellungen sowie von Admins abgesagte Eintragungen. Übliche Selbstbedienungsaktionen wie Anmelden, Abmelden oder das Versenden von Einladungen werden hier nicht erfasst.",
+        "scopeDescription": "Erfasst nur privilegierte Administrationsaktionen: Rollenänderungen, Sperren, Schattenlöschungen und Wiederherstellungen, abgelehnte Meldungen sowie von Admins abgesagte Eintragungen. Übliche Selbstbedienungsaktionen wie Anmelden, Abmelden oder das Versenden von Einladungen werden hier nicht erfasst.",
         "loading": "Audit-Log wird geladen…",
         "error": "Audit-Log konnte nicht geladen werden.",
         "noEntries": "Noch keine privilegierten Aktionen erfasst.",
+        "noEntriesMessage": "Privilegierte Aktionen erscheinen hier, sobald ein Admin eine ausführt.",
+        "noMatchesTitle": "Keine Einträge passen zu diesen Filtern.",
+        "noMatchesMessage": "Keine privilegierte Aktion passt zu den gesetzten Filtern.",
         "loadMore": "Mehr laden",
         "reason": "Grund: {{reason}}",
+        "filters": {
+          "actionLabel": "Aktion",
+          "subjectLabel": "Betroffenes Objekt",
+          "anyAction": "Alle Aktionen",
+          "anySubject": "Alle Objekte",
+          "fromLabel": "Von",
+          "toLabel": "Bis",
+          "sortNewestFirst": "Neueste zuerst",
+          "sortOldestFirst": "Älteste zuerst",
+          "onlyThisAdmin": "Nur {{name}}",
+          "actorChip": "Gefiltert auf {{name}}",
+          "clearActorNamed": "Nicht mehr nach {{name}} filtern"
+        },
         "actionType": {
           "UserPromotedToAdmin": "Zum Admin gemacht",
           "UserDemotedFromAdmin": "Admin-Rechte entzogen",
@@ -1489,7 +1540,8 @@
           "OrganizationRestored": "Organisation wiederhergestellt",
           "VolunteerOpportunityShadowDeleted": "Einsatz schattengelöscht",
           "VolunteerOpportunityRestored": "Einsatz wiederhergestellt",
-          "EngagementCancelled": "Eintragung abgesagt"
+          "EngagementCancelled": "Eintragung abgesagt",
+          "ReportDismissed": "Meldung abgelehnt"
         },
         "subjectType": {
           "User": "Nutzer:in",
@@ -1620,7 +1672,7 @@
         "NotFound": "Einladung nicht gefunden.",
         "NotRecipient": "Du bist nicht der Empfänger dieser Einladung.",
         "WrongOrganization": "Diese Einladung gehört nicht zu dieser Organisation.",
-        "NotExpired": "Nur abgelaufene Einladungen können erneut gesendet werden.",
+        "NotResendable": "Nur ausstehende oder abgelaufene Einladungen können erneut gesendet werden.",
         "NotYetExpired": "Die Einladung ist noch nicht abgelaufen.",
         "AlreadyMember": "Der:die Nutzer:in ist bereits Mitglied dieser Organisation.",
         "AlreadyInvited": "Für diese:n Nutzer:in besteht bereits eine ausstehende Einladung.",
@@ -1677,7 +1729,8 @@
       "TimeSlot": {
         "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",
         "EndMustBeAfterStart": "Das Enddatum muss nach dem Startdatum liegen.",
-        "MaxParticipantsMustBePositive": "Die maximale Anzahl an Teilnehmer:innen muss größer als null sein."
+        "MaxParticipantsMustBePositive": "Die maximale Anzahl an Teilnehmer:innen muss größer als null sein.",
+        "MaxParticipantsTooLarge": "Die Platzzahl darf 10.000 nicht überschreiten."
       },
       "Engagement": {
         "MessageRequired": "Bei einer Interessensbekundung per Einzelkontakt ist eine Nachricht erforderlich.",

@@ -24,7 +24,10 @@ beforeEach(() => {
 	});
 });
 
-function renderProfile(auth?: TestAuth) {
+function renderProfile(
+	auth?: TestAuth,
+	route = `/organizations/${ORGANIZATION_ID}`,
+) {
 	return renderWithProviders(
 		<Routes>
 			<Route
@@ -32,7 +35,7 @@ function renderProfile(auth?: TestAuth) {
 				element={<OrganizationProfilePage />}
 			/>
 		</Routes>,
-		{ lng: "en", route: `/organizations/${ORGANIZATION_ID}`, auth },
+		{ lng: "en", route, auth },
 	);
 }
 
@@ -48,7 +51,9 @@ describe("OrganizationProfilePage description language", () => {
 });
 
 describe("OrganizationProfilePage anonymous visitor", () => {
-	it("returns the visitor to this organization after signing in from the report action", async () => {
+	// The returnTo carries the click itself, not just the page: without the marker the visitor
+	// came back to an unchanged page and had to find the small Report button again (#2326).
+	it("carries the report click back to this organization after signing in", async () => {
 		const signinRedirect = vi.fn().mockResolvedValue(undefined);
 		renderProfile({ isAuthenticated: false, signinRedirect });
 
@@ -56,9 +61,63 @@ describe("OrganizationProfilePage anonymous visitor", () => {
 
 		expect(signinRedirect).toHaveBeenCalledWith(
 			expect.objectContaining({
-				state: { returnTo: `/organizations/${ORGANIZATION_ID}` },
+				state: {
+					returnTo: `/organizations/${ORGANIZATION_ID}?report=${ORGANIZATION_ID}`,
+				},
 			}),
 		);
+	});
+
+	it("opens the report modal on the way back in, and only for its own organization", async () => {
+		renderProfile(
+			{ isAuthenticated: true },
+			`/organizations/${ORGANIZATION_ID}?report=${ORGANIZATION_ID}`,
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Report content" }),
+		).toBeInTheDocument();
+	});
+
+	it("ignores a report marker naming a different organization", async () => {
+		renderProfile(
+			{ isAuthenticated: true },
+			`/organizations/${ORGANIZATION_ID}?report=00000000-0000-0000-0000-000000000009`,
+		);
+
+		await screen.findByTestId("report-organization");
+
+		expect(
+			screen.queryByRole("heading", { name: "Report content" }),
+		).not.toBeInTheDocument();
+	});
+});
+
+describe("OrganizationProfilePage organization logo", () => {
+	it("renders the uploaded logo the profile response carries", async () => {
+		api.getPublicOrganizationProfile.mockResolvedValue({
+			id: ORGANIZATION_ID,
+			name: "Nachbarschaftshilfe Leipzig",
+			logoUrl: "https://storage.example.test/org-logos/leipzig.webp",
+			openOpportunities: [],
+		});
+		const { container } = renderProfile();
+
+		await screen.findByRole("heading", { name: "Nachbarschaftshilfe Leipzig" });
+
+		// A decorative `alt=""` image has no `img` role, so query it by tag.
+		const logo = container.ownerDocument.querySelector(
+			'img[src="https://storage.example.test/org-logos/leipzig.webp"]',
+		);
+		expect(logo).not.toBeNull();
+	});
+
+	it("falls back to the organization's initials when it has no logo", async () => {
+		renderProfile();
+
+		await screen.findByRole("heading", { name: "Nachbarschaftshilfe Leipzig" });
+
+		expect(await screen.findByText("NL")).toBeInTheDocument();
 	});
 });
 

@@ -8,7 +8,11 @@ import { Link, type LinkProps } from "react-router";
 const SIZE_CLASSES = {
 	sm: "px-3 py-1.5 text-xs",
 
-	md: "min-h-10 px-4 py-2 text-sm",
+	// 44px, not 40 - the default size is what the mobile drawer's sign-in/register
+	// buttons and most in-page actions render at, and a 40px control is under every
+	// touch-target guideline going (#2327). Rows that pair a button with an input
+	// stretch (flex default `align-items: stretch`), so the two stay aligned.
+	md: "min-h-11 px-4 py-2 text-sm",
 	lg: "px-6 py-3 text-base",
 } as const;
 

@@ -5,5 +5,6 @@ namespace Application.Reports.ListFlaggedTargets.v1;
 
 public sealed record ListFlaggedTargetsQuery(
 	int PageNumber,
-	int PageSize)
+	int PageSize,
+	bool IncludeResolved)
 	: IQuery<PagedList<FlaggedTargetSummary>>;

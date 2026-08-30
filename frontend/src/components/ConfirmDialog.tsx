@@ -8,6 +8,16 @@ interface Props {
 	title: string;
 	message: string;
 	confirmLabel: string;
+
+	/**
+	 * What the confirm button is agreeing to. "destructive" (the default) paints it red;
+	 * "constructive" keeps the primary brand button, so red still means "this removes or
+	 * hides something" instead of merely "this is a confirm dialog" (#2326).
+	 */
+	tone?: "destructive" | "constructive";
+
+	/** Overrides the "Keep" cancel label, which only reads right against a destructive act. */
+	cancelLabel?: string;
 	onConfirm: () => void;
 	onClose: () => void;
 	loading?: boolean;
@@ -20,6 +30,8 @@ export default function ConfirmDialog({
 	title,
 	message,
 	confirmLabel,
+	tone = "destructive",
+	cancelLabel,
 	onConfirm,
 	onClose,
 	loading = false,
@@ -77,11 +89,11 @@ export default function ConfirmDialog({
 							onClick={onClose}
 							disabled={loading}
 						>
-							{t("confirmDialog.keep")}
+							{cancelLabel ?? t("confirmDialog.keep")}
 						</Button>
 						<Button
 							type="button"
-							variant="danger"
+							variant={tone === "constructive" ? "primary" : "danger"}
 							onClick={onConfirm}
 							disabled={loading}
 							aria-busy={loading}

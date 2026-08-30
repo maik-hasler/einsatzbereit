@@ -79,6 +79,43 @@ input[type="number"]::-webkit-outer-spin-button {
 	opacity: 0.5;
 }
 
+/* Chromium paints its own clear glyph inside every input[type="search"], in a
+fixed blue that ignores the field around it. In the organization directory's
+dark-green translucent search pill that made it the only blue pixel on the page,
+and at its native size it does not read as an "x" at all (#2331). Replaced with
+a currentColor cross, so it inherits whatever the field's own text colour is -
+white in the pill, gray in the light form inputs - instead of hiding it, which
+would take the clear action away from all six search fields. Drawn with
+gradients rather than a data: URI because the CSP's img-src (nginx.conf.template)
+allows 'self' and blob: only. */
+input[type="search"]::-webkit-search-cancel-button {
+	-webkit-appearance: none;
+	appearance: none;
+	height: 0.875rem;
+	width: 0.875rem;
+	cursor: pointer;
+	opacity: 0.6;
+	background-image:
+		linear-gradient(
+			45deg,
+			transparent 43%,
+			currentColor 43%,
+			currentColor 57%,
+			transparent 57%
+		),
+		linear-gradient(
+			-45deg,
+			transparent 43%,
+			currentColor 43%,
+			currentColor 57%,
+			transparent 57%
+		);
+}
+
+input[type="search"]::-webkit-search-cancel-button:hover {
+	opacity: 1;
+}
+
 .rbc-toolbar {
 	display: flex;
 	align-items: center;
@@ -131,7 +168,17 @@ input[type="number"]::-webkit-outer-spin-button {
 	border-right-width: 1px;
 }
 
-.rbc-btn-group button:hover {
+/* react-big-calendar's own stylesheet repaints every interactive state of a
+toolbar button as #373a3c on grey, and does it from `.rbc-toolbar button:hover`
+/ `:focus` / `.rbc-active:hover` - one pseudo-class more specific than the
+resting rules here. So the selected view button (Agenda/Month/Week) kept our
+brand-green background but took react-big-calendar's dark grey label the moment
+the pointer touched it: 1.06:1, an axe `color-contrast` violation at serious
+impact (#2327). Every state below therefore restates `color`, not just
+`background` - dropping the colour is what let the default through. */
+.rbc-btn-group button:hover,
+.rbc-btn-group button:focus {
+	color: rgb(55 65 81);
 	background: rgb(249 250 251);
 }
 
@@ -142,7 +189,8 @@ input[type="number"]::-webkit-outer-spin-button {
 	position: relative;
 }
 
-.rbc-btn-group button.rbc-active {
+.rbc-btn-group button.rbc-active,
+.rbc-btn-group button.rbc-active:focus {
 	background: var(--color-brand-700);
 	color: white;
 	border-color: var(--color-brand-700);
@@ -154,6 +202,8 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .rbc-btn-group button.rbc-active:hover {
 	background: var(--color-brand-800);
+	color: white;
+	border-color: var(--color-brand-800);
 }
 
 .rbc-month-view,
@@ -435,6 +485,20 @@ the brand-colored ring reads as "this is fine", fighting the red border
 and error text right next to it. */
 [aria-invalid="true"]:focus-visible {
 	--focus-ring-color: var(--color-red-600);
+}
+
+/* A control hidden with `sr-only` still takes keyboard focus - and the ring
+above is then drawn around a 1x1 clipped box, so focus simply vanishes for a
+tab stop. Every file picker in the app is built that way (a visually hidden
+`input[type=file]` plus the label that stands in for it), which left the
+opportunity-banner, organization-logo and avatar uploads with no visible focus
+at all (#2327). Project the ring onto the label instead, whether it sits next
+to the input or wraps it. */
+label:has(+ .sr-only:focus-visible),
+label:has(> .sr-only:focus-visible) {
+	outline: 2px solid var(--focus-ring-color);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
 @theme {

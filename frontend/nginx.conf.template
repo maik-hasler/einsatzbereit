@@ -63,6 +63,17 @@ server {
 		try_files $uri $uri/ /index.html;
 	}
 
+	# The homepage's own preview. Split out from `location /` above because that
+	# one is a prefix match covering every SPA path, and only the site root should
+	# resolve to the "home" entry of the backend's StaticPageCatalog
+	# (einsatzbereit#2331).
+	location = / {
+		if ($is_social_bot) {
+			rewrite ^ /__meta/pages/home last;
+		}
+		try_files $uri $uri/ /index.html;
+	}
+
 	location = /config.js {
 		add_header Cache-Control "no-store" always;
 		add_header X-Content-Type-Options "nosniff" always;
@@ -143,6 +154,19 @@ server {
 		try_files $uri $uri/ /index.html;
 	}
 
+	# The same treatment for the static routes (einsatzbereit#2331). Those used to
+	# fall straight through to index.html, whose og:url/canonical is one hardcoded
+	# string pointing at the site root - so /help pasted into Slack, WhatsApp or a
+	# Facebook post previewed as the homepage and declared the homepage canonical.
+	# The site root itself is covered by the `location = /` block above; the copy
+	# for every one of these lives in the backend's StaticPageCatalog.
+	location ~ ^/(opportunities|organizations|help|contact|imprint|privacy-policy|terms-of-use)$ {
+		if ($is_social_bot) {
+			rewrite ^/(.+)$ /__meta/pages/$1 last;
+		}
+		try_files $uri $uri/ /index.html;
+	}
+
 	# Internal-only rewrite target for the bot branch above - proxied rather than
 	# served as a static file since it needs the opportunity/organization's
 	# current title/description/banner from the database. Same cross-subdomain
@@ -154,6 +178,17 @@ server {
 		set $meta_entity_type $1;
 		set $meta_entity_id $2;
 		proxy_pass $backend_upstream/v1/meta/$meta_entity_type/$meta_entity_id;
+	}
+
+	# Internal-only rewrite target for the static-route bot branch above. The copy
+	# is static, but it is the backend that holds it (StaticPageCatalog) so the
+	# sitemap and these previews cannot list different sets of pages.
+	location ~ ^/__meta/pages/([a-z-]+)$ {
+		internal;
+		resolver ${DNS_RESOLVER} valid=10s;
+		set $backend_upstream ${BACKEND_UPSTREAM};
+		set $meta_page_slug $1;
+		proxy_pass $backend_upstream/v1/meta/pages/$meta_page_slug;
 	}
 
 	# A sitemap must be served from the same host as the URLs it lists, or crawlers

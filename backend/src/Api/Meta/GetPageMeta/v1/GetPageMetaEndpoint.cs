@@ -1,0 +1,38 @@
+using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
+using Api.Common.RateLimiting;
+using Application.Common.Messaging;
+using Application.Meta.GetPageMeta.v1;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+
+namespace Api.Meta.GetPageMeta.v1;
+
+internal sealed class GetPageMetaEndpoint : IEndpoint
+{
+	public void MapEndpoint(IEndpointRouteBuilder app) =>
+		app.MapGet("/meta/pages/{slug}", GetPageMetaAsync)
+			.WithName("GetPageMeta")
+			.WithTags("Meta")
+			.Produces(StatusCodes.Status200OK, contentType: "text/html")
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.AllowAnonymous()
+			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.ShortPublicRead)
+			.MapToApiVersion(1);
+
+	private static async Task<IResult> GetPageMetaAsync(
+		[FromRoute] string slug,
+		[FromServices] ISender sender,
+		[FromServices] IConfiguration configuration,
+		CancellationToken cancellationToken)
+	{
+		var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+		var baseUrl = origins.Length > 0 ? origins[0].TrimEnd('/') : "";
+
+		var html = await sender.Send(new GetPageMetaQuery(slug, baseUrl), cancellationToken);
+
+		return html is null ? Results.NotFound() : Results.Content(html, "text/html; charset=utf-8");
+	}
+}

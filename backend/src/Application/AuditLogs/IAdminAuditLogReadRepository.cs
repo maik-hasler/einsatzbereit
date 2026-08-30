@@ -6,6 +6,7 @@ namespace Application.AuditLogs;
 public interface IAdminAuditLogReadRepository
 {
 	ValueTask<PagedList<AuditLogEntry>> GetAuditLogsPagedAsync(
+		AuditLogFilter filter,
 		int pageNumber,
 		int pageSize,
 		CancellationToken cancellationToken = default);

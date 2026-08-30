@@ -49,10 +49,10 @@ internal sealed class CreateInvitationEndpoint : IEndpoint
 			role,
 			UserId.Create(invitedById).GetValueOrThrow());
 
-		var invitationId = await sender.Send(command, cancellationToken);
+		var invitation = await sender.Send(command, cancellationToken);
 
 		return Results.Created(
-			$"/v1/organizations/{organizationId}/invitations/{invitationId.Value}",
-			new CreateInvitationResponse(invitationId.Value));
+			$"/v1/organizations/{organizationId}/invitations/{invitation.Id.Value}",
+			new CreateInvitationResponse(invitation.Id.Value, invitation.ExpiresOn));
 	}
 }
