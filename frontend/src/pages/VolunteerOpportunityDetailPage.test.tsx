@@ -545,7 +545,7 @@ describe("opportunity detail page capacity", () => {
 		).toHaveTextContent("1 person has already joined");
 	});
 
-	it("counts seats per slot rather than trusting the viewer-relative participant count (#2318)", () => {
+	it("counts seats per slot rather than trusting the viewer-relative participant count (#2318)", async () => {
 		// The API drops the caller's own engagements from currentParticipantCount, so
 		// vera - booked on both slots - was shown MORE free spots than a logged-out
 		// visitor. Both must read the same 8.
@@ -557,20 +557,19 @@ describe("opportunity detail page capacity", () => {
 			})),
 		};
 
-		return Promise.all(
-			[0, 2].map(async (currentParticipantCount) => {
-				api.getVolunteerOpportunityDetails.mockResolvedValue({
-					...bookedTwice,
-					currentParticipantCount,
-				});
+		// 0 is what vera's own bearer gets back, 2 what everyone else does.
+		for (const currentParticipantCount of [0, 2]) {
+			api.getVolunteerOpportunityDetails.mockResolvedValue({
+				...bookedTwice,
+				currentParticipantCount,
+			});
 
-				const { unmount } = renderAs(VOLUNTEER_AUTH);
-				expect(
-					await screen.findByTestId("opportunity-capacity"),
-				).toHaveTextContent("8 spots left");
-				unmount();
-			}),
-		);
+			const { unmount } = renderAs(VOLUNTEER_AUTH);
+			expect(
+				await screen.findByTestId("opportunity-capacity"),
+			).toHaveTextContent("8 spots left");
+			unmount();
+		}
 	});
 
 	it("never reads as full when a slot has unlimited capacity", async () => {
