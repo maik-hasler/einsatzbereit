@@ -672,6 +672,11 @@ export default function ProfileOverviewPage() {
 															aria-invalid={
 																fieldRejected("firstName") || undefined
 															}
+															aria-describedby={
+																fieldRejected("firstName")
+																	? "first-name-error"
+																	: undefined
+															}
 															value={form.state.firstName}
 															onChange={(e) =>
 																form.setFirstName(e.target.value)
@@ -693,6 +698,11 @@ export default function ProfileOverviewPage() {
 															maxLength={PROFILE_FIELD_LIMITS.lastName}
 															aria-invalid={
 																fieldRejected("lastName") || undefined
+															}
+															aria-describedby={
+																fieldRejected("lastName")
+																	? "last-name-error"
+																	: undefined
 															}
 															value={form.state.lastName}
 															onChange={(e) => form.setLastName(e.target.value)}
@@ -718,6 +728,9 @@ export default function ProfileOverviewPage() {
 													rows={4}
 													maxLength={PROFILE_FIELD_LIMITS.bio}
 													aria-invalid={fieldRejected("bio") || undefined}
+													aria-describedby={
+														fieldRejected("bio") ? "bio-error" : undefined
+													}
 													value={form.state.bio}
 													placeholder={t("profile.bioPlaceholder")}
 													onChange={(e) => form.setBio(e.target.value)}
@@ -774,6 +787,9 @@ export default function ProfileOverviewPage() {
 													autoComplete="tel"
 													maxLength={PROFILE_FIELD_LIMITS.phone}
 													aria-invalid={fieldRejected("phone") || undefined}
+													aria-describedby={
+														fieldRejected("phone") ? "phone-error" : undefined
+													}
 													value={form.state.phone}
 													placeholder={t("profile.phonePlaceholder")}
 													onChange={(e) => form.setPhone(e.target.value)}
