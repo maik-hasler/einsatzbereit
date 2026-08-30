@@ -28,14 +28,19 @@ public class IntegrationTestFixture
 	private const string DefaultUserRole = "user";
 	private const string BaselineOrganisator = "olaf";
 
-	// Every client this fixture hands out reaches the backend over loopback, and the
-	// anonymous Read bucket is partitioned by the real connection IP (see
-	// RateLimitingExtensions.GetClientIp), so the entire suite draws on one bucket. Pinned
-	// at the production limit of 60/min the suite's own ordinary anonymous traffic already
-	// rode the ceiling, and tests began failing on 429s raised by their neighbours'
-	// requests rather than their own. These give that shared bucket the headroom
-	// ordinary tests need; the burst tests that must still trip the limiter scale their
-	// request counts off these values rather than hardcoding one.
+	// AppHost runs the other limits at 10000, effectively off; this fixture is the only
+	// caller that dials one back down, so that RateLimitingTests has a real limiter to
+	// trip. That dialled-down bucket is shared, though: every client this fixture hands
+	// out reaches the backend over loopback, and the anonymous Read bucket is partitioned
+	// by the real connection IP (see RateLimitingExtensions.GetClientIp), so all 600-odd
+	// tests draw on a single one. At the production value of 60/min the suite's own ordinary
+	// anonymous traffic already rode that ceiling, and tests began failing on 429s raised
+	// by their neighbours' requests rather than their own. 300 leaves ordinary traffic
+	// room while staying cheap to exhaust deliberately; the burst tests scale their
+	// request counts off these values rather than hardcoding one. The tile budget has to
+	// clear the Read limit, because MapTileRateLimitingTests shows tiles outlasting the
+	// content bucket by out-requesting it - and AppHost only forwards this because of the
+	// RateLimiting:MapTiles:PermitLimit passthrough added alongside these values.
 	public const int AnonymousReadPermitLimit = 300;
 	public const int MapTilesPermitLimit = 2000;
 
