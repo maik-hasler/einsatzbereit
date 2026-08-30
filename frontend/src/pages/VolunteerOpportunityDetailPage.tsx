@@ -29,6 +29,7 @@ import {
 	type OpportunityCapacity,
 } from "../lib/opportunityCapacity";
 import { SIGN_UP_INTEREST, SIGN_UP_PARAM } from "../lib/signUpDeepLink";
+import AddToCalendarMenu from "../components/AddToCalendarMenu";
 import Chip from "../components/Chip";
 import SectionHeading from "../components/SectionHeading";
 import SignUpModal from "../components/SignUpModal";
@@ -54,12 +55,13 @@ import {
 	type LoadFailureKind,
 } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
-import { cardClass } from "../lib/surfaceClasses";
+import { cardClass, cardSubtleClass } from "../lib/surfaceClasses";
 import {
 	ArrowTopRightOnSquareIcon,
 	BuildingOfficeIcon,
 	CalendarIcon,
 	CheckIconSolid,
+	ChevronDownIcon,
 	ChevronRightIcon,
 	EnvelopeIcon,
 	FlagIcon,
@@ -76,6 +78,34 @@ const CreateVolunteerOpportunityModal = lazy(
 );
 
 const MAX_META_DESCRIPTION_LENGTH = 160;
+
+/**
+ * Baseline-aligned and wrapping. A long capacity label used to squeeze the
+ * date onto two lines and then centre itself between them, so the rows of one
+ * list came out at different heights with nothing lining up (#2330).
+ */
+const SLOT_ROW_CLASS =
+	"flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1";
+
+const HERO_LEAD_MAX_LENGTH = 220;
+
+/**
+ * The hero band is a lead, not the body copy. It renders on one line-height
+ * with newlines collapsed, so a description written in paragraphs and bullets
+ * arrived as a single run-on block that could fill the whole first screen and
+ * push the sign-up CTA out of sight. Summarise it for the band; the stored
+ * text keeps its line breaks in its own section further down (#2330).
+ */
+function toHeroLead(text: string): string {
+	const collapsed = (text.trim().split(/\n\s*\n/)[0] ?? "")
+		.replace(/\s+/g, " ")
+		.trim();
+	if (collapsed.length <= HERO_LEAD_MAX_LENGTH) return collapsed;
+
+	const cut = collapsed.slice(0, HERO_LEAD_MAX_LENGTH);
+	const lastSpace = cut.lastIndexOf(" ");
+	return `${(lastSpace > HERO_LEAD_MAX_LENGTH / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}\u2026`;
+}
 
 function toMetaDescription(text: string): string {
 	const trimmed = text.trim();
@@ -413,7 +443,9 @@ export default function VolunteerOpportunityDetailPage() {
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
 
-	const hasActionRow = isDraft || !isOwner;
+	// A draft is visible to its owner alone, so there is no date anyone else
+	// could save (#2330).
+	const canSaveDate = !isDraft;
 
 	const upcomingTimeSlots = opportunity.timeSlots.filter(
 		(ts) => !isTimeSlotEnded(ts),
@@ -461,11 +493,31 @@ export default function VolunteerOpportunityDetailPage() {
 	const address = opportunity.isRemote
 		? ""
 		: `${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`;
+	// "At a glance" is a summary, so it names the place; the street address is
+	// stated once, in the location block that also offers the route (#2330).
+	const locationSummary = opportunity.isRemote
+		? t("opportunities.remote")
+		: opportunity.city;
+
+	const hasMap = opportunity.latitude != null && opportunity.longitude != null;
 
 	const directionsUrl =
 		opportunity.latitude != null && opportunity.longitude != null
 			? `https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`
 			: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+
+	// The canonical URL for this page, so the calendar entry never carries a
+	// ?signUp= deep-link param that is spent the moment it is consumed.
+	const canonicalUrl = `${window.location.origin}/volunteer-opportunities/${opportunity.id}`;
+
+	const nextUpcomingSlot =
+		opportunity.participationType === "ScheduledSlots"
+			? findNextTimeSlot(upcomingTimeSlots)
+			: undefined;
+
+	// An owner looking at their own published, undated opportunity has nothing
+	// in the toolbar - don't leave an empty row eating its bottom margin.
+	const hasActionRow = !isOwner || isDraft || !!nextUpcomingSlot;
 
 	const postedOnRelative = formatPostedAgo(
 		opportunity.createdOn as unknown as string,
@@ -482,17 +534,12 @@ export default function VolunteerOpportunityDetailPage() {
 			.slice(0, 3) ?? [];
 
 	const showSignUpCta = canInteract && canSignUpForMore;
-	const showDeadlineCard =
-		opportunity.participationType === "IndividualContact" &&
-		!!opportunity.validUntil &&
-		!showSignUpCta;
 	const showApplicationStatus =
 		canInteract && opportunity.currentUserEngagements.length > 0;
 	const showLoginPrompt = !isAuthenticated && !isDraft;
 
 	const showOwnerNotice = isOwner && !isDraft;
 	const hasActionRail =
-		showDeadlineCard ||
 		showApplicationStatus ||
 		showSignUpCta ||
 		showLoginPrompt ||
@@ -516,21 +563,6 @@ export default function VolunteerOpportunityDetailPage() {
 						}}
 						data-testid={`opportunity-owner-notice${testIdSuffix}`}
 					/>
-				)}
-
-				{showDeadlineCard && (
-					<div
-						className={`flex items-center gap-1.5 text-sm font-medium text-gray-700 ${cardClass}`}
-					>
-						<span>
-							{t("opportunities.applyBy", {
-								date: formatDate(
-									opp.validUntil as unknown as string,
-									i18n.language,
-								),
-							})}
-						</span>
-					</div>
 				)}
 
 				{showApplicationStatus && (
@@ -700,11 +732,19 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.titleEn,
 		i18n.language,
 	);
-	const headerLead = pickLocalizedText(
+	const description = pickLocalizedText(
 		opportunity.descriptionDe,
 		opportunity.descriptionEn,
 		i18n.language,
 	);
+	const descriptionText = description?.text.trim();
+	const headerLead = description
+		? { ...description, text: toHeroLead(description.text) }
+		: undefined;
+	// A one-line description is said in full by the band already - only repeat
+	// it below when the band had to shorten it or drop its line breaks.
+	const showDescriptionSection =
+		!!descriptionText && descriptionText !== headerLead?.text;
 
 	const isGermanFallback =
 		headerTitle.lang !== i18n.language ||
@@ -734,16 +774,6 @@ export default function VolunteerOpportunityDetailPage() {
 			</PageHeaderBand>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
-				{opportunity.bannerImageUrl && (
-					<img
-						src={opportunity.bannerImageUrl}
-						alt=""
-						width={1200}
-						height={480}
-						className="mb-6 h-56 w-full rounded-card object-cover shadow-resting sm:h-72"
-					/>
-				)}
-
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
 					<aside className="hidden lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
 						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
@@ -751,9 +781,30 @@ export default function VolunteerOpportunityDetailPage() {
 
 					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
 						<div>
+							{opportunity.bannerImageUrl && (
+								// Inside the content column, not above the whole grid: a
+								// full-container banner over a 792px column left a visible
+								// step in the page's right edge. One aspect ratio at every
+								// width, rather than a fixed height per breakpoint, so a
+								// banner cropped to fit on desktop survives on a phone
+								// too (#2330).
+								<img
+									src={opportunity.bannerImageUrl}
+									alt=""
+									width={1200}
+									height={480}
+									className="mb-6 aspect-5/2 w-full rounded-card object-cover shadow-resting"
+								/>
+							)}
+
+							{/* One toolbar for everything a visitor can do with the page
+							itself. It used to hold the report button alone with its label
+							hidden below sm:, which left a bare flag pill in an otherwise
+							empty row on phones; every control keeps its label at every
+							width now and the row wraps instead (#2330). */}
 							{hasActionRow && (
 								<div
-									className="mb-4 flex items-center gap-3"
+									className="mb-4 flex flex-wrap items-center gap-2"
 									data-testid="opportunity-detail-actions"
 								>
 									{isDraft && isOwner && (
@@ -768,7 +819,22 @@ export default function VolunteerOpportunityDetailPage() {
 										</div>
 									)}
 
-									<div className="ml-auto flex shrink-0 gap-2">
+									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+										{canSaveDate && nextUpcomingSlot && (
+											<AddToCalendarMenu
+												icsUid={`opportunity-${opportunity.id}-slot-${nextUpcomingSlot.id}@einsatzbereit`}
+												title={headerTitle.text}
+												{...(headerLead
+													? { description: headerLead.text }
+													: {})}
+												{...(address ? { location: address } : {})}
+												url={canonicalUrl}
+												start={
+													nextUpcomingSlot.startDateTime as unknown as string
+												}
+												end={nextUpcomingSlot.endDateTime as unknown as string}
+											/>
+										)}
 										{!isOwner && (
 											<Button
 												variant="outline"
@@ -787,9 +853,7 @@ export default function VolunteerOpportunityDetailPage() {
 												aria-label={t("opportunities.reportOpportunity")}
 											>
 												<FlagIcon className="h-4 w-4" />
-												<span className="hidden sm:inline">
-													{t("opportunities.report")}
-												</span>
+												<span>{t("opportunities.report")}</span>
 											</Button>
 										)}
 										{isDraft && isOwner && (
@@ -858,8 +922,11 @@ export default function VolunteerOpportunityDetailPage() {
 										)}
 										{t("opportunities.factWhere")}
 									</dt>
-									<dd className="mt-2 text-sm font-medium text-gray-900">
-										{opportunity.isRemote ? t("opportunities.remote") : address}
+									<dd
+										className="mt-2 text-sm font-medium text-gray-900"
+										data-testid="opportunity-detail-where"
+									>
+										{locationSummary}
 									</dd>
 								</div>
 							</dl>
@@ -922,8 +989,34 @@ export default function VolunteerOpportunityDetailPage() {
 								</div>
 							)}
 
+							{showDescriptionSection && (
+								<div className="mb-6" data-testid="opportunity-description">
+									<SectionHeading>
+										{t("opportunities.aboutOpportunity")}
+									</SectionHeading>
+									{/* Organizers compose this in a multi-line textarea and the
+									API stores the newlines verbatim, so `pre-line` is what
+									keeps their paragraphs and hyphen bullets from collapsing
+									into one run-on block (#2330). */}
+									<p
+										lang={description?.lang}
+										className="max-w-prose leading-relaxed whitespace-pre-line text-gray-700"
+									>
+										{descriptionText}
+									</p>
+								</div>
+							)}
+
 							{!opportunity.isRemote && (
-								<div className="mb-6">
+								<div className="mb-6" data-testid="opportunity-location">
+									<SectionHeading>
+										{t("opportunities.locationHeading")}
+									</SectionHeading>
+
+									{/* The street address is stated here and nowhere else: the
+									at-a-glance band above names the town only, so a page
+									without coordinates no longer prints the same line three
+									times on one screen (#2330). */}
 									{opportunity.latitude != null &&
 									opportunity.longitude != null ? (
 										<div
@@ -938,17 +1031,17 @@ export default function VolunteerOpportunityDetailPage() {
 												/>
 											</Suspense>
 										</div>
-									) : (
-										<div
-											className={`flex items-center gap-3 ${cardClass}`}
-											data-testid="opportunity-location-fallback"
-										>
-											<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
-											<span className="text-sm font-medium text-gray-900">
-												{address}
-											</span>
-										</div>
-									)}
+									) : null}
+
+									<div
+										className={`flex items-center gap-3 ${hasMap ? "mt-3" : ""} ${cardClass}`}
+										data-testid="opportunity-address"
+									>
+										<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
+										<span className="text-sm font-medium text-gray-900">
+											{address}
+										</span>
+									</div>
 
 									<a
 										href={directionsUrl}
@@ -988,7 +1081,7 @@ export default function VolunteerOpportunityDetailPage() {
 																)}
 															</span>
 
-															<span className="ml-3 flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
+															<span className="flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
 																{slotCapacityLabel(ts, t)}
 																{clickable && (
 																	<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
@@ -1006,13 +1099,13 @@ export default function VolunteerOpportunityDetailPage() {
 																		setShowSignUp(true);
 																	}}
 																	data-testid="opportunity-time-slot-row"
-																	className={`flex w-full items-center justify-between ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
+																	className={`${SLOT_ROW_CLASS} w-full ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
 																>
 																	{rowContent}
 																</button>
 															) : (
 																<div
-																	className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
+																	className={`${SLOT_ROW_CLASS} ${cardClass} text-sm text-gray-700`}
 																>
 																	{rowContent}
 																</div>
@@ -1026,10 +1119,14 @@ export default function VolunteerOpportunityDetailPage() {
 
 									{pastTimeSlots.length > 0 && (
 										<details
-											className="mt-3"
+											className="group mt-3"
 											data-testid="opportunity-past-time-slots"
 										>
-											<summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-800">
+											{/* The same disclosure treatment as FaqAccordion: the
+											app's own chevron rather than whichever triangle the
+											browser draws by default (#2330). */}
+											<summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 [&::-webkit-details-marker]:hidden">
+												<ChevronDownIcon className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
 												{t("opportunities.pastTimeSlots", {
 													count: pastTimeSlots.length,
 												})}
@@ -1037,8 +1134,11 @@ export default function VolunteerOpportunityDetailPage() {
 											<ul className="mt-2 space-y-2">
 												{pastTimeSlots.map((ts) => (
 													<li key={ts.id}>
+														{/* Expanded, a past row sat under "Available time
+														slots" looking exactly like a bookable one - so
+														it says which it is (#2330). */}
 														<div
-															className={`flex items-center justify-between ${cardClass} text-sm text-gray-500`}
+															className={`${SLOT_ROW_CLASS} ${cardSubtleClass} text-sm text-gray-500`}
 														>
 															<span>
 																{formatDateTimeRange(
@@ -1047,6 +1147,9 @@ export default function VolunteerOpportunityDetailPage() {
 																	i18n.language,
 																)}
 															</span>
+															<Chip tone="neutral" size="sm">
+																{t("opportunities.pastSlotBadge")}
+															</Chip>
 														</div>
 													</li>
 												))}

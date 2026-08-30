@@ -126,7 +126,7 @@ export default function UserProfilePage() {
 				title={profile.displayName}
 			/>
 
-			<div className="max-w-5xl">
+			<div data-content-wrapper className="mx-auto max-w-5xl">
 				<div className="mb-8 flex items-center gap-4">
 					{profile.avatarUrl ? (
 						<img
@@ -162,7 +162,7 @@ export default function UserProfilePage() {
 					)}
 				</div>
 
-				<div data-content-wrapper className="mb-8 max-w-2xl">
+				<div className="mb-8 max-w-2xl">
 					{isProfileEmpty ? (
 						<EmptyState
 							title={t("userProfile.emptyStateTitle")}

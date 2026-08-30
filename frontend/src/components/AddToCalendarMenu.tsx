@@ -2,16 +2,31 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
+import { buildIcsEvent, toIcsDataUrl } from "../lib/ics";
 import Button from "./Button";
 import { CalendarIcon } from "./icons";
 
 interface AddToCalendarMenuProps {
-	engagementId: string;
+	/**
+	 * Engagement whose live server feed the Apple/.ics entries point at. The
+	 * public opportunity page has no engagement yet, so it passes `icsUid`
+	 * instead and the menu builds the event in the browser (#2330).
+	 */
+	engagementId?: string;
+
+	/** Identity for the locally built event, so a re-import updates rather
+	 *  than duplicates it. Required when `engagementId` is absent. */
+	icsUid?: string;
+
 	title: string;
 	description?: string;
 	location?: string;
+	url?: string;
 	start: string | Date;
 	end: string | Date;
+
+	/** Hidden below sm: where a row of labelled buttons will not fit. */
+	labelClassName?: string;
 }
 
 function toGoogleDateTime(date: Date): string {
@@ -23,11 +38,14 @@ function toGoogleDateTime(date: Date): string {
 
 export default function AddToCalendarMenu({
 	engagementId,
+	icsUid,
 	title,
 	description,
 	location,
+	url,
 	start,
 	end,
+	labelClassName,
 }: AddToCalendarMenuProps) {
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
@@ -60,8 +78,27 @@ export default function AddToCalendarMenu({
 		},
 	).toString()}`;
 
-	const icsUrl = `${runtimeConfig.apiUrl}/v1/engagements/${engagementId}/calendar`;
-	const webcalUrl = icsUrl.replace(/^https?:\/\//, "webcal://");
+	// A webcal:// subscription only means anything for a feed the server keeps
+	// updating, so it is offered for an engagement and left out for the
+	// one-off event built here.
+	const serverIcsUrl = engagementId
+		? `${runtimeConfig.apiUrl}/v1/engagements/${engagementId}/calendar`
+		: null;
+	const webcalUrl = serverIcsUrl?.replace(/^https?:\/\//, "webcal://") ?? null;
+
+	const icsUrl =
+		serverIcsUrl ??
+		toIcsDataUrl(
+			buildIcsEvent({
+				uid: icsUid ?? `${startDate.toISOString()}-${title}`,
+				title,
+				description,
+				location,
+				url,
+				start: startDate,
+				end: endDate,
+			}),
+		);
 
 	return (
 		<div className="relative" ref={rootRef}>
@@ -71,9 +108,13 @@ export default function AddToCalendarMenu({
 				size="sm"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
+				title={t("myEngagements.addToCalendar")}
+				aria-label={t("myEngagements.addToCalendar")}
 			>
 				<CalendarIcon className="h-3.5 w-3.5" />
-				{t("myEngagements.addToCalendar")}
+				<span className={labelClassName}>
+					{t("myEngagements.addToCalendar")}
+				</span>
 			</Button>
 
 			{open && (
@@ -100,18 +141,21 @@ export default function AddToCalendarMenu({
 							{t("myEngagements.addToCalendarOutlook")}
 						</a>
 					</li>
-					<li>
-						<a
-							href={webcalUrl}
-							onClick={() => setOpen(false)}
-							className="block px-3 py-2 text-gray-700 hover:bg-gray-50"
-						>
-							{t("myEngagements.addToCalendarApple")}
-						</a>
-					</li>
+					{webcalUrl && (
+						<li>
+							<a
+								href={webcalUrl}
+								onClick={() => setOpen(false)}
+								className="block px-3 py-2 text-gray-700 hover:bg-gray-50"
+							>
+								{t("myEngagements.addToCalendarApple")}
+							</a>
+						</li>
+					)}
 					<li>
 						<a
 							href={icsUrl}
+							{...(serverIcsUrl ? {} : { download: "einsatzbereit.ics" })}
 							onClick={() => setOpen(false)}
 							className="block px-3 py-2 text-gray-700 hover:bg-gray-50"
 						>

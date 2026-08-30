@@ -269,9 +269,9 @@ describe("opportunity detail page without coordinates", () => {
 
 		await screen.findByTestId("opportunity-detail-when");
 		expect(screen.queryByTestId("opportunity-map")).toBeNull();
-		expect(
-			screen.getByTestId("opportunity-location-fallback"),
-		).toHaveTextContent("Teststrasse 1, 24103 Kiel");
+		expect(screen.getByTestId("opportunity-address")).toHaveTextContent(
+			"Teststrasse 1, 24103 Kiel",
+		);
 
 		const directions = screen.getByTestId("opportunity-directions-link");
 		const href = directions.getAttribute("href") ?? "";
@@ -1061,5 +1061,176 @@ describe("opportunity detail page missing opportunity", () => {
 		expect(
 			screen.getByRole("button", { name: "Try again" }),
 		).toBeInTheDocument();
+	});
+});
+
+describe("opportunity detail page description (#2330)", () => {
+	const STRUCTURED = [
+		"Wir suchen Menschen, die uns beim wöchentlichen Ausgabetag helfen.",
+		"",
+		"Was du mitbringen solltest:",
+		"- Zuverlässigkeit",
+		"- Freude an Teamarbeit",
+		"- Mindestalter 16 Jahre",
+	].join("\n");
+
+	it("keeps the stored line breaks instead of collapsing them into one block", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			descriptionEn: STRUCTURED,
+			descriptionDe: STRUCTURED,
+		});
+
+		renderDetail("en");
+
+		const section = await screen.findByTestId("opportunity-description");
+		expect(section).toHaveTextContent("Mindestalter 16 Jahre");
+		// The newlines only survive rendering if the element is told to keep
+		// them - jsdom has no layout engine, so the class is the assertion.
+		const body = section.querySelector("p");
+		expect(body).toHaveClass("whitespace-pre-line");
+		expect(body?.textContent).toContain("\n- Zuverlässigkeit");
+	});
+
+	it("shortens the hero lead rather than letting the body copy fill it", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			descriptionEn: STRUCTURED,
+			descriptionDe: STRUCTURED,
+		});
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-description");
+		const lead = screen.getByText(
+			"Wir suchen Menschen, die uns beim wöchentlichen Ausgabetag helfen.",
+		);
+		expect(lead).not.toHaveTextContent("Mindestalter");
+	});
+
+	it("says a one-line description once, in the hero, with no repeat below", async () => {
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByTestId("opportunity-description")).toBeNull();
+		expect(screen.getAllByText("English description.")).toHaveLength(1);
+	});
+
+	it("truncates a long single-paragraph description in the hero and gives it a section", async () => {
+		const long = `${"Wort ".repeat(120)}Ende.`;
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			descriptionEn: long,
+			descriptionDe: long,
+		});
+
+		renderDetail("en");
+
+		const section = await screen.findByTestId("opportunity-description");
+		expect(section).toHaveTextContent("Ende.");
+		expect(screen.getByText(/^Wort .*…$/)).toBeInTheDocument();
+	});
+});
+
+describe("opportunity detail page add to calendar (#2330)", () => {
+	it("lets an anonymous visitor save the next slot to their calendar", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Add to calendar" }),
+		);
+		const google =
+			screen
+				.getByRole("link", { name: "Google Calendar" })
+				.getAttribute("href") ?? "";
+		expect(decodeURIComponent(google)).toContain(
+			"20270114T090000Z/20270114T120000Z",
+		);
+	});
+
+	it("builds the .ics in the browser, there being no engagement to point at", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		await userEvent.click(
+			screen.getByRole("button", { name: "Add to calendar" }),
+		);
+
+		const href =
+			screen
+				.getByRole("link", { name: "Download .ics" })
+				.getAttribute("href") ?? "";
+		expect(href.startsWith("data:text/calendar")).toBe(true);
+		expect(decodeURIComponent(href)).toContain("BEGIN:VEVENT");
+		// A subscription feed would go stale - there is nothing to subscribe to.
+		expect(screen.queryByRole("link", { name: "Apple Calendar" })).toBeNull();
+	});
+
+	it("offers no calendar entry when the opportunity has no dated slot", async () => {
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(
+			screen.queryByRole("button", { name: "Add to calendar" }),
+		).toBeNull();
+	});
+
+	it("keeps every toolbar control labelled, never a bare icon pill (#2330)", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		const toolbar = await screen.findByTestId("opportunity-detail-actions");
+		for (const span of toolbar.querySelectorAll("button span")) {
+			expect(span).not.toHaveClass("hidden");
+		}
+		expect(within(toolbar).getAllByRole("button").length).toBeGreaterThan(1);
+	});
+});
+
+describe("opportunity detail page location (#2330)", () => {
+	const onSite = { ...details, isRemote: false };
+
+	it("names the town at a glance and the street address once, below", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(onSite);
+
+		renderDetail("en");
+
+		expect(
+			await screen.findByTestId("opportunity-detail-where"),
+		).toHaveTextContent("Kiel");
+		expect(screen.getAllByText("Teststrasse 1, 24103 Kiel")).toHaveLength(1);
+	});
+
+	it("still shows the address next to a map", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...onSite,
+			latitude: 54.32,
+			longitude: 10.13,
+		});
+
+		renderDetail("en");
+
+		expect(await screen.findByTestId("opportunity-address")).toHaveTextContent(
+			"Teststrasse 1, 24103 Kiel",
+		);
+	});
+
+	it("does not repeat the deadline the at-a-glance band already states", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),
+		});
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.getAllByText(/^Express interest by/)).toHaveLength(1);
 	});
 });

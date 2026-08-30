@@ -5,6 +5,10 @@ import ProfileOverviewPage from "./index";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { useLocation } from "react-router";
 import { renderWithProviders } from "../../test/render";
+import {
+	clearDisplayNameOverride,
+	getDisplayNameOverride,
+} from "../../lib/displayName";
 
 const { api } = await vi.hoisted(async () => {
 	const { createApiMock } = await import("../../test/apiMock");
@@ -15,6 +19,7 @@ vi.mock("../../hooks/useApiClient", () => ({ useApiClient: () => api }));
 
 beforeEach(() => {
 	api.__reset();
+	clearDisplayNameOverride();
 	api.getUserProfile.mockResolvedValue({
 		firstName: "Vera",
 		lastName: "Volunteer",
@@ -446,6 +451,115 @@ describe("ProfileOverviewPage rejected field a11y", () => {
 		expect(document.querySelector("#bio")).toHaveAttribute(
 			"aria-invalid",
 			"true",
+		);
+	});
+});
+
+describe("ProfileOverviewPage streak cards (#2330)", () => {
+	const AUTH = { isAuthenticated: true };
+
+	it("states progress toward a badge the volunteer has not earned yet", async () => {
+		api.getMyStreaks.mockResolvedValue({
+			loginStreak: 1,
+			activityStreak: 1,
+			confirmedEngagements: 0,
+		});
+
+		renderWithProviders(<ProfileOverviewPage />, { auth: AUTH });
+
+		const streak = await screen.findByTestId("profile-stat-streak");
+		// The badge grid on this same page shows both of these locked, so the
+		// card may only name what is still missing.
+		expect(streak).toHaveTextContent("Weekly Hero: 1 of 4");
+		expect(
+			await screen.findByTestId("profile-stat-login-streak"),
+		).toHaveTextContent("On a Roll: 1 of 7");
+	});
+
+	it("names the badge once the streak actually reaches its target", async () => {
+		api.getMyStreaks.mockResolvedValue({
+			loginStreak: 7,
+			activityStreak: 4,
+			confirmedEngagements: 0,
+		});
+
+		renderWithProviders(<ProfileOverviewPage />, { auth: AUTH });
+
+		const streak = await screen.findByTestId("profile-stat-streak");
+		expect(streak).toHaveTextContent("Weekly Hero");
+		expect(streak).not.toHaveTextContent("of 4");
+	});
+
+	it("gives every stat tile the same width rather than shrink-to-fit", async () => {
+		api.getMyStreaks.mockResolvedValue({
+			loginStreak: 3,
+			activityStreak: 2,
+			confirmedEngagements: 0,
+		});
+
+		renderWithProviders(<ProfileOverviewPage />, { auth: AUTH });
+
+		const streak = await screen.findByTestId("profile-stat-streak");
+		const login = screen.getByTestId("profile-stat-login-streak");
+		// jsdom has no layout engine; equal width comes from flex-1 basis-0.
+		for (const tile of [streak, login]) {
+			expect(tile).toHaveClass("flex-1", "basis-0");
+		}
+	});
+});
+
+describe("ProfileOverviewPage public profile link (#2330)", () => {
+	it("links the public profile page the notice promises", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true, sub: "user-1" },
+		});
+
+		expect(await screen.findByTestId("view-public-profile")).toHaveAttribute(
+			"href",
+			"/users/user-1",
+		);
+	});
+});
+
+describe("ProfileOverviewPage editor actions (#2330)", () => {
+	it("keeps one Save/Cancel pair, pinned to the bottom of the form", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		const save = await screen.findByTestId("profile-save");
+		expect(screen.getAllByRole("button", { name: /^Save$/ })).toHaveLength(1);
+		expect(save.closest("form")).not.toBeNull();
+		expect(save.parentElement).toHaveClass("sticky", "bottom-0");
+	});
+
+	it("submits the form from the pinned Save button", async () => {
+		api.updateUserProfile.mockResolvedValue(undefined);
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		await userEvent.click(await screen.findByTestId("profile-save"));
+
+		await waitFor(() => expect(api.updateUserProfile).toHaveBeenCalled());
+	});
+
+	it("hands the saved name to the header so the pill stops contradicting it", async () => {
+		api.updateUserProfile.mockResolvedValue(undefined);
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true, sub: "user-1" },
+		});
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		const lastName = document.querySelector("#last-name") as HTMLInputElement;
+		await userEvent.clear(lastName);
+		await userEvent.type(lastName, "Schmidt-Neuberger");
+		await userEvent.click(await screen.findByTestId("profile-save"));
+
+		await waitFor(() =>
+			expect(getDisplayNameOverride("user-1")).toBe("Vera Schmidt-Neuberger"),
 		);
 	});
 });
