@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Application.Common.Sitemap;
+using Application.Common.StaticPages;
 using Application.Organizations;
 using Application.Sitemap.GetSitemap.v1;
 using Application.VolunteerOpportunities;
@@ -30,14 +31,53 @@ public class GetSitemapQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnEmptyUrlset_WhenNoOpportunitiesOrOrganizationsExist(
+	public async Task Handle_ShouldListOnlyTheStaticPages_WhenNoOpportunitiesOrOrganizationsExist(
 		CancellationToken cancellationToken)
 	{
 		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example"), cancellationToken);
 
 		var document = XDocument.Parse(xml);
 		document.Root!.Name.Should().Be(SitemapNs + "urlset");
-		document.Root!.Elements(SitemapNs + "url").Should().BeEmpty();
+		Locations(document).Should().BeEquivalentTo(
+			StaticPageCatalog.All.Select(page => $"https://einsatzbereit.example{page.Path}"));
+	}
+
+	[Test]
+	public async Task Handle_ShouldIncludeTheSiteRoot(CancellationToken cancellationToken)
+	{
+		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example"), cancellationToken);
+
+		Locations(XDocument.Parse(xml)).Should().Contain("https://einsatzbereit.example/");
+	}
+
+	[Test]
+	[Arguments("/opportunities")]
+	[Arguments("/organizations")]
+	[Arguments("/help")]
+	[Arguments("/contact")]
+	[Arguments("/imprint")]
+	[Arguments("/privacy-policy")]
+	[Arguments("/terms-of-use")]
+	public async Task Handle_ShouldIncludeEveryStaticPage(
+		string path,
+		CancellationToken cancellationToken)
+	{
+		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example"), cancellationToken);
+
+		Locations(XDocument.Parse(xml)).Should().Contain($"https://einsatzbereit.example{path}");
+	}
+
+	[Test]
+	public async Task Handle_ShouldOmitLastModified_ForStaticPages(
+		CancellationToken cancellationToken)
+	{
+		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example"), cancellationToken);
+
+		var root = XDocument.Parse(xml).Root!;
+		var staticEntry = root.Elements(SitemapNs + "url")
+			.Single(u => u.Element(SitemapNs + "loc")!.Value == "https://einsatzbereit.example/help");
+
+		staticEntry.Element(SitemapNs + "lastmod").Should().BeNull();
 	}
 
 	[Test]
@@ -60,10 +100,11 @@ public class GetSitemapQueryHandlerTests
 			.Select(u => u.Element(SitemapNs + "loc")!.Value)
 			.ToList();
 
-		locs.Should().BeEquivalentTo([
+		locs.Should().Contain([
 			$"https://einsatzbereit.example/organizations/{orgId}",
 			$"https://einsatzbereit.example/volunteer-opportunities/{opportunityId}",
 		]);
+		locs.Should().HaveCount(StaticPageCatalog.All.Count + 2);
 	}
 
 	[Test]
@@ -77,10 +118,8 @@ public class GetSitemapQueryHandlerTests
 
 		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example/"), cancellationToken);
 
-		var document = XDocument.Parse(xml);
-		var loc = document.Root!.Element(SitemapNs + "url")!.Element(SitemapNs + "loc")!.Value;
-
-		loc.Should().Be($"https://einsatzbereit.example/organizations/{orgId}");
+		Locations(XDocument.Parse(xml)).Should()
+			.Contain($"https://einsatzbereit.example/organizations/{orgId}");
 	}
 
 	[Test]
@@ -94,9 +133,16 @@ public class GetSitemapQueryHandlerTests
 
 		var xml = await _sut.Handle(new GetSitemapQuery("https://einsatzbereit.example"), cancellationToken);
 
-		var document = XDocument.Parse(xml);
-		var lastmod = document.Root!.Element(SitemapNs + "url")!.Element(SitemapNs + "lastmod")!.Value;
+		var root = XDocument.Parse(xml).Root!;
+		var entry = root.Elements(SitemapNs + "url")
+			.Single(u => u.Element(SitemapNs + "loc")!.Value
+				== $"https://einsatzbereit.example/organizations/{orgId}");
 
-		lastmod.Should().Be("2026-03-07");
+		entry.Element(SitemapNs + "lastmod")!.Value.Should().Be("2026-03-07");
 	}
+
+	private static List<string> Locations(XDocument document) =>
+		document.Root!.Elements(SitemapNs + "url")
+			.Select(u => u.Element(SitemapNs + "loc")!.Value)
+			.ToList();
 }

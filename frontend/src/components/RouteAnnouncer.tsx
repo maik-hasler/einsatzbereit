@@ -8,6 +8,10 @@ export default function RouteAnnouncer() {
 	const location = useLocation();
 	const [announcement, setAnnouncement] = useState("");
 	const previousPathname = useRef(location.pathname);
+	// Read through a ref so the announce effect stays keyed on the pathname
+	// alone - a same-page fragment change is not a route change.
+	const currentHash = useRef(location.hash);
+	currentHash.current = location.hash;
 
 	useEffect(() => {
 		if (previousPathname.current === location.pathname) return;
@@ -18,7 +22,10 @@ export default function RouteAnnouncer() {
 		// back/forward - so don't rip focus out of its trap.
 		if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
 
-		window.scrollTo(0, 0);
+		// A fragment URL asks for a specific section, so leave the scroll to
+		// HashScroll rather than yanking the reader back to the top first
+		// (#2331).
+		if (!currentHash.current) window.scrollTo(0, 0);
 
 		let headingFocused = false;
 		let lastFocusTarget: HTMLElement | null = null;

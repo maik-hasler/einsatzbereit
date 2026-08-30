@@ -20,6 +20,7 @@ import { clearAuthRecoveryAttempts } from "./lib/authRecovery";
 import ErrorBanner from "./components/ErrorBanner";
 import Button from "./components/Button";
 import RouteAnnouncer from "./components/RouteAnnouncer";
+import HashScroll from "./components/HashScroll";
 import RouteState from "./components/RouteState";
 import { SpinnerIcon } from "./components/Spinner";
 import { statusTitleClass } from "./lib/headingClasses";
@@ -201,6 +202,7 @@ export function AppRoutes() {
 	return (
 		<>
 			<RouteAnnouncer />
+			<HashScroll />
 			<Routes>
 				<Route path="/callback" element={<CallbackPage />} />
 				<Route

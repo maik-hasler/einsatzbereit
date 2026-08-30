@@ -52,7 +52,7 @@ export default function HelpPage() {
 					<h2 className="mb-5 font-display text-3xl font-bold text-gray-900">
 						{t("help.generalTitle")}
 					</h2>
-					<FaqAccordion items={generalItems} className="max-w-3xl" />
+					<FaqAccordion items={generalItems} />
 				</section>
 
 				<div className="grid gap-10 lg:grid-cols-2 lg:gap-8">

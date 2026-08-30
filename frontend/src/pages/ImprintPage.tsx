@@ -36,7 +36,11 @@ export default function ImprintPage() {
 				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{records.map(({ title, body, isContact }) => (
 						<section key={title} className={cardClass}>
-							<h2 className="text-xs font-semibold tracking-widest text-brand-700 uppercase">
+							{/* Two lines' worth of eyebrow, reserved: the third card's
+							    statutory heading wraps where the other two do not, which
+							    pushed its body 16px below its row-mates' (#2331). Only from
+							    `sm` up, where the cards actually share a row. */}
+							<h2 className="text-xs font-semibold tracking-widest text-brand-700 uppercase sm:min-h-8">
 								{title}
 							</h2>
 							<div className="mt-3">
@@ -55,6 +59,16 @@ export default function ImprintPage() {
 													// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
 													<a
 														href={`mailto:${runtimeConfig.operatorEmail}`}
+														className={linkClass}
+													/>
+												),
+												// The Website row is one of the fields section 5 TMG
+												// requires here, and it was plain text: the card's only
+												// anchor was the mailto above (#2331).
+												websiteLink: (
+													// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <websiteLink> tag content
+													<a
+														href={runtimeConfig.operatorSiteUrl}
 														className={linkClass}
 													/>
 												),

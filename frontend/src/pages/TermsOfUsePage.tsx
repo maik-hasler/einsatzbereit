@@ -14,11 +14,14 @@ export default function TermsOfUsePage() {
 
 	const sections = [
 		{ id: "scope", label: t("termsOfUse.section1Title") },
-		{ id: "accounts", label: t("termsOfUse.section2Title") },
-		{ id: "conduct", label: t("termsOfUse.section3Title") },
-		{ id: "content", label: t("termsOfUse.section4Title") },
+		{ id: "platform-role", label: t("termsOfUse.section2Title") },
+		{ id: "acceptable-use", label: t("termsOfUse.section3Title") },
+		{
+			id: "organizations-and-opportunities",
+			label: t("termsOfUse.section4Title"),
+		},
 		{ id: "liability", label: t("termsOfUse.section5Title") },
-		{ id: "privacy", label: t("termsOfUse.section6Title") },
+		{ id: "suspension-and-termination", label: t("termsOfUse.section6Title") },
 		{ id: "changes", label: t("termsOfUse.section7Title") },
 	];
 
@@ -49,7 +52,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="accounts"
+						id="platform-role"
 						number={2}
 						title={t("termsOfUse.section2Title")}
 					>
@@ -57,7 +60,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="conduct"
+						id="acceptable-use"
 						number={3}
 						title={t("termsOfUse.section3Title")}
 					>
@@ -65,7 +68,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="content"
+						id="organizations-and-opportunities"
 						number={4}
 						title={t("termsOfUse.section4Title")}
 					>
@@ -88,7 +91,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="privacy"
+						id="suspension-and-termination"
 						number={6}
 						title={t("termsOfUse.section6Title")}
 					>
