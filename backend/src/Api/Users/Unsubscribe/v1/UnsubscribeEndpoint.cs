@@ -3,6 +3,7 @@ using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.Unsubscribe.v1;
+using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +16,7 @@ internal sealed class UnsubscribeEndpoint
 		app.MapGet("/users/{userId:guid}/unsubscribe", UnsubscribeAsync)
 			.WithName("Unsubscribe")
 			.WithTags("Users")
-			.Produces(StatusCodes.Status302Found)
+			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
@@ -28,21 +29,23 @@ internal sealed class UnsubscribeEndpoint
 		[FromQuery] string type,
 		[FromQuery] Guid token,
 		[FromServices] ISender sender,
-		[FromServices] IConfiguration configuration,
 		CancellationToken cancellationToken)
 	{
 		if (!Enum.TryParse<EmailNotificationType>(type, out var notificationType))
 		{
-			return Results.Problem("Unknown notification type.", statusCode: StatusCodes.Status400BadRequest);
+			throw new ResultFailureException(Error.Validation(
+				"User.UnknownNotificationType",
+				"Unknown notification type."));
 		}
 
 		await sender.Send(
 			new UnsubscribeCommand(UserId.Create(userId).GetValueOrThrow(), token, notificationType),
 			cancellationToken);
 
-		var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-		var frontendBaseUrl = origins.Length > 0 ? origins[0].TrimEnd('/') : "";
-
-		return Results.Redirect($"{frontendBaseUrl}/unsubscribed?type={Uri.EscapeDataString(type)}");
+		// 204, not a redirect to the frontend: the confirm page calls this from
+		// inside the SPA and routes itself on the outcome, so a failure stays a
+		// translated message in the app rather than raw JSON on the API origin
+		// that the user has no way back from (#2320).
+		return Results.NoContent();
 	}
 }

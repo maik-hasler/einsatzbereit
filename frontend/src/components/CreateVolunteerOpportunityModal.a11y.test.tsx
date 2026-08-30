@@ -98,7 +98,7 @@ describe("CreateVolunteerOpportunityModal a11y", () => {
 		await addSlot("2020-01-05T10:00", "2020-01-05T12:00");
 
 		expect(
-			await screen.findByText("Start must be in the future."),
+			await screen.findByText("Start date must be in the future."),
 		).toBeInTheDocument();
 		await expectNoA11yViolations();
 	});

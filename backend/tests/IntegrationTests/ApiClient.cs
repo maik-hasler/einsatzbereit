@@ -173,6 +173,7 @@ namespace IntegrationTests
         System.Threading.Tasks.Task<NotificationPreferencesResponse> GetNotificationPreferencesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task UnsubscribeAsync(System.Guid userId, string type, System.Guid token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
@@ -3809,6 +3810,7 @@ namespace IntegrationTests
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task UnsubscribeAsync(System.Guid userId, string type, System.Guid token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
@@ -3863,10 +3865,9 @@ namespace IntegrationTests
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 302)
+                        if (status_ == 204)
                         {
-                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("Found", status_, responseText_, headers_, null);
+                            return;
                         }
                         else
                         if (status_ == 400)
@@ -3897,13 +3898,6 @@ namespace IntegrationTests
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-
-                        if (status_ == 200 || status_ == 204)
-                        {
-
-                            return;
                         }
                         else
                         {

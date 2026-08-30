@@ -45,7 +45,7 @@ import {
 	MAX_PARTICIPANTS_LIMIT,
 	resolveCapacity,
 } from "./timeSlots";
-import type { CapacityInput } from "./timeSlots";
+import type { CapacityInput, NewSlotField } from "./timeSlots";
 
 const BLOCKED_JUMP_MESSAGE_ID = "create-opportunity-step-blocked";
 
@@ -155,6 +155,16 @@ function endOfDayFromDateInput(value: string): Date {
 	return new Date(year, month - 1, day, 23, 59, 59, 999);
 }
 
+// The four fields the backend blames when it cannot resolve an address. They
+// live on step 2, so a rejection has to send the organizer back there rather
+// than leave a banner on whichever step they submitted from (#2320).
+const ADDRESS_FIELDS = [
+	"street",
+	"houseNumber",
+	"zipCode",
+	"city",
+] as const satisfies readonly (keyof OpportunityFormValues)[];
+
 const DEFAULT_VALUES: OpportunityFormValues = {
 	titleDe: "",
 	titleEn: "",
@@ -226,6 +236,7 @@ export default function CreateVolunteerOpportunityModal({
 		getValues,
 		trigger,
 		clearErrors,
+		setError: setFieldError,
 		setFocus,
 		getFieldState,
 		formState: { errors, isDirty },
@@ -277,6 +288,19 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: "1",
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
+	// Which of the add form's inputs the current message is about, so it points
+	// at the ones that produced it rather than floating under the row (#2320).
+	// A past start is the start box's alone, a bad capacity the spot box's;
+	// only "ends before it starts" implicates the pair (#2325). Scoped to that
+	// form on purpose: an open edit row has its own inputs, and the shared
+	// message renders down here either way.
+	const [invalidNewSlotFields, setInvalidNewSlotFields] = useState<
+		ReadonlySet<NewSlotField>
+	>(new Set());
+
+	function clearInvalidNewSlotFields() {
+		setInvalidNewSlotFields(new Set());
+	}
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 	const [pendingSlotDelete, setPendingSlotDelete] = useState<{
 		id: string;
@@ -507,6 +531,7 @@ export default function CreateVolunteerOpportunityModal({
 	async function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
 		setSlotError(null);
+		clearInvalidNewSlotFields();
 		const start = zonedDatetimeLocalToUtc(
 			newSlot.startDateTime,
 			CANONICAL_TIME_ZONE,
@@ -517,18 +542,23 @@ export default function CreateVolunteerOpportunityModal({
 		);
 		// The API rejects each of these, and while creating it does so only
 		// after the opportunity itself has been POSTed - so the slot never
-		// leaves the browser until it is one the API would take (#2325).
+		// leaves the browser until it is one the API would take (#2325). The
+		// app already ships the precise message the server would send for each
+		// of the first two; a generic "could not add" said nothing (#2320).
 		if (start <= new Date()) {
-			setSlotError(t("timeSlots.startMustBeFuture"));
+			setSlotError(t("apiError.TimeSlot.StartMustBeFuture"));
+			setInvalidNewSlotFields(new Set(["start"]));
 			return;
 		}
 		if (end <= start) {
-			setSlotError(t("timeSlots.endMustBeAfterStart"));
+			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
+			setInvalidNewSlotFields(new Set(["start", "end"]));
 			return;
 		}
 		const maxParticipants = resolveCapacity(newSlot.maxParticipants);
 		if (maxParticipants === undefined) {
 			setSlotError(capacityErrorMessage);
+			setInvalidNewSlotFields(new Set(["max"]));
 			return;
 		}
 
@@ -613,6 +643,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!initialOpportunity) return;
 		setRemovingSlotId(timeSlotId);
 		setSlotError(null);
+		clearInvalidNewSlotFields();
 		setSlotDeleteError(null);
 		try {
 			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId, "Only");
@@ -663,6 +694,7 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: number | null;
 	}) {
 		setSlotError(null);
+		clearInvalidNewSlotFields();
 		setEditingSlot({
 			id: slot.id,
 			startDateTime: toDatetimeLocalValue(slot.startDateTime),
@@ -676,6 +708,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!initialOpportunity) return;
 		setUpdatingSlotId(edit.id);
 		setSlotError(null);
+		clearInvalidNewSlotFields();
 		try {
 			const result = await api.updateTimeSlot(initialOpportunity.id, edit.id, {
 				startDateTime:
@@ -741,6 +774,7 @@ export default function CreateVolunteerOpportunityModal({
 		const edit: ValidatedSlotEdit = { ...editingSlot, maxParticipants };
 		if (edit.scope !== "Only") {
 			setSlotError(null);
+			clearInvalidNewSlotFields();
 			void applySlotEdit(edit);
 			return;
 		}
@@ -751,10 +785,11 @@ export default function CreateVolunteerOpportunityModal({
 		);
 		const end = zonedDatetimeLocalToUtc(edit.endDateTime, CANONICAL_TIME_ZONE);
 		if (end <= start) {
-			setSlotError(t("timeSlots.endMustBeAfterStart"));
+			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
 			return;
 		}
 		setSlotError(null);
+		clearInvalidNewSlotFields();
 		if (bookedCount > 0) {
 			setPendingSlotEdit({ ...edit, bookedCount });
 		} else {
@@ -959,6 +994,15 @@ export default function CreateVolunteerOpportunityModal({
 			onSuccess(createdDraftId);
 			onClose();
 		} catch (err: unknown) {
+			if (isApiErrorCode(err, "Address.NotGeocodable")) {
+				for (const field of ADDRESS_FIELDS)
+					setFieldError(field, {
+						type: "server",
+						message: t("createOpportunity.addressUnresolvedField"),
+					});
+				setStep(2);
+				requestFocusFirstInvalid([...ADDRESS_FIELDS]);
+			}
 			setError(
 				getApiErrorMessage(
 					err,
@@ -1193,6 +1237,7 @@ export default function CreateVolunteerOpportunityModal({
 							newSlot={newSlot}
 							onNewSlotChange={setNewSlot}
 							slotError={slotError}
+							invalidNewSlotFields={invalidNewSlotFields}
 							slotChangesAreImmediate={isEditMode}
 							addingSlot={addingSlot}
 							onAddSlot={() => void handleAddSlot()}

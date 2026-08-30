@@ -108,9 +108,12 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 
 			if (geocodingResult.Outcome == GeocodingOutcome.NotFound)
 			{
-				return Results.Problem(
-					"Address could not be located. Please check the street, house number, zip code, and city.",
-					statusCode: StatusCodes.Status400BadRequest);
+				// Carries an errorCode, unlike a bare Results.Problem: the client
+				// keys its translated message and its jump back to the address
+				// step off that code, and had nothing to act on without it (#2320).
+				throw new ResultFailureException(Error.Validation(
+					"Address.NotGeocodable",
+					"Address could not be located. Please check the street, house number, zip code, and city."));
 			}
 
 			if (geocodingResult.Outcome == GeocodingOutcome.Found)

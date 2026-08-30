@@ -7,7 +7,11 @@ import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
 import { formatDateTimeRange } from "../../lib/format";
-import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
+import {
+	getInputSurfaceClass,
+	inputSurfaceClass,
+	labelClass,
+} from "../../lib/formClasses";
 import {
 	CANONICAL_TIME_ZONE,
 	toZonedDatetimeLocalValue,
@@ -19,7 +23,9 @@ import {
 	MAX_PARTICIPANTS_LIMIT,
 	overlapsAnySlot,
 } from "./timeSlots";
-import type { CapacityInput } from "./timeSlots";
+import type { CapacityInput, NewSlotField } from "./timeSlots";
+
+const SLOT_ERROR_ID = "time-slot-error";
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
 
@@ -72,6 +78,7 @@ interface Props {
 		maxParticipants: CapacityInput;
 	}) => void;
 	slotError: string | null;
+	invalidNewSlotFields: ReadonlySet<NewSlotField>;
 
 	/**
 	 * True while editing an opportunity that already exists, where adding,
@@ -121,6 +128,7 @@ export default function DetailsStep({
 	newSlot,
 	onNewSlotChange,
 	slotError,
+	invalidNewSlotFields,
 	slotChangesAreImmediate,
 	addingSlot,
 	onAddSlot,
@@ -500,7 +508,15 @@ export default function DetailsStep({
 											startDateTime: e.target.value,
 										})
 									}
-									className={inputSurfaceClass}
+									aria-invalid={invalidNewSlotFields.has("start") || undefined}
+									aria-describedby={
+										invalidNewSlotFields.has("start")
+											? SLOT_ERROR_ID
+											: undefined
+									}
+									className={getInputSurfaceClass(
+										invalidNewSlotFields.has("start"),
+									)}
 								/>
 							</div>
 							<div>
@@ -520,7 +536,13 @@ export default function DetailsStep({
 											endDateTime: e.target.value,
 										})
 									}
-									className={inputSurfaceClass}
+									aria-invalid={invalidNewSlotFields.has("end") || undefined}
+									aria-describedby={
+										invalidNewSlotFields.has("end") ? SLOT_ERROR_ID : undefined
+									}
+									className={getInputSurfaceClass(
+										invalidNewSlotFields.has("end"),
+									)}
 								/>
 							</div>
 						</div>
@@ -538,6 +560,10 @@ export default function DetailsStep({
 									min={1}
 									max={MAX_PARTICIPANTS_LIMIT}
 									disabled={newSlot.maxParticipants === null}
+									aria-invalid={invalidNewSlotFields.has("max") || undefined}
+									aria-describedby={
+										invalidNewSlotFields.has("max") ? SLOT_ERROR_ID : undefined
+									}
 									value={newSlot.maxParticipants ?? ""}
 									onChange={(e) =>
 										onNewSlotChange({
@@ -625,7 +651,11 @@ export default function DetailsStep({
 							</p>
 						)}
 						{slotError && (
-							<p className="text-xs text-red-600" role="alert">
+							<p
+								id={SLOT_ERROR_ID}
+								className="text-xs text-red-600"
+								role="alert"
+							>
 								{slotError}
 							</p>
 						)}

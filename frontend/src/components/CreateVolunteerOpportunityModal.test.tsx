@@ -386,6 +386,86 @@ describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
 	});
 });
 
+describe("create-opportunity wizard: an address the backend cannot locate (#2320)", () => {
+	it("sends the organizer back to the address step with the fields flagged", async () => {
+		api.createVolunteerOpportunity.mockRejectedValue({
+			status: 400,
+			errorCode: "Address.NotGeocodable",
+			detail:
+				"Address could not be located. Please check the street, house number, zip code, and city.",
+		});
+		openWizard();
+
+		await userEvent.type(title(), "Deutscher Titel");
+		await userEvent.click(await screen.findByTestId("modal-save-draft"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-stepper-2")).toHaveAttribute(
+				"aria-current",
+				"step",
+			),
+		);
+		// The banner's wording comes from getApiErrorMessage against the app's
+		// own i18n singleton, which a component test does not drive - that
+		// mapping is covered in lib/apiError.test.ts. What matters here is that
+		// the four address fields are the ones flagged, on their own step.
+		expect(screen.getAllByText("Check this entry")).toHaveLength(4);
+		for (const id of [
+			"#opportunity-street",
+			"#opportunity-house",
+			"#opportunity-zip",
+			"#opportunity-city",
+		]) {
+			expect(document.querySelector(id)).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+		}
+	});
+
+	it("leaves the step alone for a failure that is not about the address", async () => {
+		api.createVolunteerOpportunity.mockRejectedValue({ status: 500 });
+		openWizard();
+
+		await userEvent.type(title(), "Deutscher Titel");
+		await userEvent.click(await screen.findByTestId("modal-save-draft"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-stepper-1")).toHaveAttribute(
+				"aria-current",
+				"step",
+			),
+		);
+		expect(document.querySelector("#opportunity-street")).toBeNull();
+	});
+});
+
+describe("create-opportunity wizard: a time slot that ends before it starts (#2320)", () => {
+	it("says the end must be after the start, and marks both inputs", async () => {
+		openWizard();
+
+		await userEvent.type(title(), "Zeitslot Regression");
+		await userEvent.type(description(), "Regression test for #2320.");
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-step-4")).toBeInTheDocument(),
+		);
+
+		const start = document.querySelector("#slot-start") as HTMLInputElement;
+		const end = document.querySelector("#slot-end") as HTMLInputElement;
+		fireEvent.change(start, { target: { value: "2027-06-01T12:00" } });
+		fireEvent.change(end, { target: { value: "2027-06-01T09:00" } });
+		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+		expect(
+			await screen.findByText("End date must be after start date."),
+		).toBeInTheDocument();
+		expect(start).toHaveAttribute("aria-invalid", "true");
+		expect(end).toHaveAttribute("aria-invalid", "true");
+		expect(end).toHaveAttribute("aria-describedby", "time-slot-error");
+	});
+});
+
 describe("edit wizard: time slot changes are not staged (#2315)", () => {
 	const SLOT = {
 		id: "slot-1",
@@ -607,8 +687,13 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		await addSlot("2020-01-05T10:00", "2020-01-05T12:00");
 
 		expect(
-			await screen.findByText("Start must be in the future."),
+			await screen.findByText("Start date must be in the future."),
 		).toBeInTheDocument();
+		// Only the start box is at fault, so only it is marked - the pair is
+		// flagged together just for "ends before it starts" (#2320).
+		expect(slotStart()).toHaveAttribute("aria-invalid", "true");
+		expect(slotStart()).toHaveAttribute("aria-describedby", "time-slot-error");
+		expect(slotEnd()).not.toHaveAttribute("aria-invalid");
 		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
 		expect(api.createVolunteerOpportunity).not.toHaveBeenCalled();
 		expect(api.createTimeSlot).not.toHaveBeenCalled();
@@ -620,7 +705,7 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		await addSlot("2026-10-05T12:00", "2026-10-05T10:00");
 
 		expect(
-			await screen.findByText("End must be after the start."),
+			await screen.findByText("End date must be after start date."),
 		).toBeInTheDocument();
 		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
 	});
@@ -667,6 +752,9 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		expect(
 			await screen.findByText("Enter a number of spots between 1 and 10,000."),
 		).toBeInTheDocument();
+		expect(slotMax()).toHaveAttribute("aria-invalid", "true");
+		expect(slotMax()).toHaveAttribute("aria-describedby", "time-slot-error");
+		expect(slotStart()).not.toHaveAttribute("aria-invalid");
 		expect(slotMax()).toHaveValue(0);
 		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
 	});

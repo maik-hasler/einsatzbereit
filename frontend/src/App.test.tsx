@@ -116,3 +116,89 @@ describe("the legal pages", () => {
 		},
 	);
 });
+
+describe("the /callback dead ends (#2320)", () => {
+	it("does not strand a bare /callback on the completing-sign-in line", async () => {
+		renderWithProviders(<App />, {
+			route: "/callback",
+			auth: { isAuthenticated: false },
+		});
+
+		expect(
+			await screen.findByTestId("callback-nothing-to-complete"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Nothing to complete here",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Back to Einsatzbereit" }),
+		).toHaveAttribute("href", "/");
+		expect(screen.queryByText("Completing sign-in…")).toBeNull();
+	});
+
+	it("keeps completing while the sign-in response is being exchanged", async () => {
+		renderWithProviders(<App />, {
+			route: "/callback?state=abc&code=def",
+			auth: { isAuthenticated: false },
+		});
+
+		expect(
+			await screen.findByRole("heading", {
+				level: 1,
+				name: "Completing sign-in…",
+			}),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("callback-nothing-to-complete")).toBeNull();
+	});
+
+	it("never prints the oidc-client internals in the error state", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		renderWithProviders(<App />, {
+			route: "/callback?state=abc&code=def",
+			auth: {
+				isAuthenticated: false,
+				error: new Error("No matching state found in storage"),
+			},
+		});
+
+		await screen.findByTestId("callback-error");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Sign-in didn't finish" }),
+		).toBeInTheDocument();
+		expect(document.body.textContent).not.toContain(
+			"No matching state found in storage",
+		);
+		// Still recorded for whoever debugs this, just not shown to the visitor.
+		expect(consoleError).toHaveBeenCalledWith(
+			"[auth] sign-in callback failed:",
+			"No matching state found in storage",
+		);
+		consoleError.mockRestore();
+	});
+
+	it("reports the identity provider's own refusal, not a later symptom", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		renderWithProviders(<App />, {
+			route: "/callback?error=access_denied&state=abc",
+			auth: { isAuthenticated: false },
+		});
+
+		await screen.findByTestId("callback-error");
+
+		expect(
+			screen.getByText(
+				"Sign-in was declined, so you are not signed in. You can try again, or keep browsing without an account.",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Try again" }),
+		).toBeInTheDocument();
+		vi.restoreAllMocks();
+	});
+});

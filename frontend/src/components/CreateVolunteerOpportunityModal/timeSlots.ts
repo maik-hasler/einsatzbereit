@@ -16,6 +16,9 @@ export const MAX_PARTICIPANTS_LIMIT = 10000;
  */
 export type CapacityInput = string | null;
 
+/** The add form's inputs a slot message can be about. */
+export type NewSlotField = "start" | "end" | "max";
+
 export interface SlotRange {
 	startDateTime: string;
 	endDateTime: string;

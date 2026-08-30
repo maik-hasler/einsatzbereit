@@ -5,7 +5,12 @@ import { Trans, useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
+import {
+	getInputClass,
+	getTextareaClass,
+	inputClass,
+	labelClass,
+} from "../../lib/formClasses";
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 import { getInitials } from "../../lib/initials";
@@ -24,6 +29,7 @@ import CharCount from "../../components/CharCount";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
+import { getInvalidFieldNames } from "../../lib/apiError";
 import Button from "../../components/Button";
 import { CalendarIcon, CheckIcon, PencilIcon } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
@@ -33,6 +39,15 @@ import {
 	type PreferredLanguage,
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
+
+// Keyed by the property names the API blames in its per-field 400, so a
+// rejection can name the limit the field actually broke (#2320).
+const FIELD_MAX_LENGTHS = {
+	firstName: 100,
+	lastName: 100,
+	bio: 1000,
+	phone: 30,
+} as const;
 
 const NAME_MAX_LENGTH = 100;
 const BIO_MAX_LENGTH = 1000;
@@ -153,6 +168,7 @@ export default function ProfileOverviewPage() {
 	// typed" (#2315).
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const [invalidFields, setInvalidFields] = useState<string[]>([]);
 
 	const [retryingProfileLoad, setRetryingProfileLoad] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -255,6 +271,7 @@ export default function ProfileOverviewPage() {
 		e.preventDefault();
 		setSaving(true);
 		setSaveError(null);
+		setInvalidFields([]);
 		setSuccessMessage(null);
 		const savedValues = {
 			firstName: form.state.firstName || undefined,
@@ -272,8 +289,16 @@ export default function ProfileOverviewPage() {
 			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
-		} catch {
-			setSaveError(t("profile.saveError"));
+		} catch (err) {
+			// The server names the fields it rejected; say which they are
+			// instead of dropping that into a bare "saving failed" (#2320).
+			const rejected = getInvalidFieldNames(err);
+			setInvalidFields(rejected);
+			setSaveError(
+				rejected.length > 0
+					? t("profile.saveFieldError")
+					: t("profile.saveError"),
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -282,6 +307,7 @@ export default function ProfileOverviewPage() {
 	function handleCancel() {
 		form.reset(profile);
 		setSaveError(null);
+		setInvalidFields([]);
 		setEditing(false);
 	}
 
@@ -291,6 +317,16 @@ export default function ProfileOverviewPage() {
 		form.state.languages.length === 0 &&
 		!form.state.preferredContact &&
 		!form.state.phone;
+
+	// The server blames its own PascalCase property names, which
+	// getInvalidFieldNames lowercases - so match case-insensitively.
+	type LimitedField = keyof typeof FIELD_MAX_LENGTHS;
+	const fieldRejected = (name: LimitedField) =>
+		invalidFields.includes(name.toLowerCase());
+	const fieldError = (name: LimitedField) =>
+		fieldRejected(name)
+			? t("profile.fieldTooLong", { max: FIELD_MAX_LENGTHS[name] })
+			: undefined;
 
 	const displayName =
 		form.state.firstName || form.state.lastName
@@ -644,30 +680,52 @@ export default function ProfileOverviewPage() {
 													<Field
 														label={t("account.fieldFirstName")}
 														id="first-name"
+														error={fieldError("firstName")}
 													>
 														<input
 															id="first-name"
 															maxLength={NAME_MAX_LENGTH}
 															autoComplete="given-name"
+															aria-invalid={
+																fieldRejected("firstName") || undefined
+															}
+															aria-describedby={
+																fieldRejected("firstName")
+																	? "first-name-error"
+																	: undefined
+															}
 															value={form.state.firstName}
 															onChange={(e) =>
 																form.setFirstName(e.target.value)
 															}
-															className={inputClass}
+															className={getInputClass(
+																fieldRejected("firstName"),
+															)}
 														/>
 													</Field>
 
 													<Field
 														label={t("account.fieldLastName")}
 														id="last-name"
+														error={fieldError("lastName")}
 													>
 														<input
 															id="last-name"
 															maxLength={NAME_MAX_LENGTH}
 															autoComplete="family-name"
+															aria-invalid={
+																fieldRejected("lastName") || undefined
+															}
+															aria-describedby={
+																fieldRejected("lastName")
+																	? "last-name-error"
+																	: undefined
+															}
 															value={form.state.lastName}
 															onChange={(e) => form.setLastName(e.target.value)}
-															className={inputClass}
+															className={getInputClass(
+																fieldRejected("lastName"),
+															)}
 														/>
 													</Field>
 												</div>
@@ -677,15 +735,23 @@ export default function ProfileOverviewPage() {
 										<hr className="border-gray-200" />
 
 										<div className="space-y-5">
-											<Field label={t("profile.fieldBio")} id="bio">
+											<Field
+												label={t("profile.fieldBio")}
+												id="bio"
+												error={fieldError("bio")}
+											>
 												<textarea
 													id="bio"
 													rows={4}
 													maxLength={BIO_MAX_LENGTH}
+													aria-invalid={fieldRejected("bio") || undefined}
+													aria-describedby={
+														fieldRejected("bio") ? "bio-error" : undefined
+													}
 													value={form.state.bio}
 													placeholder={t("profile.bioPlaceholder")}
 													onChange={(e) => form.setBio(e.target.value)}
-													className={textareaClass}
+													className={getTextareaClass(fieldRejected("bio"))}
 												/>
 												<CharCount
 													current={form.state.bio.length}
@@ -727,16 +793,24 @@ export default function ProfileOverviewPage() {
 												/>
 											</Field>
 
-											<Field label={t("profile.fieldPhone")} id="phone">
+											<Field
+												label={t("profile.fieldPhone")}
+												id="phone"
+												error={fieldError("phone")}
+											>
 												<input
 													id="phone"
 													type="tel"
 													maxLength={PHONE_MAX_LENGTH}
 													autoComplete="tel"
+													aria-invalid={fieldRejected("phone") || undefined}
+													aria-describedby={
+														fieldRejected("phone") ? "phone-error" : undefined
+													}
 													value={form.state.phone}
 													placeholder={t("profile.phonePlaceholder")}
 													onChange={(e) => form.setPhone(e.target.value)}
-													className={inputClass}
+													className={getInputClass(fieldRejected("phone"))}
 												/>
 											</Field>
 
