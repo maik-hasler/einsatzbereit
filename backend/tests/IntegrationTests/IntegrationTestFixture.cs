@@ -28,6 +28,17 @@ public class IntegrationTestFixture
 	private const string DefaultUserRole = "user";
 	private const string BaselineOrganisator = "olaf";
 
+	// Every client this fixture hands out reaches the backend over loopback, and the
+	// anonymous Read bucket is partitioned by the real connection IP (see
+	// RateLimitingExtensions.GetClientIp), so the entire suite draws on one bucket. Pinned
+	// at the production limit of 60/min the suite's own ordinary anonymous traffic already
+	// rode the ceiling, and tests began failing on 429s raised by their neighbours'
+	// requests rather than their own. These give that shared bucket the headroom
+	// ordinary tests need; the burst tests that must still trip the limiter scale their
+	// request counts off these values rather than hardcoding one.
+	public const int AnonymousReadPermitLimit = 300;
+	public const int MapTilesPermitLimit = 2000;
+
 	private DistributedApplication _app = null!;
 	private Respawner _respawner = null!;
 	private string _connectionString = null!;
@@ -38,7 +49,8 @@ public class IntegrationTestFixture
 		var appHost = await DistributedApplicationTestingBuilder
 			.CreateAsync<AppHost>([
 				"--environment", "Testing",
-				"--RateLimiting:Read:AnonymousPermitLimit=60",
+				$"--RateLimiting:Read:AnonymousPermitLimit={AnonymousReadPermitLimit}",
+				$"--RateLimiting:MapTiles:PermitLimit={MapTilesPermitLimit}",
 			]);
 
 		_app = await appHost.BuildAsync();
