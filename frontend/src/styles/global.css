@@ -139,7 +139,8 @@ brand-green background but took react-big-calendar's dark grey label the moment
 the pointer touched it: 1.06:1, an axe `color-contrast` violation at serious
 impact (#2327). Every state below therefore restates `color`, not just
 `background` - dropping the colour is what let the default through. */
-.rbc-btn-group button:hover {
+.rbc-btn-group button:hover,
+.rbc-btn-group button:focus {
 	color: rgb(55 65 81);
 	background: rgb(249 250 251);
 }
@@ -152,7 +153,6 @@ impact (#2327). Every state below therefore restates `color`, not just
 }
 
 .rbc-btn-group button.rbc-active,
-.rbc-btn-group button.rbc-active:hover,
 .rbc-btn-group button.rbc-active:focus {
 	background: var(--color-brand-700);
 	color: white;
@@ -165,6 +165,7 @@ impact (#2327). Every state below therefore restates `color`, not just
 
 .rbc-btn-group button.rbc-active:hover {
 	background: var(--color-brand-800);
+	color: white;
 	border-color: var(--color-brand-800);
 }
 

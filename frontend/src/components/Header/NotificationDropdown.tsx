@@ -84,12 +84,18 @@ export default function NotificationDropdown({
 				aria-controls={panelId}
 				aria-expanded={notifOpen}
 			>
-				<BellIcon className="h-5 w-5" />
-				{unreadCount > 0 && (
-					<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-						{unreadCount > 9 ? "9+" : unreadCount}
-					</span>
-				)}
+				{/* The badge hangs off the icon, not off the button box - the mobile
+				button is a 44px touch target with the icon centred in it, so a
+				badge anchored to the button's own corner would float away from the
+				bell it belongs to (#2327). */}
+				<span className="relative inline-flex">
+					<BellIcon className="h-5 w-5" />
+					{unreadCount > 0 && (
+						<span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+							{unreadCount > 9 ? "9+" : unreadCount}
+						</span>
+					)}
+				</span>
 			</button>
 			{notifOpen && (
 				<div
