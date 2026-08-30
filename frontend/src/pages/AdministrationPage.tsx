@@ -241,32 +241,38 @@ function OrganizationsSection() {
 	return (
 		<>
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
-				<form
-					onSubmit={handleSearchSubmit}
-					className="mb-4 flex items-end gap-3"
-				>
-					<div className="flex-1">
-						<label htmlFor="admin-org-search" className={labelClass}>
-							{t("administration.organizations.searchLabel")}
-						</label>
-						<input
-							id="admin-org-search"
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder={t("administration.organizations.searchPlaceholder")}
-							className={inputClass}
-						/>
-					</div>
-					<Button type="submit">
-						{t("administration.organizations.searchButton")}
-					</Button>
+				{/* See the note on the users search card: the clear control stays outside the
+				form so a by-name lookup for "Search" matches exactly one button. */}
+				<div className="mb-4 flex flex-wrap items-end gap-3">
+					<form
+						onSubmit={handleSearchSubmit}
+						className="flex min-w-0 flex-1 items-end gap-3"
+					>
+						<div className="min-w-0 flex-1">
+							<label htmlFor="admin-org-search" className={labelClass}>
+								{t("administration.organizations.searchLabel")}
+							</label>
+							<input
+								id="admin-org-search"
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder={t(
+									"administration.organizations.searchPlaceholder",
+								)}
+								className={inputClass}
+							/>
+						</div>
+						<Button type="submit">
+							{t("administration.organizations.searchButton")}
+						</Button>
+					</form>
 					{filtersActive && (
 						<Button type="button" variant="tertiary" onClick={clearFilters}>
 							{t("administration.clearFilters")}
 						</Button>
 					)}
-				</form>
+				</div>
 				<div className="flex flex-wrap items-center gap-4">
 					<label
 						htmlFor="admin-org-flagged-only"
@@ -616,29 +622,37 @@ function UsersSection() {
 	return (
 		<>
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
-				<form onSubmit={handleSearchSubmit} className="flex items-end gap-3">
-					<div className="flex-1">
-						<label htmlFor="admin-user-search" className={labelClass}>
-							{t("administration.users.searchLabel")}
-						</label>
-						<input
-							id="admin-user-search"
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder={t("administration.users.searchPlaceholder")}
-							className={inputClass}
-						/>
-					</div>
-					<Button type="submit">
-						{t("administration.users.searchButton")}
-					</Button>
+				{/* The clear control sits beside the form rather than in it: it is a reset, not
+				a submit, and keeping the form to exactly one button means a by-name lookup for
+				"Search" cannot also match "Clear search". */}
+				<div className="flex flex-wrap items-end gap-3">
+					<form
+						onSubmit={handleSearchSubmit}
+						className="flex min-w-0 flex-1 items-end gap-3"
+					>
+						<div className="min-w-0 flex-1">
+							<label htmlFor="admin-user-search" className={labelClass}>
+								{t("administration.users.searchLabel")}
+							</label>
+							<input
+								id="admin-user-search"
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder={t("administration.users.searchPlaceholder")}
+								className={inputClass}
+							/>
+						</div>
+						<Button type="submit">
+							{t("administration.users.searchButton")}
+						</Button>
+					</form>
 					{searchActive && (
 						<Button type="button" variant="tertiary" onClick={clearSearch}>
 							{t("administration.clearSearch")}
 						</Button>
 					)}
-				</form>
+				</div>
 
 				<p className="mt-3 text-xs text-gray-500">
 					{t("administration.users.staleness")}
