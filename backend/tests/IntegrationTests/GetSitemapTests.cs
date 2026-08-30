@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Application.Common.Exceptions;
+using Application.Common.StaticPages;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence;
@@ -15,7 +16,7 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	public Task ResetAsync() => fixture.ResetAsync();
 
 	[Test]
-	public async Task GetSitemap_ShouldReturnEmptyUrlset_WhenNothingPublished(
+	public async Task GetSitemap_ShouldListOnlyTheStaticPages_WhenNothingPublished(
 		CancellationToken cancellationToken)
 	{
 		using var httpClient = fixture.CreateHttpClient();
@@ -25,7 +26,18 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 
 		response.EnsureSuccessStatusCode();
 		response.Content.Headers.ContentType!.MediaType.Should().Be("application/xml");
-		xml.Should().Contain("<urlset").And.NotContain("<url>");
+		xml.Should().Contain("<urlset");
+
+		// The static routes are listed unconditionally, so an empty database no
+		// longer means an empty urlset - only that no entity URL is in it
+		// (einsatzbereit#2331).
+		xml.Should().NotContain("/organizations/").And.NotContain("/volunteer-opportunities/");
+		foreach (var page in StaticPageCatalog.All)
+			xml.Should().Contain($"{page.Path}</loc>");
+
+		// The site root was missing outright, so assert it by shape rather than
+		// trusting the "/" entry of the loop above.
+		xml.Should().MatchRegex(@"<loc>https?://[^<]+/</loc>");
 	}
 
 	[Test]

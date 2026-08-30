@@ -79,6 +79,43 @@ input[type="number"]::-webkit-outer-spin-button {
 	opacity: 0.5;
 }
 
+/* Chromium paints its own clear glyph inside every input[type="search"], in a
+fixed blue that ignores the field around it. In the organization directory's
+dark-green translucent search pill that made it the only blue pixel on the page,
+and at its native size it does not read as an "x" at all (#2331). Replaced with
+a currentColor cross, so it inherits whatever the field's own text colour is -
+white in the pill, gray in the light form inputs - instead of hiding it, which
+would take the clear action away from all six search fields. Drawn with
+gradients rather than a data: URI because the CSP's img-src (nginx.conf.template)
+allows 'self' and blob: only. */
+input[type="search"]::-webkit-search-cancel-button {
+	-webkit-appearance: none;
+	appearance: none;
+	height: 0.875rem;
+	width: 0.875rem;
+	cursor: pointer;
+	opacity: 0.6;
+	background-image:
+		linear-gradient(
+			45deg,
+			transparent 43%,
+			currentColor 43%,
+			currentColor 57%,
+			transparent 57%
+		),
+		linear-gradient(
+			-45deg,
+			transparent 43%,
+			currentColor 43%,
+			currentColor 57%,
+			transparent 57%
+		);
+}
+
+input[type="search"]::-webkit-search-cancel-button:hover {
+	opacity: 1;
+}
+
 .rbc-toolbar {
 	display: flex;
 	align-items: center;

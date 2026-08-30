@@ -219,7 +219,18 @@ export default function OrganizationsPage() {
 													lazy
 												/>
 												<div className="flex min-w-0 flex-1 items-center gap-2">
-													<h3 className="block truncate text-sm font-semibold text-gray-900">
+													{/*
+													 * Two lines plus the full name in `title`: a single truncated
+													 * line showed about a third of a 95-character name, with nothing
+													 * but the stretched link's aria-label holding the rest, and empty
+													 * card space right below it. `relative z-10` lifts the text out
+													 * from under that link so it can still be selected and copied
+													 * (#2331).
+													 */}
+													<h3
+														title={org.name}
+														className="relative z-10 line-clamp-2 text-sm font-semibold break-words text-gray-900"
+													>
 														{org.name}
 													</h3>
 												</div>
@@ -236,27 +247,44 @@ export default function OrganizationsPage() {
 													/>
 												)}
 											</div>
+											{/*
+											 * Every line here used to be conditional, so an org with no
+											 * description, no city and no open opportunities rendered a
+											 * bordered card that was blank below the name - which reads as a
+											 * failed render rather than a sparse organization (#2331). The
+											 * description and the count now always say something.
+											 */}
 											<div className="min-w-0 flex-1">
-												{org.description && (
+												{org.description ? (
 													<p
 														lang="de"
-														className="line-clamp-2 text-sm text-gray-500"
+														className="relative z-10 line-clamp-2 text-sm text-gray-500"
 													>
 														{org.description}
 													</p>
+												) : (
+													<p className="relative z-10 text-sm text-gray-500 italic">
+														{t("organizationsPage.noDescription")}
+													</p>
 												)}
 												{org.city && (
-													<p className="mt-1 text-xs text-gray-500">
+													<p className="relative z-10 mt-1 text-xs text-gray-500">
 														{org.city}
 													</p>
 												)}
-												{org.openOpportunityCount > 0 && (
-													<p className="mt-1 text-xs font-medium text-brand-700">
-														{t("organizationsPage.openOpportunities", {
-															count: org.openOpportunityCount,
-														})}
-													</p>
-												)}
+												<p
+													className={`relative z-10 mt-1 text-xs font-medium ${
+														org.openOpportunityCount > 0
+															? "text-brand-700"
+															: "text-gray-500"
+													}`}
+												>
+													{org.openOpportunityCount > 0
+														? t("organizationsPage.openOpportunities", {
+																count: org.openOpportunityCount,
+															})
+														: t("organizationsPage.noOpenOpportunities")}
+												</p>
 											</div>
 										</li>
 									);
