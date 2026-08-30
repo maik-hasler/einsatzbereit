@@ -285,7 +285,13 @@ export default defineConfig({
 					// blank screen before the last config that did arrive is used.
 					// No expiration: exactly one URL is ever stored here, so there is
 					// nothing to evict - and an entry aging out is precisely the state
-					// that breaks the cold start this rule exists to fix.
+					// that breaks the cold start this rule exists to fix. Cacheable
+					// statuses are [200], not the [0, 200] the API rules below need:
+					// those talk to a cross-origin host and so have to accept opaque
+					// responses, where the same-origin match here guarantees a
+					// readable one - and an opaque status-0 response cached under
+					// this name would be an unverifiable stand-in for the one file
+					// the whole app boots from.
 					{
 						urlPattern: ({
 							url,
