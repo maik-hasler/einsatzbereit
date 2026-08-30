@@ -39,6 +39,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
 import Skeleton from "../components/Skeleton";
 import LoadMoreError from "../components/LoadMoreError";
+import DetailLoadFailure from "../components/DetailLoadFailure";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
 import OpportunityCard from "../components/OpportunityCard";
@@ -47,7 +48,11 @@ import WarningBanner from "../components/WarningBanner";
 import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
-import { getApiErrorMessage, isNetworkError } from "../lib/apiError";
+import {
+	classifyLoadFailure,
+	getApiErrorMessage,
+	type LoadFailureKind,
+} from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
 import {
@@ -186,9 +191,12 @@ export default function VolunteerOpportunityDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const [errorIsNetworkFailure, setErrorIsNetworkFailure] = useState(false);
+	const [failure, setFailure] = useState<LoadFailureKind | null>(null);
 	const online = useOnlineStatus();
-	const errorIsOffline = error !== null && (!online || errorIsNetworkFailure);
+	// An error captured while offline stays an offline state until the
+	// connection is back, whatever the browser reported at the time.
+	const failureKind =
+		failure && failure !== "notFound" && !online ? "offline" : failure;
 	const [showSignUp, setShowSignUp] = useState(false);
 
 	const [preselectedSlotId, setPreselectedSlotId] = useState<
@@ -296,7 +304,7 @@ export default function VolunteerOpportunityDetailPage() {
 		const requestId = ++latestRequestRef.current;
 		setLoading(true);
 		setError(null);
-		setErrorIsNetworkFailure(false);
+		setFailure(null);
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then((details) => {
@@ -306,7 +314,7 @@ export default function VolunteerOpportunityDetailPage() {
 			.catch((err) => {
 				if (requestId !== latestRequestRef.current) return;
 				setError(getApiErrorMessage(err, t("error.serverError")));
-				setErrorIsNetworkFailure(isNetworkError(err));
+				setFailure(classifyLoadFailure(err, online));
 			})
 			.finally(() => {
 				if (requestId !== latestRequestRef.current) return;
@@ -387,24 +395,19 @@ export default function VolunteerOpportunityDetailPage() {
 				</div>
 			</div>
 		);
-	if (error)
-		return errorIsOffline ? (
-			<RouteState
-				variant="offline"
-				title={t("routeState.offline.title")}
-				message={t("opportunities.offlineDetail")}
+	if (failureKind || !opportunity)
+		return (
+			<DetailLoadFailure
+				kind={failureKind ?? "notFound"}
+				notFoundTitle={t("opportunities.notFoundTitle")}
+				notFoundMessage={t("opportunities.notFoundMessage")}
+				errorMessage={error ?? t("error.serverError")}
+				offlineMessage={t("opportunities.offlineDetail")}
 				onRetry={load}
-			/>
-		) : (
-			<LoadMoreError
-				message={t("opportunities.error", { message: error })}
-
-				retrying={false}
-				onRetry={load}
+				action={{ label: t("nav.findOpportunities"), to: "/opportunities" }}
+				data-testid="opportunity-load-failure"
 			/>
 		);
-	if (!opportunity)
-		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
 
 	const isOwner =
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);

@@ -347,3 +347,105 @@ describe("ProfileOverviewPage field limits", () => {
 		);
 	});
 });
+
+describe("ProfileOverviewPage bio counter", () => {
+	it("counts the bio's characters like the report dialog does", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		expect(await screen.findByText("15 / 1000")).toBeInTheDocument();
+	});
+});
+
+describe("ProfileOverviewPage rejected save", () => {
+	it("names the fields the server rejected instead of a bare failure", async () => {
+		api.updateUserProfile.mockRejectedValue({
+			status: 400,
+			response: JSON.stringify({
+				errors: {
+					FirstName: [
+						"The field FirstName must be a string or array type with a maximum length of '100'.",
+					],
+				},
+			}),
+		});
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Save$/ }),
+		);
+
+		expect(
+			await screen.findByText(
+				"Some entries are too long. Shorten the highlighted fields and save again.",
+			),
+		).toBeInTheDocument();
+		expect(document.querySelector("#first-name")).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
+		expect(
+			screen.getByText("Must not be longer than 100 characters."),
+		).toBeInTheDocument();
+		expect(document.querySelector("#last-name")).not.toHaveAttribute(
+			"aria-invalid",
+		);
+	});
+
+	it("falls back to the generic message when the server blames no field", async () => {
+		api.updateUserProfile.mockRejectedValue({ status: 500 });
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Save$/ }),
+		);
+
+		expect(
+			await screen.findByText("Failed to save profile."),
+		).toBeInTheDocument();
+	});
+});
+
+describe("ProfileOverviewPage rejected field a11y", () => {
+	it("ties the field's error text to the input that carries it", async () => {
+		api.updateUserProfile.mockRejectedValue({
+			status: 400,
+			response: JSON.stringify({ errors: { Bio: ["too long"] } }),
+		});
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Save$/ }),
+		);
+
+		// Wait on the rendered message, like the sibling rejected-save tests do,
+		// then read the wiring off the settled DOM.
+		const error = await screen.findByText(
+			"Must not be longer than 1000 characters.",
+		);
+
+		expect(error).toHaveAttribute("id", "bio-error");
+		// Field derives the id as `${id}-error`; without the pointer the message
+		// is visible but never announced with the control.
+		expect(document.querySelector("#bio")).toHaveAttribute(
+			"aria-describedby",
+			"bio-error",
+		);
+		expect(document.querySelector("#bio")).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
+	});
+});

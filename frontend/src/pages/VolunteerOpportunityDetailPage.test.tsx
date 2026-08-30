@@ -1030,3 +1030,36 @@ describe("opportunity detail page sign-up deep link (#2323)", () => {
 		);
 	});
 });
+
+describe("opportunity detail page missing opportunity", () => {
+	it("shows the not-found state with a way back instead of an endless retry", async () => {
+		api.getVolunteerOpportunityDetails.mockRejectedValue({ status: 404 });
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Opportunity not found" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Try again" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Find opportunities" }),
+		).toHaveAttribute("href", "/opportunities");
+	});
+
+	it("keeps a retry for a genuine server error", async () => {
+		api.getVolunteerOpportunityDetails.mockRejectedValue({ status: 500 });
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Try again" }),
+		).toBeInTheDocument();
+	});
+});

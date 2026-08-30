@@ -22,9 +22,56 @@
 		<meta name="twitter:description" content="Einsatzbereit verbindet engagierte Freiwillige mit regionalen Hilfsangeboten. Finde lokale Einsätze, hilf spontan und mach einen Unterschied in deiner Gemeinde." />
 		<meta name="twitter:image" content="https://einsatzbereit.maik-hasler.de/og-image.png" />
 		<script src="/config.js" defer></script>
+		<!--
+			The app shell (#2320). Everything below paints from the first HTML
+			bytes, before the module bundle, the fonts or Tailwind's stylesheet
+			arrive - on a throttled connection that gap ran 6-9 seconds of pure
+			white, which is indistinguishable from a dead site. It lives inside
+			#root, so React clears it on its first commit with no teardown code.
+		-->
+		<style>
+			#app-splash {
+				position: fixed;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: #f0faf5;
+			}
+			#app-splash svg {
+				width: 88px;
+				height: 88px;
+				color: #226947;
+				animation: app-splash-pulse 1.6s ease-in-out infinite;
+			}
+			@keyframes app-splash-pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.45;
+				}
+			}
+			@media (prefers-reduced-motion: reduce) {
+				#app-splash svg {
+					animation: none;
+				}
+			}
+		</style>
 	</head>
 	<body>
-		<div id="root"></div>
+		<div id="root">
+			<div id="app-splash" aria-hidden="true">
+				<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="3">
+					<circle cx="28" cy="28" r="25" />
+					<circle cx="28" cy="14" r="4.5" />
+					<path d="M17,19 L28,26 L39,19" stroke-linecap="round" stroke-linejoin="round" />
+					<line x1="28" y1="19" x2="28" y2="32" stroke-linecap="round" />
+					<path d="M19,43 L28,32 L37,43" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</div>
+		</div>
 		<script type="module" src="/src/main.tsx"></script>
 	</body>
 </html>

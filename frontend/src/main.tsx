@@ -8,6 +8,7 @@ import App from "./App";
 import ConfigGate from "./components/ConfigGate";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
+import { SpinnerIcon } from "./components/Spinner";
 import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
 import { dispatchToast } from "./lib/toastBus";
@@ -63,12 +64,29 @@ window.addEventListener("unhandledrejection", (event) => {
 	handleUnhandledRejection(event.reason);
 });
 
+// Hands over from index.html's app shell, which React clears on its first
+// commit: locales and the first route chunk are still in flight at that point,
+// and a `null` fallback turned the shell straight back into a blank white
+// page. Deliberately free of `t()` - i18n is one of the things suspending
+// here - and aria-hidden, since a translated status has nothing to say yet
+// (#2320).
+function AppBoot() {
+	return (
+		<div
+			aria-hidden="true"
+			className="flex min-h-screen items-center justify-center bg-brand-50"
+		>
+			<SpinnerIcon className="h-12 w-12" />
+		</div>
+	);
+}
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
 		<PwaUpdatePrompt />
 		<ErrorBoundary>
 			<ConfigGate>
-				<Suspense fallback={null}>
+				<Suspense fallback={<AppBoot />}>
 					<ToastProvider>
 						<AuthProvider {...oidcConfig}>
 							<BrowserRouter>
