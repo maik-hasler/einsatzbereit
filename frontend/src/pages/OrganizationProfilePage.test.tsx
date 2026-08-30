@@ -61,3 +61,46 @@ describe("OrganizationProfilePage anonymous visitor", () => {
 		);
 	});
 });
+
+describe("OrganizationProfilePage missing organization", () => {
+	it("shows the not-found state with a way back instead of a retry that cannot succeed", async () => {
+		api.getPublicOrganizationProfile.mockRejectedValue({ status: 404 });
+		renderProfile();
+
+		const failure = await screen.findByTestId("organization-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Organization not found" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Try again" }),
+		).not.toBeInTheDocument();
+		expect(
+			await screen.findByRole("link", { name: "Organizations" }),
+		).toHaveAttribute("href", "/organizations");
+		expect(failure).toBeInTheDocument();
+	});
+
+	it("does not leave the tab title on the loading placeholder", async () => {
+		api.getPublicOrganizationProfile.mockRejectedValue({ status: 404 });
+		renderProfile();
+
+		await screen.findByTestId("organization-load-failure");
+
+		expect(document.title).toBe("Organization not found | Einsatzbereit");
+	});
+
+	it("keeps a retry for a genuine server error", async () => {
+		api.getPublicOrganizationProfile.mockRejectedValue({ status: 500 });
+		renderProfile();
+
+		await screen.findByTestId("organization-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Try again" }),
+		).toBeInTheDocument();
+	});
+});

@@ -13,8 +13,10 @@ vi.mock("../i18n", () => ({
 }));
 
 import {
+	classifyLoadFailure,
 	getApiErrorMessage,
 	getApiErrorStatus,
+	getInvalidFieldNames,
 	hasActionableErrorCode,
 	isApiErrorCode,
 	isApiForbiddenError,
@@ -264,5 +266,58 @@ describe("hasActionableErrorCode", () => {
 
 	it("returns false for a non-object value", () => {
 		expect(hasActionableErrorCode("boom")).toBe(false);
+	});
+});
+
+describe("classifyLoadFailure", () => {
+	it("treats a 404 as not found, not as something worth retrying", () => {
+		expect(classifyLoadFailure({ status: 404 }, true)).toBe("notFound");
+	});
+
+	it("still reports not found while offline - the id is missing either way", () => {
+		expect(classifyLoadFailure({ status: 404 }, false)).toBe("notFound");
+	});
+
+	it("treats a rejection with no status as an offline failure", () => {
+		expect(classifyLoadFailure(new TypeError("Failed to fetch"), true)).toBe(
+			"offline",
+		);
+	});
+
+	it("treats any failure as offline while the browser reports no connection", () => {
+		expect(classifyLoadFailure({ status: 500 }, false)).toBe("offline");
+	});
+
+	it("treats a server status as a retryable error", () => {
+		expect(classifyLoadFailure({ status: 500 }, true)).toBe("error");
+		expect(classifyLoadFailure({ status: 403 }, true)).toBe("error");
+	});
+});
+
+describe("getInvalidFieldNames", () => {
+	it("reads the parsed ProblemDetails NSwag hands a declared status", () => {
+		expect(
+			getInvalidFieldNames({ errors: { FirstName: ["too long"] } }),
+		).toEqual(["firstname"]);
+	});
+
+	it("parses the raw response body NSwag leaves on an undeclared status", () => {
+		expect(
+			getInvalidFieldNames({
+				status: 400,
+				response: JSON.stringify({ errors: { Bio: ["too long"], Phone: [] } }),
+			}),
+		).toEqual(["bio", "phone"]);
+	});
+
+	it("returns nothing for a body that is not JSON", () => {
+		expect(getInvalidFieldNames({ response: "<html>502</html>" })).toEqual([]);
+	});
+
+	it("returns nothing when the failure blames no field", () => {
+		expect(getInvalidFieldNames({ status: 500 })).toEqual([]);
+		expect(getInvalidFieldNames({ response: JSON.stringify({}) })).toEqual([]);
+		expect(getInvalidFieldNames(null)).toEqual([]);
+		expect(getInvalidFieldNames("boom")).toEqual([]);
 	});
 });

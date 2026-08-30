@@ -1,7 +1,9 @@
-import { useSearchParams } from "react-router";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { runtimeConfig } from "../lib/runtimeConfig";
+import { useApiClient } from "../hooks/useApiClient";
+import { getApiErrorMessage } from "../lib/apiError";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
 import { EnvelopeIcon } from "../components/icons";
@@ -16,22 +18,56 @@ const TYPE_LABEL_KEYS: Record<string, string> = {
 	EngagementReminder: "notificationPreferences.engagementReminder",
 };
 
+// Both ids in the link are GUIDs the API will reject out of hand if they are
+// not - checking their shape here keeps a mangled link on the app's own
+// invalid-link state instead of spending a request to learn the same thing.
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function UnsubscribeConfirmPage() {
 	const { t } = useTranslation();
-	usePageTitle(t("unsubscribeConfirm.title"));
+	const api = useApiClient();
+	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const userId = searchParams.get("userId");
 	const type = searchParams.get("type");
 	const token = searchParams.get("token");
 
-	const isValid = Boolean(userId && type && token);
+	// `type` is checked against the five real notification types rather than
+	// echoed into the copy: an unvalidated value both said something the app
+	// could not act on and broke the page's width when it was long (#2320).
+	const isValid = Boolean(
+		userId &&
+		GUID.test(userId) &&
+		token &&
+		GUID.test(token) &&
+		type &&
+		TYPE_LABEL_KEYS[type],
+	);
 	const typeLabel =
-		type && TYPE_LABEL_KEYS[type] ? t(TYPE_LABEL_KEYS[type]) : type;
+		type && TYPE_LABEL_KEYS[type] ? t(TYPE_LABEL_KEYS[type]) : "";
 
-	const confirmUrl = isValid
-		? `${runtimeConfig.apiUrl}/v1/users/${encodeURIComponent(userId ?? "")}/unsubscribe?type=${encodeURIComponent(type ?? "")}&token=${encodeURIComponent(token ?? "")}`
-		: undefined;
+	usePageTitle(
+		isValid
+			? t("unsubscribeConfirm.title")
+			: t("unsubscribeConfirm.invalidTitle"),
+	);
+
+	async function handleConfirm() {
+		if (!isValid || !userId || !type || !token) return;
+		setSubmitting(true);
+		setError(null);
+		try {
+			await api.unsubscribe(userId, type, token);
+			void navigate("/unsubscribed", { replace: true });
+		} catch (err) {
+			setError(getApiErrorMessage(err, t("unsubscribeConfirm.failed")));
+			setSubmitting(false);
+		}
+	}
 
 	return (
 		<div className="mx-auto max-w-md py-10 sm:py-16">
@@ -43,21 +79,43 @@ export default function UnsubscribeConfirmPage() {
 					<EnvelopeIcon className="h-7 w-7" />
 				</div>
 				<h1 className={`mt-6 text-gray-900 ${statusTitleClass}`}>
-					{t("unsubscribeConfirm.title")}
+					{isValid
+						? t("unsubscribeConfirm.title")
+						: t("unsubscribeConfirm.invalidTitle")}
 				</h1>
-				{isValid && confirmUrl ? (
+				{isValid ? (
 					<>
 						<p className="mt-4 leading-relaxed text-gray-700">
 							{t("unsubscribeConfirm.description", { type: typeLabel })}
 						</p>
-						<Button href={confirmUrl} size="lg" className="mt-8">
-							{t("unsubscribeConfirm.confirm")}
+						{error && (
+							<ErrorBanner message={error} className="mt-6 text-left" />
+						)}
+						<Button
+							onClick={handleConfirm}
+							disabled={submitting}
+							size="lg"
+							className="mt-8"
+						>
+							{submitting
+								? t("unsubscribeConfirm.confirming")
+								: t("unsubscribeConfirm.confirm")}
 						</Button>
 					</>
 				) : (
-					<div className="mt-6 text-left">
-						<ErrorBanner message={t("unsubscribeConfirm.invalidLink")} />
-					</div>
+					<>
+						<p className="mt-4 leading-relaxed text-gray-700">
+							{t("unsubscribeConfirm.invalidLink")}
+						</p>
+						<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+							<Button to="/profile/settings" size="lg">
+								{t("unsubscribe.manageInProfile")}
+							</Button>
+							<Button to="/" variant="secondary" size="lg">
+								{t("notFound.backHome")}
+							</Button>
+						</div>
+					</>
 				)}
 			</div>
 		</div>

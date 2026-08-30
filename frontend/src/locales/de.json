@@ -211,7 +211,6 @@
       "getDirections": "Route über Google Maps planen",
       "joinWaitlist": "Für Zeitslot eintragen",
       "expressInterest": "Interesse bekunden",
-      "notFound": "Nicht gefunden.",
       "germanOnlyNotice": "Nur auf Deutsch verfügbar",
       "crossLocaleMatchNotice": "Trifft Ihre Suche auf {{language}} zu:",
       "flexibleDate": "Flexibler Termin",
@@ -257,7 +256,9 @@
       "factWhere": "Wo",
       "offline": "Sobald deine Verbindung zurück ist, laden wir die Einsätze.",
       "offlineLoadMore": "Das sind die Einsätze, die vor dem Verbindungsabbruch geladen wurden – den Rest holen wir, sobald du wieder online bist.",
-      "offlineDetail": "Sobald deine Verbindung zurück ist, laden wir diese Seite erneut."
+      "offlineDetail": "Sobald deine Verbindung zurück ist, laden wir diese Seite erneut.",
+      "notFoundTitle": "Einsatz nicht gefunden",
+      "notFoundMessage": "Dieser Einsatz existiert nicht oder wurde entfernt. Prüfe den Link, dem du gefolgt bist – die ID darin könnte unvollständig sein."
     },
     "createOpportunity": {
       "title": "Einsatz erstellen",
@@ -338,8 +339,9 @@
       "saving": "Wird gespeichert…",
       "unsavedChangesTitle": "Ungespeicherte Änderungen verwerfen?",
       "unsavedChangesMessage": "Du hast ungespeicherte Änderungen an diesem Einsatz. Wenn du jetzt schließt, gehen sie verloren.",
-      "slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
-      "discardChanges": "Änderungen verwerfen"
+"slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
+      "discardChanges": "Änderungen verwerfen",
+      "addressUnresolvedField": "Prüfe diese Angabe"
     },
     "checkInMethod": {
       "none": "Automatisch (nach dem Einsatz)",
@@ -979,11 +981,15 @@
       "switchedFromAccount": "Zu {{language}} gewechselt, basierend auf deinem Konto"
     },
     "auth": {
-      "authError": "Authentifizierungsfehler: {{message}}",
       "completing": "Anmeldung wird abgeschlossen…",
       "loading": "Wird geladen…",
       "recoveryFailedTitle": "Anmeldung nicht möglich",
-      "recoveryFailedMessage": "Deine Sitzung konnte trotz mehrerer Versuche nicht wiederhergestellt werden. Bitte melde dich ab und versuche anschließend erneut, dich anzumelden. Falls das Problem weiterhin besteht, wende dich an den Support."
+      "recoveryFailedMessage": "Deine Sitzung konnte trotz mehrerer Versuche nicht wiederhergestellt werden. Bitte melde dich ab und versuche anschließend erneut, dich anzumelden. Falls das Problem weiterhin besteht, wende dich an den Support.",
+      "signInFailedTitle": "Anmeldung nicht abgeschlossen",
+      "signInFailedMessage": "Wir konnten deine Anmeldung nicht abschließen. Meist klappt ein zweiter Versuch – falls nicht, schließe den Tab und starte erneut von der Startseite.",
+      "signInDeclined": "Die Anmeldung wurde abgebrochen, du bist nicht angemeldet. Du kannst es erneut versuchen oder ohne Konto weiterstöbern.",
+      "nothingToCompleteTitle": "Hier gibt es nichts abzuschließen",
+      "nothingToCompleteMessage": "Diese Seite schließt nur eine bereits gestartete Anmeldung ab, und es läuft gerade keine. Melde dich stattdessen über die Startseite an."
     },
     "notFound": {
       "title": "Seite nicht gefunden",
@@ -999,7 +1005,10 @@
       "title": "E-Mails abbestellen?",
       "description": "Bestätige, dass du keine E-Mails vom Typ „{{type}}“ mehr erhalten möchtest. Dieser Link wirkt erst, wenn du unten auf Bestätigen klickst – das bloße Öffnen dieser Seite bestellt nichts ab.",
       "confirm": "Abbestellung bestätigen",
-      "invalidLink": "Dieser Abmeldelink ist ungültig oder unvollständig."
+      "invalidLink": "Der Link ist unvollständig oder nicht mehr gültig. In deinen Benachrichtigungseinstellungen kannst du weiterhin jede E-Mail-Art verwalten.",
+      "invalidTitle": "Dieser Abmeldelink funktioniert nicht",
+      "confirming": "Wird abgemeldet …",
+      "failed": "Wir konnten dich nicht abmelden. Versuche den Link erneut oder verwalte deine E-Mails in den Benachrichtigungseinstellungen."
     },
     "report": {
       "title": "Inhalt melden",
@@ -1157,14 +1166,14 @@
     },
     "orgProfile": {
       "loading": "Wird geladen…",
-      "error": "Fehler: {{message}}",
-      "notFound": "Organisation nicht gefunden.",
       "currentNeeds": "Aktuelle Einsätze",
       "noOpportunities": "Keine aktuellen Einsätze vorhanden.",
       "report": "Melden",
       "reportOrganization": "Organisation melden",
       "visitWebsite": "Website besuchen",
-      "eyebrow": "Organisation"
+      "eyebrow": "Organisation",
+      "notFoundTitle": "Organisation nicht gefunden",
+      "notFoundMessage": "Diese Organisation existiert nicht oder wurde gelöscht. Prüfe den Link, dem du gefolgt bist – die ID darin könnte unvollständig sein."
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
@@ -1217,7 +1226,9 @@
       "loading": "Wird geladen…",
       "removeChip": "Entfernen",
       "subNavActivity": "Einsätze",
-      "eyebrow": "Konto"
+      "eyebrow": "Konto",
+      "saveFieldError": "Einige Angaben sind zu lang. Kürze die markierten Felder und speichere erneut.",
+      "fieldTooLong": "Darf höchstens {{max}} Zeichen lang sein."
     },
     "profileSettings": {
       "title": "Einstellungen"
@@ -1329,14 +1340,15 @@
     },
     "userProfile": {
       "loading": "Profil wird geladen…",
-      "notFound": "Nutzer:in nicht gefunden.",
       "engagementCount": "{{count}} bestätigte Einsätze",
       "engagementCount_other": "{{count}} bestätigte Einsätze",
       "reportUser": "Nutzer:in melden",
       "engagementCount_one": "{{count}} bestätigter Einsatz",
       "emptyStateTitle": "Dieses Profil ist noch leer",
       "emptyStateMessage": "Diese:r Nutzer:in hat noch keine Bio, Fähigkeiten oder Sprachen hinzugefügt.",
-      "eyebrow": "Profil"
+      "eyebrow": "Profil",
+      "notFoundTitle": "Profil nicht gefunden",
+      "notFoundMessage": "Dieses Profil existiert nicht oder das Konto wurde gelöscht. Prüfe den Link, dem du gefolgt bist – die ID darin könnte unvollständig sein."
     },
     "administration": {
       "title": "Administration",
@@ -1546,7 +1558,8 @@
         "AlreadyDeleted": "Nutzer:in ist bereits ausgeblendet.",
         "NotDeleted": "Nutzer:in ist nicht ausgeblendet.",
         "InvalidUnsubscribeToken": "Der Abmelde-Link ist ungültig oder wurde bereits mit einem anderen Token verwendet.",
-        "SoleOrganizerOfOrganizations": "Du bist die:der einzige Organisator:in mindestens einer Organisation. Übertrage die Leitung an eine andere Person oder lösche diese Organisationen, bevor du dein Konto löschst."
+        "SoleOrganizerOfOrganizations": "Du bist die:der einzige Organisator:in mindestens einer Organisation. Übertrage die Leitung an eine andere Person oder lösche diese Organisationen, bevor du dein Konto löschst.",
+        "UnknownNotificationType": "Dieser Abmeldelink verweist auf eine E-Mail-Art, die es nicht mehr gibt."
       },
       "Users": {
         "CannotModifyServiceAccount": "Das interne Service-Konto des Systems kann nicht geändert werden.",
@@ -1562,7 +1575,8 @@
         "ZipCodeInvalid": "Die Postleitzahl muss genau 5 Zeichen lang sein.",
         "CityRequired": "Stadt darf nicht leer sein.",
         "LatitudeOutOfRange": "Der Breitengrad muss zwischen -90 und 90 liegen.",
-        "LongitudeOutOfRange": "Der Längengrad muss zwischen -180 und 180 liegen."
+        "LongitudeOutOfRange": "Der Längengrad muss zwischen -180 und 180 liegen.",
+        "NotGeocodable": "Diese Adresse konnten wir nicht finden. Prüfe Straße, Hausnummer, PLZ und Stadt."
       },
       "Organization": {
         "NameRequired": "Name darf nicht leer sein.",

@@ -50,3 +50,41 @@ export function hasActionableErrorCode(err: unknown): boolean {
 	if (typeof errorCode !== "string" || !errorCode.trim()) return false;
 	return i18next.exists(`apiError.${errorCode}`);
 }
+
+export type LoadFailureKind = "notFound" | "offline" | "error";
+
+// How a failed detail-route load should be presented (#2320). A 404 there is
+// not a transient server fault - the id simply does not resolve - so it earns
+// the app's not-found state instead of a retry that can never succeed.
+export function classifyLoadFailure(
+	err: unknown,
+	online: boolean,
+): LoadFailureKind {
+	if (isApiNotFoundError(err)) return "notFound";
+	if (!online || isNetworkError(err)) return "offline";
+	return "error";
+}
+
+// The field names an ASP.NET `ValidationProblemDetails` blames, lowercased.
+// The framework's own messages are untranslated English internals ("The field
+// FirstName must be a string or array type with a maximum length of '100'."),
+// so only the names are usable - the copy shown to the user comes from the
+// locale files (#2320). NSwag hands a declared status the parsed body and any
+// other status a raw `response` string, so both shapes are read here.
+export function getInvalidFieldNames(err: unknown): string[] {
+	if (!err || typeof err !== "object") return [];
+
+	const problem = err as { errors?: unknown; response?: unknown };
+	let errors = problem.errors;
+
+	if (!errors && typeof problem.response === "string") {
+		try {
+			errors = (JSON.parse(problem.response) as { errors?: unknown }).errors;
+		} catch {
+			return [];
+		}
+	}
+
+	if (!errors || typeof errors !== "object") return [];
+	return Object.keys(errors).map((name) => name.toLowerCase());
+}
