@@ -15,6 +15,10 @@ public class MapTileRateLimitingTests(IntegrationTestFixture fixture)
 	// while still exercising the real rate-limiting middleware in front of it.
 	private const string InvalidTileUrl = "/v1/maps/tiles/0/9/9.png";
 
+	// Matches the burst RateLimitingTests uses to trip the anonymous Read bucket, so this
+	// asserts the tile budget survives exactly the volume that exhausts the content one.
+	private const int BurstRequests = IntegrationTestFixture.AnonymousReadPermitLimit * 2;
+
 	[Test]
 	public async Task GetMapTile_ShouldNotReturn429_AtVolumeThatWouldExhaustTheAnonymousContentBucket(
 		CancellationToken cancellationToken)
@@ -24,11 +28,11 @@ public class MapTileRateLimitingTests(IntegrationTestFixture fixture)
 
 		var statusCodes = new List<HttpStatusCode>();
 
-		// 65 requests would already have tripped the anonymous Read bucket's
-		// default 60/min limit (see RateLimitingTests) - map tiles must have
-		// their own, more generous budget so panning the map cannot starve
-		// the content calls that share an IP with it (#2208).
-		for (var i = 0; i < 65; i++)
+		// This many requests would already have tripped the anonymous Read
+		// bucket (see RateLimitingTests) - map tiles must have their own, more
+		// generous budget so panning the map cannot starve the content calls
+		// that share an IP with it (#2208).
+		for (var i = 0; i < BurstRequests; i++)
 		{
 			var response = await httpClient.GetAsync(InvalidTileUrl, cancellationToken);
 			statusCodes.Add(response.StatusCode);

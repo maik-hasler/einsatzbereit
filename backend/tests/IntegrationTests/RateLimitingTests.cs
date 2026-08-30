@@ -9,6 +9,13 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 {
 	private const string TestIp = "10.0.0.99";
 
+	// Twice the permit limit, so that a fixed-window rollover part-way through the burst
+	// still leaves one of the two windows carrying more requests than the limit allows.
+	// A burst only fractionally over the limit (this was 65 against 60) can straddle a
+	// window boundary and leave neither half tripping the limiter, and the wider the
+	// budget the longer the burst takes and the likelier that becomes.
+	private const int BurstRequests = IntegrationTestFixture.AnonymousReadPermitLimit * 2;
+
 	[Test]
 	public async Task GetVolunteerOpportunities_ShouldReturn429_WhenAnonymousRateLimitExceeded(
 		CancellationToken cancellationToken)
@@ -19,7 +26,7 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 		var statusCodes = new List<HttpStatusCode>();
 		HttpResponseMessage? rejected = null;
 
-		for (var i = 0; i < 65; i++)
+		for (var i = 0; i < BurstRequests; i++)
 		{
 			var response = await httpClient.GetAsync(
 				"/v1/volunteer-opportunities?pageNumber=1&pageSize=1", cancellationToken);
@@ -50,7 +57,7 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 
 		var statusCodes = new List<HttpStatusCode>();
 
-		for (var i = 0; i < 65; i++)
+		for (var i = 0; i < BurstRequests; i++)
 		{
 			var response = await httpClient.GetAsync("/health", cancellationToken);
 			statusCodes.Add(response.StatusCode);
@@ -68,7 +75,7 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 
 		var statusCodes = new List<HttpStatusCode>();
 
-		for (var i = 0; i < 65; i++)
+		for (var i = 0; i < BurstRequests; i++)
 		{
 			var response = await httpClient.GetAsync("/alive", cancellationToken);
 			statusCodes.Add(response.StatusCode);

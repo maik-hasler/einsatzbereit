@@ -178,6 +178,17 @@ if (builder.Configuration["Database:SeedOnStartup"] is { } seedOnStartup)
 if (builder.Configuration["Authentication:RequireHttpsMetadata"] is { } requireHttpsMetadata)
 	backend.WithEnvironment("Authentication__RequireHttpsMetadata", requireHttpsMetadata);
 
+// Same passthrough shape as Database:MigrateOnStartup above, for the same reason. Unlike
+// the Read/Write limits, the map tile budget is not raised to 10000 here, so it keeps
+// appsettings.json's production value - which sits *below* the anonymous Read limit
+// IntegrationTestFixture pins. MapTileRateLimitingTests proves tiles are on a more
+// generous budget than the content bucket by out-requesting that Read limit, and it
+// cannot do that while the tile budget is the smaller of the two. Only that fixture ever
+// sets this; without the passthrough its argument reaches the AppHost's own configuration
+// and never the backend project it launches.
+if (builder.Configuration["RateLimiting:MapTiles:PermitLimit"] is { } mapTilesPermitLimit)
+	backend.WithEnvironment("RateLimiting__MapTiles__PermitLimit", mapTilesPermitLimit);
+
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()
 	.WithReference(backend)
