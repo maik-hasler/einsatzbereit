@@ -9,6 +9,7 @@ import {
 } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { useDocumentMetaDefaults } from "./hooks/useDocumentMetaDefaults";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import { useSilentSsoProbe } from "./hooks/useSilentSsoProbe";
 import {
@@ -193,6 +194,7 @@ function AuthRecoveryFailedPage() {
 // avoids App's own <AuthStatusProvider> below shadowing the one
 // renderWithProviders sets up for the test.
 export function AppRoutes() {
+	useDocumentMetaDefaults();
 	useSessionExpiryHandler();
 	useSilentSsoProbe();
 	const authRecoveryFailed = useAuthRecoveryFailedFlag();

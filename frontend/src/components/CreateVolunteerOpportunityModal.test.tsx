@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
+import { formatDate } from "../lib/format";
 
 const { api } = vi.hoisted(() => ({
 	api: {
@@ -718,10 +719,17 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		await addSlot("2026-11-11T10:00", "2026-11-11T12:00");
 
 		await waitFor(() => expect(slotRows()).toHaveLength(3));
-		const dates = slotRows().map(
-			(row) => (row.textContent ?? "").split(",")[0],
-		);
-		expect(dates).toEqual(["5 Oct 2026", "11 Nov 2026", "20 Dec 2026"]);
+		// Built with the app's own formatter rather than hardcoded, and matched
+		// without splitting on a comma: which of the day and the month comes
+		// first, and whether a comma separates the year, both follow the
+		// visitor's own English locale (#2328). The ordering is the assertion.
+		const expected = [
+			"2026-10-05T10:00",
+			"2026-11-11T10:00",
+			"2026-12-20T10:00",
+		].map((start) => formatDate(start, "en"));
+		const rows = slotRows().map((row) => row.textContent ?? "");
+		expected.forEach((date, index) => expect(rows[index]).toContain(date));
 	});
 
 	it("says what the number after a slot means instead of bracketing it", async () => {

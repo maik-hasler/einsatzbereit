@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
+import { quoteMarks } from "../lib/quotes";
 import type {
 	EngagementSummary,
 	FeedbackItemDto,
@@ -52,6 +53,7 @@ export default function EngagementManagementPage() {
 	const { isOrganizer } = useOutletContext<OrgAppContext>();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
+	const quotes = quoteMarks(i18n.language);
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
 	const [opportunityError, setOpportunityError] = useState<string | null>(null);
@@ -767,7 +769,9 @@ export default function EngagementManagementPage() {
 										)}
 										{e.message && (
 											<p className="mt-1 text-sm text-gray-700 italic">
-												&ldquo;{e.message}&rdquo;
+												{quotes.open}
+												{e.message}
+												{quotes.close}
 											</p>
 										)}
 										{e.timeSlotId &&

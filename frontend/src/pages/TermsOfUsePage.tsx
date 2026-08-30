@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
@@ -9,6 +10,7 @@ import { inlineLinkClass } from "../lib/linkClasses";
 export default function TermsOfUsePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("termsOfUse.title"));
+	usePageDescription(t("termsOfUse.metaDescription"));
 
 	const sections = [
 		{ id: "scope", label: t("termsOfUse.section1Title") },

@@ -240,6 +240,19 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(mapContainer).ToHaveAttributeAsync(
 			"aria-label", "Map showing the location of Teststrasse 1, 12345 Musterstadt");
 
+		// Leaflet ships the popup's close control with a hard-coded English
+		// aria-label and, because this map disables its keyboard handler to
+		// stay a fixed snapshot, no Escape binding either (#2328). Both are
+		// supplied by the app, so both need a real browser to verify.
+		await marker.ClickAsync();
+		var popup = Page.Locator(".leaflet-popup");
+		await Expect(popup).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator(".leaflet-popup-close-button"))
+			.ToHaveAttributeAsync("aria-label", "Close the location popup");
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(popup).ToBeHiddenAsync();
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}

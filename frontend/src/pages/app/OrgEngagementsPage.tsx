@@ -1,5 +1,6 @@
 import { useOutletContext, useSearchParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { quoteMarks } from "../../lib/quotes";
 import { useState } from "react";
 import type {
 	EngagementSummary,
@@ -10,7 +11,7 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { formatDate } from "../../lib/format";
+import { formatDate, pickLocalizedText } from "../../lib/format";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { cardClass } from "../../lib/surfaceClasses";
@@ -64,6 +65,7 @@ function NotOrganizerState({ org }: { org: OrganizationDetailsResponse }) {
 
 function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 	const { t, i18n } = useTranslation();
+	const quotes = quoteMarks(i18n.language);
 	const api = useApiClient();
 	const organizationId = org.id;
 	usePageTitle(`${t("orgOverview.tabEngagements")} - ${org.name}`);
@@ -278,95 +280,120 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
-					{engagements.map((e) => (
-						<li
-							key={e.id}
-							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
-						>
-							<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-								<div className="min-w-0">
-									<Link
-										to={`/app/${organizationId}/dashboard/opportunities/${e.opportunityId}/engagements`}
-										className="text-xs font-medium text-brand-700 hover:underline"
-									>
-										{e.opportunityTitle ?? t("orgDashboard.unnamedDraft")}
-									</Link>
-									<p className="mt-0.5 text-sm font-medium text-gray-800">
-										{e.volunteerName ? (
-											e.volunteerName
-										) : e.volunteerId ? (
-											<span className="font-mono text-xs text-gray-500">
-												{t("orgEngagements.volunteer", {
-													id: e.volunteerId.slice(0, 8) + "...",
-												})}
-											</span>
-										) : (
-											<span className="text-xs text-gray-500 italic">
-												{t("orgEngagements.anonymizedVolunteer")}
-											</span>
+					{engagements.map((e) => {
+						const opportunityTitle = pickLocalizedText(
+							e.opportunityTitle,
+							e.opportunityTitleEn,
+							i18n.language,
+						);
+						return (
+							<li
+								key={e.id}
+								className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
+							>
+								<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+									<div className="min-w-0">
+										<Link
+											to={`/app/${organizationId}/dashboard/opportunities/${e.opportunityId}/engagements`}
+											lang={opportunityTitle?.lang}
+											className="text-xs font-medium text-brand-700 hover:underline"
+										>
+											{opportunityTitle?.text ?? t("orgDashboard.unnamedDraft")}
+										</Link>
+										<p className="mt-0.5 text-sm font-medium text-gray-800">
+											{e.volunteerName ? (
+												e.volunteerName
+											) : e.volunteerId ? (
+												<span className="font-mono text-xs text-gray-500">
+													{t("orgEngagements.volunteer", {
+														id: e.volunteerId.slice(0, 8) + "...",
+													})}
+												</span>
+											) : (
+												<span className="text-xs text-gray-500 italic">
+													{t("orgEngagements.anonymizedVolunteer")}
+												</span>
+											)}
+										</p>
+										{(e.volunteerEmail || e.volunteerPhone) && (
+											<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
+												{e.volunteerEmail && (
+													<a
+														href={`mailto:${e.volunteerEmail}`}
+														className="hover:underline"
+													>
+														{e.volunteerEmail}
+													</a>
+												)}
+												{e.volunteerPhone && (
+													<a
+														href={`tel:${e.volunteerPhone}`}
+														className="hover:underline"
+													>
+														{e.volunteerPhone}
+													</a>
+												)}
+											</p>
 										)}
-									</p>
-									{(e.volunteerEmail || e.volunteerPhone) && (
-										<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
-											{e.volunteerEmail && (
-												<a
-													href={`mailto:${e.volunteerEmail}`}
-													className="hover:underline"
-												>
-													{e.volunteerEmail}
-												</a>
-											)}
-											{e.volunteerPhone && (
-												<a
-													href={`tel:${e.volunteerPhone}`}
-													className="hover:underline"
-												>
-													{e.volunteerPhone}
-												</a>
-											)}
+										{e.message && (
+											<p className="mt-1 text-sm text-gray-700 italic">
+												{quotes.open}
+												{e.message}
+												{quotes.close}
+											</p>
+										)}
+										<p className="mt-1 text-xs text-gray-500">
+											{t("orgEngagements.receivedOn", {
+												date: formatDate(
+													e.createdOn as unknown as string,
+													i18n.language,
+												),
+											})}
 										</p>
-									)}
-									{e.message && (
-										<p className="mt-1 text-sm text-gray-700 italic">
-											&ldquo;{e.message}&rdquo;
-										</p>
-									)}
-									<p className="mt-1 text-xs text-gray-500">
-										{t("orgEngagements.receivedOn", {
-											date: formatDate(
-												e.createdOn as unknown as string,
-												i18n.language,
-											),
-										})}
-									</p>
-								</div>
+									</div>
 
-								<div className="flex flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
-									<span
-										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${ENGAGEMENT_STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
-									>
-										{STATUS_LABELS[e.status] ?? e.status}
-									</span>
-									{e.status === "Pending" && (
-										<div className="flex gap-2">
-											<Button
-												type="button"
-												variant="success"
-												size="sm"
-												onClick={() => void handleConfirm(e.id)}
-												disabled={confirming === e.id}
-												aria-label={t("orgEngagements.confirmNamed", {
-													name: volunteerDisplayName(e),
-												})}
-											>
-												{confirming === e.id
-													? t("orgEngagements.processing")
-													: t("orgEngagements.confirm")}
-											</Button>
+									<div className="flex flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
+										<span
+											className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${ENGAGEMENT_STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
+										>
+											{STATUS_LABELS[e.status] ?? e.status}
+										</span>
+										{e.status === "Pending" && (
+											<div className="flex gap-2">
+												<Button
+													type="button"
+													variant="success"
+													size="sm"
+													onClick={() => void handleConfirm(e.id)}
+													disabled={confirming === e.id}
+													aria-label={t("orgEngagements.confirmNamed", {
+														name: volunteerDisplayName(e),
+													})}
+												>
+													{confirming === e.id
+														? t("orgEngagements.processing")
+														: t("orgEngagements.confirm")}
+												</Button>
+												<Button
+													type="button"
+													variant="dangerOutline"
+													size="sm"
+													onClick={() => setConfirmCancelId(e.id)}
+													aria-label={t("orgEngagements.cancelNamed", {
+														name: volunteerDisplayName(e),
+													})}
+												>
+													<TrashIcon className="h-3.5 w-3.5" />
+													{t("orgEngagements.cancel")}
+												</Button>
+											</div>
+										)}
+										{e.status === "Confirmed" && (
 											<Button
 												type="button"
 												variant="dangerOutline"
 												size="sm"
+												data-testid={`org-engagement-revoke-${e.id}`}
 												onClick={() => setConfirmCancelId(e.id)}
 												aria-label={t("orgEngagements.cancelNamed", {
 													name: volunteerDisplayName(e),
@@ -375,27 +402,12 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 												<TrashIcon className="h-3.5 w-3.5" />
 												{t("orgEngagements.cancel")}
 											</Button>
-										</div>
-									)}
-									{e.status === "Confirmed" && (
-										<Button
-											type="button"
-											variant="dangerOutline"
-											size="sm"
-											data-testid={`org-engagement-revoke-${e.id}`}
-											onClick={() => setConfirmCancelId(e.id)}
-											aria-label={t("orgEngagements.cancelNamed", {
-												name: volunteerDisplayName(e),
-											})}
-										>
-											<TrashIcon className="h-3.5 w-3.5" />
-											{t("orgEngagements.cancel")}
-										</Button>
-									)}
+										)}
+									</div>
 								</div>
-							</div>
-						</li>
-					))}
+							</li>
+						);
+					})}
 				</ul>
 			)}
 
@@ -426,7 +438,11 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 							? volunteerDisplayName(cancelTarget)
 							: t("orgEngagements.anonymizedVolunteer"),
 						opportunity:
-							cancelTarget?.opportunityTitle ?? t("orgDashboard.unnamedDraft"),
+							pickLocalizedText(
+								cancelTarget?.opportunityTitle,
+								cancelTarget?.opportunityTitleEn,
+								i18n.language,
+							)?.text ?? t("orgDashboard.unnamedDraft"),
 					})}
 					confirmLabel={t("confirmDialog.cancel.confirm")}
 					onConfirm={handleCancelConfirm}

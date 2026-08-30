@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { quoteMarks } from "../../lib/quotes";
 import { useAuth } from "react-oidc-context";
 import type {
 	EngagementSummary,
@@ -27,6 +28,7 @@ import {
 	formatDate,
 	formatDateTime,
 	formatDateTimeRange,
+	pickLocalizedText,
 } from "../../lib/format";
 import { buildSignUpLink } from "../../lib/signUpDeepLink";
 import { cardClass } from "../../lib/surfaceClasses";
@@ -68,6 +70,7 @@ export default function ActivitySection() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const { t, i18n } = useTranslation();
+	const quotes = quoteMarks(i18n.language);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -307,8 +310,11 @@ export default function ActivitySection() {
 		? (engagements.find((e) => e.id === confirmWithdrawId) ?? null)
 		: null;
 	const withdrawTargetTitle =
-		withdrawTarget?.opportunityTitle ??
-		t("myEngagements.deletedOpportunityTitle");
+		pickLocalizedText(
+			withdrawTarget?.opportunityTitle,
+			withdrawTarget?.opportunityTitleEn,
+			i18n.language,
+		)?.text ?? t("myEngagements.deletedOpportunityTitle");
 	const withdrawTargetIsInterest = withdrawTarget
 		? isInterestEngagement(withdrawTarget)
 		: false;
@@ -509,6 +515,14 @@ export default function ActivitySection() {
 							!e.isCheckedIn &&
 							!!e.opportunityTitle;
 						const slotEnded = hasSlotEnded(e.timeSlotEndDateTime);
+						// Undefined only for an opportunity that no longer exists -
+						// the German title is always present otherwise, and the
+						// English one is the optional translation (#2328).
+						const title = pickLocalizedText(
+							e.opportunityTitle,
+							e.opportunityTitleEn,
+							i18n.language,
+						);
 						// Check-in opens an hour before the slot starts, so being
 						// checked in is not on its own a reason to offer a rating for
 						// something that has not happened yet (#2323).
@@ -525,13 +539,13 @@ export default function ActivitySection() {
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-										{e.opportunityTitle ? (
+										{title ? (
 											<Link
 												to={`/volunteer-opportunities/${e.opportunityId}`}
-
+												lang={title.lang}
 												className="text-sm font-semibold text-gray-900 underline-offset-2 transition-colors hover:text-brand-700 hover:underline focus-visible:text-brand-700 focus-visible:underline"
 											>
-												{e.opportunityTitle}
+												{title.text}
 											</Link>
 										) : (
 											<span className="text-sm font-semibold text-gray-500 italic">
@@ -607,7 +621,9 @@ export default function ActivitySection() {
 													{t("myEngagements.yourMessage")}
 												</span>{" "}
 												<span className="italic">
-													&ldquo;{e.message}&rdquo;
+													{quotes.open}
+													{e.message}
+													{quotes.close}
 												</span>
 											</p>
 										)}
@@ -763,7 +779,7 @@ export default function ActivitySection() {
 											<AddToCalendarMenu
 												engagementId={e.id}
 												title={
-													e.opportunityTitle ??
+													title?.text ??
 													t("myEngagements.deletedOpportunityTitle")
 												}
 												location={e.location}
@@ -918,8 +934,11 @@ export default function ActivitySection() {
 				<SubmitFeedbackModal
 					engagementId={feedbackEngagement.id}
 					opportunityTitle={
-						feedbackEngagement.opportunityTitle ??
-						t("myEngagements.deletedOpportunityTitle")
+						pickLocalizedText(
+							feedbackEngagement.opportunityTitle,
+							feedbackEngagement.opportunityTitleEn,
+							i18n.language,
+						)?.text ?? t("myEngagements.deletedOpportunityTitle")
 					}
 					initialRating={
 						feedbackEngagement.hasFeedback

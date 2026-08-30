@@ -1109,12 +1109,20 @@ export default function VolunteerOpportunityDetailPage() {
 											{t("opportunities.aboutOrganization")}
 										</SectionHeading>
 										{orgProfile.description && (
-											<p
-												lang="de"
-												className="mb-3 leading-relaxed text-gray-600"
-											>
-												{orgProfile.description}
-											</p>
+											<div className="mb-3">
+												<p lang="de" className="leading-relaxed text-gray-600">
+													{orgProfile.description}
+												</p>
+												{/* No descriptionEn exists for an organization,
+												so in the English UI this is always the German
+												original - the same disclosure a German-only
+												opportunity already carries (#2328). */}
+												{i18n.language !== "de" && (
+													<p className="mt-1 text-xs text-gray-500">
+														{t("opportunities.germanOnlyNotice")}
+													</p>
+												)}
+											</div>
 										)}
 										{(orgProfile.contactEmail ||
 											orgProfile.contactPhone ||

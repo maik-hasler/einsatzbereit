@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import FaqAccordion from "../components/FaqAccordion";
@@ -10,6 +11,7 @@ import { inlineLinkClass } from "../lib/linkClasses";
 export default function HelpPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("help.title"));
+	usePageDescription(t("help.intro"));
 
 	const generalItems = [
 		{ q: t("help.generalQ1"), a: t("help.generalA1") },

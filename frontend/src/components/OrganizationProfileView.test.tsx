@@ -80,7 +80,10 @@ describe("OrganizationProfileView", () => {
 			description.compareDocumentPosition(aside as Node) &
 				Node.DOCUMENT_POSITION_FOLLOWING,
 		).toBeTruthy();
-		expect(description.className).toContain("mb-6");
+		// The description now shares a wrapper with the German-only notice
+		// (#2328), so the spacing that keeps it clear of the contact card sits
+		// on that wrapper rather than on the paragraph itself.
+		expect(description.closest("div")?.className).toContain("mb-6");
 	});
 
 	it("keeps the stacked layout inline instead of in a sidebar", () => {

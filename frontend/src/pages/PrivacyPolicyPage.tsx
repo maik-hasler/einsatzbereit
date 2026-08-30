@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
@@ -11,6 +12,7 @@ import { inlineLinkClass } from "../lib/linkClasses";
 export default function PrivacyPolicyPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("privacyPolicy.title"));
+	usePageDescription(t("privacyPolicy.metaDescription"));
 
 	const sections = [
 		{ id: "controller", label: t("privacyPolicy.section1Title") },

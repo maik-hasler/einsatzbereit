@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import { FlagIcon, EnvelopeIcon, ArrowRightIcon } from "../components/icons";
@@ -10,6 +11,7 @@ import { inlineLinkClass } from "../lib/linkClasses";
 export default function ContactPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("contact.title"));
+	usePageDescription(t("contact.intro"));
 
 	return (
 		<>

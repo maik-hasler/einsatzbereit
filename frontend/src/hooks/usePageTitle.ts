@@ -1,13 +1,14 @@
 import { useEffect } from "react";
+import { APP_NAME, registerPageTitle } from "../lib/documentMeta";
 
-const APP_NAME = "Einsatzbereit";
+export { APP_NAME };
 
 export function usePageTitle(title?: string | null) {
 	useEffect(() => {
+		// `null` means "someone else owns the title on this route" - the page
+		// yielding to a RouteState it renders, typically - and must not
+		// register an owner of its own.
 		if (title === null) return;
-		document.title = title ? `${title} | ${APP_NAME}` : APP_NAME;
-		return () => {
-			document.title = APP_NAME;
-		};
+		return registerPageTitle(title ?? "");
 	}, [title]);
 }

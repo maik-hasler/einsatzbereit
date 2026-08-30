@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { quoteMarks } from "../lib/quotes";
 import type { TFunction } from "i18next";
 import {
 	findCrossLocaleKeywordMatch,
@@ -149,6 +150,7 @@ export default function OpportunityCard({
 	withMedia?: boolean;
 }) {
 	const { t, i18n } = useTranslation();
+	const quotes = quoteMarks(i18n.language);
 	const Heading = headingLevel === 3 ? "h3" : "h2";
 	const capacity = capacityChip(getOpportunityCapacity(item), t);
 	const date = dateLine(item, t, i18n.language);
@@ -255,7 +257,9 @@ export default function OpportunityCard({
 								language: t(`language.${crossLocaleMatch.lang}`),
 							})}{" "}
 							<span lang={crossLocaleMatch.lang}>
-								&quot;{crossLocaleMatch.text}&quot;
+								{quotes.open}
+								{crossLocaleMatch.text}
+								{quotes.close}
 							</span>
 						</p>
 					)}
