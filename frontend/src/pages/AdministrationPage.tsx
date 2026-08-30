@@ -194,15 +194,15 @@ function OrganizationsSection() {
 	}
 
 	function clearFilters() {
+		// The checkboxes are in useLoadMore's deps and reload the list themselves; the search
+		// term is not, so it needs an explicit reset - but only when nothing else will already
+		// have triggered one, or the list is fetched twice for the same click.
+		const checkboxesWillReload = flaggedOnly || deletedOnly;
 		setSearch("");
 		setFlaggedOnly(false);
 		setDeletedOnly(false);
-		// Only the search term is outside `deps`, so it needs an explicit reset; the two
-		// checkboxes reload the list through useLoadMore's dependency change on their own.
-		if (appliedSearch !== "") {
-			setAppliedSearch("");
-			reset();
-		}
+		setAppliedSearch("");
+		if (!checkboxesWillReload && appliedSearch !== "") reset();
 	}
 
 	async function confirmActionSubmit() {
@@ -842,6 +842,12 @@ interface FlaggedTargetRow {
 	isDeleted: boolean;
 }
 
+// Only opportunity titles carry a second authored language, so only they can produce a
+// language fallback worth marking with `lang` - see the row title below.
+function isBilingualTargetTitle(targetType: string): boolean {
+	return targetType === "VolunteerOpportunity";
+}
+
 function targetHref(targetType: string, targetId: string): string {
 	switch (targetType) {
 		case "VolunteerOpportunity":
@@ -968,6 +974,10 @@ function ReportsSection() {
 				i18n.language,
 			)
 		: undefined;
+	const historyTitleLang =
+		historyTarget && isBilingualTargetTitle(historyTarget.targetType)
+			? historyTitle?.lang
+			: undefined;
 
 	async function confirmActionSubmit() {
 		if (!confirmAction) return;
@@ -1103,9 +1113,10 @@ function ReportsSection() {
 				{rows.map((row) => {
 					// Opportunity titles are authored per language and only German is required, so
 					// an English console was rendering a German title with no `lang` - announced by
-					// a screen reader in an English voice (#2326). The organization and user cases
-					// carry no English variant and fall through to the German-tagged branch, which
-					// is correct for them too: those names are German-language content.
+					// a screen reader in an English voice (#2326). Only they get marked: an
+					// organization's name and a person's name are proper nouns in no particular
+					// language, and tagging those would just have a screen reader guess at German
+					// phonetics for a name.
 					const localizedTitle = pickLocalizedText(
 						row.targetTitle,
 						row.targetTitleEn,
@@ -1113,7 +1124,7 @@ function ReportsSection() {
 					);
 					const targetName =
 						localizedTitle.text || t("administration.reports.unknownTarget");
-					const targetLang = localizedTitle.text
+					const targetLang = isBilingualTargetTitle(row.targetType)
 						? localizedTitle.lang
 						: undefined;
 					return (
@@ -1216,7 +1227,7 @@ function ReportsSection() {
 					targetLabel={
 						historyTitle?.text || t("administration.reports.unknownTarget")
 					}
-					targetLabelLang={historyTitle?.text ? historyTitle.lang : undefined}
+					targetLabelLang={historyTitleLang}
 					onDismissed={(count) => handleReportsDismissed(historyTarget, count)}
 					onClose={closeHistory}
 				/>
@@ -1702,17 +1713,20 @@ function AuditLogSection() {
 			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 				{rows.map((row) => {
 					const href = auditSubjectHref(row.subjectType, row.subjectId);
-					// Same per-language title handling as the moderation queue - see the note on
-					// its row title for why the fallback still needs marking (#2326).
+					// Same per-language handling as the moderation queue, and the same restriction:
+					// an Engagement's subject label is the opportunity's title, so those two are
+					// the only bilingual cases here (#2326).
 					const localizedSubject = pickLocalizedText(
 						row.subjectDisplayName,
 						row.subjectDisplayNameEn,
 						i18n.language,
 					);
 					const subjectLabel = localizedSubject.text || row.subjectId;
-					const subjectLang = localizedSubject.text
-						? localizedSubject.lang
-						: undefined;
+					const subjectLang =
+						row.subjectType === "VolunteerOpportunity" ||
+						row.subjectType === "Engagement"
+							? localizedSubject.lang
+							: undefined;
 					const actorName = row.actorDisplayName || row.actorUserId;
 					const isActorFiltered = actor?.id === row.actorUserId;
 					return (
