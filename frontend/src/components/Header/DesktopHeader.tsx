@@ -11,6 +11,7 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 import { buildPrimaryNav } from "../../lib/headerNav";
 
 export default function DesktopHeader({
+	className = "hidden lg:flex",
 	authStatus,
 	isTransparent,
 	menu,
@@ -22,6 +23,7 @@ export default function DesktopHeader({
 	onSignIn,
 	onRegister,
 }: {
+	className?: string;
 	authStatus: AuthDisplayStatus;
 	isTransparent: boolean;
 	menu: AccountMenuState;
@@ -39,7 +41,7 @@ export default function DesktopHeader({
 	return (
 		<nav
 			aria-label={t("nav.primaryLabel")}
-			className="hidden items-center gap-1.5 lg:flex"
+			className={`items-center gap-1.5 ${className}`}
 		>
 			<ul className="mr-0.5 flex items-center gap-1">
 				{buildPrimaryNav(activeOrg).map((link) => {

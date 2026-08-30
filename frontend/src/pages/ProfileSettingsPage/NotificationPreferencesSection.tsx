@@ -71,7 +71,7 @@ function PreferenceRowList({
 						id={row.key}
 						checked={preferences[row.key]}
 						onChange={() => onToggle(row.key)}
-						className="mt-0.5 h-4 w-4 accent-brand-600"
+						className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
 					/>
 					<span className="text-sm text-gray-800">{t(row.labelKey)}</span>
 				</label>

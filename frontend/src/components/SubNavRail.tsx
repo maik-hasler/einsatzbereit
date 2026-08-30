@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 
 export interface SubNavItem {
@@ -15,8 +16,33 @@ export default function SubNavRail({
 	active: string;
 	ariaLabel: string;
 }) {
+	const railRef = useRef<HTMLElement>(null);
+
+	// Below lg: the rail is a horizontally scrolling strip, and it opened at
+	// scrollLeft 0 no matter which tab was active - so on a 320-390px viewport
+	// the tab you were actually on sat past the right edge, half-cut or gone
+	// entirely, and the strip showed no selection at all (#2321). Scroll the
+	// active tab into the middle of the strip instead. `scrollTo` on the rail
+	// moves only the rail; `scrollIntoView` would drag the page with it.
+	useEffect(() => {
+		const rail = railRef.current;
+		if (!rail) return;
+		const activeTab = rail.querySelector<HTMLElement>('[aria-current="page"]');
+		if (!activeTab) return;
+		// At lg: the rail is a vertical column with no overflow, so there is
+		// nothing to scroll and this is a no-op.
+		if (rail.scrollWidth <= rail.clientWidth) return;
+		rail.scrollTo({
+			left: Math.max(
+				0,
+				activeTab.offsetLeft - (rail.clientWidth - activeTab.offsetWidth) / 2,
+			),
+		});
+	}, [active, items]);
+
 	return (
 		<nav
+			ref={railRef}
 			aria-label={ariaLabel}
 			// lg:self-start is load-bearing: as a grid item the nav otherwise
 			// stretches to the row's full height, dragging its border-l rule

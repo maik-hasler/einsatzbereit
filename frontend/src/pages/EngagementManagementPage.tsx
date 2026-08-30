@@ -667,7 +667,7 @@ export default function EngagementManagementPage() {
 							checked={allPendingSelected}
 							onChange={toggleSelectAllPending}
 							disabled={pendingIds.length === 0}
-							className="h-4 w-4 rounded border-gray-300 text-brand-700"
+							className="h-4 w-4 shrink-0 rounded border-gray-300 text-brand-700"
 						/>
 						{t("engagementManagement.selectAllPending")}
 					</label>

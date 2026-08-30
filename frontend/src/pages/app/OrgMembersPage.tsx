@@ -597,10 +597,13 @@ export default function OrgMembersPage() {
 									{members.map((member) => (
 										<li
 											key={member.userId}
-											className="flex items-center justify-between gap-4 px-4 py-4"
+											className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
 										>
 											<div className="min-w-0">
-												<p className="truncate text-sm font-medium text-gray-900">
+												<p
+													data-testid="org-member-name"
+													className="truncate text-sm font-medium text-gray-900"
+												>
 													{member.firstName && member.lastName
 														? `${member.firstName} ${member.lastName}`
 														: member.username}
@@ -620,7 +623,7 @@ export default function OrgMembersPage() {
 												</Chip>
 											</div>
 											{member.userId === currentUserId ? (
-												<div className="flex shrink-0 flex-col items-end gap-1">
+												<div className="flex flex-col gap-1 sm:shrink-0 sm:items-end">
 													<Button
 														type="button"
 														variant="dangerOutline"
@@ -638,7 +641,7 @@ export default function OrgMembersPage() {
 													{isLastOrganizer && (
 														<p
 															id="leave-organization-hint"
-															className="max-w-48 text-right text-xs text-gray-500"
+															className="text-xs text-gray-500 sm:max-w-48 sm:text-right"
 														>
 															<Trans
 																i18nKey="orgSettings.leaveOrganizationLastOrganizerHint"
@@ -655,7 +658,7 @@ export default function OrgMembersPage() {
 													)}
 												</div>
 											) : isOrganizer ? (
-												<div className="flex shrink-0 items-center gap-2">
+												<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 													{(() => {
 														const memberName =
 															member.firstName && member.lastName

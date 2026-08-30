@@ -15,6 +15,7 @@ import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { lockScroll } from "../../lib/scrollLock";
 
 export default function MobileMenu({
+	className = "lg:hidden",
 	isTransparent,
 	authStatus,
 	avatarUrl,
@@ -28,6 +29,7 @@ export default function MobileMenu({
 	onRegister,
 	onSignOut,
 }: {
+	className?: string;
 	isTransparent: boolean;
 	authStatus: AuthDisplayStatus;
 	avatarUrl: string | null;
@@ -95,14 +97,14 @@ export default function MobileMenu({
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"
-				className="animate-fade-in fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 lg:hidden"
+				className={`animate-fade-in fixed top-[var(--header-height)] right-0 bottom-0 left-0 z-30 bg-black/50 ${className}`}
 			/>
 			<div
 				ref={panelRef}
 				role="dialog"
 				aria-modal="true"
 				aria-label={t("nav.menu")}
-				className={`animate-fade-up absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal lg:hidden ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
+				className={`animate-fade-up absolute top-full right-0 left-0 z-30 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain border-t shadow-modal ${className} ${isTransparent ? "border-white/20 bg-brand-900" : "border-gray-100 bg-white"}`}
 			>
 				{isTransparent && (
 					<div
