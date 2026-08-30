@@ -24,7 +24,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export default function OrganizationsPage() {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const auth = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -238,12 +238,19 @@ export default function OrganizationsPage() {
 											</div>
 											<div className="min-w-0 flex-1">
 												{org.description && (
-													<p
-														lang="de"
-														className="line-clamp-2 text-sm text-gray-500"
-													>
-														{org.description}
-													</p>
+													<>
+														<p
+															lang="de"
+															className="line-clamp-2 text-sm text-gray-500"
+														>
+															{org.description}
+														</p>
+														{i18n.language !== "de" && (
+															<p className="mt-0.5 text-xs text-gray-500">
+																{t("opportunities.germanOnlyNotice")}
+															</p>
+														)}
+													</>
 												)}
 												{org.city && (
 													<p className="mt-1 text-xs text-gray-500">

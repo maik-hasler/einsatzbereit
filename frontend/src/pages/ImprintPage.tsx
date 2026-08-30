@@ -1,4 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import WarningBanner from "../components/WarningBanner";
@@ -8,6 +9,7 @@ import { runtimeConfig } from "../lib/runtimeConfig";
 export default function ImprintPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("imprint.title"));
+	usePageDescription(t("imprint.metaDescription"));
 
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";

@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
@@ -8,6 +9,7 @@ import DocumentSection from "../components/DocumentSection";
 export default function TermsOfUsePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("termsOfUse.title"));
+	usePageDescription(t("termsOfUse.metaDescription"));
 
 	const linkClass =
 		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";

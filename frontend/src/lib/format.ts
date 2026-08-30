@@ -129,8 +129,36 @@ export function findCrossLocaleKeywordMatch(
 	);
 }
 
+// Germany is where the platform operates, so an English speaker whose browser
+// says nothing about region still gets local conventions.
+const FALLBACK_ENGLISH_LOCALE = "en-GB";
+
+// Only well-formed English tags. A region subtag is what actually differs
+// between en-GB and en-US here (day-first vs month-first, 24- vs 12-hour), and
+// Intl.DateTimeFormat throws a RangeError on a malformed tag.
+const ENGLISH_TAG = /^en(-[A-Za-z0-9]{2,8})*$/;
+
+// Exported for the test suite: navigator.languages is read once at call time
+// in production, and passing it explicitly is the only way to exercise the
+// branches without mutating a read-only browser global.
+export function pickEnglishLocale(
+	candidates: readonly string[] | undefined,
+): string {
+	return (
+		candidates?.find((tag) => ENGLISH_TAG.test(tag)) ?? FALLBACK_ENGLISH_LOCALE
+	);
+}
+
+// The interface language picks the language; the visitor's own browser picks
+// the region. Hard-wiring every English speaker to en-GB gave US visitors
+// day-first dates and a 24-hour clock (#2328).
 export function resolveDateLocale(lng: string): string {
-	return lng === "de" ? "de-DE" : "en-GB";
+	if (lng === "de") return "de-DE";
+	return pickEnglishLocale(
+		typeof navigator === "undefined"
+			? undefined
+			: (navigator.languages ?? [navigator.language]),
+	);
 }
 
 // Intl.DateTimeFormat rejects timeZoneName combined with dateStyle/timeStyle

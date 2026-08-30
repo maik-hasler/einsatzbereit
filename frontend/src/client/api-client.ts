@@ -6832,6 +6832,7 @@ export interface EngagementSummary {
     checkInMethod?: string;
     opportunityValidUntil?: Date | undefined;
     remainingReactivations?: number | undefined;
+    opportunityTitleEn?: string | undefined;
 
     [key: string]: any;
 }

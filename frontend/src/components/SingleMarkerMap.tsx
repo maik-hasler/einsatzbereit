@@ -25,6 +25,59 @@ function MapAccessibleName({ label }: { label: string }) {
 	return null;
 }
 
+// Leaflet hard-codes the popup's close control as aria-label="Close popup"
+// and, because this map keeps keyboard={false} (a fixed snapshot must not pan
+// on arrow keys), never binds Escape to closing it either - so on a German
+// page the only way out was announced in English and the site-wide dismissal
+// key did nothing (#2328). Both are restored here without handing arrow keys
+// back to Leaflet.
+function PopupDismissal() {
+	const map = useMap();
+	const { t } = useTranslation();
+
+	useEffect(() => {
+		const closeLabel = t("opportunities.mapPopupClose");
+
+		function labelCloseButton() {
+			map
+				.getContainer()
+				.querySelectorAll(".leaflet-popup-close-button")
+				.forEach((button) => button.setAttribute("aria-label", closeLabel));
+		}
+
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key !== "Escape") return;
+			const popup = map.getContainer().querySelector(".leaflet-popup");
+			// Nothing open here - leave Escape to whatever overlay does own it.
+			if (!popup) return;
+
+			// Closing the popup destroys the element focus is sitting on, so
+			// hand focus back to the marker that opened it rather than
+			// dropping the keyboard user at the top of the document.
+			const returnFocus =
+				document.activeElement instanceof HTMLElement &&
+				popup.contains(document.activeElement);
+			map.closePopup();
+			if (returnFocus) {
+				map
+					.getContainer()
+					.querySelector<HTMLElement>(".leaflet-marker-icon")
+					?.focus();
+			}
+		}
+
+		map.on("popupopen", labelCloseButton);
+		labelCloseButton();
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			map.off("popupopen", labelCloseButton);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [map, t]);
+
+	return null;
+}
+
 interface Props {
 	latitude: number;
 	longitude: number;
@@ -59,6 +112,7 @@ export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 				className="h-full w-full"
 			>
 				<MapAccessibleName label={label} />
+				<PopupDismissal />
 				<TileLayer attribution={ATTRIBUTION} url={TILE_URL} />
 
 				<Marker

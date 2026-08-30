@@ -4,6 +4,10 @@
       "name": "Einsatzbereit",
       "description": "Einsatzbereit connects committed volunteers with regional needs. Spontaneous, fast, and effective."
     },
+    "meta": {
+      "socialTitle": "Einsatzbereit - Volunteer on short notice. Find your opportunity.",
+      "description": "Einsatzbereit connects committed volunteers with regional needs. Find volunteer opportunities near you, help out on short notice, and make a difference in your community."
+    },
     "common": {
       "edit": "Edit",
       "save": "Save",
@@ -208,6 +212,7 @@
       "pastTimeSlots_one": "{{count}} past time slot",
       "pastTimeSlots_other": "{{count}} past time slots",
       "mapLabel": "Map showing the location of {{location}}",
+      "mapPopupClose": "Close the location popup",
       "getDirections": "Get directions via Google Maps",
       "joinWaitlist": "Sign up for a slot",
       "expressInterest": "Express interest",
@@ -281,7 +286,7 @@
       "fieldDescription": "Description",
       "contentLanguageGroup": "Content language",
       "contentLanguageHasError": "Contains errors",
-      "contentLanguageEnglishHint": "Optional. Volunteers viewing the site in English see this instead of the German version below - leave it blank to show the German text to everyone.",
+      "contentLanguageEnglishHint": "Optional. Volunteers viewing the site in English see this instead of the version in the \"Deutsch\" tab - leave it blank to show the German text to everyone.",
       "fieldStreet": "Street",
       "fieldNumber": "House number",
       "fieldZip": "ZIP",
@@ -843,6 +848,7 @@
     },
     "privacyPolicy": {
       "title": "Privacy Policy",
+      "metaDescription": "What personal data Einsatzbereit collects, why, how long it is kept, and the rights you have under the GDPR.",
       "lastUpdated": "Last updated: August 7, 2026",
       "section1Title": "Responsible party",
       "section1Body": "{{name}}\n{{address}}\nEmail: {{email}}\nWebsite: {{website}}",
@@ -882,6 +888,7 @@
     },
     "imprint": {
       "title": "Imprint",
+      "metaDescription": "Provider identification under section 5 DDG: responsible party, contact details and liability notices for Einsatzbereit.",
       "section1Title": "Information according to § 5 DDG",
       "section2Title": "Contact",
       "section2Body": "Email: <emailLink>{{email}}</emailLink>\nWebsite: {{website}}",
@@ -935,6 +942,7 @@
     },
     "termsOfUse": {
       "title": "Terms of Use",
+      "metaDescription": "The rules for using Einsatzbereit: our role as a platform, acceptable use, obligations for organizations, and liability.",
       "lastUpdated": "Last updated: August 7, 2026",
       "section1Title": "Scope and acceptance",
       "section1Body": "These Terms of Use govern your use of Einsatzbereit (the \"Platform\"). By creating an account, registering for a volunteer opportunity, or otherwise using the Platform, you agree to be bound by these Terms. If you do not agree, please do not use the Platform.",
@@ -991,7 +999,10 @@
       "en": "English",
       "switchLanguage": "Switch language",
       "switchLanguageCurrent": "{{code}} - Switch language, currently {{language}}",
-      "switchedFromAccount": "Switched to {{language}} based on your account"
+      "switchedFromAccount": "Switched to {{language}} based on your account",
+      "contentDe": "German",
+      "contentEn": "English",
+      "emailLanguageDiffers": "Your notification emails still arrive in {{language}}. Change that under \"Email language\" in your profile."
     },
     "auth": {
       "completing": "Completing sign-in…",
@@ -1237,6 +1248,7 @@
       "fieldPreferredLanguage": "Email language",
       "preferredLanguageDe": "Deutsch",
       "preferredLanguageEn": "English",
+      "preferredLanguageDiffersHint": "Emails arrive in {{language}}, which is not the language the site is currently shown in.",
       "savedSuccess": "Profile saved.",
       "saveError": "Failed to save profile.",
       "loadError": "Could not load profile.",

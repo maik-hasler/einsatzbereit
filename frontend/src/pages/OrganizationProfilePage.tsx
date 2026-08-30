@@ -32,7 +32,7 @@ export default function OrganizationProfilePage() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const location = useLocation();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 
 	const [profile, setProfile] =
 		useState<PublicOrganizationProfileResponse | null>(null);
@@ -131,6 +131,15 @@ export default function OrganizationProfilePage() {
 				lead={profile.description ?? undefined}
 				leadLang="de"
 			>
+				{/* Organizations carry no English description to fall back
+				from, so on an English page this lead is always the German
+				original - the same disclosure a German-only opportunity
+				already gets on its own header band (#2328). */}
+				{profile.description && i18n.language !== "de" && (
+					<p className="mb-4 text-sm text-brand-200">
+						{t("opportunities.germanOnlyNotice")}
+					</p>
+				)}
 				{profile.website && (
 					<Button
 						variant="onDark"

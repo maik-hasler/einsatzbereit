@@ -18,7 +18,7 @@ export default function ProfileFieldsView({
 	phone,
 	preferredLanguage,
 }: ProfileFieldsViewProps) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 
 	return (
 		<div className="space-y-5">
@@ -93,6 +93,20 @@ export default function ProfileFieldsView({
 							? t("profile.preferredLanguageEn")
 							: t("profile.preferredLanguageDe")}
 					</p>
+					{/* Reading "Deutsch" under an all-English label says nothing
+					about the consequence; spell out that emails go on arriving
+					in a language the site is not being shown in (#2328). */}
+					{preferredLanguage !== i18n.language && (
+						<p className="mt-1 text-xs text-gray-500">
+							{t("profile.preferredLanguageDiffersHint", {
+								language: t(
+									preferredLanguage === "en"
+										? "language.contentEn"
+										: "language.contentDe",
+								),
+							})}
+						</p>
+					)}
 				</div>
 			)}
 		</div>

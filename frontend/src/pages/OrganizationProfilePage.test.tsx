@@ -45,6 +45,37 @@ describe("OrganizationProfilePage description language", () => {
 		);
 		expect(description).toHaveAttribute("lang", "de");
 	});
+
+	// Organizations carry no English description to fall back from, so unlike
+	// an opportunity this text is always the German original - and used to say
+	// nothing about that, while a German-only opportunity right beside it did
+	// (#2328).
+	it("discloses that the description is German-only on an English page", async () => {
+		renderProfile();
+
+		expect(
+			await screen.findByText("Only available in German"),
+		).toBeInTheDocument();
+	});
+
+	it("leaves the notice off the German page, where it says nothing", async () => {
+		renderWithProviders(
+			<Routes>
+				<Route
+					path="/organizations/:organizationId"
+					element={<OrganizationProfilePage />}
+				/>
+			</Routes>,
+			{ lng: "de", route: `/organizations/${ORGANIZATION_ID}` },
+		);
+
+		await screen.findByText(
+			"Wir unterstuetzen Menschen in Leipzig und Umgebung.",
+		);
+		expect(
+			screen.queryByText("Nur auf Deutsch verfügbar"),
+		).not.toBeInTheDocument();
+	});
 });
 
 describe("OrganizationProfilePage anonymous visitor", () => {

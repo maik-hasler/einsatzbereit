@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { quoteMarks } from "../../lib/quotes";
 import { dispatchToast } from "../../lib/toastBus";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import { useApiClient } from "../../hooks/useApiClient";
@@ -56,6 +57,7 @@ const NEAR_ME_MAX_AGE_MS = 60_000;
 
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
+	const quotes = quoteMarks(i18n.language);
 	const locale = resolveDateLocale(i18n.language);
 	const api = useApiClient();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -668,7 +670,11 @@ export default function VolunteerOpportunitiesList() {
 						>
 							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
 								<MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0 text-brand-600" />
-								<span>&quot;{keyword}&quot;</span>
+								<span>
+									{quotes.open}
+									{keyword}
+									{quotes.close}
+								</span>
 							</span>
 							<button
 								type="button"

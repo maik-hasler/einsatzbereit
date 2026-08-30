@@ -16,6 +16,7 @@ import {
 	NEW_ORGANIZATION_THRESHOLD_DAYS,
 	findCrossLocaleKeywordMatch,
 	pickLocalizedText,
+	pickEnglishLocale,
 	resolveDateLocale,
 } from "./format";
 
@@ -370,9 +371,33 @@ describe("resolveDateLocale", () => {
 		expect(resolveDateLocale("de")).toBe("de-DE");
 	});
 
-	it("maps en (and anything else) to en-GB", () => {
-		expect(resolveDateLocale("en")).toBe("en-GB");
-		expect(resolveDateLocale("fr")).toBe("en-GB");
+	// jsdom reports navigator.languages as ["en-US"], which is exactly the
+	// case #2328 was about: an American visitor used to get en-GB regardless.
+	it("regionalises anything that is not de from the browser", () => {
+		expect(resolveDateLocale("en")).toBe("en-US");
+		expect(resolveDateLocale("fr")).toBe("en-US");
+	});
+});
+
+describe("pickEnglishLocale", () => {
+	it("takes the first English tag the browser offers", () => {
+		expect(pickEnglishLocale(["de-DE", "en-US", "en-GB"])).toBe("en-US");
+	});
+
+	it("keeps a bare en, letting Intl resolve the region itself", () => {
+		expect(pickEnglishLocale(["en"])).toBe("en");
+	});
+
+	it("falls back to en-GB when the browser offers no English at all", () => {
+		expect(pickEnglishLocale(["de-DE", "fr-FR"])).toBe("en-GB");
+		expect(pickEnglishLocale([])).toBe("en-GB");
+		expect(pickEnglishLocale(undefined)).toBe("en-GB");
+	});
+
+	// Intl.DateTimeFormat throws a RangeError on a malformed tag, so a
+	// nonsense entry must not reach it.
+	it("ignores tags that only look English", () => {
+		expect(pickEnglishLocale(["english", "en_US", "eng"])).toBe("en-GB");
 	});
 });
 
@@ -396,10 +421,10 @@ function expectedDateTimeWithZone(iso: string, locale: string): string {
 }
 
 describe("formatDateTime", () => {
-	it("formats using en-GB style for en, pinned to the Berlin zone with its name shown", () => {
+	it("formats using the visitor's English locale, pinned to the Berlin zone with its name shown", () => {
 		const iso = "2024-03-15T14:30:00Z";
 		expect(formatDateTime(iso, "en")).toBe(
-			expectedDateTimeWithZone(iso, "en-GB"),
+			expectedDateTimeWithZone(iso, resolveDateLocale("en")),
 		);
 	});
 
@@ -432,9 +457,9 @@ describe("formatDateTime", () => {
 });
 
 describe("formatDate", () => {
-	it("formats using en-GB style for en, with no time-of-day, pinned to the Berlin zone", () => {
+	it("formats using the visitor's English locale, with no time-of-day, pinned to the Berlin zone", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
-		const expected = new Date(iso).toLocaleDateString("en-GB", {
+		const expected = new Date(iso).toLocaleDateString(resolveDateLocale("en"), {
 			dateStyle: "medium",
 			timeZone: "Europe/Berlin",
 		});
@@ -500,7 +525,7 @@ describe("formatDateTimeRange", () => {
 		);
 	});
 
-	it("uses en-GB style time-of-day for en", () => {
+	it("uses the visitor's English time-of-day style for en", () => {
 		const startIso = "2026-08-27T07:00:00Z";
 		const endIso = "2026-08-27T15:00:00Z";
 		expect(formatDateTimeRange(startIso, endIso, "en")).not.toBe(

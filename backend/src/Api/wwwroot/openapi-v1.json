@@ -8586,6 +8586,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "opportunityTitleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

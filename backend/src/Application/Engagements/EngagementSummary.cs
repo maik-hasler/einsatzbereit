@@ -27,4 +27,10 @@ public sealed record EngagementSummary(
 
 	DateTimeOffset? OpportunityValidUntil = null,
 
-	int? RemainingReactivations = null);
+	int? RemainingReactivations = null,
+
+	// The German title travels in OpportunityTitle, matching every other
+	// read model; this carries the optional English one so a client showing
+	// the English UI can render the same title the opportunity's own page
+	// does instead of falling back to German (#2328).
+	string? OpportunityTitleEn = null);

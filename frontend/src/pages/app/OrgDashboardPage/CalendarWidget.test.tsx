@@ -112,8 +112,12 @@ describe("CalendarWidget toolbar date range", () => {
 		});
 
 		const text = label.textContent?.trim() ?? "";
+		// Day and month order follows the visitor's own English locale
+		// (#2328), so the assertion is about the month being spelled out at
+		// both ends of the range - not about which side of it the day sits.
+		const spelledOutDate = String.raw`(\d{1,2}\s+\p{L}+|\p{L}+\s+\d{1,2},?)\s+\d{4}`;
 		expect(text).toMatch(
-			/\d{1,2}\s+\p{L}+\s+\d{4}\s*-\s*\d{1,2}\s+\p{L}+\s+\d{4}/u,
+			new RegExp(`${spelledOutDate}\\s*-\\s*${spelledOutDate}`, "u"),
 		);
 		expect(text).not.toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/);
 	});

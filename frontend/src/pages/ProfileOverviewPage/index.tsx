@@ -864,6 +864,20 @@ export default function ProfileOverviewPage() {
 														},
 													]}
 												/>
+												{/* Interface language and email language are set
+												independently, and nothing used to point out that
+												they had drifted apart (#2328). */}
+												{form.state.preferredLanguage !== i18n.language && (
+													<p className="mt-1 text-xs text-gray-500">
+														{t("profile.preferredLanguageDiffersHint", {
+															language: t(
+																form.state.preferredLanguage === "en"
+																	? "language.contentEn"
+																	: "language.contentDe",
+															),
+														})}
+													</p>
+												)}
 											</Field>
 										</div>
 									</form>

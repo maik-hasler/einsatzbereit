@@ -353,6 +353,43 @@ describe("my-signups calendar button (#2240)", () => {
 	});
 });
 
+describe("my-signups opportunity title language (#2328)", () => {
+	it("shows the English title in the English interface", async () => {
+		mockRows([engagement()]);
+
+		renderSection("en");
+
+		const card = await screen.findByTestId("engagement-card");
+		const link = within(card).getByRole("link", { name: "German shift" });
+		expect(link).toHaveAttribute("lang", "en");
+		expect(
+			within(card).queryByText("Deutscher Einsatz"),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows the German title in the German interface", async () => {
+		mockRows([engagement()]);
+
+		renderSection("de");
+
+		const card = await screen.findByTestId("engagement-card");
+		const link = within(card).getByRole("link", { name: "Deutscher Einsatz" });
+		expect(link).toHaveAttribute("lang", "de");
+	});
+
+	// A German-only opportunity has no titleEn to pick, so the English
+	// interface keeps the German title - marked up as German either way.
+	it("falls back to the German title when no translation exists", async () => {
+		mockRows([engagement({ opportunityTitleEn: undefined })]);
+
+		renderSection("en");
+
+		const card = await screen.findByTestId("engagement-card");
+		const link = within(card).getByRole("link", { name: "Deutscher Einsatz" });
+		expect(link).toHaveAttribute("lang", "de");
+	});
+});
+
 describe("my-signups withdraw copy (#2228)", () => {
 	it("speaks of withdrawing interest, not releasing a seat, for an interest-based sign-up", async () => {
 		mockRows([engagement({ status: "Confirmed" })]);
@@ -371,7 +408,7 @@ describe("my-signups withdraw copy (#2228)", () => {
 		).toBeInTheDocument();
 		expect(
 			screen.getByText(
-				'Your expression of interest for "Deutscher Einsatz" will be withdrawn, and you\'ll be able to express interest again later.',
+				'Your expression of interest for "German shift" will be withdrawn, and you\'ll be able to express interest again later.',
 			),
 		).toBeInTheDocument();
 	});
@@ -398,7 +435,7 @@ describe("my-signups withdraw copy (#2228)", () => {
 		).toBeInTheDocument();
 		expect(
 			screen.getByText(
-				'Your spot for "Deutscher Einsatz" will be released, and you\'ll be able to sign up again later.',
+				'Your spot for "German shift" will be released, and you\'ll be able to sign up again later.',
 			),
 		).toBeInTheDocument();
 	});

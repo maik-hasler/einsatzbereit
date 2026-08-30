@@ -13350,6 +13350,9 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int? RemainingReactivations { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("opportunityTitleEn")]
+        public string? OpportunityTitleEn { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

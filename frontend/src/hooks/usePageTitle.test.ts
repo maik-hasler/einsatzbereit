@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import indexHtml from "../../index.html?raw";
-import usePageTitleSource from "./usePageTitle.ts?raw";
+import documentMetaSource from "../lib/documentMeta.ts?raw";
 
 describe("static document title", () => {
 	const appName = () => {
-		const match = /const APP_NAME = "([^"]+)"/.exec(usePageTitleSource);
+		const match = /const APP_NAME = "([^"]+)"/.exec(documentMetaSource);
 		expect(
 			match,
-			"usePageTitle.ts must declare a string APP_NAME const",
+			"documentMeta.ts must declare a string APP_NAME const",
 		).not.toBeNull();
 		return match?.[1];
 	};

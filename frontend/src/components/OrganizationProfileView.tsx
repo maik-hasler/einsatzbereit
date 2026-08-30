@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { EnvelopeIcon, GlobeIcon, MapPinIcon, PhoneIcon } from "./icons";
 import { cardClass } from "../lib/surfaceClasses";
 import { pageTitleClass } from "../lib/headingClasses";
@@ -50,6 +51,7 @@ export default function OrganizationProfileView({
 	showHeader = true,
 	centered = false,
 }: OrganizationProfileViewProps) {
+	const { t, i18n } = useTranslation();
 	const NameTag = nameAs;
 	const hasContactInfo = !!(contactEmail || contactPhone || website || address);
 	const useSidebar = layout === "sidebar" && hasContactInfo;
@@ -141,12 +143,20 @@ export default function OrganizationProfileView({
 				>
 					<div className="min-w-0">
 						{description && (
-							<p
-								lang="de"
-								className="mb-6 max-w-2xl leading-relaxed text-gray-700"
-							>
-								{description}
-							</p>
+							<div className="mb-6 max-w-2xl">
+								<p lang="de" className="leading-relaxed text-gray-700">
+									{description}
+								</p>
+								{/* Organizations have no descriptionEn to fall back
+								from, so unlike an opportunity this is always the
+								German original - say so rather than let it read as
+								untranslated chrome (#2328). */}
+								{i18n.language !== "de" && (
+									<p className="mt-1 text-xs text-gray-500">
+										{t("opportunities.germanOnlyNotice")}
+									</p>
+								)}
+							</div>
 						)}
 						{!useSidebar && hasContactInfo && (
 							<div className="mb-6 max-w-md">{contactCard}</div>
