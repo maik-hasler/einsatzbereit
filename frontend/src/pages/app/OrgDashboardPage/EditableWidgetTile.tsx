@@ -109,15 +109,17 @@ export default function EditableWidgetTile({
 					: ""
 			}`}
 		>
-			{/* No top padding in edit mode. The grip button below used to be
-			    reserved 40px of `pt-10` here so it would not sit on top of
-			    WidgetCard's own title (#2045, PR #2038 F12) - but the tile's
-			    grid height does not grow to pay for that, so the card lost
-			    40px off its bottom instead: the "create opportunity" button
-			    was sliced through its own label, and an `inert` tile cannot
-			    be scrolled to reach what was cut (#2322 F4). The grip now
-			    straddles the tile's top edge instead, which clears the title
-			    just as well and costs the card nothing. */}
+			{/*
+				No top padding in edit mode. The grip button below used to be
+				reserved 40px of `pt-10` here so it would not sit on top of
+				WidgetCard's own title (#2045, PR #2038 F12) - but the tile's grid
+				height does not grow to pay for that, so the card lost 40px off its
+				bottom instead: the "create opportunity" button was sliced through
+				its own label, and an `inert` tile cannot be scrolled to reach what
+				was cut (#2322 F4). The grip now straddles the tile's top edge
+				instead, which clears the title just as well and costs the card
+				nothing.
+			*/}
 			<div inert={editing} className="h-full">
 				<ErrorBoundary
 					fallback={

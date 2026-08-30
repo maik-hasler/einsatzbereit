@@ -135,8 +135,10 @@ function QuickCheckInWidget({
 								}))}
 							/>
 						</div>
-						{/* Only QR check-in can be finished here; PIN and manual both
-						    need the opportunity's own sign-up list (#2322 F6). */}
+						{/*
+							Only QR check-in can be finished here; PIN and manual both
+							need the opportunity's own sign-up list (#2322 F6).
+						*/}
 						{scannable ? (
 							<Button
 								type="button"

@@ -172,20 +172,18 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* A month week row must fit its date header plus TWO event rows.
-   react-big-calendar sizes a row's capacity from the row's own height -
-   `Math.max(Math.floor(space / eventHeight), 1)` - and at a limit of 1 it
-   still renders one event row *plus* the "+N more" link under it. So a row
-   only tall enough for a single line lays that link out below its own
-   `overflow: hidden` box, where it is never painted: a day with four
-   occurrences showed one chip and no indication at all that the other
-   three existed (#2322 F3).
-
-   `min-content` on the view is load-bearing, not belt-and-braces: its
-   `overflow: hidden` zeroes the automatic minimum size a flex container
-   would otherwise take from these rows, so without it the rows keep their
-   height and the view simply clips the last weeks off instead - trading a
-   hidden link for hidden weeks. With it the view grows and the widget
-   card's own scroll container takes the overflow. */
+react-big-calendar sizes a row's capacity from the row's own height -
+`Math.max(Math.floor(space / eventHeight), 1)` - and at a limit of 1 it still
+renders one event row *plus* the "+N more" link under it. So a row only tall
+enough for a single line lays that link out below its own `overflow: hidden`
+box, where it is never painted: a day with four occurrences showed one chip
+and no indication at all that the other three existed (#2322 F3).
+`min-content` on the view is load-bearing, not belt-and-braces: that
+element's `overflow: hidden` zeroes the automatic minimum size a flex
+container would otherwise take from these rows, so without it the rows keep
+their height and the view simply clips the last weeks off instead - trading a
+hidden link for hidden weeks. With it the view grows and the widget card's
+own scroll container takes the overflow. */
 .rbc-month-view {
 	min-height: min-content;
 }
@@ -382,15 +380,15 @@ widgets, where EVENT still gets ample room and titles show in full (#1906). */
 }
 
 /* The same row height in both modes, so a tile is the size the organizer
-   gave it in the layout editor - and stays that size once they leave it.
-   This rule used to apply while editing only; view mode sized its rows from
-   their content instead (`grid-auto-rows: auto` plus `align-items: start`),
-   which ignored the saved row span outright. A tile resized to three rows
-   tall snapped back to one row's worth of height the moment editing ended,
-   and cards sharing a row ended at three different heights (#2322 F2, F5,
-   F9). A card whose content outgrows its rows scrolls inside itself, which
-   is what WidgetCard's own scroll container is for - the row band stays
-   fixed either way. */
+gave it in the layout editor - and stays that size once they leave it. This
+rule used to apply while editing only; view mode sized its rows from their
+content instead (`grid-auto-rows: auto` plus `align-items: start`), which
+ignored the saved row span outright. A tile resized to three rows tall
+snapped back to one row's worth of height the moment editing ended, and cards
+sharing a row ended at three different heights (#2322 F2, F5, F9). A card
+whose content outgrows its rows scrolls inside itself, which is what
+WidgetCard's own scroll container is for - the row band stays fixed either
+way. */
 @media (min-width: 1024px) {
 	.dashboard-widget-grid {
 		grid-auto-rows: max(
