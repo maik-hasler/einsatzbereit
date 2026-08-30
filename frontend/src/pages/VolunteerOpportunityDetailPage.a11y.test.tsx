@@ -65,7 +65,54 @@ describe("VolunteerOpportunityDetailPage a11y", () => {
 
 		renderDetail();
 
-		await screen.findByTestId("opportunity-location-fallback");
+		await screen.findByTestId("opportunity-address");
+		await expectNoA11yViolations();
+	});
+
+	it("has no violations with a described opportunity, a toolbar and past slots (#2330)", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			id: OPPORTUNITY_ID,
+			organizationId: "22222222-2222-2222-2222-222222222222",
+			organizationName: "Bilingual Org",
+			titleDe: "Deutscher Titel",
+			titleEn: "English Title",
+			descriptionDe: "Absatz eins.\n\nAbsatz zwei.",
+			descriptionEn: "Paragraph one.\n\nParagraph two.",
+			street: "Teststrasse",
+			houseNumber: "1",
+			zipCode: "24103",
+			city: "Kiel",
+			isRemote: true,
+			occurrence: "OneTime",
+			participationType: "ScheduledSlots",
+			checkInMethod: "None",
+			status: "Published",
+			bannerImageUrl: "https://storage.test/banner.jpg",
+			timeSlots: [
+				{
+					id: "aaaaaaaa-0000-0000-0000-000000000001",
+					startDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+					endDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+					maxParticipants: 5,
+					bookedCount: 0,
+				},
+				{
+					id: "aaaaaaaa-0000-0000-0000-000000000002",
+					startDateTime: new Date(Date.UTC(2020, 0, 14, 9, 0)),
+					endDateTime: new Date(Date.UTC(2020, 0, 14, 12, 0)),
+					maxParticipants: 5,
+					bookedCount: 0,
+				},
+			],
+			tags: [],
+			currentUserEngagements: [],
+			validUntil: undefined,
+			createdOn: new Date(Date.UTC(2026, 7, 1, 9, 0)),
+		});
+
+		renderDetail();
+
+		await screen.findByTestId("opportunity-description");
 		await expectNoA11yViolations();
 	});
 });

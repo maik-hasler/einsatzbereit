@@ -11,6 +11,8 @@ import { signinLocaleArgs } from "../../lib/authLocale";
 import { clearActiveOrgId } from "../../lib/activeOrg";
 import { clearAuthRecoveryAttempts } from "../../lib/authRecovery";
 import { clearSeenAchievements } from "../../hooks/useAchievementNotifier";
+import { useDisplayName } from "../../hooks/useDisplayName";
+import { clearDisplayNameOverride } from "../../lib/displayName";
 import { getInitials } from "../../lib/initials";
 import DesktopHeader from "./DesktopHeader";
 import MobileHeader from "./MobileHeader";
@@ -30,9 +32,13 @@ export default function Header({
 	const authStatus = useAuthDisplayStatus();
 	const isLoggedIn = authStatus === "signedIn";
 	const user = auth.user?.profile;
-	const displayName = (user?.name ??
+	// Keycloak re-issues the id_token's `name` only on the next sign-in, so a
+	// name saved on /profile is picked up from the override the profile page
+	// publishes until a fresh token carries it (#2330).
+	const claimedName = (user?.name ??
 		user?.preferred_username ??
 		"User") as string;
+	const displayName = useDisplayName(user?.sub, claimedName);
 	const initials = isLoggedIn ? getInitials(displayName) : "";
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -120,6 +126,7 @@ export default function Header({
 		clearActiveOrgId();
 		clearSeenAchievements(user?.sub);
 		clearAuthRecoveryAttempts();
+		clearDisplayNameOverride();
 		auth.signoutRedirect();
 	}
 

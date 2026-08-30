@@ -14,6 +14,8 @@ import {
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 import { getInitials } from "../../lib/initials";
+import { setDisplayNameOverride } from "../../lib/displayName";
+import { BADGE_PROGRESS_TARGETS } from "../../components/BadgeGrid";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
@@ -31,7 +33,12 @@ import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
 import { getInvalidFieldNames } from "../../lib/apiError";
 import Button from "../../components/Button";
-import { CalendarIcon, CheckIcon, PencilIcon } from "../../components/icons";
+import {
+	ArrowTopRightOnSquareIcon,
+	CalendarIcon,
+	CheckIcon,
+	PencilIcon,
+} from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
 import {
 	useProfileForm,
@@ -48,6 +55,11 @@ const FIELD_MAX_LENGTHS = {
 	bio: 1000,
 	phone: 30,
 } as const;
+
+/** `flex-1 basis-0` rather than shrink-to-fit, so however many tiles are on
+ *  screen they come out the same width (#2330). */
+const STAT_TILE_CLASS =
+	"flex flex-1 basis-0 items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3";
 
 const NAME_MAX_LENGTH = 100;
 const BIO_MAX_LENGTH = 1000;
@@ -81,6 +93,39 @@ function FireIcon({ className = "h-5 w-5" }: { className?: string }) {
 				d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"
 			/>
 		</svg>
+	);
+}
+
+/**
+ * The streak cards used to chip the badge name outright, so a 1-week streak
+ * was labelled "Wochenheld" while the grid on the same page showed that badge
+ * locked at "1 von 4". The chip now states progress toward the badge until
+ * the streak actually reaches its target - the same threshold BadgeGrid reads
+ * for the grid below, so the two can no longer disagree (#2330).
+ */
+function StreakBadgeChip({
+	badgeKey,
+	current,
+}: {
+	badgeKey: string;
+	current: number;
+}) {
+	const { t } = useTranslation();
+	const target = BADGE_PROGRESS_TARGETS[badgeKey]?.target;
+	const name = t(`achievements.badges.${badgeKey}.name`);
+
+	if (target === undefined || current >= target) {
+		return (
+			<Chip tone="brand" size="sm" className="mt-1">
+				{name}
+			</Chip>
+		);
+	}
+
+	return (
+		<Chip tone="neutral" size="sm" className="mt-1">
+			{t("achievements.badgeStreakProgress", { badge: name, current, target })}
+		</Chip>
 	);
 }
 
@@ -176,7 +221,6 @@ export default function ProfileOverviewPage() {
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const [engagementCount, setEngagementCount] = useState<number | null>(null);
-	const formRef = useRef<HTMLFormElement>(null);
 
 	const profileLoadCancelledRef = useRef(false);
 
@@ -287,6 +331,15 @@ export default function ProfileOverviewPage() {
 			await api.updateUserProfile(savedValues);
 
 			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
+			// The header reads the id_token, which Keycloak will not re-issue
+			// until the next sign-in - hand it the new name directly (#2330).
+			if (userId) {
+				setDisplayNameOverride(
+					userId,
+					`${savedValues.firstName ?? ""} ${savedValues.lastName ?? ""}`.trim() ||
+						(profile?.username ?? ""),
+				);
+			}
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
 		} catch (err) {
@@ -382,8 +435,8 @@ export default function ProfileOverviewPage() {
 							<SuccessBanner message={successMessage} className="mb-4" />
 
 							{!editing && (
-								<div className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-									<div className="flex items-center gap-4">
+								<div className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+									<div className="flex min-w-0 items-center gap-4">
 										{avatarUrl ? (
 											<img
 												src={avatarUrl}
@@ -407,14 +460,31 @@ export default function ProfileOverviewPage() {
 											<p className="truncate text-sm text-brand-800">
 												{profile?.email}
 											</p>
+											{/* The notice below tells volunteers they have a public
+											profile page, and nothing in the app linked to one - a
+											crawl of every volunteer-reachable page found zero
+											/users/ anchors. Here it is (#2330). */}
+											{userId && (
+												<Link
+													to={`/users/${userId}`}
+													data-testid="view-public-profile"
+													className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+												>
+													<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+													{t("profile.viewPublicProfile")}
+												</Link>
+											)}
 										</div>
 									</div>
 
-									<div className="flex flex-wrap gap-3">
+									{/* One row of equal-width tiles, rather than three
+									shrink-to-fit boxes that came out 177/161/168px wide and
+									wrapped into an L-shape (#2330). */}
+									<div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
 										{engagementCount !== null && (
 											<div
 												data-testid="profile-stat-engagements"
-												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+												className={STAT_TILE_CLASS}
 											>
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
 													<CheckIcon className="h-5 w-5" />
@@ -435,7 +505,7 @@ export default function ProfileOverviewPage() {
 										{streaks && streaks.activityStreak > 0 && (
 											<div
 												data-testid="profile-stat-streak"
-												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+												className={STAT_TILE_CLASS}
 											>
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
 													<FireIcon />
@@ -449,16 +519,17 @@ export default function ProfileOverviewPage() {
 															count: streaks.activityStreak,
 														})}
 													</p>
-													<Chip tone="brand" size="sm" className="mt-1">
-														{t("achievements.badges.weekly-hero-4.name")}
-													</Chip>
+													<StreakBadgeChip
+														badgeKey="weekly-hero-4"
+														current={streaks.activityStreak}
+													/>
 												</div>
 											</div>
 										)}
 										{streaks && streaks.loginStreak > 0 && (
 											<div
 												data-testid="profile-stat-login-streak"
-												className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3"
+												className={STAT_TILE_CLASS}
 											>
 												<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
 													<CalendarIcon className="h-5 w-5" />
@@ -472,9 +543,10 @@ export default function ProfileOverviewPage() {
 															count: streaks.loginStreak,
 														})}
 													</p>
-													<Chip tone="brand" size="sm" className="mt-1">
-														{t("achievements.badges.on-a-roll-7.name")}
-													</Chip>
+													<StreakBadgeChip
+														badgeKey="on-a-roll-7"
+														current={streaks.loginStreak}
+													/>
 												</div>
 											</div>
 										)}
@@ -485,44 +557,18 @@ export default function ProfileOverviewPage() {
 							<section className="mb-10">
 								<div className="flex items-center justify-between gap-3">
 									<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
-									{editing ? (
-										<div className="flex shrink-0 items-center gap-2">
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={handleCancel}
-												disabled={saving}
-												data-testid="profile-cancel"
-											>
-												{t("common.cancel")}
-											</Button>
-											<Button
-												type="button"
-												size="sm"
-												disabled={saving}
-												data-testid="profile-save"
-
-												onClick={() => formRef.current?.requestSubmit()}
-											>
-												<CheckIcon className="h-4 w-4" />
-												{saving ? t("common.saving") : t("common.save")}
-											</Button>
-										</div>
-									) : (
-										!isProfileFieldsEmpty && (
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() => setEditing(true)}
-												data-testid="profile-edit"
-												className="shrink-0"
-											>
-												<PencilIcon className="h-4 w-4" />
-												{t("common.edit")}
-											</Button>
-										)
+									{!editing && !isProfileFieldsEmpty && (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => setEditing(true)}
+											data-testid="profile-edit"
+											className="shrink-0"
+										>
+											<PencilIcon className="h-4 w-4" />
+											{t("common.edit")}
+										</Button>
 									)}
 								</div>
 
@@ -564,11 +610,7 @@ export default function ProfileOverviewPage() {
 								)}
 
 								{editing && (
-									<form
-										ref={formRef}
-										onSubmit={handleSave}
-										className="space-y-6"
-									>
+									<form onSubmit={handleSave} className="space-y-6">
 										<div>
 											<h3 className="mb-4 text-sm font-semibold text-gray-900">
 												{t("account.title")}
@@ -879,6 +921,33 @@ export default function ProfileOverviewPage() {
 													</p>
 												)}
 											</Field>
+										</div>
+
+										{/* Sticky, and inside the form rather than above it: the
+										pair used to sit in the statically positioned section
+										header, so by the time the volunteer had scrolled to the
+										last field Save was 426px above the top of the viewport
+										with nothing left to click (#2330). */}
+										<div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-2 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={handleCancel}
+												disabled={saving}
+												data-testid="profile-cancel"
+											>
+												{t("common.cancel")}
+											</Button>
+											<Button
+												type="submit"
+												size="sm"
+												disabled={saving}
+												data-testid="profile-save"
+											>
+												<CheckIcon className="h-4 w-4" />
+												{saving ? t("common.saving") : t("common.save")}
+											</Button>
 										</div>
 									</form>
 								)}

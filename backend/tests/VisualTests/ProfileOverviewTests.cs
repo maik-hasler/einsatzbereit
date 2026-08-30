@@ -98,7 +98,12 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 			Page.GetByText("Skills & interests", new() { Exact = true }),
 			"Public user profile page (#1112)");
 
-		await AssertMaxWidthContentLeftAlignedAsync("Public user profile page");
+		// Centered, not left-aligned: this page's own h1 sits at the site's
+		// standard content gutter because PageHeaderBand centers a max-w-5xl
+		// block, so a flush-left body was 176px out of alignment with its own
+		// title and stopped 176px short of the right gutter (#2330). /help and
+		// /profile already center theirs; this was the odd one out.
+		await AssertMaxWidthContentCenteredAsync("Public user profile page");
 	}
 
 	[Test]
