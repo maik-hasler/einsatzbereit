@@ -153,8 +153,8 @@ export default function UserProfilePage() {
 						})}
 					</p>
 					{/* Offered to anonymous visitors too, routed through sign-in with the click
-					    carried along - the same treatment every other report affordance gets
-					    (#2326). Still hidden on your own profile. */}
+					carried along - the same treatment every other report affordance gets
+					(#2326). Still hidden on your own profile. */}
 					{auth.user?.profile.sub !== userId && userId && (
 						<ReportFlagButton
 							targetLabel={profile.displayName}

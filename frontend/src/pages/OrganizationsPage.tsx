@@ -230,9 +230,9 @@ export default function OrganizationsPage() {
 													</h3>
 												</div>
 												{/* Shown to anonymous visitors too: the profile one click deeper
-												    already offers this to everyone and routes them through
-												    sign-in, so hiding it here made the affordance appear and
-												    disappear by page (#2326). */}
+												already offers this to everyone and routes them through
+												sign-in, so hiding it here made the affordance appear and
+												disappear by page (#2326). */}
 												<ReportFlagButton
 													targetLabel={org.name}
 													ariaLabel={t("orgProfile.reportOrganization")}
