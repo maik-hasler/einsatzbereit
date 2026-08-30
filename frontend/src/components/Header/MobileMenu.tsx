@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 import Button from "../Button";
 import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
@@ -125,15 +125,32 @@ export default function MobileMenu({
 							// (#2327). The height comes from `min-h-11` rather than more padding
 							// so the rows keep their compact rhythm.
 							const rowBase = `flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
+							// NavLink, not Link: the drawer renders the same five items as
+							// the desktop nav, and used to mark none of them - no "you are
+							// here" affordance below the `lg:` breakpoint, and no
+							// `aria-current` on any route (#2329 F5). NavLink sets
+							// `aria-current="page"` itself; `activeRow` is its visual half.
+							const activeRow = isTransparent
+								? "bg-white/15 font-semibold text-white"
+								: "bg-brand-50 font-semibold text-brand-700";
+							const rowClass = ({ isActive }: { isActive: boolean }) =>
+								`${rowBase} ${isActive ? activeRow : ""}`;
 
 							if (link.kind === "organization") {
 								return (
 									<div key={link.key}>
-										<Link
+										{/* `end`, unlike the desktop nav's org link: this row is the
+										dashboard link and its own section list sits right under it, so
+										without it every section route prefix-matches the row too and
+										the drawer claims two current pages. */}
+										<NavLink
 											to={link.to}
+											end
 											onClick={onClose}
 											data-testid={`mobile-nav-${link.key}`}
-											className={`${rowBase} gap-2`}
+											className={({ isActive }) =>
+												`${rowClass({ isActive })} gap-2`
+											}
 										>
 											<OrgAvatar
 												name={link.org.name}
@@ -141,7 +158,7 @@ export default function MobileMenu({
 												size="sm"
 											/>
 											<span className="truncate">{link.org.name}</span>
-										</Link>
+										</NavLink>
 
 										<div
 											data-testid="mobile-nav-org-sections"
@@ -150,14 +167,16 @@ export default function MobileMenu({
 											{visibleOrgTabs(link.org.role === "Organizer")
 												.filter((tab) => tab.key !== "dashboard")
 												.map((tab) => (
-													<Link
+													<NavLink
 														key={tab.key}
 														to={orgTabPath(link.org.id, tab.key)}
 														onClick={onClose}
-														className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`}
+														className={({ isActive }) =>
+															`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isActive ? activeRow : isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`
+														}
 													>
 														{t(tab.labelKey)}
-													</Link>
+													</NavLink>
 												))}
 										</div>
 									</div>
@@ -177,15 +196,16 @@ export default function MobileMenu({
 									{t(`nav.${link.key}`)}
 								</Link>
 							) : (
-								<Link
+								<NavLink
 									key={link.key}
 									to={link.to}
+									end={link.to === "/"}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={rowBase}
+									className={({ isActive }) => rowClass({ isActive })}
 								>
 									{t(`nav.${link.key}`)}
-								</Link>
+								</NavLink>
 							);
 						})}
 					</div>

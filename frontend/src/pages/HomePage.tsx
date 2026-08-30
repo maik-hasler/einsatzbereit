@@ -206,10 +206,20 @@ export default function HomePage() {
 						</defs>
 					</svg>
 
+					{/* The two top stones and the copy block's top padding are one
+					measurement, not two: a stone's bottom edge has to sit above the
+					first line of copy at every width. That holds at the base and `sm`
+					steps (88px and 104px of stone against 96px and 112px of padding)
+					but broke at `lg`, where the stones jump to 256/288px against
+					unchanged 112px padding - so the headline set straight across the
+					amber stone, white on #F0B23A at 1.89:1 (#2329 F1). Both stones now
+					bleed further off the top edge and the copy starts below them:
+					160px of stone against 176px of padding at `lg`, 176px against
+					192px at `xl`. Changing either half means recomputing the other. */}
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-1)" }}
-						className="pointer-events-none absolute -top-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-top-8 lg:-left-8 lg:h-64 lg:w-64 xl:h-72 xl:w-72"
+						className="pointer-events-none absolute -top-2 -left-2 h-20 w-20 shadow-raised sm:h-24 sm:w-24 lg:-top-24 lg:-left-8 lg:h-64 lg:w-64 xl:-top-28 xl:h-72 xl:w-72"
 					>
 						<img
 							src="/images/hero/volunteer-1.jpg"
@@ -236,7 +246,7 @@ export default function HomePage() {
 					<div
 						aria-hidden="true"
 						style={{ clipPath: "url(#hero-stone-4)" }}
-						className="pointer-events-none absolute -top-2 -right-2 h-24 w-24 bg-accent-400 shadow-raised sm:h-28 sm:w-28 lg:-top-8 lg:-right-8 lg:h-72 lg:w-72 xl:h-80 xl:w-80"
+						className="pointer-events-none absolute -top-2 -right-2 h-24 w-24 bg-accent-400 shadow-raised sm:h-28 sm:w-28 lg:-top-32 lg:-right-8 lg:h-72 lg:w-72 xl:-top-36 xl:h-80 xl:w-80"
 					/>
 					<div
 						aria-hidden="true"
@@ -250,13 +260,13 @@ export default function HomePage() {
 						/>
 					</div>
 
-					<div className="relative px-4 pt-24 pb-12 text-center sm:px-8 sm:pt-28 sm:pb-32 lg:px-10 lg:py-28">
+					<div className="relative px-4 pt-24 pb-12 text-center sm:px-8 sm:pt-28 sm:pb-32 lg:px-10 lg:pt-44 lg:pb-28 xl:pt-48">
 						<p className="animate-fade-up mb-3 text-xs font-semibold tracking-widest text-brand-100 uppercase">
 							{t("landing.heroLabel")}
 						</p>
 						<h1
 							id={heroTitleId}
-							className="animate-fade-up-d1 mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-8xl"
+							className="animate-fade-up-d1 mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-balance text-white sm:text-6xl lg:text-7xl xl:text-8xl"
 						>
 							{t("landing.heroTitle")}
 						</h1>
@@ -334,13 +344,21 @@ export default function HomePage() {
 
 				<div className="bg-brand-800">
 					<div className="relative isolate overflow-hidden">
+						{/* Inset by 64px - `blur-3xl`'s own radius - top and bottom, not
+						bled off those edges: this container's `overflow-hidden` ends
+						exactly where the wave SVGs start, so a glow that still had body
+						left at the clip line was sliced off with a razor-straight
+						horizontal edge flush against the curve, in the same brand-800
+						the wave is filled with (#2329 F3). Measured: a 234px-wide seam
+						band at 1440 becomes 0px. The left/right bleed is kept - the
+						section is `w-screen`, so those edges are the viewport's. */}
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
+							className="pointer-events-none absolute top-16 -left-16 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
 						/>
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-accent-400 opacity-10 blur-3xl"
+							className="pointer-events-none absolute -right-10 bottom-16 h-56 w-56 rounded-full bg-accent-400 opacity-10 blur-3xl"
 						/>
 
 						<div className="relative mx-auto max-w-page px-4 py-10 sm:px-6 sm:py-14 lg:px-8">

@@ -45,13 +45,19 @@ export default function DesktopHeader({
 		>
 			<ul className="mr-0.5 flex items-center gap-1">
 				{buildPrimaryNav(activeOrg).map((link) => {
+					// The underline colour belongs to the state classes, not to `base`:
+					// with `border-transparent` in `base` both rules are border-color
+					// utilities of equal specificity, and `border-transparent` won the
+					// emitted order - so the active underline never painted on any
+					// route (#2329 F4). The transparent header deliberately has no
+					// underline (#2311), hence the explicit transparent border there.
 					const base =
-						"rounded-lg border-b-2 border-transparent px-2 py-2 text-sm font-medium whitespace-nowrap transition-colors";
+						"rounded-lg border-b-2 px-2 py-2 text-sm font-medium whitespace-nowrap transition-colors";
 					const idle = isTransparent
-						? "text-brand-100 hover:text-white"
-						: "text-gray-600 hover:text-brand-800";
+						? "border-transparent text-brand-100 hover:text-white"
+						: "border-transparent text-gray-600 hover:text-brand-800";
 					const activeClass = isTransparent
-						? "font-semibold text-white"
+						? "border-transparent font-semibold text-white"
 						: "border-brand-700 font-semibold text-brand-800";
 
 					if (link.kind === "organization") {
@@ -131,10 +137,14 @@ export default function DesktopHeader({
 					>
 						{t("nav.signIn")}
 					</Button>
+					{/* `tertiary`, not `outline`: the gray-500 outline was a cool
+					blue-gray off the green brand ramp, and read as heavier than the
+					filled primary sitting right next to it - two controls competing
+					for the same CTA slot (#2329 F12). */}
 					<Button
 						type="button"
 						onClick={onRegister}
-						variant={isTransparent ? "outlineOnDark" : "outline"}
+						variant={isTransparent ? "outlineOnDark" : "tertiary"}
 					>
 						{t("nav.register")}
 					</Button>

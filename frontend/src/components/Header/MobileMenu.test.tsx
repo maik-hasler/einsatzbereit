@@ -20,7 +20,7 @@ const base = {
 	onSignOut: () => {},
 };
 
-function renderMenu(role: string) {
+function renderMenu(role: string, route = "/") {
 	return renderWithProviders(
 		<MobileMenu
 			{...base}
@@ -31,7 +31,7 @@ function renderMenu(role: string) {
 				role,
 			}}
 		/>,
-		{ auth: { isAuthenticated: true } },
+		{ auth: { isAuthenticated: true }, route },
 	);
 }
 
@@ -64,5 +64,51 @@ describe("MobileMenu organization sections", () => {
 		expect(
 			sections().getByRole("link", { name: "Settings" }),
 		).toBeInTheDocument();
+	});
+});
+
+// The drawer renders the same primary items as the desktop nav, and marked
+// none of them: below the `lg:` breakpoint the shell offered no "you are
+// here" affordance at all, visually or to assistive tech (#2329 F5).
+describe("MobileMenu current-page marking", () => {
+	it("marks the route the visitor is on, and only that one", () => {
+		renderMenu("Organizer", "/opportunities");
+
+		expect(screen.getByTestId("mobile-nav-findOpportunities")).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		expect(screen.getByTestId("mobile-nav-home")).not.toHaveAttribute(
+			"aria-current",
+		);
+		expect(screen.getByTestId("mobile-nav-organizations")).not.toHaveAttribute(
+			"aria-current",
+		);
+	});
+
+	// Without `end`, "/" prefix-matches every route and the drawer would mark
+	// Home on all of them.
+	it("does not mark Home from a deeper route", () => {
+		renderMenu("Organizer", "/organizations");
+
+		expect(screen.getByTestId("mobile-nav-home")).not.toHaveAttribute(
+			"aria-current",
+		);
+		expect(screen.getByTestId("mobile-nav-organizations")).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+	});
+
+	it("marks the org section the visitor is in, not just the org itself", () => {
+		renderMenu("Organizer", `/app/${ORG_ID}/dashboard/engagements`);
+
+		expect(sections().getByRole("link", { name: "Sign-ups" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		expect(screen.getByTestId("mobile-nav-organization")).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 });

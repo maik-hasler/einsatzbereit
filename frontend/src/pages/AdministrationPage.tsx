@@ -10,7 +10,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
-import { inputClass, labelClass } from "../lib/formClasses";
+import { checkboxClass, inputClass, labelClass } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import {
 	formatDate,
@@ -283,7 +283,7 @@ function OrganizationsSection() {
 							id="admin-org-flagged-only"
 							checked={flaggedOnly}
 							onChange={(e) => setFlaggedOnly(e.target.checked)}
-							className="h-4 w-4 shrink-0 accent-brand-600"
+							className={`h-4 w-4 ${checkboxClass}`}
 						/>
 						<span className="text-sm text-gray-800">
 							{t("administration.organizations.flaggedOnlyLabel")}
@@ -298,7 +298,7 @@ function OrganizationsSection() {
 							id="admin-org-deleted-only"
 							checked={deletedOnly}
 							onChange={(e) => setDeletedOnly(e.target.checked)}
-							className="h-4 w-4 shrink-0 accent-brand-600"
+							className={`h-4 w-4 ${checkboxClass}`}
 						/>
 						<span className="text-sm text-gray-800">
 							{t("administration.organizations.deletedOnlyLabel")}
@@ -1049,7 +1049,7 @@ function ReportsSection() {
 					id="admin-reports-include-resolved"
 					checked={includeResolved}
 					onChange={(e) => setIncludeResolved(e.target.checked)}
-					className="h-4 w-4 shrink-0 accent-brand-600"
+					className={`h-4 w-4 ${checkboxClass}`}
 				/>
 				<span className="text-sm text-gray-800">
 					{t("administration.reports.includeResolvedLabel")}

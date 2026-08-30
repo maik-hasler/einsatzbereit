@@ -71,7 +71,7 @@ export function useVolunteerOpportunitiesData(
 		: [];
 	const hasLocation = !!(lat && lng && radius);
 
-	return useLoadMore<VolunteerOpportunitySummary>(
+	const results = useLoadMore<VolunteerOpportunitySummary>(
 		(pageNumber) => {
 			const isRemoteBool =
 				isRemoteParam === "true"
@@ -125,4 +125,8 @@ export function useVolunteerOpportunitiesData(
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
 		},
 	);
+
+	// The page size travels with the results so the loading placeholders can
+	// stand in for a page of them rather than a fixed three (#2329 F6).
+	return { ...results, pageSize };
 }

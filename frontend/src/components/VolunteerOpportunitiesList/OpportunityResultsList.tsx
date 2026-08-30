@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import EmptyState from "../EmptyState";
-import Skeleton from "../Skeleton";
+import OpportunityCardSkeleton from "../OpportunityCardSkeleton";
 import LoadMoreError from "../LoadMoreError";
 import LoadMoreButton from "../LoadMoreButton";
 import RouteState from "../RouteState";
@@ -22,6 +22,7 @@ export default function OpportunityResultsList({
 	loadMoreErrorIsOffline,
 	onRetryLoadMore,
 	keyword,
+	pageSize,
 }: {
 	loading: boolean;
 	error: string | null;
@@ -37,6 +38,9 @@ export default function OpportunityResultsList({
 	loadMoreErrorIsOffline: boolean;
 	onRetryLoadMore: () => void;
 	keyword?: string;
+	/** How many cards a page holds, so the placeholders occupy the space the
+	 * results will (#2329 F6) - three of them stood in for a nine-card page. */
+	pageSize: number;
 }) {
 	const { t } = useTranslation();
 
@@ -68,19 +72,8 @@ export default function OpportunityResultsList({
 					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
 				>
 					<span className="sr-only">{t("opportunities.loading")}</span>
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div
-							key={i}
-							aria-hidden="true"
-							className="flex flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting"
-						>
-							<Skeleton className="h-32 w-full shrink-0 rounded-none" />
-							<div className="flex-1 space-y-2 p-4">
-								<Skeleton className="h-4 w-2/3" />
-								<Skeleton className="h-3 w-1/2" />
-								<Skeleton className="h-3 w-1/3" />
-							</div>
-						</div>
+					{Array.from({ length: pageSize }).map((_, i) => (
+						<OpportunityCardSkeleton key={i} withMedia />
 					))}
 				</div>
 			)}
@@ -129,6 +122,7 @@ export default function OpportunityResultsList({
 									item={item}
 									headingLevel={3}
 									keyword={keyword}
+									withMedia
 								/>
 							))}
 						</ul>

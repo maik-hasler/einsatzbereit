@@ -179,6 +179,7 @@ export default function VolunteerOpportunitiesList() {
 		loadMoreErrorIsOffline,
 		retryLoadMore,
 		totalItems,
+		pageSize,
 	} = useVolunteerOpportunitiesData({
 		occurrence,
 		participationType,
@@ -740,6 +741,7 @@ export default function VolunteerOpportunitiesList() {
 				loadMoreErrorIsOffline={loadMoreErrorIsOffline}
 				onRetryLoadMore={retryLoadMore}
 				keyword={keyword}
+				pageSize={pageSize}
 			/>
 		</div>
 	);

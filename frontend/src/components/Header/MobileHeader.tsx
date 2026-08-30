@@ -40,7 +40,7 @@ export default function MobileHeader({
 				ref={menuButtonRef}
 				type="button"
 				onClick={() => setMobileOpen((o) => !o)}
-				className={`inline-flex items-center justify-center rounded-lg p-2.5 transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
+				className={`inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={t(mobileOpen ? "nav.closeMenu" : "nav.openMenu")}
 				aria-expanded={mobileOpen}
 			>

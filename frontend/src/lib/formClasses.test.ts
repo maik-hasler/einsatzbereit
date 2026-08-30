@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+	checkboxClass,
 	inputSurfaceClass,
 	inputClass,
 	textareaClass,
@@ -82,5 +83,47 @@ describe("formClasses", () => {
 	it("turns the label red on error, same as the field it labels", () => {
 		expect(getLabelClass(true)).toContain("text-red-600");
 		expect(getLabelClass(false)).toBe(labelClass);
+	});
+});
+
+// Sources rather than rendered output: the defect this guards against is that
+// `text-brand-600` on a native checkbox renders exactly like no class at all,
+// so there is nothing in the DOM to assert on - the browser paints its own
+// default blue and the markup looks fine either way (#2329 F8). The one place
+// the mistake is visible is the class string itself.
+const sources = import.meta.glob("../**/*.tsx", {
+	query: "?raw",
+	import: "default",
+	eager: true,
+}) as Record<string, string>;
+
+function checkboxElements(source: string): string[] {
+	return source
+		.split("<input")
+		.slice(1)
+		.map((chunk) => chunk.slice(0, chunk.indexOf("/>")))
+		.filter((element) => element.includes('type="checkbox"'));
+}
+
+describe("the shared checkbox recipe", () => {
+	it("drives the checked fill through accent-color", () => {
+		expect(checkboxClass).toContain("accent-brand-600");
+		// `text-*` and `border-*` are inert on a control the UA paints itself.
+		expect(checkboxClass).not.toMatch(/\b(text|border)-/);
+	});
+
+	it("is what every checkbox in the app is painted with", () => {
+		let checked = 0;
+		for (const [path, source] of Object.entries(sources)) {
+			if (path.includes(".test.")) continue;
+			for (const element of checkboxElements(source)) {
+				checked += 1;
+				expect(
+					element,
+					`${path} paints a checkbox without the shared recipe, so it falls back to the browser's default blue`,
+				).toContain("checkboxClass");
+			}
+		}
+		expect(checked).toBeGreaterThanOrEqual(8);
 	});
 });

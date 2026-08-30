@@ -30,7 +30,12 @@ import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
-import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
+import {
+	checkboxClass,
+	inputClass,
+	labelClass,
+	textareaClass,
+} from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
 import { CheckIconSolid, QrCodeIcon, TrashIcon } from "../components/icons";
 import StarRating from "../components/StarRating";
@@ -663,7 +668,7 @@ export default function EngagementManagementPage() {
 							checked={allPendingSelected}
 							onChange={toggleSelectAllPending}
 							disabled={pendingIds.length === 0}
-							className="h-4 w-4 shrink-0 rounded border-gray-300 text-brand-700"
+							className={`h-4 w-4 ${checkboxClass}`}
 						/>
 						{t("engagementManagement.selectAllPending")}
 					</label>
@@ -720,7 +725,7 @@ export default function EngagementManagementPage() {
 											aria-label={t("engagementManagement.selectRow", {
 												name: volunteerDisplayName(e),
 											})}
-											className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-brand-700"
+											className={`mt-1 h-4 w-4 ${checkboxClass}`}
 										/>
 									)}
 								<div className="flex flex-1 items-start justify-between gap-2">

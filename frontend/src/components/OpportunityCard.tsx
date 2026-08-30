@@ -129,12 +129,24 @@ export default function OpportunityCard({
 	item,
 	headingLevel = 2,
 	keyword,
+	withMedia = false,
 }: {
 	item: OpportunityCardItem;
 
 	headingLevel?: 2 | 3;
 	/** The active search keyword, if this card is shown as a search result (#2242). */
 	keyword?: string;
+	/**
+	 * Whether this surface's cards carry a media band. A per-list decision, not
+	 * a per-item one: rendering the band only for the items that happen to have
+	 * an image gave one grid row two different card anatomies and stretched the
+	 * banner-less siblings to the tallest card's height - 365px against the
+	 * 209px they needed, ~156px of it empty (#2329 F10). Pass it on the
+	 * surfaces whose DTO carries `bannerImageUrl` at all; the leaner
+	 * `PublicOpportunitySummaryDto` has no banner field, so those lists would
+	 * only ever show placeholders.
+	 */
+	withMedia?: boolean;
 }) {
 	const { t, i18n } = useTranslation();
 	const Heading = headingLevel === 3 ? "h3" : "h2";
@@ -181,16 +193,23 @@ export default function OpportunityCard({
 				lang={title.lang}
 			/>
 			<div className="flex h-full flex-col">
-				{item.bannerImageUrl && (
+				{withMedia && (
 					<div className="relative h-32 w-full shrink-0 overflow-hidden rounded-t-card bg-gradient-to-br from-brand-50 to-brand-100">
-						<img
-							src={item.bannerImageUrl}
-							alt=""
-							width={1200}
-							height={480}
-							loading="lazy"
-							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-						/>
+						{item.bannerImageUrl ? (
+							<img
+								src={item.bannerImageUrl}
+								alt=""
+								width={1200}
+								height={480}
+								loading="lazy"
+								className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
+							/>
+						) : (
+							<CategoryGlyph
+								category={item.category}
+								className="absolute top-1/2 left-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-brand-200"
+							/>
+						)}
 					</div>
 				)}
 
@@ -285,11 +304,17 @@ export default function OpportunityCard({
 						</div>
 					)}
 					{hasOrganization ? (
-						<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
+						/* One row, always. `flex-wrap` plus an `ml-auto` location meant
+						whether the row wrapped depended purely on the org name's length,
+						so two cards side by side in the same grid rendered two different
+						footer anatomies (#2329 F7). The org name gives up its width
+						instead, which it can: CSS truncation leaves the full name in the
+						DOM, so the link's accessible name is unchanged. */
+						<div className="mt-auto flex items-center gap-x-3 border-t border-gray-100 pt-3">
 							<Link
 								to={`/organizations/${item.organizationId}`}
 								data-testid="opportunity-org-link"
-								className="group/org relative z-20 inline-flex items-center gap-2"
+								className="group/org relative z-20 inline-flex min-w-0 items-center gap-2"
 							>
 								<OrgAvatar
 									name={item.organizationName ?? ""}
@@ -297,12 +322,12 @@ export default function OpportunityCard({
 									size="lg"
 									lazy
 								/>
-								<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
+								<span className="truncate text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 									{item.organizationName}
 								</span>
 							</Link>
 							{(item.isRemote || item.city) && (
-								<span className="ml-auto flex items-center gap-1 text-xs text-gray-500">
+								<span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-gray-500">
 									{item.isRemote ? (
 										<>
 											<GlobeIcon className="h-3.5 w-3.5 shrink-0" />

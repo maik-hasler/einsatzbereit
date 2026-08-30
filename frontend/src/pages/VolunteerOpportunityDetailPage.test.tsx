@@ -389,6 +389,35 @@ describe("opportunity detail page tag chips", () => {
 	});
 });
 
+// Six siblings in one flex row, three of them visually identical grey pills
+// at the same 12px font size - and the occurrence pill was 4px shorter and
+// 8px tighter than the tag pills either side of it (#2329 F9). jsdom has no
+// box model, so the guard is that the row's chips resolve to one size recipe.
+describe("opportunity detail page meta row chip sizing", () => {
+	it("gives every chip on the row the same size recipe", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			category: "Health",
+			tags: ["Erste Hilfe"],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		const occurrence = await screen.findByTestId("opportunity-occurrence");
+		const tag = screen.getByRole("link", {
+			name: "Filter by tag: Erste Hilfe",
+		});
+
+		const sizeOf = (el: Element) =>
+			[...el.classList]
+				.filter((c) => /^p[xy]-/.test(c))
+				.sort()
+				.join(" ");
+
+		expect(sizeOf(occurrence)).toBe(sizeOf(tag));
+	});
+});
+
 describe("opportunity detail page withdraw failure", () => {
 	const pending = {
 		...details,
