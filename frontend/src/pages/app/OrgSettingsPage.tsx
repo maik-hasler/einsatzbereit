@@ -113,11 +113,22 @@ export default function OrgSettingsPage() {
 		editDisabledTitle: !isOrganizer
 			? t("orgSettings.editDisabledNotOrganizerHint")
 			: undefined,
-		onEdit: () => setEditing(true),
+		onEdit: handleStartEdit,
 
 		onSave: () => formRef.current?.requestSubmit(),
 		onCancel: handleCancelEdit,
 	});
+
+	function handleStartEdit() {
+		// Re-seed from the organization as it stands now: a logo upload or a
+		// previous save has since refreshed it in place, and a leftover
+		// "Changes saved." banner must not hang over the new edit session.
+		reset(organizationToFormValues());
+		setSuccessMessage(null);
+		setLogoError(null);
+		setSettingsError(null);
+		setEditing(true);
+	}
 
 	function handleCancelEdit() {
 		reset(organizationToFormValues());
@@ -257,9 +268,11 @@ export default function OrgSettingsPage() {
 						}
 						beforeContent={
 							<>
-								{successMessage && (
-									<SuccessBanner message={successMessage} className="mb-4" />
-								)}
+								<SuccessBanner
+									message={successMessage}
+									className="mb-4"
+									data-testid="org-settings-saved"
+								/>
 								{settingsError && (
 									<ErrorBanner message={settingsError} className="mb-4" />
 								)}

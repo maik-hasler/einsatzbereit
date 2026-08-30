@@ -18,7 +18,9 @@ import PageHeaderBand from "../../components/PageHeaderBand";
 import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
 import LoadMoreError from "../../components/LoadMoreError";
+import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
+import CharCount from "../../components/CharCount";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
@@ -31,6 +33,12 @@ import {
 	type PreferredLanguage,
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
+
+const NAME_MAX_LENGTH = 100;
+const BIO_MAX_LENGTH = 1000;
+const PHONE_MAX_LENGTH = 30;
+const SKILL_MAX_LENGTH = 100;
+const LANGUAGE_MAX_LENGTH = 50;
 
 const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
@@ -67,6 +75,7 @@ function ChipInput({
 	chips,
 	inputValue,
 	placeholder,
+	maxLength,
 	onInputChange,
 	onAdd,
 	onRemove,
@@ -78,6 +87,7 @@ function ChipInput({
 	chips: string[];
 	inputValue: string;
 	placeholder: string;
+	maxLength: number;
 	onInputChange: (v: string) => void;
 	onAdd: (v: string) => void;
 	onRemove: (v: string) => void;
@@ -111,6 +121,7 @@ function ChipInput({
 				ref={inputRef}
 				id={inputId}
 				type="text"
+				maxLength={maxLength}
 				value={inputValue}
 				placeholder={placeholder}
 				onChange={(e) => onInputChange(e.target.value)}
@@ -135,7 +146,13 @@ export default function ProfileOverviewPage() {
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [profileLoading, setProfileLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
-	const [profileError, setProfileError] = useState<string | null>(null);
+
+	// Load and save failures need separate slots. The load error renders a
+	// retry that re-fetches the profile and resets the form, so letting a
+	// failed save render it turned "Retry" into "throw away everything I just
+	// typed" (#2315).
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const [retryingProfileLoad, setRetryingProfileLoad] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -159,12 +176,12 @@ export default function ProfileOverviewPage() {
 				setProfile(data);
 				form.reset(data);
 				setAvatarUrl(data.avatarUrl ?? null);
-				setProfileError(null);
+				setLoadError(null);
 				return;
 			} catch {
 				if (profileLoadCancelledRef.current) return;
 				if (attempt >= retryDelaysMs.length) {
-					setProfileError(t("profile.loadError"));
+					setLoadError(t("profile.loadError"));
 					return;
 				}
 				await new Promise<void>((resolve) =>
@@ -237,7 +254,7 @@ export default function ProfileOverviewPage() {
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
 		setSaving(true);
-		setProfileError(null);
+		setSaveError(null);
 		setSuccessMessage(null);
 		const savedValues = {
 			firstName: form.state.firstName || undefined,
@@ -256,7 +273,7 @@ export default function ProfileOverviewPage() {
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
 		} catch {
-			setProfileError(t("profile.saveError"));
+			setSaveError(t("profile.saveError"));
 		} finally {
 			setSaving(false);
 		}
@@ -264,7 +281,7 @@ export default function ProfileOverviewPage() {
 
 	function handleCancel() {
 		form.reset(profile);
-		setProfileError(null);
+		setSaveError(null);
 		setEditing(false);
 	}
 
@@ -310,11 +327,19 @@ export default function ProfileOverviewPage() {
 
 					{!profileLoading && (
 						<>
-							{profileError && (
+							{loadError && (
 								<LoadMoreError
-									message={profileError}
+									message={loadError}
 									retrying={retryingProfileLoad}
 									onRetry={handleRetryProfileLoad}
+								/>
+							)}
+
+							{saveError && (
+								<ErrorBanner
+									message={saveError}
+									className="mb-4"
+									data-testid="profile-save-error"
 								/>
 							)}
 
@@ -622,6 +647,7 @@ export default function ProfileOverviewPage() {
 													>
 														<input
 															id="first-name"
+															maxLength={NAME_MAX_LENGTH}
 															autoComplete="given-name"
 															value={form.state.firstName}
 															onChange={(e) =>
@@ -637,6 +663,7 @@ export default function ProfileOverviewPage() {
 													>
 														<input
 															id="last-name"
+															maxLength={NAME_MAX_LENGTH}
 															autoComplete="family-name"
 															value={form.state.lastName}
 															onChange={(e) => form.setLastName(e.target.value)}
@@ -654,10 +681,15 @@ export default function ProfileOverviewPage() {
 												<textarea
 													id="bio"
 													rows={4}
+													maxLength={BIO_MAX_LENGTH}
 													value={form.state.bio}
 													placeholder={t("profile.bioPlaceholder")}
 													onChange={(e) => form.setBio(e.target.value)}
 													className={textareaClass}
+												/>
+												<CharCount
+													current={form.state.bio.length}
+													max={BIO_MAX_LENGTH}
 												/>
 											</Field>
 
@@ -668,6 +700,7 @@ export default function ProfileOverviewPage() {
 													chips={form.state.skills}
 													inputValue={form.state.skillInput}
 													placeholder={t("profile.skillsPlaceholder")}
+													maxLength={SKILL_MAX_LENGTH}
 													onInputChange={form.setSkillInput}
 													onAdd={form.addSkill}
 													onRemove={form.removeSkill}
@@ -685,6 +718,7 @@ export default function ProfileOverviewPage() {
 													chips={form.state.languages}
 													inputValue={form.state.langInput}
 													placeholder={t("profile.languagesPlaceholder")}
+													maxLength={LANGUAGE_MAX_LENGTH}
 													onInputChange={form.setLangInput}
 													onAdd={form.addLanguage}
 													onRemove={form.removeLanguage}
@@ -697,6 +731,7 @@ export default function ProfileOverviewPage() {
 												<input
 													id="phone"
 													type="tel"
+													maxLength={PHONE_MAX_LENGTH}
 													autoComplete="tel"
 													value={form.state.phone}
 													placeholder={t("profile.phonePlaceholder")}

@@ -46,7 +46,7 @@ interface Props {
 	isEditMode: boolean;
 	allTimeSlots: TimeSlotRow[];
 	removingSlotId: string | null;
-	onRemoveExistingSlot: (id: string) => void;
+	onRemoveExistingSlot: (id: string, bookedCount: number) => void;
 	onRemovePendingSlot: (id: string) => void;
 	onRequestRemoveSeriesSlot: (id: string, bookedCount: number) => void;
 	editingSlot: EditingSlot | null;
@@ -66,6 +66,13 @@ interface Props {
 		maxParticipants: number | null;
 	}) => void;
 	slotError: string | null;
+
+	/**
+	 * True while editing an opportunity that already exists, where adding,
+	 * editing or removing a slot writes straight to the server rather than
+	 * being staged for the wizard's own Save button (#2315).
+	 */
+	slotChangesAreImmediate: boolean;
 	addingSlot: boolean;
 	onAddSlot: () => void;
 	recurrenceFrequency: string;
@@ -109,6 +116,7 @@ export default function DetailsStep({
 	newSlot,
 	onNewSlotChange,
 	slotError,
+	slotChangesAreImmediate,
 	addingSlot,
 	onAddSlot,
 	recurrenceFrequency,
@@ -181,9 +189,15 @@ export default function DetailsStep({
 
 			{isScheduledSlots && (
 				<div className="rounded-card border border-gray-200 bg-gray-50 p-4">
-					<p className="mb-3 text-sm font-semibold text-gray-800">
+					<p className="mb-1 text-sm font-semibold text-gray-800">
 						{t("timeSlots.sectionTitle")}
 					</p>
+
+					{slotChangesAreImmediate && (
+						<p className="mb-3 text-xs text-amber-700">
+							{t("timeSlots.immediateHint")}
+						</p>
+					)}
 
 					{allTimeSlots.length === 0 ? (
 						<p className="text-xs text-gray-500">{t("timeSlots.noSlots")}</p>
@@ -401,7 +415,7 @@ export default function DetailsStep({
 															slot.bookedCount,
 														);
 													} else if (slot.persisted) {
-														onRemoveExistingSlot(slot.id);
+														onRemoveExistingSlot(slot.id, slot.bookedCount);
 													} else {
 														onRemovePendingSlot(slot.id);
 													}

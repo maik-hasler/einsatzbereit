@@ -335,6 +335,7 @@
       "saving": "Wird gespeichert…",
       "unsavedChangesTitle": "Ungespeicherte Änderungen verwerfen?",
       "unsavedChangesMessage": "Du hast ungespeicherte Änderungen an diesem Einsatz. Wenn du jetzt schließt, gehen sie verloren.",
+      "slotChangesKeptOnDiscard": "Deine Änderungen an den Zeitslots wurden bereits gespeichert und bleiben bestehen – nur die übrigen Änderungen werden verworfen.",
       "discardChanges": "Änderungen verwerfen"
     },
     "checkInMethod": {
@@ -364,6 +365,7 @@
       "removeButton": "Entfernen",
       "removing": "…",
       "noSlots": "Noch keine Zeitslots hinzugefügt.",
+      "immediateHint": "Änderungen an Zeitslots wirken sofort – „Speichern“ und „Abbrechen“ unten erfassen sie nicht.",
       "requiredForPublish": "Ein Zeitslots-Einsatz muss mindestens einen Zeitslot haben, bevor er veröffentlicht werden kann.",
       "addError": "Zeitslot konnte nicht hinzugefügt werden.",
       "removeError": "Zeitslot konnte nicht entfernt werden.",
@@ -596,6 +598,9 @@
       "expiredInvitations": "Abgelaufene Einladungen",
       "dismissInvitation": "Entfernen",
       "dismissInvitationNamed": "Einladung für {{name}} entfernen",
+      "revokeInvitation": "Zurückziehen",
+      "revokeInvitationNamed": "Einladung für {{name}} zurückziehen",
+      "invitationRevoked": "Einladung zurückgezogen.",
       "dismissError": "Einladung konnte nicht entfernt werden.",
       "resendInvitation": "Erneut senden",
       "resendInvitationNamed": "Einladung für {{name}} erneut senden",
@@ -1058,6 +1063,11 @@
         "reasonLabel": "Grund (optional)",
         "reasonPlaceholder": "Teile den Freiwilligen den Grund mit…"
       },
+      "removeTimeSlot": {
+        "title": "Zeitslot entfernen?",
+        "message": "Der Zeitslot wird sofort entfernt, unabhängig von der Schaltfläche „Speichern“ – das lässt sich nicht rückgängig machen.",
+        "confirm": "Ja, entfernen"
+      },
       "editTimeSlot": {
         "title": "Zeitslot bearbeiten?",
         "message": "{{count}} Personen sind für diesen Zeitslot eingetragen und werden über die Änderung benachrichtigt, damit sie entscheiden können, ob sie weiterhin teilnehmen möchten.",
@@ -1074,6 +1084,11 @@
         "title": "Mitglied entfernen?",
         "message": "Möchtest du {{name}} wirklich aus dieser Organisation entfernen?",
         "confirm": "Ja, entfernen"
+      },
+      "revokeInvitation": {
+        "title": "Einladung zurückziehen?",
+        "message": "{{name}} kann diese Einladung dann nicht mehr annehmen. Du kannst die Person später erneut einladen.",
+        "confirm": "Ja, zurückziehen"
       },
       "deleteOrganization": {
         "title": "Organisation löschen?",

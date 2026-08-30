@@ -335,6 +335,7 @@
       "saving": "Saving…",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
+      "slotChangesKeptOnDiscard": "Your time slot changes were already saved and stay in place - only the other edits are discarded.",
       "discardChanges": "Discard changes"
     },
     "checkInMethod": {
@@ -364,6 +365,7 @@
       "removeButton": "Remove",
       "removing": "…",
       "noSlots": "No time slots added yet.",
+      "immediateHint": "Time slot changes take effect immediately - Save and Cancel below do not cover them.",
       "requiredForPublish": "A Scheduled slots opportunity must have at least one time slot before it can be published.",
       "addError": "Could not add time slot.",
       "removeError": "Could not remove time slot.",
@@ -596,6 +598,9 @@
       "expiredInvitations": "Expired invitations",
       "dismissInvitation": "Dismiss",
       "dismissInvitationNamed": "Dismiss invitation for {{name}}",
+      "revokeInvitation": "Revoke",
+      "revokeInvitationNamed": "Revoke invitation for {{name}}",
+      "invitationRevoked": "Invitation revoked.",
       "dismissError": "Could not dismiss invitation.",
       "resendInvitation": "Resend",
       "resendInvitationNamed": "Resend invitation for {{name}}",
@@ -1058,6 +1063,11 @@
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let volunteers know why…"
       },
+      "removeTimeSlot": {
+        "title": "Remove time slot?",
+        "message": "This removes the time slot right away, independently of the Save button - it cannot be undone.",
+        "confirm": "Yes, remove"
+      },
       "editTimeSlot": {
         "title": "Edit time slot?",
         "message": "{{count}} people are signed up for this time slot and will be notified of the change so they can decide whether to still participate.",
@@ -1074,6 +1084,11 @@
         "title": "Remove member?",
         "message": "Are you sure you want to remove {{name}} from this organization?",
         "confirm": "Yes, remove"
+      },
+      "revokeInvitation": {
+        "title": "Revoke invitation?",
+        "message": "{{name}} will no longer be able to accept this invitation. You can invite them again later.",
+        "confirm": "Yes, revoke"
       },
       "deleteOrganization": {
         "title": "Delete organization?",
