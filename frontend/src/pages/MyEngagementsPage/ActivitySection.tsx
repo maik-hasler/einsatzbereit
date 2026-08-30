@@ -649,8 +649,8 @@ export default function ActivitySection() {
 									)}
 
 									{/* The button used to look identical three weeks out and
-									    during the slot, and the window was only revealed by
-									    submitting a valid PIN and having it rejected (#2323). */}
+									during the slot, and the window was only revealed by
+									submitting a valid PIN and having it rejected (#2323). */}
 									{awaitingCheckIn &&
 										needsVolunteerCheckIn &&
 										checkInWindowState === "notYetOpen" &&
@@ -677,8 +677,8 @@ export default function ActivitySection() {
 										)}
 
 									{/* Nobody checked this volunteer in and the window has
-									    lapsed: without a word here the card dead-ends with no
-									    rating and no reason given (#2323). */}
+									lapsed: without a word here the card dead-ends with no
+									rating and no reason given (#2323). */}
 									{awaitingCheckIn && checkInWindowState === "closed" && (
 										<p
 											data-testid="check-in-window-closed"
@@ -771,8 +771,8 @@ export default function ActivitySection() {
 											/>
 										)}
 									{/* Withdrawing from something that already happened
-									    releases nothing and burns a reactivation - don't
-									    offer it (#2323). */}
+									releases nothing and burns a reactivation - don't
+									offer it (#2323). */}
 									{(e.status === "Pending" || e.status === "Confirmed") &&
 										!e.isCheckedIn &&
 										!slotEnded && (

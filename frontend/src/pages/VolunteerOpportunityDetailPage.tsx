@@ -536,9 +536,9 @@ export default function VolunteerOpportunityDetailPage() {
 						className={`${cardClass} sm:p-5`}
 					>
 						{/* One heading for the card, then one dated block per sign-up:
-						    repeating an identical "Your sign-up" label above every block
-						    left the withdraw buttons floating between two rows nobody
-						    could tell apart (#2323). */}
+						repeating an identical "Your sign-up" label above every block
+						left the withdraw buttons floating between two rows nobody
+						could tell apart (#2323). */}
 						<p className="mb-2 text-xs text-gray-500">
 							{isInterestBased
 								? t("opportunities.yourInterest")

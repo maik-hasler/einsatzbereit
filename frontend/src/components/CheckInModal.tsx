@@ -102,7 +102,7 @@ export default function CheckInModal({
 			{loadError && <ErrorBanner message={t("checkIn.loadError")} />}
 
 			{/* The window is the rule volunteers used to only discover by having a
-			    valid PIN rejected (#2323) - say it before they type anything. */}
+			valid PIN rejected (#2323) - say it before they type anything. */}
 			{details && !success && checkInWindow && checkInMethod !== "None" && (
 				<p
 					data-testid="checkin-window-notice"
