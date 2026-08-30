@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { useApiClient } from "../../../hooks/useApiClient";
+import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 
 export interface DashboardKpis {
 	pendingEngagements: number;
@@ -18,39 +18,27 @@ export function useOrganizationDashboardKpis(
 ): DashboardKpisState {
 	const api = useApiClient();
 
-	const [kpis, setKpis] = useState<DashboardKpis | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [failed, setFailed] = useState(false);
+	// Shared rather than per-widget: the ToDo and VolunteerStats tiles read
+	// two numbers out of the same response, and each used to issue its own
+	// identical request on every dashboard load (#2322 F7).
+	//
+	// Keying on the organization also settles the race the per-widget effect
+	// used to guard by hand - switching organizations from the header
+	// switcher issues a second request while the first is still open, and
+	// without a guard the slower response wins whichever order they land in,
+	// so one org's dashboard can end up showing another's counts.
+	const [kpis, , error] = useSharedOrgFetch<DashboardKpis>(
+		`organizationDashboard:${organizationId}:${refreshKey}`,
+		() =>
+			api.getOrganizationDashboard(organizationId).then((data) => ({
+				pendingEngagements: data.pendingEngagements,
+				confirmedEngagementsTotal: data.confirmedEngagementsTotal,
+			})),
+	);
 
-	useEffect(() => {
-		// Switching organizations from the header switcher issues a second
-		// request while the first is still open; without this guard the slower
-		// response wins whichever order they land in, and one org's dashboard
-		// can end up showing another's counts. Same pattern as OrgAppLayout's
-		// own latestRequestRef.
-		let alive = true;
-		setLoading(true);
-		setFailed(false);
-		api
-			.getOrganizationDashboard(organizationId)
-			.then((data) => {
-				if (!alive) return;
-				setKpis({
-					pendingEngagements: data.pendingEngagements,
-					confirmedEngagementsTotal: data.confirmedEngagementsTotal,
-				});
-			})
-			.catch(() => {
-				if (alive) setFailed(true);
-			})
-			.finally(() => {
-				if (alive) setLoading(false);
-			});
-		return () => {
-			alive = false;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId, refreshKey]);
-
-	return { kpis, loading, failed };
+	return {
+		kpis,
+		loading: kpis === null && error === null,
+		failed: error !== null,
+	};
 }

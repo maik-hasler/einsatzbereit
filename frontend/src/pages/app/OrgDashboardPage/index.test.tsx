@@ -98,10 +98,14 @@ describe("OrgDashboardPage when the saved layout fails to load", () => {
 			"aria-describedby",
 			"dashboard-layout-load-error",
 		);
-		await waitFor(() =>
-			expect(screen.getByTestId("quick-action-edit")).toBeDisabled(),
-		);
-		expect(screen.getByTestId("quick-action-edit")).toHaveAttribute("title");
+		// Both in one waitFor: Edit is already disabled while the layout is
+		// still loading, so waiting on `toBeDisabled` alone no longer waits
+		// for the failure to land and explain itself.
+		await waitFor(() => {
+			const edit = screen.getByTestId("quick-action-edit");
+			expect(edit).toBeDisabled();
+			expect(edit).toHaveAttribute("title");
+		});
 	});
 
 	it("recovers once the retry succeeds", async () => {
@@ -312,6 +316,101 @@ describe("OrgDashboardPage edit mode", () => {
 	});
 });
 
+// Saving a layout used to flip hasCustomLayout on for good: no DELETE on the
+// endpoint, and no reset anywhere in the edit toolbar (#2322 F8).
+describe("OrgDashboardPage layout reset", () => {
+	beforeEach(() => {
+		mockDashboardData();
+		api.resetDashboardLayout.mockResolvedValue(undefined);
+	});
+
+	it("offers no reset while the org is still on the default layout", async () => {
+		api.getDashboardLayout.mockResolvedValue({
+			widgets: [],
+			hasCustomLayout: false,
+		});
+
+		renderDashboard();
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+
+		expect(screen.queryByTestId("quick-action-reset-layout")).toBeNull();
+	});
+
+	it("discards the saved layout and puts the default back", async () => {
+		renderDashboard();
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+		await userEvent.click(screen.getByTestId("quick-action-reset-layout"));
+
+		// Both the toolbar action and the dialog's confirm read "Reset layout".
+		await userEvent.click(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Reset layout",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.resetDashboardLayout).toHaveBeenCalledWith(org.id),
+		);
+		// Back on the default layout, which the two-widget saved one lacks.
+		expect(await screen.findByTestId("widget-tile-Calendar")).toBeVisible();
+		expect(screen.getByTestId("quick-action-edit")).toBeInTheDocument();
+		expect(api.saveDashboardLayout).not.toHaveBeenCalled();
+	});
+
+	it("stops offering the reset once there is nothing left to reset", async () => {
+		renderDashboard();
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+		await userEvent.click(screen.getByTestId("quick-action-reset-layout"));
+		// Both the toolbar action and the dialog's confirm read "Reset layout".
+		await userEvent.click(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Reset layout",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeInTheDocument(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+
+		expect(screen.queryByTestId("quick-action-reset-layout")).toBeNull();
+	});
+
+	it("keeps the saved layout and says why when the reset fails", async () => {
+		api.resetDashboardLayout.mockRejectedValue(new Error("boom"));
+
+		renderDashboard();
+
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+		await userEvent.click(screen.getByTestId("quick-action-edit"));
+		await userEvent.click(screen.getByTestId("quick-action-reset-layout"));
+		// Both the toolbar action and the dialog's confirm read "Reset layout".
+		await userEvent.click(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Reset layout",
+			}),
+		);
+
+		expect(await screen.findByRole("alert")).toBeInTheDocument();
+		expect(screen.getByRole("dialog")).toBeInTheDocument();
+		expect(screen.queryByTestId("widget-tile-Calendar")).toBeNull();
+	});
+});
+
 describe("OrgDashboardPage grid backdrop", () => {
 	beforeEach(() => {
 		mockDashboardData();
@@ -491,6 +590,86 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		expect(screen.getByText("No upcoming opportunities.")).toBeInTheDocument();
 		expect(screen.getByText("1 member")).toBeInTheDocument();
 		expect(screen.getByTestId("create-opportunity-btn")).toBeInTheDocument();
+	});
+});
+
+// Every widget mounting twice, and the two KPI tiles each fetching for
+// themselves, put four identical dashboard requests and two of everything
+// else on the wire per load (#2322 F7).
+describe("OrgDashboardPage request volume", () => {
+	beforeEach(() => {
+		mockDashboardData();
+		// A layout whose first row stops short of the full grid width - the
+		// shape that makes the page render per-row bands rather than one
+		// grid, so a late-arriving layout used to remount every tile.
+		api.getDashboardLayout.mockResolvedValue({
+			hasCustomLayout: true,
+			widgets: [
+				{ widgetKey: "ToDo", x: 1, y: 1, width: 3, height: 1 },
+				{ widgetKey: "VolunteerStats", x: 4, y: 1, width: 2, height: 1 },
+				{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
+				{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
+			],
+		});
+		// With no events at all the widget switches itself to the agenda view,
+		// which is a different visible range and so a legitimate second
+		// request - not the duplicate this is about.
+		const start = new Date();
+		start.setDate(start.getDate() + 2);
+		start.setHours(9, 0, 0, 0);
+		const end = new Date(start);
+		end.setHours(11, 0, 0, 0);
+		api.getOrganizationCalendarEvents.mockResolvedValue([
+			{
+				opportunityId: "22222222-2222-2222-2222-222222222222",
+				titleDe: "Deutscher Einsatz",
+				titleEn: "English shift",
+				color: undefined,
+				timeSlots: [
+					{
+						timeSlotId: "33333333-3333-3333-3333-333333333333",
+						startDateTime: start,
+						endDateTime: end,
+						bookedCount: 0,
+						maxParticipants: 5,
+					},
+				],
+			},
+		]);
+		useLargeViewport();
+	});
+
+	it("fetches each dashboard endpoint exactly once per load", async () => {
+		renderDashboard();
+
+		await screen.findByTestId("widget-tile-Calendar");
+		await waitFor(() =>
+			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
+		);
+
+		expect({
+			kpis: api.getOrganizationDashboard.mock.calls.length,
+			opportunities: api.getOrganizationOpportunities.mock.calls.length,
+			calendarEvents: api.getOrganizationCalendarEvents.mock.calls.length,
+			layout: api.getDashboardLayout.mock.calls.length,
+		}).toEqual({
+			kpis: 1,
+			opportunities: 1,
+			calendarEvents: 1,
+			layout: 1,
+		});
+	});
+
+	it("holds the widgets back until it knows which layout they belong in", async () => {
+		renderDashboard();
+
+		expect(screen.getByTestId("dashboard-layout-loading")).toBeInTheDocument();
+		expect(screen.queryByTestId("widget-tile-Calendar")).toBeNull();
+		expect(api.getOrganizationDashboard).not.toHaveBeenCalled();
+
+		await screen.findByTestId("widget-tile-Calendar");
+
+		expect(screen.queryByTestId("dashboard-layout-loading")).toBeNull();
 	});
 });
 

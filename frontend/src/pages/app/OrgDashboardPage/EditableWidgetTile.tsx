@@ -92,7 +92,10 @@ export default function EditableWidgetTile({
 					? onGripPointerDown
 					: undefined
 			}
-			className={`relative ${editing ? "h-full" : "h-full lg:h-auto"} ${
+			// `h-full` in both modes: the tile fills the grid rows the layout
+			// gave it. It used to drop to `lg:h-auto` outside edit mode, which
+			// is what made a saved height silently revert on save (#2322 F2).
+			className={`relative h-full ${
 				editing && showPlacementControls && !isPlacing && !placingDisabled
 					? "cursor-grab touch-none active:cursor-grabbing"
 					: editing
@@ -106,16 +109,16 @@ export default function EditableWidgetTile({
 					: ""
 			}`}
 		>
-			<div
-				inert={editing}
-				className={`h-full ${
-					// Reserves room for the grip button below (absolutely positioned,
-					// centered at the tile's top edge) instead of letting it sit on
-					// top of WidgetCard's own title - on a narrow tile the two used to
-					// overlap directly (#2045, PR #2038 F12).
-					editing && showPlacementControls ? "pt-10" : ""
-				}`}
-			>
+			{/* No top padding in edit mode. The grip button below used to be
+			    reserved 40px of `pt-10` here so it would not sit on top of
+			    WidgetCard's own title (#2045, PR #2038 F12) - but the tile's
+			    grid height does not grow to pay for that, so the card lost
+			    40px off its bottom instead: the "create opportunity" button
+			    was sliced through its own label, and an `inert` tile cannot
+			    be scrolled to reach what was cut (#2322 F4). The grip now
+			    straddles the tile's top edge instead, which clears the title
+			    just as well and costs the card nothing. */}
+			<div inert={editing} className="h-full">
 				<ErrorBoundary
 					fallback={
 						<section
@@ -149,7 +152,11 @@ export default function EditableWidgetTile({
 								onGripPointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className={`absolute top-2 left-1/2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							// Centred ON the tile's top edge, so its lower half falls
+							// inside the card's own padding (above the title) and its
+							// upper half into the grid gap - see the note above the
+							// content wrapper for why it no longer reserves room.
+							className={`absolute top-0 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 							title={moveLabel}
 						>

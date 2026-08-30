@@ -15,8 +15,10 @@ import { usePageTitle } from "../../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions";
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
-import { PlusIcon } from "../../../components/QuickActionIcons";
+import { PlusIcon, ResetIcon } from "../../../components/QuickActionIcons";
 import EmptyState from "../../../components/EmptyState";
+import Skeleton from "../../../components/Skeleton";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import ErrorBanner from "../../../components/ErrorBanner";
 import AddWidgetModal from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
@@ -45,8 +47,6 @@ import {
 	type WidgetKey,
 	type WidgetSizeClass,
 } from "./widgetCatalog";
-
-type BandGridStyle = CSSProperties & { "--dashboard-grid-columns": number };
 
 function useIsLargeViewport() {
 	const [isLarge, setIsLarge] = useState(
@@ -85,7 +85,15 @@ export default function OrgDashboardPage() {
 	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
 
 	const [layoutLoadFailed, setLayoutLoadFailed] = useState(false);
+	const [layoutLoaded, setLayoutLoaded] = useState(false);
 	const [retryingLayoutLoad, setRetryingLayoutLoad] = useState(false);
+
+	// Only worth offering the reset once there is a saved layout to discard -
+	// before that, Cancel already returns the board to the default (#2322 F8).
+	const [hasCustomLayout, setHasCustomLayout] = useState(false);
+	const [confirmingReset, setConfirmingReset] = useState(false);
+	const [resetting, setResetting] = useState(false);
+	const [resetError, setResetError] = useState<string | null>(null);
 
 	const placement = useWidgetPlacement({ draftLayout, setDraftLayout });
 
@@ -109,13 +117,22 @@ export default function OrgDashboardPage() {
 					.filter((w): w is PlacedWidget => w !== null);
 
 				setSavedLayout(response.hasCustomLayout ? sanitized : DEFAULT_LAYOUT);
+				setHasCustomLayout(response.hasCustomLayout);
 				setLayoutLoadFailed(false);
 			})
-			.catch(() => setLayoutLoadFailed(true));
+			.catch(() => setLayoutLoadFailed(true))
+			.finally(() => setLayoutLoaded(true));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
 	useEffect(() => {
+		// The widgets only mount once the layout they belong in is known.
+		// Painting DEFAULT_LAYOUT first and swapping it for the saved one
+		// remounted every tile - the grid switches between one grid and
+		// per-row bands depending on the layout, which is a different DOM
+		// parent - so each widget reran its own fetch: four identical KPI
+		// requests and two of everything else per load (#2322 F7).
+		setLayoutLoaded(false);
 		void loadLayout();
 	}, [loadLayout]);
 
@@ -168,6 +185,7 @@ export default function OrgDashboardPage() {
 				})),
 			});
 			setSavedLayout(draftLayout);
+			setHasCustomLayout(true);
 			setEditing(false);
 			setDraftLayout(null);
 			placement.cancelPlacing();
@@ -184,10 +202,32 @@ export default function OrgDashboardPage() {
 		setDraftLayout(null);
 
 		setShowAddWidgetModal(false);
+		setConfirmingReset(false);
+		setResetError(null);
+	}
+
+	async function handleResetLayout() {
+		setResetting(true);
+		setResetError(null);
+		try {
+			await api.resetDashboardLayout(organizationId);
+			setSavedLayout(DEFAULT_LAYOUT);
+			setHasCustomLayout(false);
+			setConfirmingReset(false);
+			placement.cancelPlacing();
+			setEditing(false);
+			setDraftLayout(null);
+			setShowAddWidgetModal(false);
+			dispatchToast("success", t("orgDashboard.resetLayoutSuccess"));
+		} catch (e) {
+			setResetError(getApiErrorMessage(e, t("error.serverError")));
+		} finally {
+			setResetting(false);
+		}
 	}
 
 	function startEditing() {
-		if (layoutLoadFailed || !isOrganizer) return;
+		if (!layoutLoaded || layoutLoadFailed || !isOrganizer) return;
 		setDraftLayout(savedLayout);
 		setEditing(true);
 	}
@@ -199,8 +239,8 @@ export default function OrgDashboardPage() {
 
 	const hasWidgetsToAdd = availableToAdd.length > 0;
 	const extraEditingActions = useMemo(
-		() =>
-			hasWidgetsToAdd
+		() => [
+			...(hasWidgetsToAdd
 				? [
 						{
 							key: "add-widget",
@@ -211,17 +251,34 @@ export default function OrgDashboardPage() {
 							disabled: saving,
 						},
 					]
-				: [],
-		[hasWidgetsToAdd, saving, t],
+				: []),
+			...(hasCustomLayout
+				? [
+						{
+							key: "reset-layout",
+							label: t("orgDashboard.resetLayoutAction"),
+							icon: <ResetIcon />,
+							onClick: () => {
+								setResetError(null);
+								setConfirmingReset(true);
+							},
+							disabled: saving || resetting,
+						},
+					]
+				: []),
+		],
+		[hasWidgetsToAdd, hasCustomLayout, saving, resetting, t],
 	);
 
 	useEditModeQuickActions({
 		editing,
 		saving,
-		editDisabled: layoutLoadFailed || !isOrganizer,
+		editDisabled: !layoutLoaded || layoutLoadFailed || !isOrganizer,
 		editDisabledTitle: !isOrganizer
 			? t("orgDashboard.layoutEditDisabledNotOrganizerHint")
-			: t("orgDashboard.layoutLoadError"),
+			: layoutLoadFailed
+				? t("orgDashboard.layoutLoadError")
+				: undefined,
 		onEdit: startEditing,
 		onSave: () => void handleSave(),
 		onCancel: handleCancel,
@@ -449,10 +506,15 @@ export default function OrgDashboardPage() {
 	) : needsRowBanding ? (
 		<div data-testid="dashboard-widget-grid" className="flex flex-col gap-4">
 			{rowBands.map((band) => {
-				const bandStyle: BandGridStyle = {
+				// A band is capped to its own widgets' reach, but its rows are
+				// still the shared grid's rows - so it deliberately does NOT
+				// override `--dashboard-grid-columns`. Narrowing that to the
+				// band's own column count divides the same width by fewer
+				// columns and makes a banded row half again as tall as an
+				// unbanded one.
+				const bandStyle: CSSProperties = {
 					gridTemplateColumns: `repeat(${band.columns}, minmax(0, 1fr))`,
 					maxWidth: `${(band.columns / GRID_COLUMNS) * 100}%`,
-					"--dashboard-grid-columns": band.columns,
 				};
 				return (
 					<div
@@ -467,12 +529,15 @@ export default function OrgDashboardPage() {
 				);
 			})}
 			{isOrganizer && !layoutLoadFailed && (
-				<div className="dashboard-widget-grid grid">
+				// Deliberately not a `dashboard-widget-grid`: the hint is a
+				// single button, not a widget row, and must not take a whole
+				// grid cell's height.
+				<div className="grid">
 					<button
 						type="button"
 						data-testid="dashboard-customize-hint"
 						onClick={startEditing}
-						className="flex h-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-200 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
+						className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-200 py-3 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
 					>
 						<PlusIcon />
 						{t("orgDashboard.customizeHint")}
@@ -484,7 +549,7 @@ export default function OrgDashboardPage() {
 		<div
 			data-testid="dashboard-widget-grid"
 
-			className={`dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8 ${editing ? "dashboard-widget-grid--editing" : ""}`}
+			className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
 
 			role="presentation"
 			onClick={editing && isLargeViewport ? handleGuideCellClick : undefined}
@@ -504,7 +569,9 @@ export default function OrgDashboardPage() {
 						gridColumn: `1 / span ${GRID_COLUMNS}`,
 						gridRow: contentRows + 1,
 					}}
-					className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-200 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
+					// `self-start`: rows are a widget cell tall now, and the
+					// hint is a one-line button, not a widget.
+					className="flex items-center justify-center gap-1.5 self-start rounded-md border border-dashed border-gray-200 py-3 text-sm text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600"
 				>
 					<PlusIcon />
 					{t("orgDashboard.customizeHint")}
@@ -564,13 +631,54 @@ export default function OrgDashboardPage() {
 				</div>
 			)}
 
-			{grid}
+			{layoutLoaded ? (
+				grid
+			) : (
+				<div
+					role="status"
+					data-testid="dashboard-layout-loading"
+					className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
+				>
+					<span className="sr-only">{t("orgDashboard.loading")}</span>
+					{DEFAULT_LAYOUT.map((widget) => (
+						<div
+							key={widget.widgetKey}
+							className="h-full"
+							style={
+								isLargeViewport
+									? {
+											gridColumn: `${widget.x} / span ${widget.width}`,
+											gridRow: `${widget.y} / span ${widget.height}`,
+										}
+									: undefined
+							}
+						>
+							<Skeleton className="h-full min-h-24 rounded-card" />
+						</div>
+					))}
+				</div>
+			)}
 
 			{showAddWidgetModal && (
 				<AddWidgetModal
 					availableKeys={availableToAdd}
 					onAdd={handleAddWidget}
 					onClose={() => setShowAddWidgetModal(false)}
+				/>
+			)}
+
+			{confirmingReset && (
+				<ConfirmDialog
+					title={t("orgDashboard.resetLayoutConfirmTitle")}
+					message={t("orgDashboard.resetLayoutConfirmMessage")}
+					confirmLabel={t("orgDashboard.resetLayoutAction")}
+					loading={resetting}
+					error={resetError}
+					onConfirm={() => void handleResetLayout()}
+					onClose={() => {
+						setConfirmingReset(false);
+						setResetError(null);
+					}}
 				/>
 			)}
 		</>

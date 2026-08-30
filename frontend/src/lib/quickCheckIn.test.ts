@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
-import { filterQrCheckInOpportunities } from "./quickCheckIn";
+import { filterCheckInOpportunities, isQrCheckIn } from "./quickCheckIn";
 
 function makeOpportunity(
 	overrides: Partial<VolunteerOpportunitySummary>,
@@ -37,32 +37,52 @@ function makeOpportunity(
 	};
 }
 
-describe("filterQrCheckInOpportunities", () => {
-	it("keeps opportunities using QR code check-in", () => {
-		const qrOpp = makeOpportunity({ id: "qr", checkInMethod: "QRCode" });
-
-		expect(filterQrCheckInOpportunities([qrOpp])).toEqual([qrOpp]);
-	});
-
-	it("drops opportunities using PIN code, manual, or no check-in method", () => {
+describe("filterCheckInOpportunities", () => {
+	it("keeps every method an organizer can act on, not just QR", () => {
 		const opportunities = [
+			makeOpportunity({ id: "qr", checkInMethod: "QRCode" }),
 			makeOpportunity({ id: "pin", checkInMethod: "PINCode" }),
 			makeOpportunity({ id: "manual", checkInMethod: "Manual" }),
-			makeOpportunity({ id: "none", checkInMethod: "None" }),
 		];
 
-		expect(filterQrCheckInOpportunities(opportunities)).toEqual([]);
+		expect(filterCheckInOpportunities(opportunities)).toEqual(opportunities);
 	});
 
-	it("filters a mixed list down to only the QR ones, preserving order", () => {
-		const qr1 = makeOpportunity({ id: "qr1", checkInMethod: "QRCode" });
-		const pin = makeOpportunity({ id: "pin", checkInMethod: "PINCode" });
-		const qr2 = makeOpportunity({ id: "qr2", checkInMethod: "QRCode" });
+	// "None" volunteers are marked checked in automatically once the event
+	// ends, so there is nothing for the widget to offer.
+	it("drops opportunities with no check-in step at all", () => {
+		const none = makeOpportunity({ id: "none", checkInMethod: "None" });
+		const qr = makeOpportunity({ id: "qr", checkInMethod: "QRCode" });
 
-		expect(filterQrCheckInOpportunities([qr1, pin, qr2])).toEqual([qr1, qr2]);
+		expect(filterCheckInOpportunities([none, qr])).toEqual([qr]);
+	});
+
+	it("preserves the order it was given", () => {
+		const pin = makeOpportunity({ id: "pin", checkInMethod: "PINCode" });
+		const qr = makeOpportunity({ id: "qr", checkInMethod: "QRCode" });
+
+		expect(filterCheckInOpportunities([pin, qr]).map((o) => o.id)).toEqual([
+			"pin",
+			"qr",
+		]);
 	});
 
 	it("returns an empty array for an empty input", () => {
-		expect(filterQrCheckInOpportunities([])).toEqual([]);
+		expect(filterCheckInOpportunities([])).toEqual([]);
+	});
+});
+
+describe("isQrCheckIn", () => {
+	it("is true only for QR code check-in", () => {
+		for (const method of ["QRCode", "PINCode", "Manual", "None"] as const) {
+			expect({
+				method,
+				scannable: isQrCheckIn(makeOpportunity({ checkInMethod: method })),
+			}).toEqual({ method, scannable: method === "QRCode" });
+		}
+	});
+
+	it("is false when nothing is selected yet", () => {
+		expect(isQrCheckIn(undefined)).toBe(false);
 	});
 });

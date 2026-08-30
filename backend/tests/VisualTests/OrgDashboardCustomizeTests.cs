@@ -388,7 +388,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task OverlappingPlacement_DisplacesTheOtherWidgetDownward_InsteadOfBeingRejected()
+	public async Task OverlappingPlacement_MovesTheOtherWidgetIntoTheNearestFreeSpace_InsteadOfBeingRejected()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -414,8 +414,13 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
+		// The point of #18 is that an overlapping placement displaces what is
+		// in the way instead of being rejected - the direction is not the
+		// point, and dropping ToDo to row 5 left all four rows of columns 5-8
+		// empty beside the widget that displaced it. It now settles in the
+		// nearest free space, which here is right beside Settings (#2322 F1).
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -425,7 +430,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
 	}
 
 	[Test]
