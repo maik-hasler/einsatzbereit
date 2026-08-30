@@ -9,14 +9,19 @@ import ReportContentModal, {
 	type ReportReason,
 } from "../components/ReportContentModal";
 import Skeleton from "../components/Skeleton";
-import LoadMoreError from "../components/LoadMoreError";
+import DetailLoadFailure from "../components/DetailLoadFailure";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
-import { getApiErrorMessage } from "../lib/apiError";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
+import {
+	classifyLoadFailure,
+	getApiErrorMessage,
+	type LoadFailureKind,
+} from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { FlagIcon, GlobeIcon } from "../components/icons";
 import PageHeaderBand from "../components/PageHeaderBand";
@@ -34,21 +39,41 @@ export default function OrganizationProfilePage() {
 		useState<PublicOrganizationProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [retrying, setRetrying] = useState(false);
+	const [failure, setFailure] = useState<LoadFailureKind | null>(null);
 	const [showReport, setShowReport] = useState(false);
+	const online = useOnlineStatus();
 
-	usePageTitle(profile?.name ?? t("orgProfile.loading"));
+	// A resolved-but-absent profile is the same dead end as a 404.
+	const failureKind = loading
+		? null
+		: (failure ?? (profile ? null : "notFound"));
+
+	// `null` while a failure is on screen: DetailLoadFailure sets the title
+	// itself, and letting the loading placeholder win would leave the tab
+	// claiming the page is still loading (#2320).
+	usePageTitle(failureKind ? null : (profile?.name ?? t("orgProfile.loading")));
 	usePageDescription(profile?.description || null);
 
 	function load() {
-		if (!organizationId) return;
+		setLoading(true);
+		if (!organizationId) {
+			setFailure("notFound");
+			setLoading(false);
+			return;
+		}
+		setError(null);
+		setFailure(null);
 		return api
 			.getPublicOrganizationProfile(organizationId)
 			.then((data) => {
 				setProfile(data);
 				setError(null);
+				setFailure(null);
 			})
-			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
+			.catch((err) => {
+				setError(getApiErrorMessage(err, t("error.serverError")));
+				setFailure(classifyLoadFailure(err, online));
+			})
 			.finally(() => setLoading(false));
 	}
 
@@ -56,12 +81,6 @@ export default function OrganizationProfilePage() {
 		load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
-
-	async function retryLoad() {
-		setRetrying(true);
-		await load();
-		setRetrying(false);
-	}
 
 	if (loading)
 		return (
@@ -83,16 +102,18 @@ export default function OrganizationProfilePage() {
 				</div>
 			</div>
 		);
-	if (error)
+	if (failureKind || !profile)
 		return (
-			<LoadMoreError
-				message={t("orgProfile.error", { message: error })}
-				retrying={retrying}
-				onRetry={retryLoad}
+			<DetailLoadFailure
+				kind={failureKind ?? "notFound"}
+				notFoundTitle={t("orgProfile.notFoundTitle")}
+				notFoundMessage={t("orgProfile.notFoundMessage")}
+				errorMessage={error ?? t("error.serverError")}
+				onRetry={load}
+				action={{ label: t("nav.organizations"), to: "/organizations" }}
+				data-testid="organization-load-failure"
 			/>
 		);
-	if (!profile)
-		return <p className="text-gray-500">{t("orgProfile.notFound")}</p>;
 
 	async function handleReportSubmit(reason: ReportReason, details: string) {
 		if (!organizationId) return;

@@ -13,10 +13,15 @@ import ProfileFieldsView from "../components/ProfileFieldsView";
 import ReportFlagButton from "../components/ReportFlagButton";
 import SectionHeading from "../components/SectionHeading";
 import Skeleton from "../components/Skeleton";
-import LoadMoreError from "../components/LoadMoreError";
+import DetailLoadFailure from "../components/DetailLoadFailure";
 import { useApiClient } from "../hooks/useApiClient";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { getApiErrorMessage } from "../lib/apiError";
+import {
+	classifyLoadFailure,
+	getApiErrorMessage,
+	type LoadFailureKind,
+} from "../lib/apiError";
 import { getInitials } from "../lib/initials";
 
 export default function UserProfilePage() {
@@ -31,12 +36,30 @@ export default function UserProfilePage() {
 	const [catalog, setCatalog] = useState<BadgeCatalogEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [retrying, setRetrying] = useState(false);
+	const [failure, setFailure] = useState<LoadFailureKind | null>(null);
+	const online = useOnlineStatus();
 
-	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
+	// A resolved-but-absent profile is the same dead end as a 404.
+	const failureKind = loading
+		? null
+		: (failure ?? (profile ? null : "notFound"));
+
+	// `null` while a failure is on screen: DetailLoadFailure sets the title
+	// itself, and letting the loading placeholder win would leave the tab
+	// claiming the page is still loading (#2320).
+	usePageTitle(
+		failureKind ? null : (profile?.displayName ?? t("userProfile.loading")),
+	);
 
 	function load() {
-		if (!userId) return Promise.resolve();
+		setLoading(true);
+		if (!userId) {
+			setFailure("notFound");
+			setLoading(false);
+			return Promise.resolve();
+		}
+		setError(null);
+		setFailure(null);
 		return Promise.all([
 			api.getPublicUserProfile(userId),
 			api.getBadgeCatalog(),
@@ -45,8 +68,12 @@ export default function UserProfilePage() {
 				setProfile(prof);
 				setCatalog(cat);
 				setError(null);
+				setFailure(null);
 			})
-			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
+			.catch((err) => {
+				setError(getApiErrorMessage(err, t("error.serverError")));
+				setFailure(classifyLoadFailure(err, online));
+			})
 			.finally(() => setLoading(false));
 	}
 
@@ -54,11 +81,6 @@ export default function UserProfilePage() {
 		void load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [userId]);
-
-	function retryLoad() {
-		setRetrying(true);
-		void load().finally(() => setRetrying(false));
-	}
 
 	if (loading)
 		return (
@@ -79,12 +101,18 @@ export default function UserProfilePage() {
 				</div>
 			</div>
 		);
-	if (error)
+	if (failureKind || !profile)
 		return (
-			<LoadMoreError message={error} retrying={retrying} onRetry={retryLoad} />
+			<DetailLoadFailure
+				kind={failureKind ?? "notFound"}
+				notFoundTitle={t("userProfile.notFoundTitle")}
+				notFoundMessage={t("userProfile.notFoundMessage")}
+				errorMessage={error ?? t("error.serverError")}
+				onRetry={() => void load()}
+				action={{ label: t("notFound.backHome"), to: "/" }}
+				data-testid="user-profile-load-failure"
+			/>
 		);
-	if (!profile)
-		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 
 	const isProfileEmpty =
 		!profile.bio &&

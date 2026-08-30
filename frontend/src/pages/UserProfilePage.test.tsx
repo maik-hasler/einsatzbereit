@@ -45,3 +45,55 @@ describe("UserProfilePage badges", () => {
 		).toBeNull();
 	});
 });
+
+describe("UserProfilePage missing profile", () => {
+	function renderProfile() {
+		return renderWithProviders(
+			<Routes>
+				<Route path="/users/:userId" element={<UserProfilePage />} />
+			</Routes>,
+			{ route: `/users/${USER_ID}` },
+		);
+	}
+
+	it("shows the not-found state with a way back instead of an endless retry", async () => {
+		api.getPublicUserProfile.mockRejectedValue({ status: 404 });
+		renderProfile();
+
+		await screen.findByTestId("user-profile-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Profile not found" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Try again" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute(
+			"href",
+			"/",
+		);
+	});
+
+	it("does not leave the tab title on the loading placeholder", async () => {
+		api.getPublicUserProfile.mockRejectedValue({ status: 404 });
+		renderProfile();
+
+		await screen.findByTestId("user-profile-load-failure");
+
+		expect(document.title).toBe("Profile not found | Einsatzbereit");
+	});
+
+	it("keeps a retry for a genuine server error", async () => {
+		api.getPublicUserProfile.mockRejectedValue({ status: 500 });
+		renderProfile();
+
+		await screen.findByTestId("user-profile-load-failure");
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Try again" }),
+		).toBeInTheDocument();
+	});
+});
