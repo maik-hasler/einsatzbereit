@@ -278,7 +278,6 @@ export default function OrgDashboardPage() {
 					<UpcomingOpportunitiesWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
-						size={size}
 						isOrganizer={isOrganizer}
 						onOpportunityCreated={handleOpportunityCreated}
 					/>

@@ -245,7 +245,7 @@ export default function OrgEngagementsPage() {
 							key={e.id}
 							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
 						>
-							<div className="flex items-start justify-between gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 								<div className="min-w-0">
 									<Link
 										to={`/app/${organizationId}/dashboard/opportunities/${e.opportunityId}/engagements`}
@@ -303,7 +303,7 @@ export default function OrgEngagementsPage() {
 									</p>
 								</div>
 
-								<div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+								<div className="flex flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
 									<span
 										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${ENGAGEMENT_STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 									>

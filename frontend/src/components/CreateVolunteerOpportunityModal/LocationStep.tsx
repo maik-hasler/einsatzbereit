@@ -43,7 +43,7 @@ export default function LocationStep({
 				<input
 					type="checkbox"
 					id="opportunity-remote"
-					className="mt-0.5 h-4 w-4 accent-brand-600"
+					className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
 					{...register("isRemote", {
 						onChange: (e) => onRemoteToggle(e.target.checked),
 					})}

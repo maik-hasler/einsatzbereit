@@ -65,6 +65,17 @@ export default function Header({
 	// renders - for a multi-org user it's still the one place the mobile
 	// menu offers direct links into the org's sub-tabs.
 	const navOrg = orgSwitcher ? null : activeOrg;
+	// Inside the org app the row also carries the org switcher, which needs
+	// ~290px next to the 158px logo. The German primary nav plus the account
+	// controls and the language switcher then need more room than a 1024px
+	// viewport has, and the overflow pushed the notification bell, the
+	// account menu and the language switcher entirely off-screen - reachable
+	// only by scrolling the whole page sideways (#2321). Hold the collapsed
+	// header one breakpoint longer there, so every control in the row stays
+	// reachable; the hamburger already carries the same links.
+	const desktopNavFrom = orgSwitcher ? "xl" : "lg";
+	const desktopNavClass = orgSwitcher ? "hidden xl:flex" : "hidden lg:flex";
+	const mobileNavClass = orgSwitcher ? "xl:hidden" : "lg:hidden";
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
@@ -79,13 +90,15 @@ export default function Header({
 	}, []);
 
 	useEffect(() => {
-		const desktop = window.matchMedia("(min-width: 768px)");
+		const desktop = window.matchMedia(
+			desktopNavFrom === "xl" ? "(min-width: 1280px)" : "(min-width: 1024px)",
+		);
 		const closeIfDesktop = () => {
 			if (desktop.matches) setMobileOpen(false);
 		};
 		desktop.addEventListener("change", closeIfDesktop);
 		return () => desktop.removeEventListener("change", closeIfDesktop);
-	}, []);
+	}, [desktopNavFrom]);
 
 	const isTransparent = overlaysBand && !scrolled;
 
@@ -140,7 +153,7 @@ export default function Header({
 
 						{effectiveOrgSwitcher && (
 							<div
-								className={`min-w-0 flex-1 sm:flex-none ${orgSwitcher ? "" : "lg:hidden"}`}
+								className={`min-w-0 flex-1 sm:max-w-72 sm:min-w-48 sm:flex-none sm:shrink xl:max-w-64 2xl:max-w-none ${orgSwitcher ? "" : "lg:hidden"}`}
 							>
 								<OrganizationSwitcher
 									currentOrgId={effectiveOrgSwitcher.currentOrgId}
@@ -154,6 +167,7 @@ export default function Header({
 						)}
 
 						<DesktopHeader
+							className={desktopNavClass}
 							authStatus={authStatus}
 							isTransparent={isTransparent}
 							menu={menu}
@@ -167,6 +181,7 @@ export default function Header({
 						/>
 
 						<MobileHeader
+							className={mobileNavClass}
 							isLoggedIn={isLoggedIn}
 							isTransparent={isTransparent}
 							mobileOpen={mobileOpen}
@@ -180,6 +195,7 @@ export default function Header({
 
 				{mobileOpen && (
 					<MobileMenu
+						className={mobileNavClass}
 						isTransparent={isTransparent}
 						authStatus={authStatus}
 						avatarUrl={avatarUrl}

@@ -1132,7 +1132,10 @@ export default function CreateVolunteerOpportunityModal({
 
 				<div className="border-t border-gray-100 bg-gray-50">
 					{canSaveDraft && draftTitleMissing && (
-						<p id="save-draft-hint" className="px-6 pt-3 text-xs text-gray-500">
+						<p
+							id="save-draft-hint"
+							className="px-4 pt-3 text-xs text-gray-500 sm:px-6"
+						>
 							{t(
 								step === 1
 									? "createOpportunity.saveDraftRequiresTitleHere"
@@ -1140,7 +1143,7 @@ export default function CreateVolunteerOpportunityModal({
 							)}
 						</p>
 					)}
-					<div className="flex items-center justify-between gap-3 px-6 py-4">
+					<div className="flex flex-col-reverse gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 						<Button
 							type="button"
 							variant="secondary"
@@ -1154,7 +1157,7 @@ export default function CreateVolunteerOpportunityModal({
 								: t("createOpportunity.back")}
 						</Button>
 
-						<div className="flex items-center gap-2">
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
 							{canSaveDraft && (
 								<Button
 									type="button"

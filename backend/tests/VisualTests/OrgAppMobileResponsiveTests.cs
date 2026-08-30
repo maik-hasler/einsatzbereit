@@ -94,6 +94,64 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	}
 
 	[Test]
+	public async Task OrgHeader_AtTheDesktopBreakpoint_KeepsTheAccountMenuAndLanguageSwitcherReachable()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+		await Page.SetViewportSizeAsync(1024, 768);
+
+		await Expect(Page.GetByTestId("org-switcher-current-name"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var overflow = await Page.EvaluateAsync<int>(
+			"() => document.documentElement.scrollWidth - document.documentElement.clientWidth");
+		overflow.Should().BeLessThanOrEqualTo(0,
+			"the org switcher plus the primary nav used to push the bell, the account menu "
+			+ "and the language switcher past the right edge of a 1024px viewport, so the "
+			+ "only way to reach your own account menu was to scroll the whole page "
+			+ "sideways (#2321)");
+
+		// Below the breakpoint where the row fits, the collapsed header holds and the
+		// hamburger carries the same controls - what must never happen is that they are
+		// rendered somewhere off-screen.
+		var hamburger = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" });
+		await Expect(hamburger).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await hamburger.ClickAsync(new() { Timeout = 10_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign out" }))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task MembersList_At320px_KeepsEveryMemberNameLegible()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{pinnedOrgId!.Value}/dashboard/members");
+		await Page.SetViewportSizeAsync(320, 568);
+
+		var names = Page.GetByTestId("org-member-name");
+		try
+		{
+			await names.First.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("seed data changed - this organization has no member rows to measure");
+		}
+
+		var widths = await names.EvaluateAllAsync<int[]>("els => els.map(el => el.clientWidth)");
+		widths.Should().NotBeEmpty();
+		widths.Should().AllSatisfy(width => width.Should().BeGreaterThan(0),
+			"the action buttons never shrank, so on a 320px viewport they took the whole "
+			+ "row and the member's name rendered at zero width - leaving a Remove button "
+			+ "with no indication of which member it would remove (#2321)");
+	}
+
+	[Test]
 	public async Task NotificationPanelHeader_AtMobileWidth_WrapsInsteadOfOverflowing()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
