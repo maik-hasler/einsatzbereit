@@ -6,13 +6,11 @@ import DocumentOutline from "../components/DocumentOutline";
 import DocumentSection from "../components/DocumentSection";
 import WarningBanner from "../components/WarningBanner";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function PrivacyPolicyPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("privacyPolicy.title"));
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	const sections = [
 		{ id: "controller", label: t("privacyPolicy.section1Title") },
@@ -90,7 +88,9 @@ export default function PrivacyPolicyPage() {
 							<Trans
 								i18nKey="privacyPolicy.section3aBody"
 								components={{
-									termsLink: <Link to="/terms-of-use" className={linkClass} />,
+									termsLink: (
+										<Link to="/terms-of-use" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>
@@ -110,7 +110,7 @@ export default function PrivacyPolicyPage() {
 								href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
 								target="_blank"
 								rel="noopener noreferrer"
-								className={linkClass}
+								className={inlineLinkClass}
 							>
 								{t("privacyPolicy.section3cLinkOsm")}
 							</a>
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
 								href="https://operations.osmfoundation.org/policies/nominatim/"
 								target="_blank"
 								rel="noopener noreferrer"
-								className={linkClass}
+								className={inlineLinkClass}
 							>
 								{t("privacyPolicy.section3cLinkNominatim")}
 							</a>

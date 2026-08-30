@@ -131,7 +131,16 @@ input[type="number"]::-webkit-outer-spin-button {
 	border-right-width: 1px;
 }
 
+/* react-big-calendar's own stylesheet repaints every interactive state of a
+toolbar button as #373a3c on grey, and does it from `.rbc-toolbar button:hover`
+/ `:focus` / `.rbc-active:hover` - one pseudo-class more specific than the
+resting rules here. So the selected view button (Agenda/Month/Week) kept our
+brand-green background but took react-big-calendar's dark grey label the moment
+the pointer touched it: 1.06:1, an axe `color-contrast` violation at serious
+impact (#2327). Every state below therefore restates `color`, not just
+`background` - dropping the colour is what let the default through. */
 .rbc-btn-group button:hover {
+	color: rgb(55 65 81);
 	background: rgb(249 250 251);
 }
 
@@ -142,7 +151,9 @@ input[type="number"]::-webkit-outer-spin-button {
 	position: relative;
 }
 
-.rbc-btn-group button.rbc-active {
+.rbc-btn-group button.rbc-active,
+.rbc-btn-group button.rbc-active:hover,
+.rbc-btn-group button.rbc-active:focus {
 	background: var(--color-brand-700);
 	color: white;
 	border-color: var(--color-brand-700);
@@ -154,6 +165,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .rbc-btn-group button.rbc-active:hover {
 	background: var(--color-brand-800);
+	border-color: var(--color-brand-800);
 }
 
 .rbc-month-view,
@@ -435,6 +447,20 @@ the brand-colored ring reads as "this is fine", fighting the red border
 and error text right next to it. */
 [aria-invalid="true"]:focus-visible {
 	--focus-ring-color: var(--color-red-600);
+}
+
+/* A control hidden with `sr-only` still takes keyboard focus - and the ring
+above is then drawn around a 1x1 clipped box, so focus simply vanishes for a
+tab stop. Every file picker in the app is built that way (a visually hidden
+`input[type=file]` plus the label that stands in for it), which left the
+opportunity-banner, organization-logo and avatar uploads with no visible focus
+at all (#2327). Project the ring onto the label instead, whether it sits next
+to the input or wraps it. */
+label:has(+ .sr-only:focus-visible),
+label:has(> .sr-only:focus-visible) {
+	outline: 2px solid var(--focus-ring-color);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
 @theme {

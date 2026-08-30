@@ -144,6 +144,7 @@
       "clearOccurrence": "Häufigkeitsfilter löschen",
       "clearType": "Typfilter löschen",
       "clearLocation": "Standortfilter löschen",
+      "clearRemote": "Formatfilter löschen",
       "clearCategory": "Kategoriefilter löschen",
       "clearTag": "Schlagwort-Filter löschen",
       "clearKeyword": "Suchbegriff-Filter löschen",

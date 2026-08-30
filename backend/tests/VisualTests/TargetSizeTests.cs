@@ -63,6 +63,91 @@ public class TargetSizeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await DeleteOrganizationAsync(backend, organizationId);
 	}
 
+	// WCAG 2.5.5 (AAA) and every mobile platform guideline put the comfortable
+	// touch minimum at 44x44. The drawer rows were 32px tall and the burger 40x40
+	// (#2327) - these are a phone's primary navigation, so they are held to that
+	// bar rather than to 2.5.8's 24px floor.
+	[Test]
+	public async Task MobileHeaderAndDrawer_PrimaryControls_MeetThe44pxTouchTarget()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.SetViewportSizeAsync(390, 844);
+		await Page.GotoAsync(frontend.ToString());
+
+		var burger = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" });
+		await Expect(burger).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await AssertMinimumTargetAsync(burger, 44, "the burger toggle");
+
+		await burger.ClickAsync();
+
+		var navRow = Page.GetByTestId("mobile-nav-findOpportunities");
+		await Expect(navRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await AssertMinimumTargetAsync(navRow, 44, "a drawer navigation row");
+
+		var languageTrigger = Page.GetByTestId("language-selector-trigger");
+		await Expect(languageTrigger).ToBeVisibleAsync();
+		await AssertMinimumTargetAsync(languageTrigger, 44, "the language switcher");
+
+		var signIn = Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" });
+		await Expect(signIn).ToBeVisibleAsync();
+		await AssertMinimumTargetAsync(signIn, 44, "the drawer sign-in button");
+	}
+
+	[Test]
+	public async Task OpportunityCard_TagChip_MeetsTheMinimum24pxTapTarget()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var olaf = await Fixture.SignInAsync("olaf", "olaf123");
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olaf.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var tag = $"targetsize-{suffix}";
+
+		var orgResponse = await PostJsonWithRetryAsync(http, "/v1/organizations", new { name = $"TargetSize Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"TargetSize Opportunity {suffix}";
+		(await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			titleDe = oppTitle,
+			descriptionDe = "Seeded by TargetSizeTests.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+			tags = new[] { tag },
+		})).EnsureSuccessStatusCode();
+
+		await Page.SetViewportSizeAsync(1440, 900);
+		await Page.GotoAsync($"{origin}/opportunities?tag={tag}");
+
+		var chip = Page.GetByRole(AriaRole.Link, new() { Name = $"Filter by tag: {tag}" }).First;
+		await Expect(chip).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await AssertMinimumTargetAsync(chip, 24, "an opportunity card's tag chip");
+	}
+
+	private static async Task AssertMinimumTargetAsync(ILocator locator, int minimum, string what)
+	{
+		var box = await locator.BoundingBoxAsync();
+		box.Should().NotBeNull($"Could not get bounding box for {what}");
+
+		box!.Height.Should().BeGreaterThanOrEqualTo(minimum,
+			$"{what} must be at least {minimum}x{minimum} CSS px (was {box.Width}x{box.Height})");
+		box.Width.Should().BeGreaterThanOrEqualTo(minimum,
+			$"{what} must be at least {minimum}x{minimum} CSS px (was {box.Width}x{box.Height})");
+	}
+
 	private async Task<string> CreateOrganizationAsync(Uri backend, string name)
 	{
 		using var http = await CreateAuthenticatedHttpClientAsync(backend);

@@ -4,13 +4,11 @@ import PageHeaderBand from "../components/PageHeaderBand";
 import WarningBanner from "../components/WarningBanner";
 import { cardClass } from "../lib/surfaceClasses";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function ImprintPage() {
 	const { t } = useTranslation();
 	usePageTitle(t("imprint.title"));
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	const operatorRecord = `${runtimeConfig.operatorName}\n${runtimeConfig.operatorAddress}`;
 
@@ -55,7 +53,7 @@ export default function ImprintPage() {
 													// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <emailLink> tag content
 													<a
 														href={`mailto:${runtimeConfig.operatorEmail}`}
-														className={linkClass}
+														className={inlineLinkClass}
 													/>
 												),
 											}}

@@ -95,6 +95,10 @@ export default function VolunteerOpportunitiesList() {
 		openFilter !== null,
 		() => setOpenFilter(null),
 	);
+	// The bar-level overlay above only dismisses on a click or a focus move that
+	// leaves the whole bar; each dropdown additionally closes itself once focus
+	// reaches a sibling chip, which is still inside the bar (#2327).
+	const closeOpenFilter = useCallback(() => setOpenFilter(null), []);
 
 	useEffect(() => {
 		if (!city || lat || lng) return;
@@ -401,6 +405,7 @@ export default function VolunteerOpportunitiesList() {
 							}
 							setOpenFilter((f) => (f === "location" ? null : "location"));
 						}}
+						onClose={closeOpenFilter}
 						onClear={clearLocation}
 						clearAriaLabel={t("opportunities.clearLocation")}
 						allowOverflow
@@ -489,6 +494,7 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() =>
 							setOpenFilter((f) => (f === "category" ? null : "category"))
 						}
+						onClose={closeOpenFilter}
 						onClear={() => {
 							const params = new URLSearchParams(window.location.search);
 							params.delete("categories");
@@ -523,6 +529,7 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() =>
 							setOpenFilter((f) => (f === "type" ? null : "type"))
 						}
+						onClose={closeOpenFilter}
 						onClear={() => updateFilter("participationType", "")}
 						clearAriaLabel={t("opportunities.clearType")}
 					>
@@ -566,8 +573,9 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() =>
 							setOpenFilter((f) => (f === "remote" ? null : "remote"))
 						}
+						onClose={closeOpenFilter}
 						onClear={() => updateFilter("isRemote", "")}
-						clearAriaLabel={t("opportunities.clearLocation")}
+						clearAriaLabel={t("opportunities.clearRemote")}
 					>
 						<DropdownOption
 							label={t("opportunities.all")}
@@ -610,6 +618,7 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() =>
 							setOpenFilter((f) => (f === "frequency" ? null : "frequency"))
 						}
+						onClose={closeOpenFilter}
 						onClear={() => updateFilter("occurrence", "")}
 						clearAriaLabel={t("opportunities.clearOccurrence")}
 					>
@@ -647,6 +656,7 @@ export default function VolunteerOpportunitiesList() {
 						onToggle={() =>
 							setOpenFilter((f) => (f === "date" ? null : "date"))
 						}
+						onClose={closeOpenFilter}
 						onClear={clearDateRange}
 						clearAriaLabel={t("opportunities.clearDateRange")}
 					>

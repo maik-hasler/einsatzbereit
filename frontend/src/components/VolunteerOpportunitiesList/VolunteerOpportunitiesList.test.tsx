@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import VolunteerOpportunitiesList from "./VolunteerOpportunitiesList";
 import { useLocation } from "react-router";
@@ -412,5 +412,60 @@ describe('opportunity list "near me"', () => {
 		const chip = await screen.findByTestId("filter-location");
 		expect(chip).toHaveTextContent("Selected location · 10 km");
 		expect(chip).not.toHaveTextContent("Near me");
+	});
+});
+
+describe("opportunity list filter panels", () => {
+	beforeEach(() => {
+		api.getVolunteerOpportunities.mockResolvedValue(page);
+	});
+
+	// The panel used to stay open indefinitely once focus tabbed past it, and on a
+	// narrow viewport it covers the chips it drops over - so a keyboard user was
+	// focusing a control the panel hid completely, a WCAG 2.2 SC 2.4.11 failure
+	// (#2327). The list's shared outside-click handler cannot catch this: a sibling
+	// chip is still inside the filter bar.
+	it("closes an open panel once focus reaches a sibling chip", async () => {
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route: "/opportunities",
+		});
+
+		const frequency = await screen.findByTestId("filter-frequency");
+		await userEvent.click(frequency);
+		expect(frequency).toHaveAttribute("aria-expanded", "true");
+
+		act(() => screen.getByTestId("filter-type").focus());
+
+		expect(frequency).toHaveAttribute("aria-expanded", "false");
+	});
+
+	it("keeps a panel open while focus moves inside it", async () => {
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route: "/opportunities",
+		});
+
+		const frequency = await screen.findByTestId("filter-frequency");
+		await userEvent.click(frequency);
+
+		act(() => screen.getByRole("button", { name: "One-time" }).focus());
+
+		expect(frequency).toHaveAttribute("aria-expanded", "true");
+	});
+
+	// Both clear buttons used to read "Clear location filter", so the filter bar
+	// offered a screen reader the same command twice and the wrong one cleared
+	// remote/on-site instead of the city (#2327).
+	it("names the location and format clear buttons apart", async () => {
+		renderWithProviders(<VolunteerOpportunitiesList />, {
+			route:
+				"/opportunities?city=Kiel&lat=54.32&lng=10.14&radius=25&isRemote=true",
+		});
+
+		expect(
+			await screen.findByRole("button", { name: "Clear location filter" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Clear format filter" }),
+		).toBeInTheDocument();
 	});
 });

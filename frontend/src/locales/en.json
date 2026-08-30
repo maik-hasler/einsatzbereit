@@ -144,6 +144,7 @@
       "clearOccurrence": "Clear frequency filter",
       "clearType": "Clear type filter",
       "clearLocation": "Clear location filter",
+      "clearRemote": "Clear format filter",
       "clearCategory": "Clear category filter",
       "clearTag": "Clear tag filter",
       "clearKeyword": "Clear keyword filter",

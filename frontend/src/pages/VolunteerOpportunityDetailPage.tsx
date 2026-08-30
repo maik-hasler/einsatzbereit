@@ -55,6 +55,7 @@ import {
 } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { cardClass } from "../lib/surfaceClasses";
+import { inlineLinkClass } from "../lib/linkClasses";
 import {
 	ArrowTopRightOnSquareIcon,
 	BuildingOfficeIcon,
@@ -1218,7 +1219,7 @@ export default function VolunteerOpportunityDetailPage() {
 						{withdrawTarget.remainingReactivations === 0 && (
 							<Link
 								to={`/organizations/${opportunity.organizationId}`}
-								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+								className={`mt-1 inline-block text-sm ${inlineLinkClass}`}
 							>
 								{t("common.contactOrganization")}
 							</Link>
