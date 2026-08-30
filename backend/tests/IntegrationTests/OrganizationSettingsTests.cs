@@ -586,7 +586,32 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
-	public async Task ResendInvitation_ShouldReturn409_WhenInvitationIsStillPending(
+	public async Task ResendInvitation_ShouldReturn204AndExtendExpiry_WhenInvitationIsStillPending(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Resend Pending Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		var before = (await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken))
+			.Single(i => i.Id == invitation.InvitationId);
+
+		await olafClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var after = (await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken))
+			.Single(i => i.Id == invitation.InvitationId);
+		after.Status.Should().Be("Pending");
+		after.ExpiresOn.Should().BeOnOrAfter(before.ExpiresOn);
+	}
+
+	[Test]
+	public async Task ResendInvitation_ShouldReturn409_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -598,6 +623,7 @@ public class OrganizationSettingsTests(
 
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		var act = () => olafClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
 

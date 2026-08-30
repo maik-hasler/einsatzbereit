@@ -345,9 +345,10 @@
       "saving": "Saving…",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
-"slotChangesKeptOnDiscard": "Your time slot changes were already saved and stay in place - only the other edits are discarded.",
+      "slotChangesKeptOnDiscard": "Your time slot changes were already saved and stay in place - only the other edits are discarded.",
       "discardChanges": "Discard changes",
-      "addressUnresolvedField": "Check this entry"
+      "addressUnresolvedField": "Check this entry",
+      "bannerReplace": "Replace"
     },
     "checkInMethod": {
       "none": "Automatic (after the event)",
@@ -405,7 +406,15 @@
         "scopeEntireSeries": "Entire series",
         "cancelsEngagementsWarning": "Volunteers signed up for the affected occurrences will have their sign-up cancelled and be notified.",
         "confirm": "Remove"
-      }
+      },
+      "capacity": "{{count}} spots",
+      "capacity_one": "{{count}} spot",
+      "capacity_other": "{{count}} spots",
+      "capacityUnlimited": "Unlimited spots",
+      "capacityInvalid": "Enter a number of spots between 1 and {{max}}.",
+      "overlapWarning": "Overlaps another time slot",
+      "overlapHint": "This overlaps a time slot already on the list - a volunteer could sign up for both.",
+      "pastSlotsBeforePublish": "Some time slots have moved into the past. Correct or remove them before publishing."
     },
     "signUp": {
       "titleWaitlist": "Sign up for a slot",
@@ -625,6 +634,11 @@
       "resendError": "Could not resend invitation.",
       "resendSent": "Invitation resent.",
       "invitationSentOn": "Sent {{date}}",
+      "invitationExpiresOn": "Expires {{date}}",
+      "invitationExpiredOn": "Expired {{date}}",
+      "pendingInvitationsHint": "Invitees get an email and an in-app notification, and stay listed here until they accept or decline. An invitation that is not answered by its expiry date lapses - resend it to start a fresh window.",
+      "roleMemberDescription": "Members see the organization's internal pages and its opportunities.",
+      "organisatorDescription": "Organizers can do everything members can, plus publish and manage opportunities, check volunteers in, invite people, change roles, and edit the organization's profile.",
       "dangerZone": "Delete organization",
       "deleteOrganization": "Delete organization",
       "deleteOrganizationHint": "Only the organization's sole remaining member can delete it. Remove other members first.",
@@ -927,6 +941,10 @@
       "organizersA2": "From your organization's dashboard, go to \"Opportunities\" and click \"Create opportunity\". Fill in the details and time slots, then publish it so volunteers can sign up.",
       "organizersQ3": "How do I manage volunteer sign-ups?",
       "organizersA3": "Open an opportunity from your organization's dashboard to see everyone who signed up, message them, or check them in.",
+      "organizersQ4": "What is the difference between a member and an organizer?",
+      "organizersA4": "Members see the organization's internal pages and its opportunities. Organizers can do everything members can, plus publish and manage opportunities, check volunteers in, invite people, change roles, and edit the organization's profile. Every organization keeps at least one organizer, so the last one cannot be demoted or leave.",
+      "organizersQ5": "How do invitations to my organization work?",
+      "organizersA5": "Invite people from the \"Members\" tab of your organization's dashboard and pick the role they should get. They receive an email and an in-app notification, and the invitation stays listed as pending until they accept or decline. Unanswered invitations expire after 14 days - the pending row shows the exact date, and you can resend an invitation at any time to start a fresh window or revoke it.",
       "generalTitle": "General",
       "generalQ1": "Does using Einsatzbereit cost anything?",
       "generalA1": "No. Einsatzbereit is completely free and open source - for volunteers and organizations.",
@@ -1057,7 +1075,7 @@
       "understood": "Understood",
       "delete": {
         "title": "Delete opportunity?",
-        "message": "Are you sure you want to permanently delete this opportunity? This cannot be undone.",
+        "message": "Are you sure you want to permanently delete the opportunity “{{title}}”? This cannot be undone.",
         "confirm": "Yes, delete"
       },
       "withdraw": {
@@ -1093,12 +1111,12 @@
       },
       "unpublish": {
         "title": "Unpublish opportunity?",
-        "message": "This removes it from the public listing and cancels any pending or confirmed sign-ups - volunteers will be informed. You can publish it again later.",
+        "message": "This removes the opportunity “{{title}}” from the public listing and cancels any pending or confirmed sign-ups - volunteers will be informed. You can publish it again later.",
         "confirm": "Yes, unpublish"
       },
       "cancelOpportunity": {
         "title": "Cancel opportunity?",
-        "message": "This permanently cancels the opportunity and cancels any pending or confirmed sign-ups - volunteers will be informed. This cannot be undone.",
+        "message": "This permanently cancels the opportunity “{{title}}” and cancels any pending or confirmed sign-ups - volunteers will be informed. This cannot be undone.",
         "confirm": "Yes, cancel opportunity",
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let volunteers know why…"
@@ -1627,7 +1645,7 @@
         "NotFound": "Invitation not found.",
         "NotRecipient": "You are not the recipient of this invitation.",
         "WrongOrganization": "Invitation does not belong to this organization.",
-        "NotExpired": "Only expired invitations can be resent.",
+        "NotResendable": "Only pending or expired invitations can be resent.",
         "NotYetExpired": "Invitation has not reached its expiry date yet.",
         "AlreadyMember": "User is already a member of this organization.",
         "AlreadyInvited": "A pending invitation already exists for this user.",
@@ -1684,7 +1702,8 @@
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",
         "EndMustBeAfterStart": "End date must be after start date.",
-        "MaxParticipantsMustBePositive": "Max participants must be greater than zero."
+        "MaxParticipantsMustBePositive": "Max participants must be greater than zero.",
+        "MaxParticipantsTooLarge": "Max participants must not exceed 10,000."
       },
       "Engagement": {
         "MessageRequired": "A message is required when expressing interest via individual contact.",

@@ -34,6 +34,8 @@ export default function HelpPage() {
 				{ q: t("help.organizersQ1"), a: t("help.organizersA1") },
 				{ q: t("help.organizersQ2"), a: t("help.organizersA2") },
 				{ q: t("help.organizersQ3"), a: t("help.organizersA3") },
+				{ q: t("help.organizersQ4"), a: t("help.organizersA4") },
+				{ q: t("help.organizersQ5"), a: t("help.organizersA5") },
 			],
 		},
 	];

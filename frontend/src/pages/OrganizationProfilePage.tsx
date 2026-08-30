@@ -26,6 +26,7 @@ import { dispatchToast } from "../lib/toastBus";
 import { FlagIcon, GlobeIcon } from "../components/icons";
 import PageHeaderBand from "../components/PageHeaderBand";
 import OpportunityCard from "../components/OpportunityCard";
+import OrgAvatar from "../components/OrgAvatar";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -128,6 +129,9 @@ export default function OrganizationProfilePage() {
 			<PageHeaderBand
 				eyebrow={t("orgProfile.eyebrow")}
 				title={profile.name}
+				avatar={
+					<OrgAvatar name={profile.name} logoUrl={profile.logoUrl} size="3xl" />
+				}
 				lead={profile.description ?? undefined}
 				leadLang="de"
 			>
@@ -159,7 +163,6 @@ export default function OrganizationProfilePage() {
 				showHeader={false}
 				centered
 				name={profile.name}
-				logoUrl={profile.logoUrl}
 				contactEmail={profile.contactEmail}
 				contactPhone={profile.contactPhone}
 				website={profile.website}

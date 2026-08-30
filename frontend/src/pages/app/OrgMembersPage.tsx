@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
@@ -23,6 +24,76 @@ import SuccessBanner from "../../components/SuccessBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDate } from "../../lib/format";
 import { cardClass } from "../../lib/surfaceClasses";
+
+// Members and invitations are the same kind of row - a person, their role, and
+// what you can do about them - so they share one shell (#2324). They used to be
+// styled as two unrelated components 90px apart in the same column.
+const personListClass =
+	"overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting";
+
+const personRowClass =
+	"flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4";
+
+function roleDescriptionKey(isOrganizer: boolean): string {
+	return isOrganizer
+		? "orgSettings.organisatorDescription"
+		: "orgSettings.roleMemberDescription";
+}
+
+function InvitationSection({
+	heading,
+	hint,
+	invitations,
+	renderMeta,
+	renderActions,
+}: {
+	heading: string;
+	hint?: string;
+	invitations: OrgInvitationDto[];
+	renderMeta?: (invitation: OrgInvitationDto) => ReactNode;
+	renderActions: (invitation: OrgInvitationDto) => ReactNode;
+}) {
+	const { t } = useTranslation();
+
+	if (invitations.length === 0) return null;
+
+	return (
+		<div className="mb-6">
+			<SectionHeading>{heading}</SectionHeading>
+			{hint && <p className="mb-3 max-w-prose text-sm text-gray-600">{hint}</p>}
+			<div className={personListClass}>
+				<ul className="divide-y divide-gray-100">
+					{invitations.map((invitation) => {
+						const isOrganizerRole = invitation.intendedRole === "Organizer";
+						return (
+							<li key={invitation.id} className={personRowClass}>
+								<div className="min-w-0">
+									<p className="truncate text-sm font-medium text-gray-900">
+										{invitation.inviteeName}
+									</p>
+									{renderMeta?.(invitation)}
+									<Chip
+										tone={isOrganizerRole ? "brand" : "neutral"}
+										size="sm"
+										className="mt-0.5"
+										title={t(roleDescriptionKey(isOrganizerRole))}
+									>
+										{isOrganizerRole
+											? t("orgSettings.organisator")
+											: t("orgSettings.roleMember")}
+									</Chip>
+								</div>
+								<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+									{renderActions(invitation)}
+								</div>
+							</li>
+						);
+					})}
+				</ul>
+			</div>
+		</div>
+	);
+}
 
 export default function OrgMembersPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
@@ -143,6 +214,12 @@ export default function OrgMembersPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [org.id, isOrganizer]);
 
+	const pendingInvitations = invitations.filter((i) => i.status === "Pending");
+	const declinedInvitations = invitations.filter(
+		(i) => i.status === "Declined",
+	);
+	const expiredInvitations = invitations.filter((i) => i.status === "Expired");
+
 	async function handleInviteMember(userId: string) {
 		setInvitingUserId(userId);
 		try {
@@ -163,6 +240,7 @@ export default function OrgMembersPage() {
 					intendedRole: inviteRole,
 					status: "Pending",
 					createdOn: new Date(),
+					expiresOn: response.expiresOn,
 				},
 			]);
 			setMemberCandidates((prev) => prev.filter((c) => c.userId !== userId));
@@ -242,10 +320,16 @@ export default function OrgMembersPage() {
 		setResendingInvitationId(invitationId);
 		try {
 			await api.resendInvitation(org.id, invitationId);
-			setInvitations((prev) =>
-				prev.map((i) =>
-					i.id === invitationId ? { ...i, status: "Pending" } : i,
-				),
+
+			// The 204 carries no body, so re-read the list rather than guessing
+			// the expiry date the domain just stamped on the invitation (#2324).
+			const refreshed = await api.getOrgInvitations(org.id).catch(() => null);
+			setInvitations(
+				(prev) =>
+					refreshed ??
+					prev.map((i) =>
+						i.id === invitationId ? { ...i, status: "Pending" } : i,
+					),
 			);
 			setSettingsError(null);
 			setSuccessMessage(t("orgSettings.resendSent"));
@@ -310,8 +394,13 @@ export default function OrgMembersPage() {
 				>
 					{isOrganizer && (
 						<aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
-							<div className={`mb-8 ${cardClass} sm:p-6`}>
-								<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+							<div className={`@container mb-8 ${cardClass} sm:p-6`}>
+								{/* Container query, not `sm:` (#2324) - the two-column
+								split used to fire on viewport width while this card sits
+								in a fixed 20rem sidebar, squeezing the search field to
+								62px on every desktop size. Measure the card, not the
+								window. */}
+								<div className="grid gap-4 @md:grid-cols-[minmax(0,1fr)_12rem]">
 									<div>
 										<label htmlFor="member-search" className={labelClass}>
 											{t("orgSettings.inviteLabel")}
@@ -335,6 +424,7 @@ export default function OrgMembersPage() {
 											onChange={(e) =>
 												setInviteRole(e.target.value as "Member" | "Organizer")
 											}
+											aria-describedby="invite-role-hint"
 										>
 											<option value="Member">
 												{t("orgSettings.roleMember")}
@@ -343,6 +433,12 @@ export default function OrgMembersPage() {
 												{t("orgSettings.organisator")}
 											</option>
 										</Select>
+										<p
+											id="invite-role-hint"
+											className="mt-1 text-xs text-gray-500"
+										>
+											{t(roleDescriptionKey(inviteRole === "Organizer"))}
+										</p>
 									</div>
 								</div>
 								{memberSearch.length > 0 && memberSearch.length < 4 && (
@@ -425,159 +521,135 @@ export default function OrgMembersPage() {
 							isOrganizer ? "min-w-0 lg:col-start-1 lg:row-start-1" : ""
 						}
 					>
-						{invitations.some((i) => i.status === "Pending") && (
-							<div className="mb-6">
-								<SectionHeading>
-									{t("orgSettings.pendingInvitations")}
-								</SectionHeading>
-								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-									{invitations
-										.filter((i) => i.status === "Pending")
-										.map((invitation) => (
-											<li
-												key={invitation.id}
-												className="flex items-center justify-between px-3 py-2"
-											>
-												<div className="min-w-0">
-													<p className="truncate text-sm font-medium text-gray-900">
-														{invitation.inviteeName}
-														{invitation.intendedRole === "Organizer" && (
-															<Chip tone="brand" size="sm" className="ml-2">
-																{t("orgSettings.organisator")}
-															</Chip>
-														)}
-													</p>
-													<p className="truncate text-xs text-gray-500">
-														{t("orgSettings.invitationSentOn", {
-															date: formatDate(
-																invitation.createdOn as unknown as string,
-																i18n.language,
-															),
-														})}
-													</p>
-												</div>
-												<button
-													type="button"
-													onClick={() =>
-														setRevokeTarget({
-															id: invitation.id,
-															name: invitation.inviteeName,
-														})
-													}
-													disabled={
-														revokingInvitation &&
-														revokeTarget?.id === invitation.id
-													}
-													aria-label={t("orgSettings.revokeInvitationNamed", {
-														name: invitation.inviteeName,
-													})}
-													className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-												>
-													{t("orgSettings.revokeInvitation")}
-												</button>
-											</li>
-										))}
-								</ul>
-							</div>
-						)}
+						<InvitationSection
+							heading={t("orgSettings.pendingInvitations")}
+							hint={t("orgSettings.pendingInvitationsHint")}
+							invitations={pendingInvitations}
+							renderMeta={(invitation) => (
+								<p className="truncate text-xs text-gray-500">
+									{t("orgSettings.invitationSentOn", {
+										date: formatDate(
+											invitation.createdOn as unknown as string,
+											i18n.language,
+										),
+									})}
+									{" · "}
+									{t("orgSettings.invitationExpiresOn", {
+										date: formatDate(
+											invitation.expiresOn as unknown as string,
+											i18n.language,
+										),
+									})}
+								</p>
+							)}
+							renderActions={(invitation) => (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => void handleResendInvitation(invitation.id)}
+										disabled={resendingInvitationId === invitation.id}
+										aria-label={t("orgSettings.resendInvitationNamed", {
+											name: invitation.inviteeName,
+										})}
+									>
+										{resendingInvitationId === invitation.id
+											? t("orgSettings.resendingInvitation")
+											: t("orgSettings.resendInvitation")}
+									</Button>
+									<Button
+										type="button"
+										variant="dangerOutline"
+										size="sm"
+										onClick={() =>
+											setRevokeTarget({
+												id: invitation.id,
+												name: invitation.inviteeName,
+											})
+										}
+										disabled={
+											revokingInvitation && revokeTarget?.id === invitation.id
+										}
+										aria-label={t("orgSettings.revokeInvitationNamed", {
+											name: invitation.inviteeName,
+										})}
+									>
+										{t("orgSettings.revokeInvitation")}
+									</Button>
+								</>
+							)}
+						/>
 
-						{invitations.some((i) => i.status === "Declined") && (
-							<div className="mb-6">
-								<SectionHeading>
-									{t("orgSettings.declinedInvitations")}
-								</SectionHeading>
-								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-									{invitations
-										.filter((i) => i.status === "Declined")
-										.map((invitation) => (
-											<li
-												key={invitation.id}
-												className="flex items-center justify-between px-3 py-2"
-											>
-												<div className="min-w-0">
-													<p className="truncate text-sm font-medium text-gray-900">
-														{invitation.inviteeName}
-													</p>
-												</div>
-												<button
-													type="button"
-													onClick={() => handleDismissInvitation(invitation.id)}
-													disabled={dismissingInvitationId === invitation.id}
-													aria-label={t("orgSettings.dismissInvitationNamed", {
-														name: invitation.inviteeName,
-													})}
-													className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-												>
-													{t("orgSettings.dismissInvitation")}
-												</button>
-											</li>
-										))}
-								</ul>
-							</div>
-						)}
+						<InvitationSection
+							heading={t("orgSettings.declinedInvitations")}
+							invitations={declinedInvitations}
+							renderActions={(invitation) => (
+								<Button
+									type="button"
+									variant="dangerOutline"
+									size="sm"
+									onClick={() => void handleDismissInvitation(invitation.id)}
+									disabled={dismissingInvitationId === invitation.id}
+									aria-label={t("orgSettings.dismissInvitationNamed", {
+										name: invitation.inviteeName,
+									})}
+								>
+									{t("orgSettings.dismissInvitation")}
+								</Button>
+							)}
+						/>
 
-						{invitations.some((i) => i.status === "Expired") && (
-							<div className="mb-6">
-								<SectionHeading>
-									{t("orgSettings.expiredInvitations")}
-								</SectionHeading>
-								<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-									{invitations
-										.filter((i) => i.status === "Expired")
-										.map((invitation) => (
-											<li
-												key={invitation.id}
-												className="flex items-center justify-between px-3 py-2"
-											>
-												<div className="min-w-0">
-													<p className="truncate text-sm font-medium text-gray-900">
-														{invitation.inviteeName}
-													</p>
-												</div>
-												<div className="ml-3 flex shrink-0 items-center gap-3">
-													<button
-														type="button"
-														onClick={() =>
-															handleResendInvitation(invitation.id)
-														}
-														disabled={
-															resendingInvitationId === invitation.id ||
-															dismissingInvitationId === invitation.id
-														}
-														aria-label={t("orgSettings.resendInvitationNamed", {
-															name: invitation.inviteeName,
-														})}
-														className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-													>
-														{resendingInvitationId === invitation.id
-															? t("orgSettings.resendingInvitation")
-															: t("orgSettings.resendInvitation")}
-													</button>
-													<button
-														type="button"
-														onClick={() =>
-															handleDismissInvitation(invitation.id)
-														}
-														disabled={
-															dismissingInvitationId === invitation.id ||
-															resendingInvitationId === invitation.id
-														}
-														aria-label={t(
-															"orgSettings.dismissInvitationNamed",
-															{
-																name: invitation.inviteeName,
-															},
-														)}
-														className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-													>
-														{t("orgSettings.dismissInvitation")}
-													</button>
-												</div>
-											</li>
-										))}
-								</ul>
-							</div>
-						)}
+						<InvitationSection
+							heading={t("orgSettings.expiredInvitations")}
+							invitations={expiredInvitations}
+							renderMeta={(invitation) => (
+								<p className="truncate text-xs text-gray-500">
+									{t("orgSettings.invitationExpiredOn", {
+										date: formatDate(
+											invitation.expiresOn as unknown as string,
+											i18n.language,
+										),
+									})}
+								</p>
+							)}
+							renderActions={(invitation) => (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => void handleResendInvitation(invitation.id)}
+										disabled={
+											resendingInvitationId === invitation.id ||
+											dismissingInvitationId === invitation.id
+										}
+										aria-label={t("orgSettings.resendInvitationNamed", {
+											name: invitation.inviteeName,
+										})}
+									>
+										{resendingInvitationId === invitation.id
+											? t("orgSettings.resendingInvitation")
+											: t("orgSettings.resendInvitation")}
+									</Button>
+									<Button
+										type="button"
+										variant="dangerOutline"
+										size="sm"
+										onClick={() => void handleDismissInvitation(invitation.id)}
+										disabled={
+											dismissingInvitationId === invitation.id ||
+											resendingInvitationId === invitation.id
+										}
+										aria-label={t("orgSettings.dismissInvitationNamed", {
+											name: invitation.inviteeName,
+										})}
+									>
+										{t("orgSettings.dismissInvitation")}
+									</Button>
+								</>
+							)}
+						/>
 
 						{org.membersUnavailable && (
 							<ErrorBanner
@@ -592,13 +664,10 @@ export default function OrgMembersPage() {
 								message={t("orgSettings.noMembersHint")}
 							/>
 						) : (
-							<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
+							<div className={personListClass}>
 								<ul className="divide-y divide-gray-100">
 									{members.map((member) => (
-										<li
-											key={member.userId}
-											className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-										>
+										<li key={member.userId} className={personRowClass}>
 											<div className="min-w-0">
 												<p
 													data-testid="org-member-name"
@@ -616,6 +685,7 @@ export default function OrgMembersPage() {
 													tone={member.isOrganisator ? "brand" : "neutral"}
 													size="sm"
 													className="mt-0.5"
+													title={t(roleDescriptionKey(member.isOrganisator))}
 												>
 													{member.isOrganisator
 														? t("orgSettings.organisator")

@@ -340,3 +340,103 @@ describe("OrgOpportunitiesPage unpublish and cancel", () => {
 		expect(within(cancelledRow).queryByTestId("opportunity-cancel")).toBeNull();
 	});
 });
+
+describe("OrgOpportunitiesPage destructive confirmations (#2325)", () => {
+	async function openRowAction(rowTitle: string, testId: string) {
+		const row = await screen.findByText(rowTitle);
+		await userEvent.click(
+			within(row.closest("li") as HTMLElement).getByRole("button", {
+				name: /More actions/,
+			}),
+		);
+		await userEvent.click(screen.getByTestId(testId));
+	}
+
+	it("names the opportunity it is about to unpublish", async () => {
+		mockByStatus({
+			Published: [
+				opportunity(
+					"aaaa0002-0000-0000-0000-000000000002",
+					"Küstenreinigung",
+					"Published",
+				),
+			],
+		});
+		renderPage();
+
+		await openRowAction("Küstenreinigung", "opportunity-unpublish");
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Unpublish opportunity?",
+		});
+		expect(dialog).toHaveTextContent(
+			"This removes the opportunity “Küstenreinigung” from the public listing",
+		);
+	});
+
+	it("names the opportunity it is about to cancel", async () => {
+		mockByStatus({
+			Published: [
+				opportunity(
+					"aaaa0002-0000-0000-0000-000000000002",
+					"Küstenreinigung",
+					"Published",
+				),
+			],
+		});
+		renderPage();
+
+		await openRowAction("Küstenreinigung", "opportunity-cancel");
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Cancel opportunity?",
+		});
+		expect(dialog).toHaveTextContent(
+			"This permanently cancels the opportunity “Küstenreinigung”",
+		);
+	});
+
+	it("names the opportunity it is about to delete", async () => {
+		mockByStatus({
+			Draft: [
+				opportunity("aaaa0001-0000-0000-0000-000000000001", "Entwurf", "Draft"),
+			],
+		});
+		renderPage();
+
+		await openRowAction("Entwurf", "opportunity-delete");
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Delete opportunity?",
+		});
+		expect(dialog).toHaveTextContent(
+			"permanently delete the opportunity “Entwurf”",
+		);
+	});
+
+	it("falls back to the unnamed-draft label rather than leaving a blank name", async () => {
+		mockByStatus({
+			Draft: [
+				opportunity("aaaa0001-0000-0000-0000-000000000001", "", "Draft", {
+					descriptionDe: "Beschreibung.",
+				}),
+			],
+		});
+		renderPage();
+
+		const row = await screen.findByText("Unnamed draft");
+		await userEvent.click(
+			within(row.closest("li") as HTMLElement).getByRole("button", {
+				name: /More actions/,
+			}),
+		);
+		await userEvent.click(screen.getByTestId("opportunity-delete"));
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Delete opportunity?",
+		});
+		expect(dialog).toHaveTextContent(
+			"permanently delete the opportunity “Unnamed draft”",
+		);
+	});
+});

@@ -7818,13 +7818,18 @@
       },
       "CreateInvitationResponse": {
         "required": [
-          "invitationId"
+          "invitationId",
+          "expiresOn"
         ],
         "type": "object",
         "properties": {
           "invitationId": {
             "type": "string",
             "format": "uuid"
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -9240,7 +9245,8 @@
           "inviteeName",
           "intendedRole",
           "status",
-          "createdOn"
+          "createdOn",
+          "expiresOn"
         ],
         "type": "object",
         "properties": {
@@ -9262,6 +9268,10 @@
             "type": "string"
           },
           "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresOn": {
             "type": "string",
             "format": "date-time"
           }
