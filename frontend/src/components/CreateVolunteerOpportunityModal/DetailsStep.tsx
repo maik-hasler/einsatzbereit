@@ -7,12 +7,18 @@ import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
 import { formatDateTimeRange } from "../../lib/format";
-import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
+import {
+	getInputSurfaceClass,
+	inputSurfaceClass,
+	labelClass,
+} from "../../lib/formClasses";
 import {
 	CANONICAL_TIME_ZONE,
 	toZonedDatetimeLocalValue,
 } from "../../lib/timezone";
 import type { OpportunityFormValues } from "./schema";
+
+const SLOT_ERROR_ID = "time-slot-error";
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
 
@@ -66,6 +72,7 @@ interface Props {
 		maxParticipants: number | null;
 	}) => void;
 	slotError: string | null;
+	newSlotFieldInvalid: boolean;
 	addingSlot: boolean;
 	onAddSlot: () => void;
 	recurrenceFrequency: string;
@@ -109,6 +116,7 @@ export default function DetailsStep({
 	newSlot,
 	onNewSlotChange,
 	slotError,
+	newSlotFieldInvalid,
 	addingSlot,
 	onAddSlot,
 	recurrenceFrequency,
@@ -449,7 +457,11 @@ export default function DetailsStep({
 											startDateTime: e.target.value,
 										})
 									}
-									className={inputSurfaceClass}
+									aria-invalid={newSlotFieldInvalid || undefined}
+									aria-describedby={
+										newSlotFieldInvalid ? SLOT_ERROR_ID : undefined
+									}
+									className={getInputSurfaceClass(newSlotFieldInvalid)}
 								/>
 							</div>
 							<div>
@@ -469,7 +481,11 @@ export default function DetailsStep({
 											endDateTime: e.target.value,
 										})
 									}
-									className={inputSurfaceClass}
+									aria-invalid={newSlotFieldInvalid || undefined}
+									aria-describedby={
+										newSlotFieldInvalid ? SLOT_ERROR_ID : undefined
+									}
+									className={getInputSurfaceClass(newSlotFieldInvalid)}
 								/>
 							</div>
 						</div>
@@ -568,7 +584,11 @@ export default function DetailsStep({
 							</div>
 						)}
 						{slotError && (
-							<p className="text-xs text-red-600" role="alert">
+							<p
+								id={SLOT_ERROR_ID}
+								className="text-xs text-red-600"
+								role="alert"
+							>
 								{slotError}
 							</p>
 						)}

@@ -256,3 +256,95 @@ describe("ProfileOverviewPage legacy tab deep links", () => {
 		expect(screen.getByTestId("location")).toHaveTextContent("/profile");
 	});
 });
+
+describe("ProfileOverviewPage field limits", () => {
+	it("caps every free-text field at the limit the server enforces", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await waitFor(() =>
+			expect(document.querySelector("#first-name")).not.toBeNull(),
+		);
+
+		const limits: Record<string, number> = {
+			"#first-name": 100,
+			"#last-name": 100,
+			"#bio": 1000,
+			"#phone": 30,
+			"#skill-input": 100,
+			"#lang-input": 50,
+		};
+		for (const [selector, max] of Object.entries(limits)) {
+			expect(
+				document.querySelector<HTMLInputElement>(selector)?.maxLength,
+			).toBe(max);
+		}
+	});
+
+	it("counts the bio's characters like the report dialog does", async () => {
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+
+		expect(await screen.findByText("15 / 1000")).toBeInTheDocument();
+	});
+});
+
+describe("ProfileOverviewPage rejected save", () => {
+	it("names the fields the server rejected instead of a bare failure", async () => {
+		api.updateUserProfile.mockRejectedValue({
+			status: 400,
+			response: JSON.stringify({
+				errors: {
+					FirstName: [
+						"The field FirstName must be a string or array type with a maximum length of '100'.",
+					],
+				},
+			}),
+		});
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Save$/ }),
+		);
+
+		expect(
+			await screen.findByText(
+				"Some entries are too long. Shorten the highlighted fields and save again.",
+			),
+		).toBeInTheDocument();
+		expect(document.querySelector("#first-name")).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
+		expect(
+			screen.getByText("Must not be longer than 100 characters."),
+		).toBeInTheDocument();
+		expect(document.querySelector("#last-name")).not.toHaveAttribute(
+			"aria-invalid",
+		);
+	});
+
+	it("falls back to the generic message when the server blames no field", async () => {
+		api.updateUserProfile.mockRejectedValue({ status: 500 });
+		renderWithProviders(<ProfileOverviewPage />, {
+			auth: { isAuthenticated: true },
+		});
+
+		await userEvent.click(await screen.findByTestId("profile-edit"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Save$/ }),
+		);
+
+		expect(
+			await screen.findByText("Failed to save profile."),
+		).toBeInTheDocument();
+	});
+});

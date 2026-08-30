@@ -140,6 +140,16 @@ function endOfDayFromDateInput(value: string): Date {
 	return new Date(year, month - 1, day, 23, 59, 59, 999);
 }
 
+// The four fields the backend blames when it cannot resolve an address. They
+// live on step 2, so a rejection has to send the organizer back there rather
+// than leave a banner on whichever step they submitted from (#2320).
+const ADDRESS_FIELDS = [
+	"street",
+	"houseNumber",
+	"zipCode",
+	"city",
+] as const satisfies readonly (keyof OpportunityFormValues)[];
+
 const DEFAULT_VALUES: OpportunityFormValues = {
 	titleDe: "",
 	titleEn: "",
@@ -207,6 +217,7 @@ export default function CreateVolunteerOpportunityModal({
 		getValues,
 		trigger,
 		clearErrors,
+		setError: setFieldError,
 		setFocus,
 		getFieldState,
 		formState: { errors, isDirty },
@@ -258,6 +269,11 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: 1,
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
+	// Marks the add form's start/end pair invalid, so the message points at the
+	// two inputs that produced it rather than floating under the row (#2320).
+	// Scoped to that form on purpose: an open edit row has its own pair of
+	// inputs, and the shared message renders down here either way.
+	const [newSlotFieldInvalid, setNewSlotFieldInvalid] = useState(false);
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 	const [addingSlot, setAddingSlot] = useState(false);
 	const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
@@ -477,6 +493,7 @@ export default function CreateVolunteerOpportunityModal({
 	async function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
 		setSlotError(null);
+		setNewSlotFieldInvalid(false);
 		const start = zonedDatetimeLocalToUtc(
 			newSlot.startDateTime,
 			CANONICAL_TIME_ZONE,
@@ -486,7 +503,10 @@ export default function CreateVolunteerOpportunityModal({
 			CANONICAL_TIME_ZONE,
 		);
 		if (end <= start) {
-			setSlotError(t("timeSlots.addError"));
+			// The app already ships the precise message the server would send
+			// for this; a generic "could not add" said nothing (#2320).
+			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
+			setNewSlotFieldInvalid(true);
 			return;
 		}
 
@@ -557,6 +577,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!initialOpportunity) return;
 		setRemovingSlotId(timeSlotId);
 		setSlotError(null);
+		setNewSlotFieldInvalid(false);
 		try {
 			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId, "Only");
 			setExistingSlots((prev) => prev.filter((s) => s.id !== timeSlotId));
@@ -603,6 +624,7 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: number | null;
 	}) {
 		setSlotError(null);
+		setNewSlotFieldInvalid(false);
 		setEditingSlot({
 			id: slot.id,
 			startDateTime: toDatetimeLocalValue(slot.startDateTime),
@@ -616,6 +638,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!initialOpportunity) return;
 		setUpdatingSlotId(edit.id);
 		setSlotError(null);
+		setNewSlotFieldInvalid(false);
 		try {
 			const result = await api.updateTimeSlot(initialOpportunity.id, edit.id, {
 				startDateTime:
@@ -674,6 +697,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (!editingSlot) return;
 		if (editingSlot.scope !== "Only") {
 			setSlotError(null);
+			setNewSlotFieldInvalid(false);
 			void applySlotEdit(editingSlot);
 			return;
 		}
@@ -687,10 +711,11 @@ export default function CreateVolunteerOpportunityModal({
 			CANONICAL_TIME_ZONE,
 		);
 		if (end <= start) {
-			setSlotError(t("timeSlots.editError"));
+			setSlotError(t("apiError.TimeSlot.EndMustBeAfterStart"));
 			return;
 		}
 		setSlotError(null);
+		setNewSlotFieldInvalid(false);
 		if (bookedCount > 0) {
 			setPendingSlotEdit({ ...editingSlot, bookedCount });
 		} else {
@@ -885,6 +910,15 @@ export default function CreateVolunteerOpportunityModal({
 			onSuccess(createdDraftId);
 			onClose();
 		} catch (err: unknown) {
+			if (isApiErrorCode(err, "Address.NotGeocodable")) {
+				for (const field of ADDRESS_FIELDS)
+					setFieldError(field, {
+						type: "server",
+						message: t("createOpportunity.addressUnresolvedField"),
+					});
+				setStep(2);
+				requestFocusFirstInvalid([...ADDRESS_FIELDS]);
+			}
 			setError(
 				getApiErrorMessage(
 					err,
@@ -1118,6 +1152,7 @@ export default function CreateVolunteerOpportunityModal({
 							newSlot={newSlot}
 							onNewSlotChange={setNewSlot}
 							slotError={slotError}
+							newSlotFieldInvalid={newSlotFieldInvalid}
 							addingSlot={addingSlot}
 							onAddSlot={() => void handleAddSlot()}
 							recurrenceFrequency={recurrenceFrequency}

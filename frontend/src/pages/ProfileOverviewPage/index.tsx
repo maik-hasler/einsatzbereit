@@ -5,7 +5,12 @@ import { Trans, useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
-import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
+import {
+	getInputClass,
+	getTextareaClass,
+	inputClass,
+	labelClass,
+} from "../../lib/formClasses";
 import { cardClass, cardSubtleClass } from "../../lib/surfaceClasses";
 import { IMAGE_UPLOAD_ACCEPT, getImageUploadHint } from "../../lib/imageUpload";
 import { getInitials } from "../../lib/initials";
@@ -22,7 +27,9 @@ import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
+import CharCount from "../../components/CharCount";
 import Button from "../../components/Button";
+import { getInvalidFieldNames } from "../../lib/apiError";
 import { CalendarIcon, CheckIcon, PencilIcon } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
 import {
@@ -31,6 +38,19 @@ import {
 	type PreferredLanguage,
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
+
+// Mirrors the server's own limits on Api.Users.UpdateUserProfile.v1's request
+// record and its MaxSkill/MaxLanguage constants. Enforced here so the user is
+// stopped at the boundary instead of losing the whole save to a 400 whose
+// per-field body the UI used to discard (#2320).
+export const PROFILE_FIELD_LIMITS = {
+	firstName: 100,
+	lastName: 100,
+	bio: 1000,
+	phone: 30,
+	skill: 100,
+	language: 50,
+} as const;
 
 const LEGACY_SCROLL_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
@@ -71,6 +91,7 @@ function ChipInput({
 	onAdd,
 	onRemove,
 	removeLabel,
+	maxLength,
 	tone = "brand",
 }: {
 	inputRef: React.RefObject<HTMLInputElement | null>;
@@ -82,6 +103,7 @@ function ChipInput({
 	onAdd: (v: string) => void;
 	onRemove: (v: string) => void;
 	removeLabel: string;
+	maxLength: number;
 	tone?: ChipTone;
 }) {
 	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -113,6 +135,7 @@ function ChipInput({
 				type="text"
 				value={inputValue}
 				placeholder={placeholder}
+				maxLength={maxLength}
 				onChange={(e) => onInputChange(e.target.value)}
 				onKeyDown={handleKeyDown}
 				onBlur={() => {
@@ -143,6 +166,7 @@ export default function ProfileOverviewPage() {
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const [engagementCount, setEngagementCount] = useState<number | null>(null);
+	const [invalidFields, setInvalidFields] = useState<string[]>([]);
 	const formRef = useRef<HTMLFormElement>(null);
 
 	const profileLoadCancelledRef = useRef(false);
@@ -238,6 +262,7 @@ export default function ProfileOverviewPage() {
 		e.preventDefault();
 		setSaving(true);
 		setProfileError(null);
+		setInvalidFields([]);
 		setSuccessMessage(null);
 		const savedValues = {
 			firstName: form.state.firstName || undefined,
@@ -255,8 +280,16 @@ export default function ProfileOverviewPage() {
 			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
-		} catch {
-			setProfileError(t("profile.saveError"));
+		} catch (err) {
+			// The server names the fields it rejected; say which they are
+			// instead of dropping that into a bare "saving failed" (#2320).
+			const rejected = getInvalidFieldNames(err);
+			setInvalidFields(rejected);
+			setProfileError(
+				rejected.length > 0
+					? t("profile.saveFieldError")
+					: t("profile.saveError"),
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -265,6 +298,7 @@ export default function ProfileOverviewPage() {
 	function handleCancel() {
 		form.reset(profile);
 		setProfileError(null);
+		setInvalidFields([]);
 		setEditing(false);
 	}
 
@@ -274,6 +308,16 @@ export default function ProfileOverviewPage() {
 		form.state.languages.length === 0 &&
 		!form.state.preferredContact &&
 		!form.state.phone;
+
+	// The server blames its own PascalCase property names, which
+	// getInvalidFieldNames lowercases - so match case-insensitively.
+	type LimitedField = keyof typeof PROFILE_FIELD_LIMITS;
+	const fieldRejected = (name: LimitedField) =>
+		invalidFields.includes(name.toLowerCase());
+	const fieldError = (name: LimitedField) =>
+		fieldRejected(name)
+			? t("profile.fieldTooLong", { max: PROFILE_FIELD_LIMITS[name] })
+			: undefined;
 
 	const displayName =
 		form.state.firstName || form.state.lastName
@@ -619,28 +663,42 @@ export default function ProfileOverviewPage() {
 													<Field
 														label={t("account.fieldFirstName")}
 														id="first-name"
+														error={fieldError("firstName")}
 													>
 														<input
 															id="first-name"
 															autoComplete="given-name"
+															maxLength={PROFILE_FIELD_LIMITS.firstName}
+															aria-invalid={
+																fieldRejected("firstName") || undefined
+															}
 															value={form.state.firstName}
 															onChange={(e) =>
 																form.setFirstName(e.target.value)
 															}
-															className={inputClass}
+															className={getInputClass(
+																fieldRejected("firstName"),
+															)}
 														/>
 													</Field>
 
 													<Field
 														label={t("account.fieldLastName")}
 														id="last-name"
+														error={fieldError("lastName")}
 													>
 														<input
 															id="last-name"
 															autoComplete="family-name"
+															maxLength={PROFILE_FIELD_LIMITS.lastName}
+															aria-invalid={
+																fieldRejected("lastName") || undefined
+															}
 															value={form.state.lastName}
 															onChange={(e) => form.setLastName(e.target.value)}
-															className={inputClass}
+															className={getInputClass(
+																fieldRejected("lastName"),
+															)}
 														/>
 													</Field>
 												</div>
@@ -650,14 +708,24 @@ export default function ProfileOverviewPage() {
 										<hr className="border-gray-200" />
 
 										<div className="space-y-5">
-											<Field label={t("profile.fieldBio")} id="bio">
+											<Field
+												label={t("profile.fieldBio")}
+												id="bio"
+												error={fieldError("bio")}
+											>
 												<textarea
 													id="bio"
 													rows={4}
+													maxLength={PROFILE_FIELD_LIMITS.bio}
+													aria-invalid={fieldRejected("bio") || undefined}
 													value={form.state.bio}
 													placeholder={t("profile.bioPlaceholder")}
 													onChange={(e) => form.setBio(e.target.value)}
-													className={textareaClass}
+													className={getTextareaClass(fieldRejected("bio"))}
+												/>
+												<CharCount
+													current={form.state.bio.length}
+													max={PROFILE_FIELD_LIMITS.bio}
 												/>
 											</Field>
 
@@ -672,6 +740,7 @@ export default function ProfileOverviewPage() {
 													onAdd={form.addSkill}
 													onRemove={form.removeSkill}
 													removeLabel={t("profile.removeChip")}
+													maxLength={PROFILE_FIELD_LIMITS.skill}
 												/>
 											</Field>
 
@@ -689,19 +758,26 @@ export default function ProfileOverviewPage() {
 													onAdd={form.addLanguage}
 													onRemove={form.removeLanguage}
 													removeLabel={t("profile.removeChip")}
+													maxLength={PROFILE_FIELD_LIMITS.language}
 													tone="neutral"
 												/>
 											</Field>
 
-											<Field label={t("profile.fieldPhone")} id="phone">
+											<Field
+												label={t("profile.fieldPhone")}
+												id="phone"
+												error={fieldError("phone")}
+											>
 												<input
 													id="phone"
 													type="tel"
 													autoComplete="tel"
+													maxLength={PROFILE_FIELD_LIMITS.phone}
+													aria-invalid={fieldRejected("phone") || undefined}
 													value={form.state.phone}
 													placeholder={t("profile.phonePlaceholder")}
 													onChange={(e) => form.setPhone(e.target.value)}
-													className={inputClass}
+													className={getInputClass(fieldRejected("phone"))}
 												/>
 											</Field>
 

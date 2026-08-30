@@ -384,3 +384,83 @@ describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
 		);
 	});
 });
+
+describe("create-opportunity wizard: an address the backend cannot locate (#2320)", () => {
+	it("sends the organizer back to the address step with the fields flagged", async () => {
+		api.createVolunteerOpportunity.mockRejectedValue({
+			status: 400,
+			errorCode: "Address.NotGeocodable",
+			detail:
+				"Address could not be located. Please check the street, house number, zip code, and city.",
+		});
+		openWizard();
+
+		await userEvent.type(title(), "Deutscher Titel");
+		await userEvent.click(await screen.findByTestId("modal-save-draft"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-stepper-2")).toHaveAttribute(
+				"aria-current",
+				"step",
+			),
+		);
+		// The banner's wording comes from getApiErrorMessage against the app's
+		// own i18n singleton, which a component test does not drive - that
+		// mapping is covered in lib/apiError.test.ts. What matters here is that
+		// the four address fields are the ones flagged, on their own step.
+		expect(screen.getAllByText("Check this entry")).toHaveLength(4);
+		for (const id of [
+			"#opportunity-street",
+			"#opportunity-house",
+			"#opportunity-zip",
+			"#opportunity-city",
+		]) {
+			expect(document.querySelector(id)).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+		}
+	});
+
+	it("leaves the step alone for a failure that is not about the address", async () => {
+		api.createVolunteerOpportunity.mockRejectedValue({ status: 500 });
+		openWizard();
+
+		await userEvent.type(title(), "Deutscher Titel");
+		await userEvent.click(await screen.findByTestId("modal-save-draft"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-stepper-1")).toHaveAttribute(
+				"aria-current",
+				"step",
+			),
+		);
+		expect(document.querySelector("#opportunity-street")).toBeNull();
+	});
+});
+
+describe("create-opportunity wizard: a time slot that ends before it starts (#2320)", () => {
+	it("says the end must be after the start, and marks both inputs", async () => {
+		openWizard();
+
+		await userEvent.type(title(), "Zeitslot Regression");
+		await userEvent.type(description(), "Regression test for #2320.");
+		await userEvent.click(await screen.findByTestId("wizard-stepper-4"));
+		await waitFor(() =>
+			expect(screen.getByTestId("wizard-step-4")).toBeInTheDocument(),
+		);
+
+		const start = document.querySelector("#slot-start") as HTMLInputElement;
+		const end = document.querySelector("#slot-end") as HTMLInputElement;
+		fireEvent.change(start, { target: { value: "2027-06-01T12:00" } });
+		fireEvent.change(end, { target: { value: "2027-06-01T09:00" } });
+		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+		expect(
+			await screen.findByText("End date must be after start date."),
+		).toBeInTheDocument();
+		expect(start).toHaveAttribute("aria-invalid", "true");
+		expect(end).toHaveAttribute("aria-invalid", "true");
+		expect(end).toHaveAttribute("aria-describedby", "time-slot-error");
+	});
+});

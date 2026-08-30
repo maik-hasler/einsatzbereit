@@ -208,7 +208,6 @@
       "getDirections": "Get directions via Google Maps",
       "joinWaitlist": "Sign up for a slot",
       "expressInterest": "Express interest",
-      "notFound": "Not found.",
       "germanOnlyNotice": "Only available in German",
       "crossLocaleMatchNotice": "Matches your search in {{language}}:",
       "flexibleDate": "Flexible date",
@@ -253,7 +252,9 @@
       "factWhere": "Where",
       "offline": "We will load the opportunities as soon as your connection is back.",
       "offlineLoadMore": "These are the opportunities that loaded before the connection dropped - we will fetch the rest as soon as you are back online.",
-      "offlineDetail": "We will load this page again as soon as your connection is back."
+      "offlineDetail": "We will load this page again as soon as your connection is back.",
+      "notFoundTitle": "Opportunity not found",
+      "notFoundMessage": "This opportunity does not exist, or it has been removed. Check the link you followed - the id in it may be incomplete."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -334,7 +335,8 @@
       "saving": "Saving…",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
-      "discardChanges": "Discard changes"
+      "discardChanges": "Discard changes",
+      "addressUnresolvedField": "Check this entry"
     },
     "checkInMethod": {
       "none": "Automatic (after the event)",
@@ -967,11 +969,15 @@
       "switchedFromAccount": "Switched to {{language}} based on your account"
     },
     "auth": {
-      "authError": "Authentication error: {{message}}",
       "completing": "Completing sign-in…",
       "loading": "Loading…",
       "recoveryFailedTitle": "Sign-in isn't working",
-      "recoveryFailedMessage": "We couldn't restore your session after repeated attempts. Please sign out, then try signing in again. If this keeps happening, contact support."
+      "recoveryFailedMessage": "We couldn't restore your session after repeated attempts. Please sign out, then try signing in again. If this keeps happening, contact support.",
+      "signInFailedTitle": "Sign-in didn't finish",
+      "signInFailedMessage": "We couldn't complete your sign-in. This usually clears up on a second attempt - if it doesn't, close the tab and start again from the home page.",
+      "signInDeclined": "Sign-in was declined, so you are not signed in. You can try again, or keep browsing without an account.",
+      "nothingToCompleteTitle": "Nothing to complete here",
+      "nothingToCompleteMessage": "This page only finishes a sign-in that has already started, and there is none in progress. Sign in from the home page instead."
     },
     "notFound": {
       "title": "Page not found",
@@ -987,7 +993,10 @@
       "title": "Unsubscribe from emails?",
       "description": "Confirm you want to stop receiving \"{{type}}\" emails. This link works once you click confirm below - opening this page alone does not unsubscribe you.",
       "confirm": "Confirm unsubscribe",
-      "invalidLink": "This unsubscribe link is invalid or incomplete."
+      "invalidLink": "The link is incomplete or no longer valid. You can still manage every email type in your notification preferences.",
+      "invalidTitle": "This unsubscribe link doesn't work",
+      "confirming": "Unsubscribing…",
+      "failed": "We couldn't unsubscribe you. Try the link again, or manage your emails in your notification preferences."
     },
     "report": {
       "title": "Report content",
@@ -1135,14 +1144,14 @@
     },
     "orgProfile": {
       "loading": "Loading…",
-      "error": "Error: {{message}}",
-      "notFound": "Organization not found.",
       "currentNeeds": "Current opportunities",
       "noOpportunities": "No current opportunities available.",
       "report": "Report",
       "reportOrganization": "Report organization",
       "visitWebsite": "Visit website",
-      "eyebrow": "Organization"
+      "eyebrow": "Organization",
+      "notFoundTitle": "Organization not found",
+      "notFoundMessage": "This organization does not exist, or it has been deleted. Check the link you followed - the id in it may be incomplete."
     },
     "profileOverview": {
       "invitationsHeading": "Open invitations"
@@ -1195,7 +1204,9 @@
       "loading": "Loading…",
       "removeChip": "Remove",
       "subNavActivity": "Sign-ups",
-      "eyebrow": "Account"
+      "eyebrow": "Account",
+      "saveFieldError": "Some entries are too long. Shorten the highlighted fields and save again.",
+      "fieldTooLong": "Must not be longer than {{max}} characters."
     },
     "profileSettings": {
       "title": "Settings"
@@ -1307,14 +1318,15 @@
     },
     "userProfile": {
       "loading": "Loading profile…",
-      "notFound": "User not found.",
       "engagementCount": "{{count}} confirmed opportunities",
       "engagementCount_other": "{{count}} confirmed opportunities",
       "reportUser": "Report user",
       "engagementCount_one": "{{count}} confirmed opportunity",
       "emptyStateTitle": "This profile is still empty",
       "emptyStateMessage": "This volunteer hasn't added a bio, skills, or languages yet.",
-      "eyebrow": "Profile"
+      "eyebrow": "Profile",
+      "notFoundTitle": "Profile not found",
+      "notFoundMessage": "This profile does not exist, or the account has been deleted. Check the link you followed - the id in it may be incomplete."
     },
     "administration": {
       "title": "Administration",
@@ -1524,7 +1536,8 @@
         "AlreadyDeleted": "User is already hidden.",
         "NotDeleted": "User is not hidden.",
         "InvalidUnsubscribeToken": "The unsubscribe link is invalid or has already been used with a different token.",
-        "SoleOrganizerOfOrganizations": "You are the sole organizer of one or more organizations. Transfer ownership to another organizer or delete these organizations before deleting your account."
+        "SoleOrganizerOfOrganizations": "You are the sole organizer of one or more organizations. Transfer ownership to another organizer or delete these organizations before deleting your account.",
+        "UnknownNotificationType": "This unsubscribe link points at an email type that no longer exists."
       },
       "Users": {
         "CannotModifyServiceAccount": "The backend's own service account cannot be modified.",
@@ -1540,7 +1553,8 @@
         "ZipCodeInvalid": "Zip code must be exactly 5 characters.",
         "CityRequired": "City must not be empty.",
         "LatitudeOutOfRange": "Latitude must be between -90 and 90.",
-        "LongitudeOutOfRange": "Longitude must be between -180 and 180."
+        "LongitudeOutOfRange": "Longitude must be between -180 and 180.",
+        "NotGeocodable": "We could not find this address. Check the street, house number, zip code and city."
       },
       "Organization": {
         "NameRequired": "Name must not be empty.",
