@@ -158,7 +158,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.ToListAsync(cancellationToken);
 
 			var pageGuids = page.Select(x => x.Id.Value).ToList();
-			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
+			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, includeEndedSlots: false, cancellationToken);
 			var orgMap = await LoadOrganizationSummariesAsync(page.Select(x => x.OrganizationId), cancellationToken);
 
 			var summaries = page
@@ -187,7 +187,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return new PagedList<VolunteerOpportunitySummary>([], total, filter.PageNumber, filter.PageSize);
 
 		var guids = rows.Select(x => x.Id.Value).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: false, cancellationToken);
 		var organizationSummaries = await LoadOrganizationSummariesAsync(rows.Select(x => x.OrganizationId), cancellationToken);
 
 		var result = rows
@@ -356,29 +356,43 @@ internal sealed class VolunteerOpportunityReadRepository(
 			? GeoMath.BoundingBoxFor(centerLatitude.Value, centerLongitude.Value, radiusKm.Value)
 			: null;
 
+	/// <param name="includeEndedSlots">
+	/// <c>true</c> for the organizer-facing lists, where the tally is a record of everything
+	/// that was ever signed up for. <c>false</c> for anything a volunteer reads as
+	/// "spots left": seats in a slot that has already ended can never be booked, so counting
+	/// them advertised capacity that does not exist (einsatzbereit#2318).
+	/// </param>
 	private async Task<(Dictionary<Guid, int?> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
 		LoadParticipantStatsAsync(
 			List<Guid> opportunityGuids,
+			bool includeEndedSlots,
 			CancellationToken cancellationToken)
 	{
 		var opportunityIds = opportunityGuids
 			.Select(g => VolunteerOpportunityId.Create(g).GetValueOrThrow())
 			.ToList();
 
+		// A cutoff rather than a conditional predicate, so both queries keep one shape EF
+		// can always translate.
+		var slotCutoff = includeEndedSlots ? DateTimeOffset.MinValue : DateTimeOffset.UtcNow;
+
 		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => opportunityIds.Contains(vo.Id))
 			.Select(vo => new
 			{
 				OpportunityId = vo.Id.Value,
-				MaxParticipants = vo.TimeSlots.Any(ts => ts.MaxParticipants == null)
+				MaxParticipants = vo.TimeSlots.Any(ts => ts.EndDateTime >= slotCutoff && ts.MaxParticipants == null)
 					? (int?)null
-					: vo.TimeSlots.Sum(ts => ts.MaxParticipants) ?? 0,
+					: vo.TimeSlots.Where(ts => ts.EndDateTime >= slotCutoff).Sum(ts => ts.MaxParticipants) ?? 0,
 			})
 			.ToListAsync(cancellationToken);
 
+		// An IndividualContact engagement has no time slot at all - it stays counted either way.
 		var participantCounts = await dbContext.EngagementsQuery
 			.Where(e => opportunityIds.Contains(e.OpportunityId) &&
-				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed) &&
+				(e.TimeSlotId == null || dbContext.TimeSlotsQuery
+					.Any(ts => ts.Id == e.TimeSlotId && ts.EndDateTime >= slotCutoff)))
 			.GroupBy(e => e.OpportunityId)
 			.Select(g => new { OpportunityId = g.Key.Value, Count = g.Count() })
 			.ToListAsync(cancellationToken);
@@ -521,6 +535,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 			? UserId.Create(requestingUserIdValue).GetValueOrThrow()
 			: (UserId?)null;
 
+		// Deliberately viewer-relative: "how many *others* have joined". It is therefore not
+		// a capacity figure - an absolute "spots left" label must be derived from the
+		// viewer-independent TimeSlotDetail.BookedCount above (einsatzbereit#2318).
 		var currentParticipantCount = await dbContext.EngagementsQuery
 			.CountAsync(e =>
 				e.OpportunityId == opportunityId_ &&
@@ -652,7 +669,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return [];
 
 		var guids = rows.Select(x => x.Id).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: false, cancellationToken);
 
 		return rows
 			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
@@ -731,7 +748,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return new PagedList<VolunteerOpportunitySummary>([], totalCount, pageNumber, pageSize);
 
 		var guids = rows.Select(x => x.Id).ToList();
-		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, includeEndedSlots: true, cancellationToken);
 
 		var items = rows
 			.Select(x => ToSummary(x.Id, x.TitleDe, x.TitleEn, x.DescriptionDe, x.DescriptionEn, x.OrganizationId, x.OrgName, x.OrgLogoUrl,

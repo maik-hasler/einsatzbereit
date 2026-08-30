@@ -88,14 +88,18 @@ function describeCapacity(
 				tone: "text-teal-700",
 			};
 		case "notApplicable":
-			return {
-				label: t("opportunities.byInterest"),
-				tone: "text-gray-700",
-				secondaryLabel:
-					capacity.booked > 0
-						? t("opportunities.participantsJoined", { count: capacity.booked })
-						: undefined,
-			};
+			return capacity.reason === "interest"
+				? {
+						label: t("opportunities.byInterest"),
+						tone: "text-gray-700",
+						secondaryLabel:
+							capacity.booked > 0
+								? t("opportunities.participantsJoined", {
+										count: capacity.booked,
+									})
+								: undefined,
+					}
+				: { label: t("opportunities.noOpenSpots"), tone: "text-gray-700" };
 		case "capped":
 			if (capacity.isFull) {
 				return { label: t("opportunities.full"), tone: "text-red-600" };
@@ -146,10 +150,11 @@ function describeWhenFact(
 
 function describeHowFact(
 	opportunity: VolunteerOpportunityDetails,
+	upcomingTimeSlotCount: number,
 	t: TFunction,
 ): string {
 	return opportunity.participationType === "ScheduledSlots"
-		? t("opportunities.slotCount", { count: opportunity.timeSlots.length })
+		? t("opportunities.slotCount", { count: upcomingTimeSlotCount })
 		: formatParticipationType(opportunity.participationType, t);
 }
 
@@ -410,8 +415,10 @@ export default function VolunteerOpportunityDetailPage() {
 			? !individualContactEngagement
 			: upcomingTimeSlots.some((ts) => !engagementsBySlot.has(ts.id));
 
+	// Only the slots a visitor can still book: an ended slot's seats are gone, so
+	// counting them advertised spots that could never be taken (#2318).
 	const capacity = getCapacityFromTimeSlots(
-		opportunity.timeSlots,
+		upcomingTimeSlots,
 		opportunity.currentParticipantCount,
 		opportunity.participationType,
 	);
@@ -793,7 +800,7 @@ export default function VolunteerOpportunityDetailPage() {
 										className="mt-2 text-sm font-medium text-gray-900"
 										data-testid="opportunity-detail-how"
 									>
-										{describeHowFact(opportunity, t)}
+										{describeHowFact(opportunity, upcomingTimeSlots.length, t)}
 									</dd>
 								</div>
 
