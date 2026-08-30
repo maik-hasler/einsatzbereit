@@ -4,6 +4,14 @@ using AwesomeAssertions;
 
 namespace Application.UnitTests.Meta.GetPageMeta;
 
+// These carry this endpoint alone: there is deliberately no IntegrationTests
+// counterpart. The anonymous Read bucket is 60 permits a minute keyed by the
+// connection IP (Api/Common/RateLimiting), and RateLimitingTests and
+// MapTileRateLimitingTests each burn a full window on purpose, so the suite's
+// shared anonymous budget has no headroom - adding even two requests to it
+// made unrelated anonymous tests fail with 429 (einsatzbereit#2331). The
+// endpoint's own wiring is the same shape as the two sibling meta endpoints,
+// which are integration-tested, and is held by EndpointConventionTests.
 public class GetPageMetaQueryHandlerTests
 {
 	private readonly GetPageMetaQueryHandler _sut = new();
