@@ -34,17 +34,9 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 		xml.Should().NotContain("/organizations/").And.NotContain("/volunteer-opportunities/");
 		foreach (var page in StaticPageCatalog.All)
 			xml.Should().Contain($"{page.Path}</loc>");
-	}
 
-	[Test]
-	public async Task GetSitemap_ShouldIncludeTheSiteRoot(CancellationToken cancellationToken)
-	{
-		using var httpClient = fixture.CreateHttpClient();
-
-		var response = await httpClient.GetAsync(SitemapRoute(), cancellationToken);
-		var xml = await response.Content.ReadAsStringAsync(cancellationToken);
-
-		response.EnsureSuccessStatusCode();
+		// The site root was missing outright, so assert it by shape rather than
+		// trusting the "/" entry of the loop above.
 		xml.Should().MatchRegex(@"<loc>https?://[^<]+/</loc>");
 	}
 
