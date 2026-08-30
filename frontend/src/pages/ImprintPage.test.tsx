@@ -76,6 +76,15 @@ describe("ImprintPage", () => {
 		expect(screen.queryByText(/24 hours/)).toBeNull();
 	});
 
+	it("links the statutory Website field instead of printing it as text", async () => {
+		window.__APP_CONFIG__ = OPERATOR;
+		await renderImprint();
+
+		expect(
+			screen.getByRole("link", { name: OPERATOR.OPERATOR_SITE_URL }),
+		).toHaveAttribute("href", OPERATOR.OPERATOR_SITE_URL);
+	});
+
 	it("shows a not-configured notice instead of anyone's real details when the operator hasn't set up their legal identity", async () => {
 		await renderImprint();
 

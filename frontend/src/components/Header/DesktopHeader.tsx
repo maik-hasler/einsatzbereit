@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router";
+import { Link, NavLink } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
 import OrgAvatar from "../OrgAvatar";
@@ -85,13 +85,16 @@ export default function DesktopHeader({
 					return (
 						<li key={link.key}>
 							{link.hash ? (
-								<a
-									href={link.to}
+								// A router <Link>, not an <a> (#2324): a plain href triggers a
+								// full document load, and the browser gives up looking for the
+								// fragment before the landing page's chunk mounts.
+								<Link
+									to={link.to}
 									data-testid={`nav-${link.key}`}
 									className={`${base} ${idle}`}
 								>
 									{t(`nav.${link.key}`)}
-								</a>
+								</Link>
 							) : (
 								<NavLink
 									to={link.to}

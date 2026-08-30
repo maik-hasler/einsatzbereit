@@ -128,7 +128,7 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.ToTable("audit_log", null, t =>
 						{
-							t.HasCheckConstraint("ck_audit_log_action_type_valid", "action_type IN ('UserPromotedToAdmin', 'UserDemotedFromAdmin', 'UserEnabled', 'UserDisabled', 'UserShadowDeleted', 'UserRestored', 'OrganizationShadowDeleted', 'OrganizationRestored', 'VolunteerOpportunityShadowDeleted', 'VolunteerOpportunityRestored', 'EngagementCancelled')");
+							t.HasCheckConstraint("ck_audit_log_action_type_valid", "action_type IN ('UserPromotedToAdmin', 'UserDemotedFromAdmin', 'UserEnabled', 'UserDisabled', 'UserShadowDeleted', 'UserRestored', 'OrganizationShadowDeleted', 'OrganizationRestored', 'VolunteerOpportunityShadowDeleted', 'VolunteerOpportunityRestored', 'EngagementCancelled', 'ReportDismissed')");
 
 							t.HasCheckConstraint("ck_audit_log_subject_type_valid", "subject_type IN ('User', 'Organization', 'VolunteerOpportunity', 'Engagement')");
 						});

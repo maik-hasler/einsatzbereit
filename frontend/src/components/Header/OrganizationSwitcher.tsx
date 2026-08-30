@@ -70,7 +70,7 @@ export default function OrganizationSwitcher({
 	}
 
 	if (loading) {
-		return <Skeleton className="h-10 w-48 rounded-xl" />;
+		return <Skeleton className="h-11 w-48 rounded-xl" />;
 	}
 
 	return (
@@ -79,7 +79,7 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className={`flex h-10 w-full min-w-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors ${
+					className={`flex min-h-11 w-full min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors ${
 						error
 							? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
 							: transparent

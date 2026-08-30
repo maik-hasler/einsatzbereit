@@ -54,7 +54,12 @@ import {
 	type LoadFailureKind,
 } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
+import {
+	reportIntentSigninArgs,
+	usePendingReportIntent,
+} from "../lib/reportIntent";
 import { cardClass } from "../lib/surfaceClasses";
+import { inlineLinkClass } from "../lib/linkClasses";
 import {
 	ArrowTopRightOnSquareIcon,
 	BuildingOfficeIcon,
@@ -256,6 +261,30 @@ export default function VolunteerOpportunityDetailPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOrganisator]);
 
+	// Resumes a Report click made before the Keycloak round trip, which used to be dropped at
+	// the redirect (#2326). Waits for the opportunity itself: the report control is not offered
+	// on your own organization's opportunity, so neither is the resumed modal.
+	const pendingReportTargetId = usePendingReportIntent();
+	const viewerOwnsOpportunity =
+		isOrganisator &&
+		opportunity !== null &&
+		userOrgIds.includes(opportunity.organizationId);
+	useEffect(() => {
+		if (
+			isAuthenticated &&
+			opportunity !== null &&
+			!viewerOwnsOpportunity &&
+			pendingReportTargetId === opportunity.id
+		) {
+			setShowReport(true);
+		}
+	}, [
+		isAuthenticated,
+		opportunity,
+		viewerOwnsOpportunity,
+		pendingReportTargetId,
+	]);
+
 	const [orgProfile, setOrgProfile] =
 		useState<PublicOrganizationProfileResponse | null>(null);
 	const [orgProfileError, setOrgProfileError] = useState<string | null>(null);
@@ -409,8 +438,7 @@ export default function VolunteerOpportunityDetailPage() {
 			/>
 		);
 
-	const isOwner =
-		isOrganisator && userOrgIds.includes(opportunity.organizationId);
+	const isOwner = viewerOwnsOpportunity;
 	const isDraft = opportunity.status === "Draft";
 
 	const hasActionRow = isDraft || !isOwner;
@@ -776,9 +804,11 @@ export default function VolunteerOpportunityDetailPage() {
 												onClick={() =>
 													isAuthenticated
 														? setShowReport(true)
-														: auth.signinRedirect(
-																signinLocaleArgs(
-																	location.pathname + location.search,
+														: void auth.signinRedirect(
+																reportIntentSigninArgs(
+																	location.pathname,
+																	location.search,
+																	opportunity.id,
 																),
 															)
 												}
@@ -1218,7 +1248,7 @@ export default function VolunteerOpportunityDetailPage() {
 						{withdrawTarget.remainingReactivations === 0 && (
 							<Link
 								to={`/organizations/${opportunity.organizationId}`}
-								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+								className={`mt-1 inline-block text-sm ${inlineLinkClass}`}
 							>
 								{t("common.contactOrganization")}
 							</Link>

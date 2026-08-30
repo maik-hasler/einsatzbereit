@@ -20,14 +20,16 @@ internal sealed class AdminReportReadRepository(
 	public async ValueTask<PagedList<FlaggedTargetSummary>> GetFlaggedTargetsPagedAsync(
 		int pageNumber,
 		int pageSize,
+		bool includeResolved,
 		CancellationToken cancellationToken = default)
 	{
+		// Grouped first, then filtered on the aggregate: a target belongs in the queue while
+		// any of its reports is still Open. Without this the queue only ever grows - a target
+		// whose every report was dismissed or actioned stayed listed at "0 open flags" forever,
+		// and the "all caught up" empty state became unreachable after the first ever report
+		// (#2326). Resolved targets stay retrievable via includeResolved.
 		var groupedReports = dbContext.ReportsQuery
-			.GroupBy(r => new { r.TargetType, r.TargetId });
-
-		var totalItems = await groupedReports.CountAsync(cancellationToken);
-
-		var page = await groupedReports
+			.GroupBy(r => new { r.TargetType, r.TargetId })
 			.Select(g => new
 			{
 				g.Key.TargetType,
@@ -35,7 +37,14 @@ internal sealed class AdminReportReadRepository(
 				OpenCount = g.Count(r => r.Status == ReportStatus.Open),
 				TotalCount = g.Count(),
 				LastReportedOn = g.Max(r => r.CreatedOn),
-			})
+			});
+
+		if (!includeResolved)
+			groupedReports = groupedReports.Where(g => g.OpenCount > 0);
+
+		var totalItems = await groupedReports.CountAsync(cancellationToken);
+
+		var page = await groupedReports
 			.OrderByDescending(g => g.LastReportedOn)
 			.ThenBy(g => g.TargetId)
 			.Skip((pageNumber - 1) * pageSize)
@@ -53,7 +62,7 @@ internal sealed class AdminReportReadRepository(
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.IgnoreQueryFilters()
 			.Where(vo => opportunityIdVOs.Contains(vo.Id))
-			.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.TitleDe, vo.IsDeleted }, cancellationToken);
+			.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.TitleDe, vo.TitleEn, vo.IsDeleted }, cancellationToken);
 
 		var organizations = await dbContext.OrganizationsQuery
 			.IgnoreQueryFilters()
@@ -81,6 +90,13 @@ internal sealed class AdminReportReadRepository(
 					ReportTargetType.User => userDisplayNames.GetValueOrDefault(g.TargetId, string.Empty),
 					_ => string.Empty,
 				},
+				// Opportunity titles are authored per language; only the German one is required.
+				// Both travel so the console can render the admin's own language and mark the
+				// row lang="de" when it has to fall back (#2326). Organization names and user
+				// names are single-language by nature, so they carry no English variant.
+				g.TargetType == ReportTargetType.VolunteerOpportunity
+					? opportunities.GetValueOrDefault(g.TargetId)?.TitleEn
+					: null,
 				g.OpenCount,
 				g.TotalCount,
 				g.LastReportedOn,

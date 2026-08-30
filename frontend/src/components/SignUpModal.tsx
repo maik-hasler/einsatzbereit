@@ -17,6 +17,7 @@ import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import Field from "./Field";
 import { RequiredFieldsLegend } from "./RequiredMark";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 const MESSAGE_MAX_LENGTH = 500;
 
@@ -234,7 +235,7 @@ export default function SignUpModal({
 						{showContactOrganizationLink && (
 							<Link
 								to={`/organizations/${organizationId}`}
-								className="mt-1 inline-block text-sm text-brand-700 underline-offset-2 hover:text-brand-800 hover:underline"
+								className={`mt-1 inline-block text-sm ${inlineLinkClass}`}
 							>
 								{t("common.contactOrganization")}
 							</Link>

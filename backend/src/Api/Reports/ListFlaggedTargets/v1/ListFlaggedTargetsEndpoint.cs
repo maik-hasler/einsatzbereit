@@ -25,10 +25,13 @@ internal sealed class ListFlaggedTargetsEndpoint : IEndpoint
 	private static async Task<IResult> ListFlaggedTargetsAsync(
 		[FromQuery] int pageNumber,
 		[FromQuery] int pageSize,
+		[FromQuery] bool? includeResolved,
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
-		var result = await sender.Send(new ListFlaggedTargetsQuery(pageNumber, pageSize), cancellationToken);
+		var result = await sender.Send(
+			new ListFlaggedTargetsQuery(pageNumber, pageSize, includeResolved ?? false),
+			cancellationToken);
 
 		return Results.Ok(result);
 	}

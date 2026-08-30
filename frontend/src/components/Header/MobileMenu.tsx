@@ -120,12 +120,16 @@ export default function MobileMenu({
 						className={`space-y-0.5 border-b pb-2 ${isTransparent ? "border-white/20" : "border-gray-100"}`}
 					>
 						{buildPrimaryNav(activeOrg).map((link) => {
+							// 44px minimum: a drawer row is a phone's primary touch target and
+							// these were 32px tall, under every touch-target guideline going
+							// (#2327). The height comes from `min-h-11` rather than more padding
+							// so the rows keep their compact rhythm.
+							const rowBase = `flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
 							// NavLink, not Link: the drawer renders the same five items as
 							// the desktop nav, and used to mark none of them - no "you are
 							// here" affordance below the `lg:` breakpoint, and no
 							// `aria-current` on any route (#2329 F5). NavLink sets
 							// `aria-current="page"` itself; `activeRow` is its visual half.
-							const rowBase = `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`;
 							const activeRow = isTransparent
 								? "bg-white/15 font-semibold text-white"
 								: "bg-brand-50 font-semibold text-brand-700";
@@ -145,7 +149,7 @@ export default function MobileMenu({
 											onClick={onClose}
 											data-testid={`mobile-nav-${link.key}`}
 											className={({ isActive }) =>
-												`${rowClass({ isActive })} flex items-center gap-2`
+												`${rowClass({ isActive })} gap-2`
 											}
 										>
 											<OrgAvatar
@@ -168,7 +172,7 @@ export default function MobileMenu({
 														to={orgTabPath(link.org.id, tab.key)}
 														onClick={onClose}
 														className={({ isActive }) =>
-															`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isActive ? activeRow : isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`
+															`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isActive ? activeRow : isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-700"}`
 														}
 													>
 														{t(tab.labelKey)}
@@ -180,15 +184,17 @@ export default function MobileMenu({
 							}
 
 							return link.hash ? (
-								<a
+								// See DesktopHeader: a router <Link> so the fragment survives
+								// the landing page's lazy mount (#2324).
+								<Link
 									key={link.key}
-									href={link.to}
+									to={link.to}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={`${rowBase} block`}
+									className={rowBase}
 								>
 									{t(`nav.${link.key}`)}
-								</a>
+								</Link>
 							) : (
 								<NavLink
 									key={link.key}
@@ -196,9 +202,7 @@ export default function MobileMenu({
 									end={link.to === "/"}
 									onClick={onClose}
 									data-testid={`mobile-nav-${link.key}`}
-									className={({ isActive }) =>
-										`${rowClass({ isActive })} block`
-									}
+									className={({ isActive }) => rowClass({ isActive })}
 								>
 									{t(`nav.${link.key}`)}
 								</NavLink>
@@ -236,21 +240,21 @@ export default function MobileMenu({
 							<Link
 								to="/profile"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myProfile")}
 							</Link>
 							<Link
 								to="/my-signups"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.myEngagements")}
 							</Link>
 							<Link
 								to="/profile/settings"
 								onClick={onClose}
-								className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.profileSettings")}
 							</Link>
@@ -258,7 +262,7 @@ export default function MobileMenu({
 								<Link
 									to="/administration"
 									onClick={onClose}
-									className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
 								>
 									{t("nav.administration")}
 								</Link>
@@ -266,7 +270,7 @@ export default function MobileMenu({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`flex min-h-11 w-full items-center rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.signOut")}
 							</button>

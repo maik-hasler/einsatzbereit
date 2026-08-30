@@ -102,8 +102,8 @@ public sealed class OrganizationInvitation
 
 	public Result Resend(DateTimeOffset now)
 	{
-		if (Status != InvitationStatus.Expired)
-			return Result.Failure(Error.Conflict("OrganizationInvitation.NotExpired", "Only expired invitations can be resent."));
+		if (Status is not (InvitationStatus.Pending or InvitationStatus.Expired))
+			return Result.Failure(Error.Conflict("OrganizationInvitation.NotResendable", "Only pending or expired invitations can be resent."));
 
 		Status = InvitationStatus.Pending;
 		ExpiresOn = now.AddDays(ExpiryWindowDays);

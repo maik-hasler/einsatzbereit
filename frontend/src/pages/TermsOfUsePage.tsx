@@ -4,21 +4,22 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeaderBand from "../components/PageHeaderBand";
 import DocumentOutline from "../components/DocumentOutline";
 import DocumentSection from "../components/DocumentSection";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function TermsOfUsePage() {
 	const { t } = useTranslation();
 	usePageTitle(t("termsOfUse.title"));
 
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
-
 	const sections = [
 		{ id: "scope", label: t("termsOfUse.section1Title") },
-		{ id: "accounts", label: t("termsOfUse.section2Title") },
-		{ id: "conduct", label: t("termsOfUse.section3Title") },
-		{ id: "content", label: t("termsOfUse.section4Title") },
+		{ id: "platform-role", label: t("termsOfUse.section2Title") },
+		{ id: "acceptable-use", label: t("termsOfUse.section3Title") },
+		{
+			id: "organizations-and-opportunities",
+			label: t("termsOfUse.section4Title"),
+		},
 		{ id: "liability", label: t("termsOfUse.section5Title") },
-		{ id: "privacy", label: t("termsOfUse.section6Title") },
+		{ id: "suspension-and-termination", label: t("termsOfUse.section6Title") },
 		{ id: "changes", label: t("termsOfUse.section7Title") },
 	];
 
@@ -49,7 +50,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="accounts"
+						id="platform-role"
 						number={2}
 						title={t("termsOfUse.section2Title")}
 					>
@@ -57,7 +58,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="conduct"
+						id="acceptable-use"
 						number={3}
 						title={t("termsOfUse.section3Title")}
 					>
@@ -65,7 +66,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="content"
+						id="organizations-and-opportunities"
 						number={4}
 						title={t("termsOfUse.section4Title")}
 					>
@@ -73,7 +74,9 @@ export default function TermsOfUsePage() {
 							<Trans
 								i18nKey="termsOfUse.section4Body"
 								components={{
-									contactLink: <Link to="/contact" className={linkClass} />,
+									contactLink: (
+										<Link to="/contact" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>
@@ -88,7 +91,7 @@ export default function TermsOfUsePage() {
 					</DocumentSection>
 
 					<DocumentSection
-						id="privacy"
+						id="suspension-and-termination"
 						number={6}
 						title={t("termsOfUse.section6Title")}
 					>
@@ -97,7 +100,7 @@ export default function TermsOfUsePage() {
 								i18nKey="termsOfUse.section6Body"
 								components={{
 									privacyLink: (
-										<Link to="/privacy-policy" className={linkClass} />
+										<Link to="/privacy-policy" className={inlineLinkClass} />
 									),
 								}}
 							/>
@@ -113,7 +116,9 @@ export default function TermsOfUsePage() {
 							<Trans
 								i18nKey="termsOfUse.section7Body"
 								components={{
-									imprintLink: <Link to="/imprint" className={linkClass} />,
+									imprintLink: (
+										<Link to="/imprint" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>

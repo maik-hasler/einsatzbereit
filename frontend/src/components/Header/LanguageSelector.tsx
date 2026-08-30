@@ -36,7 +36,7 @@ export default function LanguageSelector({
 					language: t(`language.${currentCode}`),
 				})}
 				data-testid="language-selector-trigger"
-				className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm transition-colors ${transparent ? "border-white/50 text-white hover:bg-white/10" : "border-gray-500 text-gray-700 hover:bg-gray-50"}`}
+				className={`flex h-11 items-center gap-1.5 rounded-xl border px-3 text-sm transition-colors ${transparent ? "border-white/50 text-white hover:bg-white/10" : "border-gray-500 text-gray-700 hover:bg-gray-50"}`}
 			>
 				<span className="font-semibold tracking-wide">{current.short}</span>
 				<ChevronDownIcon
@@ -64,7 +64,7 @@ export default function LanguageSelector({
 									);
 									setOpen(false);
 								}}
-								className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+								className={`flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
 									transparent
 										? lang.code === currentCode
 											? "bg-white/15 font-medium text-white"

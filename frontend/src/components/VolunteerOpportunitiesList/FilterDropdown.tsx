@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { resolveDropdownPlacement } from "../../lib/dropdownPlacement";
 import {
 	CheckIcon,
@@ -74,6 +74,7 @@ export default function FilterDropdown({
 	displayValue,
 	isOpen,
 	onToggle,
+	onClose,
 	onClear,
 	clearAriaLabel,
 	allowOverflow = false,
@@ -85,6 +86,13 @@ export default function FilterDropdown({
 	displayValue: string;
 	isOpen: boolean;
 	onToggle: () => void;
+	/**
+	 * Closes this dropdown when focus leaves it. The list's shared outside-click
+	 * handler covers the filter bar as a whole, so it never fires while focus is
+	 * still on a sibling chip - which is exactly the case that left a panel
+	 * floating over the chip the user had just tabbed to (#2327).
+	 */
+	onClose: () => void;
 	onClear: () => void;
 	clearAriaLabel: string;
 	/**
@@ -102,6 +110,22 @@ export default function FilterDropdown({
 	const [panelLeft, setPanelLeft] = useState(0);
 	const [dropUp, setDropUp] = useState(false);
 	const panelId = useId();
+	const onCloseRef = useRef(onClose);
+	onCloseRef.current = onClose;
+
+	useEffect(() => {
+		if (!isOpen) return;
+
+		function handleFocusIn(e: FocusEvent) {
+			const target = e.target;
+			if (!(target instanceof Node)) return;
+			if (containerRef.current?.contains(target)) return;
+			onCloseRef.current();
+		}
+
+		document.addEventListener("focusin", handleFocusIn);
+		return () => document.removeEventListener("focusin", handleFocusIn);
+	}, [isOpen]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;

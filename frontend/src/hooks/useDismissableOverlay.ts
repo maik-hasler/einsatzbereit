@@ -57,13 +57,30 @@ export function useDismissableOverlay<T extends HTMLElement = HTMLDivElement>(
 			onDismissRef.current();
 		}
 
+		// A non-modal popover that stays open once focus has tabbed past it leaves a
+		// panel floating over content the user is now working in - and a control that
+		// the panel covers is a WCAG 2.2 SC 2.4.11 (Focus Not Obscured) failure the
+		// moment it takes focus (#2327). `focusin` rather than `focusout` on purpose:
+		// removing the focused node (picking an option, a list re-rendering) moves
+		// focus to `body` and fires `focusout` with nothing gaining focus, which would
+		// dismiss overlays that are mid-interaction. No focus restoration here either -
+		// the user moved focus themselves, so pulling it back to the trigger would
+		// fight them.
+		function handleFocusIn(e: FocusEvent) {
+			const target = e.target;
+			if (!(target instanceof Node) || isInside(target)) return;
+			onDismissRef.current();
+		}
+
 		document.addEventListener("click", handleClick);
 		document.addEventListener("keydown", handleKeyDown);
+		document.addEventListener("focusin", handleFocusIn);
 		return () => {
 			const index = openStack.indexOf(id);
 			if (index !== -1) openStack.splice(index, 1);
 			document.removeEventListener("click", handleClick);
 			document.removeEventListener("keydown", handleKeyDown);
+			document.removeEventListener("focusin", handleFocusIn);
 		};
 	}, [open]);
 

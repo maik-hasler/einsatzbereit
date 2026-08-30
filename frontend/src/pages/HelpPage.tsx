@@ -5,6 +5,7 @@ import PageHeaderBand from "../components/PageHeaderBand";
 import FaqAccordion from "../components/FaqAccordion";
 import { HandRaisedIcon } from "../components/icons";
 import { cardClass } from "../lib/surfaceClasses";
+import { inlineLinkClass } from "../lib/linkClasses";
 
 export default function HelpPage() {
 	const { t } = useTranslation();
@@ -32,12 +33,11 @@ export default function HelpPage() {
 				{ q: t("help.organizersQ1"), a: t("help.organizersA1") },
 				{ q: t("help.organizersQ2"), a: t("help.organizersA2") },
 				{ q: t("help.organizersQ3"), a: t("help.organizersA3") },
+				{ q: t("help.organizersQ4"), a: t("help.organizersA4") },
+				{ q: t("help.organizersQ5"), a: t("help.organizersA5") },
 			],
 		},
 	];
-
-	const linkClass =
-		"font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800";
 
 	return (
 		<>
@@ -52,7 +52,7 @@ export default function HelpPage() {
 					<h2 className="mb-5 font-display text-3xl font-bold text-gray-900">
 						{t("help.generalTitle")}
 					</h2>
-					<FaqAccordion items={generalItems} className="max-w-3xl" />
+					<FaqAccordion items={generalItems} />
 				</section>
 
 				<div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
@@ -88,13 +88,15 @@ export default function HelpPage() {
 								i18nKey="help.contactBody"
 								components={{
 									opportunitiesLink: (
-										<Link to="/opportunities" className={linkClass} />
+										<Link to="/opportunities" className={inlineLinkClass} />
 									),
 
 									organizationsLink: (
-										<Link to="/organizations" className={linkClass} />
+										<Link to="/organizations" className={inlineLinkClass} />
 									),
-									contactLink: <Link to="/contact" className={linkClass} />,
+									contactLink: (
+										<Link to="/contact" className={inlineLinkClass} />
+									),
 								}}
 							/>
 						</p>

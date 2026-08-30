@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { PublicOrganizationSummary } from "../client/api-client";
@@ -9,6 +9,10 @@ import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { cardClass } from "../lib/surfaceClasses";
+import {
+	reportIntentSigninArgs,
+	usePendingReportIntent,
+} from "../lib/reportIntent";
 import EmptyState from "../components/EmptyState";
 import OrgAvatar from "../components/OrgAvatar";
 import Skeleton from "../components/Skeleton";
@@ -26,7 +30,9 @@ export default function OrganizationsPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const auth = useAuth();
+	const location = useLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
+	const pendingReportTargetId = usePendingReportIntent();
 
 	const search = searchParams.get("q") ?? "";
 	const [searchInput, setSearchInput] = useState(search);
@@ -219,44 +225,90 @@ export default function OrganizationsPage() {
 													lazy
 												/>
 												<div className="flex min-w-0 flex-1 items-center gap-2">
-													<h3 className="block truncate text-sm font-semibold text-gray-900">
+													{/*
+													 * Two lines plus the full name in `title`: a single truncated
+													 * line showed about a third of a 95-character name, with nothing
+													 * but the stretched link's aria-label holding the rest, and empty
+													 * card space right below it. `relative z-10` lifts the text out
+													 * from under that link so it can still be selected and copied
+													 * (#2331).
+													 */}
+													<h3
+														title={org.name}
+														className="relative z-10 line-clamp-2 text-sm font-semibold break-words text-gray-900"
+													>
 														{org.name}
 													</h3>
 												</div>
-												{auth.isAuthenticated && (
-													<ReportFlagButton
-														targetLabel={org.name}
-														ariaLabel={t("orgProfile.reportOrganization")}
-														onReport={async (reason, details) => {
-															await api.reportOrganization(org.id, {
-																reason,
-																details: details || undefined,
-															});
-														}}
-													/>
-												)}
+												{/* Shown to anonymous visitors too: the profile one click deeper
+												already offers this to everyone and routes them through
+												sign-in, so hiding it here made the affordance appear and
+												disappear by page (#2326). */}
+												<ReportFlagButton
+													targetLabel={org.name}
+													ariaLabel={t("orgProfile.reportOrganization")}
+													onReport={async (reason, details) => {
+														await api.reportOrganization(org.id, {
+															reason,
+															details: details || undefined,
+														});
+													}}
+													onRequireSignIn={
+														auth.isAuthenticated
+															? undefined
+															: () =>
+																	void auth.signinRedirect(
+																		reportIntentSigninArgs(
+																			location.pathname,
+																			location.search,
+																			org.id,
+																		),
+																	)
+													}
+													autoOpen={
+														auth.isAuthenticated &&
+														pendingReportTargetId === org.id
+													}
+												/>
 											</div>
+											{/*
+											 * Every line here used to be conditional, so an org with no
+											 * description, no city and no open opportunities rendered a
+											 * bordered card that was blank below the name - which reads as a
+											 * failed render rather than a sparse organization (#2331). The
+											 * description and the count now always say something.
+											 */}
 											<div className="min-w-0 flex-1">
-												{org.description && (
+												{org.description ? (
 													<p
 														lang="de"
-														className="line-clamp-2 text-sm text-gray-500"
+														className="relative z-10 line-clamp-2 text-sm text-gray-500"
 													>
 														{org.description}
 													</p>
+												) : (
+													<p className="relative z-10 text-sm text-gray-500 italic">
+														{t("organizationsPage.noDescription")}
+													</p>
 												)}
 												{org.city && (
-													<p className="mt-1 text-xs text-gray-500">
+													<p className="relative z-10 mt-1 text-xs text-gray-500">
 														{org.city}
 													</p>
 												)}
-												{org.openOpportunityCount > 0 && (
-													<p className="mt-1 text-xs font-medium text-brand-700">
-														{t("organizationsPage.openOpportunities", {
-															count: org.openOpportunityCount,
-														})}
-													</p>
-												)}
+												<p
+													className={`relative z-10 mt-1 text-xs font-medium ${
+														org.openOpportunityCount > 0
+															? "text-brand-700"
+															: "text-gray-500"
+													}`}
+												>
+													{org.openOpportunityCount > 0
+														? t("organizationsPage.openOpportunities", {
+																count: org.openOpportunityCount,
+															})
+														: t("organizationsPage.noOpenOpportunities")}
+												</p>
 											</div>
 										</li>
 									);

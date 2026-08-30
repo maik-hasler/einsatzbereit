@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router";
@@ -16,6 +16,7 @@ import {
 	formatDate,
 	formatDateTime,
 	isRecentlyCreatedOrganization,
+	pickLocalizedText,
 } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Chip from "../components/Chip";
@@ -30,6 +31,7 @@ import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
+import Dropdown from "../components/Dropdown";
 
 const PAGE_SIZE = 10;
 
@@ -182,10 +184,25 @@ function OrganizationsSection() {
 		},
 	);
 
+	const filtersActive =
+		appliedSearch.trim().length > 0 || flaggedOnly || deletedOnly;
+
 	function handleSearchSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setAppliedSearch(search);
 		reset();
+	}
+
+	function clearFilters() {
+		// The checkboxes are in useLoadMore's deps and reload the list themselves; the search
+		// term is not, so it needs an explicit reset - but only when nothing else will already
+		// have triggered one, or the list is fetched twice for the same click.
+		const checkboxesWillReload = flaggedOnly || deletedOnly;
+		setSearch("");
+		setFlaggedOnly(false);
+		setDeletedOnly(false);
+		setAppliedSearch("");
+		if (!checkboxesWillReload && appliedSearch !== "") reset();
 	}
 
 	async function confirmActionSubmit() {
@@ -224,28 +241,39 @@ function OrganizationsSection() {
 	return (
 		<>
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
-				<form
-					onSubmit={handleSearchSubmit}
-					className="mb-4 flex items-end gap-3"
-				>
-					<div className="flex-1">
-						<label htmlFor="admin-org-search" className={labelClass}>
-							{t("administration.organizations.searchLabel")}
-						</label>
-						<input
-							id="admin-org-search"
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder={t("administration.organizations.searchPlaceholder")}
-							className={inputClass}
-						/>
-					</div>
-					<Button type="submit">
-						{t("administration.organizations.searchButton")}
-					</Button>
-				</form>
-				<div className="mb-6 flex flex-wrap items-center gap-4">
+				{/* See the note on the users search card: the clear control stays outside the
+				form so a by-name lookup for "Search" matches exactly one button. */}
+				<div className="mb-4 flex flex-wrap items-end gap-3">
+					<form
+						onSubmit={handleSearchSubmit}
+						className="flex min-w-0 flex-1 items-end gap-3"
+					>
+						<div className="min-w-0 flex-1">
+							<label htmlFor="admin-org-search" className={labelClass}>
+								{t("administration.organizations.searchLabel")}
+							</label>
+							<input
+								id="admin-org-search"
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder={t(
+									"administration.organizations.searchPlaceholder",
+								)}
+								className={inputClass}
+							/>
+						</div>
+						<Button type="submit">
+							{t("administration.organizations.searchButton")}
+						</Button>
+					</form>
+					{filtersActive && (
+						<Button type="button" variant="tertiary" onClick={clearFilters}>
+							{t("administration.clearFilters")}
+						</Button>
+					)}
+				</div>
+				<div className="flex flex-wrap items-center gap-4">
 					<label
 						htmlFor="admin-org-flagged-only"
 						className="flex cursor-pointer items-center gap-2 py-1"
@@ -301,7 +329,18 @@ function OrganizationsSection() {
 					onRetry={retryLoadMore}
 				/>
 			) : rows.length === 0 ? (
-				<EmptyState title={t("administration.organizations.noOrganizations")} />
+				<EmptyState
+					title={t(
+						filtersActive
+							? "administration.organizations.noMatchesTitle"
+							: "administration.organizations.noOrganizations",
+					)}
+					message={t(
+						filtersActive
+							? "administration.organizations.noMatchesMessage"
+							: "administration.organizations.noOrganizationsMessage",
+					)}
+				/>
 			) : (
 				<>
 					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
@@ -372,8 +411,10 @@ function OrganizationsSection() {
 												{t("administration.reports.restore")}
 											</Button>
 										) : (
-											<button
+											<Button
 												type="button"
+												variant="dangerOutline"
+												size="sm"
 												onClick={() =>
 													setConfirmAction({ row, kind: "delete" })
 												}
@@ -381,10 +422,9 @@ function OrganizationsSection() {
 													"administration.reports.shadowDeleteNamed",
 													{ name: row.name },
 												)}
-												className="rounded-lg border border-red-500 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
 											>
 												{t("administration.reports.shadowDelete")}
-											</button>
+											</Button>
 										)}
 									</div>
 								</li>
@@ -424,6 +464,12 @@ function OrganizationsSection() {
 									? "confirmDialog.adminShadowDelete.confirm"
 									: "confirmDialog.adminRestore.confirm",
 							)}
+							tone={
+								confirmAction.kind === "delete" ? "destructive" : "constructive"
+							}
+							cancelLabel={
+								confirmAction.kind === "delete" ? undefined : t("common.cancel")
+							}
 							onConfirm={() => void confirmActionSubmit()}
 							onClose={() => {
 								if (actioning) return;
@@ -440,6 +486,11 @@ function OrganizationsSection() {
 	);
 }
 
+// `tone` decides whether the confirm button is the red danger button. Only the two acts that
+// take something away from the account are destructive; unblocking and promoting are not, and
+// painting them red made the colour mean "this is a dialog" rather than "this removes access"
+// (#2326). A constructive dialog also drops the "Keep" cancel label, which only reads right
+// against a removal.
 const USER_ACTION_COPY = {
 	block: {
 		title: "confirmDialog.adminBlockUser.title",
@@ -447,6 +498,7 @@ const USER_ACTION_COPY = {
 		confirm: "confirmDialog.adminBlockUser.confirm",
 		success: "administration.users.blockSuccess",
 		error: "administration.users.blockError",
+		tone: "destructive",
 	},
 	unblock: {
 		title: "confirmDialog.adminUnblockUser.title",
@@ -454,6 +506,7 @@ const USER_ACTION_COPY = {
 		confirm: "confirmDialog.adminUnblockUser.confirm",
 		success: "administration.users.unblockSuccess",
 		error: "administration.users.unblockError",
+		tone: "constructive",
 	},
 	promote: {
 		title: "confirmDialog.adminPromoteUser.title",
@@ -461,6 +514,7 @@ const USER_ACTION_COPY = {
 		confirm: "confirmDialog.adminPromoteUser.confirm",
 		success: "administration.users.promoteSuccess",
 		error: "administration.users.promoteError",
+		tone: "constructive",
 	},
 	demote: {
 		title: "confirmDialog.adminDemoteUser.title",
@@ -468,6 +522,7 @@ const USER_ACTION_COPY = {
 		confirm: "confirmDialog.adminDemoteUser.confirm",
 		success: "administration.users.demoteSuccess",
 		error: "administration.users.demoteError",
+		tone: "destructive",
 	},
 } as const;
 
@@ -512,9 +567,17 @@ function UsersSection() {
 		{ getErrorMessage: () => t("administration.users.error") },
 	);
 
+	const searchActive = appliedSearch.trim().length > 0;
+
 	function handleSearchSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setAppliedSearch(search);
+		reset();
+	}
+
+	function clearSearch() {
+		setSearch("");
+		setAppliedSearch("");
 		reset();
 	}
 
@@ -559,24 +622,37 @@ function UsersSection() {
 	return (
 		<>
 			<div className={`mb-6 ${cardClass} sm:p-5`}>
-				<form onSubmit={handleSearchSubmit} className="flex items-end gap-3">
-					<div className="flex-1">
-						<label htmlFor="admin-user-search" className={labelClass}>
-							{t("administration.users.searchLabel")}
-						</label>
-						<input
-							id="admin-user-search"
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder={t("administration.users.searchPlaceholder")}
-							className={inputClass}
-						/>
-					</div>
-					<Button type="submit">
-						{t("administration.users.searchButton")}
-					</Button>
-				</form>
+				{/* The clear control sits beside the form rather than in it: it is a reset, not
+				a submit, and keeping the form to exactly one button means a by-name lookup for
+				"Search" cannot also match "Clear search". */}
+				<div className="flex flex-wrap items-end gap-3">
+					<form
+						onSubmit={handleSearchSubmit}
+						className="flex min-w-0 flex-1 items-end gap-3"
+					>
+						<div className="min-w-0 flex-1">
+							<label htmlFor="admin-user-search" className={labelClass}>
+								{t("administration.users.searchLabel")}
+							</label>
+							<input
+								id="admin-user-search"
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder={t("administration.users.searchPlaceholder")}
+								className={inputClass}
+							/>
+						</div>
+						<Button type="submit">
+							{t("administration.users.searchButton")}
+						</Button>
+					</form>
+					{searchActive && (
+						<Button type="button" variant="tertiary" onClick={clearSearch}>
+							{t("administration.clearSearch")}
+						</Button>
+					)}
+				</div>
 
 				<p className="mt-3 text-xs text-gray-500">
 					{t("administration.users.staleness")}
@@ -609,7 +685,19 @@ function UsersSection() {
 					onRetry={retryLoadMore}
 				/>
 			) : rows.length === 0 ? (
-				<EmptyState title={t("administration.users.noUsers")} />
+				<EmptyState
+					title={t(
+						searchActive
+							? "administration.users.noMatchesTitle"
+							: "administration.users.noUsers",
+					)}
+					message={t(
+						searchActive
+							? "administration.users.noMatchesMessage"
+							: "administration.users.noUsersMessage",
+						{ search: appliedSearch.trim() },
+					)}
+				/>
 			) : (
 				<>
 					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
@@ -735,6 +823,12 @@ function UsersSection() {
 								name: userDisplayName(confirmAction.row),
 							})}
 							confirmLabel={t(USER_ACTION_COPY[confirmAction.kind].confirm)}
+							tone={USER_ACTION_COPY[confirmAction.kind].tone}
+							cancelLabel={
+								USER_ACTION_COPY[confirmAction.kind].tone === "constructive"
+									? t("common.cancel")
+									: undefined
+							}
 							onConfirm={() => void confirmActionSubmit()}
 							onClose={() => {
 								if (actioning) return;
@@ -755,10 +849,17 @@ interface FlaggedTargetRow {
 	targetType: string;
 	targetId: string;
 	targetTitle: string;
+	targetTitleEn: string | undefined;
 	openReportCount: number;
 	totalReportCount: number;
 	lastReportedOn: string;
 	isDeleted: boolean;
+}
+
+// Only opportunity titles carry a second authored language, so only they can produce a
+// language fallback worth marking with `lang` - see the row title below.
+function isBilingualTargetTitle(targetType: string): boolean {
+	return targetType === "VolunteerOpportunity";
 }
 
 function targetHref(targetType: string, targetId: string): string {
@@ -808,6 +909,7 @@ function ReportsSection() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
+	const [includeResolved, setIncludeResolved] = useState(false);
 	const [confirmAction, setConfirmAction] = useState<{
 		row: FlaggedTargetRow;
 		kind: "delete" | "restore";
@@ -830,20 +932,66 @@ function ReportsSection() {
 		retryLoadMore,
 	} = useLoadMore<FlaggedTargetRow>(
 		(pageNumber) =>
-			api.listFlaggedTargets(pageNumber, PAGE_SIZE).then((result) => ({
-				items: result.items.map((r) => ({
-					targetType: r.targetType,
-					targetId: r.targetId,
-					targetTitle: r.targetTitle,
-					openReportCount: r.openReportCount,
-					totalReportCount: r.totalReportCount,
-					lastReportedOn: r.lastReportedOn as unknown as string,
-					isDeleted: r.isDeleted,
+			api
+				.listFlaggedTargets(pageNumber, PAGE_SIZE, includeResolved)
+				.then((result) => ({
+					items: result.items.map((r) => ({
+						targetType: r.targetType,
+						targetId: r.targetId,
+						targetTitle: r.targetTitle,
+						targetTitleEn: r.targetTitleEn,
+						openReportCount: r.openReportCount,
+						totalReportCount: r.totalReportCount,
+						lastReportedOn: r.lastReportedOn as unknown as string,
+						isDeleted: r.isDeleted,
+					})),
+					pageCount: result.pageCount,
 				})),
-				pageCount: result.pageCount,
-			})),
-		{ getErrorMessage: () => t("administration.reports.error") },
+		{
+			deps: [includeResolved],
+			getErrorMessage: () => t("administration.reports.error"),
+		},
 	);
+
+	// A dismissal resolves one report on a row the modal is showing, so the count behind it is
+	// stale the moment the modal closes. Both halves used to need a manual reload (#2326): the
+	// count updates live, and a row the queue no longer has any open work on drops out when the
+	// modal closes - deferred to the close so the list does not rearrange under the open dialog.
+	function handleReportsDismissed(
+		row: FlaggedTargetRow,
+		dismissedCount: number,
+	) {
+		if (dismissedCount === 0) return;
+		setRows((prev) =>
+			prev.map((r) =>
+				r.targetType === row.targetType && r.targetId === row.targetId
+					? {
+							...r,
+							openReportCount: Math.max(0, r.openReportCount - dismissedCount),
+						}
+					: r,
+			),
+		);
+	}
+
+	function closeHistory() {
+		setHistoryTarget(null);
+		if (!includeResolved) {
+			setRows((prev) => prev.filter((r) => r.openReportCount > 0));
+		}
+	}
+
+	const historyTitle = historyTarget
+		? pickLocalizedText(
+				historyTarget.targetTitle,
+				historyTarget.targetTitleEn,
+				i18n.language,
+			)
+		: undefined;
+	const historyTitleLang =
+		historyTarget && isBilingualTargetTitle(historyTarget.targetType)
+			? historyTitle?.lang
+			: undefined;
 
 	async function confirmActionSubmit() {
 		if (!confirmAction) return;
@@ -858,12 +1006,22 @@ function ReportsSection() {
 				await restoreTarget(api, row.targetType, row.targetId);
 				dispatchToast("success", t("administration.reports.restoreSuccess"));
 			}
+			// Hiding a target resolves its open reports server-side (every shadow-delete handler
+			// marks them Actioned), so the row's own count has to follow - otherwise the queue
+			// keeps showing work that is already done, the same staleness a dismissal used to
+			// leave behind (#2326). Restoring does not reopen them.
 			setRows((prev) =>
-				prev.map((r) =>
-					r.targetType === row.targetType && r.targetId === row.targetId
-						? { ...r, isDeleted: kind === "delete" }
-						: r,
-				),
+				prev
+					.map((r) =>
+						r.targetType === row.targetType && r.targetId === row.targetId
+							? {
+									...r,
+									isDeleted: kind === "delete",
+									openReportCount: kind === "delete" ? 0 : r.openReportCount,
+								}
+							: r,
+					)
+					.filter((r) => includeResolved || r.openReportCount > 0),
 			);
 			setConfirmAction(null);
 		} catch (err) {
@@ -880,41 +1038,109 @@ function ReportsSection() {
 		}
 	}
 
+	const filterCard = (
+		<div className={`mb-6 ${cardClass} sm:p-5`}>
+			<label
+				htmlFor="admin-reports-include-resolved"
+				className="flex cursor-pointer items-center gap-2 py-1"
+			>
+				<input
+					type="checkbox"
+					id="admin-reports-include-resolved"
+					checked={includeResolved}
+					onChange={(e) => setIncludeResolved(e.target.checked)}
+					className={`h-4 w-4 ${checkboxClass}`}
+				/>
+				<span className="text-sm text-gray-800">
+					{t("administration.reports.includeResolvedLabel")}
+				</span>
+			</label>
+			<p className="mt-2 text-xs text-gray-500">
+				{t("administration.reports.includeResolvedHint")}
+			</p>
+		</div>
+	);
+
 	if (loading) {
 		return (
-			<div
-				role="status"
-				className="overflow-hidden rounded-card border border-gray-500"
-			>
-				<span className="sr-only">{t("administration.reports.loading")}</span>
-				<div className="divide-y divide-gray-100">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
-							<Skeleton className="h-4 w-1/2" />
-							<Skeleton className="h-3 w-2/3" />
-						</div>
-					))}
+			<>
+				{filterCard}
+				<div
+					role="status"
+					className="overflow-hidden rounded-card border border-gray-500"
+				>
+					<span className="sr-only">{t("administration.reports.loading")}</span>
+					<div className="divide-y divide-gray-100">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
+								<Skeleton className="h-4 w-1/2" />
+								<Skeleton className="h-3 w-2/3" />
+							</div>
+						))}
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 	if (error)
 		return (
-			<LoadMoreError
-				message={error}
-				retrying={loading}
-				onRetry={retryLoadMore}
-			/>
+			<>
+				{filterCard}
+				<LoadMoreError
+					message={error}
+					retrying={loading}
+					onRetry={retryLoadMore}
+				/>
+			</>
 		);
 	if (rows.length === 0)
-		return <EmptyState title={t("administration.reports.noReports")} />;
+		return (
+			<>
+				{filterCard}
+				<EmptyState
+					title={t(
+						includeResolved
+							? "administration.reports.noReportsEverTitle"
+							: "administration.reports.noReports",
+					)}
+					message={t(
+						includeResolved
+							? "administration.reports.noReportsEverMessage"
+							: "administration.reports.noReportsMessage",
+					)}
+					action={
+						includeResolved
+							? undefined
+							: {
+									label: t("administration.reports.showResolved"),
+									onClick: () => setIncludeResolved(true),
+								}
+					}
+				/>
+			</>
+		);
 
 	return (
 		<>
+			{filterCard}
 			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 				{rows.map((row) => {
+					// Opportunity titles are authored per language and only German is required, so
+					// an English console was rendering a German title with no `lang` - announced by
+					// a screen reader in an English voice (#2326). Only they get marked: an
+					// organization's name and a person's name are proper nouns in no particular
+					// language, and tagging those would just have a screen reader guess at German
+					// phonetics for a name.
+					const localizedTitle = pickLocalizedText(
+						row.targetTitle,
+						row.targetTitleEn,
+						i18n.language,
+					);
 					const targetName =
-						row.targetTitle || t("administration.reports.unknownTarget");
+						localizedTitle.text || t("administration.reports.unknownTarget");
+					const targetLang = isBilingualTargetTitle(row.targetType)
+						? localizedTitle.lang
+						: undefined;
 					return (
 						<li
 							key={`${row.targetType}:${row.targetId}`}
@@ -924,6 +1150,7 @@ function ReportsSection() {
 								<div className="flex flex-wrap items-center gap-2">
 									<Link
 										to={targetHref(row.targetType, row.targetId)}
+										lang={targetLang}
 										className="font-medium text-brand-700 hover:underline"
 									>
 										{targetName}
@@ -976,16 +1203,17 @@ function ReportsSection() {
 										{t("administration.reports.restore")}
 									</Button>
 								) : (
-									<button
+									<Button
 										type="button"
+										variant="dangerOutline"
+										size="sm"
 										onClick={() => setConfirmAction({ row, kind: "delete" })}
 										aria-label={t("administration.reports.shadowDeleteNamed", {
 											name: targetName,
 										})}
-										className="rounded-lg border border-red-500 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
 									>
 										{t("administration.reports.shadowDelete")}
-									</button>
+									</Button>
 								)}
 							</div>
 						</li>
@@ -1010,7 +1238,12 @@ function ReportsSection() {
 			{historyTarget && (
 				<ReportHistoryModal
 					target={historyTarget}
-					onClose={() => setHistoryTarget(null)}
+					targetLabel={
+						historyTitle?.text || t("administration.reports.unknownTarget")
+					}
+					targetLabelLang={historyTitleLang}
+					onDismissed={(count) => handleReportsDismissed(historyTarget, count)}
+					onClose={closeHistory}
 				/>
 			)}
 			{confirmAction && (
@@ -1031,6 +1264,12 @@ function ReportsSection() {
 							? "confirmDialog.adminShadowDelete.confirm"
 							: "confirmDialog.adminRestore.confirm",
 					)}
+					tone={
+						confirmAction.kind === "delete" ? "destructive" : "constructive"
+					}
+					cancelLabel={
+						confirmAction.kind === "delete" ? undefined : t("common.cancel")
+					}
 					onConfirm={() => void confirmActionSubmit()}
 					onClose={() => {
 						if (actioning) return;
@@ -1047,9 +1286,17 @@ function ReportsSection() {
 
 function ReportHistoryModal({
 	target,
+	targetLabel,
+	targetLabelLang,
+	onDismissed,
 	onClose,
 }: {
 	target: FlaggedTargetRow;
+	targetLabel: string;
+	targetLabelLang: string | undefined;
+
+	/** Reports each dismissal to the queue so the row behind the modal stays truthful (#2326). */
+	onDismissed: (dismissedCount: number) => void;
 	onClose: () => void;
 }) {
 	const { t, i18n } = useTranslation();
@@ -1081,6 +1328,7 @@ function ReportHistoryModal({
 						e.id === reportId ? { ...e, status: "Dismissed" } : e,
 					) ?? null,
 			);
+			onDismissed(1);
 			dispatchToast("success", t("administration.reports.dismissSuccess"));
 		} catch (err) {
 			dispatchToast(
@@ -1104,7 +1352,9 @@ function ReportHistoryModal({
 			>
 				{t("administration.reports.historyTitle")}
 			</h2>
-			<p className="mb-5 text-sm text-gray-500">{target.targetTitle}</p>
+			<p lang={targetLabelLang} className="mb-5 text-sm text-gray-500">
+				{targetLabel}
+			</p>
 
 			{loadError ? (
 				<ErrorBanner message={loadError} />
@@ -1165,8 +1415,48 @@ interface AuditLogRow {
 	subjectType: string;
 	subjectId: string;
 	subjectDisplayName: string;
+	subjectDisplayNameEn: string | undefined;
 	reason: string | null;
 	createdOn: string;
+}
+
+// Kept in step with Domain.AuditLogs.AuditActionType / AuditSubjectType: the API rejects any
+// other value, and every entry here needs a matching `administration.auditLog.actionType.*` /
+// `subjectType.*` translation, which the i18n parity check already guards.
+const AUDIT_ACTION_TYPES = [
+	"UserPromotedToAdmin",
+	"UserDemotedFromAdmin",
+	"UserEnabled",
+	"UserDisabled",
+	"UserShadowDeleted",
+	"UserRestored",
+	"OrganizationShadowDeleted",
+	"OrganizationRestored",
+	"VolunteerOpportunityShadowDeleted",
+	"VolunteerOpportunityRestored",
+	"EngagementCancelled",
+	"ReportDismissed",
+] as const;
+
+const AUDIT_SUBJECT_TYPES = [
+	"User",
+	"Organization",
+	"VolunteerOpportunity",
+	"Engagement",
+] as const;
+
+/**
+ * Turns a `<input type="date">` value into the instant the API filters on.
+ *
+ * The bounds are the admin's own local midnights - `from` inclusive, `to` exclusive, so picking
+ * the same day at both ends selects exactly that day rather than an empty range.
+ */
+function dayBoundary(value: string, offsetDays: number): Date | undefined {
+	if (!value) return undefined;
+	const parsed = new Date(`${value}T00:00:00`);
+	if (Number.isNaN(parsed.getTime())) return undefined;
+	parsed.setDate(parsed.getDate() + offsetDays);
+	return parsed;
 }
 
 function auditSubjectHref(
@@ -1189,6 +1479,31 @@ function AuditLogSection() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
+	const [actionType, setActionType] = useState("");
+	const [subjectType, setSubjectType] = useState("");
+	const [fromDate, setFromDate] = useState("");
+	const [toDate, setToDate] = useState("");
+	const [oldestFirst, setOldestFirst] = useState(false);
+	// Not a picker: an admin selector would need the whole realm's user list, where every row
+	// already names its own actor. "Only this admin" on a row is the same filter, reachable
+	// from the entry that prompted the question (#2326).
+	const [actor, setActor] = useState<{ id: string; name: string } | null>(null);
+
+	const filtersActive =
+		actionType !== "" ||
+		subjectType !== "" ||
+		fromDate !== "" ||
+		toDate !== "" ||
+		actor !== null;
+
+	function clearFilters() {
+		setActionType("");
+		setSubjectType("");
+		setFromDate("");
+		setToDate("");
+		setActor(null);
+	}
+
 	const {
 		items: rows,
 		loading,
@@ -1200,58 +1515,234 @@ function AuditLogSection() {
 		retryLoadMore,
 	} = useLoadMore<AuditLogRow>(
 		(pageNumber) =>
-			api.listAuditLogs(pageNumber, PAGE_SIZE).then((result) => ({
-				items: result.items.map((entry) => ({
-					id: entry.id,
-					actorUserId: entry.actorUserId,
-					actorDisplayName: entry.actorDisplayName,
-					actionType: entry.actionType,
-					subjectType: entry.subjectType,
-					subjectId: entry.subjectId,
-					subjectDisplayName: entry.subjectDisplayName,
-					reason: entry.reason ?? null,
-					createdOn: entry.createdOn as unknown as string,
+			api
+				.listAuditLogs(
+					pageNumber,
+					PAGE_SIZE,
+					actionType || undefined,
+					subjectType || undefined,
+					actor?.id,
+					dayBoundary(fromDate, 0),
+					dayBoundary(toDate, 1),
+					oldestFirst,
+				)
+				.then((result) => ({
+					items: result.items.map((entry) => ({
+						id: entry.id,
+						actorUserId: entry.actorUserId,
+						actorDisplayName: entry.actorDisplayName,
+						actionType: entry.actionType,
+						subjectType: entry.subjectType,
+						subjectId: entry.subjectId,
+						subjectDisplayName: entry.subjectDisplayName,
+						subjectDisplayNameEn: entry.subjectDisplayNameEn,
+						reason: entry.reason ?? null,
+						createdOn: entry.createdOn as unknown as string,
+					})),
+					pageCount: result.pageCount,
 				})),
-				pageCount: result.pageCount,
+		{
+			deps: [actionType, subjectType, fromDate, toDate, oldestFirst, actor?.id],
+			getErrorMessage: () => t("administration.auditLog.error"),
+		},
+	);
+
+	const actionTypeOptions = useMemo(
+		() => [
+			{ value: "", label: t("administration.auditLog.filters.anyAction") },
+			...AUDIT_ACTION_TYPES.map((value) => ({
+				value,
+				label: t(`administration.auditLog.actionType.${value}`),
 			})),
-		{ getErrorMessage: () => t("administration.auditLog.error") },
+		],
+		[t],
+	);
+
+	const subjectTypeOptions = useMemo(
+		() => [
+			{ value: "", label: t("administration.auditLog.filters.anySubject") },
+			...AUDIT_SUBJECT_TYPES.map((value) => ({
+				value,
+				label: t(`administration.auditLog.subjectType.${value}`),
+			})),
+		],
+		[t],
+	);
+
+	const filterCard = (
+		<div className={`mb-6 ${cardClass} sm:p-5`}>
+			<div className="grid gap-4 sm:grid-cols-2">
+				<div>
+					<label htmlFor="admin-audit-action" className={labelClass}>
+						{t("administration.auditLog.filters.actionLabel")}
+					</label>
+					<Dropdown
+						id="admin-audit-action"
+						value={actionType}
+						onChange={setActionType}
+						options={actionTypeOptions}
+					/>
+				</div>
+				<div>
+					<label htmlFor="admin-audit-subject" className={labelClass}>
+						{t("administration.auditLog.filters.subjectLabel")}
+					</label>
+					<Dropdown
+						id="admin-audit-subject"
+						value={subjectType}
+						onChange={setSubjectType}
+						options={subjectTypeOptions}
+					/>
+				</div>
+				<div>
+					<label htmlFor="admin-audit-from" className={labelClass}>
+						{t("administration.auditLog.filters.fromLabel")}
+					</label>
+					<input
+						id="admin-audit-from"
+						type="date"
+						value={fromDate}
+						max={toDate || undefined}
+						onChange={(e) => setFromDate(e.target.value)}
+						className={inputClass}
+					/>
+				</div>
+				<div>
+					<label htmlFor="admin-audit-to" className={labelClass}>
+						{t("administration.auditLog.filters.toLabel")}
+					</label>
+					<input
+						id="admin-audit-to"
+						type="date"
+						value={toDate}
+						min={fromDate || undefined}
+						onChange={(e) => setToDate(e.target.value)}
+						className={inputClass}
+					/>
+				</div>
+			</div>
+
+			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+				<div className="flex flex-wrap items-center gap-3">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => setOldestFirst((prev) => !prev)}
+						aria-pressed={oldestFirst}
+					>
+						{t(
+							oldestFirst
+								? "administration.auditLog.filters.sortOldestFirst"
+								: "administration.auditLog.filters.sortNewestFirst",
+						)}
+					</Button>
+					{actor && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => setActor(null)}
+							aria-label={t("administration.auditLog.filters.clearActorNamed", {
+								name: actor.name,
+							})}
+						>
+							{t("administration.auditLog.filters.actorChip", {
+								name: actor.name,
+							})}
+							<span aria-hidden="true">&times;</span>
+						</Button>
+					)}
+				</div>
+				{filtersActive && (
+					<Button
+						type="button"
+						variant="tertiary"
+						size="sm"
+						onClick={clearFilters}
+					>
+						{t("administration.clearFilters")}
+					</Button>
+				)}
+			</div>
+		</div>
 	);
 
 	if (loading) {
 		return (
-			<div
-				role="status"
-				className="overflow-hidden rounded-card border border-gray-500"
-			>
-				<span className="sr-only">{t("administration.auditLog.loading")}</span>
-				<div className="divide-y divide-gray-100">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
-							<Skeleton className="h-4 w-1/2" />
-							<Skeleton className="h-3 w-1/3" />
-						</div>
-					))}
+			<>
+				{filterCard}
+				<div
+					role="status"
+					className="overflow-hidden rounded-card border border-gray-500"
+				>
+					<span className="sr-only">
+						{t("administration.auditLog.loading")}
+					</span>
+					<div className="divide-y divide-gray-100">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
+								<Skeleton className="h-4 w-1/2" />
+								<Skeleton className="h-3 w-1/3" />
+							</div>
+						))}
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 	if (error)
 		return (
-			<LoadMoreError
-				message={error}
-				retrying={loading}
-				onRetry={retryLoadMore}
-			/>
+			<>
+				{filterCard}
+				<LoadMoreError
+					message={error}
+					retrying={loading}
+					onRetry={retryLoadMore}
+				/>
+			</>
 		);
 	if (rows.length === 0)
-		return <EmptyState title={t("administration.auditLog.noEntries")} />;
+		return (
+			<>
+				{filterCard}
+				<EmptyState
+					title={t(
+						filtersActive
+							? "administration.auditLog.noMatchesTitle"
+							: "administration.auditLog.noEntries",
+					)}
+					message={t(
+						filtersActive
+							? "administration.auditLog.noMatchesMessage"
+							: "administration.auditLog.noEntriesMessage",
+					)}
+				/>
+			</>
+		);
 
 	return (
 		<>
+			{filterCard}
 			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-500">
 				{rows.map((row) => {
 					const href = auditSubjectHref(row.subjectType, row.subjectId);
-					const subjectLabel = row.subjectDisplayName || row.subjectId;
+					// Same per-language handling as the moderation queue, and the same restriction:
+					// an Engagement's subject label is the opportunity's title, so those two are
+					// the only bilingual cases here (#2326).
+					const localizedSubject = pickLocalizedText(
+						row.subjectDisplayName,
+						row.subjectDisplayNameEn,
+						i18n.language,
+					);
+					const subjectLabel = localizedSubject.text || row.subjectId;
+					const subjectLang =
+						row.subjectType === "VolunteerOpportunity" ||
+						row.subjectType === "Engagement"
+							? localizedSubject.lang
+							: undefined;
+					const actorName = row.actorDisplayName || row.actorUserId;
+					const isActorFiltered = actor?.id === row.actorUserId;
 					return (
 						<li key={row.id} className="px-4 py-3">
 							<div className="flex flex-wrap items-center gap-2">
@@ -1264,16 +1755,19 @@ function AuditLogSection() {
 								{href ? (
 									<Link
 										to={href}
+										lang={subjectLang}
 										className="text-sm text-brand-700 hover:underline"
 									>
 										{subjectLabel}
 									</Link>
 								) : (
-									<span className="text-sm text-gray-500">{subjectLabel}</span>
+									<span lang={subjectLang} className="text-sm text-gray-500">
+										{subjectLabel}
+									</span>
 								)}
 							</div>
 							<p className="mt-1 text-xs text-gray-500">
-								{row.actorDisplayName || row.actorUserId}
+								{actorName}
 								{" · "}
 								{formatDateTime(row.createdOn, i18n.language)}
 								{row.reason && (
@@ -1285,6 +1779,19 @@ function AuditLogSection() {
 									</>
 								)}
 							</p>
+							{!isActorFiltered && (
+								<button
+									type="button"
+									onClick={() =>
+										setActor({ id: row.actorUserId, name: actorName })
+									}
+									className="mt-1 text-xs font-medium text-brand-700 hover:underline"
+								>
+									{t("administration.auditLog.filters.onlyThisAdmin", {
+										name: actorName,
+									})}
+								</button>
+							)}
 						</li>
 					);
 				})}
