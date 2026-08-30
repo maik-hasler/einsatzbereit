@@ -8,6 +8,7 @@ import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
 import { formatDateTimeRange } from "../../lib/format";
 import {
+	checkboxClass,
 	getInputSurfaceClass,
 	inputSurfaceClass,
 	labelClass,
@@ -341,7 +342,7 @@ export default function DetailsStep({
 																	maxParticipants: e.target.checked ? null : 1,
 																})
 															}
-															className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
+															className={`h-3.5 w-3.5 ${checkboxClass}`}
 														/>
 														{t("timeSlots.unlimited")}
 													</label>
@@ -539,7 +540,7 @@ export default function DetailsStep({
 												maxParticipants: e.target.checked ? null : 1,
 											})
 										}
-										className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
+										className={`h-3.5 w-3.5 ${checkboxClass}`}
 									/>
 									{t("timeSlots.unlimited")}
 								</label>

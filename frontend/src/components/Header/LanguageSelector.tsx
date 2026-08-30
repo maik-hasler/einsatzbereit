@@ -36,7 +36,7 @@ export default function LanguageSelector({
 					language: t(`language.${currentCode}`),
 				})}
 				data-testid="language-selector-trigger"
-				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+				className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm transition-colors ${transparent ? "border-white/50 text-white hover:bg-white/10" : "border-gray-500 text-gray-700 hover:bg-gray-50"}`}
 			>
 				<span className="font-semibold tracking-wide">{current.short}</span>
 				<ChevronDownIcon

@@ -162,3 +162,69 @@ describe("OpportunityCard cross-locale search match notice (#2242)", () => {
 		expect(screen.queryByTestId("opportunity-cross-locale-match")).toBeNull();
 	});
 });
+
+// One grid row, one card anatomy. A media band rendered per item - only where
+// `bannerImageUrl` happened to be set - gave a row of cards two different
+// shapes and stretched the banner-less ones to the tallest card's height,
+// ~156px of it empty (#2329 F10). The band is now a property of the surface.
+describe("OpportunityCard media band", () => {
+	it("renders no band at all on a surface that does not ask for one", () => {
+		const { container } = renderWithProviders(
+			<OpportunityCard
+				item={{ ...base, bannerImageUrl: "https://example.test/banner.jpg" }}
+				headingLevel={3}
+			/>,
+		);
+
+		// alt="" images have no img role, so this is queried by tag (see
+		// frontend/AGENTS.md on that porting hazard).
+		expect(container.querySelector("img[src*='banner']")).toBeNull();
+	});
+
+	it("renders the banner where the surface asks for one", () => {
+		const { container } = renderWithProviders(
+			<OpportunityCard
+				item={{ ...base, bannerImageUrl: "https://example.test/banner.jpg" }}
+				headingLevel={3}
+				withMedia
+			/>,
+		);
+
+		expect(container.querySelector("img[src*='banner']")).not.toBeNull();
+	});
+
+	it("keeps the band, and the card's height, when an item has no banner", () => {
+		const { container } = renderWithProviders(
+			<OpportunityCard item={base} headingLevel={3} withMedia />,
+		);
+
+		const band = container.querySelector(".h-32");
+		expect(band).not.toBeNull();
+		expect(container.querySelector("img[src*='banner']")).toBeNull();
+		// The fallback is the category glyph on the brand gradient, not a
+		// broken image or an empty grey box.
+		expect(band?.querySelector("svg")).not.toBeNull();
+	});
+});
+
+// Whether the footer wrapped used to depend purely on the org name's length,
+// so two cards side by side in one grid rendered two different footers
+// (#2329 F7). jsdom cannot measure the wrap, so the guard is the recipe: no
+// wrapping, and the name is the element that gives up width.
+describe("OpportunityCard footer row", () => {
+	it("lays the organization and the location out on one unwrapping row", () => {
+		renderCard(base);
+
+		const orgLink = screen.getByTestId("opportunity-org-link");
+		const footer = orgLink.parentElement;
+
+		expect(footer?.className).not.toContain("flex-wrap");
+		expect(orgLink.className).toContain("min-w-0");
+		expect(screen.getByText("Freiwillige Feuerwehr Kiel").className).toContain(
+			"truncate",
+		);
+		expect(screen.getByText("Kiel").parentElement?.className).toContain(
+			"shrink-0",
+		);
+	});
+});

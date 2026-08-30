@@ -49,6 +49,7 @@ const baseProps = {
 	loadMoreError: null as string | null,
 	loadMoreErrorIsOffline: false,
 	onRetryLoadMore: () => {},
+	pageSize: 9,
 };
 
 function renderList(props: Partial<typeof baseProps>) {

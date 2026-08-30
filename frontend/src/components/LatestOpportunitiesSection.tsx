@@ -3,8 +3,8 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import OpportunityCard from "./OpportunityCard";
+import OpportunityCardSkeleton from "./OpportunityCardSkeleton";
 import RouteState from "./RouteState";
-import Skeleton from "./Skeleton";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { fetchVolunteerOpportunities } from "../lib/volunteerOpportunities";
@@ -71,18 +71,7 @@ export default function LatestOpportunitiesSection() {
 			) : loading && items.length === 0 ? (
 				<div className={GRID_CLASS}>
 					{Array.from({ length: PREVIEW_COUNT }).map((_, i) => (
-						<div
-							key={i}
-							aria-hidden="true"
-							className="rounded-card border border-gray-100 bg-white p-4 shadow-resting sm:p-5"
-						>
-							<Skeleton className="h-5 w-24" />
-							<Skeleton className="mt-3 h-5 w-3/4" />
-							<Skeleton className="mt-2 h-3 w-1/2" />
-							<Skeleton className="mt-4 h-3 w-full" />
-							<Skeleton className="mt-2 h-3 w-2/3" />
-							<Skeleton className="mt-5 h-7 w-1/2" />
-						</div>
+						<OpportunityCardSkeleton key={i} withMedia />
 					))}
 				</div>
 			) : (
@@ -91,7 +80,12 @@ export default function LatestOpportunitiesSection() {
 					data-testid="landing-latest-opportunities"
 				>
 					{items.map((item) => (
-						<OpportunityCard key={item.id} item={item} headingLevel={3} />
+						<OpportunityCard
+							key={item.id}
+							item={item}
+							headingLevel={3}
+							withMedia
+						/>
 					))}
 				</ul>
 			)}

@@ -39,3 +39,11 @@ export const textareaClass = getTextareaClass();
 export const selectClass = `${inputClass} appearance-none pr-9`;
 
 export const labelClass = getLabelClass();
+
+// A native checkbox takes its checked fill from `accent-color`, and from
+// nothing else: `text-brand-*` sets a text colour the control never reads, so
+// four of the eight checkboxes in the app painted the browser default blue
+// against the green brand while the other four painted brand green (#2329 F8).
+// `border-*` is just as inert on a control the UA paints itself. One class, so
+// the two treatments cannot drift apart again.
+export const checkboxClass = "shrink-0 accent-brand-600";

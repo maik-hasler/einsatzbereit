@@ -130,3 +130,44 @@ describe("OrganizationSwitcher", () => {
 		).toBeInTheDocument();
 	});
 });
+
+// The name is split into a truncating head and an intact tail so a legal
+// suffix survives ("... Nachbarschaftshilfe" + " e.V."). Both are flex items,
+// and a leading space at the start of a flex item is collapsed away under
+// normal white-space processing - which ran the two halves together into
+// "Nachbarschaftshilfee.V." on screen while the DOM text still looked right
+// (#2329 F2). jsdom has no layout, so the guard is the DOM text plus the
+// white-space mode the browser will apply to it.
+describe("OrganizationSwitcher name split", () => {
+	it("keeps the separator between the head and the trailing token", () => {
+		renderWithProviders(
+			<OrganizationSwitcher
+				currentOrgId={ORG_A}
+				currentTab="dashboard"
+				orgs={[
+					{
+						id: ORG_A,
+						name: "Lindenauer Nachbarschaftshilfe e.V.",
+						logoUrl: undefined,
+						role: "Organizer",
+					},
+				]}
+				loading={false}
+				error={null}
+			/>,
+		);
+
+		const head = screen.getByTestId("org-switcher-current-name-head");
+		const tail = screen.getByTestId("org-switcher-current-name-tail");
+
+		expect(head.textContent).toBe("Lindenauer Nachbarschaftshilfe");
+		expect(tail.textContent).toBe(" e.V.");
+		expect(`${head.textContent}${tail.textContent}`).toBe(
+			"Lindenauer Nachbarschaftshilfe e.V.",
+		);
+		// `whitespace-nowrap` collapses that leading space; `whitespace-pre`
+		// preserves it and still refuses to wrap.
+		expect(tail.className).toContain("whitespace-pre");
+		expect(tail.className).not.toContain("whitespace-nowrap");
+	});
+});

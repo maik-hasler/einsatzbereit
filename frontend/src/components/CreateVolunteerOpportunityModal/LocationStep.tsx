@@ -4,6 +4,7 @@ import type { UseFormRegister, UseFormWatch } from "react-hook-form";
 import type { AddressDto } from "../../client/api-client";
 import { FloatingField } from "./shared";
 import type { OpportunityFormValues } from "./schema";
+import { checkboxClass } from "../../lib/formClasses";
 
 interface Props {
 	register: UseFormRegister<OpportunityFormValues>;
@@ -43,7 +44,7 @@ export default function LocationStep({
 				<input
 					type="checkbox"
 					id="opportunity-remote"
-					className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
+					className={`mt-0.5 h-4 w-4 ${checkboxClass}`}
 					{...register("isRemote", {
 						onChange: (e) => onRemoteToggle(e.target.checked),
 					})}

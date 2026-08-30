@@ -871,11 +871,11 @@ export default function VolunteerOpportunityDetailPage() {
 									</Chip>
 								)}
 
-								<Chip
-									tone="neutral"
-									size="sm"
-									data-testid="opportunity-occurrence"
-								>
+								{/* Default size, like the category and tag chips either side of it:
+								`size="sm"` made this one pill 4px shorter and 8px tighter than its
+								visually identical neighbours on the same row, at the same font
+								size (#2329 F9). */}
+								<Chip tone="neutral" data-testid="opportunity-occurrence">
 									{formatOccurrence(opportunity.occurrence, t)}
 								</Chip>
 								{opportunity.tags?.map((tag) => (

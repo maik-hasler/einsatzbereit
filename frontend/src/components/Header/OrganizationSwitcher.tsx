@@ -70,7 +70,7 @@ export default function OrganizationSwitcher({
 	}
 
 	if (loading) {
-		return <Skeleton className="h-9 w-48 rounded-lg" />;
+		return <Skeleton className="h-10 w-48 rounded-xl" />;
 	}
 
 	return (
@@ -79,12 +79,12 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className={`flex w-full min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors ${
+					className={`flex h-10 w-full min-w-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors ${
 						error
-							? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+							? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
 							: transparent
-								? "border-white/30 bg-white/10 text-white hover:bg-white/20"
-								: "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+								? "border-white/50 bg-white/10 text-white hover:bg-white/20"
+								: "border-gray-500 bg-white text-gray-700 hover:bg-gray-50"
 					}`}
 					aria-expanded={open}
 					aria-label={
@@ -119,9 +119,15 @@ export default function OrganizationSwitcher({
 								>
 									{currentOrgNameHead}
 								</span>
+								{/* whitespace-pre, not -nowrap: the tail keeps the space that
+								separates it from the head ("... Nachbarschaftshilfe" +
+								" e.V."), and a leading space at the start of a flex item is
+								collapsed away under normal white-space processing - which
+								ran the two halves together as "Nachbarschaftshilfee.V."
+								(#2329 F2). */}
 								<span
 									data-testid="org-switcher-current-name-tail"
-									className="shrink-0 whitespace-nowrap"
+									className="shrink-0 whitespace-pre"
 								>
 									{currentOrgNameTail}
 								</span>
