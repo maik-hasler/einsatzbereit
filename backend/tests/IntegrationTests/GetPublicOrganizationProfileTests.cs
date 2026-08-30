@@ -89,6 +89,43 @@ public class GetPublicOrganizationProfileTests(
 		profile.OpenOpportunities.Should().BeEmpty();
 	}
 
+	[Test]
+	public async Task GetPublicOrganizationProfile_ShouldExcludeEndedTimeSlots_FromTheAdvertisedCapacity(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
+		await PublishSlotBasedOpportunityAsync(
+			client, organizationId, "Half expired", DateTimeOffset.UtcNow.AddDays(7),
+			cancellationToken, maxParticipants: 10);
+		var opportunityId = (await new EinsatzbereitApi(fixture.CreateHttpClient())
+			.GetPublicOrganizationProfileAsync(organizationId, cancellationToken))
+			.OpenOpportunities.Should().ContainSingle().Which.Id;
+		await AddEndedTimeSlotDirectlyAsync(opportunityId, cancellationToken);
+
+		var profile = await new EinsatzbereitApi(fixture.CreateHttpClient())
+			.GetPublicOrganizationProfileAsync(organizationId, cancellationToken);
+
+		// The ended slot's 10 seats can never be booked, so advertising 20 would promise
+		// capacity that does not exist (einsatzbereit#2318).
+		profile.OpenOpportunities.Should().ContainSingle().Which
+			.TotalMaxParticipants.Should().Be(10);
+	}
+
+	private async Task AddEndedTimeSlotDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
+		var aggregate = await dbContext.VolunteerOpportunities.FindAsync(opportunityId_, cancellationToken)
+			?? throw new InvalidOperationException($"Seeded opportunity '{opportunityId}' not found.");
+
+		var start = DateTimeOffset.UtcNow.AddDays(-7);
+		aggregate.AddTimeSlot(start, start.AddHours(2), maxParticipants: 10, now: start.AddDays(-1))
+			.GetValueOrThrow();
+
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
 	private async Task SetExpiredValidUntilDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();

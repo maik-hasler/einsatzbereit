@@ -154,6 +154,38 @@ describe("getCapacityFromTimeSlots", () => {
 		});
 	});
 
+	it("counts bookings from the slots, not from the viewer-relative participant count", () => {
+		// The API omits the caller's own engagements from currentParticipantCount, so a
+		// volunteer holding a seat used to be told more spots were free than anyone else
+		// saw (#2318). bookedCount is the same number for every viewer.
+		expect(
+			getCapacityFromTimeSlots([{ maxParticipants: 20, bookedCount: 1 }], 0),
+		).toEqual({
+			kind: "capped",
+			booked: 1,
+			max: 20,
+			spotsLeft: 19,
+			isFull: false,
+		});
+	});
+
+	it("only counts the slots handed in, so an excluded ended slot takes its seats with it", () => {
+		const upcomingOnly = [{ maxParticipants: 20, bookedCount: 1 }];
+		const bothSlots = [
+			{ maxParticipants: 20, bookedCount: 1 },
+			...upcomingOnly,
+		];
+
+		expect(getCapacityFromTimeSlots(upcomingOnly, 2)).toMatchObject({
+			max: 20,
+			spotsLeft: 19,
+		});
+		expect(getCapacityFromTimeSlots(bothSlots, 2)).toMatchObject({
+			max: 40,
+			spotsLeft: 38,
+		});
+	});
+
 	it("matches getOpportunityCapacity for the same underlying data", () => {
 		const fromSlots = getCapacityFromTimeSlots(
 			[{ maxParticipants: 20, bookedCount: 1 }],

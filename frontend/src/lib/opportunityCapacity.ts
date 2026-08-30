@@ -56,21 +56,44 @@ export interface TimeSlotCapacityInput {
 	bookedCount: number;
 }
 
+/**
+ * At-a-glance capacity for a slotted opportunity, derived from the slots handed
+ * in - callers pass only the slots a visitor can still book, because seats in an
+ * ended slot can never be taken and must not be advertised (#2318).
+ *
+ * The per-slot `bookedCount` is the same for everyone, whereas
+ * `currentParticipantCount` deliberately omits the caller's own engagements
+ * (see `VolunteerOpportunityReadRepository.GetDetailsAsync`). Feeding that
+ * viewer-relative number into an absolute "N spots left" label told a volunteer
+ * who had already taken a seat that there were *more* seats free than everyone
+ * else saw, so it is now only used to tally participants for opportunities that
+ * have no time slots at all.
+ */
 export function getCapacityFromTimeSlots(
 	timeSlots: readonly TimeSlotCapacityInput[],
 	currentParticipantCount: number,
 	participationType?: string | null,
 ): OpportunityCapacity {
-	const totalMaxParticipants =
-		timeSlots.length === 0
-			? 0
-			: timeSlots.some((ts) => ts.maxParticipants == null)
-				? null
-				: timeSlots.reduce((sum, ts) => sum + (ts.maxParticipants ?? 0), 0);
+	if (timeSlots.length === 0) {
+		return getOpportunityCapacity({
+			totalMaxParticipants: 0,
+			currentParticipantCount,
+			participationType,
+		});
+	}
+
+	const totalMaxParticipants = timeSlots.some(
+		(ts) => ts.maxParticipants == null,
+	)
+		? null
+		: timeSlots.reduce((sum, ts) => sum + (ts.maxParticipants ?? 0), 0);
 
 	return getOpportunityCapacity({
 		totalMaxParticipants,
-		currentParticipantCount,
+		currentParticipantCount: timeSlots.reduce(
+			(sum, ts) => sum + ts.bookedCount,
+			0,
+		),
 		participationType,
 	});
 }

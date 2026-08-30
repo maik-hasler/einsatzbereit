@@ -545,6 +545,34 @@ describe("opportunity detail page capacity", () => {
 		).toHaveTextContent("1 person has already joined");
 	});
 
+	it("counts seats per slot rather than trusting the viewer-relative participant count (#2318)", () => {
+		// The API drops the caller's own engagements from currentParticipantCount, so
+		// vera - booked on both slots - was shown MORE free spots than a logged-out
+		// visitor. Both must read the same 8.
+		const bookedTwice = {
+			...scheduledSlots,
+			timeSlots: scheduledSlots.timeSlots.map((ts) => ({
+				...ts,
+				bookedCount: 1,
+			})),
+		};
+
+		return Promise.all(
+			[0, 2].map(async (currentParticipantCount) => {
+				api.getVolunteerOpportunityDetails.mockResolvedValue({
+					...bookedTwice,
+					currentParticipantCount,
+				});
+
+				const { unmount } = renderAs(VOLUNTEER_AUTH);
+				expect(
+					await screen.findByTestId("opportunity-capacity"),
+				).toHaveTextContent("8 spots left");
+				unmount();
+			}),
+		);
+	});
+
 	it("never reads as full when a slot has unlimited capacity", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...scheduledSlots,
@@ -828,6 +856,33 @@ describe("opportunity detail page past time slots (#2199)", () => {
 			within(pastSection).getByText("1 past time slot"),
 		).toBeInTheDocument();
 		expect(within(pastSection).queryAllByRole("button")).toHaveLength(0);
+	});
+
+	it("leaves the past slot's seats out of the at-a-glance capacity and slot count (#2318)", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(withPastSlot);
+
+		renderAs(VOLUNTEER_AUTH);
+
+		// The ended slot adds 5 seats nobody can take; only the two upcoming ones count.
+		expect(await screen.findByTestId("opportunity-capacity")).toHaveTextContent(
+			"10 spots left",
+		);
+		expect(screen.getByTestId("opportunity-detail-how")).toHaveTextContent(
+			"2 time slots",
+		);
+	});
+
+	it("says there are no open spots once every slot has ended (#2318)", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...withPastSlot,
+			timeSlots: [withPastSlot.timeSlots[0]],
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		expect(await screen.findByTestId("opportunity-capacity")).toHaveTextContent(
+			"No open spots",
+		);
 	});
 
 	it("excludes the past slot from the sign-up dialog's options", async () => {
