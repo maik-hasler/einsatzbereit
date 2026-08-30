@@ -142,11 +142,40 @@ public class ResendInvitationCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrowConflict_WhenInvitationIsStillPending(
+	public async Task Handle_ShouldExtendExpiryAndSendEmail_WhenInvitationIsStillPending(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var invitation = CreatePendingInvitation(DefaultOrgId);
+		var originalExpiry = invitation.ExpiresOn;
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		invitation.Status.Should().Be(InvitationStatus.Pending);
+		invitation.ExpiresOn.Should().BeOnOrAfter(originalExpiry);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+		await _emailService.Received(1).SendAsync(
+			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+	}
+
+	[Test]
+	[Arguments(true)]
+	[Arguments(false)]
+	public async Task Handle_ShouldThrowConflict_WhenInvitationIsAlreadyAnswered(
+		bool accepted,
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreatePendingInvitation(DefaultOrgId);
+		if (accepted)
+			invitation.Accept().ThrowIfFailure();
+		else
+			invitation.Decline().ThrowIfFailure();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 

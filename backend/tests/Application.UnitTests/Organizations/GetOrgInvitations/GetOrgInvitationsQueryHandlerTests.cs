@@ -70,5 +70,6 @@ public class GetOrgInvitationsQueryHandlerTests
 		result[0].InviteeName.Should().Be("Vera");
 		result[0].IntendedRole.Should().Be("Organizer");
 		result[0].Status.Should().Be("Pending");
+		result[0].ExpiresOn.Should().Be(invitation.ExpiresOn);
 	}
 }

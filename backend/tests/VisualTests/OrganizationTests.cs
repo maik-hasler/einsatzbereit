@@ -184,6 +184,34 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AssertMaxWidthContentLeftAlignedAsync("Organization members page");
 	}
 
+	[Test]
+	public async Task MembersPage_InviteSearchField_IsNotSqueezedByTheRolePicker()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual2324 InviteField", pinnedOrgId!.Value);
+
+		await Page.SetViewportSizeAsync(1440, 900);
+		await Page.GetByTestId("org-tab-members").ClickAsync();
+
+		var search = Page.Locator("#member-search");
+		await Expect(search).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var searchBox = await search.BoundingBoxAsync();
+		var roleBox = await Page.Locator("#invite-role").BoundingBoxAsync();
+		searchBox.Should().NotBeNull();
+		roleBox.Should().NotBeNull();
+
+		searchBox!.Width.Should().BeGreaterThanOrEqualTo(roleBox!.Width,
+			"the two fields used to split on viewport width while the card itself sits "
+			+ "in a fixed 20rem sidebar, leaving the search field 62px wide next to a "
+			+ "192px role select - too narrow to read its own placeholder or what you "
+			+ "type into it (#2324)");
+	}
+
 	private async Task<string> CreateOrganizationAsync(string namePrefix, Guid pinnedOrgId)
 	{
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
