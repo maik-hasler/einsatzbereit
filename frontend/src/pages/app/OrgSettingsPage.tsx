@@ -23,6 +23,7 @@ import Button from "../../components/Button";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
+import OrgAvatar from "../../components/OrgAvatar";
 import ErrorBanner from "../../components/ErrorBanner";
 import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
@@ -320,19 +321,12 @@ export default function OrgSettingsPage() {
 									{t("orgSettings.fieldLogo")}
 								</p>
 								<div className="flex items-center gap-4">
-									{logoUrl ? (
-										<img
-											src={logoUrl}
-											alt=""
-											width={64}
-											height={64}
-											className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
-										/>
-									) : (
-										<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
-											{org.name.charAt(0).toUpperCase()}
-										</span>
-									)}
+									{/* The same avatar the read view and the circular crop
+									    dialog show (#2324) - this used to be a hand-rolled
+									    rounded square with a single letter, so toggling
+									    "Edit" made the avatar change shape and lose a
+									    letter. */}
+									<OrgAvatar name={org.name} logoUrl={logoUrl} size="3xl" />
 									<div>
 										<div className="flex items-center gap-3">
 											<FileUploadButton

@@ -6600,6 +6600,7 @@ export interface CreateInvitationRequest {
 
 export interface CreateInvitationResponse {
     invitationId: string;
+    expiresOn: Date;
 
     [key: string]: any;
 }
@@ -6951,6 +6952,7 @@ export interface OrgInvitationDto {
     intendedRole: string;
     status: string;
     createdOn: Date;
+    expiresOn: Date;
 
     [key: string]: any;
 }

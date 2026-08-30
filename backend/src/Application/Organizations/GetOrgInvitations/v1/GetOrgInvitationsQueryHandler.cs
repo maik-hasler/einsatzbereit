@@ -33,7 +33,8 @@ internal sealed class GetOrgInvitationsQueryHandler(
 				displayNames.GetValueOrDefault(i.InviteeId.Value, "(unknown user)"),
 				i.IntendedRole.ToString(),
 				i.Status.ToString(),
-				i.CreatedOn))
+				i.CreatedOn,
+				i.ExpiresOn))
 			.ToList();
 	}
 }

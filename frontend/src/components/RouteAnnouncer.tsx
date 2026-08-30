@@ -18,7 +18,9 @@ export default function RouteAnnouncer() {
 		// back/forward - so don't rip focus out of its trap.
 		if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
 
-		window.scrollTo(0, 0);
+		// A fragment link (`/#for-organizations`) asked for a specific section,
+		// not the top of the page - `HashScroller` takes it from here (#2324).
+		if (!location.hash) window.scrollTo(0, 0);
 
 		let headingFocused = false;
 		let lastFocusTarget: HTMLElement | null = null;
@@ -53,7 +55,7 @@ export default function RouteAnnouncer() {
 		}
 
 		return () => observer.disconnect();
-	}, [location.pathname]);
+	}, [location.pathname, location.hash]);
 
 	return (
 		<div aria-live="polite" aria-atomic="true" className="sr-only">

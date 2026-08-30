@@ -61,3 +61,31 @@ describe("OrganizationProfilePage anonymous visitor", () => {
 		);
 	});
 });
+
+describe("OrganizationProfilePage organization logo", () => {
+	it("renders the uploaded logo the profile response carries", async () => {
+		api.getPublicOrganizationProfile.mockResolvedValue({
+			id: ORGANIZATION_ID,
+			name: "Nachbarschaftshilfe Leipzig",
+			logoUrl: "https://storage.example.test/org-logos/leipzig.webp",
+			openOpportunities: [],
+		});
+		const { container } = renderProfile();
+
+		await screen.findByRole("heading", { name: "Nachbarschaftshilfe Leipzig" });
+
+		// A decorative `alt=""` image has no `img` role, so query it by tag.
+		const logo = container.ownerDocument.querySelector(
+			'img[src="https://storage.example.test/org-logos/leipzig.webp"]',
+		);
+		expect(logo).not.toBeNull();
+	});
+
+	it("falls back to the organization's initials when it has no logo", async () => {
+		renderProfile();
+
+		await screen.findByRole("heading", { name: "Nachbarschaftshilfe Leipzig" });
+
+		expect(await screen.findByText("NL")).toBeInTheDocument();
+	});
+});

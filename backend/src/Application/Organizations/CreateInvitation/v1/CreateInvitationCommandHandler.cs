@@ -18,9 +18,9 @@ internal sealed class CreateInvitationCommandHandler(
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
 	IEmailTemplateRenderer emailTemplateRenderer)
-	: ICommandHandler<CreateInvitationCommand, OrganizationInvitationId>
+	: ICommandHandler<CreateInvitationCommand, CreateInvitationResult>
 {
-	public async ValueTask<OrganizationInvitationId> Handle(
+	public async ValueTask<CreateInvitationResult> Handle(
 		CreateInvitationCommand request,
 		CancellationToken cancellationToken = default)
 	{
@@ -78,6 +78,6 @@ internal sealed class CreateInvitationCommandHandler(
 			invitation.Id.Value.ToString(),
 			cancellationToken);
 
-		return invitation.Id;
+		return new CreateInvitationResult(invitation.Id, invitation.ExpiresOn);
 	}
 }

@@ -234,6 +234,7 @@ const invitation = {
 	role: "Member",
 	status: "Pending",
 	createdOn: new Date(Date.UTC(2026, 0, 2)),
+	expiresOn: new Date(Date.UTC(2026, 0, 16)),
 };
 
 const candidate = {
@@ -582,5 +583,123 @@ describe("OrgMembersPage invite search result states", () => {
 		await screen.findByText("Already invited");
 
 		await expectNoA11yViolations();
+	});
+});
+
+describe("OrgMembersPage invitation lifecycle", () => {
+	it("shows a pending invitation's expiry date, not just when it was sent", async () => {
+		renderManage([olaf], [invitation]);
+
+		const sent = await screen.findByText(/Sent /);
+		expect(sent).toHaveTextContent("Expires");
+	});
+
+	it("resends a pending invitation and re-reads the list for the new expiry", async () => {
+		const extended = {
+			...invitation,
+			expiresOn: new Date(Date.UTC(2026, 0, 30)),
+		};
+		api.resendInvitation.mockResolvedValue(undefined);
+		api.getOrgInvitations
+			.mockResolvedValueOnce([invitation])
+			.mockResolvedValueOnce([extended]);
+		renderManage([olaf], [invitation]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Resend invitation for ${invitation.inviteeName}`,
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.resendInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+		);
+		expect(api.getOrgInvitations).toHaveBeenCalledTimes(2);
+	});
+
+	it("keeps the row listed when the post-resend refresh fails", async () => {
+		api.resendInvitation.mockResolvedValue(undefined);
+		api.getOrgInvitations
+			.mockResolvedValueOnce([{ ...invitation, status: "Expired" }])
+			.mockRejectedValueOnce(new Error("boom"));
+		renderManage([olaf], [{ ...invitation, status: "Expired" }]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Resend invitation for ${invitation.inviteeName}`,
+			}),
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Pending invitations" }),
+		).toBeInTheDocument();
+	});
+
+	it("has no a11y violations across the pending/declined/expired sections", async () => {
+		renderManage(
+			[olaf],
+			[
+				invitation,
+				{
+					...invitation,
+					id: "99999999-9999-9999-9999-999999999999",
+					status: "Declined",
+				},
+				{
+					...invitation,
+					id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+					status: "Expired",
+					intendedRole: "Organizer",
+				},
+			],
+		);
+
+		await screen.findByRole("heading", { name: "Pending invitations" });
+		await screen.findByRole("heading", { name: "Declined invitations" });
+		await screen.findByRole("heading", { name: "Expired invitations" });
+
+		await expectNoA11yViolations();
+	});
+
+	it("explains what happens after an invitation is sent", async () => {
+		renderManage([olaf], [invitation]);
+
+		expect(
+			await screen.findByText(/stay listed here until they accept or decline/),
+		).toBeInTheDocument();
+	});
+});
+
+describe("OrgMembersPage role explanations", () => {
+	it("describes the role the invite picker is currently set to", async () => {
+		const { container } = renderManage([olaf]);
+
+		expect(
+			await screen.findByText(/Members see the organization's internal pages/),
+		).toBeInTheDocument();
+
+		const roleSelect = container.ownerDocument.getElementById("invite-role");
+		await userEvent.selectOptions(roleSelect as HTMLElement, "Organizer");
+
+		expect(
+			await screen.findByText(/Organizers can do everything members can/),
+		).toBeInTheDocument();
+	});
+});
+
+describe("OrgMembersPage invite card layout", () => {
+	it("splits the search field and the role picker on the card's own width", async () => {
+		const { container } = renderManage([olaf]);
+
+		const search = await screen.findByLabelText("Invite member");
+		const grid = search.closest("div")?.parentElement;
+
+		// A viewport-width `sm:` split squeezed this field to 62px inside the
+		// fixed 20rem sidebar at every desktop size (#2324).
+		expect(grid?.className).toContain("@md:grid-cols-");
+		expect(grid?.className).not.toContain("sm:grid-cols-");
+		expect(
+			container.ownerDocument.querySelector(".\\@container"),
+		).not.toBeNull();
 	});
 });

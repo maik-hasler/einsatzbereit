@@ -8,4 +8,4 @@ public sealed record CreateInvitationCommand(
 	OrganizationId OrganizationId,
 	UserId InviteeId,
 	OrganizationMemberRole Role,
-	UserId InvitedById) : ICommand<OrganizationInvitationId>;
+	UserId InvitedById) : ICommand<CreateInvitationResult>;
