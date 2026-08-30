@@ -231,3 +231,49 @@ describe("OrgSettingsPage logo upload rejection", () => {
 		expect(api.uploadOrganizationLogo).not.toHaveBeenCalled();
 	});
 });
+
+describe("OrgSettingsPage save confirmation", () => {
+	async function saveDescription(text: string) {
+		await enterEditMode();
+		const description = document.querySelector(
+			"#org-description",
+		) as HTMLTextAreaElement;
+		await userEvent.clear(description);
+		await userEvent.type(description, text);
+		await userEvent.click(screen.getByTestId("org-settings-form-save"));
+	}
+
+	it("says the save worked rather than silently returning to the profile", async () => {
+		api.updateOrganization.mockResolvedValue(undefined);
+		renderPage();
+
+		await saveDescription("Neuer Text");
+
+		await waitFor(() => expect(api.updateOrganization).toHaveBeenCalled());
+		expect(await screen.findByText("Changes saved.")).toBeInTheDocument();
+		expect(screen.getByTestId("org-settings-saved")).toHaveAttribute(
+			"role",
+			"status",
+		);
+	});
+
+	it("keeps the banner's live region mounted before there is anything to say", () => {
+		renderPage();
+
+		const banner = screen.getByTestId("org-settings-saved");
+		expect(banner).toHaveAttribute("aria-live", "polite");
+		expect(banner).toHaveTextContent("");
+	});
+
+	it("drops the stale banner when the next edit begins", async () => {
+		api.updateOrganization.mockResolvedValue(undefined);
+		renderPage();
+
+		await saveDescription("Neuer Text");
+		expect(await screen.findByText("Changes saved.")).toBeInTheDocument();
+
+		await enterEditMode();
+
+		expect(screen.queryByText("Changes saved.")).toBeNull();
+	});
+});

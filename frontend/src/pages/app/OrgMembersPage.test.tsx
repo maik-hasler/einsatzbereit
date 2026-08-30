@@ -372,9 +372,113 @@ describe("OrgMembersPage invitations", () => {
 		);
 	});
 
-	it("dismisses a pending invitation before it is accepted", async () => {
+	it("revokes a pending invitation once the revoke is confirmed", async () => {
 		api.dismissInvitation.mockResolvedValue(undefined);
 		renderManage([olaf], [invitation]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		);
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Yes, revoke",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(api.dismissInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+		);
+		expect(await screen.findByText("Invitation revoked.")).toBeInTheDocument();
+	});
+
+	it("leaves the invitation alone when the revoke is not confirmed", async () => {
+		api.dismissInvitation.mockResolvedValue(undefined);
+		renderManage([olaf], [invitation]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		expect(within(dialog).getByText(/Ingo Invitee/)).toBeInTheDocument();
+		await expectNoA11yViolations();
+
+		await userEvent.click(within(dialog).getByRole("button", { name: "Keep" }));
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(api.dismissInvitation).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("replaces the stale 'invitation sent' banner when the invite is revoked", async () => {
+		api.createInvitation.mockResolvedValue(invitation);
+		api.dismissInvitation.mockResolvedValue(undefined);
+		api.searchMemberCandidates.mockResolvedValue([candidate]);
+		renderManage([olaf]);
+
+		await search("ingo");
+		await vi.advanceTimersByTimeAsync(400);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Invite" }),
+		);
+		expect(await screen.findByText("Invitation sent.")).toBeInTheDocument();
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		);
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Yes, revoke",
+			}),
+		);
+
+		expect(await screen.findByText("Invitation revoked.")).toBeInTheDocument();
+		expect(screen.queryByText("Invitation sent.")).toBeNull();
+	});
+
+	it("keeps the invitation listed when revoking fails", async () => {
+		api.dismissInvitation.mockRejectedValue(new Error("boom"));
+		renderManage([olaf], [invitation]);
+
+		await userEvent.click(
+			await screen.findByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		);
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Yes, revoke",
+			}),
+		);
+
+		expect(
+			await screen.findByText("Could not dismiss invitation."),
+		).toBeInTheDocument();
+		await userEvent.click(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Understood",
+			}),
+		);
+		expect(
+			screen.getByRole("button", {
+				name: `Revoke invitation for ${invitation.inviteeName}`,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("dismisses a declined invitation without a confirm step", async () => {
+		api.dismissInvitation.mockResolvedValue(undefined);
+		renderManage([olaf], [{ ...invitation, status: "Declined" }]);
 
 		await userEvent.click(
 			await screen.findByRole("button", {
@@ -385,6 +489,7 @@ describe("OrgMembersPage invitations", () => {
 		await waitFor(() =>
 			expect(api.dismissInvitation).toHaveBeenCalledWith(org.id, invitation.id),
 		);
+		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 });
 

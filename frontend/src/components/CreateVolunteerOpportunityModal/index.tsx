@@ -259,6 +259,17 @@ export default function CreateVolunteerOpportunityModal({
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
+	const [pendingSlotDelete, setPendingSlotDelete] = useState<{
+		id: string;
+		bookedCount: number;
+	} | null>(null);
+	const [slotDeleteError, setSlotDeleteError] = useState<string | null>(null);
+
+	// In edit mode every slot action hits the server the moment it is clicked,
+	// which is not what a dialog with an unpressed "Save" implies. The step now
+	// says so up front and confirms the destructive one; this tracks whether it
+	// has happened, so closing can repeat the point (#2315).
+	const [slotChangesApplied, setSlotChangesApplied] = useState(false);
 	const [addingSlot, setAddingSlot] = useState(false);
 	const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
 	const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
@@ -515,6 +526,7 @@ export default function CreateVolunteerOpportunityModal({
 					})),
 				]);
 
+				setSlotChangesApplied(true);
 				setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 			} catch {
 				setSlotError(t("timeSlots.addError"));
@@ -553,15 +565,27 @@ export default function CreateVolunteerOpportunityModal({
 		setPendingSlots((prev) => prev.filter((s) => s.id !== id));
 	}
 
-	async function handleRemoveExistingSlot(timeSlotId: string) {
+	function handleRequestRemoveExistingSlot(
+		timeSlotId: string,
+		bookedCount: number,
+	) {
+		setSlotError(null);
+		setSlotDeleteError(null);
+		setPendingSlotDelete({ id: timeSlotId, bookedCount });
+	}
+
+	async function performExistingSlotDelete(timeSlotId: string) {
 		if (!initialOpportunity) return;
 		setRemovingSlotId(timeSlotId);
 		setSlotError(null);
+		setSlotDeleteError(null);
 		try {
 			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId, "Only");
 			setExistingSlots((prev) => prev.filter((s) => s.id !== timeSlotId));
+			setSlotChangesApplied(true);
+			setPendingSlotDelete(null);
 		} catch {
-			setSlotError(t("timeSlots.removeError"));
+			setSlotDeleteError(t("timeSlots.removeError"));
 		} finally {
 			setRemovingSlotId(null);
 		}
@@ -588,6 +612,7 @@ export default function CreateVolunteerOpportunityModal({
 			setExistingSlots((prev) =>
 				prev.filter((s) => !result.deletedTimeSlotIds.includes(s.id)),
 			);
+			setSlotChangesApplied(true);
 			setPendingSeriesDelete(null);
 		} catch {
 			setSeriesDeleteError(t("timeSlots.removeError"));
@@ -661,6 +686,7 @@ export default function CreateVolunteerOpportunityModal({
 					);
 				}
 			}
+			setSlotChangesApplied(true);
 			setEditingSlot(null);
 		} catch {
 			setSlotError(t("timeSlots.editError"));
@@ -1106,7 +1132,7 @@ export default function CreateVolunteerOpportunityModal({
 							isEditMode={isEditMode}
 							allTimeSlots={allTimeSlots}
 							removingSlotId={removingSlotId}
-							onRemoveExistingSlot={(id) => void handleRemoveExistingSlot(id)}
+							onRemoveExistingSlot={handleRequestRemoveExistingSlot}
 							onRequestRemoveSeriesSlot={handleRequestRemoveSeriesSlot}
 							onRemovePendingSlot={handleRemovePendingSlot}
 							editingSlot={editingSlot}
@@ -1118,6 +1144,7 @@ export default function CreateVolunteerOpportunityModal({
 							newSlot={newSlot}
 							onNewSlotChange={setNewSlot}
 							slotError={slotError}
+							slotChangesAreImmediate={isEditMode}
 							addingSlot={addingSlot}
 							onAddSlot={() => void handleAddSlot()}
 							recurrenceFrequency={recurrenceFrequency}
@@ -1219,7 +1246,34 @@ export default function CreateVolunteerOpportunityModal({
 						onClose();
 					}}
 					onClose={() => setShowDiscardConfirm(false)}
-				/>
+				>
+					{slotChangesApplied && (
+						<p className="text-sm text-amber-700">
+							{t("createOpportunity.slotChangesKeptOnDiscard")}
+						</p>
+					)}
+				</ConfirmDialog>
+			)}
+
+			{pendingSlotDelete && (
+				<ConfirmDialog
+					title={t("confirmDialog.removeTimeSlot.title")}
+					message={t("confirmDialog.removeTimeSlot.message")}
+					confirmLabel={t("confirmDialog.removeTimeSlot.confirm")}
+					loading={removingSlotId === pendingSlotDelete.id}
+					error={slotDeleteError}
+					onConfirm={() => void performExistingSlotDelete(pendingSlotDelete.id)}
+					onClose={() => {
+						setPendingSlotDelete(null);
+						setSlotDeleteError(null);
+					}}
+				>
+					{pendingSlotDelete.bookedCount > 0 && (
+						<p className="text-sm text-amber-700">
+							{t("timeSlots.deleteSeries.cancelsEngagementsWarning")}
+						</p>
+					)}
+				</ConfirmDialog>
 			)}
 
 			{pendingSlotEdit && (
