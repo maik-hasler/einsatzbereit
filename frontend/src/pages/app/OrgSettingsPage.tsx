@@ -321,11 +321,11 @@ export default function OrgSettingsPage() {
 									{t("orgSettings.fieldLogo")}
 								</p>
 								<div className="flex items-center gap-4">
-									{/* The same avatar the read view and the circular crop
-									    dialog show (#2324) - this used to be a hand-rolled
-									    rounded square with a single letter, so toggling
-									    "Edit" made the avatar change shape and lose a
-									    letter. */}
+									{/* The same avatar the read view and the circular
+									crop dialog show (#2324) - this used to be a
+									hand-rolled rounded square with a single letter, so
+									toggling "Edit" made the avatar change shape and
+									lose a letter. */}
 									<OrgAvatar name={org.name} logoUrl={logoUrl} size="3xl" />
 									<div>
 										<div className="flex items-center gap-3">

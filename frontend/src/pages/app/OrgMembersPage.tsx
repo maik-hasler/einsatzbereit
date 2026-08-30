@@ -395,10 +395,11 @@ export default function OrgMembersPage() {
 					{isOrganizer && (
 						<aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
 							<div className={`@container mb-8 ${cardClass} sm:p-6`}>
-								{/* Container query, not `sm:` (#2324) - the two-column split
-								    used to fire on viewport width while this card sits in a
-								    fixed 20rem sidebar, squeezing the search field to 62px on
-								    every desktop size. Measure the card, not the window. */}
+								{/* Container query, not `sm:` (#2324) - the two-column
+								split used to fire on viewport width while this card sits
+								in a fixed 20rem sidebar, squeezing the search field to
+								62px on every desktop size. Measure the card, not the
+								window. */}
 								<div className="grid gap-4 @md:grid-cols-[minmax(0,1fr)_12rem]">
 									<div>
 										<label htmlFor="member-search" className={labelClass}>
