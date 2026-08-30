@@ -2799,6 +2799,13 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "includeResolved",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -7154,6 +7161,51 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "actionType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorUserId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "oldestFirst",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -7163,6 +7215,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedListOfAuditLogEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7492,6 +7554,7 @@
           "subjectType",
           "subjectId",
           "subjectDisplayName",
+          "subjectDisplayNameEn",
           "reason",
           "createdOn"
         ],
@@ -7520,6 +7583,12 @@
           },
           "subjectDisplayName": {
             "type": "string"
+          },
+          "subjectDisplayNameEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "reason": {
             "type": [
@@ -8670,6 +8739,7 @@
           "targetType",
           "targetId",
           "targetTitle",
+          "targetTitleEn",
           "openReportCount",
           "totalReportCount",
           "lastReportedOn",
@@ -8686,6 +8756,12 @@
           },
           "targetTitle": {
             "type": "string"
+          },
+          "targetTitleEn": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "openReportCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",

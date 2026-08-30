@@ -2,6 +2,7 @@ using Application.AuditLogs;
 using Application.AuditLogs.ListAuditLogs.v1;
 using Application.Common.Pagination;
 using AwesomeAssertions;
+using Domain.AuditLogs;
 using NSubstitute;
 
 namespace Application.UnitTests.AuditLogs.ListAuditLogs;
@@ -15,7 +16,7 @@ public class ListAuditLogsQueryHandlerTests
 	public ListAuditLogsQueryHandlerTests()
 	{
 		_readRepo
-			.GetAuditLogsPagedAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
 			.Returns(new PagedList<AuditLogEntry>([], 0, 1, 10));
 		_sut = new ListAuditLogsQueryHandler(_readRepo);
 	}
@@ -26,10 +27,10 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		// Arrange
 		var entry = new AuditLogEntry(
-			Guid.NewGuid(), Guid.NewGuid(), "Admina Admin", "UserShadowDeleted", "User", Guid.NewGuid(), "Volunteera Vera", null, DateTimeOffset.UtcNow);
+			Guid.NewGuid(), Guid.NewGuid(), "Admina Admin", "UserShadowDeleted", "User", Guid.NewGuid(), "Volunteera Vera", null, null, DateTimeOffset.UtcNow);
 
 		_readRepo
-			.GetAuditLogsPagedAsync(1, 10, cancellationToken)
+			.GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), 1, 10, cancellationToken)
 			.Returns(new PagedList<AuditLogEntry>([entry], 1, 1, 10));
 
 		// Act
@@ -45,7 +46,7 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		await _sut.Handle(new ListAuditLogsQuery(0, 10), cancellationToken);
 
-		await _readRepo.Received(1).GetAuditLogsPagedAsync(1, 10, cancellationToken);
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), 1, 10, cancellationToken);
 	}
 
 	[Test]
@@ -54,7 +55,7 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		await _sut.Handle(new ListAuditLogsQuery(-5, 10), cancellationToken);
 
-		await _readRepo.Received(1).GetAuditLogsPagedAsync(1, 10, cancellationToken);
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), 1, 10, cancellationToken);
 	}
 
 	[Test]
@@ -63,7 +64,7 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		await _sut.Handle(new ListAuditLogsQuery(1, 0), cancellationToken);
 
-		await _readRepo.Received(1).GetAuditLogsPagedAsync(1, 1, cancellationToken);
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), 1, 1, cancellationToken);
 	}
 
 	[Test]
@@ -72,6 +73,55 @@ public class ListAuditLogsQueryHandlerTests
 	{
 		await _sut.Handle(new ListAuditLogsQuery(1, 5000), cancellationToken);
 
-		await _readRepo.Received(1).GetAuditLogsPagedAsync(1, 100, cancellationToken);
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(Arg.Any<AuditLogFilter>(), 1, 100, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDefaultToTheUnfilteredNewestFirstLog(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(new ListAuditLogsQuery(1, 10), cancellationToken);
+
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(
+			new AuditLogFilter(),
+			1,
+			10,
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldPassEveryFilter_ToReadRepository(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var actorUserId = Guid.NewGuid();
+		var from = DateTimeOffset.UtcNow.AddDays(-7);
+		var to = DateTimeOffset.UtcNow;
+
+		// Act
+		await _sut.Handle(
+			new ListAuditLogsQuery(
+				1,
+				10,
+				AuditActionType.ReportDismissed,
+				AuditSubjectType.Organization,
+				actorUserId,
+				from,
+				to,
+				OldestFirst: true),
+			cancellationToken);
+
+		// Assert
+		await _readRepo.Received(1).GetAuditLogsPagedAsync(
+			new AuditLogFilter(
+				AuditActionType.ReportDismissed,
+				AuditSubjectType.Organization,
+				actorUserId,
+				from,
+				to,
+				OldestFirst: true),
+			1,
+			10,
+			cancellationToken);
 	}
 }

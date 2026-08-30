@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { PublicOrganizationSummary } from "../client/api-client";
@@ -9,6 +9,10 @@ import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { cardClass } from "../lib/surfaceClasses";
+import {
+	reportIntentSigninArgs,
+	usePendingReportIntent,
+} from "../lib/reportIntent";
 import EmptyState from "../components/EmptyState";
 import OrgAvatar from "../components/OrgAvatar";
 import Skeleton from "../components/Skeleton";
@@ -26,7 +30,9 @@ export default function OrganizationsPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const auth = useAuth();
+	const location = useLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
+	const pendingReportTargetId = usePendingReportIntent();
 
 	const search = searchParams.get("q") ?? "";
 	const [searchInput, setSearchInput] = useState(search);
@@ -234,18 +240,36 @@ export default function OrganizationsPage() {
 														{org.name}
 													</h3>
 												</div>
-												{auth.isAuthenticated && (
-													<ReportFlagButton
-														targetLabel={org.name}
-														ariaLabel={t("orgProfile.reportOrganization")}
-														onReport={async (reason, details) => {
-															await api.reportOrganization(org.id, {
-																reason,
-																details: details || undefined,
-															});
-														}}
-													/>
-												)}
+												{/* Shown to anonymous visitors too: the profile one click deeper
+												already offers this to everyone and routes them through
+												sign-in, so hiding it here made the affordance appear and
+												disappear by page (#2326). */}
+												<ReportFlagButton
+													targetLabel={org.name}
+													ariaLabel={t("orgProfile.reportOrganization")}
+													onReport={async (reason, details) => {
+														await api.reportOrganization(org.id, {
+															reason,
+															details: details || undefined,
+														});
+													}}
+													onRequireSignIn={
+														auth.isAuthenticated
+															? undefined
+															: () =>
+																	void auth.signinRedirect(
+																		reportIntentSigninArgs(
+																			location.pathname,
+																			location.search,
+																			org.id,
+																		),
+																	)
+													}
+													autoOpen={
+														auth.isAuthenticated &&
+														pendingReportTargetId === org.id
+													}
+												/>
 											</div>
 											{/*
 											 * Every line here used to be conditional, so an org with no

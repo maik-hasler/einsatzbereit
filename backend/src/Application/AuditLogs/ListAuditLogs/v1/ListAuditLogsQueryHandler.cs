@@ -16,6 +16,16 @@ internal sealed class ListAuditLogsQueryHandler(
 		var pageNumber = Math.Max(1, request.PageNumber);
 		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-		return await readRepository.GetAuditLogsPagedAsync(pageNumber, pageSize, cancellationToken);
+		return await readRepository.GetAuditLogsPagedAsync(
+			new AuditLogFilter(
+				request.ActionType,
+				request.SubjectType,
+				request.ActorUserId,
+				request.From,
+				request.To,
+				request.OldestFirst),
+			pageNumber,
+			pageSize,
+			cancellationToken);
 	}
 }

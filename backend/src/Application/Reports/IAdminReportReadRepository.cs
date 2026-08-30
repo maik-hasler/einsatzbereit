@@ -10,6 +10,7 @@ public interface IAdminReportReadRepository
 	ValueTask<PagedList<FlaggedTargetSummary>> GetFlaggedTargetsPagedAsync(
 		int pageNumber,
 		int pageSize,
+		bool includeResolved,
 		CancellationToken cancellationToken = default);
 
 	Task<List<ReportHistoryEntry>> GetHistoryForTargetAsync(

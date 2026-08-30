@@ -229,7 +229,9 @@ describe("opportunity detail page anonymous visitor", () => {
 		);
 	});
 
-	it("returns the visitor to this opportunity after signing in from the report action", async () => {
+	// The returnTo carries the click itself, not just the page: without the marker the visitor
+	// came back to an unchanged page and had to find the small Report button again (#2326).
+	it("carries the report click back to this opportunity after signing in", async () => {
 		const signinRedirect = vi.fn().mockResolvedValue(undefined);
 		renderAs({ isAuthenticated: false, signinRedirect });
 
@@ -237,9 +239,24 @@ describe("opportunity detail page anonymous visitor", () => {
 
 		expect(signinRedirect).toHaveBeenCalledWith(
 			expect.objectContaining({
-				state: { returnTo: `/volunteer-opportunities/${OPPORTUNITY_ID}` },
+				state: {
+					returnTo: `/volunteer-opportunities/${OPPORTUNITY_ID}?report=${OPPORTUNITY_ID}`,
+				},
 			}),
 		);
+	});
+
+	it("opens the report modal on the way back in", async () => {
+		renderAs(
+			{ isAuthenticated: true },
+			"en",
+			undefined,
+			`/volunteer-opportunities/${OPPORTUNITY_ID}?report=${OPPORTUNITY_ID}`,
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Report content" }),
+		).toBeInTheDocument();
 	});
 
 	it("still lists the time slots, but none of them as a control", async () => {
@@ -294,6 +311,7 @@ function renderAs(
 	auth: TestAuth,
 	lng: "de" | "en" = "en",
 	extra?: React.ReactNode,
+	route = `/volunteer-opportunities/${OPPORTUNITY_ID}`,
 ) {
 	return renderWithProviders(
 		<>
@@ -305,7 +323,7 @@ function renderAs(
 			</Routes>
 			{extra}
 		</>,
-		{ lng, route: `/volunteer-opportunities/${OPPORTUNITY_ID}`, auth },
+		{ lng, route, auth },
 	);
 }
 

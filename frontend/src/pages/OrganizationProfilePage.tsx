@@ -15,7 +15,10 @@ import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { signinLocaleArgs } from "../lib/authLocale";
+import {
+	reportIntentSigninArgs,
+	usePendingReportIntent,
+} from "../lib/reportIntent";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
 	classifyLoadFailure,
@@ -41,6 +44,19 @@ export default function OrganizationProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [failure, setFailure] = useState<LoadFailureKind | null>(null);
 	const [showReport, setShowReport] = useState(false);
+	const pendingReportTargetId = usePendingReportIntent();
+
+	// Resumes a Report click an anonymous visitor made before being sent through Keycloak: the
+	// intent used to be dropped at the redirect, so they came back to an unchanged page (#2326).
+	useEffect(() => {
+		if (
+			auth.isAuthenticated &&
+			organizationId &&
+			pendingReportTargetId === organizationId
+		) {
+			setShowReport(true);
+		}
+	}, [auth.isAuthenticated, organizationId, pendingReportTargetId]);
 	const online = useOnlineStatus();
 
 	// A resolved-but-absent profile is the same dead end as a 404.
@@ -174,13 +190,19 @@ export default function OrganizationProfilePage() {
 				<div className="mt-10 border-t border-gray-100 pt-6">
 					<button
 						type="button"
-						onClick={() =>
-							auth.isAuthenticated
-								? setShowReport(true)
-								: auth.signinRedirect(
-										signinLocaleArgs(location.pathname + location.search),
-									)
-						}
+						onClick={() => {
+							if (auth.isAuthenticated || !organizationId) {
+								setShowReport(true);
+								return;
+							}
+							void auth.signinRedirect(
+								reportIntentSigninArgs(
+									location.pathname,
+									location.search,
+									organizationId,
+								),
+							);
+						}}
 						data-testid="report-organization"
 						aria-label={t("orgProfile.reportOrganization")}
 						className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-700"
