@@ -12787,6 +12787,10 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid InvitationId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("expiresOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset ExpiresOn { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -13955,6 +13959,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("expiresOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset ExpiresOn { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
