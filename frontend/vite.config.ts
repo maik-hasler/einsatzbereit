@@ -259,9 +259,48 @@ export default defineConfig({
 					"assets/*.css",
 				],
 
+				// config.js is env-templated at container start
+				// (docker-entrypoint.d/99-runtime-config.sh), so it must never be
+				// precached: a precache entry is keyed by a build-time revision and
+				// served cache-first, which would pin every deployment to whatever
+				// origins the image happened to be built against. The runtimeCaching
+				// rule below is what covers it instead - keeping it out of *both*
+				// was #2317.
 				globIgnores: ["config.js"],
 
 				runtimeCaching: [
+					// /config.js - the runtime config index.html loads ahead of the
+					// app bundle, and the one file the app cannot boot without:
+					// lib/runtimeConfig.ts reads window.__APP_CONFIG__ from it for the
+					// API/Keycloak origins, and ConfigGate refuses to render anything
+					// when they are missing (#2207). Left uncached, that turned every
+					// offline reload and every cold start of the installed PWA into a
+					// full-page "configuration missing" dead end while index.html, the
+					// bundles, the route chunks and the API responses all sat warm in
+					// the cache - the one request that failed was this one (#2317).
+					// NetworkFirst rather than a cache-first strategy so a redeploy's
+					// new origins still win whenever the network answers; the 3s
+					// timeout matches the API rules below, and bounds how long a
+					// technically-connected-but-useless link can hold the app at a
+					// blank screen before the last config that did arrive is used.
+					// No expiration: exactly one URL is ever stored here, so there is
+					// nothing to evict - and an entry aging out is precisely the state
+					// that breaks the cold start this rule exists to fix.
+					{
+						urlPattern: ({
+							url,
+							sameOrigin,
+						}: {
+							url: URL;
+							sameOrigin: boolean;
+						}) => sameOrigin && url.pathname === "/config.js",
+						handler: "NetworkFirst",
+						options: {
+							cacheName: "runtime-config",
+							networkTimeoutSeconds: 3,
+							cacheableResponse: { statuses: [200] },
+						},
+					},
 					{
 						urlPattern: /\/assets\/.+\.js$/,
 						handler: "StaleWhileRevalidate",
