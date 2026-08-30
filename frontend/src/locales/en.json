@@ -339,7 +339,8 @@
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
       "slotChangesKeptOnDiscard": "Your time slot changes were already saved and stay in place - only the other edits are discarded.",
-      "discardChanges": "Discard changes"
+      "discardChanges": "Discard changes",
+      "bannerReplace": "Replace"
     },
     "checkInMethod": {
       "none": "Automatic (after the event)",
@@ -397,7 +398,17 @@
         "scopeEntireSeries": "Entire series",
         "cancelsEngagementsWarning": "Volunteers signed up for the affected occurrences will have their sign-up cancelled and be notified.",
         "confirm": "Remove"
-      }
+      },
+      "capacity": "{{count}} spots",
+      "capacity_one": "{{count}} spot",
+      "capacity_other": "{{count}} spots",
+      "capacityUnlimited": "Unlimited spots",
+      "capacityInvalid": "Enter a number of spots between 1 and {{max}}.",
+      "startMustBeFuture": "Start must be in the future.",
+      "endMustBeAfterStart": "End must be after the start.",
+      "overlapWarning": "Overlaps another time slot",
+      "overlapHint": "This overlaps a time slot already on the list - a volunteer could sign up for both.",
+      "pastSlotsBeforePublish": "Some time slots have moved into the past. Correct or remove them before publishing."
     },
     "signUp": {
       "titleWaitlist": "Sign up for a slot",
@@ -1024,7 +1035,7 @@
       "understood": "Understood",
       "delete": {
         "title": "Delete opportunity?",
-        "message": "Are you sure you want to permanently delete this opportunity? This cannot be undone.",
+        "message": "Are you sure you want to permanently delete the opportunity “{{title}}”? This cannot be undone.",
         "confirm": "Yes, delete"
       },
       "withdraw": {
@@ -1056,12 +1067,12 @@
       },
       "unpublish": {
         "title": "Unpublish opportunity?",
-        "message": "This removes it from the public listing and cancels any pending or confirmed sign-ups - volunteers will be informed. You can publish it again later.",
+        "message": "This removes the opportunity “{{title}}” from the public listing and cancels any pending or confirmed sign-ups - volunteers will be informed. You can publish it again later.",
         "confirm": "Yes, unpublish"
       },
       "cancelOpportunity": {
         "title": "Cancel opportunity?",
-        "message": "This permanently cancels the opportunity and cancels any pending or confirmed sign-ups - volunteers will be informed. This cannot be undone.",
+        "message": "This permanently cancels the opportunity “{{title}}” and cancels any pending or confirmed sign-ups - volunteers will be informed. This cannot be undone.",
         "confirm": "Yes, cancel opportunity",
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let volunteers know why…"
@@ -1641,7 +1652,8 @@
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",
         "EndMustBeAfterStart": "End date must be after start date.",
-        "MaxParticipantsMustBePositive": "Max participants must be greater than zero."
+        "MaxParticipantsMustBePositive": "Max participants must be greater than zero.",
+        "MaxParticipantsTooLarge": "Max participants must not exceed 10,000."
       },
       "Engagement": {
         "MessageRequired": "A message is required when expressing interest via individual contact.",

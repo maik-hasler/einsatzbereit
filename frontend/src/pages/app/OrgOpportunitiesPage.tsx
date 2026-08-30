@@ -31,6 +31,16 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const OPPORTUNITIES_PAGE_SIZE = 10;
 
+/**
+ * What a destructive confirmation is about to act on. The title travels with
+ * the id so the dialog can name the opportunity rather than leaning on a
+ * pronoun with nothing to refer back to (#2325).
+ */
+interface ConfirmTarget {
+	id: string;
+	title: string;
+}
+
 const STATUS_BADGE_TONE: Record<string, ChipTone> = {
 	Draft: "warning",
 	Published: "success",
@@ -153,15 +163,15 @@ export default function OrgOpportunitiesPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
 	const [publishingId, setPublishingId] = useState<string | null>(null);
-	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const [unpublishTargetId, setUnpublishTargetId] = useState<string | null>(
+	const [unpublishTarget, setUnpublishTarget] = useState<ConfirmTarget | null>(
 		null,
 	);
 	const [unpublishing, setUnpublishing] = useState(false);
 	const [unpublishError, setUnpublishError] = useState<string | null>(null);
-	const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+	const [cancelTarget, setCancelTarget] = useState<ConfirmTarget | null>(null);
 	const [cancelReason, setCancelReason] = useState("");
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
@@ -247,12 +257,12 @@ export default function OrgOpportunitiesPage() {
 	}
 
 	async function handleDeleteConfirm() {
-		if (!deleteTargetId) return;
+		if (!deleteTarget) return;
 		setDeleting(true);
 		setDeleteError(null);
 		try {
-			await api.deleteVolunteerOpportunity(deleteTargetId);
-			setDeleteTargetId(null);
+			await api.deleteVolunteerOpportunity(deleteTarget.id);
+			setDeleteTarget(null);
 			reloadAll();
 		} catch (err) {
 			setDeleteError(getApiErrorMessage(err, t("opportunities.deleteError")));
@@ -262,12 +272,12 @@ export default function OrgOpportunitiesPage() {
 	}
 
 	async function handleUnpublishConfirm() {
-		if (!unpublishTargetId) return;
+		if (!unpublishTarget) return;
 		setUnpublishing(true);
 		setUnpublishError(null);
 		try {
-			await api.unpublishVolunteerOpportunity(unpublishTargetId);
-			setUnpublishTargetId(null);
+			await api.unpublishVolunteerOpportunity(unpublishTarget.id);
+			setUnpublishTarget(null);
 			dispatchToast("success", t("opportunities.unpublishSuccess"));
 			reloadAll();
 		} catch (err) {
@@ -278,21 +288,21 @@ export default function OrgOpportunitiesPage() {
 	}
 
 	function handleCancelClose() {
-		setCancelTargetId(null);
+		setCancelTarget(null);
 		setCancelReason("");
 		setCancelError(null);
 	}
 
 	async function handleCancelConfirm() {
-		if (!cancelTargetId) return;
+		if (!cancelTarget) return;
 		setCancelling(true);
 		setCancelError(null);
 		try {
 			const trimmedReason = cancelReason.trim();
-			await api.cancelVolunteerOpportunity(cancelTargetId, {
+			await api.cancelVolunteerOpportunity(cancelTarget.id, {
 				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
 			});
-			setCancelTargetId(null);
+			setCancelTarget(null);
 			setCancelReason("");
 			dispatchToast("success", t("opportunities.cancelSuccess"));
 			reloadAll();
@@ -310,6 +320,10 @@ export default function OrgOpportunitiesPage() {
 		const status = item.status;
 		const isHighlighted = item.id === highlightedId;
 		const title = pickLocalizedText(item.titleDe, item.titleEn, i18n.language);
+		const confirmTarget: ConfirmTarget = {
+			id: item.id,
+			title: title.text || t("orgDashboard.unnamedDraft"),
+		};
 		const description = pickLocalizedText(
 			item.descriptionDe,
 			item.descriptionEn,
@@ -425,7 +439,7 @@ export default function OrgOpportunitiesPage() {
 													label: t("opportunities.unpublish"),
 													testId: "opportunity-unpublish",
 													onClick: () => {
-														setUnpublishTargetId(item.id);
+														setUnpublishTarget(confirmTarget);
 														setUnpublishError(null);
 													},
 												},
@@ -439,7 +453,7 @@ export default function OrgOpportunitiesPage() {
 													destructive: true,
 													testId: "opportunity-cancel",
 													onClick: () => {
-														setCancelTargetId(item.id);
+														setCancelTarget(confirmTarget);
 														setCancelReason("");
 														setCancelError(null);
 													},
@@ -452,7 +466,7 @@ export default function OrgOpportunitiesPage() {
 										destructive: true,
 										testId: "opportunity-delete",
 										onClick: () => {
-											setDeleteTargetId(item.id);
+											setDeleteTarget(confirmTarget);
 											setDeleteError(null);
 										},
 									},
@@ -655,14 +669,16 @@ export default function OrgOpportunitiesPage() {
 				/>
 			)}
 
-			{deleteTargetId && (
+			{deleteTarget && (
 				<ConfirmDialog
 					title={t("confirmDialog.delete.title")}
-					message={t("confirmDialog.delete.message")}
+					message={t("confirmDialog.delete.message", {
+						title: deleteTarget.title,
+					})}
 					confirmLabel={t("confirmDialog.delete.confirm")}
 					onConfirm={handleDeleteConfirm}
 					onClose={() => {
-						setDeleteTargetId(null);
+						setDeleteTarget(null);
 						setDeleteError(null);
 					}}
 					loading={deleting}
@@ -670,14 +686,16 @@ export default function OrgOpportunitiesPage() {
 				/>
 			)}
 
-			{unpublishTargetId && (
+			{unpublishTarget && (
 				<ConfirmDialog
 					title={t("confirmDialog.unpublish.title")}
-					message={t("confirmDialog.unpublish.message")}
+					message={t("confirmDialog.unpublish.message", {
+						title: unpublishTarget.title,
+					})}
 					confirmLabel={t("confirmDialog.unpublish.confirm")}
 					onConfirm={handleUnpublishConfirm}
 					onClose={() => {
-						setUnpublishTargetId(null);
+						setUnpublishTarget(null);
 						setUnpublishError(null);
 					}}
 					loading={unpublishing}
@@ -685,10 +703,12 @@ export default function OrgOpportunitiesPage() {
 				/>
 			)}
 
-			{cancelTargetId && (
+			{cancelTarget && (
 				<ConfirmDialog
 					title={t("confirmDialog.cancelOpportunity.title")}
-					message={t("confirmDialog.cancelOpportunity.message")}
+					message={t("confirmDialog.cancelOpportunity.message", {
+						title: cancelTarget.title,
+					})}
 					confirmLabel={t("confirmDialog.cancelOpportunity.confirm")}
 					onConfirm={handleCancelConfirm}
 					onClose={handleCancelClose}

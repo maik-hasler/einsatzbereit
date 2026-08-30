@@ -572,3 +572,222 @@ describe("edit wizard: time slot changes are not staged (#2315)", () => {
 		).toBeInTheDocument();
 	});
 });
+
+describe("create-opportunity wizard: time slot guards (#2325)", () => {
+	const slotStart = () =>
+		document.querySelector("#slot-start") as HTMLInputElement;
+	const slotEnd = () => document.querySelector("#slot-end") as HTMLInputElement;
+	const slotMax = () => document.querySelector("#slot-max") as HTMLInputElement;
+	const slotRows = () =>
+		within(screen.getByTestId("time-slot-list")).getAllByRole("listitem");
+
+	async function gotoTimeSlots() {
+		openWizard();
+		await userEvent.type(title(), "Zeitfenster");
+		await userEvent.type(description(), "Eine ausreichend lange Beschreibung.");
+		await userEvent.click(screen.getByTestId("wizard-stepper-2"));
+		await userEvent.click(
+			await screen.findByLabelText(/remote|Remote/i, { selector: "input" }),
+		);
+		await userEvent.click(screen.getByTestId("wizard-stepper-4"));
+		await screen.findByTestId("wizard-step-4");
+	}
+
+	async function addSlot(start: string, end: string, max?: string) {
+		fireEvent.change(slotStart(), { target: { value: start } });
+		fireEvent.change(slotEnd(), { target: { value: end } });
+		if (max !== undefined)
+			fireEvent.change(slotMax(), { target: { value: max } });
+		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+	}
+
+	it("refuses a past-dated slot without contacting the API at all", async () => {
+		await gotoTimeSlots();
+
+		await addSlot("2020-01-05T10:00", "2020-01-05T12:00");
+
+		expect(
+			await screen.findByText("Start must be in the future."),
+		).toBeInTheDocument();
+		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
+		expect(api.createVolunteerOpportunity).not.toHaveBeenCalled();
+		expect(api.createTimeSlot).not.toHaveBeenCalled();
+	});
+
+	it("says which end of the range is wrong when it ends before it starts", async () => {
+		await gotoTimeSlots();
+
+		await addSlot("2026-10-05T12:00", "2026-10-05T10:00");
+
+		expect(
+			await screen.findByText("End must be after the start."),
+		).toBeInTheDocument();
+		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
+	});
+
+	it("lists slots in chronological order, not the order they were added", async () => {
+		await gotoTimeSlots();
+
+		await addSlot("2026-12-20T10:00", "2026-12-20T12:00");
+		await addSlot("2026-10-05T10:00", "2026-10-05T12:00");
+		await addSlot("2026-11-11T10:00", "2026-11-11T12:00");
+
+		await waitFor(() => expect(slotRows()).toHaveLength(3));
+		const dates = slotRows().map(
+			(row) => (row.textContent ?? "").split(",")[0],
+		);
+		expect(dates).toEqual(["5 Oct 2026", "11 Nov 2026", "20 Dec 2026"]);
+	});
+
+	it("says what the number after a slot means instead of bracketing it", async () => {
+		await gotoTimeSlots();
+
+		await addSlot("2026-10-05T10:00", "2026-10-05T12:00", "3");
+
+		const row = await waitFor(() => slotRows()[0]);
+		expect(row).toHaveTextContent("3 spots");
+		expect(row).not.toHaveTextContent("(3)");
+	});
+
+	it("labels an unlimited slot rather than showing a bare word in brackets", async () => {
+		await gotoTimeSlots();
+		await userEvent.click(screen.getByLabelText("Unlimited"));
+
+		await addSlot("2026-10-05T10:00", "2026-10-05T12:00");
+
+		const row = await waitFor(() => slotRows()[0]);
+		expect(row).toHaveTextContent("Unlimited spots");
+	});
+
+	it("refuses a spot limit of 0 instead of silently rewriting it to 1", async () => {
+		await gotoTimeSlots();
+
+		await addSlot("2026-10-05T10:00", "2026-10-05T12:00", "0");
+
+		expect(
+			await screen.findByText("Enter a number of spots between 1 and 10,000."),
+		).toBeInTheDocument();
+		expect(slotMax()).toHaveValue(0);
+		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
+	});
+
+	it("refuses a spot limit past the cap, and bounds the box itself", async () => {
+		await gotoTimeSlots();
+		expect(slotMax()).toHaveAttribute("max", "10000");
+
+		await addSlot("2026-10-05T10:00", "2026-10-05T12:00", "999999999");
+
+		expect(
+			await screen.findByText("Enter a number of spots between 1 and 10,000."),
+		).toBeInTheDocument();
+		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
+	});
+
+	it("warns about an overlap before it is added, and flags both slots after", async () => {
+		await gotoTimeSlots();
+		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+
+		fireEvent.change(slotStart(), { target: { value: "2026-09-10T11:00" } });
+		fireEvent.change(slotEnd(), { target: { value: "2026-09-10T13:00" } });
+
+		expect(
+			await screen.findByText(
+				"This overlaps a time slot already on the list - a volunteer could sign up for both.",
+			),
+		).toBeInTheDocument();
+
+		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+		await waitFor(() => expect(slotRows()).toHaveLength(2));
+		expect(screen.getAllByText("Overlaps another time slot")).toHaveLength(2);
+	});
+
+	it("never creates the opportunity when a staged slot has aged into the past", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			await gotoTimeSlots();
+			await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+			await waitFor(() => expect(slotRows()).toHaveLength(1));
+
+			// The slot was in the future when it was added; the organizer took
+			// their time over the rest of the wizard.
+			vi.setSystemTime(new Date("2026-09-11T06:00:00Z"));
+			await userEvent.click(screen.getByTestId("modal-submit"));
+
+			expect(
+				await screen.findByText(
+					"Some time slots have moved into the past. Correct or remove them before publishing.",
+				),
+			).toBeInTheDocument();
+			expect(api.createVolunteerOpportunity).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("stays quiet about slots that merely sit back to back", async () => {
+		await gotoTimeSlots();
+		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+
+		fireEvent.change(slotStart(), { target: { value: "2026-09-10T12:00" } });
+		fireEvent.change(slotEnd(), { target: { value: "2026-09-10T14:00" } });
+		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+		await waitFor(() => expect(slotRows()).toHaveLength(2));
+		expect(screen.queryByText("Overlaps another time slot")).toBeNull();
+	});
+});
+
+describe("edit wizard: replacing the banner (#2325)", () => {
+	function openEditWizardWithBanner() {
+		return renderWithProviders(
+			<CreateVolunteerOpportunityModal
+				organizationId="org-1"
+				initialOpportunity={
+					{
+						id: "existing-opp-id",
+						organizationId: "org-1",
+						titleDe: "Bestehende Chance",
+						descriptionDe: "Beschreibung.",
+						isRemote: true,
+						occurrence: "OneTime",
+						participationType: "ScheduledSlots",
+						checkInMethod: "None",
+						tags: [],
+						timeSlots: [],
+						bannerImageUrl: "https://storage.example/banner.jpg",
+					} as unknown as Parameters<
+						typeof CreateVolunteerOpportunityModal
+					>[0]["initialOpportunity"]
+				}
+				onClose={() => {}}
+				onSuccess={() => {}}
+			/>,
+			{ auth: { isAuthenticated: true } },
+		);
+	}
+
+	it("offers a file picker while a banner is already set", async () => {
+		openEditWizardWithBanner();
+
+		await screen.findByTestId("wizard-step-1");
+		const picker = document.querySelector(
+			"#opportunity-banner",
+		) as HTMLInputElement | null;
+		expect(picker).not.toBeNull();
+		expect(picker?.type).toBe("file");
+		expect(screen.getByLabelText("Replace")).toBe(picker);
+		expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+	});
+
+	it("keeps the picker once the banner is removed", async () => {
+		openEditWizardWithBanner();
+
+		await screen.findByTestId("wizard-step-1");
+		await userEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+		expect(document.querySelector("#opportunity-banner")).not.toBeNull();
+		expect(screen.queryByLabelText("Replace")).toBeNull();
+	});
+});

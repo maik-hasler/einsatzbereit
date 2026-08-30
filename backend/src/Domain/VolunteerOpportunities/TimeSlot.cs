@@ -17,6 +17,12 @@ public sealed class TimeSlot
 
 	public static readonly TimeSpan CheckInWindowAfter = TimeSpan.FromHours(2);
 
+	// An organizer typing a capacity has no upper bound to bump into otherwise,
+	// so a slip of the keyboard persists as a nine-digit figure that reads as a
+	// real number of seats everywhere it is shown (einsatzbereit#2325). Well
+	// above any plausible shift, low enough to catch a typo.
+	public const int MaxParticipantsLimit = 10_000;
+
 	public DateTimeOffset StartDateTime { get; private set; }
 
 	public DateTimeOffset EndDateTime { get; private set; }
@@ -92,8 +98,9 @@ public sealed class TimeSlot
 
 	public Result UpdateCapacity(int? maxParticipants)
 	{
-		if (maxParticipants is <= 0)
-			return Result.Failure(Error.Validation("TimeSlot.MaxParticipantsMustBePositive", "Max participants must be greater than zero."));
+		var validation = ValidateCapacity(maxParticipants);
+		if (validation.IsFailure)
+			return validation;
 
 		MaxParticipants = maxParticipants;
 		return Result.Success();
@@ -107,8 +114,16 @@ public sealed class TimeSlot
 		if (endDateTime <= startDateTime)
 			return Result.Failure(Error.Validation("TimeSlot.EndMustBeAfterStart", "End date must be after start date."));
 
+		return ValidateCapacity(maxParticipants);
+	}
+
+	private static Result ValidateCapacity(int? maxParticipants)
+	{
 		if (maxParticipants is <= 0)
 			return Result.Failure(Error.Validation("TimeSlot.MaxParticipantsMustBePositive", "Max participants must be greater than zero."));
+
+		if (maxParticipants > MaxParticipantsLimit)
+			return Result.Failure(Error.Validation("TimeSlot.MaxParticipantsTooLarge", $"Max participants must not exceed {MaxParticipantsLimit}."));
 
 		return Result.Success();
 	}
