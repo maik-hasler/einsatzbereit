@@ -71,7 +71,7 @@ export default function ImprintPage() {
 													// eslint-disable-next-line jsx-a11y/anchor-has-content -- self-closing, filled by Trans from the translation's <websiteLink> tag content
 													<a
 														href={runtimeConfig.operatorSiteUrl}
-														className={linkClass}
+														className={inlineLinkClass}
 													/>
 												),
 											}}
