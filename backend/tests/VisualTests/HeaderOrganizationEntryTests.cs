@@ -53,7 +53,7 @@ public class HeaderOrganizationEntryTests(AspireFixture fixture) : VisualTestBas
 		overflow.Should().BeLessThanOrEqualTo(0,
 			"the organization entry must not push the page into horizontal scroll");
 
-		var reference = await Page.GetByTestId("nav-help").BoundingBoxAsync();
+		var reference = await Page.GetByTestId("nav-organizations").BoundingBoxAsync();
 		var box = await entry.BoundingBoxAsync();
 		reference.Should().NotBeNull();
 		box.Should().NotBeNull();

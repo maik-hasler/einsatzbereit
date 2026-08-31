@@ -12,12 +12,12 @@ public class ErrorBoundaryOfflineTests(AspireFixture fixture) : VisualTestBase(f
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await Page.GotoAsync(origin);
-		await Expect(Page.GetByTestId("nav-help")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("nav-organizations")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Context.SetOfflineAsync(true);
 		try
 		{
-			await Page.GetByTestId("nav-help").ClickAsync();
+			await Page.GetByTestId("nav-organizations").ClickAsync();
 
 			await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
 				.ToBeVisibleAsync(new() { Timeout = 20_000 });
@@ -43,12 +43,12 @@ public class ErrorBoundaryOfflineTests(AspireFixture fixture) : VisualTestBase(f
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await Page.GotoAsync(origin);
-		await Expect(Page.GetByTestId("nav-help")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByTestId("nav-organizations")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Context.SetOfflineAsync(true);
 		try
 		{
-			await Page.GetByTestId("nav-help").ClickAsync();
+			await Page.GetByTestId("nav-organizations").ClickAsync();
 			await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
 				.ToBeVisibleAsync(new() { Timeout = 20_000 });
 		}
@@ -57,7 +57,7 @@ public class ErrorBoundaryOfflineTests(AspireFixture fixture) : VisualTestBase(f
 			await Context.SetOfflineAsync(false);
 		}
 
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Help", Exact = true }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Organizations", Exact = true }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 	}
 }

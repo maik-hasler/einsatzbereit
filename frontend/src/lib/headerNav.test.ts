@@ -8,19 +8,17 @@ function org(id: string, name: string): OrganizationSummaryDto {
 }
 
 describe("buildPrimaryNav", () => {
-	it("returns the five static destinations for a viewer with no organization", () => {
+	it("returns the four static destinations for a viewer with no organization", () => {
 		expect(buildPrimaryNav(null).map((link) => link.key)).toEqual([
 			"home",
 			"findOpportunities",
 			"organizations",
 			"forOrganizations",
-			"help",
 		]);
 	});
 
 	it("treats undefined (organizations not loaded yet) like no membership", () => {
 		expect(buildPrimaryNav(undefined).map((link) => link.kind)).toEqual([
-			"static",
 			"static",
 			"static",
 			"static",
@@ -38,7 +36,6 @@ describe("buildPrimaryNav", () => {
 			"findOpportunities",
 			"organizations",
 			"organization",
-			"help",
 		]);
 	});
 
@@ -59,11 +56,11 @@ describe("buildPrimaryNav", () => {
 		expect(entry.kind === "organization" && entry.org).toBe(activeOrg);
 	});
 
-	it("leaves the other four destinations untouched", () => {
+	it("leaves the other three destinations untouched", () => {
 		const withOrg = buildPrimaryNav(org("org-1", "Some Org"));
 		const withoutOrg = buildPrimaryNav(null);
 
-		for (const index of [0, 1, 2, 4]) {
+		for (const index of [0, 1, 2]) {
 			expect(withOrg[index]).toEqual(withoutOrg[index]);
 		}
 	});

@@ -84,11 +84,11 @@ describe("Header primary navigation", () => {
 		const { container } = renderWithProviders(<Header />, { auth: signedIn });
 
 		await screen.findByRole("button", { name: "User menu" });
-		for (const key of ["findOpportunities", "help"]) {
-			expect(
-				container.ownerDocument.querySelector(`[data-testid="nav-${key}"]`),
-			).toBeInTheDocument();
-		}
+		expect(
+			container.ownerDocument.querySelector(
+				'[data-testid="nav-findOpportunities"]',
+			),
+		).toBeInTheDocument();
 	});
 
 	it("carries the way home in the nav", () => {
