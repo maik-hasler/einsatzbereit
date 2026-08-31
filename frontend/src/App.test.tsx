@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App, { AppRoutes } from "./App";
 import { renderWithProviders } from "./test/render";
@@ -99,9 +99,15 @@ describe("the merged profile settings page (#2354)", () => {
 	it("redirects /profile/settings to /profile", async () => {
 		renderAt("/profile/settings");
 
-		expect(
-			await screen.findByRole("heading", { level: 1, name: "My profile" }),
-		).toBeVisible();
+		// ProfileOverviewPage keeps re-rendering as its own effects (profile,
+		// streaks, engagement count) settle, so re-query on each retry instead
+		// of asserting on a single findByRole snapshot that a later render can
+		// detach from the document.
+		await waitFor(() =>
+			expect(
+				screen.getByRole("heading", { level: 1, name: "My profile" }),
+			).toBeVisible(),
+		);
 	});
 });
 
