@@ -26,10 +26,10 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		await Expect(calendar).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		(await calendar.EvaluateAsync<string>("el => el.style.gridRow"))
-			.Should().Be("4 / span 4", "the Calendar defaults to 4 rows, not the 6 it shipped with");
-		(await Page.GetByTestId("widget-tile-Settings").EvaluateAsync<string>("el => el.style.gridRow"))
-			.Should().Be("8 / span 1",
-				"shrinking the Calendar must pull Settings up with it, not leave three empty rows");
+			.Should().Be("3 / span 4", "the Calendar defaults to 4 rows, not the 6 it shipped with");
+		(await calendar.EvaluateAsync<string>("el => el.style.gridColumn"))
+			.Should().Be("1 / span 8",
+				"the Calendar is the board's canvas: full width, and below the row an organizer acts on");
 
 		var calendarBox = await calendar.BoundingBoxAsync();
 		calendarBox.Should().NotBeNull();

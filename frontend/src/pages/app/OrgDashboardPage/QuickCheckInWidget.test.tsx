@@ -41,7 +41,6 @@ function renderWidget() {
 		<QuickCheckInWidget
 			organizationId={ORG_ID}
 			refreshKey={0}
-			size="full"
 			onOpportunityCreated={() => {}}
 		/>,
 		{ auth: { isAuthenticated: true } },

@@ -28,7 +28,6 @@ import VolunteerStatsWidget from "./VolunteerStatsWidget";
 import SettingsWidget from "./SettingsWidget";
 import CreateOpportunityWidget from "./CreateOpportunityWidget";
 import QuickCheckInWidget from "./QuickCheckInWidget";
-import SettingsIconWidget from "./SettingsIconWidget";
 import EditableWidgetTile from "./EditableWidgetTile";
 import { cellInRect, useWidgetPlacement } from "./useWidgetPlacement";
 import {
@@ -37,7 +36,8 @@ import {
 	GRID_MAX_ROWS,
 	WIDGET_CATALOG,
 	WIDGET_KEYS,
-	classifyWidth,
+	MOBILE_WIDGET_SIZE,
+	classifyWidgetSize,
 	compactLayout,
 	groupIntoRowBands,
 	placeNewWidget,
@@ -45,7 +45,7 @@ import {
 	sortByPosition,
 	type PlacedWidget,
 	type WidgetKey,
-	type WidgetSizeClass,
+	type WidgetSize,
 } from "./widgetCatalog";
 
 function useIsLargeViewport() {
@@ -116,7 +116,18 @@ export default function OrgDashboardPage() {
 					})
 					.filter((w): w is PlacedWidget => w !== null);
 
-				setSavedLayout(response.hasCustomLayout ? sanitized : DEFAULT_LAYOUT);
+				// A saved placement whose key has since left the catalog - the
+				// settings-cog tile, retired as a duplicate of the Organization
+				// one - is dropped rather than rendered, and the board is pulled
+				// back together so it does not leave a hole where that tile was.
+				const withoutRetired =
+					sanitized.length === response.widgets.length
+						? sanitized
+						: compactLayout(sanitized);
+
+				setSavedLayout(
+					response.hasCustomLayout ? withoutRetired : DEFAULT_LAYOUT,
+				);
 				setHasCustomLayout(response.hasCustomLayout);
 				setLayoutLoadFailed(false);
 			})
@@ -312,7 +323,7 @@ export default function OrgDashboardPage() {
 		});
 	}
 
-	function renderWidget(key: WidgetKey, size: WidgetSizeClass) {
+	function renderWidget(key: WidgetKey, size: WidgetSize) {
 		switch (key) {
 			case "ToDo":
 				return (
@@ -329,6 +340,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						isOrganizer={isOrganizer}
 					/>
 				);
 			case "UpcomingOpportunities":
@@ -336,6 +348,7 @@ export default function OrgDashboardPage() {
 					<UpcomingOpportunitiesWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
+						size={size}
 						isOrganizer={isOrganizer}
 						onOpportunityCreated={handleOpportunityCreated}
 					/>
@@ -350,7 +363,14 @@ export default function OrgDashboardPage() {
 					/>
 				);
 			case "Settings":
-				return <SettingsWidget org={org} size={size} />;
+				return (
+					<SettingsWidget
+						org={org}
+						refreshKey={refreshKey}
+						size={size}
+						isOrganizer={isOrganizer}
+					/>
+				);
 			case "CreateOpportunity":
 				return (
 					<CreateOpportunityWidget
@@ -364,13 +384,8 @@ export default function OrgDashboardPage() {
 					<QuickCheckInWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
-						size={size}
 						onOpportunityCreated={handleOpportunityCreated}
 					/>
-				);
-			case "SettingsIcon":
-				return (
-					<SettingsIconWidget organizationId={organizationId} size={size} />
 				);
 		}
 	}
@@ -452,7 +467,9 @@ export default function OrgDashboardPage() {
 	function renderTile(widget: PlacedWidget, rowOffset = 0) {
 		const isPlacingThis = activeKey === widget.widgetKey;
 		const rect = isPlacingThis && previewRect ? previewRect : widget;
-		const sizeClass = isLargeViewport ? classifyWidth(rect.width) : "compact";
+		const sizeClass = isLargeViewport
+			? classifyWidgetSize(rect.width, rect.height)
+			: MOBILE_WIDGET_SIZE;
 		return (
 			<EditableWidgetTile
 				key={widget.widgetKey}

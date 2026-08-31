@@ -5,10 +5,23 @@ export type WidgetKey =
 	| "Calendar"
 	| "Settings"
 	| "CreateOpportunity"
-	| "QuickCheckIn"
-	| "SettingsIcon";
+	| "QuickCheckIn";
 
-export type WidgetSizeClass = "compact" | "medium" | "full";
+// How wide the tile is, in bands rather than columns, so a widget lays itself
+// out against the room it actually has instead of against a column count.
+export type WidgetWidthClass = "compact" | "medium" | "full";
+
+// How tall it is. A one-row tile is a strip - roughly a button's worth of
+// height once the card's padding and label are paid for - and nothing that
+// wants a list or a chart fits in one. Widgets used to be told only how WIDE
+// they were, so a full-width strip and a full-width canvas were handed the
+// same "full" and rendered the same crushed layout.
+export type WidgetHeightClass = "strip" | "short" | "tall";
+
+export interface WidgetSize {
+	width: WidgetWidthClass;
+	height: WidgetHeightClass;
+}
 
 interface WidgetCatalogEntry {
 	titleKey: string;
@@ -21,62 +34,58 @@ interface WidgetCatalogEntry {
 }
 
 export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
-	CreateOpportunity: {
-		titleKey: "orgDashboard.createOpportunityWidgetTitle",
-		defaultWidth: 4,
-		defaultHeight: 1,
-		minWidth: 2,
-		minHeight: 1,
-	},
+	// The triage queue, and the reason an organizer opens the dashboard at all,
+	// so it gets the top-left cell and enough height to list real rows.
 	ToDo: {
 		titleKey: "orgDashboard.todoWidgetTitle",
-		defaultWidth: 4,
-		defaultHeight: 1,
-		minWidth: 2,
-		minHeight: 1,
-	},
-	VolunteerStats: {
-		titleKey: "orgDashboard.volunteerStatsWidgetTitle",
-		defaultWidth: 4,
-		defaultHeight: 1,
+		defaultWidth: 3,
+		defaultHeight: 2,
 		minWidth: 2,
 		minHeight: 1,
 	},
 	UpcomingOpportunities: {
 		titleKey: "orgDashboard.upcomingWidgetTitle",
-		defaultWidth: 4,
+		defaultWidth: 3,
 		defaultHeight: 2,
 		minWidth: 2,
 		minHeight: 2,
 	},
+	// Not one button in a card any more - the shortcuts an organizer reaches for
+	// between the two lists beside it.
+	CreateOpportunity: {
+		titleKey: "orgDashboard.quickActionsWidgetTitle",
+		defaultWidth: 2,
+		defaultHeight: 2,
+		minWidth: 2,
+		minHeight: 1,
+	},
+	VolunteerStats: {
+		titleKey: "orgDashboard.volunteerStatsWidgetTitle",
+		defaultWidth: 2,
+		defaultHeight: 1,
+		minWidth: 2,
+		minHeight: 1,
+	},
 	Calendar: {
 		titleKey: "orgDashboard.calendarWidgetTitle",
 		defaultWidth: 8,
-
 		defaultHeight: 4,
 		minWidth: 4,
 		minHeight: 4,
 	},
 	Settings: {
 		titleKey: "orgDashboard.settingsWidgetTitle",
-		defaultWidth: 8,
+		defaultWidth: 3,
 		defaultHeight: 1,
-		minWidth: 3,
+		minWidth: 2,
 		minHeight: 1,
 	},
 	QuickCheckIn: {
 		titleKey: "orgDashboard.quickCheckInWidgetTitle",
-		defaultWidth: 4,
+		defaultWidth: 3,
 		defaultHeight: 2,
 		minWidth: 2,
 		minHeight: 2,
-	},
-	SettingsIcon: {
-		titleKey: "orgDashboard.settingsIconWidgetTitle",
-		defaultWidth: 2,
-		defaultHeight: 1,
-		minWidth: 1,
-		minHeight: 1,
 	},
 };
 
@@ -94,24 +103,36 @@ export interface PlacedWidget {
 	height: number;
 }
 
+// What a dashboard nobody has customized is for: the two questions an
+// organizer opens it with - what needs a decision from me, and what is
+// happening next - side by side above the fold, the shortcuts they reach for
+// beside them, and the calendar below as the thing you scroll to rather than
+// the thing you land on. Everything else in the catalog is opt-in.
 export const DEFAULT_LAYOUT: PlacedWidget[] = [
-	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 3, height: 1 },
-	{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
-	{ widgetKey: "VolunteerStats", x: 7, y: 1, width: 2, height: 1 },
-	{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
-	{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 4 },
-	{ widgetKey: "Settings", x: 1, y: 8, width: 8, height: 1 },
+	{ widgetKey: "ToDo", x: 1, y: 1, width: 3, height: 2 },
+	{ widgetKey: "UpcomingOpportunities", x: 4, y: 1, width: 3, height: 2 },
+	{ widgetKey: "CreateOpportunity", x: 7, y: 1, width: 2, height: 2 },
+	{ widgetKey: "Calendar", x: 1, y: 3, width: 8, height: 4 },
 ];
 
 export function sortByPosition(widgets: PlacedWidget[]): PlacedWidget[] {
 	return [...widgets].sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
-export function classifyWidth(width: number): WidgetSizeClass {
-	if (width <= 3) return "compact";
-	if (width <= 5) return "medium";
-	return "full";
+export function classifyWidgetSize(width: number, height: number): WidgetSize {
+	return {
+		width: width <= 3 ? "compact" : width <= 5 ? "medium" : "full",
+		height: height <= 1 ? "strip" : height <= 2 ? "short" : "tall",
+	};
 }
+
+// One column, content-sized rows: a phone gives a widget the full width of a
+// narrow screen and as much height as it asks for, which is neither of the
+// desktop extremes.
+export const MOBILE_WIDGET_SIZE: WidgetSize = {
+	width: "compact",
+	height: "short",
+};
 
 export function sanitizeWidgetKey(key: string): WidgetKey | null {
 	return key in WIDGET_CATALOG ? (key as WidgetKey) : null;

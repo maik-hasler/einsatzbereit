@@ -64,6 +64,27 @@ export function formatSignUpCount(
 	}
 }
 
+/**
+ * The same three capacity states as `formatSignUpCount`, worded for ONE
+ * occurrence rather than a whole opportunity.
+ *
+ * A market stall that runs every Saturday is one opportunity and twelve
+ * mornings, so "8/20 sign-ups total" is the right sentence for the series and
+ * the wrong one for this Saturday. Kept beside its sibling rather than written
+ * inline at the call site, so the two registers stay one decision.
+ */
+export function formatSlotSignUpCount(
+	capacity: OpportunityCapacity,
+	t: TFunction,
+): string {
+	return capacity.kind === "capped"
+		? t("orgDashboard.slotPlaces", {
+				booked: capacity.booked,
+				max: capacity.max,
+			})
+		: t("orgDashboard.slotSignedUp", { count: capacity.booked });
+}
+
 export interface LocalizedText {
 	text: string;
 	lang: string;

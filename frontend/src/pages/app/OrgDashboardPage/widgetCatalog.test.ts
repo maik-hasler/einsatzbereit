@@ -185,12 +185,12 @@ describe("groupIntoRowBands", () => {
 
 describe("placeNewWidget", () => {
 	it("places into an empty grid at the top-left corner", () => {
-		expect(placeNewWidget("SettingsIcon", [])).toEqual({
-			widgetKey: "SettingsIcon",
+		expect(placeNewWidget("VolunteerStats", [])).toEqual({
+			widgetKey: "VolunteerStats",
 			x: 1,
 			y: 1,
-			width: WIDGET_CATALOG.SettingsIcon.defaultWidth,
-			height: WIDGET_CATALOG.SettingsIcon.defaultHeight,
+			width: WIDGET_CATALOG.VolunteerStats.defaultWidth,
+			height: WIDGET_CATALOG.VolunteerStats.defaultHeight,
 		});
 	});
 
@@ -202,13 +202,19 @@ describe("placeNewWidget", () => {
 
 		const placed = placeNewWidget("ToDo", existing);
 
+		// Row 1, beside what is already there, rather than appended under it.
+		// Not column 3: the tile is two rows tall, so starting there would put
+		// its lower half through the Settings strip in row 2.
 		expect(placed).toEqual({
 			widgetKey: "ToDo",
-			x: 3,
+			x: 4,
 			y: 1,
-			width: 4,
-			height: 1,
+			width: WIDGET_CATALOG.ToDo.defaultWidth,
+			height: WIDGET_CATALOG.ToDo.defaultHeight,
 		});
+		for (const widget of existing) {
+			expect(rectsOverlap(placed, widget)).toBe(false);
+		}
 	});
 
 	it("places three widgets added in sequence into separate open cells rather than one shared column", () => {
@@ -347,7 +353,7 @@ describe("settlePlacement", () => {
 			{ widgetKey: "ToDo", x: 4, y: 1, width: 3, height: 1 },
 			{ widgetKey: "VolunteerStats", x: 4, y: 1, width: 2, height: 3 },
 			{ widgetKey: "Calendar", x: 1, y: 1, width: 8, height: 4 },
-			{ widgetKey: "SettingsIcon", x: 7, y: 2, width: 2, height: 1 },
+			{ widgetKey: "Settings", x: 7, y: 2, width: 2, height: 1 },
 		] as PlacedWidget[]) {
 			const settled = settleInto(rect, CROWDED_LAYOUT);
 

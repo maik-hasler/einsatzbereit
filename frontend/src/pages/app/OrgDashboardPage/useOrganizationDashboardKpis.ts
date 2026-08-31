@@ -3,7 +3,13 @@ import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 
 export interface DashboardKpis {
 	pendingEngagements: number;
-	confirmedEngagementsTotal: number;
+
+	/** People, not rows: one helper across twelve slots counts once. */
+	distinctVolunteersTotal: number;
+
+	/** Sign-ups received in the last 30 days, and in the 30 before them. */
+	signUpsLast30Days: number;
+	signUpsPrevious30Days: number;
 }
 
 export interface DashboardKpisState {
@@ -32,7 +38,9 @@ export function useOrganizationDashboardKpis(
 		() =>
 			api.getOrganizationDashboard(organizationId).then((data) => ({
 				pendingEngagements: data.pendingEngagements,
-				confirmedEngagementsTotal: data.confirmedEngagementsTotal,
+				distinctVolunteersTotal: data.distinctVolunteersTotal,
+				signUpsLast30Days: data.signUpsLast30Days,
+				signUpsPrevious30Days: data.signUpsPrevious30Days,
 			})),
 	);
 

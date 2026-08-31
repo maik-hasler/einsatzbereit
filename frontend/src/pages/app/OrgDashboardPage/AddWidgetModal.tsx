@@ -11,9 +11,8 @@ const WIDGET_DESC_KEY: Record<WidgetKey, string> = {
 	UpcomingOpportunities: "orgDashboard.upcomingWidgetDesc",
 	Calendar: "orgDashboard.calendarWidgetDesc",
 	Settings: "orgDashboard.settingsWidgetDesc",
-	CreateOpportunity: "orgDashboard.createOpportunityWidgetDesc",
+	CreateOpportunity: "orgDashboard.quickActionsWidgetDesc",
 	QuickCheckIn: "orgDashboard.quickCheckInWidgetDesc",
-	SettingsIcon: "orgDashboard.settingsIconWidgetDesc",
 };
 
 function Bar({ className = "" }: { className?: string }) {
@@ -24,25 +23,44 @@ function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
 		case "ToDo":
 			return (
-				<div className="space-y-1.5" aria-hidden="true">
-					<div className="h-4 w-8 rounded bg-brand-100" />
-					<Bar className="w-3/4" />
-					<div className="h-2 w-1/2 rounded-full bg-brand-200" />
+				<div className="space-y-2" aria-hidden="true">
+					{[0, 1].map((row) => (
+						<div key={row} className="flex items-center gap-2">
+							<div className="w-full space-y-1">
+								<Bar className="w-2/3" />
+								<Bar className="w-1/2" />
+							</div>
+							<div className="h-4 w-8 shrink-0 rounded bg-brand-200" />
+							<div className="h-4 w-8 shrink-0 rounded border border-gray-300" />
+						</div>
+					))}
 				</div>
 			);
 		case "VolunteerStats":
 			return (
 				<div className="space-y-1.5" aria-hidden="true">
-					<div className="h-4 w-8 rounded bg-brand-100" />
+					<div className="h-5 w-8 rounded bg-brand-100" />
 					<Bar className="w-3/4" />
+					<div className="h-px w-full bg-gray-200" />
+					<Bar className="w-1/2" />
 				</div>
 			);
 		case "UpcomingOpportunities":
 			return (
-				<div className="space-y-1.5" aria-hidden="true">
-					<Bar className="w-full" />
-					<Bar className="w-full" />
-					<Bar className="w-2/3" />
+				<div className="space-y-2" aria-hidden="true">
+					{[3, 1].map((filled, row) => (
+						<div key={row} className="space-y-1">
+							<Bar className="w-2/3" />
+							<div className="flex items-center gap-0.5">
+								{Array.from({ length: 5 }, (_, i) => (
+									<span
+										key={i}
+										className={`h-1.5 w-2 rounded-full ${i < filled ? "bg-brand-700" : "bg-gray-200"}`}
+									/>
+								))}
+							</div>
+						</div>
+					))}
 				</div>
 			);
 		case "Calendar":
@@ -58,32 +76,25 @@ function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 			);
 		case "Settings":
 			return (
-				<div className="flex items-center gap-2" aria-hidden="true">
-					<div className="h-8 w-8 shrink-0 rounded-lg bg-brand-100" />
-					<div className="w-full space-y-1.5">
-						<Bar className="w-3/4" />
-						<Bar className="w-1/2" />
-					</div>
+				<div className="space-y-1.5" aria-hidden="true">
+					<div className="h-5 w-8 rounded bg-brand-100" />
+					<Bar className="w-2/3" />
+					<Bar className="w-1/2" />
 				</div>
 			);
 		case "CreateOpportunity":
 			return (
-				<div
-					className="h-7 w-full rounded-lg bg-brand-200"
-					aria-hidden="true"
-				/>
+				<div className="space-y-1.5" aria-hidden="true">
+					<div className="h-6 w-full rounded-lg bg-brand-200" />
+					<div className="h-6 w-full rounded-lg border border-gray-300" />
+				</div>
 			);
 		case "QuickCheckIn":
 			return (
 				<div className="space-y-1.5" aria-hidden="true">
-					<div className="h-6 w-full rounded-md border border-gray-200" />
+					<div className="h-6 w-full rounded-md border border-gray-300" />
+					<Bar className="w-1/2" />
 					<div className="h-6 w-full rounded-lg bg-brand-200" />
-				</div>
-			);
-		case "SettingsIcon":
-			return (
-				<div className="flex justify-center" aria-hidden="true">
-					<div className="h-8 w-8 rounded-lg bg-brand-100" />
 				</div>
 			);
 	}

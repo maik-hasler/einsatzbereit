@@ -7,8 +7,9 @@ import { inputSurfaceClass } from "../../../lib/formClasses";
 import {
 	filterCheckInOpportunities,
 	isQrCheckIn,
+	pickCheckInOpportunity,
 } from "../../../lib/quickCheckIn";
-import { pickLocalizedText } from "../../../lib/format";
+import { formatDateTimeRange, pickLocalizedText } from "../../../lib/format";
 import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import Dropdown from "../../../components/Dropdown";
@@ -18,7 +19,6 @@ import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
-import type { WidgetSizeClass } from "./widgetCatalog";
 
 const OPPORTUNITY_PAGE_SIZE = 100;
 
@@ -27,14 +27,12 @@ const QRScannerModal = lazy(() => import("../../../components/QRScannerModal"));
 interface Props {
 	organizationId: string;
 	refreshKey: number;
-	size: WidgetSizeClass;
 	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
 function QuickCheckInWidget({
 	organizationId,
 	refreshKey,
-	size,
 	onOpportunityCreated,
 }: Props) {
 	const { t, i18n } = useTranslation();
@@ -66,10 +64,28 @@ function QuickCheckInWidget({
 	// action below is a scanner for a QR opportunity and a link for the rest,
 	// so a render where the list has arrived but the selection has not yet
 	// caught up would paint a link to nowhere.
+	//
+	// The fallback is the opportunity being run right now, not whichever one the
+	// API listed first - check-in is a thing organizers do standing at a door,
+	// and the right default is the door they are standing at.
 	const selected =
 		checkInOpportunities?.find((o) => o.id === selectedId) ??
-		checkInOpportunities?.[0];
+		(checkInOpportunities
+			? pickCheckInOpportunity(checkInOpportunities, Date.now())
+			: undefined);
 	const scannable = isQrCheckIn(selected);
+
+	// Which occurrence the action below will actually check people into, spelled
+	// out under the picker. Two Einsaetze can read almost identically in a
+	// dropdown; their slot times never do.
+	const selectedWhen =
+		selected?.nextTimeSlotStart && selected.nextTimeSlotEnd
+			? formatDateTimeRange(
+					selected.nextTimeSlotStart as unknown as string,
+					selected.nextTimeSlotEnd as unknown as string,
+					i18n.language,
+				)
+			: null;
 
 	function startScanning() {
 		if (!selected) return;
@@ -82,19 +98,10 @@ function QuickCheckInWidget({
 			title={t("orgDashboard.quickCheckInWidgetTitle")}
 		>
 			{checkInOpportunities === null && !error && (
-				<div
-					role="status"
-					className={
-						size !== "compact" ? "flex items-center gap-3" : "space-y-3"
-					}
-				>
+				<div role="status" className="space-y-3">
 					<span className="sr-only">{t("orgDashboard.loading")}</span>
-					<Skeleton
-						className={`h-9 rounded-xl ${size !== "compact" ? "min-w-0 flex-1" : "w-full"}`}
-					/>
-					<Skeleton
-						className={`h-9 rounded-lg ${size !== "compact" ? "w-24 shrink-0" : "w-full"}`}
-					/>
+					<Skeleton className="h-9 w-full rounded-xl" />
+					<Skeleton className="h-9 w-full rounded-xl" />
 				</div>
 			)}
 			{error && <ErrorBanner message={error} />}
@@ -113,12 +120,8 @@ function QuickCheckInWidget({
 			{checkInOpportunities !== null &&
 				!error &&
 				checkInOpportunities.length > 0 && (
-					<div
-						className={
-							size !== "compact" ? "flex items-center gap-3" : "space-y-3"
-						}
-					>
-						<div className={size !== "compact" ? "min-w-0 flex-1" : undefined}>
+					<div className="space-y-3">
+						<div>
 							<label htmlFor="quick-checkin-opportunity" className="sr-only">
 								{t("orgDashboard.quickCheckInSelectOpportunity")}
 							</label>
@@ -139,12 +142,22 @@ function QuickCheckInWidget({
 							Only QR check-in can be finished here; PIN and manual both
 							need the opportunity's own sign-up list (#2322 F6).
 						*/}
+						{selectedWhen && (
+							<p
+								data-testid="quick-checkin-selected-when"
+								className="text-xs text-gray-600 tabular-nums"
+							>
+								{selectedWhen}
+							</p>
+						)}
+
 						{scannable ? (
 							<Button
 								type="button"
 								onClick={startScanning}
 								data-testid="quick-checkin-scan-btn"
-								className={`shadow-sm ${size !== "compact" ? "shrink-0" : "w-full"}`}
+								fullWidth
+								className="shadow-sm"
 							>
 								{t("orgDashboard.quickCheckInOpenScanner")}
 							</Button>
@@ -152,7 +165,8 @@ function QuickCheckInWidget({
 							<Button
 								to={`/app/${organizationId}/dashboard/opportunities/${selected?.id ?? ""}/engagements`}
 								data-testid="quick-checkin-open-btn"
-								className={`shadow-sm ${size !== "compact" ? "shrink-0" : "w-full"}`}
+								fullWidth
+								className="shadow-sm"
 							>
 								{t("orgDashboard.quickCheckInOpenSignUps")}
 							</Button>

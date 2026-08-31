@@ -54,6 +54,8 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"nav.administration",
 		"landing.heroStat3Label",
 		"landing.missionAuthor",
+		"orgDashboard.settingsWidgetTitle",
+
 		"opportunities.remote",
 		"opportunities.filterLabelRemote",
 		"opportunities.dateRangeDisplay",

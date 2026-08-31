@@ -49,10 +49,10 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 			"a standalone narrow widget's own row band should be capped to its own width, not the "
 			+ $"full page-width grid (tile width: {tileWidth}px, parent/band width: {parentWidth}px)");
 
-		parentWidth.Should().BeLessThan(800,
-			"the band should be capped to roughly half the grid's width (UpcomingOpportunities is "
-			+ "4 of GRID_COLUMNS=8) rather than spanning the full ~1376px content column "
-			+ $"(last observed: {parentWidth}px)");
+		parentWidth.Should().BeLessThan(700,
+			"the band should be capped to roughly three eighths of the grid's width "
+			+ "(UpcomingOpportunities is 3 of GRID_COLUMNS=8) rather than spanning the full "
+			+ $"~1376px content column (last observed: {parentWidth}px)");
 
 		await DeleteOrganizationAsync(backend, organizationId);
 	}
@@ -76,37 +76,37 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
-		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
+		await dialog.GetByTestId("add-widget-option-Calendar").ClickAsync();
 		await dialog.GetByTestId("add-widget-option-VolunteerStats").ClickAsync();
 		await dialog.GetByTestId("add-widget-done").ClickAsync();
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var settingsTile = Page.GetByTestId("widget-tile-Settings");
+		var calendarTile = Page.GetByTestId("widget-tile-Calendar");
 		var statsTile = Page.GetByTestId("widget-tile-VolunteerStats");
-		await Expect(settingsTile).ToBeVisibleAsync();
+		await Expect(calendarTile).ToBeVisibleAsync();
 		await Expect(statsTile).ToBeVisibleAsync();
 
-		double settingsParentWidth = 0, statsParentWidth = 0, statsTileWidth = 0;
+		double calendarParentWidth = 0, statsParentWidth = 0, statsTileWidth = 0;
 		await PollUntilAsync(async () =>
 		{
-			var settingsWidths = await settingsTile.EvaluateAsync<double[]>(
+			var calendarWidths = await calendarTile.EvaluateAsync<double[]>(
 				"el => [el.parentElement.getBoundingClientRect().width, el.getBoundingClientRect().width]");
 			var statsWidths = await statsTile.EvaluateAsync<double[]>(
 				"el => [el.parentElement.getBoundingClientRect().width, el.getBoundingClientRect().width]");
-			settingsParentWidth = settingsWidths[0];
+			calendarParentWidth = calendarWidths[0];
 			statsParentWidth = statsWidths[0];
 			statsTileWidth = statsWidths[1];
-			return settingsWidths[1] > 0 && statsTileWidth > 0;
-		}, () => "Settings/VolunteerStats tiles never reported a non-zero width");
+			return calendarWidths[1] > 0 && statsTileWidth > 0;
+		}, () => "Calendar/VolunteerStats tiles never reported a non-zero width");
 
-		(settingsParentWidth - statsParentWidth).Should().BeGreaterThan(200,
-			"the full-width Settings band and the narrower VolunteerStats band should render at "
-			+ $"visibly different widths (Settings band: {settingsParentWidth}px, "
+		(calendarParentWidth - statsParentWidth).Should().BeGreaterThan(200,
+			"the full-width Calendar band and the narrower VolunteerStats band should render at "
+			+ $"visibly different widths (Calendar band: {calendarParentWidth}px, "
 			+ $"VolunteerStats band: {statsParentWidth}px)");
 		Math.Abs(statsParentWidth - statsTileWidth).Should().BeLessThan(20,
 			"VolunteerStats' own band should be capped to its own width, not left spanning the same "
-			+ $"full-width grid as the Settings row above it (tile: {statsTileWidth}px, "
+			+ $"full-width grid as the Calendar rows above it (tile: {statsTileWidth}px, "
 			+ $"band: {statsParentWidth}px)");
 
 		await DeleteOrganizationAsync(backend, organizationId);
@@ -116,12 +116,12 @@ public class OrgDashboardRowBandingTests(AspireFixture fixture) : VisualTestBase
 	{
 		foreach (var (testId, widgetTitle) in new[]
 		{
-			("CreateOpportunity", "Create opportunity"),
-			("ToDo", "Needs your attention"),
+			("CreateOpportunity", "Quick actions"),
+			("ToDo", "Sign-ups to review"),
 			("VolunteerStats", "Volunteers"),
-			("UpcomingOpportunities", "Upcoming opportunities"),
+			("UpcomingOpportunities", "What's next"),
 			("Calendar", "Calendar"),
-			("Settings", "Organization"),
+			("Settings", "Team"),
 		})
 		{
 			var tile = Page.GetByTestId($"widget-tile-{testId}");

@@ -31,11 +31,16 @@ import {
 } from "../../../lib/colorContrast";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { labelClass } from "../../../lib/formClasses";
-import type { WidgetSizeClass } from "./widgetCatalog";
+import type { WidgetSize } from "./widgetCatalog";
 
-function defaultViewForSize(size: WidgetSizeClass): View {
-	if (size === "compact") return "agenda";
-	if (size === "medium") return "week";
+// A month grid needs both axes: seven columns to be legible and four or five
+// week rows to be a month at all. A tile that is only one or two grid rows tall
+// paints a month view whose weeks are each a sliver, so height decides first -
+// which is what the old width-only version could not see (a full-width strip
+// and a full-width canvas both counted as "full" and both got a month).
+function defaultViewForSize(size: WidgetSize): View {
+	if (size.height === "strip" || size.width === "compact") return "agenda";
+	if (size.height === "short" || size.width === "medium") return "week";
 	return "month";
 }
 
@@ -158,7 +163,7 @@ const COLOR_INPUT_DEBOUNCE_MS = 100;
 interface Props {
 	organizationId: string;
 	refreshKey: number;
-	size: WidgetSizeClass;
+	size: WidgetSize;
 	isOrganizer: boolean;
 }
 

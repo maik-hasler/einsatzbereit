@@ -25,7 +25,7 @@ src/
 ├── pages/
 │   ├── HomePage.tsx                    Landing page: hero search, LatestOpportunitiesSection preview, org CTA, founder band, FAQ
 │   ├── OpportunitiesPage.tsx           /opportunities - the browse/search route that owns VolunteerOpportunitiesList
-│   ├── app/OrgDashboardPage/           Customizable widget dashboard (calendar, to-do, quick check-in, etc. - see widgetCatalog.ts) - org app shell's landing tab
+│   ├── app/OrgDashboardPage/           Customizable widget dashboard - org app shell's landing tab. `widgetCatalog.ts` holds the roster, each tile's default/minimum footprint and `DEFAULT_LAYOUT`; `WidgetCard.tsx` is the shared shell (condensed uppercase title, optional single footer affordance, vertical scroll fades). A widget is handed a `WidgetSize` of BOTH a width class and a height class - a one-row tile is a `strip` and has room for a number, not a list, so tiles that carry rows fall back to a count there (see `ToDoWidget`). Widget keys are persisted (`DashboardWidgetKey` in the backend) and in saved layouts: retitle and redesign a tile in place rather than renaming its key, and drop a retired key from the catalog so `sanitizeWidgetKey` degrades old layouts gracefully
 │   ├── AdministrationPage.tsx          Platform-admin only: list/verify organizations, list users, toggle admin/enabled status
 │   ├── PrivacyPolicyPage.tsx           Privacy policy (static)
 │   └── ImprintPage.tsx                 Legal notice (static)
