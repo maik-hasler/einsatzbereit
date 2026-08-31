@@ -15,5 +15,9 @@ public enum EmailTemplateKind
 	InvitationReceived,
 	OpportunityUpdated,
 
+	EngagementOrganizerDigest,
+	EngagementOrganizerDigestSignupLine,
+	EngagementOrganizerDigestWithdrawalLine,
+
 	EmailFooter,
 }

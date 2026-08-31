@@ -259,4 +259,11 @@ public interface IApplicationDbContext
 
 	Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default);
+
+	Task EnqueueOrganizerDigestItemAsync(
+		UserId organizerId,
+		string opportunityTitle,
+		string volunteerName,
+		EmailNotificationType kind,
+		CancellationToken cancellationToken = default);
 }

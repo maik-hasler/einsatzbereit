@@ -10,7 +10,8 @@ namespace Infrastructure.Email;
 internal sealed class SmtpEmailService(
 	IOptions<SmtpOptions> options,
 	ILogger<SmtpEmailService> logger,
-	EmailMetrics metrics)
+	EmailMetrics metrics,
+	EmailRateLimiter rateLimiter)
 	: IEmailService
 {
 	private readonly SmtpOptions _options = options.Value;
@@ -40,6 +41,7 @@ internal sealed class SmtpEmailService(
 			message.Subject = subject;
 			message.Body = new TextPart("plain") { Text = body };
 
+			await rateLimiter.WaitForPermitAsync(cancellationToken);
 			await client.SendAsync(message, cancellationToken);
 			await client.DisconnectAsync(true, cancellationToken);
 
@@ -93,6 +95,7 @@ internal sealed class SmtpEmailService(
 				message.Subject = email.Subject;
 				message.Body = new TextPart("plain") { Text = email.Body };
 
+				await rateLimiter.WaitForPermitAsync(cancellationToken);
 				await client.SendAsync(message, cancellationToken);
 
 				metrics.RecordSucceeded();

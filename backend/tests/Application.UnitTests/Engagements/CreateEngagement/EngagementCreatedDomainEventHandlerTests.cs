@@ -24,7 +24,6 @@ public class EngagementCreatedDomainEventHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly IAggregateRepository<User, UserId> _userRepo = Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly EngagementCreatedDomainEventHandler _sut;
 
@@ -48,7 +47,7 @@ public class EngagementCreatedDomainEventHandlerTests
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
 		_sut = new EngagementCreatedDomainEventHandler(
-			_dbContext, _unitOfWork, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder,
+			_dbContext, _unitOfWork, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer,
 			NullLogger<EngagementCreatedDomainEventHandler>.Instance);
 	}
 
@@ -59,7 +58,7 @@ public class EngagementCreatedDomainEventHandlerTests
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 
 	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
+	public async Task Handle_ShouldEnqueueOrganizerDigestItem_WhenSubscribedToNewSignUp(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -69,8 +68,6 @@ public class EngagementCreatedDomainEventHandlerTests
 		var organizerId = Guid.NewGuid();
 		_keycloakService.GetMembersAsync(organizationId.Value, cancellationToken)
 			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
 
 		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
 
@@ -78,41 +75,16 @@ public class EngagementCreatedDomainEventHandlerTests
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert
-
-		await _emailService.Received(1).SendBatchAsync(
-			Arg.Is<IReadOnlyList<EmailMessage>>(messages => messages!.Any(m =>
-				m.To == "olaf@example.com" && m.Body.Contains("https://example.com/unsubscribe"))),
+		await _dbContext.Received(1).EnqueueOrganizerDigestItemAsync(
+			UserId.Create(organizerId).GetValueOrThrow(),
+			opportunity.TitleDe,
+			"Vera",
+			EmailNotificationType.NewSignUp,
 			cancellationToken);
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenOrganizerEmailFailsToSend(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var organizationId = OrganizationId.New();
-		var opportunity = CreateOpportunity(organizationId);
-		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(organizationId.Value, cancellationToken)
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
-		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
-			.Returns([false]);
-
-		var domainEvent = new EngagementCreatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id, IsSlotSignUp: false);
-
-		// Act
-		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
-
-		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>(
-			"a swallowed delivery failure here would let the outbox believe the organizer alert was delivered when it never left the process");
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
+	public async Task Handle_ShouldNotEnqueueOrganizerDigestItem_WhenOptedOutOfNewSignUp(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -138,8 +110,8 @@ public class EngagementCreatedDomainEventHandlerTests
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().EnqueueOrganizerDigestItemAsync(
+			Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<EmailNotificationType>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
