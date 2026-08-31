@@ -183,19 +183,7 @@ export default function MobileMenu({
 								);
 							}
 
-							return link.hash ? (
-								// See DesktopHeader: a router <Link> so the fragment survives
-								// the landing page's lazy mount (#2324).
-								<Link
-									key={link.key}
-									to={link.to}
-									onClick={onClose}
-									data-testid={`mobile-nav-${link.key}`}
-									className={rowBase}
-								>
-									{t(`nav.${link.key}`)}
-								</Link>
-							) : (
+							return (
 								<NavLink
 									key={link.key}
 									to={link.to}

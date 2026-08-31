@@ -1,15 +1,12 @@
 import type { OrganizationSummaryDto } from "../client/api-client";
 import { orgTabPath } from "./orgTabs";
 
-export type StaticNavLinkKey =
-	"home" | "findOpportunities" | "organizations" | "forOrganizations";
+export type StaticNavLinkKey = "home" | "findOpportunities" | "organizations";
 
 export type StaticNavLink = {
 	kind: "static";
 	key: StaticNavLinkKey;
 	to: string;
-
-	hash: boolean;
 };
 
 export type OrganizationNavLink = {
@@ -22,38 +19,23 @@ export type OrganizationNavLink = {
 export type PrimaryNavLink = StaticNavLink | OrganizationNavLink;
 
 const STATIC_LINKS: readonly StaticNavLink[] = [
-	{ kind: "static", key: "home", to: "/", hash: false },
-	{
-		kind: "static",
-		key: "findOpportunities",
-		to: "/opportunities",
-		hash: false,
-	},
-	{
-		kind: "static",
-		key: "organizations",
-		to: "/organizations",
-		hash: false,
-	},
-	{
-		kind: "static",
-		key: "forOrganizations",
-		to: "/#for-organizations",
-		hash: true,
-	},
+	{ kind: "static", key: "home", to: "/" },
+	{ kind: "static", key: "findOpportunities", to: "/opportunities" },
+	{ kind: "static", key: "organizations", to: "/organizations" },
 ];
 
 export function buildPrimaryNav(
 	activeOrg?: OrganizationSummaryDto | null,
 ): PrimaryNavLink[] {
-	return STATIC_LINKS.map((link) =>
-		link.key === "forOrganizations" && activeOrg
-			? {
-					kind: "organization",
-					key: "organization",
-					to: orgTabPath(activeOrg.id, "dashboard"),
-					org: activeOrg,
-				}
-			: link,
-	);
+	if (!activeOrg) return [...STATIC_LINKS];
+
+	return [
+		...STATIC_LINKS,
+		{
+			kind: "organization",
+			key: "organization",
+			to: orgTabPath(activeOrg.id, "dashboard"),
+			org: activeOrg,
+		},
+	];
 }
