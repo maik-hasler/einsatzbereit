@@ -16,7 +16,6 @@ internal sealed class EngagementCreatedDomainEventHandler(
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
 	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ILogger<EngagementCreatedDomainEventHandler> logger)
 	: INotificationHandler<EngagementCreatedDomainEvent>
 {
@@ -24,17 +23,13 @@ internal sealed class EngagementCreatedDomainEventHandler(
 		EngagementCreatedDomainEvent notification,
 		CancellationToken cancellationToken)
 	{
-		await EngagementOrganizerNotificationHelper.NotifyAsync(
+		await EngagementOrganizerNotificationHelper.EnqueueAsync(
 			dbContext,
 			keycloakOrganizationService,
 			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
 			notification.EngagementId,
 			notification.OpportunityId,
 			notification.VolunteerId,
-			EmailTemplateKind.EngagementSignupNotifyOrganizer,
 			EmailNotificationType.NewSignUp,
 			logger,
 			cancellationToken);

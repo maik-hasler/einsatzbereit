@@ -1,4 +1,3 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -22,9 +21,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly EngagementWithdrawnDomainEventHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -35,18 +31,10 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Vera", "Volunteer", "vera@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_emailTemplateRenderer
-			.Render(EmailTemplateKind.EmailFooter, Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(call => new EmailContent(
-				string.Empty,
-				$"\n\n---\n{((IReadOnlyDictionary<string, string>)call[2]!)["UnsubscribeUrl"]}"));
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
 		_sut = new EngagementWithdrawnDomainEventHandler(
-			_dbContext, _unitOfWork, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder,
+			_dbContext, _unitOfWork, _keycloakService, _keycloakUserService,
 			NullLogger<EngagementWithdrawnDomainEventHandler>.Instance);
 	}
 
@@ -57,7 +45,7 @@ public class EngagementWithdrawnDomainEventHandlerTests
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 
 	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToWithdrawal(
+	public async Task Handle_ShouldEnqueueOrganizerDigestItem_WhenSubscribedToWithdrawal(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -67,8 +55,6 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		var organizerId = Guid.NewGuid();
 		_keycloakService.GetMembersAsync(organizationId.Value, cancellationToken)
 			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
 
 		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
 
@@ -76,15 +62,16 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert
-
-		await _emailService.Received(1).SendBatchAsync(
-			Arg.Is<IReadOnlyList<EmailMessage>>(messages => messages!.Any(m =>
-				m.To == "olaf@example.com" && m.Body.Contains("https://example.com/unsubscribe"))),
+		await _dbContext.Received(1).EnqueueOrganizerDigestItemAsync(
+			UserId.Create(organizerId).GetValueOrThrow(),
+			opportunity.TitleDe,
+			"Vera",
+			EmailNotificationType.Withdrawal,
 			cancellationToken);
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfWithdrawal(
+	public async Task Handle_ShouldNotEnqueueOrganizerDigestItem_WhenOptedOutOfWithdrawal(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -110,37 +97,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
-	}
-
-	[Test]
-	public async Task Handle_ShouldRenderOrganizerEmail_InOrganizersPreferredLanguage(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-
-		var organizationId = OrganizationId.New();
-		var opportunity = CreateOpportunity(organizationId);
-		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(organizationId.Value, cancellationToken)
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		var organizer = User.Create(UserId.Create(organizerId).GetValueOrThrow());
-		organizer.SetPreferredLanguage("en");
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([organizer]);
-
-		var domainEvent = new EngagementWithdrawnDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
-
-		// Act
-		await _sut.Handle(domainEvent, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
+		await _dbContext.DidNotReceive().EnqueueOrganizerDigestItemAsync(
+			Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<EmailNotificationType>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -160,10 +118,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 		// Assert
 		await act.Should().NotThrowAsync();
-		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().EnqueueOrganizerDigestItemAsync(
+			Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<EmailNotificationType>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -180,10 +136,8 @@ public class EngagementWithdrawnDomainEventHandlerTests
 
 		// Assert
 		await act.Should().NotThrowAsync();
-		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-		await _emailService.DidNotReceive().SendBatchAsync(
-			Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().EnqueueOrganizerDigestItemAsync(
+			Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<EmailNotificationType>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

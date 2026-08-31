@@ -39,6 +39,18 @@
     "subject": "Ein Einsatz, für den du dich eingetragen hast, hat sich geändert: „{OpportunityTitle}“",
     "body": "Hallo {VolunteerName},\n\ndie Details für „{OpportunityTitle}“ haben sich geändert. Bitte sieh in der App nach den aktuellen Informationen.\n\nEinsatzbereit"
   },
+  "EngagementOrganizerDigest": {
+    "subject": "{Count} Neuigkeit(en) zu deinen Einsätzen",
+    "body": "Hallo {OrganizerName},\n\nhier ist, was sich seit deiner letzten Zusammenfassung getan hat:\n\n{ItemsList}\n\nEinsatzbereit"
+  },
+  "EngagementOrganizerDigestSignupLine": {
+    "subject": "",
+    "body": "- {VolunteerName} hat sich für „{OpportunityTitle}“ eingetragen"
+  },
+  "EngagementOrganizerDigestWithdrawalLine": {
+    "subject": "",
+    "body": "- {VolunteerName} hat sich von „{OpportunityTitle}“ zurückgezogen"
+  },
   "EmailFooter": {
     "subject": "",
     "body": "\n\n---\nMöchtest du diese Art von E-Mail nicht mehr erhalten? Hier abmelden: {UnsubscribeUrl}"

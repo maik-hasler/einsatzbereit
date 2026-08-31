@@ -108,12 +108,15 @@ public static class ServiceCollectionExtensions
 
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddSingleton<EmailMetrics>();
+		services.AddSingleton<EmailRateLimiter>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
 		services.ConfigureOptions<ApiOptionsSetup>();
 		services.AddSingleton<IUnsubscribeLinkBuilder, UnsubscribeLinkBuilder>();
 		services.ConfigureOptions<EngagementReminderOptionsSetup>();
 		services.AddHostedService<EngagementReminderJob>();
+		services.ConfigureOptions<OrganizerNotificationDigestOptionsSetup>();
+		services.AddHostedService<OrganizerNotificationDigestJob>();
 		services.ConfigureOptions<AutomaticCheckInOptionsSetup>();
 		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();

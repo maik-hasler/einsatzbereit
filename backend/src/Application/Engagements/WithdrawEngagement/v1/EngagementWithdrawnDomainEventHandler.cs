@@ -1,4 +1,3 @@
-using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -14,9 +13,6 @@ internal sealed class EngagementWithdrawnDomainEventHandler(
 	IUnitOfWork unitOfWork,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ILogger<EngagementWithdrawnDomainEventHandler> logger)
 	: INotificationHandler<EngagementWithdrawnDomainEvent>
 {
@@ -24,17 +20,13 @@ internal sealed class EngagementWithdrawnDomainEventHandler(
 		EngagementWithdrawnDomainEvent notification,
 		CancellationToken cancellationToken)
 	{
-		await EngagementOrganizerNotificationHelper.NotifyAsync(
+		await EngagementOrganizerNotificationHelper.EnqueueAsync(
 			dbContext,
 			keycloakOrganizationService,
 			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
 			notification.EngagementId,
 			notification.OpportunityId,
 			notification.VolunteerId,
-			EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
 			EmailNotificationType.Withdrawal,
 			logger,
 			cancellationToken);

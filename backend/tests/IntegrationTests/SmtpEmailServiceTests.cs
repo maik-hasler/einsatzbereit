@@ -177,18 +177,23 @@ public class SmtpEmailServiceTests
 		recorded.Should().BeEmpty();
 	}
 
-	private static SmtpEmailService CreateService(int port, EmailMetrics metrics, ILogger<SmtpEmailService>? logger = null) =>
-		new(
-			Options.Create(new SmtpOptions
-			{
-				Host = "127.0.0.1",
-				Port = port,
-				FromAddress = "noreply@test.local",
-				FromName = "Test",
-				EnableSsl = false,
-			}),
+	private static SmtpEmailService CreateService(int port, EmailMetrics metrics, ILogger<SmtpEmailService>? logger = null)
+	{
+		var options = Options.Create(new SmtpOptions
+		{
+			Host = "127.0.0.1",
+			Port = port,
+			FromAddress = "noreply@test.local",
+			FromName = "Test",
+			EnableSsl = false,
+		});
+
+		return new SmtpEmailService(
+			options,
 			logger ?? NullLogger<SmtpEmailService>.Instance,
-			metrics);
+			metrics,
+			new EmailRateLimiter(options));
+	}
 
 	private static List<(string Status, long Value)> RecordEmailSendMeasurements(IMeterFactory meterFactory)
 	{
