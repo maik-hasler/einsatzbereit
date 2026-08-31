@@ -53,39 +53,32 @@ function renderHeader(route: string, isTransparent = false) {
 	);
 }
 
-// jsdom has no cascade to resolve, so this is asserted on the class strings
-// themselves: the underline never painted because `border-transparent` sat in
-// the shared base alongside the active `border-brand-700`, two border-color
-// utilities of equal specificity where the transparent one won the emitted
-// order (#2329 F4). An active link that still carries both is the defect,
-// whatever a browser then decides to paint.
-describe("DesktopHeader active-page underline", () => {
-	it("gives the current route an underline colour and nothing to override it", () => {
+// The active nav link is marked by `aria-current` plus a bolder/darker
+// label, deliberately with no border/underline treatment (#2329 F4 had a
+// border-color specificity bug in the underline; this removes the
+// underline outright rather than fixing it).
+describe("DesktopHeader active-page styling", () => {
+	it("marks the current route as current and carries no border classes", () => {
 		renderHeader("/opportunities");
 
 		const active = screen.getByTestId("nav-findOpportunities");
 		expect(active).toHaveAttribute("aria-current", "page");
-		expect(active.className).toContain("border-brand-700");
-		expect(active.className).not.toContain("border-transparent");
+		expect(active.className).not.toMatch(/\bborder\b/);
 	});
 
-	it("leaves every other route transparent", () => {
+	it("leaves every other route without aria-current or border classes", () => {
 		renderHeader("/opportunities");
 
 		const idle = screen.getByTestId("nav-organizations");
 		expect(idle).not.toHaveAttribute("aria-current");
-		expect(idle.className).toContain("border-transparent");
-		expect(idle.className).not.toContain("border-brand-700");
+		expect(idle.className).not.toMatch(/\bborder\b/);
 	});
 
-	// #2311 removed the underline from the header's transparent state on
-	// purpose - the fix above must not bring it back there.
-	it("keeps the transparent header underline-free", () => {
+	it("keeps the transparent header underline-free too", () => {
 		renderHeader("/opportunities", true);
 
 		const active = screen.getByTestId("nav-findOpportunities");
 		expect(active).toHaveAttribute("aria-current", "page");
-		expect(active.className).toContain("border-transparent");
-		expect(active.className).not.toContain("border-brand-700");
+		expect(active.className).not.toMatch(/\bborder\b/);
 	});
 });
