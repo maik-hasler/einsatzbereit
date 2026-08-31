@@ -106,6 +106,9 @@ const EMAIL_TEMPLATE_ALLOWED_IDENTICAL_KEYS = new Set([
 	"EngagementCancelledReasonSuffix.subject",
 
 	"EmailFooter.subject",
+
+	"EngagementOrganizerDigestSignupLine.subject",
+	"EngagementOrganizerDigestWithdrawalLine.subject",
 ]);
 
 const PLURAL_EXEMPT_KEYS = new Set(
