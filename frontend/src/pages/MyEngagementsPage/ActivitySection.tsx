@@ -401,21 +401,32 @@ export default function ActivitySection() {
 
 			<h2 className="sr-only">{t("myEngagements.listHeading")}</h2>
 
+			{/* Segments share a CSS Grid track (two minmax(0,1fr) columns) rather
+			than sizing to their own label, so "Current & upcoming" and "Past"
+			render at equal width regardless of label length - see
+			MyEngagementsScopeToggleTests.cs's regression comment for #1836
+			(unequal segments) and why an equal-width flex-1 track isn't a safe
+			substitute (it can squeeze the longer German label into wrapping). */}
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
-
-				className="mb-4 inline-grid max-w-full grid-cols-2 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1"
+				className="relative mb-4 inline-grid max-w-full grid-cols-2 overflow-x-auto rounded-full border border-gray-200 bg-gray-50 p-1"
 			>
+				<span
+					aria-hidden="true"
+					className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out motion-reduce:transition-none ${
+						engagementsScope === "past" ? "translate-x-full" : "translate-x-0"
+					}`}
+				/>
 				<button
 					type="button"
 					data-testid="engagements-scope-upcoming"
 					onClick={() => switchEngagementsScope("upcoming")}
 					disabled={engagementsLoading}
 					aria-pressed={engagementsScope === "upcoming"}
-					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+					className={`relative z-10 rounded-full px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "upcoming"
-							? "bg-white text-brand-700 shadow-sm"
+							? "text-brand-700"
 							: "text-gray-600 hover:text-gray-900"
 					}`}
 				>
@@ -427,9 +438,9 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("past")}
 					disabled={engagementsLoading}
 					aria-pressed={engagementsScope === "past"}
-					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+					className={`relative z-10 rounded-full px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "past"
-							? "bg-white text-brand-700 shadow-sm"
+							? "text-brand-700"
 							: "text-gray-600 hover:text-gray-900"
 					}`}
 				>
