@@ -53,6 +53,7 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"footer.license",
 		"nav.administration",
 		"landing.heroStat3Label",
+		"landing.missionAuthor",
 		"opportunities.remote",
 		"opportunities.filterLabelRemote",
 		"opportunities.dateRangeDisplay",

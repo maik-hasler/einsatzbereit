@@ -31,7 +31,6 @@
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
       "myEngagements": "Meine Einsätze",
-      "profileSettings": "Einstellungen",
       "administration": "Administration",
       "signOut": "Abmelden",
       "signIn": "Anmelden",
@@ -70,14 +69,14 @@
       "heroSearchLocationNotFound": "Dieser Ort wurde nicht gefunden – zeige stattdessen alle Einsätze.",
       "heroCtaOrg": "Organisation erstellen",
       "heroCtaOrgDashboard": "Zum Dashboard",
-      "latestLabel": "Gerade veröffentlicht",
+      "latestLabel": "Für Freiwillige",
       "latestTitle": "Diese Einsätze suchen Leute",
       "latestLink": "Alle Einsätze ansehen",
       "offline": "Sobald deine Verbindung zurück ist, zeigen wir diese Einsätze wieder.",
       "missionLabel": "Vom Gründer",
       "missionTitle": "Warum ich Einsatzbereit gebaut habe",
-      "missionText": "Ehrenamt sollte nicht an Papierkram scheitern. Ich habe immer wieder erlebt, wie Leute helfen wollten und an Anmeldeformularen, Wartelisten oder schlicht fehlenden Einstiegspunkten gescheitert sind. Einsatzbereit nimmt jede dieser Hürden weg: Mikro-Ehrenamt, das in eine echte Woche passt – kostenlos, ohne Wartelisten, komplett open source.",
-      "missionAuthor": "Maik Hasler, Gründer von Einsatzbereit",
+      "missionText": "Für ein klassisches Ehrenamt hatte ich zeitlich nie den Kopf frei – Arbeitszeiten und feste Zusagen passten einfach nicht zusammen. Trotzdem wollte ich etwas zurückgeben. Aus der Idee wurde Einsatzbereit: Ehrenamt ohne langfristige Verbindlichkeit. Kostenlos und öffentlich einsehbar. Gebaut für die Region Oldenburg. Benutzbar von allen.",
+      "missionAuthor": "Maik Hasler",
       "missionCta": "Einsätze finden",
       "orgCtaLabel": "Für Organisationen",
       "orgCtaTitle": "Sucht deine Organisation Freiwillige?",
@@ -1240,7 +1239,6 @@
       "title": "Mein Profil",
       "subNavLabel": "Profilnavigation",
       "subNavProfile": "Profil",
-      "subNavSettings": "Einstellungen",
       "sectionDetails": "Profil-Details",
       "viewPublicProfile": "Mein \u00f6ffentliches Profil ansehen",
       "publicProfileNotice": "Dein Profilbild, dein Text im Feld „Über mich“, deine Fähigkeiten und Sprachen erscheinen auf deiner öffentlichen Profilseite, die für jede Person im Internet ohne Anmeldung einsehbar ist. Weitere Informationen dazu findest du in unserer <privacyLink>Datenschutzerklärung</privacyLink>.",
@@ -1280,9 +1278,6 @@
       "saveFieldError": "Einige Angaben sind zu lang. Kürze die markierten Felder und speichere erneut.",
       "fieldTooLong": "Darf höchstens {{max}} Zeichen lang sein."
     },
-    "profileSettings": {
-      "title": "Einstellungen"
-    },
     "myEngagementsPage": {
       "title": "Meine Einsätze"
     },
@@ -1297,9 +1292,6 @@
       "engagementConfirmed": "Deine Eintragung wird bestätigt",
       "engagementCancelled": "Deine Eintragung wird abgesagt",
       "engagementReminder": "Erinnerung vor Beginn deines Einsatzes",
-      "save": "Einstellungen speichern",
-      "saving": "Wird gespeichert…",
-      "savedSuccess": "Benachrichtigungseinstellungen gespeichert.",
       "saveError": "Benachrichtigungseinstellungen konnten nicht gespeichert werden.",
       "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden."
     },

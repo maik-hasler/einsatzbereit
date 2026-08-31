@@ -108,7 +108,7 @@ export default function UnsubscribeConfirmPage() {
 							{t("unsubscribeConfirm.invalidLink")}
 						</p>
 						<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-							<Button to="/profile/settings" size="lg">
+							<Button to="/profile" size="lg">
 								{t("unsubscribe.manageInProfile")}
 							</Button>
 							<Button to="/" variant="secondary" size="lg">

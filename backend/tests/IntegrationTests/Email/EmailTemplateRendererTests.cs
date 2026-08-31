@@ -28,6 +28,7 @@ public class EmailTemplateRendererTests
 				["OrganizationName"] = "Beach Cleanup Crew",
 				["Count"] = "2",
 				["OpportunitiesList"] = "- Beach Cleanup\n- Park Cleanup",
+				["ItemsList"] = "- Vera signed up for \"Beach Cleanup\"",
 				["UnsubscribeUrl"] = "https://example.com/unsubscribe",
 			};
 

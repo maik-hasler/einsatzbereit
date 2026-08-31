@@ -100,7 +100,7 @@ describe("UnsubscribeConfirmPage a link it cannot act on", () => {
 		).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: "Manage notification preferences" }),
-		).toHaveAttribute("href", "/profile/settings");
+		).toHaveAttribute("href", "/profile");
 		expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute(
 			"href",
 			"/",

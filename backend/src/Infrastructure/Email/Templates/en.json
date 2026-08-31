@@ -39,6 +39,18 @@
     "subject": "An opportunity you signed up for has changed: \"{OpportunityTitle}\"",
     "body": "Hello {VolunteerName},\n\nThe details for \"{OpportunityTitle}\" have changed. Please check the app for the latest information.\n\nEinsatzbereit"
   },
+  "EngagementOrganizerDigest": {
+    "subject": "{Count} update(s) for your volunteer opportunities",
+    "body": "Hi {OrganizerName},\n\nHere is what happened since your last update:\n\n{ItemsList}\n\nEinsatzbereit"
+  },
+  "EngagementOrganizerDigestSignupLine": {
+    "subject": "",
+    "body": "- {VolunteerName} signed up for \"{OpportunityTitle}\""
+  },
+  "EngagementOrganizerDigestWithdrawalLine": {
+    "subject": "",
+    "body": "- {VolunteerName} withdrew from \"{OpportunityTitle}\""
+  },
   "EmailFooter": {
     "subject": "",
     "body": "\n\n---\nDon't want to receive this type of email? Unsubscribe here: {UnsubscribeUrl}"

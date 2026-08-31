@@ -13,7 +13,7 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
 
 	[Test]
-	public async Task ProfileSettings_SaveWithHiddenOrganizerRows_StillSendsTheirStoredValues()
+	public async Task Profile_SaveWithHiddenOrganizerRows_StillSendsTheirStoredValues()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -40,15 +40,19 @@ public class NotificationPreferencesOrganizerRowsTests(AspireFixture fixture) : 
 			});
 
 			await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-			await Page.GotoAsync($"{origin}/profile/settings");
+			await Page.GotoAsync($"{origin}/profile");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 			await Expect(Page.Locator("#notifyOnEngagementConfirmed"))
 				.ToBeVisibleAsync(new() { Timeout = 20_000 });
 			await Expect(Page.Locator("#notifyOnNewSignUp")).ToHaveCountAsync(0);
 
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Save preferences" }).ClickAsync();
-			await Expect(Page.GetByText("Notification preferences saved.")).ToBeVisibleAsync(
+			// The preferences are read-only until the page's own profile edit
+			// mode is entered - there is no longer a save button of their own
+			// (#2354).
+			await Page.GetByTestId("profile-edit").ClickAsync();
+			await Page.GetByTestId("profile-save").ClickAsync();
+			await Expect(Page.GetByText("Profile saved.")).ToBeVisibleAsync(
 				new() { Timeout = 15_000 });
 
 			savedPayload.Should().NotBeNull("the Save button should have issued a PUT");

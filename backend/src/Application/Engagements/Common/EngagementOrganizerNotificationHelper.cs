@@ -1,7 +1,5 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
-using Application.Common.Localization;
 using Application.Common.Persistence;
 using Domain.Engagements;
 using Domain.Users;
@@ -10,19 +8,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.Common;
 
+// Queues one digest item per subscribed organizer instead of emailing them immediately -
+// OrganizerNotificationDigestJob (Infrastructure/BackgroundJobs) periodically collapses each
+// organizer's queued items into a single email, so an opportunity with many organizers or a
+// volunteer signing up/withdrawing repeatedly doesn't cost one email per event.
 internal static class EngagementOrganizerNotificationHelper
 {
-	public static async Task NotifyAsync(
+	public static async Task EnqueueAsync(
 		IApplicationDbContext dbContext,
 		IKeycloakOrganizationService keycloakOrganizationService,
 		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		EngagementId engagementId,
 		VolunteerOpportunityId opportunityId,
 		UserId volunteerId,
-		EmailTemplateKind templateKind,
 		EmailNotificationType subscriptionType,
 		ILogger logger,
 		CancellationToken cancellationToken)
@@ -66,46 +64,15 @@ internal static class EngagementOrganizerNotificationHelper
 		var organizerUsersById = (await dbContext.GetOrCreateUsersAsync(organizerIds, cancellationToken))
 			.ToDictionary(u => u.Id);
 
-		var messages = new List<EmailMessage>(members.Count);
-
-		foreach (var organizer in members.Where(m => m.IsOrganisator))
+		foreach (var organizerId in organizerIds)
 		{
-			var organizerId = UserId.Create(organizer.UserId).GetValueOrThrow();
 			var organizerUser = organizerUsersById[organizerId];
 
 			if (!organizerUser.IsSubscribedTo(subscriptionType))
 				continue;
 
-			var organizerName = organizer.FirstName ?? organizer.Username;
-			var organizerLanguage = SupportedLanguages.Resolve(organizerUser.PreferredLanguage);
-
-			var content = emailTemplateRenderer.Render(
-				templateKind,
-				organizerLanguage,
-				new Dictionary<string, string>
-				{
-					["OrganizerName"] = organizerName,
-					["VolunteerName"] = volunteerName,
-					["OpportunityTitle"] = opportunity.TitleDe,
-				});
-
-			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
-				organizerId, organizerUser.UnsubscribeToken, subscriptionType);
-
-			messages.Add(new EmailMessage(
-				organizer.Email,
-				content.Subject,
-				EmailFooter.Append(emailTemplateRenderer, organizerLanguage, content.Body, unsubscribeUrl),
-				engagementId.Value.ToString()));
-		}
-
-		if (messages.Count > 0)
-		{
-			var results = await emailService.SendBatchAsync(messages, cancellationToken);
-			var failedCount = results.Count(succeeded => !succeeded);
-			if (failedCount > 0)
-				throw new InvalidOperationException(
-					$"Failed to send {failedCount} of {results.Count} organizer notification email(s) for engagement {engagementId.Value}");
+			await dbContext.EnqueueOrganizerDigestItemAsync(
+				organizerId, opportunity.TitleDe, volunteerName, subscriptionType, cancellationToken);
 		}
 	}
 }

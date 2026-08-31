@@ -239,13 +239,6 @@ export default function MobileMenu({
 							>
 								{t("nav.myEngagements")}
 							</Link>
-							<Link
-								to="/profile/settings"
-								onClick={onClose}
-								className={`flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${menuItemVariant}`}
-							>
-								{t("nav.profileSettings")}
-							</Link>
 							{isAdmin && (
 								<Link
 									to="/administration"

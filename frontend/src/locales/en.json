@@ -31,7 +31,6 @@
       "userMenu": "User menu",
       "myProfile": "My profile",
       "myEngagements": "My sign-ups",
-      "profileSettings": "Settings",
       "administration": "Administration",
       "signOut": "Sign out",
       "signIn": "Sign in",
@@ -70,14 +69,14 @@
       "heroSearchLocationNotFound": "We couldn't find that location - showing all opportunities instead.",
       "heroCtaOrg": "Create an organization",
       "heroCtaOrgDashboard": "Go to dashboard",
-      "latestLabel": "Just published",
+      "latestLabel": "For volunteers",
       "latestTitle": "These opportunities need people",
       "latestLink": "Browse all opportunities",
       "offline": "We will show these opportunities again as soon as your connection is back.",
       "missionLabel": "From the founder",
       "missionTitle": "Why I built Einsatzbereit",
-      "missionText": "Volunteering shouldn't require paperwork. I kept watching people who wanted to help get stuck on registration forms, waitlists, or simply not knowing where to start. Einsatzbereit removes every one of those barriers: micro-volunteering that fits into a real week - free, no waiting lists, and fully open source.",
-      "missionAuthor": "Maik Hasler, Founder of Einsatzbereit",
+      "missionText": "I never had the head space for a traditional volunteer role - work hours and fixed commitments just didn't line up. Still, I wanted to give something back. That idea became Einsatzbereit: volunteering without long-term commitment. Free and open for anyone to see. Built for the Oldenburg region. Usable by everyone.",
+      "missionAuthor": "Maik Hasler",
       "missionCta": "Find opportunities",
       "orgCtaLabel": "For organizations",
       "orgCtaTitle": "Does your organization need volunteers?",
@@ -1240,7 +1239,6 @@
       "title": "My profile",
       "subNavLabel": "Profile navigation",
       "subNavProfile": "Profile",
-      "subNavSettings": "Settings",
       "sectionDetails": "Profile details",
       "viewPublicProfile": "View my public profile",
       "publicProfileNotice": "Your profile picture, bio, skills, and languages appear on your public profile page, visible to anyone on the internet without signing in. See our <privacyLink>Privacy Policy</privacyLink> for details on how this information is used.",
@@ -1280,9 +1278,6 @@
       "saveFieldError": "Some entries are too long. Shorten the highlighted fields and save again.",
       "fieldTooLong": "Must not be longer than {{max}} characters."
     },
-    "profileSettings": {
-      "title": "Settings"
-    },
     "myEngagementsPage": {
       "title": "My sign-ups"
     },
@@ -1297,9 +1292,6 @@
       "engagementConfirmed": "Your sign-up is confirmed",
       "engagementCancelled": "Your sign-up is cancelled",
       "engagementReminder": "Reminder before your opportunity starts",
-      "save": "Save preferences",
-      "saving": "Saving…",
-      "savedSuccess": "Notification preferences saved.",
       "saveError": "Failed to save notification preferences.",
       "loadError": "Could not load notification preferences."
     },

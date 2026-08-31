@@ -9,6 +9,7 @@ using Domain.Organizations;
 using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Infrastructure.Persistence.Notifications;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -671,6 +672,17 @@ internal sealed class ApplicationDbContext(
 	public Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default) =>
 		Database.CanConnectAsync(cancellationToken);
+
+	public async Task EnqueueOrganizerDigestItemAsync(
+		UserId organizerId,
+		string opportunityTitle,
+		string volunteerName,
+		EmailNotificationType kind,
+		CancellationToken cancellationToken = default) =>
+		await Set<PendingOrganizerDigestItem>().AddAsync(
+			PendingOrganizerDigestItem.Create(
+				organizerId.Value, opportunityTitle, volunteerName, kind, DateTime.UtcNow),
+			cancellationToken);
 
 	protected override void OnModelCreating(
 		ModelBuilder modelBuilder) =>
