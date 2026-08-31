@@ -91,11 +91,17 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		var calendar = Page.GetByTestId("widget-tile-Calendar");
 		await Expect(calendar).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// The span, not the start row: the resize above is driven from wherever
+		// DEFAULT_LAYOUT happens to put the Calendar, so pinning the start row
+		// couples this to a number the sibling test above already owns - and
+		// breaks it every time the default board is rearranged. What this case is
+		// actually about is the saved HEIGHT surviving a reload instead of being
+		// reset to the catalog default of 4.
 		string? gridRow = null;
 		await PollUntilAsync(async () =>
 		{
 			gridRow = await calendar.EvaluateAsync<string>("el => el.style.gridRow");
-			return gridRow == "4 / span 5";
+			return gridRow?.EndsWith("/ span 5", StringComparison.Ordinal) == true;
 		}, () => "a saved layout must keep its own Calendar height rather than being reset to the "
 			+ $"default 4 rows (last observed: \"{gridRow}\")", timeoutMs: 10_000);
 
