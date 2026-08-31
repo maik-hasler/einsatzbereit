@@ -110,4 +110,31 @@ describe("OrgEngagementsPage for an organizer", () => {
 		);
 		expect(screen.queryByTestId("org-engagements-forbidden")).toBeNull();
 	});
+
+	it("links a named applicant's row to their public profile", async () => {
+		const volunteerId = "aaaaaaaa-0000-0000-0000-000000000001";
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [
+				{
+					id: "bbbbbbbb-0000-0000-0000-000000000001",
+					opportunityId: "cccccccc-0000-0000-0000-000000000001",
+					opportunityTitle: "Straßenfest",
+					volunteerId,
+					volunteerName: "Vera",
+					status: "Pending",
+					createdOn: new Date(Date.UTC(2026, 7, 10)),
+				},
+			],
+			pageCount: 1,
+			totalCount: 1,
+			currentPage: 1,
+		});
+
+		renderPage("Organizer");
+
+		const link = await screen.findByRole("link", {
+			name: "View Vera's public profile",
+		});
+		expect(link).toHaveAttribute("href", `/users/${volunteerId}`);
+	});
 });
