@@ -5,3 +5,7 @@
 
 # Local secrets - never committed
 .env
+
+# dependencies - only frontend/ has actual node_modules, but a root-level
+# pnpm/vitest invocation can create one here too
+node_modules/
