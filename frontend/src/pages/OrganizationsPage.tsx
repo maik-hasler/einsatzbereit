@@ -112,12 +112,12 @@ export default function OrganizationsPage() {
 				title={t("organizationsPage.title")}
 				lead={t("organizationsPage.lead")}
 			>
-				<div className="max-w-md">
+				<div className="max-w-md rounded-3xl bg-white/10 p-3 shadow-lg backdrop-blur-sm">
 					<label htmlFor="organizations-search" className="sr-only">
 						{t("organizationsPage.searchLabel")}
 					</label>
-					<div className="relative">
-						<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-white/60" />
+					<div className="relative rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
+						<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
 						<input
 							id="organizations-search"
 							data-testid="organizations-search"
@@ -125,7 +125,7 @@ export default function OrganizationsPage() {
 							value={searchInput}
 							onChange={(e) => handleSearchInputChange(e.target.value)}
 							placeholder={t("organizationsPage.searchPlaceholder")}
-							className="w-full rounded-full border border-white/20 bg-white/10 py-3 pr-4 pl-10 text-sm text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none"
+							className="w-full rounded-full border-0 bg-transparent py-3 pr-4 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
 						/>
 					</div>
 				</div>
