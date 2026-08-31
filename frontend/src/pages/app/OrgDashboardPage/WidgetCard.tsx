@@ -89,7 +89,9 @@ export default function WidgetCard({
 			</div>
 
 			{footer && (
-				<div className="mt-3 shrink-0 border-t border-gray-100 pt-3">
+				// z-10 so a card that also carries a stretched link keeps its
+				// footer clickable rather than painting the link over it.
+				<div className="relative z-10 mt-3 shrink-0 border-t border-gray-100 pt-3">
 					{footer}
 				</div>
 			)}

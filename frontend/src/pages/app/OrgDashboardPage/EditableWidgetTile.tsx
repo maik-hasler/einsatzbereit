@@ -125,11 +125,14 @@ export default function EditableWidgetTile({
 					fallback={
 						<section
 							aria-labelledby={`widget-error-title-${widgetKey}`}
-							className="flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting"
+							className="flex h-full flex-col rounded-card border border-gray-100 bg-white p-4 shadow-resting"
 						>
+							{/* Same treatment as WidgetCard's own title - a widget that
+							crashed should not also be the one card on the board with a
+							different heading style. */}
 							<h2
 								id={`widget-error-title-${widgetKey}`}
-								className="mb-4 text-base font-semibold text-gray-900"
+								className="mb-3 truncate font-display text-sm font-semibold tracking-wider text-gray-500 uppercase"
 							>
 								{title}
 							</h2>

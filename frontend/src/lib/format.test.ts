@@ -10,6 +10,7 @@ import {
 	formatDateTime,
 	formatDateTimeRange,
 	formatPostedAgo,
+	formatSlotSignUpCount,
 	isRecentlyCreatedOrganization,
 	isSlotFull,
 	isTimeSlotEnded,
@@ -604,5 +605,50 @@ describe("isRecentlyCreatedOrganization", () => {
 		expect(isRecentlyCreatedOrganization(pastThreshold.toISOString())).toBe(
 			false,
 		);
+	});
+});
+
+describe("formatSlotSignUpCount", () => {
+	// The opportunity-level sibling says "sign-ups total" - right for a series,
+	// wrong for one Saturday morning out of twelve.
+	it("states places filled for a capped occurrence", () => {
+		const t = fakeT();
+
+		expect(
+			formatSlotSignUpCount(
+				{ kind: "capped", booked: 3, max: 6, spotsLeft: 3, isFull: false },
+				t,
+			),
+		).toBe('orgDashboard.slotPlaces:{"booked":3,"max":6}');
+	});
+
+	it("counts sign-ups when the occurrence has no cap", () => {
+		const t = fakeT();
+
+		expect(formatSlotSignUpCount({ kind: "unlimited", booked: 4 }, t)).toBe(
+			'orgDashboard.slotSignedUp:{"count":4}',
+		);
+	});
+
+	it("counts sign-ups when there are no places to speak of", () => {
+		const t = fakeT();
+
+		expect(
+			formatSlotSignUpCount(
+				{ kind: "notApplicable", booked: 2, reason: "interest" },
+				t,
+			),
+		).toBe('orgDashboard.slotSignedUp:{"count":2}');
+	});
+
+	it("never reports more filled than the occurrence holds", () => {
+		const t = fakeT();
+
+		expect(
+			formatSlotSignUpCount(
+				{ kind: "capped", booked: 6, max: 6, spotsLeft: 0, isFull: true },
+				t,
+			),
+		).toBe('orgDashboard.slotPlaces:{"booked":6,"max":6}');
 	});
 });

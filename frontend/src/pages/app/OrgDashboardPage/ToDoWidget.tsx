@@ -192,8 +192,13 @@ function ReviewQueue({
 			await api.confirmEngagement(engagement.id);
 			// The row stays put and reads "Confirmed" rather than vanishing under
 			// the click: an organizer working down four rows needs to see which one
-			// their verdict landed on before the list closes over the gap.
+			// their verdict landed on before the list closes over the gap. The
+			// count above it does drop, though - the row is decided, and leaving it
+			// in the total would have the chip claim work that is done.
 			setConfirmedIds((prev) => [...prev, engagement.id]);
+			setQueue((prev) =>
+				prev ? { ...prev, total: Math.max(0, prev.total - 1) } : prev,
+			);
 			dispatchToast("success", t("orgEngagements.confirmSuccess"));
 		} catch (err) {
 			dispatchToast(
@@ -234,7 +239,8 @@ function ReviewQueue({
 
 	const loading = queue === null && !queueError;
 	const waiting = queue?.total ?? 0;
-	const shown = queue?.items.length ?? 0;
+	const undecided =
+		queue?.items.filter((e) => !confirmedIds.includes(e.id)).length ?? 0;
 
 	return (
 		<WidgetCard
@@ -248,7 +254,7 @@ function ReviewQueue({
 				) : undefined
 			}
 			footer={
-				waiting > shown ? (
+				waiting > undecided ? (
 					<Link
 						to={pendingPath(organizationId)}
 						className="text-sm font-medium text-brand-700 hover:underline"
