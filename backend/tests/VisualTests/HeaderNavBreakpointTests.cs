@@ -15,7 +15,6 @@ public class HeaderNavBreakpointTests(AspireFixture fixture) : VisualTestBase(fi
 		"nav-home",
 		"nav-findOpportunities",
 		"nav-organizations",
-		"nav-forOrganizations",
 	];
 
 	[Test]
@@ -67,7 +66,7 @@ public class HeaderNavBreakpointTests(AspireFixture fixture) : VisualTestBase(fi
 
 	private async Task<float> SingleLineHeightAsync()
 	{
-		var box = await Page.GetByTestId("nav-forOrganizations").BoundingBoxAsync();
+		var box = await Page.GetByTestId("nav-organizations").BoundingBoxAsync();
 		box.Should().NotBeNull("Could not measure the reference nav link");
 		return box!.Height;
 	}

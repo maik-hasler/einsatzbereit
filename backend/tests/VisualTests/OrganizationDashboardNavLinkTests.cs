@@ -75,6 +75,6 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Expect(Page.GetByTestId("mobile-nav-organization")).ToHaveCountAsync(0);
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }))
 			.ToHaveCountAsync(0);
-		await Expect(Page.GetByTestId("mobile-nav-forOrganizations")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("mobile-nav-forOrganizations")).ToHaveCountAsync(0);
 	}
 }
