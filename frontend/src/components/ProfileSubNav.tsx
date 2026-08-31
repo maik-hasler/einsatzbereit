@@ -8,11 +8,6 @@ const TABS = [
 		href: "/my-signups",
 		labelKey: "profile.subNavActivity",
 	},
-	{
-		key: "settings",
-		href: "/profile/settings",
-		labelKey: "profile.subNavSettings",
-	},
 ] as const;
 
 export default function ProfileSubNav({

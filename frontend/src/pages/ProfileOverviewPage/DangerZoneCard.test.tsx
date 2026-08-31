@@ -7,7 +7,7 @@ vi.mock("../../hooks/useApiClient", () => ({
 	useApiClient: () => ({ deleteMyAccount: vi.fn() }),
 }));
 
-describe("ProfileSettingsPage danger zone", () => {
+describe("profile page danger zone", () => {
 	it("is headed by the action it performs, not a generic 'Danger zone'", () => {
 		renderWithProviders(<DangerZoneCard />, {
 			auth: { isAuthenticated: true },

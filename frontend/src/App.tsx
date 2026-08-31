@@ -49,7 +49,6 @@ const EngagementManagementPage = lazy(
 	() => import("./pages/EngagementManagementPage"),
 );
 const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
-const ProfileSettingsPage = lazy(() => import("./pages/ProfileSettingsPage"));
 const MyEngagementsPage = lazy(() => import("./pages/MyEngagementsPage"));
 const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
@@ -266,13 +265,11 @@ export function AppRoutes() {
 							</ProtectedRoute>
 						}
 					/>
+					{/* /profile/settings was merged into /profile - keep the old
+					path resolving for bookmarks and links in past emails (#2354). */}
 					<Route
 						path="/profile/settings"
-						element={
-							<ProtectedRoute>
-								<ProfileSettingsPage />
-							</ProtectedRoute>
-						}
+						element={<Navigate to="/profile" replace />}
 					/>
 					<Route path="/users/:userId" element={<UserProfilePage />} />
 

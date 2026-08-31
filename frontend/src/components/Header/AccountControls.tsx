@@ -85,14 +85,6 @@ export default function AccountControls({
 								<HandRaisedIcon className="h-4 w-4" />
 								{t("nav.myEngagements")}
 							</Link>
-							<Link
-								to="/profile/settings"
-								onClick={() => setDropdownOpen(false)}
-								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
-							>
-								<Cog6ToothIcon className="h-4 w-4" />
-								{t("nav.profileSettings")}
-							</Link>
 							{isAdmin && (
 								<Link
 									to="/administration"

@@ -33,7 +33,6 @@
       "userMenu": "Benutzermenü",
       "myProfile": "Mein Profil",
       "myEngagements": "Meine Einsätze",
-      "profileSettings": "Einstellungen",
       "administration": "Administration",
       "signOut": "Abmelden",
       "signIn": "Anmelden",
@@ -1244,7 +1243,6 @@
       "title": "Mein Profil",
       "subNavLabel": "Profilnavigation",
       "subNavProfile": "Profil",
-      "subNavSettings": "Einstellungen",
       "sectionDetails": "Profil-Details",
       "viewPublicProfile": "Mein \u00f6ffentliches Profil ansehen",
       "publicProfileNotice": "Dein Profilbild, dein Text im Feld „Über mich“, deine Fähigkeiten und Sprachen erscheinen auf deiner öffentlichen Profilseite, die für jede Person im Internet ohne Anmeldung einsehbar ist. Weitere Informationen dazu findest du in unserer <privacyLink>Datenschutzerklärung</privacyLink>.",
@@ -1284,9 +1282,6 @@
       "saveFieldError": "Einige Angaben sind zu lang. Kürze die markierten Felder und speichere erneut.",
       "fieldTooLong": "Darf höchstens {{max}} Zeichen lang sein."
     },
-    "profileSettings": {
-      "title": "Einstellungen"
-    },
     "myEngagementsPage": {
       "title": "Meine Einsätze"
     },
@@ -1301,9 +1296,6 @@
       "engagementConfirmed": "Deine Eintragung wird bestätigt",
       "engagementCancelled": "Deine Eintragung wird abgesagt",
       "engagementReminder": "Erinnerung vor Beginn deines Einsatzes",
-      "save": "Einstellungen speichern",
-      "saving": "Wird gespeichert…",
-      "savedSuccess": "Benachrichtigungseinstellungen gespeichert.",
       "saveError": "Benachrichtigungseinstellungen konnten nicht gespeichert werden.",
       "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden."
     },
