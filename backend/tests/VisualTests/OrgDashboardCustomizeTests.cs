@@ -330,19 +330,11 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		// Onto an empty board with one widget on it, the way the three drag cases
-		// above set themselves up. The corner flow starts from wherever the tile
-		// already sits, so reading that start position out of DEFAULT_LAYOUT
-		// coupled this case to the default board and broke it the first time the
-		// board was rearranged - the gesture under test is the same either way.
-		await RemoveAllWidgetsAsync();
-
-		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
-		var dialog = Page.GetByRole(AriaRole.Dialog);
-		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
-		await dialog.GetByTestId("add-widget-done").ClickAsync();
-		await Expect(Page.GetByTestId("widget-tile-ToDo")).ToBeVisibleAsync();
-
+		// Straight from the default board, where ToDo starts at column 1, row 1:
+		// the corner flow anchors its first corner on the tile's own cell, so one
+		// ArrowRight and one ArrowDown from there give (1,1)-(2,2). Deliberately
+		// NOT cleared-and-re-added the way the drag cases above set themselves up
+		// - going through the picker first moved where this gesture landed.
 		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" });
 		await moveButton.FocusAsync();
 
