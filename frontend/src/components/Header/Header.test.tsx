@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Header from "./Header";
-import { useLocation } from "react-router";
 import { renderWithProviders } from "../../test/render";
 
 const { api } = await vi.hoisted(async () => {
@@ -108,15 +107,10 @@ describe("Header organization entry", () => {
 	});
 
 	it("offers a member their organization as a top-level destination", async () => {
-		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+		renderWithProviders(<Header />, { auth: signedIn });
 
 		const entry = await screen.findByTestId("nav-organization");
 		expect(entry).toHaveAttribute("href", `/app/${ORG.id}/dashboard`);
-		expect(
-			container.ownerDocument.querySelector(
-				'[data-testid="nav-forOrganizations"]',
-			),
-		).toBeNull();
 	});
 
 	it("offers a switcher alongside the direct link once a member belongs to more than one organization", async () => {
@@ -126,7 +120,7 @@ describe("Header organization entry", () => {
 		};
 		api.getOrganizations.mockResolvedValue([ORG, ORG_B]);
 
-		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+		renderWithProviders(<Header />, { auth: signedIn });
 
 		expect(
 			await screen.findByRole("button", {
@@ -140,29 +134,19 @@ describe("Header organization entry", () => {
 			"href",
 			`/app/${ORG_B.id}/dashboard`,
 		);
-		expect(
-			container.ownerDocument.querySelector(
-				'[data-testid="nav-forOrganizations"]',
-			),
-		).toBeNull();
 	});
 
-	it("keeps the pitch for a signed-in non-member", async () => {
+	it("offers no organization entry for a signed-in non-member", async () => {
 		api.getOrganizations.mockResolvedValue([]);
 
-		const { container } = renderWithProviders(<Header />, { auth: signedIn });
+		renderWithProviders(<Header />, { auth: signedIn });
 
 		await screen.findByRole("button", { name: "User menu" });
-		expect(
-			container.ownerDocument.querySelector(
-				'[data-testid="nav-forOrganizations"]',
-			),
-		).toBeInTheDocument();
 		expect(screen.queryByTestId("nav-organization")).toBeNull();
 	});
 
 	it("withholds the organization inside the org app, where the switcher names it", async () => {
-		const { container } = renderWithProviders(
+		renderWithProviders(
 			<Header
 				orgSwitcher={{ currentOrgId: ORG.id, currentTab: "dashboard" }}
 			/>,
@@ -173,11 +157,6 @@ describe("Header organization entry", () => {
 			await screen.findByTestId("org-switcher-current-name"),
 		).toHaveTextContent(/Feuerwehr/);
 		expect(screen.queryByTestId("nav-organization")).toBeNull();
-		expect(
-			container.ownerDocument.querySelector(
-				'[data-testid="nav-forOrganizations"]',
-			),
-		).toBeInTheDocument();
 	});
 
 	it("keeps the account menu to personal items only", async () => {
@@ -240,33 +219,5 @@ describe("Header avatar", () => {
 		const menu = await screen.findByRole("button", { name: "User menu" });
 		expect(menu).toHaveTextContent("VV");
 		expect(menu.querySelector("img")).toBeNull();
-	});
-});
-
-function LocationProbe() {
-	const location = useLocation();
-	return (
-		<span data-testid="location">{location.pathname + location.hash}</span>
-	);
-}
-
-describe("Header's landing-page fragment link", () => {
-	it("navigates client-side from another route instead of reloading the document", async () => {
-		renderWithProviders(
-			<>
-				<Header />
-				<LocationProbe />
-			</>,
-			{ route: "/help" },
-		);
-
-		// A plain <a href="/#for-organizations"> asked the browser for a full
-		// document load, so the fragment was resolved before React Router had
-		// mounted the landing page and the visitor landed at the top (#2324).
-		await userEvent.click(await screen.findByTestId("nav-forOrganizations"));
-
-		expect(screen.getByTestId("location")).toHaveTextContent(
-			"/#for-organizations",
-		);
 	});
 });

@@ -8,12 +8,11 @@ function org(id: string, name: string): OrganizationSummaryDto {
 }
 
 describe("buildPrimaryNav", () => {
-	it("returns the four static destinations for a viewer with no organization", () => {
+	it("returns the three static destinations for a viewer with no organization", () => {
 		expect(buildPrimaryNav(null).map((link) => link.key)).toEqual([
 			"home",
 			"findOpportunities",
 			"organizations",
-			"forOrganizations",
 		]);
 	});
 
@@ -22,11 +21,10 @@ describe("buildPrimaryNav", () => {
 			"static",
 			"static",
 			"static",
-			"static",
 		]);
 	});
 
-	it("gives a member the organization entry in the 'for organizations' slot", () => {
+	it("appends the organization entry for a member", () => {
 		const links = buildPrimaryNav(
 			org("org-1", "Lindenauer Nachbarschaftshilfe e.V."),
 		);
@@ -63,15 +61,5 @@ describe("buildPrimaryNav", () => {
 		for (const index of [0, 1, 2]) {
 			expect(withOrg[index]).toEqual(withoutOrg[index]);
 		}
-	});
-
-	it("keeps the hash flag only on the landing-page fragment link", () => {
-		const links = buildPrimaryNav(null);
-
-		expect(
-			links
-				.filter((link) => link.kind === "static" && link.hash)
-				.map((l) => l.key),
-		).toEqual(["forOrganizations"]);
 	});
 });
