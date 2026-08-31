@@ -41,6 +41,25 @@ function pendingPath(organizationId: string) {
 	return `/app/${organizationId}/dashboard/engagements?status=Pending`;
 }
 
+// Deciding a sign-up destroys the control that was focused - the Confirm button
+// is replaced by its verdict, and a declined row leaves the DOM entirely, which
+// also stops Modal restoring focus to the trigger it opened from. Both paths
+// otherwise drop the keyboard user on <body>, at the top of the page, with no
+// idea their verdict landed. Focus moves to the next decision instead, or to
+// the way onward when this was the last one. Same shape as
+// OrgEngagementsPage's focusEngagementRowControl.
+function focusNextDecision() {
+	requestAnimationFrame(() => {
+		const next = document.querySelector<HTMLElement>(
+			'[data-testid^="todo-widget-confirm-"]',
+		);
+		const onward = document.querySelector<HTMLElement>(
+			'[data-testid="todo-widget-review-all"]',
+		);
+		(next ?? onward)?.focus();
+	});
+}
+
 function NothingWaiting() {
 	const { t } = useTranslation();
 	return (
@@ -199,6 +218,7 @@ function ReviewQueue({
 			setQueue((prev) =>
 				prev ? { ...prev, total: Math.max(0, prev.total - 1) } : prev,
 			);
+			focusNextDecision();
 			dispatchToast("success", t("orgEngagements.confirmSuccess"));
 		} catch (err) {
 			dispatchToast(
@@ -230,6 +250,7 @@ function ReviewQueue({
 			);
 			setDecliningId(null);
 			setDeclineReason("");
+			focusNextDecision();
 		} catch (err) {
 			setDeclineError(getApiErrorMessage(err, t("orgEngagements.cancelError")));
 		} finally {
@@ -257,6 +278,7 @@ function ReviewQueue({
 				waiting > undecided ? (
 					<Link
 						to={pendingPath(organizationId)}
+						data-testid="todo-widget-review-all"
 						className="text-sm font-medium text-brand-700 hover:underline"
 					>
 						{t("orgDashboard.todoReviewAll", { count: waiting })}
@@ -284,9 +306,26 @@ function ReviewQueue({
 				/>
 			)}
 
-			{queue !== null && !queueError && queue.items.length === 0 && (
-				<NothingWaiting />
-			)}
+			{/* Working the four rows down to nothing does not mean the queue is
+			empty - the page holds four at a time. Reporting "nothing waiting"
+			over a footer offering the other eleven is the widget contradicting
+			itself in the same card. */}
+			{queue !== null &&
+				!queueError &&
+				queue.items.length === 0 &&
+				waiting === 0 && <NothingWaiting />}
+
+			{queue !== null &&
+				!queueError &&
+				queue.items.length === 0 &&
+				waiting > 0 && (
+					<p
+						data-testid="todo-widget-more-waiting"
+						className="text-sm text-gray-600"
+					>
+						{t("orgDashboard.todoMoreWaiting", { count: waiting })}
+					</p>
+				)}
 
 			{queue !== null && !queueError && queue.items.length > 0 && (
 				<ul className="divide-y divide-gray-100">

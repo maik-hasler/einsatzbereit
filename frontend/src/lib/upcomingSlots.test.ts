@@ -27,6 +27,7 @@ function event(
 		titleDe: "Blutspendetermin begleiten",
 		titleEn: "Support a blood donation drive",
 		color: undefined,
+		status: "Published",
 		timeSlots: [],
 		...overrides,
 	} as unknown as OrganizationCalendarEventDto;
@@ -94,6 +95,18 @@ describe("selectUpcomingSlots", () => {
 		]);
 
 		expect(result.map((s) => s.id)).toEqual(["fine"]);
+	});
+
+	// Nobody can sign up to a draft, so an empty one is not a shift short of
+	// people - and sorted purely by time it looked like the most urgent row on
+	// the board.
+	it("leaves out occurrences of anything that is not published", () => {
+		const timeSlots = [slot("a", 3)];
+
+		expect(select([event({ status: "Draft", timeSlots })])).toEqual([]);
+		expect(select([event({ status: "Cancelled", timeSlots })])).toEqual([]);
+		expect(select([event({ status: "Unpublished", timeSlots })])).toEqual([]);
+		expect(select([event({ status: "Published", timeSlots })])).toHaveLength(1);
 	});
 
 	it("caps the list at the tile's row budget", () => {

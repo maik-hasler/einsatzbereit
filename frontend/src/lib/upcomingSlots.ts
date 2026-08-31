@@ -49,6 +49,15 @@ export function selectUpcomingSlots(
 ): UpcomingSlot[] {
 	return events
 		.flatMap((event): UpcomingSlot[] => {
+			// The calendar endpoint returns every occurrence an organizer has
+			// scheduled, drafts included - which is right for the calendar, where
+			// they plan. It is wrong here: nobody can sign up to a draft, so an
+			// empty one is not a shift that is short of people, and sorted purely
+			// by time it looks like the most desperate row on the board. The
+			// widget this replaced asked the opportunities endpoint for
+			// "Published" and so never had to think about it.
+			if (event.status !== "Published") return [];
+
 			const title = pickLocalizedText(event.titleDe, event.titleEn, lang);
 			return event.timeSlots.flatMap((slot): UpcomingSlot[] => {
 				const start = slot.startDateTime as unknown as string;

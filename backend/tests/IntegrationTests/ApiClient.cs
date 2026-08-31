@@ -13889,6 +13889,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("color")]
         public string? Color { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Status { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("timeSlots")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<CalendarTimeSlotDto> TimeSlots { get; set; } = new System.Collections.ObjectModel.Collection<CalendarTimeSlotDto>();

@@ -36,6 +36,7 @@ const calendarEvent = {
 	titleDe: "Blutspendetermin begleiten",
 	titleEn: "Support a blood donation drive",
 	color: undefined,
+	status: "Published",
 	timeSlots: [slot("slot-a", IN_TWO_DAYS, 3), slot("slot-b", IN_THREE_DAYS, 0)],
 };
 
@@ -81,8 +82,8 @@ describe("UpcomingOpportunitiesWidget", () => {
 				),
 			),
 		).toBeInTheDocument();
-		expect(screen.getByText("3/6 places")).toBeInTheDocument();
-		expect(screen.getByText("0/6 places")).toBeInTheDocument();
+		expect(screen.getByText("3/6 signed up")).toBeInTheDocument();
+		expect(screen.getByText("0/6 signed up")).toBeInTheDocument();
 	});
 
 	// One opportunity that repeats is several mornings to staff, and rolling them

@@ -559,7 +559,7 @@
       "todoDeclineConfirmMessage": "{{name}} verliert den Platz und erfährt, dass die Eintragung abgesagt wurde.",
       "todoDeclineReasonLabel": "Grund (optional)",
       "upcomingEmptyHint": "Veröffentliche einen Einsatz mit Zeitslots, dann erscheinen seine Termine hier.",
-      "slotPlaces": "{{booked}}/{{max}} Plätze",
+      "slotPlaces": "{{booked}}/{{max}} eingetragen",
       "slotSignedUp_one": "{{count}} Eintragung",
       "slotSignedUp_other": "{{count}} Eintragungen",
       "confirmedVolunteers_one": "bestätigte:r Freiwillige:r",
@@ -591,7 +591,10 @@
       "todoWaitingCount_one": "{{count}} offen",
       "todoWaitingCount_other": "{{count}} offen",
       "todoReviewAll_one": "Die letzte bearbeiten",
-      "todoReviewAll_other": "Alle {{count}} bearbeiten"
+      "todoReviewAll_other": "Alle {{count}} bearbeiten",
+      "todoMoreWaiting_one": "{{count}} weitere wartet auf eine Entscheidung.",
+      "todoMoreWaiting_other": "{{count}} weitere warten auf eine Entscheidung.",
+      "todoMoreWaiting": "{{count}} weitere warten auf eine Entscheidung."
     },
     "orgSettings": {
       "createdOn": "Erstellt am {{date}}",

@@ -36,14 +36,27 @@ function PendingInvitations({
 	// Silent while loading and silent on failure: this is a footnote under the
 	// member count, and a spinner or an error banner for it would shout louder
 	// than the fact it is reporting.
-	if (!invitations || invitations.length === 0) return null;
+	if (!invitations) return null;
+
+	// The endpoint returns an organization's whole invitation history, so
+	// counting the rows reports people who declined months ago, and people whose
+	// invitation has since expired, as still deciding. "Unanswered" has to mean
+	// unanswered: Pending, and not already lapsed.
+	const now = Date.now();
+	const waiting = invitations.filter(
+		(invitation) =>
+			invitation.status === "Pending" &&
+			new Date(invitation.expiresOn as unknown as string).getTime() > now,
+	).length;
+
+	if (waiting === 0) return null;
 
 	return (
 		<p
 			data-testid="team-widget-invitations"
 			className="mt-1 text-xs text-gray-600"
 		>
-			{t("orgDashboard.teamInvitationsPending", { count: invitations.length })}
+			{t("orgDashboard.teamInvitationsPending", { count: waiting })}
 		</p>
 	);
 }

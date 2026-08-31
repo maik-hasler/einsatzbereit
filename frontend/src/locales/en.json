@@ -559,7 +559,7 @@
       "todoDeclineConfirmMessage": "{{name}} loses their place, and hears that the sign-up was declined.",
       "todoDeclineReasonLabel": "Reason (optional)",
       "upcomingEmptyHint": "Publish an opportunity with time slots and its occurrences show up here.",
-      "slotPlaces": "{{booked}}/{{max}} places",
+      "slotPlaces": "{{booked}}/{{max}} signed up",
       "slotSignedUp_one": "{{count}} signed up",
       "slotSignedUp_other": "{{count}} signed up",
       "confirmedVolunteers_one": "confirmed volunteer",
@@ -591,7 +591,10 @@
       "todoWaitingCount_one": "{{count}} waiting",
       "todoWaitingCount_other": "{{count}} waiting",
       "todoReviewAll_one": "Work through the last one",
-      "todoReviewAll_other": "Work through all {{count}}"
+      "todoReviewAll_other": "Work through all {{count}}",
+      "todoMoreWaiting_one": "{{count}} more waiting for a decision.",
+      "todoMoreWaiting_other": "{{count}} more waiting for a decision.",
+      "todoMoreWaiting": "{{count}} more waiting for a decision."
     },
     "orgSettings": {
       "createdOn": "Created on {{date}}",

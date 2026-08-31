@@ -7046,6 +7046,7 @@ export interface OrganizationCalendarEventDto {
     titleDe: string;
     titleEn: string | undefined;
     color: string | undefined;
+    status: string;
     timeSlots: CalendarTimeSlotDto[];
 
     [key: string]: any;

@@ -603,6 +603,49 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		expect(screen.queryByTestId("todo-widget-resolved")).toBeNull();
 	});
 
+	// Working the visible rows down to nothing does not mean the queue is empty:
+	// the tile holds four at a time. Saying "nothing waiting" over a footer
+	// offering the other four is the widget contradicting itself in one card.
+	it("does not report the queue clear while more are still waiting", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [],
+			currentPage: 1,
+			pageCount: 2,
+			totalItems: 5,
+		});
+
+		renderDashboard();
+
+		expect(
+			await screen.findByTestId("todo-widget-more-waiting"),
+		).toHaveTextContent("5 more waiting");
+		expect(screen.queryByTestId("todo-widget-resolved")).toBeNull();
+	});
+
+	// Deciding destroys the control that was focused, which otherwise drops a
+	// keyboard user on <body> at the top of the page with no sign their verdict
+	// landed.
+	it("moves focus to the next decision after confirming one", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [
+				pendingEngagement("e-1", "Vera Volunteer"),
+				pendingEngagement("e-2", "Ali Helper"),
+			],
+			currentPage: 1,
+			pageCount: 1,
+			totalItems: 2,
+		});
+		api.confirmEngagement.mockResolvedValue({ status: "Confirmed" });
+
+		renderDashboard();
+
+		await userEvent.click(await screen.findByTestId("todo-widget-confirm-e-1"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("todo-widget-confirm-e-2")).toHaveFocus(),
+		);
+	});
+
 	it("confirms a sign-up from the board and marks the row decided", async () => {
 		api.getOrganizationEngagements.mockResolvedValue({
 			items: [pendingEngagement("e-1", "Vera Volunteer")],
@@ -686,6 +729,7 @@ describe("OrgDashboardPage request volume", () => {
 				titleDe: "Deutscher Einsatz",
 				titleEn: "English shift",
 				color: undefined,
+				status: "Published",
 				timeSlots: [
 					{
 						timeSlotId: "33333333-3333-3333-3333-333333333333",
@@ -767,6 +811,7 @@ describe("OrgDashboardPage widget links", () => {
 				titleDe: "Blutspendetermin begleiten",
 				titleEn: "Support a blood donation drive",
 				color: undefined,
+				status: "Published",
 				timeSlots: [
 					{
 						timeSlotId: "55555555-5555-5555-5555-555555555555",
