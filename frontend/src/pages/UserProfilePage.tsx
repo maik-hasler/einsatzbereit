@@ -130,23 +130,28 @@ export default function UserProfilePage() {
 			<PageHeaderBand
 				eyebrow={t("userProfile.eyebrow")}
 				title={profile.displayName}
-			/>
-
-			<div data-content-wrapper className="mx-auto max-w-5xl">
-				<div className="mb-8 flex items-center gap-4">
-					{profile.avatarUrl ? (
+				avatar={
+					profile.avatarUrl ? (
 						<img
 							src={profile.avatarUrl}
 							alt=""
 							width={64}
 							height={64}
-							className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brand-100"
+							className="h-16 w-16 shrink-0 rounded-full object-cover"
 						/>
 					) : (
-						<span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+						<span
+							aria-hidden="true"
+							className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700"
+						>
 							{getInitials(profile.displayName)}
 						</span>
-					)}
+					)
+				}
+			/>
+
+			<div data-content-wrapper className="mx-auto max-w-5xl">
+				<div className="mb-8 flex items-center gap-4">
 					<p className="text-sm text-gray-600">
 						{t("userProfile.engagementCount", {
 							count: profile.engagementCount,
