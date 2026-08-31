@@ -3,16 +3,10 @@ import { screen, within } from "@testing-library/react";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import { renderWithProviders } from "../../test/render";
 
-const { api } = await vi.hoisted(async () => {
-	const { createApiMock } = await import("../../test/apiMock");
-	return { api: createApiMock() };
-});
-
 const { useMyOrganizations } = vi.hoisted(() => ({
 	useMyOrganizations: vi.fn(),
 }));
 
-vi.mock("../../hooks/useApiClient", () => ({ useApiClient: () => api }));
 vi.mock("../../hooks/useMyOrganizations", () => ({ useMyOrganizations }));
 
 const ORGANIZER_ROWS = [
@@ -25,15 +19,15 @@ const VOLUNTEER_ROWS = [
 	"Reminder before your opportunity starts",
 ];
 
+const PREFERENCES = {
+	notifyOnNewSignUp: true,
+	notifyOnWithdrawal: true,
+	notifyOnEngagementConfirmed: true,
+	notifyOnEngagementCancelled: true,
+	notifyOnEngagementReminder: true,
+};
+
 beforeEach(() => {
-	api.__reset();
-	api.getNotificationPreferences.mockResolvedValue({
-		notifyOnNewSignUp: true,
-		notifyOnWithdrawal: true,
-		notifyOnEngagementConfirmed: true,
-		notifyOnEngagementCancelled: true,
-		notifyOnEngagementReminder: true,
-	});
 	useMyOrganizations.mockReturnValue({
 		orgs: [],
 		loading: false,
@@ -41,10 +35,22 @@ beforeEach(() => {
 	});
 });
 
-function renderSection() {
-	return renderWithProviders(<NotificationPreferencesSection />, {
-		auth: { isAuthenticated: true },
-	});
+function renderSection(
+	overrides: Partial<
+		React.ComponentProps<typeof NotificationPreferencesSection>
+	> = {},
+) {
+	return renderWithProviders(
+		<NotificationPreferencesSection
+			editing={false}
+			preferences={PREFERENCES}
+			loading={false}
+			loadError={false}
+			onToggle={vi.fn()}
+			{...overrides}
+		/>,
+		{ auth: { isAuthenticated: true } },
+	);
 }
 
 describe("notification preferences for an organization member", () => {
@@ -56,15 +62,15 @@ describe("notification preferences for an organization member", () => {
 		});
 	});
 
-	it("still shows all five preferences", async () => {
+	it("still shows all five preferences", () => {
 		renderSection();
 
 		for (const label of [...ORGANIZER_ROWS, ...VOLUNTEER_ROWS]) {
-			expect(await screen.findByLabelText(label)).toBeInTheDocument();
+			expect(screen.getByLabelText(label)).toBeInTheDocument();
 		}
 	});
 
-	it("groups them by audience", async () => {
+	it("groups them by audience", () => {
 		renderSection();
 
 		const groupOf = (heading: HTMLElement) => {
@@ -73,7 +79,7 @@ describe("notification preferences for an organization member", () => {
 			return block as HTMLElement;
 		};
 		const organizerGroup = groupOf(
-			await screen.findByRole("heading", { name: "As an organizer" }),
+			screen.getByRole("heading", { name: "As an organizer" }),
 		);
 		const volunteerGroup = groupOf(
 			screen.getByRole("heading", { name: "As a volunteer" }),
@@ -89,21 +95,21 @@ describe("notification preferences for an organization member", () => {
 });
 
 describe("notification preferences for a volunteer without an organization", () => {
-	it("hides the two organizer-only preferences", async () => {
+	it("hides the two organizer-only preferences", () => {
 		renderSection();
 
 		for (const label of VOLUNTEER_ROWS) {
-			expect(await screen.findByLabelText(label)).toBeInTheDocument();
+			expect(screen.getByLabelText(label)).toBeInTheDocument();
 		}
 		for (const label of ORGANIZER_ROWS) {
 			expect(screen.queryByLabelText(label)).toBeNull();
 		}
 	});
 
-	it("drops the group headings, since only one audience is left", async () => {
+	it("drops the group headings, since only one audience is left", () => {
 		renderSection();
 
-		expect(await screen.findByLabelText(VOLUNTEER_ROWS[0])).toBeInTheDocument();
+		expect(screen.getByLabelText(VOLUNTEER_ROWS[0])).toBeInTheDocument();
 		expect(
 			screen.queryByRole("heading", { name: "As an organizer" }),
 		).toBeNull();
@@ -112,7 +118,7 @@ describe("notification preferences for a volunteer without an organization", () 
 		).toBeNull();
 	});
 
-	it("keeps the organizer rows when the organization lookup failed", async () => {
+	it("keeps the organizer rows when the organization lookup failed", () => {
 		useMyOrganizations.mockReturnValue({
 			orgs: [],
 			loading: false,
@@ -122,7 +128,36 @@ describe("notification preferences for a volunteer without an organization", () 
 		renderSection();
 
 		for (const label of ORGANIZER_ROWS) {
-			expect(await screen.findByLabelText(label)).toBeInTheDocument();
+			expect(screen.getByLabelText(label)).toBeInTheDocument();
 		}
+	});
+});
+
+describe("editing gate", () => {
+	it("renders the checkboxes disabled outside of edit mode", () => {
+		renderSection({ editing: false });
+
+		expect(screen.getByLabelText(VOLUNTEER_ROWS[0])).toBeDisabled();
+	});
+
+	it("enables the checkboxes once the page enters edit mode", () => {
+		renderSection({ editing: true });
+
+		expect(screen.getByLabelText(VOLUNTEER_ROWS[0])).toBeEnabled();
+	});
+
+	it("shows a loading state instead of stale checkboxes while preferences load", () => {
+		renderSection({ preferences: null, loading: true });
+
+		expect(screen.getByRole("status")).toBeInTheDocument();
+		expect(screen.queryByLabelText(VOLUNTEER_ROWS[0])).toBeNull();
+	});
+
+	it("shows an error banner when preferences failed to load", () => {
+		renderSection({ preferences: null, loading: false, loadError: true });
+
+		expect(
+			screen.getByText("Could not load notification preferences."),
+		).toBeInTheDocument();
 	});
 });

@@ -32,7 +32,6 @@
       "userMenu": "User menu",
       "myProfile": "My profile",
       "myEngagements": "My sign-ups",
-      "profileSettings": "Settings",
       "administration": "Administration",
       "signOut": "Sign out",
       "signIn": "Sign in",
@@ -1242,7 +1241,6 @@
       "title": "My profile",
       "subNavLabel": "Profile navigation",
       "subNavProfile": "Profile",
-      "subNavSettings": "Settings",
       "sectionDetails": "Profile details",
       "viewPublicProfile": "View my public profile",
       "publicProfileNotice": "Your profile picture, bio, skills, and languages appear on your public profile page, visible to anyone on the internet without signing in. See our <privacyLink>Privacy Policy</privacyLink> for details on how this information is used.",
@@ -1282,9 +1280,6 @@
       "saveFieldError": "Some entries are too long. Shorten the highlighted fields and save again.",
       "fieldTooLong": "Must not be longer than {{max}} characters."
     },
-    "profileSettings": {
-      "title": "Settings"
-    },
     "myEngagementsPage": {
       "title": "My sign-ups"
     },
@@ -1299,9 +1294,6 @@
       "engagementConfirmed": "Your sign-up is confirmed",
       "engagementCancelled": "Your sign-up is cancelled",
       "engagementReminder": "Reminder before your opportunity starts",
-      "save": "Save preferences",
-      "saving": "Saving…",
-      "savedSuccess": "Notification preferences saved.",
       "saveError": "Failed to save notification preferences.",
       "loadError": "Could not load notification preferences."
     },

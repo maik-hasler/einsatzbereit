@@ -40,12 +40,15 @@ import {
 	PencilIcon,
 } from "../../components/icons";
 import AchievementsSection from "./AchievementsSection";
+import DangerZoneCard from "./DangerZoneCard";
+import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import {
 	useProfileForm,
 	type ContactPref,
 	type PreferredLanguage,
 } from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
+import { useNotificationPreferencesForm } from "./useNotificationPreferencesForm";
 
 // Keyed by the property names the API blames in its per-field 400, so a
 // rejection can name the limit the field actually broke (#2320).
@@ -226,6 +229,10 @@ export default function ProfileOverviewPage() {
 
 	const form = useProfileForm(profile);
 	const avatarUpload = useAvatarUpload(setAvatarUrl);
+	const notificationPrefs = useNotificationPreferencesForm();
+	const [notificationSaveError, setNotificationSaveError] = useState<
+		string | null
+	>(null);
 
 	async function loadProfile() {
 		const retryDelaysMs = [500, 1000, 2000];
@@ -315,6 +322,7 @@ export default function ProfileOverviewPage() {
 		e.preventDefault();
 		setSaving(true);
 		setSaveError(null);
+		setNotificationSaveError(null);
 		setInvalidFields([]);
 		setSuccessMessage(null);
 		const savedValues = {
@@ -327,9 +335,21 @@ export default function ProfileOverviewPage() {
 			preferredContact: form.state.preferredContact || undefined,
 			preferredLanguage: form.state.preferredLanguage,
 		};
-		try {
-			await api.updateUserProfile(savedValues);
 
+		// Two independent resources under one Save/Cancel: the profile fields
+		// and the notification preferences below them. Either can fail on its
+		// own, so both run and are reported separately rather than one bailing
+		// out the other (#2354).
+		const [profileResult, preferencesResult] = await Promise.allSettled([
+			api.updateUserProfile(savedValues),
+			notificationPrefs.preferences
+				? api.updateNotificationPreferences(notificationPrefs.preferences)
+				: Promise.resolve(undefined),
+		]);
+
+		let bothSucceeded = true;
+
+		if (profileResult.status === "fulfilled") {
 			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
 			// The header reads the id_token, which Keycloak will not re-issue
 			// until the next sign-in - hand it the new name directly (#2330).
@@ -340,26 +360,40 @@ export default function ProfileOverviewPage() {
 						(profile?.username ?? ""),
 				);
 			}
-			setSuccessMessage(t("profile.savedSuccess"));
-			setEditing(false);
-		} catch (err) {
+		} else {
+			bothSucceeded = false;
 			// The server names the fields it rejected; say which they are
 			// instead of dropping that into a bare "saving failed" (#2320).
-			const rejected = getInvalidFieldNames(err);
+			const rejected = getInvalidFieldNames(profileResult.reason);
 			setInvalidFields(rejected);
 			setSaveError(
 				rejected.length > 0
 					? t("profile.saveFieldError")
 					: t("profile.saveError"),
 			);
-		} finally {
-			setSaving(false);
 		}
+
+		if (preferencesResult.status === "fulfilled") {
+			if (notificationPrefs.preferences) {
+				notificationPrefs.commit(notificationPrefs.preferences);
+			}
+		} else {
+			bothSucceeded = false;
+			setNotificationSaveError(t("notificationPreferences.saveError"));
+		}
+
+		if (bothSucceeded) {
+			setSuccessMessage(t("profile.savedSuccess"));
+			setEditing(false);
+		}
+		setSaving(false);
 	}
 
 	function handleCancel() {
 		form.reset(profile);
+		notificationPrefs.reset();
 		setSaveError(null);
+		setNotificationSaveError(null);
 		setInvalidFields([]);
 		setEditing(false);
 	}
@@ -429,6 +463,14 @@ export default function ProfileOverviewPage() {
 									message={saveError}
 									className="mb-4"
 									data-testid="profile-save-error"
+								/>
+							)}
+
+							{notificationSaveError && (
+								<ErrorBanner
+									message={notificationSaveError}
+									className="mb-4"
+									data-testid="notification-preferences-save-error"
 								/>
 							)}
 
@@ -952,6 +994,14 @@ export default function ProfileOverviewPage() {
 									</form>
 								)}
 							</section>
+
+							<NotificationPreferencesSection
+								editing={editing}
+								preferences={notificationPrefs.preferences}
+								loading={notificationPrefs.loading}
+								loadError={notificationPrefs.loadError}
+								onToggle={notificationPrefs.toggle}
+							/>
 						</>
 					)}
 
@@ -959,6 +1009,8 @@ export default function ProfileOverviewPage() {
 						engagementCount={engagementCount}
 						streaks={streaks}
 					/>
+
+					<DangerZoneCard />
 				</div>
 			</div>
 

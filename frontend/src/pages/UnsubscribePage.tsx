@@ -24,7 +24,7 @@ export default function UnsubscribePage() {
 				<p className="mt-4 leading-relaxed text-gray-700">
 					{t("unsubscribe.description")}
 				</p>
-				<Button to="/profile/settings" size="lg" className="mt-8">
+				<Button to="/profile" size="lg" className="mt-8">
 					{t("unsubscribe.manageInProfile")}
 				</Button>
 			</div>
