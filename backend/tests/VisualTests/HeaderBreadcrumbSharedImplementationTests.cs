@@ -32,7 +32,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 			.ToBeVisibleAsync();
 
 		var subNav = Page.Locator("main nav[aria-label]").First;
-		foreach (var tab in new[] { "Profile", "Sign-ups", "Settings" })
+		foreach (var tab in new[] { "Profile", "Sign-ups" })
 			await Expect(subNav.GetByRole(AriaRole.Link, new() { Name = tab })).ToBeVisibleAsync();
 	}
 

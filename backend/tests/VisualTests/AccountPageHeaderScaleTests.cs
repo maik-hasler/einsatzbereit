@@ -8,7 +8,6 @@ public class AccountPageHeaderScaleTests(AspireFixture fixture) : VisualTestBase
 {
 	[Test]
 	[Arguments("/profile", "My profile")]
-	[Arguments("/profile/settings", "Settings")]
 	[Arguments("/my-signups", "My sign-ups")]
 	public async Task AccountPage_RendersCompactTitle_NotTheMarketingHeroScale(string path, string title)
 	{

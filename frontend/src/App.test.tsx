@@ -95,6 +95,16 @@ describe("the callback error retry", () => {
 	});
 });
 
+describe("the merged profile settings page (#2354)", () => {
+	it("redirects /profile/settings to /profile", async () => {
+		renderAt("/profile/settings");
+
+		expect(
+			await screen.findByRole("heading", { level: 1, name: "My profile" }),
+		).toBeVisible();
+	});
+});
+
 describe("the legal pages", () => {
 	it.each([
 		["/imprint", "Imprint"],
