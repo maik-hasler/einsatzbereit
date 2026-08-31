@@ -13918,6 +13918,21 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int ConfirmedEngagementsTotal { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("distinctVolunteersTotal")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int DistinctVolunteersTotal { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("signUpsLast30Days")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int SignUpsLast30Days { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("signUpsPrevious30Days")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int SignUpsPrevious30Days { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

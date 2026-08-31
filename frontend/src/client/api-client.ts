@@ -7054,6 +7054,9 @@ export interface OrganizationCalendarEventDto {
 export interface OrganizationDashboardResponse {
     pendingEngagements: number;
     confirmedEngagementsTotal: number;
+    distinctVolunteersTotal: number;
+    signUpsLast30Days: number;
+    signUpsPrevious30Days: number;
 
     [key: string]: any;
 }

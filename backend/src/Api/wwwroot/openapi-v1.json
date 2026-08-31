@@ -9175,7 +9175,10 @@
       "OrganizationDashboardResponse": {
         "required": [
           "pendingEngagements",
-          "confirmedEngagementsTotal"
+          "confirmedEngagementsTotal",
+          "distinctVolunteersTotal",
+          "signUpsLast30Days",
+          "signUpsPrevious30Days"
         ],
         "type": "object",
         "properties": {
@@ -9188,6 +9191,30 @@
             "format": "int32"
           },
           "confirmedEngagementsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "distinctVolunteersTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "signUpsLast30Days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "signUpsPrevious30Days": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",

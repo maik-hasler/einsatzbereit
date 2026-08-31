@@ -73,7 +73,10 @@ public class GetOrganizationDashboardQueryHandlerTests
 		// Arrange
 		var kpis = new OrganizationDashboardResponse(
 			PendingEngagements: 2,
-			ConfirmedEngagementsTotal: 5);
+			ConfirmedEngagementsTotal: 5,
+			DistinctVolunteersTotal: 3,
+			SignUpsLast30Days: 4,
+			SignUpsPrevious30Days: 1);
 		_readRepository.GetKpisAsync(DefaultOrgId, cancellationToken).Returns(kpis);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 
@@ -83,5 +86,8 @@ public class GetOrganizationDashboardQueryHandlerTests
 		// Assert
 		result.Should().Be(kpis);
 		result!.ConfirmedEngagementsTotal.Should().Be(5);
+		result.DistinctVolunteersTotal.Should().Be(3);
+		result.SignUpsLast30Days.Should().Be(4);
+		result.SignUpsPrevious30Days.Should().Be(1);
 	}
 }
