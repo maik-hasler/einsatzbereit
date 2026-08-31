@@ -185,7 +185,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.UpAsync();
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 3, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -194,7 +194,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 3, height: 2);
 	}
 
 	[Test]
@@ -227,7 +227,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.MoveAsync(startX + colPx, startY + rowPx, new() { Steps = 5 });
 		await Page.Mouse.UpAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 3);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -236,7 +236,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 3);
 	}
 
 	[Test]
@@ -330,6 +330,19 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
+		// Onto an empty board with one widget on it, the way the three drag cases
+		// above set themselves up. The corner flow starts from wherever the tile
+		// already sits, so reading that start position out of DEFAULT_LAYOUT
+		// coupled this case to the default board and broke it the first time the
+		// board was rearranged - the gesture under test is the same either way.
+		await RemoveAllWidgetsAsync();
+
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(Page.GetByTestId("widget-tile-ToDo")).ToBeVisibleAsync();
+
 		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" });
 		await moveButton.FocusAsync();
 
@@ -341,7 +354,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Keyboard.PressAsync("Enter");
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 2, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -350,7 +363,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 2, height: 2);
 	}
 
 	[Test]
@@ -618,13 +631,22 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 					// keys") after the widget name callers pass in here.
 					const grip = el.querySelector(`button[aria-label^="${gripLabel}"]`);
 					if (!grip || tileRect.width <= 0) return [0, 0, 0, 0];
+					// One column's pitch, measured off the backdrop rather than off the
+					// dragged tile. This used to be `tileRect.width / 4`, which is a
+					// column only while the caller's widget happens to be four columns
+					// wide - so re-sizing ToDo in the catalog silently turned every drag
+					// in this file into a fraction of the distance it asked for.
+					const cells = document.querySelectorAll('[data-testid="dashboard-grid-guide-cell"]');
+					if (cells.length < 2) return [0, 0, 0, 0];
+					const colPx = cells[1].getBoundingClientRect().x - cells[0].getBoundingClientRect().x;
+					if (colPx <= 0) return [0, 0, 0, 0];
 					const gripRect = grip.getBoundingClientRect();
-					return [tileRect.width, gripRect.x + gripRect.width / 2, gripRect.y + gripRect.height / 2, 1];
+					return [colPx, gripRect.x + gripRect.width / 2, gripRect.y + gripRect.height / 2, 1];
 				}
 				""", gripAriaLabel);
 			if (geometry[3] == 0)
 				return false;
-			colPx = (float)(geometry[0] / 4);
+			colPx = (float)geometry[0];
 			startX = (float)geometry[1];
 			startY = (float)geometry[2];
 			return true;
@@ -645,9 +667,19 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 					const tileRect = el.getBoundingClientRect();
 					const handle = el.querySelector('[data-testid="widget-resize-handle-corner"]');
 					if (!handle || tileRect.width <= 0 || tileRect.height <= 0) return [0, 0, 0, 0, 0];
+					// One cell's pitch on each axis, off the backdrop rather than off the
+					// tile - see the note in GetGripDragStartAsync. This one divided the
+					// tile by 4 columns and 1 row, which was ToDo's footprint at the time
+					// and nothing more general than that.
+					const cells = document.querySelectorAll('[data-testid="dashboard-grid-guide-cell"]');
+					if (cells.length < 9) return [0, 0, 0, 0, 0];
+					const first = cells[0].getBoundingClientRect();
+					const colPx = cells[1].getBoundingClientRect().x - first.x;
+					const rowPx = cells[8].getBoundingClientRect().y - first.y;
+					if (colPx <= 0 || rowPx <= 0) return [0, 0, 0, 0, 0];
 					const handleRect = handle.getBoundingClientRect();
 					return [
-						tileRect.width, tileRect.height,
+						colPx, rowPx,
 						handleRect.x + handleRect.width / 2, handleRect.y + handleRect.height / 2,
 						1,
 					];
@@ -655,8 +687,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 				""");
 			if (geometry[4] == 0)
 				return false;
-			colPx = (float)(geometry[0] / 4);
-			rowPx = (float)(geometry[1] / 1);
+			colPx = (float)geometry[0];
+			rowPx = (float)geometry[1];
 			startX = (float)geometry[2];
 			startY = (float)geometry[3];
 			return true;
