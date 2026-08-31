@@ -140,7 +140,10 @@ export default function UserProfilePage() {
 							className="h-16 w-16 shrink-0 rounded-full object-cover"
 						/>
 					) : (
-						<span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+						<span
+							aria-hidden="true"
+							className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700"
+						>
 							{getInitials(profile.displayName)}
 						</span>
 					)
