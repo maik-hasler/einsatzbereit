@@ -404,8 +404,7 @@ export default function ActivitySection() {
 			<div
 				role="group"
 				aria-label={t("myEngagements.scopeLabel")}
-
-				className="mb-4 inline-grid max-w-full grid-cols-2 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1"
+				className="mb-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-full border border-gray-200 bg-gray-50 p-1"
 			>
 				<button
 					type="button"
@@ -413,7 +412,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("upcoming")}
 					disabled={engagementsLoading}
 					aria-pressed={engagementsScope === "upcoming"}
-					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+					className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "upcoming"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
@@ -427,7 +426,7 @@ export default function ActivitySection() {
 					onClick={() => switchEngagementsScope("past")}
 					disabled={engagementsLoading}
 					aria-pressed={engagementsScope === "past"}
-					className={`rounded-md px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+					className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
 						engagementsScope === "past"
 							? "bg-white text-brand-700 shadow-sm"
 							: "text-gray-600 hover:text-gray-900"
