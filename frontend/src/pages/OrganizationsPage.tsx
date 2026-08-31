@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
@@ -21,6 +22,7 @@ import LoadMoreButton from "../components/LoadMoreButton";
 import ReportFlagButton from "../components/ReportFlagButton";
 import RouteState from "../components/RouteState";
 import PageHeaderBand from "../components/PageHeaderBand";
+import Button from "../components/Button";
 import { MagnifyingGlassIcon } from "../components/icons";
 
 const PAGE_SIZE = 10;
@@ -94,6 +96,12 @@ export default function OrganizationsPage() {
 		commitSearch("");
 	}
 
+	function handleSearchSubmit(e: FormEvent) {
+		e.preventDefault();
+		if (searchTimer.current) clearTimeout(searchTimer.current);
+		commitSearch(searchInput);
+	}
+
 	const isInitialLoad = loading && items.length === 0;
 	const countMessage =
 		!error && !isInitialLoad
@@ -112,23 +120,34 @@ export default function OrganizationsPage() {
 				title={t("organizationsPage.title")}
 				lead={t("organizationsPage.lead")}
 			>
-				<div className="max-w-md rounded-3xl bg-white/10 p-3 shadow-lg backdrop-blur-sm">
+				<form onSubmit={handleSearchSubmit} className="max-w-md">
 					<label htmlFor="organizations-search" className="sr-only">
 						{t("organizationsPage.searchLabel")}
 					</label>
-					<div className="relative rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
-						<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
-						<input
-							id="organizations-search"
-							data-testid="organizations-search"
-							type="search"
-							value={searchInput}
-							onChange={(e) => handleSearchInputChange(e.target.value)}
-							placeholder={t("organizationsPage.searchPlaceholder")}
-							className="w-full rounded-full border-0 bg-transparent py-3 pr-4 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
-						/>
+					<div className="flex flex-col gap-3 rounded-3xl bg-white/10 p-3 shadow-lg backdrop-blur-sm sm:flex-row sm:items-stretch sm:rounded-full">
+						<div className="relative flex-1 rounded-full border border-gray-200 bg-gray-50 text-left transition-colors focus-within:border-brand-400 focus-within:bg-white">
+							<MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
+							<input
+								id="organizations-search"
+								data-testid="organizations-search"
+								type="search"
+								value={searchInput}
+								onChange={(e) => handleSearchInputChange(e.target.value)}
+								placeholder={t("organizationsPage.searchPlaceholder")}
+								className="w-full rounded-full border-0 bg-transparent py-3 pr-4 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
+							/>
+						</div>
+						<Button
+							type="submit"
+							size="lg"
+							pill
+							variant="onDark"
+							className="shrink-0 shadow-md"
+						>
+							{t("landing.heroSearchButton")}
+						</Button>
 					</div>
-				</div>
+				</form>
 			</PageHeaderBand>
 
 			<p
