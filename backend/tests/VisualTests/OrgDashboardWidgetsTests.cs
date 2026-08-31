@@ -322,7 +322,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(upcomingWidget.GetByRole(AriaRole.Link, new() { Name = oppTitle }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(upcomingWidget).ToContainTextAsync(start.ToString("yyyy"));
-		await Expect(upcomingWidget).ToContainTextAsync("0/5 places");
+		await Expect(upcomingWidget).ToContainTextAsync("0/5 signed up");
 		await Expect(upcomingWidget.GetByText("This widget couldn't be displayed"))
 			.ToHaveCountAsync(0);
 	}
