@@ -1106,17 +1106,22 @@ export default function VolunteerOpportunityDetailPage() {
 								coordinates no longer prints the same line three times on one
 								screen (#2330). */}
 								<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
-									{hasMap && (
+									{/* Narrowed on the two fields rather than on the derived
+									`hasMap`: a boolean tells TypeScript nothing, and buying
+									it back with a pair of `as number` casts trades a
+									compile-time guarantee for nothing. */}
+									{opportunity.latitude != null &&
+									opportunity.longitude != null ? (
 										<div data-testid="opportunity-map">
 											<Suspense fallback={<Skeleton className="h-64 w-full" />}>
 												<SingleMarkerMap
-													latitude={opportunity.latitude as number}
-													longitude={opportunity.longitude as number}
+													latitude={opportunity.latitude}
+													longitude={opportunity.longitude}
 													label={address}
 												/>
 											</Suspense>
 										</div>
-									)}
+									) : null}
 
 									<div
 										className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-2 p-4 ${hasMap ? "border-t border-gray-100" : ""}`}
@@ -1204,7 +1209,7 @@ export default function VolunteerOpportunityDetailPage() {
 														<EnvelopeIcon className="h-4 w-4 shrink-0 text-brand-700" />
 														<a
 															href={`mailto:${orgProfile.contactEmail}`}
-															className="min-h-6 truncate text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+															className="min-h-6 break-all text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 														>
 															{orgProfile.contactEmail}
 														</a>
@@ -1228,7 +1233,7 @@ export default function VolunteerOpportunityDetailPage() {
 															href={orgProfile.website}
 															target="_blank"
 															rel="noopener noreferrer"
-															className="min-h-6 truncate text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+															className="min-h-6 break-all text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 														>
 															{orgProfile.website}
 														</a>
@@ -1278,12 +1283,16 @@ export default function VolunteerOpportunityDetailPage() {
 						every comparable listing site puts it - at the foot, quiet, still
 						labelled and still a 24px target (#2330). */}
 						<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-gray-200 pt-6">
-							<span
-								className="text-xs text-gray-500"
-								title={postedOnAbsolute}
-								aria-label={`${postedOnRelative} (${postedOnAbsolute})`}
-							>
+							{/* An `aria-label` here would be dropped on the floor: it is
+							prohibited on a role-less <span>, so the absolute timestamp
+							never reached a screen reader - and nothing catches that,
+							since axe reports `aria-prohibited-attr` as inconclusive once
+							the element has text of its own. An sr-only sibling delivers
+							it for real; `title` stays the mouse-only bonus it always
+							was. */}
+							<span className="text-xs text-gray-500" title={postedOnAbsolute}>
 								{postedOnRelative}
+								<span className="sr-only"> ({postedOnAbsolute})</span>
 							</span>
 
 							{!isOwner && (

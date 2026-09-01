@@ -13,8 +13,10 @@ const { api } = await vi.hoisted(async () => {
 vi.mock("../hooks/useApiClient", () => ({ useApiClient: () => api }));
 
 const OPPORTUNITY_ID = "11111111-1111-1111-1111-111111111111";
+const ORGANIZATION_ID = "22222222-2222-2222-2222-222222222222";
+const SLOT_ID = "aaaaaaaa-0000-0000-0000-000000000001";
 
-function renderDetail() {
+function renderDetail(auth?: { isAuthenticated: boolean }) {
 	return renderWithProviders(
 		<Routes>
 			<Route
@@ -22,7 +24,10 @@ function renderDetail() {
 				element={<VolunteerOpportunityDetailPage />}
 			/>
 		</Routes>,
-		{ route: `/volunteer-opportunities/${OPPORTUNITY_ID}` },
+		{
+			route: `/volunteer-opportunities/${OPPORTUNITY_ID}`,
+			...(auth ? { auth } : {}),
+		},
 	);
 }
 
@@ -113,6 +118,74 @@ describe("VolunteerOpportunityDetailPage a11y", () => {
 		renderDetail();
 
 		await screen.findByTestId("opportunity-description");
+		await expectNoA11yViolations();
+	});
+
+	// The signed-out cases above render the sign-in prompt, so nothing scanned
+	// the states that share the rail with it: the sign-up card with a withdraw
+	// button per engagement, and the organizer card's two-column contact grid.
+	it("has no violations for a signed-in volunteer with a sign-up and an organizer card", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			id: OPPORTUNITY_ID,
+			organizationId: ORGANIZATION_ID,
+			organizationName: "Bilingual Org",
+			titleDe: "Deutscher Titel",
+			titleEn: "English Title",
+			descriptionDe: "Absatz eins.\n\nAbsatz zwei.",
+			descriptionEn: "Paragraph one.\n\nParagraph two.",
+			street: "Teststrasse",
+			houseNumber: "1",
+			zipCode: "24103",
+			city: "Kiel",
+			isRemote: false,
+			latitude: undefined,
+			longitude: undefined,
+			occurrence: "OneTime",
+			participationType: "ScheduledSlots",
+			checkInMethod: "None",
+			status: "Published",
+			timeSlots: [
+				{
+					id: SLOT_ID,
+					startDateTime: new Date(Date.UTC(2027, 0, 14, 9, 0)),
+					endDateTime: new Date(Date.UTC(2027, 0, 14, 12, 0)),
+					maxParticipants: 5,
+					bookedCount: 1,
+				},
+			],
+			tags: ["Kiel"],
+			currentUserEngagements: [
+				{
+					id: "cccccccc-0000-0000-0000-000000000001",
+					timeSlotId: SLOT_ID,
+					status: "Pending",
+					isCheckedIn: false,
+					remainingReactivations: 2,
+				},
+			],
+			validUntil: undefined,
+			createdOn: new Date(Date.UTC(2026, 7, 1, 9, 0)),
+		});
+		api.getPublicOrganizationProfile.mockResolvedValue({
+			id: ORGANIZATION_ID,
+			name: "Bilingual Org",
+			description: "Wir helfen in Kiel.",
+			contactEmail: "kontakt@example.org",
+			contactPhone: "+49 431 1234567",
+			website: "https://example.org",
+			address: {
+				street: "Teststrasse",
+				houseNumber: "1",
+				zipCode: "24103",
+				city: "Kiel",
+			},
+			openOpportunities: [],
+		});
+
+		renderDetail({ isAuthenticated: true });
+
+		await screen.findByTestId("application-status");
+		await screen.findByTestId("about-organization");
 		await expectNoA11yViolations();
 	});
 });
