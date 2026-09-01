@@ -20,7 +20,7 @@ using Infrastructure.BackgroundJobs;
 using Infrastructure.Common;
 using Infrastructure.Email;
 using Infrastructure.Geocoding;
-using Infrastructure.Geocoding.GermanCities;
+using Infrastructure.Geocoding.GermanPlaces;
 using Infrastructure.Keycloak;
 using Infrastructure.Maps;
 using Infrastructure.Meta;
@@ -134,7 +134,7 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<AbuseReportRetentionOptionsSetup>();
 		services.AddHostedService<AbuseReportRetentionJob>();
 
-		services.AddSingleton<IGermanCityDirectory, GermanCityDirectory>();
+		services.AddSingleton<IGermanPlaceDirectory, GermanPlaceDirectory>();
 
 		if (configuration.GetValue<bool>("Geocoding:UseFakeService"))
 		{

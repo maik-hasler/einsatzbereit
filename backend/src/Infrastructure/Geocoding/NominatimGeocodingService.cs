@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Application.Common.Geocoding;
-using Infrastructure.Geocoding.GermanCities;
+using Infrastructure.Geocoding.GermanPlaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,15 +11,18 @@ namespace Infrastructure.Geocoding;
 
 // Address geocoding (GeocodeAsync) always goes to Nominatim, retrying at
 // postcode/city granularity when the full street address does not resolve
-// (#2319). City search (SearchCitiesAsync) tries Nominatim first for its
-// postcode/exonym support, then falls back to the local IGermanCityDirectory
-// when that comes back empty - Nominatim only matches complete words, so a
-// still-being-typed prefix would otherwise dead-end (#2227).
+// (#2319). City search (SearchCitiesAsync) is the opposite: it answers from
+// the local IGermanPlaceDirectory first and only asks Nominatim when that
+// finds nothing. Nominatim is the slower and weaker half of that pair for a
+// search-as-you-type field - it matches complete words only, so a prefix
+// dead-ends (#2227), and every call queues behind the shared one-request-at-a-
+// time throttle below. It still earns its place as the fallback: exonyms
+// ("Munich") and company postal codes live there and nowhere else.
 internal sealed class NominatimGeocodingService(
 	HttpClient httpClient,
 	IOptions<GeocodingOptions> options,
 	ILogger<NominatimGeocodingService> logger,
-	IGermanCityDirectory cityDirectory)
+	IGermanPlaceDirectory placeDirectory)
 	: IGeocodingService
 {
 	private const int MaxCitySuggestions = 6;
@@ -97,14 +100,11 @@ internal sealed class NominatimGeocodingService(
 		if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < MinCitySearchQueryLength)
 			return [];
 
-		var remoteResults = await SearchCitiesRemoteAsync(query, language, cancellationToken);
-		if (remoteResults.Count > 0)
-			return remoteResults;
+		var localResults = placeDirectory.Search(query, MaxCitySuggestions);
+		if (localResults.Count > 0)
+			return localResults;
 
-		// Nominatim only matches complete words, so a still-being-typed prefix
-		// (e.g. "Leip") comes back empty even though "Leipzig" is a real city
-		// (#2227). Fall back to the bounded local directory for that case.
-		return cityDirectory.SearchByPrefix(query, MaxCitySuggestions);
+		return await SearchCitiesRemoteAsync(query, language, cancellationToken);
 	}
 
 	private async Task<IReadOnlyList<CitySuggestion>> SearchCitiesRemoteAsync(

@@ -17,10 +17,6 @@ import { WAVE_PATH } from "../lib/wavePath";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
-import {
-	filterByLabelMatch,
-	sortByLabelPrefixMatch,
-} from "../lib/citySuggestionSort";
 import { dispatchToast } from "../lib/toastBus";
 import {
 	MagnifyingGlassIcon,
@@ -94,19 +90,13 @@ export default function HomePage() {
 		if (!location && heroCityInput.trim()) {
 			setResolvingHeroLocation(true);
 			try {
-				const places = await api.searchCities(heroCityInput.trim());
-				const [best] = sortByLabelPrefixMatch(
-					filterByLabelMatch(
-						places.map((place) => ({
-							label: place.label,
-							lat: place.latitude,
-							lng: place.longitude,
-						})),
-						heroCityInput,
-					),
-					heroCityInput,
-				);
-				location = best ?? null;
+				// The server ranks the matches, so the first one is the best one -
+				// including for a postal code, whose label ("26129 Oldenburg") does
+				// not contain what was typed in a way the client could re-check.
+				const [best] = await api.searchCities(heroCityInput.trim());
+				location = best
+					? { label: best.label, lat: best.latitude, lng: best.longitude }
+					: null;
 			} catch {
 				location = null;
 			} finally {

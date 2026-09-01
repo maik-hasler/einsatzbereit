@@ -182,8 +182,8 @@
       "cityUnresolved": "„{{city}}“ konnte nicht gefunden werden – es ist kein Standortfilter aktiv.",
       "citySearching": "Wird gesucht…",
       "cityKeepTyping": "Weitertippen…",
-      "cityNoMatch": "Keine passende Stadt gefunden.",
-      "cityError": "Suche nach dieser Stadt fehlgeschlagen. Bitte erneut versuchen.",
+      "cityNoMatch": "Kein passender Ort gefunden.",
+      "cityError": "Suche nach diesem Ort fehlgeschlagen. Bitte erneut versuchen.",
       "cityExactNameMatch": "Passt genau",
       "category": {
         "Social": "Soziales",

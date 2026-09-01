@@ -182,8 +182,8 @@
       "cityUnresolved": "We couldn't find \"{{city}}\", so no location filter is applied.",
       "citySearching": "Searching…",
       "cityKeepTyping": "Keep typing…",
-      "cityNoMatch": "No matching city found.",
-      "cityError": "Couldn't search for that city. Please try again.",
+      "cityNoMatch": "No matching location found.",
+      "cityError": "Couldn't search for that location. Please try again.",
       "cityExactNameMatch": "Matches exactly",
       "category": {
         "Social": "Social",
