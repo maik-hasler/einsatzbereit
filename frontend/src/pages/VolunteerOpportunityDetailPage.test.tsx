@@ -173,7 +173,7 @@ const scheduledSlots = {
 	],
 };
 
-describe("opportunity detail page at-a-glance panel", () => {
+describe("opportunity detail page action panel facts", () => {
 	it("states the next slot's real date and the slot count for scheduled slots", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
@@ -1244,16 +1244,32 @@ describe("opportunity detail page add to calendar (#2330)", () => {
 		).toBeNull();
 	});
 
-	it("keeps every toolbar control labelled, never a bare icon pill (#2330)", async () => {
+	it("keeps every control labelled, never a bare icon pill (#2330)", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderDetail("en");
 
-		const toolbar = await screen.findByTestId("opportunity-detail-actions");
-		for (const span of toolbar.querySelectorAll("button span")) {
-			expect(span).not.toHaveClass("hidden");
+		// There is no visitor-facing toolbar any more: the calendar menu sits in
+		// the action panel next to the date it saves, and Report at the foot of
+		// the page. Both still carry their label at every width.
+		const calendar = await screen.findByRole("button", {
+			name: "Add to calendar",
+		});
+		const report = screen.getByTestId("report-opportunity");
+		for (const control of [calendar, report]) {
+			for (const span of control.querySelectorAll("span")) {
+				expect(span).not.toHaveClass("hidden");
+			}
 		}
-		expect(within(toolbar).getAllByRole("button").length).toBeGreaterThan(1);
+	});
+
+	it("leaves an anonymous visitor no toolbar row at the top of the page", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByTestId("opportunity-detail-actions")).toBeNull();
 	});
 });
 
@@ -1285,7 +1301,21 @@ describe("opportunity detail page location (#2330)", () => {
 		);
 	});
 
-	it("does not repeat the deadline the at-a-glance band already states", async () => {
+	it("states an interest deadline once for a signed-in volunteer too", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		await screen.findByTestId("signup-cta");
+		// The panel's "When" fact and a note under its button would be the same
+		// sentence twice inside one card.
+		expect(screen.getAllByText(/^Express interest by/)).toHaveLength(1);
+	});
+
+	it("does not repeat the deadline the panel's When fact already states", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),

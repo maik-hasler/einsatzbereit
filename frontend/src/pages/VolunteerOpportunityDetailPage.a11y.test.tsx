@@ -69,7 +69,7 @@ describe("VolunteerOpportunityDetailPage a11y", () => {
 		await expectNoA11yViolations();
 	});
 
-	it("has no violations with a described opportunity, a toolbar and past slots (#2330)", async () => {
+	it("has no violations with a described opportunity, an action panel and past slots (#2330)", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			id: OPPORTUNITY_ID,
 			organizationId: "22222222-2222-2222-2222-222222222222",
