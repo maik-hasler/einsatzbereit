@@ -92,6 +92,6 @@ public class OpportunityDetailOfflineTests(AspireFixture fixture) : VisualTestBa
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You are offline" }))
 			.Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(Page.GetByTestId("opportunity-at-a-glance")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("opportunity-action-panel")).ToBeVisibleAsync();
 	}
 }

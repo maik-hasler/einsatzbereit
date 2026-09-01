@@ -877,7 +877,10 @@ export default function VolunteerOpportunityDetailPage() {
 				in it twice in the DOM. It spans both content rows so `sticky` has room
 				to travel: an item sized to its own single-row area never sticks. */}
 				<div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-					<div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1">
+					<div
+						className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1"
+						data-testid="opportunity-identity"
+					>
 						{opportunity.bannerImageUrl && (
 							// Inside the content column, not above the whole grid: a
 							// full-container banner over a 792px column left a visible

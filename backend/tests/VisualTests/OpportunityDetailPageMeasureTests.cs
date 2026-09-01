@@ -15,11 +15,11 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 
 	private async Task AssertMainColumnBlocksShareRightEdgeAsync(string label)
 	{
-		var atAGlance = Page.GetByTestId("opportunity-at-a-glance");
+		var identity = Page.GetByTestId("opportunity-identity");
 		var timeSlots = Page.GetByTestId("opportunity-time-slots");
 		var aboutOrg = Page.GetByTestId("about-organization");
 
-		await Expect(atAGlance).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(identity).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(timeSlots).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(aboutOrg).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -35,12 +35,12 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 				""",
 				new[]
 				{
-					"[data-testid='opportunity-at-a-glance']",
+					"[data-testid='opportunity-identity']",
 					"[data-testid='opportunity-time-slots']",
 					"[data-testid='about-organization']",
 				});
 			return edges.Max() - edges.Min() <= MaxEdgeDeltaPx;
-		}, () => $"{label}: the at-a-glance band ({edges.ElementAtOrDefault(0)}px), the time-slot list "
+		}, () => $"{label}: the banner-and-chips block ({edges.ElementAtOrDefault(0)}px), the time-slot list "
 			+ $"({edges.ElementAtOrDefault(1)}px) and the about-organization block "
 			+ $"({edges.ElementAtOrDefault(2)}px) must end at the same x - the main column holds one measure");
 	}
@@ -136,10 +136,10 @@ public class OpportunityDetailPageMeasureTests(AspireFixture fixture) : VisualTe
 			new[]
 			{
 				"[data-testid='opportunity-time-slots']",
-				"[data-testid='opportunity-at-a-glance']",
+				"[data-testid='opportunity-identity']",
 			});
 		widths[0].Should().BeApproximately(widths[1], MaxEdgeDeltaPx,
-			$"at {width}px the time-slot list must still fill the same width as the at-a-glance band - "
+			$"at {width}px the time-slot list must still fill the same width as the block above it - "
 			+ "#1794's max-w-2xl must not leave it narrower than its neighbours below lg");
 	}
 }

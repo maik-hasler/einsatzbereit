@@ -86,9 +86,15 @@ export default function PageHeaderBand({
 						<p className="animate-fade-up text-xs font-semibold tracking-widest text-brand-200 uppercase">
 							{eyebrow}
 						</p>
+						{/* German compounds do not break on their own, and the band is
+						`overflow-hidden`, so a title like "Lebensmittelausgabe" at
+						text-5xl was silently clipped mid-word on a phone rather than
+						overflowing where anything would notice. `hyphens-auto` uses the
+						`lang` above for a proper break; `break-words` is the floor for a
+						language or word it has no rule for. */}
 						<h1
 							lang={titleLang}
-							className={`animate-fade-up-d1 mt-3 max-w-4xl font-display font-bold tracking-tight text-white ${
+							className={`animate-fade-up-d1 mt-3 max-w-4xl font-display font-bold tracking-tight break-words hyphens-auto text-white ${
 								compactTitle
 									? "text-3xl sm:text-4xl"
 									: "text-5xl sm:text-6xl lg:text-7xl"
