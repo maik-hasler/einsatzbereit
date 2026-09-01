@@ -24,7 +24,7 @@ import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
 import Select from "../../components/Select";
 import RouteState from "../../components/RouteState";
-import { TrashIcon } from "../../components/icons";
+import { ArrowTopRightOnSquareIcon, TrashIcon } from "../../components/icons";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
@@ -301,14 +301,23 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 											{opportunityTitle?.text ?? t("orgDashboard.unnamedDraft")}
 										</Link>
 										<p className="mt-0.5 text-sm font-medium text-gray-800">
-											{e.volunteerName ? (
-												e.volunteerName
-											) : e.volunteerId ? (
-												<span className="font-mono text-xs text-gray-500">
-													{t("orgEngagements.volunteer", {
-														id: e.volunteerId.slice(0, 8) + "...",
+											{e.volunteerId ? (
+												<Link
+													to={`/users/${e.volunteerId}`}
+													aria-label={t("orgEngagements.viewProfile", {
+														name: volunteerDisplayName(e),
 													})}
-												</span>
+													className="inline-flex items-center gap-1 hover:text-brand-800 hover:underline"
+												>
+													{e.volunteerName ?? (
+														<span className="font-mono text-xs text-gray-500">
+															{t("orgEngagements.volunteer", {
+																id: e.volunteerId.slice(0, 8) + "...",
+															})}
+														</span>
+													)}
+													<ArrowTopRightOnSquareIcon className="h-3 w-3 shrink-0" />
+												</Link>
 											) : (
 												<span className="text-xs text-gray-500 italic">
 													{t("orgEngagements.anonymizedVolunteer")}

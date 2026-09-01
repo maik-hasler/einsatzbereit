@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useParams, useOutletContext } from "react-router";
+import { useParams, useOutletContext, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { quoteMarks } from "../lib/quotes";
 import type {
@@ -38,7 +38,12 @@ import {
 	textareaClass,
 } from "../lib/formClasses";
 import { cardClass } from "../lib/surfaceClasses";
-import { CheckIconSolid, QrCodeIcon, TrashIcon } from "../components/icons";
+import {
+	ArrowTopRightOnSquareIcon,
+	CheckIconSolid,
+	QrCodeIcon,
+	TrashIcon,
+} from "../components/icons";
 import StarRating from "../components/StarRating";
 import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
@@ -733,14 +738,23 @@ export default function EngagementManagementPage() {
 								<div className="flex flex-1 items-start justify-between gap-2">
 									<div className="min-w-0">
 										<p className="text-sm font-medium text-gray-800">
-											{e.volunteerName ? (
-												e.volunteerName
-											) : e.volunteerId ? (
-												<span className="font-mono text-xs text-gray-500">
-													{t("engagementManagement.volunteer", {
-														id: e.volunteerId.slice(0, 8) + "...",
+											{e.volunteerId ? (
+												<Link
+													to={`/users/${e.volunteerId}`}
+													aria-label={t("engagementManagement.viewProfile", {
+														name: volunteerDisplayName(e),
 													})}
-												</span>
+													className="inline-flex items-center gap-1 hover:text-brand-800 hover:underline"
+												>
+													{e.volunteerName ?? (
+														<span className="font-mono text-xs text-gray-500">
+															{t("engagementManagement.volunteer", {
+																id: e.volunteerId.slice(0, 8) + "...",
+															})}
+														</span>
+													)}
+													<ArrowTopRightOnSquareIcon className="h-3 w-3 shrink-0" />
+												</Link>
 											) : (
 												<span className="text-xs text-gray-500 italic">
 													{t("engagementManagement.anonymizedVolunteer")}

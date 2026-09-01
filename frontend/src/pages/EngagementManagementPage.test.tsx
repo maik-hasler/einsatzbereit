@@ -388,3 +388,31 @@ describe("EngagementManagementPage check-in PIN", () => {
 		expect(api.getOpportunityCheckInPin).not.toHaveBeenCalled();
 	});
 });
+
+describe("EngagementManagementPage public profile link", () => {
+	it("links a named applicant's row to their public profile", async () => {
+		const vera = engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera");
+		mockPage([vera]);
+
+		renderPage();
+
+		const link = await screen.findByRole("link", {
+			name: "View Vera's public profile",
+		});
+		expect(link).toHaveAttribute("href", `/users/${vera.volunteerId}`);
+	});
+
+	it("gives an anonymized applicant no profile link", async () => {
+		mockPage([
+			engagement("aaaaaaaa-0000-0000-0000-000000000001", "Vera", {
+				volunteerId: undefined,
+				volunteerName: undefined,
+			}),
+		]);
+
+		renderPage();
+
+		await screen.findByText("Anonymized volunteer");
+		expect(screen.queryByRole("link", { name: /public profile/i })).toBeNull();
+	});
+});
