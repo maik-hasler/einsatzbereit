@@ -55,7 +55,7 @@ describe("LocationSearchInput a11y", () => {
 		renderWithProviders(<Harness />);
 
 		await userEvent.type(screen.getByLabelText("City"), "Xyz");
-		await screen.findByText("No matching city found.");
+		await screen.findByText("No matching location found.");
 
 		await expectNoA11yViolations();
 	});
@@ -79,7 +79,9 @@ describe("LocationSearchInput a11y", () => {
 		// this test must not be served that cached "Kiel" suggestion list
 		// instead of actually exercising the rejected mock.
 		await userEvent.type(screen.getByLabelText("City"), "Bremen");
-		await screen.findByText("Couldn't search for that city. Please try again.");
+		await screen.findByText(
+			"Couldn't search for that location. Please try again.",
+		);
 
 		await expectNoA11yViolations();
 	});

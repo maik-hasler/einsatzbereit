@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
 
-namespace Infrastructure.Geocoding.GermanCities;
+namespace Infrastructure.Geocoding.GermanPlaces;
 
-internal static class GermanCityNameNormalizer
+internal static class GermanPlaceNameNormalizer
 {
 	// Folds German umlauts/eszett the way people type them on a non-German
 	// keyboard (Muenchen, Koeln, Weissenfels) before stripping any remaining

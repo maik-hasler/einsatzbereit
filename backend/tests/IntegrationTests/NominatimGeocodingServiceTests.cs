@@ -3,7 +3,7 @@ using System.Text;
 using Application.Common.Geocoding;
 using AwesomeAssertions;
 using Infrastructure.Geocoding;
-using Infrastructure.Geocoding.GermanCities;
+using Infrastructure.Geocoding.GermanPlaces;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -17,7 +17,8 @@ public class NominatimGeocodingServiceTests
 		var handler = new StubHandler(_ => JsonResponse("[]"));
 		var sut = CreateService(handler);
 
-		await sut.SearchCitiesAsync("Leipzig", "de");
+		// An exonym, so the local index steps aside and the request is actually sent.
+		await sut.SearchCitiesAsync("Munich", "en");
 
 		handler.LastRequest.Should().NotBeNull();
 		handler.LastRequest!.RequestUri!.Query.Should().Contain("countrycodes=de");
@@ -26,6 +27,8 @@ public class NominatimGeocodingServiceTests
 	[Test]
 	public async Task SearchCitiesAsync_PostalCodeMatch_KeepsTheGermanCityAndDropsInternationalNoise()
 	{
+		// 70140 is a company's "Grossempfaenger" code, which the local index drops -
+		// so this reaches Nominatim, which is the half under test here.
 		const string response = """
 			[
 				{"lat":"44.5834","lon":"-68.7873","addresstype":"postcode","address":{"city":"Bucksport"}},
@@ -35,7 +38,7 @@ public class NominatimGeocodingServiceTests
 			""";
 		var sut = CreateService(new StubHandler(_ => JsonResponse(response)));
 
-		var results = await sut.SearchCitiesAsync("04416", "de");
+		var results = await sut.SearchCitiesAsync("70140", "de");
 
 		results.Should().ContainSingle(r => r.Label == "Markkleeberg");
 	}
@@ -70,37 +73,29 @@ public class NominatimGeocodingServiceTests
 			""";
 		var sut = CreateService(new StubHandler(_ => JsonResponse(response)));
 
-		var results = await sut.SearchCitiesAsync("Leipzig", "de");
+		// A query no German city name can match, so the local index steps aside and
+		// leaves the remote response as the only source of the result.
+		var results = await sut.SearchCitiesAsync("Leipzig-sur-Mer", "de");
 
 		results.Should().ContainSingle(r =>
 			r.Label == "Leipzig" && r.Latitude == 51.3397 && r.Longitude == 12.3731);
 	}
 
 	[Test]
-	public async Task SearchCitiesAsync_RemoteMatch_TakesPriorityOverTheLocalDirectory()
+	public async Task SearchCitiesAsync_LocalMatch_IsAnsweredWithoutAskingNominatim()
 	{
-		const string response = """
-			[
-				{"lat":"1.0","lon":"2.0","addresstype":"city","address":{"city":"Leipzig-on-Sea"}}
-			]
-			""";
-		var sut = CreateService(new StubHandler(_ => JsonResponse(response)));
-
-		var results = await sut.SearchCitiesAsync("Leip", "de");
-
-		results.Should().ContainSingle(r => r.Label == "Leipzig-on-Sea");
-	}
-
-	[Test]
-	public async Task SearchCitiesAsync_PrefixNominatimCannotMatch_FallsBackToTheLocalDirectory()
-	{
-		// Nominatim only matches complete words - a real, live prefix query
-		// like "Leip" comes back empty (#2227), even though "Leipzig" exists.
-		var sut = CreateService(new StubHandler(_ => JsonResponse("[]")));
+		// Every remote call queues behind the shared throttle, which a
+		// search-as-you-type field cannot afford - and Nominatim answers a prefix
+		// like "Leip" with roads and lakes anyway (#2227).
+		var handler = new StubHandler(_ => JsonResponse("""
+			[{"lat":"1.0","lon":"2.0","addresstype":"city","address":{"city":"Leipzig-on-Sea"}}]
+			"""));
+		var sut = CreateService(handler);
 
 		var results = await sut.SearchCitiesAsync("Leip", "de");
 
 		results.Should().Contain(r => r.Label == "Leipzig");
+		handler.LastRequest.Should().BeNull();
 	}
 
 	[Test]
@@ -114,13 +109,30 @@ public class NominatimGeocodingServiceTests
 	}
 
 	[Test]
-	public async Task SearchCitiesAsync_RemoteRequestFails_FallsBackToTheLocalDirectory()
+	public async Task SearchCitiesAsync_ExonymTheLocalDirectoryDoesNotCarry_FallsBackToNominatim()
+	{
+		// The embedded gazetteer holds German endonyms only, so an English speaker
+		// typing "Munich" is exactly the case Nominatim is kept around for.
+		const string response = """
+			[
+				{"lat":"48.1374","lon":"11.5755","addresstype":"city","address":{"city":"Munich"}}
+			]
+			""";
+		var sut = CreateService(new StubHandler(_ => JsonResponse(response)));
+
+		var results = await sut.SearchCitiesAsync("Munich", "en");
+
+		results.Should().ContainSingle(r => r.Label == "Munich");
+	}
+
+	[Test]
+	public async Task SearchCitiesAsync_RemoteRequestFails_LeavesTheFieldWithoutSuggestions()
 	{
 		var sut = CreateService(new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)));
 
-		var results = await sut.SearchCitiesAsync("Leip", "de");
+		var results = await sut.SearchCitiesAsync("Munich", "en");
 
-		results.Should().Contain(r => r.Label == "Leipzig");
+		results.Should().BeEmpty();
 	}
 
 	[Test]
@@ -187,7 +199,7 @@ public class NominatimGeocodingServiceTests
 			new HttpClient(handler) { BaseAddress = new Uri("https://nominatim.example/") },
 			Options.Create(new GeocodingOptions { MinRequestIntervalMilliseconds = 0 }),
 			NullLogger<NominatimGeocodingService>.Instance,
-			new GermanCityDirectory());
+			new GermanPlaceDirectory());
 
 	private static HttpResponseMessage JsonResponse(string json) =>
 		new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };

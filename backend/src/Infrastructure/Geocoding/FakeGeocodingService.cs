@@ -1,5 +1,5 @@
 using Application.Common.Geocoding;
-using Infrastructure.Geocoding.GermanCities;
+using Infrastructure.Geocoding.GermanPlaces;
 
 namespace Infrastructure.Geocoding;
 
@@ -7,8 +7,8 @@ namespace Infrastructure.Geocoding;
 // GeocodingRetryJob) so local dev/tests never depend on a live Nominatim
 // call. City search has no such retry path and no reason to depend on
 // Nominatim at all - it serves straight from the same bounded local
-// directory the real service falls back to (#2227).
-internal sealed class FakeGeocodingService(IGermanCityDirectory cityDirectory) : IGeocodingService
+// directory the real service asks first (#2227).
+internal sealed class FakeGeocodingService(IGermanPlaceDirectory placeDirectory) : IGeocodingService
 {
 	private const int MaxCitySuggestions = 6;
 
@@ -24,5 +24,5 @@ internal sealed class FakeGeocodingService(IGermanCityDirectory cityDirectory) :
 		string query,
 		string language,
 		CancellationToken cancellationToken = default) =>
-		Task.FromResult(cityDirectory.SearchByPrefix(query, MaxCitySuggestions));
+		Task.FromResult(placeDirectory.Search(query, MaxCitySuggestions));
 }

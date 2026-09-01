@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
-import {
-	filterByLabelMatch,
-	sortByLabelPrefixMatch,
-} from "../../lib/citySuggestionSort";
 
 export interface CitySuggestion {
 	label: string;
@@ -58,17 +54,15 @@ export function useCitySuggestions(query: string) {
 			setLoading(true);
 			try {
 				const places = await api.searchCities(query, controller.signal);
-				const results: CitySuggestion[] = sortByLabelPrefixMatch(
-					filterByLabelMatch(
-						places.map((place) => ({
-							label: place.label,
-							lat: place.latitude,
-							lng: place.longitude,
-						})),
-						query,
-					),
-					query,
-				);
+				// Taken in the order the server ranked them. Re-filtering here to
+				// labels that literally contain the query threw away every postal-code
+				// hit - "26129" resolves to "26129 Oldenburg", which no client-side
+				// substring test can recognise as a match.
+				const results: CitySuggestion[] = places.map((place) => ({
+					label: place.label,
+					lat: place.latitude,
+					lng: place.longitude,
+				}));
 				if (results.length > 0) {
 					cityCache.set(cacheKeyFor(query), results);
 				}

@@ -55,6 +55,15 @@ export default function LocationSearchInput({
 						? t("opportunities.cityKeepTyping")
 						: "";
 
+	// The message is a popover like the suggestion list, not a line of helper text
+	// below the field. In the flow it stretched whatever the caller wrapped this
+	// input in - on the landing page a rounded-full pill, which grew into a
+	// two-row blob the moment a query found nothing. It opens and closes
+	// with the list, and stays in the DOM as a live region either way so screen
+	// readers still hear it.
+	const showStatusPopover =
+		isListOpen && !showSuggestions && statusMessage !== "";
+
 	useEffect(() => {
 		setActiveSuggestionIndex(-1);
 	}, [suggestions]);
@@ -179,7 +188,11 @@ export default function LocationSearchInput({
 			)}
 			<p
 				role="status"
-				className={statusMessage ? "mt-1.5 text-xs text-gray-500" : "sr-only"}
+				className={
+					showStatusPopover
+						? "absolute top-full right-0 left-0 z-30 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs text-gray-500 shadow-modal"
+						: "sr-only"
+				}
 			>
 				{statusMessage}
 			</p>

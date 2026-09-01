@@ -61,12 +61,12 @@ describe("LocationSearchInput empty-result messaging", () => {
 		// full debounce interval before the request was even sent - the field claimed
 		// the city did not exist before it had looked for it (#2319).
 		expect(await screen.findByRole("status")).not.toHaveTextContent(
-			"No matching city found.",
+			"No matching location found.",
 		);
 
 		await vi.waitFor(() =>
 			expect(screen.getByRole("status")).toHaveTextContent(
-				"No matching city found.",
+				"No matching location found.",
 			),
 		);
 	});
@@ -130,5 +130,59 @@ describe("LocationSearchInput with an already-committed value", () => {
 
 		await userEvent.click(screen.getByLabelText("City"));
 		expect(await screen.findByRole("listbox")).toBeInTheDocument();
+	});
+});
+
+describe("LocationSearchInput status message placement", () => {
+	it("floats the message instead of stretching the field's container", async () => {
+		api.searchCities.mockResolvedValue([]);
+
+		renderWithProviders(<Harness onSelect={() => {}} />);
+
+		await userEvent.type(screen.getByLabelText("City"), "Xyzzy");
+
+		// jsdom has no layout engine, so the guard is the positioning class itself:
+		// in the flow this line grew the rounded-full pill the landing page wraps
+		// this input in into a two-row blob.
+		await vi.waitFor(() =>
+			expect(screen.getByRole("status")).toHaveClass("absolute"),
+		);
+	});
+
+	it("keeps the message audible but hidden once the field is closed", async () => {
+		api.searchCities.mockResolvedValue([]);
+
+		renderWithProviders(<Harness onSelect={() => {}} />);
+
+		await userEvent.type(screen.getByLabelText("City"), "Xyzzy");
+		await vi.waitFor(() =>
+			expect(screen.getByRole("status")).toHaveTextContent(
+				"No matching location found.",
+			),
+		);
+
+		await userEvent.tab();
+
+		// It closes with the suggestion list rather than leaving a card hanging
+		// under a field nobody is using - but stays mounted as a live region.
+		await vi.waitFor(() =>
+			expect(screen.getByRole("status")).toHaveClass("sr-only"),
+		);
+	});
+});
+
+describe("LocationSearchInput postal codes", () => {
+	it("offers what the server returned for a postal code, however it is labelled", async () => {
+		api.searchCities.mockResolvedValue([place("26129 Oldenburg")]);
+
+		renderWithProviders(<Harness onSelect={() => {}} />);
+
+		await userEvent.type(screen.getByLabelText("City"), "26129");
+
+		// The label cannot contain the typed digits, so the client must not try to
+		// re-check the server's match - that dropped every postal-code hit.
+		const options = await screen.findAllByRole("option");
+		expect(options).toHaveLength(1);
+		expect(options[0]).toHaveTextContent("26129 Oldenburg");
 	});
 });

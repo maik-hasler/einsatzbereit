@@ -28,7 +28,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Geocoding\GermanCities\german-cities.json" />
+		<EmbeddedResource Include="Geocoding\GermanPlaces\german-cities.json" />
+		<EmbeddedResource Include="Geocoding\GermanPlaces\german-postal-codes.json" />
 	</ItemGroup>
 
 </Project>

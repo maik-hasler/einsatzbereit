@@ -19,10 +19,6 @@ import {
 } from "./useOpportunityDateAvailability";
 import type { CitySuggestion } from "./useCitySuggestions";
 import { resolveDateLocale } from "../../lib/format";
-import {
-	filterByLabelMatch,
-	sortByLabelPrefixMatch,
-} from "../../lib/citySuggestionSort";
 import { SpinnerIcon } from "../Spinner";
 import {
 	BroomIcon,
@@ -108,26 +104,18 @@ export default function VolunteerOpportunitiesList() {
 		const controller = new AbortController();
 		(async () => {
 			try {
-				const places = await api.searchCities(city, controller.signal);
-				const [best] = sortByLabelPrefixMatch(
-					filterByLabelMatch(
-						places.map((place) => ({
-							label: place.label,
-							lat: place.latitude,
-							lng: place.longitude,
-						})),
-						city,
-					),
-					city,
-				);
+				// First match wins: the server already ranks them, and a postal code
+				// resolves to a label the client cannot re-match against ("26129" ->
+				// "26129 Oldenburg").
+				const [best] = await api.searchCities(city, controller.signal);
 				if (!best) {
 					setCityUnresolved(true);
 					return;
 				}
 				const params = new URLSearchParams(window.location.search);
 				params.set("city", best.label);
-				params.set("lat", String(best.lat));
-				params.set("lng", String(best.lng));
+				params.set("lat", String(best.latitude));
+				params.set("lng", String(best.longitude));
 				params.set("radius", radius || DEFAULT_RADIUS_KM);
 				setSearchParams(params, { replace: true });
 			} catch {
