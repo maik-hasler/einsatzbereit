@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Regenerate german-postal-codes.json from the GeoNames export.
 
-Two GeoNames files feed the result:
+Two GeoNames files feed the result.
 
-* export/zip/DE.zip - German postal codes with a place name and coordinates.
-  It also lists "Grossempfaenger" codes reserved for a single company
-  (e.g. 70140 "Commerzbank AG"), which nobody searches for a volunteering
-  opportunity.
-* export/dump/DE.zip - every populated place and municipality in Germany.
-  A postal code is kept only when its place name appears here, which is what
-  separates a real town from a company mailbox.
+export/zip/DE.zip holds German postal codes with a place name and coordinates.
+It also lists "Grossempfaenger" codes reserved for a single company (e.g. 70140
+"Commerzbank AG"), which nobody searches for a volunteering opportunity.
+
+export/dump/DE.zip holds every populated place and municipality in Germany.
+A postal code is kept only when its place name appears there, which is what
+separates a real town from a company mailbox.
 
 Both are GeoNames.org data under CC BY 4.0; see README.md next to the output.
 
