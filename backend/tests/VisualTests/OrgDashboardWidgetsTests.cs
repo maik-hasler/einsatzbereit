@@ -10,7 +10,7 @@ namespace VisualTests;
 public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task ToDoWidget_OffersNoCta_WhenTheDashboardCountsFailToLoad()
+	public async Task ToDoWidget_ShowsTheError_AndNoQueue_WhenTheSignUpsFailToLoad()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -29,7 +29,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
-		await Page.RouteAsync($"**/v1/organizations/{organizationId}/dashboard", async route =>
+		await Page.RouteAsync($"**/v1/organizations/{organizationId}/engagements*", async route =>
 		{
 			if (route.Request.Method != "GET")
 			{
@@ -49,17 +49,14 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
 
 		var todoWidget = Page.GetByTestId("widget-tile-ToDo");
-		await Expect(todoWidget.GetByText("Failed to load summary."))
+		await Expect(todoWidget.GetByText("Couldn't load the sign-ups waiting for you."))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(todoWidget.GetByRole(AriaRole.Link, new() { Name = "View pending sign-ups" }))
-			.ToHaveCountAsync(0);
-		await Expect(todoWidget.GetByTestId("todo-widget-resolved")).ToHaveCountAsync(0);
-		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveCountAsync(0);
 
-		var volunteersWidget = Page.GetByTestId("widget-tile-VolunteerStats");
-		await Expect(volunteersWidget.GetByText("Failed to load the volunteer count."))
-			.ToBeVisibleAsync();
-		await Expect(volunteersWidget.GetByTestId("volunteer-stats-stat-confirmed"))
+		// A failed queue must not read as an empty one: "Nothing waiting" over a
+		// request that never landed tells an organizer their inbox is clear when
+		// nobody knows whether it is.
+		await Expect(todoWidget.GetByTestId("todo-widget-resolved")).ToHaveCountAsync(0);
+		await Expect(todoWidget.GetByRole(AriaRole.Button, new() { Name = "Confirm" }))
 			.ToHaveCountAsync(0);
 	}
 
@@ -325,7 +322,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(upcomingWidget.GetByRole(AriaRole.Link, new() { Name = oppTitle }))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(upcomingWidget).ToContainTextAsync(start.ToString("yyyy"));
-		await Expect(upcomingWidget).ToContainTextAsync("0/5 sign-ups");
+		await Expect(upcomingWidget).ToContainTextAsync("0/5 signed up");
 		await Expect(upcomingWidget.GetByText("This widget couldn't be displayed"))
 			.ToHaveCountAsync(0);
 	}

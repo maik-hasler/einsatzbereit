@@ -26,10 +26,10 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		await Expect(calendar).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		(await calendar.EvaluateAsync<string>("el => el.style.gridRow"))
-			.Should().Be("4 / span 4", "the Calendar defaults to 4 rows, not the 6 it shipped with");
-		(await Page.GetByTestId("widget-tile-Settings").EvaluateAsync<string>("el => el.style.gridRow"))
-			.Should().Be("8 / span 1",
-				"shrinking the Calendar must pull Settings up with it, not leave three empty rows");
+			.Should().Be("3 / span 4", "the Calendar defaults to 4 rows, not the 6 it shipped with");
+		(await calendar.EvaluateAsync<string>("el => el.style.gridColumn"))
+			.Should().Be("1 / span 8",
+				"the Calendar is the board's canvas: full width, and below the row an organizer acts on");
 
 		var calendarBox = await calendar.BoundingBoxAsync();
 		calendarBox.Should().NotBeNull();
@@ -91,11 +91,17 @@ public class OrgDashboardCalendarFootprintTests(AspireFixture fixture) : VisualT
 		var calendar = Page.GetByTestId("widget-tile-Calendar");
 		await Expect(calendar).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// The span, not the start row: the resize above is driven from wherever
+		// DEFAULT_LAYOUT happens to put the Calendar, so pinning the start row
+		// couples this to a number the sibling test above already owns - and
+		// breaks it every time the default board is rearranged. What this case is
+		// actually about is the saved HEIGHT surviving a reload instead of being
+		// reset to the catalog default of 4.
 		string? gridRow = null;
 		await PollUntilAsync(async () =>
 		{
 			gridRow = await calendar.EvaluateAsync<string>("el => el.style.gridRow");
-			return gridRow == "4 / span 5";
+			return gridRow?.EndsWith("/ span 5", StringComparison.Ordinal) == true;
 		}, () => "a saved layout must keep its own Calendar height rather than being reset to the "
 			+ $"default 4 rows (last observed: \"{gridRow}\")", timeoutMs: 10_000);
 

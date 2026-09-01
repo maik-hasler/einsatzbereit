@@ -49,7 +49,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 - **Sign up for a specific time slot ("engagement")** - withdraw if plans change, reactivate later within limits, get reminders, and check in on the day.
 - **Rate your engagement afterwards** with a rating and comment, editable for a short window after submission.
 - **Organizations post opportunities** with scheduled time slots (occurrences) and defined participation types.
-- **Organizer dashboard** with a customizable widget layout: upcoming opportunities, calendar, to-do list, quick check-in, and a create-opportunity shortcut.
+- **Organizer dashboard** with a customizable widget layout: a review queue that confirms or declines sign-ups without leaving the board, the next occurrences and how full each one is, a calendar, and opt-in tiles for volunteer numbers, the team and quick check-in.
 - **Organization management** covering membership, roles, a public directory of organizations, and multi-organization support with an org switcher.
 - **Platform administration** to manage users and toggle admin/enabled status.
 - **Notifications and a language selector** (German by default, English as a secondary language).

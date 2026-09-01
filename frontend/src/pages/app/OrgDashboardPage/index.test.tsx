@@ -153,13 +153,45 @@ function useLargeViewport() {
 	);
 }
 
+function kpis(overrides: Record<string, number> = {}) {
+	return {
+		pendingEngagements: 0,
+		confirmedEngagementsTotal: 0,
+		distinctVolunteersTotal: 0,
+		signUpsLast30Days: 0,
+		signUpsPrevious30Days: 0,
+		...overrides,
+	};
+}
+
+function pendingEngagement(id: string, volunteerName: string) {
+	const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+	return {
+		id,
+		opportunityId: "44444444-4444-4444-4444-444444444444",
+		opportunityTitle: "Blutspendetermin begleiten",
+		opportunityTitleEn: "Support a blood donation drive",
+		volunteerName,
+		status: "Pending",
+		isCheckedIn: false,
+		hasFeedback: false,
+		createdOn: new Date(),
+		timeSlotStartDateTime: start,
+		timeSlotEndDateTime: new Date(start.getTime() + 2 * 60 * 60 * 1000),
+	};
+}
+
 function mockDashboardData() {
 	api.getDashboardLayout.mockResolvedValue(LAYOUT_WITH_TWO_WIDGETS);
 	api.saveDashboardLayout.mockResolvedValue(undefined);
-	api.getOrganizationDashboard.mockResolvedValue({
-		pendingEngagements: 0,
-		confirmedEngagementsTotal: 0,
+	api.getOrganizationDashboard.mockResolvedValue(kpis());
+	api.getOrganizationEngagements.mockResolvedValue({
+		items: [],
+		currentPage: 1,
+		pageCount: 0,
+		totalItems: 0,
 	});
+	api.getOrgInvitations.mockResolvedValue([]);
 	api.getOrganizationOpportunities.mockResolvedValue({
 		items: [],
 		pageCount: 0,
@@ -180,20 +212,20 @@ describe("OrgDashboardPage edit mode", () => {
 		await waitFor(() =>
 			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
 		);
-		expect(removeButton("Create opportunity")).toBeNull();
+		expect(removeButton("Quick actions")).toBeNull();
 
 		await userEvent.click(screen.getByTestId("quick-action-edit"));
 
 		expect(screen.getByTestId("quick-action-save")).toBeInTheDocument();
 		expect(screen.getByTestId("quick-action-cancel")).toBeInTheDocument();
 		expect(screen.queryByTestId("quick-action-edit")).toBeNull();
-		expect(removeButton("Create opportunity")).not.toBeNull();
+		expect(removeButton("Quick actions")).not.toBeNull();
 
 		await userEvent.click(screen.getByTestId("quick-action-cancel"));
 
 		expect(screen.getByTestId("quick-action-edit")).toBeInTheDocument();
 		expect(screen.queryByTestId("quick-action-save")).toBeNull();
-		expect(removeButton("Create opportunity")).toBeNull();
+		expect(removeButton("Quick actions")).toBeNull();
 	});
 
 	it("saves a layout without the widget that was removed", async () => {
@@ -204,7 +236,7 @@ describe("OrgDashboardPage edit mode", () => {
 		);
 		await userEvent.click(screen.getByTestId("quick-action-edit"));
 
-		const remove = removeButton("Needs your attention");
+		const remove = removeButton("Sign-ups to review");
 		expect(remove).not.toBeNull();
 		await userEvent.click(remove as HTMLElement);
 
@@ -228,7 +260,7 @@ describe("OrgDashboardPage edit mode", () => {
 			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
 		);
 		await userEvent.click(screen.getByTestId("quick-action-edit"));
-		await userEvent.click(removeButton("Needs your attention") as HTMLElement);
+		await userEvent.click(removeButton("Sign-ups to review") as HTMLElement);
 
 		await userEvent.click(screen.getByTestId("quick-action-add-widget"));
 
@@ -270,7 +302,7 @@ describe("OrgDashboardPage edit mode", () => {
 			expect(screen.getByTestId("quick-action-edit")).toBeEnabled(),
 		);
 		await userEvent.click(screen.getByTestId("quick-action-edit"));
-		await userEvent.click(removeButton("Needs your attention") as HTMLElement);
+		await userEvent.click(removeButton("Sign-ups to review") as HTMLElement);
 		expect(screen.queryByTestId("widget-tile-ToDo")).toBeNull();
 
 		await userEvent.click(screen.getByTestId("quick-action-cancel"));
@@ -453,7 +485,7 @@ describe("OrgDashboardPage grid backdrop", () => {
 
 		await userEvent.click(
 			screen.getByRole("button", {
-				name: "Move or resize Create opportunity - drag, or press Enter and use arrow keys",
+				name: "Move or resize Quick actions - drag, or press Enter and use arrow keys",
 			}),
 		);
 
@@ -521,55 +553,128 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		renderDashboard();
 
 		for (const key of [
-			"CreateOpportunity",
 			"ToDo",
-			"VolunteerStats",
 			"UpcomingOpportunities",
+			"CreateOpportunity",
 			"Calendar",
-			"Settings",
 		]) {
 			expect(await screen.findByTestId(`widget-tile-${key}`)).toBeVisible();
 		}
+	});
+
+	// The default board is four tiles, and the three that are not the calendar
+	// are the ones an organizer acts on. The stat and team tiles are in the
+	// catalog to be added, not on the board by default - a fresh organization
+	// used to land on two zeros and a strip repeating its own name.
+	it("leaves the opt-in tiles off the default board", async () => {
+		renderDashboard();
+
+		await screen.findByTestId("widget-tile-Calendar");
+
+		expect(screen.queryByTestId("widget-tile-VolunteerStats")).toBeNull();
+		expect(screen.queryByTestId("widget-tile-Settings")).toBeNull();
+		expect(screen.queryByTestId("widget-tile-QuickCheckIn")).toBeNull();
 	});
 
 	it("reads as resolved and offers no call to action until a sign-up is waiting", async () => {
 		renderDashboard();
 
 		expect(await screen.findByTestId("todo-widget-resolved")).toHaveTextContent(
-			"Nothing pending",
+			"Nothing waiting",
 		);
 		expect(screen.queryByTestId("todo-widget-stat-pending")).toBeNull();
-		expect(
-			screen.queryByRole("link", { name: /View pending sign-ups/ }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: /Work through/ })).toBeNull();
 	});
 
-	it("switches to a count, the singular label and a link once one is", async () => {
-		api.getOrganizationDashboard.mockResolvedValue({
-			pendingEngagements: 1,
-			confirmedEngagementsTotal: 0,
+	// The tile used to be a count and a link to go and read the rows elsewhere.
+	it("lists the sign-ups themselves, each with both verdicts", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [pendingEngagement("e-1", "Vera Volunteer")],
+			currentPage: 1,
+			pageCount: 1,
+			totalItems: 1,
+		});
+
+		renderDashboard();
+
+		expect(await screen.findByText("Vera Volunteer")).toBeInTheDocument();
+		expect(screen.getByTestId("todo-widget-confirm-e-1")).toBeInTheDocument();
+		expect(screen.getByTestId("todo-widget-decline-e-1")).toBeInTheDocument();
+		expect(screen.queryByTestId("todo-widget-resolved")).toBeNull();
+	});
+
+	// Working the visible rows down to nothing does not mean the queue is empty:
+	// the tile holds four at a time. Saying "nothing waiting" over a footer
+	// offering the other four is the widget contradicting itself in one card.
+	it("does not report the queue clear while more are still waiting", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [],
+			currentPage: 1,
+			pageCount: 2,
+			totalItems: 5,
 		});
 
 		renderDashboard();
 
 		expect(
-			await screen.findByTestId("todo-widget-stat-pending"),
-		).toHaveTextContent("1");
-		expect(screen.getByText("Pending sign-up")).toBeInTheDocument();
+			await screen.findByTestId("todo-widget-more-waiting"),
+		).toHaveTextContent("5 more waiting");
 		expect(screen.queryByTestId("todo-widget-resolved")).toBeNull();
+	});
+
+	// Deciding destroys the control that was focused, which otherwise drops a
+	// keyboard user on <body> at the top of the page with no sign their verdict
+	// landed.
+	it("moves focus to the next decision after confirming one", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [
+				pendingEngagement("e-1", "Vera Volunteer"),
+				pendingEngagement("e-2", "Ali Helper"),
+			],
+			currentPage: 1,
+			pageCount: 1,
+			totalItems: 2,
+		});
+		api.confirmEngagement.mockResolvedValue({ status: "Confirmed" });
+
+		renderDashboard();
+
+		await userEvent.click(await screen.findByTestId("todo-widget-confirm-e-1"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("todo-widget-confirm-e-2")).toHaveFocus(),
+		);
+	});
+
+	it("confirms a sign-up from the board and marks the row decided", async () => {
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [pendingEngagement("e-1", "Vera Volunteer")],
+			currentPage: 1,
+			pageCount: 1,
+			totalItems: 1,
+		});
+		api.confirmEngagement.mockResolvedValue({ status: "Confirmed" });
+
+		renderDashboard();
+
+		await userEvent.click(await screen.findByTestId("todo-widget-confirm-e-1"));
+
+		await waitFor(() =>
+			expect(api.confirmEngagement).toHaveBeenCalledWith("e-1"),
+		);
 		expect(
-			screen.getByRole("link", { name: /View pending sign-ups/ }),
-		).toBeInTheDocument();
+			await screen.findByTestId("todo-widget-confirmed-e-1"),
+		).toHaveTextContent("Confirmed");
 	});
 
 	// A member may read the pending count - it comes from an endpoint they are
 	// allowed to call - but not the listing the link leads to, so the card
-	// keeps the number and drops the call to action (#2316).
+	// keeps the number and drops the call to action (#2316). The queue itself
+	// is organizer-only for the same reason: its endpoint 403s for a member.
 	it("keeps the count but drops the call to action for a plain member", async () => {
-		api.getOrganizationDashboard.mockResolvedValue({
-			pendingEngagements: 2,
-			confirmedEngagementsTotal: 0,
-		});
+		api.getOrganizationDashboard.mockResolvedValue(
+			kpis({ pendingEngagements: 2 }),
+		);
 
 		renderDashboard(false);
 
@@ -579,16 +684,15 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		expect(
 			screen.queryByRole("link", { name: /View pending sign-ups/ }),
 		).toBeNull();
+		expect(api.getOrganizationEngagements).not.toHaveBeenCalled();
 	});
 
-	it("states zero confirmed volunteers, an empty upcoming list and a singular member count", async () => {
+	it("states an empty schedule and offers the first opportunity", async () => {
 		renderDashboard();
 
 		expect(
-			await screen.findByTestId("volunteer-stats-stat-confirmed"),
-		).toHaveTextContent("0");
-		expect(screen.getByText("No upcoming opportunities.")).toBeInTheDocument();
-		expect(screen.getByText("1 member")).toBeInTheDocument();
+			await screen.findByText("Nothing scheduled in the next 30 days."),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("create-opportunity-btn")).toBeInTheDocument();
 	});
 });
@@ -625,6 +729,7 @@ describe("OrgDashboardPage request volume", () => {
 				titleDe: "Deutscher Einsatz",
 				titleEn: "English shift",
 				color: undefined,
+				status: "Published",
 				timeSlots: [
 					{
 						timeSlotId: "33333333-3333-3333-3333-333333333333",
@@ -650,14 +755,22 @@ describe("OrgDashboardPage request volume", () => {
 		expect({
 			kpis: api.getOrganizationDashboard.mock.calls.length,
 			opportunities: api.getOrganizationOpportunities.mock.calls.length,
-			calendarEvents: api.getOrganizationCalendarEvents.mock.calls.length,
 			layout: api.getDashboardLayout.mock.calls.length,
 		}).toEqual({
 			kpis: 1,
-			opportunities: 1,
-			calendarEvents: 1,
+			opportunities: 0,
 			layout: 1,
 		});
+
+		// "What's next" looks 30 days ahead from today; the calendar shows
+		// whichever range its current view is on. Two windows are two questions,
+		// so two requests are correct - what would be the #2322 F7 duplicate is
+		// the SAME window asked for twice, which is what this asserts against.
+		const ranges = api.getOrganizationCalendarEvents.mock.calls.map(
+			(call: unknown[]) =>
+				`${(call[1] as Date).toISOString()}..${(call[2] as Date).toISOString()}`,
+		);
+		expect(new Set(ranges).size).toBe(ranges.length);
 	});
 
 	it("holds the widgets back until it knows which layout they belong in", async () => {
@@ -680,16 +793,42 @@ describe("OrgDashboardPage widget links", () => {
 			widgets: [],
 			hasCustomLayout: false,
 		});
-		api.getOrganizationDashboard.mockResolvedValue({
-			pendingEngagements: 2,
-			confirmedEngagementsTotal: 0,
+		api.getOrganizationDashboard.mockResolvedValue(
+			kpis({ pendingEngagements: 6 }),
+		);
+		// More waiting than the tile shows, so its "work through all of them"
+		// footer is on screen alongside the rows.
+		api.getOrganizationEngagements.mockResolvedValue({
+			items: [pendingEngagement("e-1", "Vera Volunteer")],
+			currentPage: 1,
+			pageCount: 2,
+			totalItems: 6,
 		});
+		const start = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+		api.getOrganizationCalendarEvents.mockResolvedValue([
+			{
+				opportunityId: "44444444-4444-4444-4444-444444444444",
+				titleDe: "Blutspendetermin begleiten",
+				titleEn: "Support a blood donation drive",
+				color: undefined,
+				status: "Published",
+				timeSlots: [
+					{
+						timeSlotId: "55555555-5555-5555-5555-555555555555",
+						startDateTime: start,
+						endDateTime: new Date(start.getTime() + 2 * 60 * 60 * 1000),
+						bookedCount: 1,
+						maxParticipants: 4,
+					},
+				],
+			},
+		]);
 	});
 
-	it("reaches every org subpage from the tiles themselves", async () => {
+	it("reaches every org subpage the default board is responsible for", async () => {
 		renderDashboard();
 
-		await screen.findByRole("link", { name: /View pending sign-ups/ });
+		await screen.findByRole("link", { name: /Work through/ });
 
 		const hrefs = Array.from(document.querySelectorAll("a[href]")).map(
 			(a) => a.getAttribute("href") ?? "",
@@ -699,8 +838,8 @@ describe("OrgDashboardPage widget links", () => {
 		for (const target of [
 			`${base}/opportunities`,
 			`${base}/members`,
-			`${base}/settings`,
 			`${base}/engagements?status=Pending`,
+			`${base}/opportunities/44444444-4444-4444-4444-444444444444/engagements`,
 		]) {
 			expect(hrefs).toContain(target);
 		}
@@ -726,7 +865,7 @@ describe("OrgDashboardPage placement rejection", () => {
 
 		await userEvent.click(
 			screen.getByRole("button", {
-				name: "Move or resize Create opportunity - drag, or press Enter and use arrow keys",
+				name: "Move or resize Quick actions - drag, or press Enter and use arrow keys",
 			}),
 		);
 		const cell = document.querySelector<HTMLElement>(

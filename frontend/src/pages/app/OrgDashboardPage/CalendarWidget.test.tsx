@@ -48,7 +48,7 @@ function renderCalendar(lng: "de" | "en" = "en") {
 		<CalendarWidget
 			organizationId={ORG_ID}
 			refreshKey={0}
-			size="full"
+			size={{ width: "full", height: "tall" }}
 			isOrganizer
 		/>,
 		{ lng, auth: { isAuthenticated: true } },

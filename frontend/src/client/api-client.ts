@@ -7046,6 +7046,7 @@ export interface OrganizationCalendarEventDto {
     titleDe: string;
     titleEn: string | undefined;
     color: string | undefined;
+    status: string;
     timeSlots: CalendarTimeSlotDto[];
 
     [key: string]: any;
@@ -7054,6 +7055,9 @@ export interface OrganizationCalendarEventDto {
 export interface OrganizationDashboardResponse {
     pendingEngagements: number;
     confirmedEngagementsTotal: number;
+    distinctVolunteersTotal: number;
+    signUpsLast30Days: number;
+    signUpsPrevious30Days: number;
 
     [key: string]: any;
 }

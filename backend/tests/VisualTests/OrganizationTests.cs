@@ -88,7 +88,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgName = await CreateOrganizationAsync("Visual580 Delete", pinnedOrgId!.Value);
 		var orgId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.GetByTestId("org-tab-settings").ClickAsync();
 
 		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -160,7 +160,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.GetByTestId("org-tab-settings").ClickAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Delete organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });

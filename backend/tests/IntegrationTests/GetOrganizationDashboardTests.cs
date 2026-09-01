@@ -22,6 +22,9 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		kpis.PendingEngagements.Should().Be(0);
 		kpis.ConfirmedEngagementsTotal.Should().Be(0);
+		kpis.DistinctVolunteersTotal.Should().Be(0);
+		kpis.SignUpsLast30Days.Should().Be(0);
+		kpis.SignUpsPrevious30Days.Should().Be(0);
 	}
 
 	[Test]
@@ -88,6 +91,52 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		kpis.PendingEngagements.Should().Be(1);
 		kpis.ConfirmedEngagementsTotal.Should().Be(2);
+		kpis.DistinctVolunteersTotal.Should().Be(2);
+		kpis.SignUpsLast30Days.Should().Be(4);
+		kpis.SignUpsPrevious30Days.Should().Be(0);
+	}
+
+	[Test]
+	public async Task GetOrganizationDashboard_ShouldCountOneVolunteerOnce_WhenTheyTakeSeveralSlots(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var slots = new List<Guid>();
+		for (var day = 1; day <= 3; day++)
+		{
+			slots.Add((await olafClient.CreateTimeSlotAsync(
+				opportunity.Id,
+				new CreateTimeSlotRequest
+				{
+					StartDateTime = DateTimeOffset.UtcNow.AddDays(day),
+					EndDateTime = DateTimeOffset.UtcNow.AddDays(day).AddHours(2),
+					MaxParticipants = 5,
+					RecurrenceCount = 1,
+				},
+				cancellationToken)).Single().Id);
+		}
+
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		foreach (var slotId in slots)
+		{
+			var engagement = await veraClient.CreateEngagementAsync(
+				opportunity.Id,
+				new CreateEngagementRequest { TimeSlotId = slotId },
+				cancellationToken);
+			await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		}
+
+		var kpis = await olafClient.GetOrganizationDashboardAsync(orgId, cancellationToken);
+
+		kpis.ConfirmedEngagementsTotal.Should().Be(3, "the same helper filled three separate slots");
+		kpis.DistinctVolunteersTotal.Should().Be(
+			1, "three sign-ups from one person are still one volunteer");
 	}
 
 	[Test]
@@ -117,6 +166,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		org1Kpis.PendingEngagements.Should().Be(0);
 		org1Kpis.ConfirmedEngagementsTotal.Should().Be(1);
+		org1Kpis.DistinctVolunteersTotal.Should().Be(1);
+		org1Kpis.SignUpsLast30Days.Should().Be(1);
 	}
 
 	[Test]

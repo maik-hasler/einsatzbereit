@@ -803,6 +803,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				vo.TitleDe,
 				vo.TitleEn,
 				vo.Color,
+				vo.Status,
 				TimeSlots = vo.TimeSlots
 					.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
 					.OrderBy(ts => ts.StartDateTime)
@@ -835,6 +836,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				r.TitleDe,
 				r.TitleEn,
 				r.Color,
+				r.Status.ToString(),
 				r.TimeSlots
 					.Select(ts => new CalendarTimeSlotDto(
 						ts.SlotId,

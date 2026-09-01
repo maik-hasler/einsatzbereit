@@ -64,7 +64,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		var tile = Page.GetByTestId("widget-tile-Settings");
 		await Expect(tile).ToBeVisibleAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Team" }).ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 
 		await ClickGridCellAsync(col: 2, row: 1);
@@ -101,7 +101,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
 		await dialog.GetByTestId("add-widget-done").ClickAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" }).ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToContainTextAsync("Column 1, row 1");
 
 		await HoverGridCellAsync(col: 8, row: 3);
@@ -132,9 +132,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		var tile = Page.GetByTestId("widget-tile-ToDo");
 		await Expect(tile).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" }))
 			.ToBeVisibleAsync();
-		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs your attention");
+		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Sign-ups to review");
 
 		await Page.Mouse.MoveAsync(startX, startY);
 		await Page.Mouse.DownAsync();
@@ -142,7 +142,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.UpAsync();
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 3, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -151,7 +151,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 3, height: 2);
 	}
 
 	[Test]
@@ -174,9 +174,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		var tile = Page.GetByTestId("widget-tile-ToDo");
 		await Expect(tile).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" }))
 			.ToBeVisibleAsync();
-		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Needs your attention");
+		var (colPx, startX, startY) = await GetGripDragStartAsync(tile, "Move or resize Sign-ups to review");
 
 		await Page.Mouse.MoveAsync(startX, startY);
 		await Page.Mouse.DownAsync();
@@ -185,7 +185,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.UpAsync();
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 3, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -194,7 +194,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 3, height: 2);
 	}
 
 	[Test]
@@ -227,7 +227,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.MoveAsync(startX + colPx, startY + rowPx, new() { Steps = 5 });
 		await Page.Mouse.UpAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 3);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -236,7 +236,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 3);
 	}
 
 	[Test]
@@ -300,12 +300,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await CreateOrganizationAsync("Visual DashHorizontalCompact", pinnedOrgId!.Value);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Page.GetByTestId("widget-tile-CreateOpportunity")
-			.GetByRole(AriaRole.Button, new() { Name = "Remove Create opportunity widget" })
+		await Page.GetByTestId("widget-tile-ToDo")
+			.GetByRole(AriaRole.Button, new() { Name = "Remove Sign-ups to review widget" })
 			.ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 3, height: 1);
-		await AssertWidgetOccupiesCellsAsync("VolunteerStats", x: 4, y: 1, width: 2, height: 1);
+		await AssertWidgetOccupiesCellsAsync("UpcomingOpportunities", x: 1, y: 1, width: 3, height: 2);
+		await AssertWidgetOccupiesCellsAsync("CreateOpportunity", x: 4, y: 1, width: 2, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -314,8 +314,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 3, height: 1);
-		await AssertWidgetOccupiesCellsAsync("VolunteerStats", x: 4, y: 1, width: 2, height: 1);
+		await AssertWidgetOccupiesCellsAsync("UpcomingOpportunities", x: 1, y: 1, width: 3, height: 2);
+		await AssertWidgetOccupiesCellsAsync("CreateOpportunity", x: 4, y: 1, width: 2, height: 2);
 	}
 
 	[Test]
@@ -330,7 +330,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
+		// Straight from the default board, where ToDo starts at column 1, row 1:
+		// the corner flow anchors its first corner on the tile's own cell, so one
+		// ArrowRight and one ArrowDown from there give (1,1)-(2,2). Deliberately
+		// NOT cleared-and-re-added the way the drag cases above set themselves up
+		// - going through the picker first moved where this gesture landed.
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" });
 		await moveButton.FocusAsync();
 
 		await Page.Keyboard.PressAsync("Enter");
@@ -341,7 +346,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Keyboard.PressAsync("Enter");
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 2, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -350,7 +355,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 4, y: 1, width: 2, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 2, height: 2);
 	}
 
 	[Test]
@@ -369,7 +374,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(tile).ToBeVisibleAsync();
 		var styleBefore = await tile.EvaluateAsync<string?>("el => el.getAttribute('style')");
 
-		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs your attention" });
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Sign-ups to review" });
 		await moveButton.FocusAsync();
 		await Page.Keyboard.PressAsync("Enter");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
@@ -406,7 +411,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
 		await dialog.GetByTestId("add-widget-done").ClickAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Team" }).ClickAsync();
 
 		await ClickGridCellAsync(col: 1, row: 1);
 		await ClickGridCellAsync(col: 4, row: 4);
@@ -420,7 +425,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// empty beside the widget that displaced it. It now settles in the
 		// nearest free space, which here is right beside Settings (#2322 F1).
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 3, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -430,7 +435,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 3, height: 2);
 	}
 
 	[Test]
@@ -521,7 +526,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Create opportunity" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Quick actions" }).ClickAsync();
 		await ClickGridCellAsync(col: 1, row: 9);
 		await ClickGridCellAsync(col: 4, row: 9);
 
@@ -618,13 +623,22 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 					// keys") after the widget name callers pass in here.
 					const grip = el.querySelector(`button[aria-label^="${gripLabel}"]`);
 					if (!grip || tileRect.width <= 0) return [0, 0, 0, 0];
+					// One column's pitch, measured off the backdrop rather than off the
+					// dragged tile. This used to be `tileRect.width / 4`, which is a
+					// column only while the caller's widget happens to be four columns
+					// wide - so re-sizing ToDo in the catalog silently turned every drag
+					// in this file into a fraction of the distance it asked for.
+					const cells = document.querySelectorAll('[data-testid="dashboard-grid-guide-cell"]');
+					if (cells.length < 2) return [0, 0, 0, 0];
+					const colPx = cells[1].getBoundingClientRect().x - cells[0].getBoundingClientRect().x;
+					if (colPx <= 0) return [0, 0, 0, 0];
 					const gripRect = grip.getBoundingClientRect();
-					return [tileRect.width, gripRect.x + gripRect.width / 2, gripRect.y + gripRect.height / 2, 1];
+					return [colPx, gripRect.x + gripRect.width / 2, gripRect.y + gripRect.height / 2, 1];
 				}
 				""", gripAriaLabel);
 			if (geometry[3] == 0)
 				return false;
-			colPx = (float)(geometry[0] / 4);
+			colPx = (float)geometry[0];
 			startX = (float)geometry[1];
 			startY = (float)geometry[2];
 			return true;
@@ -645,9 +659,19 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 					const tileRect = el.getBoundingClientRect();
 					const handle = el.querySelector('[data-testid="widget-resize-handle-corner"]');
 					if (!handle || tileRect.width <= 0 || tileRect.height <= 0) return [0, 0, 0, 0, 0];
+					// One cell's pitch on each axis, off the backdrop rather than off the
+					// tile - see the note in GetGripDragStartAsync. This one divided the
+					// tile by 4 columns and 1 row, which was ToDo's footprint at the time
+					// and nothing more general than that.
+					const cells = document.querySelectorAll('[data-testid="dashboard-grid-guide-cell"]');
+					if (cells.length < 9) return [0, 0, 0, 0, 0];
+					const first = cells[0].getBoundingClientRect();
+					const colPx = cells[1].getBoundingClientRect().x - first.x;
+					const rowPx = cells[8].getBoundingClientRect().y - first.y;
+					if (colPx <= 0 || rowPx <= 0) return [0, 0, 0, 0, 0];
 					const handleRect = handle.getBoundingClientRect();
 					return [
-						tileRect.width, tileRect.height,
+						colPx, rowPx,
 						handleRect.x + handleRect.width / 2, handleRect.y + handleRect.height / 2,
 						1,
 					];
@@ -655,8 +679,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 				""");
 			if (geometry[4] == 0)
 				return false;
-			colPx = (float)(geometry[0] / 4);
-			rowPx = (float)(geometry[1] / 1);
+			colPx = (float)geometry[0];
+			rowPx = (float)geometry[1];
 			startX = (float)geometry[2];
 			startY = (float)geometry[3];
 			return true;
@@ -675,12 +699,12 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	{
 		foreach (var (testId, widgetTitle) in new[]
 		{
-			("CreateOpportunity", "Create opportunity"),
-			("ToDo", "Needs your attention"),
+			("CreateOpportunity", "Quick actions"),
+			("ToDo", "Sign-ups to review"),
 			("VolunteerStats", "Volunteers"),
-			("UpcomingOpportunities", "Upcoming opportunities"),
+			("UpcomingOpportunities", "What's next"),
 			("Calendar", "Calendar"),
-			("Settings", "Organization"),
+			("Settings", "Team"),
 		})
 		{
 			var tile = Page.GetByTestId($"widget-tile-{testId}");

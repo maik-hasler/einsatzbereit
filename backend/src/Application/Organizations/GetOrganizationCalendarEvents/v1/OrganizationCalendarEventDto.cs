@@ -5,6 +5,11 @@ public sealed record OrganizationCalendarEventDto(
 	string TitleDe,
 	string? TitleEn,
 	string? Color,
+	// The opportunity's own status, so a caller can tell a live shift from a
+	// draft nobody can sign up to yet. The calendar deliberately shows both -
+	// it is where an organizer plans - but a list of what still needs staffing
+	// must not present a draft as a shift that is short of people.
+	string Status,
 	IReadOnlyList<CalendarTimeSlotDto> TimeSlots);
 
 public sealed record CalendarTimeSlotDto(

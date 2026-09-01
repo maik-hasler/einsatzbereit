@@ -42,12 +42,11 @@ beforeEach(() => {
 // subscribe to, and they never leave the skeleton.
 let nextRefreshKey = 0;
 
-function renderWidget(size: "compact" | "medium" | "full" = "full") {
+function renderWidget() {
 	return renderWithProviders(
 		<QuickCheckInWidget
 			organizationId={ORG_ID}
 			refreshKey={++nextRefreshKey}
-			size={size}
 			onOpportunityCreated={() => {}}
 		/>,
 		{ auth: { isAuthenticated: true } },
@@ -104,24 +103,31 @@ describe("QuickCheckInWidget a11y", () => {
 		await expectNoA11yViolations();
 	});
 
-	// The compact size stacks the control and its action instead of putting
-	// them side by side, which is a different tree, not just a different class.
-	it("has no violations at the compact size", async () => {
+	// The occurrence the action will actually check people into, spelled out
+	// under the picker - an extra node in the tree, not just a class.
+	it("has no violations with the selected occurrence's time shown", async () => {
+		const start = new Date(Date.now() + 60 * 60 * 1000);
 		api.getOrganizationOpportunities.mockResolvedValue({
 			items: [
-				opportunity(
-					"aaaaaaaa-0000-0000-0000-000000000002",
-					"Type a PIN",
-					"PINCode",
-				),
+				{
+					...opportunity(
+						"aaaaaaaa-0000-0000-0000-000000000003",
+						"Starting soon",
+						"PINCode",
+					),
+					nextTimeSlotStart: start.toISOString(),
+					nextTimeSlotEnd: new Date(
+						start.getTime() + 2 * 60 * 60 * 1000,
+					).toISOString(),
+				},
 			],
 			pageCount: 1,
 			totalCount: 1,
 		});
 
-		renderWidget("compact");
+		renderWidget();
 
-		await screen.findByTestId("quick-checkin-open-btn");
+		await screen.findByTestId("quick-checkin-selected-when");
 		await expectNoA11yViolations();
 	});
 

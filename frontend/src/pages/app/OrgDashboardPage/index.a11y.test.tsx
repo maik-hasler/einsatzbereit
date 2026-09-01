@@ -80,7 +80,17 @@ beforeEach(() => {
 	api.getOrganizationDashboard.mockResolvedValue({
 		pendingEngagements: 0,
 		confirmedEngagementsTotal: 0,
+		distinctVolunteersTotal: 0,
+		signUpsLast30Days: 0,
+		signUpsPrevious30Days: 0,
 	});
+	api.getOrganizationEngagements.mockResolvedValue({
+		items: [],
+		currentPage: 1,
+		pageCount: 0,
+		totalItems: 0,
+	});
+	api.getOrgInvitations.mockResolvedValue([]);
 	api.getOrganizationOpportunities.mockResolvedValue({
 		items: [],
 		pageCount: 0,
