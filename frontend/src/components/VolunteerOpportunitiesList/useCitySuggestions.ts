@@ -57,7 +57,7 @@ export function useCitySuggestions(query: string) {
 				// Taken in the order the server ranked them. Re-filtering here to
 				// labels that literally contain the query threw away every postal-code
 				// hit - "26129" resolves to "26129 Oldenburg", which no client-side
-				// substring test can recognise as a match.
+				// substring test can recognise as a match (#2367).
 				const results: CitySuggestion[] = places.map((place) => ({
 					label: place.label,
 					lat: place.latitude,

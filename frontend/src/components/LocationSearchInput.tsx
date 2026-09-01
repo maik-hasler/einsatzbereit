@@ -58,7 +58,7 @@ export default function LocationSearchInput({
 	// The message is a popover like the suggestion list, not a line of helper text
 	// below the field. In the flow it stretched whatever the caller wrapped this
 	// input in - on the landing page a rounded-full pill, which grew into a
-	// two-row blob the moment a query found nothing. It opens and closes
+	// two-row blob the moment a query found nothing (#2367). It opens and closes
 	// with the list, and stays in the DOM as a live region either way so screen
 	// readers still hear it.
 	const showStatusPopover =

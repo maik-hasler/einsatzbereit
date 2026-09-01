@@ -143,7 +143,7 @@ describe("LocationSearchInput status message placement", () => {
 
 		// jsdom has no layout engine, so the guard is the positioning class itself:
 		// in the flow this line grew the rounded-full pill the landing page wraps
-		// this input in into a two-row blob.
+		// this input in into a two-row blob (#2367).
 		await vi.waitFor(() =>
 			expect(screen.getByRole("status")).toHaveClass("absolute"),
 		);
@@ -180,7 +180,7 @@ describe("LocationSearchInput postal codes", () => {
 		await userEvent.type(screen.getByLabelText("City"), "26129");
 
 		// The label cannot contain the typed digits, so the client must not try to
-		// re-check the server's match - that dropped every postal-code hit.
+		// re-check the server's match - that dropped every postal-code hit (#2367).
 		const options = await screen.findAllByRole("option");
 		expect(options).toHaveLength(1);
 		expect(options[0]).toHaveTextContent("26129 Oldenburg");

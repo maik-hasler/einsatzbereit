@@ -115,7 +115,7 @@ public class GermanPlaceDirectoryTests
 	public void Search_PostalCode_ResolvesToItsTownAndKeepsTheCodeInTheLabel()
 	{
 		// The location field advertises "city or postal code" - typing 26129 used to
-		// find nothing at all.
+		// find nothing at all (#2367).
 		var results = _sut.Search("26129", 6);
 
 		results.Should().ContainSingle(r => r.Label == "26129 Oldenburg");

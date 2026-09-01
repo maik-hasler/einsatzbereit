@@ -64,7 +64,7 @@ include::../images/technical-context.puml[]
 
 |Backend → Nominatim (OpenStreetMap)
 |Outbound
-|The backend geocodes opportunity addresses via the public OpenStreetMap Nominatim service at write time (see ADR-4), and proxies the frontend's city-autocomplete search requests to the same service (`GET /v1/maps/cities`). Both share one throttle of about one request per second. Nominatim never sees the visitor - only the backend's IP address - because the frontend calls the backend, not Nominatim, directly. See ADR-5.
+|The backend geocodes opportunity addresses via the public OpenStreetMap Nominatim service at write time (see ADR-4). The frontend's city-autocomplete search (`GET /v1/maps/cities`) is answered from an embedded German gazetteer of cities and postal codes (GeoNames, CC BY 4.0) and only reaches Nominatim when that finds nothing - a typed prefix matches nothing upstream, and a per-keystroke request would queue behind the shared throttle of about one request per second. Nominatim never sees the visitor - only the backend's IP address - because the frontend calls the backend, not Nominatim, directly. See ADR-5.
 
 |Backend → OpenStreetMap tile server
 |Outbound
