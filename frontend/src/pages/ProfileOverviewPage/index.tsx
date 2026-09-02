@@ -476,9 +476,21 @@ export default function ProfileOverviewPage() {
 
 							<SuccessBanner message={successMessage} className="mb-4" />
 
+							{/* Stacked, never a side-by-side split: this column is capped
+							at 800px (max-w-5xl minus the 11rem sub-nav rail and its gap), but
+							the split keyed off the viewport, so from lg: up the tiles - which
+							refused to shrink - took 680px of it and left the identity block
+							40px wide. The name and the public-profile link then spilled out of
+							their 0px-wide boxes and painted across the tiles. */}
 							{!editing && (
-								<div className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-									<div className="flex min-w-0 items-center gap-4">
+								<div
+									data-testid="profile-hero"
+									className="mb-8 flex flex-col gap-5 rounded-card bg-brand-100 p-5 sm:p-6"
+								>
+									<div
+										data-testid="profile-identity"
+										className="flex min-w-0 items-center gap-4"
+									>
 										{avatarUrl ? (
 											<img
 												src={avatarUrl}
@@ -493,10 +505,13 @@ export default function ProfileOverviewPage() {
 											</span>
 										)}
 										<div className="min-w-0">
-											<p className="font-display text-3xl font-bold text-gray-900">
+											<p
+												data-testid="profile-display-name"
+												className="font-display text-3xl font-bold break-words text-gray-900"
+											>
 												{displayName}
 											</p>
-											<p className="text-sm text-brand-800">
+											<p className="truncate text-sm text-brand-800">
 												@{profile?.username}
 											</p>
 											<p className="truncate text-sm text-brand-800">
@@ -522,7 +537,7 @@ export default function ProfileOverviewPage() {
 									{/* One row of equal-width tiles, rather than three
 									shrink-to-fit boxes that came out 177/161/168px wide and
 									wrapped into an L-shape (#2330). */}
-									<div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
+									<div className="flex flex-col gap-3 sm:flex-row">
 										{engagementCount !== null && (
 											<div
 												data-testid="profile-stat-engagements"
