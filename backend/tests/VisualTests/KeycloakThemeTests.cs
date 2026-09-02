@@ -51,10 +51,15 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator(".auth-logo")).ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
 
-		var cardBackground = await Page.Locator(".auth-card")
-			.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
-		cardBackground.Should().Be("rgb(255, 255, 255)",
-			$"{label}: the theme stylesheet should have loaded and styled the card");
+		// The card lays out - and so counts as visible - before the render-blocking
+		// stylesheet has been applied: Playwright's visibility check forces a layout,
+		// which Chromium performs against the still-unstyled DOM. A one-shot read at
+		// that moment returns rgba(0, 0, 0, 0) whenever Keycloak serves the CSS a beat
+		// behind the HTML - which is what it does under load right after the sign-in
+		// redirect, where this failed. Auto-retrying instead, so a styled card also
+		// gates the measurement below rather than it measuring an unstyled one.
+		await Expect(Page.Locator(".auth-card"))
+			.ToHaveCSSAsync("background-color", "rgb(255, 255, 255)", new() { Timeout = 15_000 });
 
 		await AssertVerticalGapBetweenAsync(
 			Page.Locator(".auth-card"), Page.Locator(".auth-back"), label);
@@ -97,9 +102,10 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(AuthUrl(locale: "en"));
 		await Expect(Page.Locator("#kc-login")).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		var background = await Page.Locator("#kc-login")
-			.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
-		background.Should().Be("rgb(34, 105, 71)", "the primary button should use brand-700");
+		// brand-700. Auto-retrying, for the same reason as the theme shell above: the
+		// stylesheet can still be in flight when the button first lays out.
+		await Expect(Page.Locator("#kc-login"))
+			.ToHaveCSSAsync("background-color", "rgb(34, 105, 71)");
 	}
 
 	[Test]
@@ -109,9 +115,8 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var forgotPassword = Page.GetByRole(AriaRole.Link, new() { Name = "Forgot password?", Exact = true });
 		await Expect(forgotPassword).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		var color = await forgotPassword.EvaluateAsync<string>("el => getComputedStyle(el).color");
-		color.Should().Be("rgb(34, 105, 71)",
-			"login: \"Forgot password?\" should get the same brand-700 treatment as \"Register\"");
+		// The same brand-700 treatment as "Register".
+		await Expect(forgotPassword).ToHaveCSSAsync("color", "rgb(34, 105, 71)");
 	}
 
 	[Test]
@@ -132,10 +137,9 @@ public class KeycloakThemeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("#password")).ToHaveAttributeAsync("aria-describedby", "input-error");
 
 		await Page.Locator("#username").FocusAsync();
-		var outlineColor = await Page.Locator("#username")
-			.EvaluateAsync<string>("el => getComputedStyle(el).outlineColor");
-		outlineColor.Should().Be("rgb(220, 38, 38)",
-			"login: the focus ring on an invalid, focused field should turn red, not stay the brand green");
+		// The focus ring on an invalid, focused field turns red rather than staying the
+		// brand green.
+		await Expect(Page.Locator("#username")).ToHaveCSSAsync("outline-color", "rgb(220, 38, 38)");
 	}
 
 	[Test]
