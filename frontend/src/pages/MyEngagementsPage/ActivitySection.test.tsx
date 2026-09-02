@@ -319,23 +319,7 @@ describe("my-signups reactivate action (#2240)", () => {
 describe("my-signups calendar button (#2240)", () => {
 	const timeSlotId = "66666666-6666-6666-6666-666666666666";
 
-	it("hides Add to calendar once the time slot has ended", async () => {
-		mockRows([
-			engagement({
-				status: "Confirmed",
-				timeSlotId,
-				timeSlotStartDateTime: new Date(Date.UTC(2020, 0, 14, 9, 0)),
-				timeSlotEndDateTime: new Date(Date.UTC(2020, 0, 14, 12, 0)),
-			}),
-		]);
-
-		renderSection();
-
-		await screen.findByTestId("engagement-card");
-		expect(screen.queryByText("Add to calendar")).toBeNull();
-	});
-
-	it("offers Add to calendar while the time slot has not ended", async () => {
+	it("offers no calendar entry on a confirmed, still-upcoming sign-up", async () => {
 		const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
 		const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 		mockRows([
@@ -349,7 +333,11 @@ describe("my-signups calendar button (#2240)", () => {
 
 		renderSection();
 
-		expect(await screen.findByText("Add to calendar")).toBeInTheDocument();
+		// This row carried the only other add-to-calendar entry point in the
+		// product; the feature is gone, so the state that used to show it is
+		// what proves it.
+		await screen.findByTestId("engagement-card");
+		expect(screen.queryByText(/calendar/i)).toBeNull();
 	});
 });
 

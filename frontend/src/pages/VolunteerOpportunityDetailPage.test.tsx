@@ -1195,71 +1195,17 @@ describe("opportunity detail page description (#2330)", () => {
 	});
 });
 
-describe("opportunity detail page add to calendar (#2330)", () => {
-	it("lets an anonymous visitor save the next slot to their calendar", async () => {
+describe("opportunity detail page controls (#2330)", () => {
+	it("keeps the report control labelled, never a bare icon pill", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderDetail("en");
 
-		await screen.findByTestId("opportunity-detail-when");
-
-		await userEvent.click(
-			screen.getByRole("button", { name: "Add to calendar" }),
-		);
-		const google =
-			screen
-				.getByRole("link", { name: "Google Calendar" })
-				.getAttribute("href") ?? "";
-		expect(decodeURIComponent(google)).toContain(
-			"20270114T090000Z/20270114T120000Z",
-		);
-	});
-
-	it("builds the .ics in the browser, there being no engagement to point at", async () => {
-		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
-
-		renderDetail("en");
-
-		await screen.findByTestId("opportunity-detail-when");
-		await userEvent.click(
-			screen.getByRole("button", { name: "Add to calendar" }),
-		);
-
-		const href =
-			screen
-				.getByRole("link", { name: "Download .ics" })
-				.getAttribute("href") ?? "";
-		expect(href.startsWith("data:text/calendar")).toBe(true);
-		expect(decodeURIComponent(href)).toContain("BEGIN:VEVENT");
-		// A subscription feed would go stale - there is nothing to subscribe to.
-		expect(screen.queryByRole("link", { name: "Apple Calendar" })).toBeNull();
-	});
-
-	it("offers no calendar entry when the opportunity has no dated slot", async () => {
-		renderDetail("en");
-
-		await screen.findByTestId("opportunity-detail-when");
-		expect(
-			screen.queryByRole("button", { name: "Add to calendar" }),
-		).toBeNull();
-	});
-
-	it("keeps every control labelled, never a bare icon pill (#2330)", async () => {
-		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
-
-		renderDetail("en");
-
-		// There is no visitor-facing toolbar any more: the calendar menu sits in
-		// the action panel next to the date it saves, and Report at the foot of
-		// the page. Both still carry their label at every width.
-		const calendar = await screen.findByRole("button", {
-			name: "Add to calendar",
-		});
-		const report = screen.getByTestId("report-opportunity");
-		for (const control of [calendar, report]) {
-			for (const span of control.querySelectorAll("span")) {
-				expect(span).not.toHaveClass("hidden");
-			}
+		// Report is the only control a visitor gets outside the action panel,
+		// and it sits at the foot of the page rather than in a top toolbar.
+		const report = await screen.findByTestId("report-opportunity");
+		for (const span of report.querySelectorAll("span")) {
+			expect(span).not.toHaveClass("hidden");
 		}
 	});
 
@@ -1270,6 +1216,15 @@ describe("opportunity detail page add to calendar (#2330)", () => {
 
 		await screen.findByTestId("opportunity-detail-when");
 		expect(screen.queryByTestId("opportunity-detail-actions")).toBeNull();
+	});
+
+	it("offers no way to put the opportunity in a calendar", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByRole("button", { name: /calendar/i })).toBeNull();
 	});
 });
 

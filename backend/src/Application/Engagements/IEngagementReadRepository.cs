@@ -54,8 +54,4 @@ public interface IEngagementReadRepository
 		int pageNumber,
 		int pageSize,
 		CancellationToken cancellationToken = default);
-
-	ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
-		EngagementId engagementId,
-		CancellationToken cancellationToken = default);
 }

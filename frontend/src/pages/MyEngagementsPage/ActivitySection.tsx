@@ -33,7 +33,6 @@ import {
 import { buildSignUpLink } from "../../lib/signUpDeepLink";
 import { cardClass } from "../../lib/surfaceClasses";
 import { dispatchToast } from "../../lib/toastBus";
-import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import Chip from "../../components/Chip";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -782,22 +781,6 @@ export default function ActivitySection() {
 											)}
 										</>
 									)}
-									{e.status === "Confirmed" &&
-										e.timeSlotId &&
-										e.timeSlotStartDateTime &&
-										e.timeSlotEndDateTime &&
-										!slotEnded && (
-											<AddToCalendarMenu
-												engagementId={e.id}
-												title={
-													title?.text ??
-													t("myEngagements.deletedOpportunityTitle")
-												}
-												location={e.location}
-												start={e.timeSlotStartDateTime}
-												end={e.timeSlotEndDateTime}
-											/>
-										)}
 									{/* Withdrawing from something that already happened
 									releases nothing and burns a reactivation - don't
 									offer it (#2323). */}

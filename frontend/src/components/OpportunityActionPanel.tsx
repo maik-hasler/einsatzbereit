@@ -37,9 +37,6 @@ interface Props {
 	/** The call to action, sign-in prompt, or owner notice for this visitor. */
 	children?: ReactNode;
 
-	/** Secondary actions on the opportunity itself, e.g. add to calendar. */
-	footer?: ReactNode;
-
 	"data-testid"?: string;
 }
 
@@ -52,7 +49,6 @@ export default function OpportunityActionPanel({
 	status,
 	facts,
 	children,
-	footer,
 	"data-testid": testId,
 }: Props) {
 	return (
@@ -104,10 +100,6 @@ export default function OpportunityActionPanel({
 				<div className="space-y-3 border-t border-gray-100 px-5 py-4">
 					{children}
 				</div>
-			)}
-
-			{footer && (
-				<div className="border-t border-gray-100 px-5 py-3">{footer}</div>
 			)}
 		</div>
 	);

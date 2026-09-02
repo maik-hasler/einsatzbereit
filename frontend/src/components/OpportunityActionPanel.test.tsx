@@ -120,19 +120,20 @@ describe("OpportunityActionPanel", () => {
 		expect(container.querySelectorAll("dl ~ div")).toHaveLength(0);
 	});
 
-	it("keeps the call to action and the secondary footer apart", () => {
-		renderWithProviders(
+	it("puts the call to action below the facts, in its own block", () => {
+		const { container } = renderWithProviders(
 			<OpportunityActionPanel
 				status={{ label: "3 spots left", tone: "open" }}
 				facts={facts}
-				footer={<button type="button">Add to calendar</button>}
 			>
 				<button type="button">Sign up</button>
 			</OpportunityActionPanel>,
 		);
 
 		const cta = screen.getByRole("button", { name: "Sign up" });
-		const footer = screen.getByRole("button", { name: "Add to calendar" });
-		expect(cta.parentElement).not.toBe(footer.parentElement);
+		const list = container.querySelector("dl") as HTMLElement;
+		expect(
+			list.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
 	});
 });

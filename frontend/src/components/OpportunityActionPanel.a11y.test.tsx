@@ -29,7 +29,7 @@ const facts: PanelFact[] = [
 ];
 
 describe("OpportunityActionPanel a11y", () => {
-	it("has no violations with a status note, a call to action and a footer", async () => {
+	it("has no violations with a status note and a call to action", async () => {
 		renderWithProviders(
 			<OpportunityActionPanel
 				status={{
@@ -38,11 +38,6 @@ describe("OpportunityActionPanel a11y", () => {
 					note: "4 people have already joined",
 				}}
 				facts={facts}
-				footer={
-					<Button variant="outline" size="sm">
-						Add to calendar
-					</Button>
-				}
 			>
 				<Button fullWidth size="lg">
 					Sign up for a slot

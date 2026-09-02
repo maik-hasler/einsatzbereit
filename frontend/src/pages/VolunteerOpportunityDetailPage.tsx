@@ -30,7 +30,6 @@ import {
 	type OpportunityCapacity,
 } from "../lib/opportunityCapacity";
 import { SIGN_UP_INTEREST, SIGN_UP_PARAM } from "../lib/signUpDeepLink";
-import AddToCalendarMenu from "../components/AddToCalendarMenu";
 import Chip from "../components/Chip";
 import PageSectionHeading from "../components/PageSectionHeading";
 import OpportunityActionPanel, {
@@ -87,8 +86,8 @@ const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
  * The page's rhythm. Every block used to carry the same 12px uppercase label
  * and the same mb-6, so "About this organization" arrived with exactly the
  * weight of the schedule a visitor came for, and a long page read as one
- * undifferentiated scroll (#2330). A rule plus a display-face heading is what
- * separates the five things this page has to say.
+ * undifferentiated scroll (#2330). A short brand rule plus a display-face
+ * heading is what separates the five things this page has to say.
  */
 function DetailSection({
 	title,
@@ -101,11 +100,21 @@ function DetailSection({
 	"data-testid"?: string;
 }) {
 	return (
-		<section
-			data-testid={testId}
-			className="border-t border-gray-200 pt-8 first:border-t-0 first:pt-0"
-		>
-			{title && <PageSectionHeading>{title}</PageSectionHeading>}
+		<section data-testid={testId} className="pt-2 first:pt-0">
+			{title && (
+				<>
+					{/* A short brand rule, not a full-width one: a hairline across the
+					column is the generic answer and reads as a horizontal rule between
+					two paragraphs, where this marks where a section starts. It repeats
+					down the page as one system with the display-face heading under
+					it. */}
+					<span
+						aria-hidden="true"
+						className="mb-4 block h-0.5 w-10 bg-brand-600"
+					/>
+					<PageSectionHeading>{title}</PageSectionHeading>
+				</>
+			)}
 			{children}
 		</section>
 	);
@@ -508,10 +517,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const isOwner = viewerOwnsOpportunity;
 	const isDraft = opportunity.status === "Draft";
 
-	// A draft is visible to its owner alone, so there is no date anyone else
-	// could save (#2330).
-	const canSaveDate = !isDraft;
-
 	const upcomingTimeSlots = opportunity.timeSlots.filter(
 		(ts) => !isTimeSlotEnded(ts),
 	);
@@ -566,15 +571,6 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.latitude != null && opportunity.longitude != null
 			? `https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`
 			: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
-
-	// The canonical URL for this page, so the calendar entry never carries a
-	// ?signUp= deep-link param that is spent the moment it is consumed.
-	const canonicalUrl = `${window.location.origin}/volunteer-opportunities/${opportunity.id}`;
-
-	const nextUpcomingSlot =
-		opportunity.participationType === "ScheduledSlots"
-			? findNextTimeSlot(upcomingTimeSlots)
-			: undefined;
 
 	// Publishing a draft is the owner's alone; a visitor's controls live in the
 	// action panel (calendar) and the page footer (report), so for everyone else
@@ -753,19 +749,6 @@ export default function VolunteerOpportunityDetailPage() {
 					data-testid="opportunity-action-panel"
 					status={capacityStatus}
 					facts={panelFacts}
-					footer={
-						canSaveDate && nextUpcomingSlot ? (
-							<AddToCalendarMenu
-								icsUid={`opportunity-${opp.id}-slot-${nextUpcomingSlot.id}@einsatzbereit`}
-								title={headerTitle.text}
-								{...(headerLead ? { description: headerLead.text } : {})}
-								{...(address ? { location: address } : {})}
-								url={canonicalUrl}
-								start={nextUpcomingSlot.startDateTime as unknown as string}
-								end={nextUpcomingSlot.endDateTime as unknown as string}
-							/>
-						) : undefined
-					}
 				>
 					{showSignUpCta && (
 						<div data-testid="signup-cta" className="space-y-3">
@@ -977,7 +960,7 @@ export default function VolunteerOpportunityDetailPage() {
 						{renderActionColumn(opportunity)}
 					</aside>
 
-					<div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-2">
+					<div className="min-w-0 space-y-14 lg:col-start-1 lg:row-start-2">
 						{showDescriptionSection && (
 							<DetailSection
 								title={t("opportunities.aboutOpportunity")}

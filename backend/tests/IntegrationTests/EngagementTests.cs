@@ -2142,46 +2142,6 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetEngagementCalendar_ReturnsAWellFormedIcsFile_ForAConfirmedScheduledEngagement(
-		CancellationToken cancellationToken)
-	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
-
-		var timeSlots = await olafClient.CreateTimeSlotAsync(
-			opportunity.Id,
-			new CreateTimeSlotRequest
-			{
-				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
-				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
-				MaxParticipants = 5,
-				RecurrenceCount = 1,
-			},
-			cancellationToken);
-		var timeSlotId = timeSlots.Single().Id;
-		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
-
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
-		var engagement = await veraClient.CreateEngagementAsync(
-			opportunity.Id,
-			new CreateEngagementRequest { TimeSlotId = timeSlotId },
-			cancellationToken);
-		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
-
-		using var http = fixture.CreateHttpClient();
-		var response = await http.GetAsync($"/v1/engagements/{engagement.Id}/calendar", cancellationToken);
-
-		response.EnsureSuccessStatusCode();
-		response.Content.Headers.ContentType!.MediaType.Should().Be("text/calendar");
-		response.Content.Headers.ContentDisposition!.FileName.Should().Be($"engagement-{engagement.Id}.ics");
-
-		var body = await response.Content.ReadAsStringAsync(cancellationToken);
-		body.Should().Contain("BEGIN:VCALENDAR");
-		body.Should().Contain($"UID:{engagement.Id}@einsatzbereit");
-	}
-
-	[Test]
 	public async Task UnpublishVolunteerOpportunity_CascadeCancelsItsConfirmedEngagement(
 		CancellationToken cancellationToken)
 	{
