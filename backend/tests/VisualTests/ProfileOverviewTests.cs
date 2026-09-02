@@ -44,6 +44,51 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
+	public async Task ProfileHero_GivesTheIdentityBlockTheWholeColumn_AtDesktopWidth()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.SetViewportSizeAsync(1440, 900);
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var identity = Page.GetByTestId("profile-identity");
+		await Expect(identity).ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		// The hero used to split into two columns from lg: up, keyed off the
+		// viewport - but its column is capped at 800px whatever the viewport, so
+		// the stat tiles took 680px of it, starved the identity block down to
+		// 40px, and the name spilled out of its 0px-wide box across the tiles.
+		var shortfall = 0d;
+		var nameOverflow = 0d;
+		await PollUntilAsync(async () =>
+		{
+			var measured = await identity.EvaluateAsync<double[]>(
+				"""
+				el => {
+					const hero = el.closest('[data-testid="profile-hero"]');
+					const style = getComputedStyle(hero);
+					const available = hero.clientWidth
+						- parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+					const name = el.querySelector('[data-testid="profile-display-name"]');
+					return [
+						available - el.getBoundingClientRect().width,
+						name.scrollWidth - name.clientWidth,
+					];
+				}
+				""");
+			shortfall = measured[0];
+			nameOverflow = measured[1];
+			return Math.Abs(shortfall) < 2 && nameOverflow < 2;
+		}, () => "the profile hero's identity block should span the card's full content width "
+			+ $"and hold its name inside its own box (last observed: {shortfall:F0}px of the "
+			+ $"card's width unused, name overflowing its box by {nameOverflow:F0}px)");
+	}
+
+	[Test]
 	public async Task PublicUserProfile_ShowsBioSkillsAndLanguagesButNotPreferredContact()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
