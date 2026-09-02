@@ -70,21 +70,27 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 		return opportunityId;
 	}
 
-	private async Task AssertRailAboveMapAndNoDesktopDuplicateAsync(ILocator railBlock, string desktopTestId)
+	/// The rail used to exist twice in the DOM - a `hidden lg:block` desktop copy
+	/// and an `lg:hidden` mobile one - so this guarded against the desktop copy
+	/// showing through on a phone. #2330 renders it once and places it with the
+	/// grid instead, which makes that guarantee a count: one node, not two that
+	/// happen to hide each other.
+	private async Task AssertRailRendersOnceAboveMapAsync(string railTestId)
 	{
 		var map = Page.Locator(".leaflet-container");
+		var railBlock = Page.GetByTestId(railTestId);
+
 		await Expect(map).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(railBlock).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(railBlock).ToHaveCountAsync(1);
 
 		var railBox = await railBlock.BoundingBoxAsync();
 		var mapBox = await map.BoundingBoxAsync();
 		railBox.Should().NotBeNull();
 		mapBox.Should().NotBeNull();
 		railBox!.Y.Should().BeLessThan(mapBox!.Y,
-			"the mobile action rail must sit above the map, matching the priority the same content has "
-			+ "in the desktop sticky rail (#1965)");
-
-		await Expect(Page.GetByTestId(desktopTestId)).Not.ToBeVisibleAsync();
+			"on a phone the action rail must sit above the map, matching the priority the same content "
+			+ "has in the desktop sticky rail (#1965)");
 	}
 
 	[Test]
@@ -99,8 +105,7 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertRailAboveMapAndNoDesktopDuplicateAsync(
-			Page.GetByTestId("login-prompt-mobile"), "login-prompt");
+		await AssertRailRendersOnceAboveMapAsync("login-prompt");
 	}
 
 	[Test]
@@ -116,8 +121,7 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertRailAboveMapAndNoDesktopDuplicateAsync(
-			Page.GetByTestId("signup-cta-mobile"), "signup-cta");
+		await AssertRailRendersOnceAboveMapAsync("signup-cta");
 	}
 
 	[Test]
@@ -142,7 +146,6 @@ public class OpportunityDetailPageMobileActionRailTests(AspireFixture fixture) :
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertRailAboveMapAndNoDesktopDuplicateAsync(
-			Page.GetByTestId("application-status-mobile"), "application-status");
+		await AssertRailRendersOnceAboveMapAsync("application-status");
 	}
 }

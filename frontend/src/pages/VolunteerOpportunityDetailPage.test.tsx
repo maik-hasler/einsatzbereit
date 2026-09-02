@@ -173,7 +173,7 @@ const scheduledSlots = {
 	],
 };
 
-describe("opportunity detail page at-a-glance panel", () => {
+describe("opportunity detail page action panel facts", () => {
 	it("states the next slot's real date and the slot count for scheduled slots", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
@@ -1195,65 +1195,36 @@ describe("opportunity detail page description (#2330)", () => {
 	});
 });
 
-describe("opportunity detail page add to calendar (#2330)", () => {
-	it("lets an anonymous visitor save the next slot to their calendar", async () => {
+describe("opportunity detail page controls (#2330)", () => {
+	it("keeps the report control labelled, never a bare icon pill", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
 
 		renderDetail("en");
 
-		await screen.findByTestId("opportunity-detail-when");
-
-		await userEvent.click(
-			screen.getByRole("button", { name: "Add to calendar" }),
-		);
-		const google =
-			screen
-				.getByRole("link", { name: "Google Calendar" })
-				.getAttribute("href") ?? "";
-		expect(decodeURIComponent(google)).toContain(
-			"20270114T090000Z/20270114T120000Z",
-		);
-	});
-
-	it("builds the .ics in the browser, there being no engagement to point at", async () => {
-		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
-
-		renderDetail("en");
-
-		await screen.findByTestId("opportunity-detail-when");
-		await userEvent.click(
-			screen.getByRole("button", { name: "Add to calendar" }),
-		);
-
-		const href =
-			screen
-				.getByRole("link", { name: "Download .ics" })
-				.getAttribute("href") ?? "";
-		expect(href.startsWith("data:text/calendar")).toBe(true);
-		expect(decodeURIComponent(href)).toContain("BEGIN:VEVENT");
-		// A subscription feed would go stale - there is nothing to subscribe to.
-		expect(screen.queryByRole("link", { name: "Apple Calendar" })).toBeNull();
-	});
-
-	it("offers no calendar entry when the opportunity has no dated slot", async () => {
-		renderDetail("en");
-
-		await screen.findByTestId("opportunity-detail-when");
-		expect(
-			screen.queryByRole("button", { name: "Add to calendar" }),
-		).toBeNull();
-	});
-
-	it("keeps every toolbar control labelled, never a bare icon pill (#2330)", async () => {
-		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
-
-		renderDetail("en");
-
-		const toolbar = await screen.findByTestId("opportunity-detail-actions");
-		for (const span of toolbar.querySelectorAll("button span")) {
+		// Report is the only control a visitor gets outside the action panel,
+		// and it sits at the foot of the page rather than in a top toolbar.
+		const report = await screen.findByTestId("report-opportunity");
+		for (const span of report.querySelectorAll("span")) {
 			expect(span).not.toHaveClass("hidden");
 		}
-		expect(within(toolbar).getAllByRole("button").length).toBeGreaterThan(1);
+	});
+
+	it("leaves an anonymous visitor no toolbar row at the top of the page", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByTestId("opportunity-detail-actions")).toBeNull();
+	});
+
+	it("offers no way to put the opportunity in a calendar", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue(scheduledSlots);
+
+		renderDetail("en");
+
+		await screen.findByTestId("opportunity-detail-when");
+		expect(screen.queryByRole("button", { name: /calendar/i })).toBeNull();
 	});
 });
 
@@ -1285,7 +1256,21 @@ describe("opportunity detail page location (#2330)", () => {
 		);
 	});
 
-	it("does not repeat the deadline the at-a-glance band already states", async () => {
+	it("states an interest deadline once for a signed-in volunteer too", async () => {
+		api.getVolunteerOpportunityDetails.mockResolvedValue({
+			...details,
+			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),
+		});
+
+		renderAs(VOLUNTEER_AUTH);
+
+		await screen.findByTestId("signup-cta");
+		// The panel's "When" fact and a note under its button would be the same
+		// sentence twice inside one card.
+		expect(screen.getAllByText(/^Express interest by/)).toHaveLength(1);
+	});
+
+	it("does not repeat the deadline the panel's When fact already states", async () => {
 		api.getVolunteerOpportunityDetails.mockResolvedValue({
 			...details,
 			validUntil: new Date(Date.UTC(2027, 0, 31, 0, 0)),

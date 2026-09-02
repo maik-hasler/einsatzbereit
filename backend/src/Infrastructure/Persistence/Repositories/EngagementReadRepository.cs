@@ -420,51 +420,6 @@ internal sealed class EngagementReadRepository(
 		return string.Join(", ", parts);
 	}
 
-	public async ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
-		EngagementId engagementId,
-		CancellationToken cancellationToken = default)
-	{
-		var engagement = await dbContext.EngagementsQuery
-			.Where(e => e.Id == engagementId &&
-				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
-			.Select(e => new { e.OpportunityId, e.TimeSlotId })
-			.FirstOrDefaultAsync(cancellationToken);
-
-		if (engagement is null || engagement.TimeSlotId is null)
-			return null;
-
-		// Status == Published (#1155): this endpoint is anonymous, so without this an
-		// unpublished Draft opportunity's title/description/address leaked to anyone
-		// holding an engagement id for it - the one thing GetDetailsAsync already
-		// refuses to show a non-organizer.
-		var opportunity = await dbContext.VolunteerOpportunitiesQuery
-			.Where(o => o.Id == engagement.OpportunityId && o.Status == OpportunityStatus.Published)
-			.Select(o => new { o.Id, o.TitleDe, o.DescriptionDe, o.IsRemote, o.Address })
-			.FirstOrDefaultAsync(cancellationToken);
-
-		if (opportunity is null)
-			return null;
-
-		var timeSlot = await dbContext.TimeSlotsQuery
-			.Where(ts => ts.Id == engagement.TimeSlotId.Value)
-			.Select(ts => new { ts.StartDateTime, ts.EndDateTime })
-			.FirstOrDefaultAsync(cancellationToken);
-
-		if (timeSlot is null)
-			return null;
-
-		var location = opportunity.IsRemote ? "Remote" : FormatAddress(opportunity.Address);
-
-		return new EngagementCalendarInfo(
-			engagementId.Value,
-			opportunity.Id.Value,
-			opportunity.TitleDe,
-			opportunity.DescriptionDe,
-			location,
-			timeSlot.StartDateTime,
-			timeSlot.EndDateTime);
-	}
-
 	public async ValueTask<List<Guid>> GetActiveVolunteerIdsByOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		TimeSlotId? timeSlotId,

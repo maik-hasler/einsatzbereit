@@ -6431,40 +6431,6 @@
         }
       }
     },
-    "/v1/engagements/{engagementId}/calendar": {
-      "get": {
-        "tags": [
-          "GetEngagementCalendarEndpoint"
-        ],
-        "operationId": "GetEngagementCalendar",
-        "parameters": [
-          {
-            "name": "engagementId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/engagements/{engagementId}/confirm": {
       "post": {
         "tags": [
@@ -11218,9 +11184,6 @@
     },
     {
       "name": "Engagements"
-    },
-    {
-      "name": "GetEngagementCalendarEndpoint"
     },
     {
       "name": "Achievements"

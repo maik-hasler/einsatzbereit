@@ -62,7 +62,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Expect(Page.GetByTestId("share-opportunity")).ToHaveCountAsync(0);
 
-		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToBeVisibleAsync();
+		// No toolbar row for a visitor any more: #2330 left it to a draft's owner
+		// and moved Report to the page footer, where every comparable listing site
+		// puts a moderation action.
+		await Expect(Page.GetByTestId("opportunity-detail-actions")).ToHaveCountAsync(0);
 		await Expect(Page.GetByTestId("report-opportunity")).ToBeVisibleAsync();
 	}
 

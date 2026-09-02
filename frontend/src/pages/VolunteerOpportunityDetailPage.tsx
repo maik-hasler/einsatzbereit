@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useParams, Link, useLocation, useSearchParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
@@ -29,9 +30,12 @@ import {
 	type OpportunityCapacity,
 } from "../lib/opportunityCapacity";
 import { SIGN_UP_INTEREST, SIGN_UP_PARAM } from "../lib/signUpDeepLink";
-import AddToCalendarMenu from "../components/AddToCalendarMenu";
 import Chip from "../components/Chip";
-import SectionHeading from "../components/SectionHeading";
+import PageSectionHeading from "../components/PageSectionHeading";
+import OpportunityActionPanel, {
+	type PanelFact,
+	type PanelStatusTone,
+} from "../components/OpportunityActionPanel";
 import SignUpModal from "../components/SignUpModal";
 import ReportContentModal, {
 	type ReportReason,
@@ -78,6 +82,44 @@ import {
 
 const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
 
+/**
+ * The page's rhythm. Every block used to carry the same 12px uppercase label
+ * and the same mb-6, so "About this organization" arrived with exactly the
+ * weight of the schedule a visitor came for, and a long page read as one
+ * undifferentiated scroll (#2330). A short brand rule plus a display-face
+ * heading is what separates the five things this page has to say.
+ */
+function DetailSection({
+	title,
+	children,
+	"data-testid": testId,
+}: {
+	/** Omitted only where the content names itself, e.g. a lone disclosure. */
+	title?: string;
+	children: ReactNode;
+	"data-testid"?: string;
+}) {
+	return (
+		<section data-testid={testId} className="pt-2 first:pt-0">
+			{title && (
+				<>
+					{/* A short brand rule, not a full-width one: a hairline across the
+					column is the generic answer and reads as a horizontal rule between
+					two paragraphs, where this marks where a section starts. It repeats
+					down the page as one system with the display-face heading under
+					it. */}
+					<span
+						aria-hidden="true"
+						className="mb-4 block h-0.5 w-10 bg-brand-600"
+					/>
+					<PageSectionHeading>{title}</PageSectionHeading>
+				</>
+			)}
+			{children}
+		</section>
+	);
+}
+
 const CreateVolunteerOpportunityModal = lazy(
 	() => import("../components/CreateVolunteerOpportunityModal"),
 );
@@ -118,43 +160,47 @@ function toMetaDescription(text: string): string {
 	return `${trimmed.slice(0, MAX_META_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 }
 
+/**
+ * The status strip of the action panel. `tone` says whether a visitor can still
+ * take part - it drives the strip's colour, so it is a panel tone rather than a
+ * text colour: the label used to sit as bare coloured text in a row of chips,
+ * where "Only 2 spots left!" carried no more weight than a tag (#2330).
+ */
 function describeCapacity(
 	capacity: OpportunityCapacity,
 	t: TFunction,
-): { label: string; tone: string; secondaryLabel?: string } {
+): { label: string; tone: PanelStatusTone; note?: string } {
 	switch (capacity.kind) {
 		case "unlimited":
-			return {
-				label: t("opportunities.unlimitedSpots"),
-				tone: "text-teal-700",
-			};
+			return { label: t("opportunities.unlimitedSpots"), tone: "open" };
 		case "notApplicable":
 			return capacity.reason === "interest"
 				? {
 						label: t("opportunities.byInterest"),
-						tone: "text-gray-700",
-						secondaryLabel:
-							capacity.booked > 0
-								? t("opportunities.participantsJoined", {
+						tone: "open",
+						...(capacity.booked > 0
+							? {
+									note: t("opportunities.participantsJoined", {
 										count: capacity.booked,
-									})
-								: undefined,
+									}),
+								}
+							: {}),
 					}
-				: { label: t("opportunities.noOpenSpots"), tone: "text-gray-700" };
+				: { label: t("opportunities.noOpenSpots"), tone: "closed" };
 		case "capped":
 			if (capacity.isFull) {
-				return { label: t("opportunities.full"), tone: "text-red-600" };
+				return { label: t("opportunities.full"), tone: "closed" };
 			}
 			return capacity.spotsLeft <= FEW_SPOTS_THRESHOLD
 				? {
 						label: t("opportunities.fewSpotsLeft", {
 							count: capacity.spotsLeft,
 						}),
-						tone: "text-orange-700",
+						tone: "urgent",
 					}
 				: {
 						label: t("opportunities.spotsLeft", { count: capacity.spotsLeft }),
-						tone: "text-gray-700",
+						tone: "open",
 					};
 	}
 }
@@ -471,10 +517,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const isOwner = viewerOwnsOpportunity;
 	const isDraft = opportunity.status === "Draft";
 
-	// A draft is visible to its owner alone, so there is no date anyone else
-	// could save (#2330).
-	const canSaveDate = !isDraft;
-
 	const upcomingTimeSlots = opportunity.timeSlots.filter(
 		(ts) => !isTimeSlotEnded(ts),
 	);
@@ -512,11 +554,7 @@ export default function VolunteerOpportunityDetailPage() {
 	/** No seat is ever released by withdrawing this - it's an expression of interest, not a sign-up (#2228). */
 	const isInterestBased =
 		capacity.kind === "notApplicable" && capacity.reason === "interest";
-	const {
-		label: capacityLabel,
-		tone: capacityTone,
-		secondaryLabel: capacitySecondaryLabel,
-	} = describeCapacity(capacity, t);
+	const capacityStatus = describeCapacity(capacity, t);
 
 	const address = opportunity.isRemote
 		? ""
@@ -534,18 +572,10 @@ export default function VolunteerOpportunityDetailPage() {
 			? `https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`
 			: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 
-	// The canonical URL for this page, so the calendar entry never carries a
-	// ?signUp= deep-link param that is spent the moment it is consumed.
-	const canonicalUrl = `${window.location.origin}/volunteer-opportunities/${opportunity.id}`;
-
-	const nextUpcomingSlot =
-		opportunity.participationType === "ScheduledSlots"
-			? findNextTimeSlot(upcomingTimeSlots)
-			: undefined;
-
-	// An owner looking at their own published, undated opportunity has nothing
-	// in the toolbar - don't leave an empty row eating its bottom margin.
-	const hasActionRow = !isOwner || isDraft || !!nextUpcomingSlot;
+	// Publishing a draft is the owner's alone; a visitor's controls live in the
+	// action panel (calendar) and the page footer (report), so for everyone else
+	// this row is gone rather than empty.
+	const hasOwnerToolbar = isOwner && isDraft;
 
 	const postedOnRelative = formatPostedAgo(
 		opportunity.createdOn as unknown as string,
@@ -567,16 +597,40 @@ export default function VolunteerOpportunityDetailPage() {
 	const showLoginPrompt = !isAuthenticated && !isDraft;
 
 	const showOwnerNotice = isOwner && !isDraft;
-	const hasActionRail =
-		showApplicationStatus ||
-		showSignUpCta ||
-		showLoginPrompt ||
-		showOwnerNotice;
 
-	function renderActionRail(
-		testIdSuffix: string,
-		opp: VolunteerOpportunityDetails,
-	) {
+	// The three facts that decide whether someone can take part, stated once,
+	// inside the panel that acts on them. They used to sit in a three-column
+	// band directly above the schedule and location sections that repeat them
+	// in full (#2330).
+	const panelFacts: PanelFact[] = [
+		{
+			key: "when",
+			icon: <CalendarIcon className="h-4 w-4" />,
+			label: t("opportunities.factWhen"),
+			value: describeWhenFact(opportunity, t, i18n.language),
+			"data-testid": "opportunity-detail-when",
+		},
+		{
+			key: "how",
+			icon: <UserGroupIcon className="h-4 w-4" />,
+			label: t("opportunities.factFormat"),
+			value: describeHowFact(opportunity, upcomingTimeSlots.length, t),
+			"data-testid": "opportunity-detail-how",
+		},
+		{
+			key: "where",
+			icon: opportunity.isRemote ? (
+				<GlobeIcon className="h-4 w-4" />
+			) : (
+				<MapPinIcon className="h-4 w-4" />
+			),
+			label: t("opportunities.factWhere"),
+			value: locationSummary,
+			"data-testid": "opportunity-detail-where",
+		},
+	];
+
+	function renderActionColumn(opp: VolunteerOpportunityDetails) {
 		return (
 			<>
 				{showOwnerNotice && (
@@ -589,13 +643,13 @@ export default function VolunteerOpportunityDetailPage() {
 							label: t("engagementManagement.title"),
 							to: `/app/${opp.organizationId}/dashboard/opportunities/${opp.id}/engagements`,
 						}}
-						data-testid={`opportunity-owner-notice${testIdSuffix}`}
+						data-testid="opportunity-owner-notice"
 					/>
 				)}
 
 				{showApplicationStatus && (
 					<div
-						data-testid={`application-status${testIdSuffix}`}
+						data-testid="application-status"
 						className={`${cardClass} sm:p-5`}
 					>
 						{/* One heading for the card, then one dated block per sign-up:
@@ -616,9 +670,8 @@ export default function VolunteerOpportunityDetailPage() {
 								);
 								// Every block's button is named "Withdraw"; the date is
 								// what tells them apart, so point at it rather than
-								// folding it into the name (#2323). The rail renders
-								// twice (desktop rail + mobile), hence the suffix.
-								const slotHeadingId = `engagement-slot-${engagement.id}${testIdSuffix}`;
+								// folding it into the name (#2323).
+								const slotHeadingId = `engagement-slot-${engagement.id}`;
 								return (
 									<li
 										key={engagement.id}
@@ -692,65 +745,57 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-				{showSignUpCta && (
-					<div
-						data-testid={`signup-cta${testIdSuffix}`}
-						className={`space-y-3 ${cardClass} sm:p-5`}
-					>
-						{isFull && (
-							<p className="text-sm font-medium text-red-600">
-								{t("opportunities.noSpotsLeft")}
-							</p>
-						)}
-						<Button
-							onClick={() => {
-								setPreselectedSlotId(undefined);
-								setShowSignUp(true);
-							}}
-							disabled={isFull}
-							fullWidth
-							size="lg"
-						>
-							{opp.participationType === "ScheduledSlots"
-								? t("opportunities.joinWaitlist")
-								: t("opportunities.expressInterest")}
-						</Button>
-						{opp.participationType === "IndividualContact" &&
-							opp.validUntil && (
-								<p className="text-sm text-gray-600">
-									{t("opportunities.applyBy", {
-										date: formatDate(
-											opp.validUntil as unknown as string,
-											i18n.language,
-										),
-									})}
+				<OpportunityActionPanel
+					data-testid="opportunity-action-panel"
+					status={capacityStatus}
+					facts={panelFacts}
+				>
+					{showSignUpCta && (
+						<div data-testid="signup-cta" className="space-y-3">
+							{isFull && (
+								<p className="text-sm font-medium text-red-600">
+									{t("opportunities.noSpotsLeft")}
 								</p>
 							)}
-					</div>
-				)}
+							{/* The deadline is the panel's "When" fact two rows up now,
+							so repeating it under the button would be the same sentence
+							twice inside one card (#2330). */}
+							<Button
+								onClick={() => {
+									setPreselectedSlotId(undefined);
+									setShowSignUp(true);
+								}}
+								disabled={isFull}
+								fullWidth
+								size="lg"
+							>
+								{opp.participationType === "ScheduledSlots"
+									? t("opportunities.joinWaitlist")
+									: t("opportunities.expressInterest")}
+							</Button>
+						</div>
+					)}
 
-				{showLoginPrompt && (
-					<div
-						data-testid={`login-prompt${testIdSuffix}`}
-						className={`space-y-3 ${cardClass} sm:p-5`}
-					>
-						<p className="text-sm text-gray-600">
-							{t("opportunities.loginPrompt")}
-						</p>
-						<Button
-							onClick={() =>
-								auth.signinRedirect(
-									signinLocaleArgs(location.pathname + location.search),
-								)
-							}
-							data-testid={`opportunity-signin${testIdSuffix}`}
-							fullWidth
-							size="lg"
-						>
-							{t("nav.signIn")}
-						</Button>
-					</div>
-				)}
+					{showLoginPrompt && (
+						<div data-testid="login-prompt" className="space-y-3">
+							<p className="text-sm text-gray-600">
+								{t("opportunities.loginPrompt")}
+							</p>
+							<Button
+								onClick={() =>
+									auth.signinRedirect(
+										signinLocaleArgs(location.pathname + location.search),
+									)
+								}
+								data-testid="opportunity-signin"
+								fullWidth
+								size="lg"
+							>
+								{t("nav.signIn")}
+							</Button>
+						</div>
+					)}
+				</OpportunityActionPanel>
 			</>
 		);
 	}
@@ -807,349 +852,191 @@ export default function VolunteerOpportunityDetailPage() {
 			</PageHeaderBand>
 
 			<div data-content-wrapper className="mx-auto max-w-6xl">
-				<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
-					<aside className="hidden lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
-						<div className="space-y-6">{renderActionRail("", opportunity)}</div>
+				{/* Three grid items rather than two. The action panel is placed between
+				the opportunity's identity (banner, chips) and its detail sections, so on
+				a phone the one thing a visitor came to do is reachable without scrolling
+				past five sections - and it stays a single rendered rail instead of the
+				duplicated desktop/mobile copies it used to be, which had every control
+				in it twice in the DOM. It spans both content rows so `sticky` has room
+				to travel: an item sized to its own single-row area never sticks. */}
+				<div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+					<div
+						className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1"
+						data-testid="opportunity-identity"
+					>
+						{opportunity.bannerImageUrl && (
+							// Inside the content column, not above the whole grid: a
+							// full-container banner over a 792px column left a visible
+							// step in the page's right edge. One aspect ratio at every
+							// width, rather than a fixed height per breakpoint, so a
+							// banner cropped to fit on desktop survives on a phone
+							// too (#2330).
+							<img
+								src={opportunity.bannerImageUrl}
+								alt=""
+								width={1200}
+								height={480}
+								className="aspect-5/2 w-full rounded-card object-cover shadow-resting"
+							/>
+						)}
+
+						{/* The owner's draft controls, and nothing else. Add-to-calendar
+						moved into the action panel, where it belongs next to the date it
+						saves, and Report to the page footer: a rare moderation action does
+						not deserve the same weight at the top of the page as the schedule
+						(#2330). Every control still keeps its label at every width. */}
+						{hasOwnerToolbar && (
+							<div
+								className="flex flex-wrap items-center gap-2"
+								data-testid="opportunity-detail-actions"
+							>
+								<Chip
+									tone="warning"
+									size="sm"
+									data-testid="opportunity-detail-draft-badge"
+								>
+									{t("opportunities.draftBadge")}
+								</Chip>
+
+								<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setShowEditModal(true)}
+										data-testid="opportunity-detail-edit"
+									>
+										{t("opportunities.edit")}
+									</Button>
+									<Button
+										type="button"
+										size="sm"
+										onClick={() => void handlePublish()}
+										disabled={publishing}
+										data-testid="opportunity-detail-publish"
+									>
+										{publishing
+											? t("opportunities.publishing")
+											: t("opportunities.publish")}
+									</Button>
+								</div>
+							</div>
+						)}
+
+						{/* Taxonomy only. Capacity moved to the panel's status strip and
+						the posted date to the page footer: the row used to mix pills,
+						coloured bare text and grey bare text from three unrelated kinds of
+						information into one line (#2330). */}
+						<div className="flex flex-wrap items-center gap-2">
+							{opportunity.category && (
+								<Chip tone="brand">
+									{t(`opportunities.category.${opportunity.category}`)}
+								</Chip>
+							)}
+
+							{/* Default size, like the category and tag chips either side of it:
+							`size="sm"` made this one pill 4px shorter and 8px tighter than its
+							visually identical neighbours on the same row, at the same font
+							size (#2329 F9). */}
+							<Chip tone="neutral" data-testid="opportunity-occurrence">
+								{formatOccurrence(opportunity.occurrence, t)}
+							</Chip>
+							{opportunity.tags?.map((tag) => (
+								<Chip
+									key={tag}
+									tone="neutral"
+									to={`/opportunities?tag=${encodeURIComponent(tag)}`}
+									aria-label={t("opportunities.filterByTag", { tag })}
+								>
+									{tag}
+								</Chip>
+							))}
+						</div>
+					</div>
+
+					<aside
+						aria-label={t("opportunities.actionPanelLabel")}
+						className="space-y-6 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1"
+					>
+						{renderActionColumn(opportunity)}
 					</aside>
 
-					<div className="min-w-0 lg:col-start-1 lg:row-start-1">
-						<div>
-							{opportunity.bannerImageUrl && (
-								// Inside the content column, not above the whole grid: a
-								// full-container banner over a 792px column left a visible
-								// step in the page's right edge. One aspect ratio at every
-								// width, rather than a fixed height per breakpoint, so a
-								// banner cropped to fit on desktop survives on a phone
-								// too (#2330).
-								<img
-									src={opportunity.bannerImageUrl}
-									alt=""
-									width={1200}
-									height={480}
-									className="mb-6 aspect-5/2 w-full rounded-card object-cover shadow-resting"
-								/>
-							)}
-
-							{/* One toolbar for everything a visitor can do with the page
-							itself. It used to hold the report button alone with its label
-							hidden below sm:, which left a bare flag pill in an otherwise
-							empty row on phones; every control keeps its label at every
-							width now and the row wraps instead (#2330). */}
-							{hasActionRow && (
-								<div
-									className="mb-4 flex flex-wrap items-center gap-2"
-									data-testid="opportunity-detail-actions"
-								>
-									{isDraft && isOwner && (
-										<div className="flex min-w-0 items-center gap-2">
-											<Chip
-												tone="warning"
-												size="sm"
-												data-testid="opportunity-detail-draft-badge"
-											>
-												{t("opportunities.draftBadge")}
-											</Chip>
-										</div>
-									)}
-
-									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-										{canSaveDate && nextUpcomingSlot && (
-											<AddToCalendarMenu
-												icsUid={`opportunity-${opportunity.id}-slot-${nextUpcomingSlot.id}@einsatzbereit`}
-												title={headerTitle.text}
-												{...(headerLead
-													? { description: headerLead.text }
-													: {})}
-												{...(address ? { location: address } : {})}
-												url={canonicalUrl}
-												start={
-													nextUpcomingSlot.startDateTime as unknown as string
-												}
-												end={nextUpcomingSlot.endDateTime as unknown as string}
-											/>
-										)}
-										{!isOwner && (
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													isAuthenticated
-														? setShowReport(true)
-														: void auth.signinRedirect(
-																reportIntentSigninArgs(
-																	location.pathname,
-																	location.search,
-																	opportunity.id,
-																),
-															)
-												}
-												data-testid="report-opportunity"
-												title={t("opportunities.report")}
-												aria-label={t("opportunities.reportOpportunity")}
-											>
-												<FlagIcon className="h-4 w-4" />
-												<span>{t("opportunities.report")}</span>
-											</Button>
-										)}
-										{isDraft && isOwner && (
-											<>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => setShowEditModal(true)}
-													data-testid="opportunity-detail-edit"
-												>
-													{t("opportunities.edit")}
-												</Button>
-												<Button
-													type="button"
-													size="sm"
-													onClick={() => void handlePublish()}
-													disabled={publishing}
-													data-testid="opportunity-detail-publish"
-												>
-													{publishing
-														? t("opportunities.publishing")
-														: t("opportunities.publish")}
-												</Button>
-											</>
-										)}
-									</div>
-								</div>
-							)}
-
-							<dl
-								className="mb-5 grid gap-5 rounded-card bg-brand-50 p-5 sm:grid-cols-3 sm:p-6"
-								data-testid="opportunity-at-a-glance"
+					<div className="min-w-0 space-y-14 lg:col-start-1 lg:row-start-2">
+						{showDescriptionSection && (
+							<DetailSection
+								title={t("opportunities.aboutOpportunity")}
+								data-testid="opportunity-description"
 							>
-								<div>
-									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
-										<CalendarIcon className="h-4 w-4 shrink-0" />
-										{t("opportunities.factWhen")}
-									</dt>
-									<dd
-										className="mt-2 text-sm font-medium text-gray-900"
-										data-testid="opportunity-detail-when"
-									>
-										{describeWhenFact(opportunity, t, i18n.language)}
-									</dd>
-								</div>
-
-								<div>
-									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
-										<UserGroupIcon className="h-4 w-4 shrink-0" />
-										{t("opportunities.factFormat")}
-									</dt>
-									<dd
-										className="mt-2 text-sm font-medium text-gray-900"
-										data-testid="opportunity-detail-how"
-									>
-										{describeHowFact(opportunity, upcomingTimeSlots.length, t)}
-									</dd>
-								</div>
-
-								<div>
-									<dt className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-700 uppercase">
-										{opportunity.isRemote ? (
-											<GlobeIcon className="h-4 w-4 shrink-0" />
-										) : (
-											<MapPinIcon className="h-4 w-4 shrink-0" />
-										)}
-										{t("opportunities.factWhere")}
-									</dt>
-									<dd
-										className="mt-2 text-sm font-medium text-gray-900"
-										data-testid="opportunity-detail-where"
-									>
-										{locationSummary}
-									</dd>
-								</div>
-							</dl>
-
-							<div className="mb-6 flex flex-wrap items-center gap-2">
-								{opportunity.category && (
-									<Chip tone="brand">
-										{t(`opportunities.category.${opportunity.category}`)}
-									</Chip>
-								)}
-
-								{/* Default size, like the category and tag chips either side of it:
-								`size="sm"` made this one pill 4px shorter and 8px tighter than its
-								visually identical neighbours on the same row, at the same font
-								size (#2329 F9). */}
-								<Chip tone="neutral" data-testid="opportunity-occurrence">
-									{formatOccurrence(opportunity.occurrence, t)}
-								</Chip>
-								{opportunity.tags?.map((tag) => (
-									<Chip
-										key={tag}
-										tone="neutral"
-										to={`/opportunities?tag=${encodeURIComponent(tag)}`}
-										aria-label={t("opportunities.filterByTag", { tag })}
-									>
-										{tag}
-									</Chip>
-								))}
-
-								<span
-									data-testid="opportunity-capacity"
-									className={`text-sm font-medium ${capacityTone}`}
+								{/* Organizers compose this in a multi-line textarea and the
+								API stores the newlines verbatim, so `pre-line` is what
+								keeps their paragraphs and hyphen bullets from collapsing
+								into one run-on block (#2330). */}
+								<p
+									lang={description?.lang}
+									className="max-w-prose leading-relaxed whitespace-pre-line text-gray-700"
 								>
-									{capacityLabel}
-								</span>
-
-								{capacitySecondaryLabel && (
-									<span
-										data-testid="opportunity-capacity-secondary"
-										className="text-sm text-gray-600"
-									>
-										{capacitySecondaryLabel}
-									</span>
-								)}
-								<span
-									className="text-xs text-gray-500"
-									title={postedOnAbsolute}
-									aria-label={`${postedOnRelative} (${postedOnAbsolute})`}
-								>
-									{postedOnRelative}
-								</span>
-							</div>
-
-							{hasActionRail && (
-								<div
-									className="mb-6 space-y-6 lg:hidden"
-									data-testid="opportunity-action-rail-mobile"
-								>
-									{renderActionRail("-mobile", opportunity)}
-								</div>
-							)}
-
-							{showDescriptionSection && (
-								<div className="mb-6" data-testid="opportunity-description">
-									<SectionHeading>
-										{t("opportunities.aboutOpportunity")}
-									</SectionHeading>
-									{/* Organizers compose this in a multi-line textarea and the
-									API stores the newlines verbatim, so `pre-line` is what
-									keeps their paragraphs and hyphen bullets from collapsing
-									into one run-on block (#2330). */}
-									<p
-										lang={description?.lang}
-										className="max-w-prose leading-relaxed whitespace-pre-line text-gray-700"
-									>
-										{descriptionText}
-									</p>
-								</div>
-							)}
-
-							{!opportunity.isRemote && (
-								<div className="mb-6" data-testid="opportunity-location">
-									<SectionHeading>
-										{t("opportunities.locationHeading")}
-									</SectionHeading>
-
-									{/* The street address is stated here and nowhere else: the
-									at-a-glance band above names the town only, so a page
-									without coordinates no longer prints the same line three
-									times on one screen (#2330). */}
-									{opportunity.latitude != null &&
-									opportunity.longitude != null ? (
-										<div
-											className="overflow-hidden rounded-card border border-gray-100 shadow-resting"
-											data-testid="opportunity-map"
-										>
-											<Suspense fallback={<Skeleton className="h-64 w-full" />}>
-												<SingleMarkerMap
-													latitude={opportunity.latitude}
-													longitude={opportunity.longitude}
-													label={address}
-												/>
-											</Suspense>
-										</div>
-									) : null}
-
-									<div
-										className={`flex items-center gap-3 ${hasMap ? "mt-3" : ""} ${cardClass}`}
-										data-testid="opportunity-address"
-									>
-										<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
-										<span className="text-sm font-medium text-gray-900">
-											{address}
-										</span>
-									</div>
-
-									<a
-										href={directionsUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										data-testid="opportunity-directions-link"
-										className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-									>
-										<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
-										{t("opportunities.getDirections")}
-									</a>
-								</div>
-							)}
-						</div>
+									{descriptionText}
+								</p>
+							</DetailSection>
+						)}
 
 						{opportunity.participationType === "ScheduledSlots" &&
 							(upcomingTimeSlots.length > 0 || pastTimeSlots.length > 0) && (
-								<div className="mb-6" data-testid="opportunity-time-slots">
+								<DetailSection
+									{...(upcomingTimeSlots.length > 0
+										? { title: t("opportunities.availableTimeSlots") }
+										: {})}
+									data-testid="opportunity-time-slots"
+								>
 									{upcomingTimeSlots.length > 0 && (
-										<>
-											<SectionHeading>
-												{t("opportunities.availableTimeSlots")}
-											</SectionHeading>
-											<ul className="space-y-2">
-												{upcomingTimeSlots.map((ts) => {
-													const clickable =
-														canInteract &&
-														!engagementsBySlot.has(ts.id) &&
-														!isSlotFull(ts.maxParticipants, ts.bookedCount);
-													const rowContent = (
-														<>
-															<span>
-																{formatDateTimeRange(
-																	ts.startDateTime as unknown as string,
-																	ts.endDateTime as unknown as string,
-																	i18n.language,
-																)}
-															</span>
-
-															<span className="flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
-																{slotCapacityLabel(ts, t)}
-																{clickable && (
-																	<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
-																)}
-															</span>
-														</>
-													);
-													return (
-														<li key={ts.id}>
-															{clickable ? (
-																<button
-																	type="button"
-																	onClick={() => {
-																		setPreselectedSlotId(ts.id);
-																		setShowSignUp(true);
-																	}}
-																	data-testid="opportunity-time-slot-row"
-																	className={`${SLOT_ROW_CLASS} w-full ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
-																>
-																	{rowContent}
-																</button>
-															) : (
-																<div
-																	className={`${SLOT_ROW_CLASS} ${cardClass} text-sm text-gray-700`}
-																>
-																	{rowContent}
-																</div>
+										<ul className="space-y-2">
+											{upcomingTimeSlots.map((ts) => {
+												const clickable =
+													canInteract &&
+													!engagementsBySlot.has(ts.id) &&
+													!isSlotFull(ts.maxParticipants, ts.bookedCount);
+												const rowContent = (
+													<>
+														<span>
+															{formatDateTimeRange(
+																ts.startDateTime as unknown as string,
+																ts.endDateTime as unknown as string,
+																i18n.language,
 															)}
-														</li>
-													);
-												})}
-											</ul>
-										</>
+														</span>
+
+														<span className="flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
+															{slotCapacityLabel(ts, t)}
+															{clickable && (
+																<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
+															)}
+														</span>
+													</>
+												);
+												return (
+													<li key={ts.id}>
+														{clickable ? (
+															<button
+																type="button"
+																onClick={() => {
+																	setPreselectedSlotId(ts.id);
+																	setShowSignUp(true);
+																}}
+																data-testid="opportunity-time-slot-row"
+																className={`${SLOT_ROW_CLASS} w-full ${cardClass} text-left text-sm text-gray-700 transition-shadow hover:shadow-raised`}
+															>
+																{rowContent}
+															</button>
+														) : (
+															<div
+																className={`${SLOT_ROW_CLASS} ${cardClass} text-sm text-gray-700`}
+															>
+																{rowContent}
+															</div>
+														)}
+													</li>
+												);
+											})}
+										</ul>
 									)}
 
 									{pastTimeSlots.length > 0 && (
@@ -1191,34 +1078,96 @@ export default function VolunteerOpportunityDetailPage() {
 											</ul>
 										</details>
 									)}
-								</div>
+								</DetailSection>
 							)}
-						<div>
-							{orgProfileError && !orgProfile && (
-								<div className="mb-6" data-testid="about-organization">
-									<SectionHeading>
-										{t("opportunities.aboutOrganization")}
-									</SectionHeading>
-									<LoadMoreError
-										message={orgProfileError}
-										retrying={retryingOrgProfile}
-										onRetry={retryLoadOrgProfile}
-									/>
+
+						{!opportunity.isRemote && (
+							<DetailSection
+								title={t("opportunities.locationHeading")}
+								data-testid="opportunity-location"
+							>
+								{/* Map, address and route in one card rather than three stacked
+								blocks. The street address is stated here and nowhere else: the
+								panel's "Where" fact names the town only, so a page without
+								coordinates no longer prints the same line three times on one
+								screen (#2330). */}
+								<div className="overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting">
+									{/* Narrowed on the two fields rather than on the derived
+									`hasMap`: a boolean tells TypeScript nothing, and buying
+									it back with a pair of `as number` casts trades a
+									compile-time guarantee for nothing. */}
+									{opportunity.latitude != null &&
+									opportunity.longitude != null ? (
+										<div data-testid="opportunity-map">
+											<Suspense fallback={<Skeleton className="h-64 w-full" />}>
+												<SingleMarkerMap
+													latitude={opportunity.latitude}
+													longitude={opportunity.longitude}
+													label={address}
+												/>
+											</Suspense>
+										</div>
+									) : null}
+
+									<div
+										className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-2 p-4 ${hasMap ? "border-t border-gray-100" : ""}`}
+									>
+										<p
+											className="flex items-center gap-3 text-sm font-medium text-gray-900"
+											data-testid="opportunity-address"
+										>
+											<MapPinIcon className="h-4 w-4 shrink-0 text-brand-700" />
+											{address}
+										</p>
+
+										<a
+											href={directionsUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											data-testid="opportunity-directions-link"
+											className="inline-flex min-h-6 items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+										>
+											<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+											{t("opportunities.getDirections")}
+										</a>
+									</div>
 								</div>
-							)}
-							{orgProfile &&
-								(orgProfile.description ||
-									orgProfile.contactEmail ||
-									orgProfile.contactPhone ||
-									orgProfile.website ||
-									orgProfile.address) && (
-									<div className="mb-6" data-testid="about-organization">
-										<SectionHeading>
-											{t("opportunities.aboutOrganization")}
-										</SectionHeading>
+							</DetailSection>
+						)}
+
+						{orgProfileError && !orgProfile && (
+							<DetailSection
+								title={t("opportunities.aboutOrganization")}
+								data-testid="about-organization"
+							>
+								<LoadMoreError
+									message={orgProfileError}
+									retrying={retryingOrgProfile}
+									onRetry={retryLoadOrgProfile}
+								/>
+							</DetailSection>
+						)}
+
+						{orgProfile &&
+							(orgProfile.description ||
+								orgProfile.contactEmail ||
+								orgProfile.contactPhone ||
+								orgProfile.website ||
+								orgProfile.address) && (
+								<DetailSection
+									title={t("opportunities.aboutOrganization")}
+									data-testid="about-organization"
+								>
+									{/* One card for the organizer, not a paragraph plus a
+									floating contact box: who they are, how to reach them and
+									where to read more are one answer (#2330). */}
+									<div className={`${cardClass} sm:p-5`}>
 										{orgProfile.description && (
-											<div className="mb-3">
-												<p lang="de" className="leading-relaxed text-gray-600">
+											<div className="mb-4">
+												<p
+													lang="de"
+													className="max-w-prose leading-relaxed text-gray-600"
+												>
 													{orgProfile.description}
 												</p>
 												{/* No descriptionEn exists for an organization,
@@ -1232,19 +1181,21 @@ export default function VolunteerOpportunityDetailPage() {
 												)}
 											</div>
 										)}
+
 										{(orgProfile.contactEmail ||
 											orgProfile.contactPhone ||
 											orgProfile.website ||
 											orgProfile.address) && (
-											<div
-												className={`max-w-md space-y-2.5 ${cardClass} text-sm text-gray-700`}
-											>
+											// Two columns from sm: up - four contact rows stacked
+											// single-file made the organizer block as tall as the
+											// schedule a visitor came for.
+											<div className="grid gap-2.5 text-sm text-gray-700 sm:grid-cols-2">
 												{orgProfile.contactEmail && (
 													<div className="flex items-center gap-3">
 														<EnvelopeIcon className="h-4 w-4 shrink-0 text-brand-700" />
 														<a
 															href={`mailto:${orgProfile.contactEmail}`}
-															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+															className="min-h-6 break-all text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 														>
 															{orgProfile.contactEmail}
 														</a>
@@ -1255,7 +1206,7 @@ export default function VolunteerOpportunityDetailPage() {
 														<PhoneIcon className="h-4 w-4 shrink-0 text-brand-700" />
 														<a
 															href={`tel:${orgProfile.contactPhone}`}
-															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+															className="min-h-6 text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 														>
 															{orgProfile.contactPhone}
 														</a>
@@ -1268,7 +1219,7 @@ export default function VolunteerOpportunityDetailPage() {
 															href={orgProfile.website}
 															target="_blank"
 															rel="noopener noreferrer"
-															className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+															className="min-h-6 break-all text-brand-700 transition-colors hover:text-brand-800 hover:underline"
 														>
 															{orgProfile.website}
 														</a>
@@ -1287,24 +1238,71 @@ export default function VolunteerOpportunityDetailPage() {
 												)}
 											</div>
 										)}
-									</div>
-								)}
 
-							{otherOrgOpportunities.length > 0 && (
-								<div className="mb-6" data-testid="more-from-organization">
-									<SectionHeading>
-										{t("opportunities.moreFromOrganization")}
-									</SectionHeading>
-									<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-										{otherOrgOpportunities.map((opp) => (
-											<OpportunityCard
-												key={opp.id}
-												item={opp}
-												headingLevel={3}
-											/>
-										))}
-									</ul>
-								</div>
+										<Link
+											to={`/organizations/${opportunity.organizationId}`}
+											className="mt-4 inline-flex min-h-6 items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+										>
+											{t("opportunities.viewOrganizationProfile")}
+											<ChevronRightIcon className="h-3.5 w-3.5" />
+										</Link>
+									</div>
+								</DetailSection>
+							)}
+
+						{otherOrgOpportunities.length > 0 && (
+							<DetailSection
+								title={t("opportunities.moreFromOrganization")}
+								data-testid="more-from-organization"
+							>
+								<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+									{otherOrgOpportunities.map((opp) => (
+										<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
+									))}
+								</ul>
+							</DetailSection>
+						)}
+
+						{/* Page metadata and the one action aimed at the page rather than
+						the opportunity. Report sat in the top toolbar with the weight of a
+						primary control; it is a rare moderation action, so it belongs where
+						every comparable listing site puts it - at the foot, quiet, still
+						labelled and still a 24px target (#2330). */}
+						<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-gray-200 pt-6">
+							{/* An `aria-label` here would be dropped on the floor: it is
+							prohibited on a role-less <span>, so the absolute timestamp
+							never reached a screen reader - and nothing catches that,
+							since axe reports `aria-prohibited-attr` as inconclusive once
+							the element has text of its own. An sr-only sibling delivers
+							it for real; `title` stays the mouse-only bonus it always
+							was. */}
+							<span className="text-xs text-gray-500" title={postedOnAbsolute}>
+								{postedOnRelative}
+								<span className="sr-only"> ({postedOnAbsolute})</span>
+							</span>
+
+							{!isOwner && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() =>
+										isAuthenticated
+											? setShowReport(true)
+											: void auth.signinRedirect(
+													reportIntentSigninArgs(
+														location.pathname,
+														location.search,
+														opportunity.id,
+													),
+												)
+									}
+									data-testid="report-opportunity"
+									title={t("opportunities.report")}
+									aria-label={t("opportunities.reportOpportunity")}
+								>
+									<FlagIcon className="h-4 w-4" />
+									<span>{t("opportunities.report")}</span>
+								</Button>
 							)}
 						</div>
 					</div>
