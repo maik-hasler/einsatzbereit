@@ -86,6 +86,7 @@ export default function DatePicker({
 		setOpen(false),
 	);
 	const gridRef = useRef<HTMLDivElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
 	const shouldMoveDomFocusRef = useRef(false);
 	const panelId = `${id}-panel`;
 	const monthLabelId = useId();
@@ -107,13 +108,18 @@ export default function DatePicker({
 	// Re-centers the grid on the current value every time the popover opens,
 	// rather than reacting to `selected` while it stays open - `commit` closes
 	// the popover in the same tick a day is picked, so there is nothing for
-	// this to fight there.
+	// this to fight there. Also moves real DOM focus onto that day (not just
+	// `aria-activedescendant`, since the grid is a roving-tabindex widget like
+	// `MiniCalendar`) - opening with the keyboard used to leave focus behind on
+	// the trigger, so arrow keys did nothing until the user tabbed past both
+	// month-nav buttons first.
 	useEffect(() => {
 		if (!open) return;
 		const base = selected ?? new Date();
 		setCalYear(base.getFullYear());
 		setCalMonth(base.getMonth());
 		setFocusedDate(base);
+		shouldMoveDomFocusRef.current = true;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open]);
 
@@ -156,6 +162,11 @@ export default function DatePicker({
 		if (isOutOfRange(day)) return;
 		onChange(toIsoDate(day));
 		setOpen(false);
+		// The clicked/activated day button unmounts with the popover, which
+		// would otherwise drop focus to <body> with no visible indication of
+		// where it went. `useDismissableOverlay` only restores focus on the
+		// Escape/outside-click path, not this one.
+		triggerRef.current?.focus();
 	}
 
 	function prevMonth() {
@@ -212,6 +223,7 @@ export default function DatePicker({
 			<button
 				type="button"
 				id={id}
+				ref={triggerRef}
 				data-testid={`${id}-trigger`}
 				disabled={disabled}
 				role="combobox"
@@ -236,14 +248,19 @@ export default function DatePicker({
 			<span className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-1">
 				{displayValue && !disabled && (
 					// A native date input keeps a hover-revealed clear affordance -
-					// losing it entirely here would be a regression, not just a re-skin.
+					// losing it entirely here would be a regression, not just a
+					// re-skin. `p-1` around a 16px icon is the same 24x24 recipe the
+					// month-nav buttons below use (WCAG 2.5.8's target-size floor);
+					// `text-gray-600` clears the 3:1 non-text contrast floor that
+					// `text-gray-400` (2.6:1) does not, same as `LocationSearchInput`'s
+					// equivalent clear button.
 					<button
 						type="button"
 						aria-label={t("datePicker.clear")}
 						onClick={() => onChange("")}
-						className="pointer-events-auto rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+						className="pointer-events-auto rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 					>
-						<CloseIcon className="h-3.5 w-3.5" />
+						<CloseIcon className="h-4 w-4" />
 					</button>
 				)}
 				<CalendarIcon className="h-4 w-4 text-gray-400" />

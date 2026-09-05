@@ -11,6 +11,7 @@ describe("DateTimePicker", () => {
 		renderWithProviders(
 			<DateTimePicker
 				id="slot-start"
+				label="Start"
 				value="2026-03-15T09:30"
 				onChange={onChange}
 			/>,
@@ -28,6 +29,7 @@ describe("DateTimePicker", () => {
 		renderWithProviders(
 			<DateTimePicker
 				id="slot-start"
+				label="Start"
 				value="2026-03-15T09:30"
 				onChange={onChange}
 			/>,
@@ -39,9 +41,36 @@ describe("DateTimePicker", () => {
 		expect(onChange).toHaveBeenCalledWith("2026-03-15T10:15");
 	});
 
+	it("names each time field by its own label when two render side by side", () => {
+		renderWithProviders(
+			<div>
+				<DateTimePicker
+					id="slot-start"
+					label="Start"
+					value="2026-03-15T09:30"
+					onChange={() => {}}
+				/>
+				<DateTimePicker
+					id="slot-end"
+					label="End"
+					value="2026-03-15T12:00"
+					onChange={() => {}}
+				/>
+			</div>,
+		);
+
+		expect(screen.getByLabelText("Start Time")).toHaveValue("09:30");
+		expect(screen.getByLabelText("End Time")).toHaveValue("12:00");
+	});
+
 	it("disables the time field until a date is chosen", () => {
 		renderWithProviders(
-			<DateTimePicker id="slot-start" value="" onChange={() => {}} />,
+			<DateTimePicker
+				id="slot-start"
+				label="Start"
+				value=""
+				onChange={() => {}}
+			/>,
 		);
 		expect(screen.getByLabelText(/time/i)).toBeDisabled();
 	});
@@ -50,7 +79,12 @@ describe("DateTimePicker", () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
 		renderWithProviders(
-			<DateTimePicker id="slot-start" value="" onChange={onChange} />,
+			<DateTimePicker
+				id="slot-start"
+				label="Start"
+				value=""
+				onChange={onChange}
+			/>,
 		);
 
 		await user.click(screen.getByTestId("slot-start-trigger"));

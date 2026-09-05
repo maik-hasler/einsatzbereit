@@ -10,6 +10,7 @@ describe("DateTimePicker a11y", () => {
 				<label htmlFor="slot-start">Start</label>
 				<DateTimePicker
 					id="slot-start"
+					label="Start"
 					value="2026-03-15T09:30"
 					onChange={() => {}}
 				/>
@@ -22,7 +23,12 @@ describe("DateTimePicker a11y", () => {
 		renderWithProviders(
 			<div>
 				<label htmlFor="slot-start">Start</label>
-				<DateTimePicker id="slot-start" value="" onChange={() => {}} />
+				<DateTimePicker
+					id="slot-start"
+					label="Start"
+					value=""
+					onChange={() => {}}
+				/>
 			</div>,
 		);
 		await expectNoA11yViolations();

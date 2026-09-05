@@ -9,6 +9,15 @@ export interface DateTimePickerProps {
 	onChange: (value: string) => void;
 	/** Only the date part is enforced - the calendar day, not the exact minute. */
 	min?: string;
+	/**
+	 * The field's own visible label ("Start", "End") - composed into the time
+	 * input's accessible name ("Start Time") instead of every instance sharing
+	 * the bare, generic "Time". Two of these render side by side wherever a
+	 * time slot is edited, and a flat "Time" name gave a screen-reader user no
+	 * way to tell them apart without also having just heard the date field
+	 * immediately before it.
+	 */
+	label: string;
 	"aria-invalid"?: boolean;
 	"aria-describedby"?: string;
 }
@@ -30,6 +39,7 @@ export default function DateTimePicker({
 	value,
 	onChange,
 	min,
+	label,
 	"aria-invalid": ariaInvalid,
 	"aria-describedby": ariaDescribedBy,
 }: DateTimePickerProps) {
@@ -60,7 +70,7 @@ export default function DateTimePicker({
 			/>
 			<input
 				type="time"
-				aria-label={t("datePicker.time")}
+				aria-label={`${label} ${t("datePicker.time")}`}
 				value={time}
 				disabled={!date}
 				onChange={(e) => handleTimeChange(e.target.value)}

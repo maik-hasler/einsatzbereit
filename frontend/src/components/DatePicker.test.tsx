@@ -91,4 +91,32 @@ describe("DatePicker", () => {
 		await user.keyboard("{Escape}");
 		expect(screen.queryByRole("grid")).not.toBeInTheDocument();
 	});
+
+	it("moves focus into the grid when opened from the keyboard", async () => {
+		const user = userEvent.setup();
+		renderWithProviders(
+			<DatePicker id="d" value="2026-03-15" onChange={() => {}} />,
+		);
+
+		screen.getByTestId("d-trigger").focus();
+		await user.keyboard("{Enter}");
+
+		const grid = screen.getByRole("grid");
+		expect(document.activeElement).toBe(
+			grid.querySelector('[data-date="2026-03-15"]'),
+		);
+	});
+
+	it("returns focus to the trigger after a day is picked", async () => {
+		const user = userEvent.setup();
+		renderWithProviders(
+			<DatePicker id="d" value="2026-03-15" onChange={() => {}} />,
+		);
+
+		await user.click(screen.getByTestId("d-trigger"));
+		const grid = screen.getByRole("grid");
+		await user.click(within(grid).getByText("20"));
+
+		expect(document.activeElement).toBe(screen.getByTestId("d-trigger"));
+	});
 });

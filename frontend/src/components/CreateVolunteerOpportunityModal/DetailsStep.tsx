@@ -310,6 +310,7 @@ export default function DetailsStep({
 														</label>
 														<DateTimePicker
 															id={`edit-slot-start-${slot.id}`}
+															label={t("timeSlots.fieldStart")}
 															value={editingSlot.startDateTime}
 															onChange={(value) =>
 																onEditingSlotChange({
@@ -328,6 +329,7 @@ export default function DetailsStep({
 														</label>
 														<DateTimePicker
 															id={`edit-slot-end-${slot.id}`}
+															label={t("timeSlots.fieldEnd")}
 															value={editingSlot.endDateTime}
 															onChange={(value) =>
 																onEditingSlotChange({
@@ -496,6 +498,7 @@ export default function DetailsStep({
 								</label>
 								<DateTimePicker
 									id="slot-start"
+									label={t("timeSlots.fieldStart")}
 									value={newSlot.startDateTime}
 									min={toZonedDatetimeLocalValue(
 										new Date(),
@@ -524,6 +527,7 @@ export default function DetailsStep({
 								</label>
 								<DateTimePicker
 									id="slot-end"
+									label={t("timeSlots.fieldEnd")}
 									value={newSlot.endDateTime}
 									onChange={(value) =>
 										onNewSlotChange({
