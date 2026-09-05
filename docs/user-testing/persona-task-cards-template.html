@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Einsatzbereit - Persona- und Aufgabenkarten (Vorlage)</title>
+	<style>
+		/* ------------------------------------------------------------------
+			Design tokens - taken from frontend/src/styles/global.css so the
+			printed cards read as part of Einsatzbereit.
+		------------------------------------------------------------------ */
+		:root {
+			--brand-50: #f0faf5;
+			--brand-100: #d6f0e3;
+			--brand-200: #a8dfc3;
+			--brand-700: #226947;
+			--brand-800: #1a3c2b;
+			--accent-400: #f0b23a;
+			--ink: #16211c;
+			--ink-muted: #5b6a62;
+			--rule: #c9d2cc;
+			--rule-soft: #e3e8e5;
+
+			--page-w: 210mm;
+			--page-h: 297mm;
+			--page-pad: 14mm;
+		}
+
+		* { box-sizing: border-box; }
+
+		html { -webkit-text-size-adjust: 100%; }
+
+		body {
+			margin: 0;
+			color: var(--ink);
+			font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+			font-size: 10.5pt;
+			line-height: 1.45;
+		}
+
+		/* ------------------------------------------------------------------
+			Page frame - one card per A4 sheet, no exceptions.
+		------------------------------------------------------------------ */
+		@page { size: A4; margin: 0; }
+
+		.page {
+			width: var(--page-w);
+			height: var(--page-h);
+			padding: var(--page-pad);
+			background: #fff;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		@media screen {
+			body { background: #e9ebea; padding: 28px 16px; }
+			.page {
+				margin: 0 auto 28px;
+				box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(0, 0, 0, .14);
+				border-radius: 2px;
+			}
+		}
+
+		@media print {
+			body { background: #fff; padding: 0; }
+			.page { margin: 0; box-shadow: none; border-radius: 0; break-after: page; }
+			.page:last-of-type { break-after: auto; }
+			.no-print { display: none !important; }
+			.card-head, .chip, .task-band, .scale span, .rating b {
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+		}
+
+		/* ------------------------------------------------------------------
+			Shared card chrome
+		------------------------------------------------------------------ */
+		.card-head {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 8mm;
+			background: var(--brand-700);
+			color: #fff;
+			margin: calc(var(--page-pad) * -1) calc(var(--page-pad) * -1) 8mm;
+			padding: 5mm var(--page-pad);
+		}
+
+		.card-head .kind {
+			font-size: 13pt;
+			font-weight: 700;
+			letter-spacing: .16em;
+			text-transform: uppercase;
+		}
+
+		.card-head .meta {
+			font-size: 9pt;
+			letter-spacing: .06em;
+			color: var(--brand-200);
+			text-transform: uppercase;
+		}
+
+		h2 {
+			margin: 0 0 2mm;
+			font-size: 9pt;
+			font-weight: 700;
+			letter-spacing: .12em;
+			text-transform: uppercase;
+			color: var(--brand-700);
+		}
+
+		.box {
+			border: .4mm solid var(--rule);
+			border-radius: 1.5mm;
+			padding: 4mm;
+		}
+
+		/* Grey italics = instructions for whoever fills the template in.
+			Delete every .hint before you print for participants. */
+		.hint {
+			color: var(--ink-muted);
+			font-style: italic;
+			font-size: 8.5pt;
+			line-height: 1.35;
+		}
+
+		.fill { color: #8d9a93; }
+
+		/* Ruled space for handwriting. */
+		.lines > i {
+			display: block;
+			border-bottom: .3mm solid var(--rule-soft);
+			height: 7mm;
+		}
+
+		.chip {
+			display: inline-block;
+			padding: 1mm 3mm;
+			border-radius: 99px;
+			background: var(--brand-100);
+			color: var(--brand-800);
+			font-size: 8.5pt;
+			font-weight: 700;
+			letter-spacing: .06em;
+			text-transform: uppercase;
+		}
+
+		.grid-2 {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 5mm;
+		}
+
+		/* ------------------------------------------------------------------
+			Card 1 - persona (the participant's role)
+		------------------------------------------------------------------ */
+		.identity {
+			display: grid;
+			grid-template-columns: 30mm 1fr;
+			gap: 6mm;
+			align-items: center;
+			margin-bottom: 6mm;
+		}
+
+		.portrait {
+			width: 30mm;
+			height: 30mm;
+			border: .4mm dashed var(--rule);
+			border-radius: 50%;
+			display: grid;
+			place-items: center;
+			text-align: center;
+			font-size: 7.5pt;
+			color: #9aa8a1;
+			line-height: 1.2;
+		}
+
+		.identity h1 {
+			margin: 0 0 1mm;
+			font-size: 26pt;
+			line-height: 1.05;
+			letter-spacing: -.01em;
+		}
+
+		.identity .facts {
+			margin: 0 0 2mm;
+			color: var(--ink-muted);
+			font-size: 10pt;
+		}
+
+		.quote {
+			border-left: 1.5mm solid var(--accent-400);
+			padding: 1mm 0 1mm 5mm;
+			margin-bottom: 6mm;
+			font-size: 14pt;
+			line-height: 1.3;
+			font-style: italic;
+			color: var(--brand-800);
+		}
+
+		.persona-body {
+			flex: 1;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			grid-auto-rows: 1fr;
+			gap: 5mm;
+		}
+
+		.scale {
+			display: flex;
+			align-items: center;
+			gap: 2mm;
+			margin-top: 3mm;
+			font-size: 8pt;
+			color: var(--ink-muted);
+		}
+
+		.scale span {
+			width: 5mm;
+			height: 5mm;
+			border: .4mm solid var(--rule);
+			border-radius: 50%;
+		}
+
+		.setup {
+			margin-top: 5mm;
+			border-top: .4mm solid var(--rule);
+			padding-top: 3mm;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 5mm;
+			font-size: 9pt;
+		}
+
+		.setup b { display: block; color: var(--brand-700); font-size: 8.5pt; letter-spacing: .08em; text-transform: uppercase; }
+
+		/* ------------------------------------------------------------------
+			Card 2 - task (scenario above the cut, observation below)
+		------------------------------------------------------------------ */
+		.task-no {
+			font-size: 30pt;
+			font-weight: 700;
+			line-height: 1;
+			color: var(--brand-700);
+		}
+
+		.task-band {
+			background: var(--brand-50);
+			border: .4mm solid var(--brand-200);
+			border-radius: 1.5mm;
+			padding: 5mm;
+			margin: 5mm 0;
+		}
+
+		.task-band p {
+			margin: 0;
+			font-size: 15pt;
+			line-height: 1.35;
+			font-weight: 600;
+		}
+
+		.scenario p { margin: 0; font-size: 12pt; line-height: 1.45; }
+
+		.done-when { margin: 5mm 0; }
+
+		.done-when ul { margin: 0; padding: 0; list-style: none; }
+
+		.done-when li {
+			display: flex;
+			gap: 3mm;
+			align-items: flex-start;
+			margin-bottom: 2mm;
+			font-size: 11pt;
+		}
+
+		.done-when li::before {
+			content: "";
+			flex: 0 0 auto;
+			width: 4mm;
+			height: 4mm;
+			margin-top: 1mm;
+			border: .4mm solid var(--brand-700);
+			border-radius: .8mm;
+		}
+
+		.participant-note {
+			margin-top: auto;
+			padding: 3mm 0;
+			font-size: 9.5pt;
+			color: var(--ink-muted);
+		}
+
+		.cut {
+			display: flex;
+			align-items: center;
+			gap: 3mm;
+			margin: 0 0 4mm;
+			color: #9aa8a1;
+			font-size: 8pt;
+			letter-spacing: .08em;
+			text-transform: uppercase;
+		}
+
+		.cut::before, .cut::after {
+			content: "";
+			flex: 1;
+			border-top: .3mm dashed var(--rule);
+		}
+
+		.observation { font-size: 9.5pt; }
+
+		.observation .row {
+			display: flex;
+			flex-wrap: wrap;
+			white-space: nowrap;
+			gap: 3mm 6mm;
+			align-items: center;
+			margin-top: 3mm;
+		}
+
+		.tick {
+			display: inline-flex;
+			align-items: center;
+			gap: 2mm;
+		}
+
+		.tick::before {
+			content: "";
+			width: 4mm;
+			height: 4mm;
+			border: .4mm solid var(--rule);
+			border-radius: .8mm;
+		}
+
+		.rating { display: flex; gap: 1.5mm; }
+
+		.rating b {
+			width: 6mm;
+			height: 6mm;
+			display: grid;
+			place-items: center;
+			border: .4mm solid var(--rule);
+			border-radius: .8mm;
+			font-size: 8.5pt;
+			font-weight: 600;
+		}
+
+		/* ------------------------------------------------------------------
+			Screen-only briefing - never printed.
+		------------------------------------------------------------------ */
+		.brief {
+			max-width: var(--page-w);
+			margin: 0 auto 28px;
+			background: #fff;
+			border-radius: 2px;
+			padding: 24px 28px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(0, 0, 0, .14);
+			border-top: 5px solid var(--accent-400);
+		}
+
+		.brief h1 { margin: 0 0 4px; font-size: 20pt; }
+		.brief > p.lead { margin: 0 0 18px; color: var(--ink-muted); }
+		.brief h3 { margin: 18px 0 6px; font-size: 11pt; color: var(--brand-700); }
+		.brief ol, .brief ul { margin: 0; padding-left: 20px; }
+		.brief li { margin-bottom: 5px; }
+		.brief code {
+			background: var(--brand-50);
+			border: 1px solid var(--brand-100);
+			border-radius: 3px;
+			padding: 1px 5px;
+			font-size: 9.5pt;
+		}
+	</style>
+</head>
+<body>
+
+	<!-- =================================================================
+			Briefing: screen only. Explains how to use the two card types.
+	================================================================== -->
+	<section class="brief no-print">
+		<h1>Persona- und Aufgabenkarten</h1>
+		<p class="lead">Vorlage fürs Live User Testing von Einsatzbereit. Zwei Kartentypen, jeweils genau eine A4-Seite.</p>
+
+		<h3>Wie die zwei Kartentypen zusammenspielen</h3>
+		<ul>
+			<li><b>Persona-Karte</b> (Seite 1): eine pro Testperson. Sie beschreibt die Rolle, in die sich die Testperson hineinversetzt. Wird zu Beginn ausgehändigt und bleibt während der ganzen Sitzung liegen.</li>
+			<li><b>Aufgabenkarte</b> (Seite 2): eine pro Aufgabe, also mehrere pro Persona. Wird einzeln und nacheinander ausgehändigt, damit niemand vorausliest.</li>
+		</ul>
+
+		<h3>Ausfüllen</h3>
+		<ol>
+			<li>Alles in <code>[eckigen Klammern]</code> ersetzen.</li>
+			<li>Jede grau-kursive Hinweiszeile (<code>class="hint"</code>) danach löschen.</li>
+			<li>Aufgabenkarte so oft duplizieren, wie es Aufgaben gibt: den kompletten Block <code>&lt;article class="page task"&gt;...&lt;/article&gt;</code> kopieren.</li>
+		</ol>
+
+		<h3>Aufgaben formulieren</h3>
+		<ul>
+			<li>Ziel beschreiben, nicht den Weg. <b>Gut:</b> "Sie wollen am Samstag helfen." <b>Schlecht:</b> "Klicken Sie auf Suchen und wählen Sie einen Filter."</li>
+			<li>Kein Vokabular aus der Oberfläche verwenden. Wer "Engagement" auf der Karte liest, sucht den Knopf "Engagement" statt nachzudenken.</li>
+			<li>Ein Ziel pro Karte. Zwei Ziele lassen sich hinterher nicht auseinanderhalten.</li>
+			<li>"Geschafft, wenn" ist für den Moderator die Abbruchbedingung, für die Testperson die Orientierung.</li>
+		</ul>
+
+		<h3>Drucken</h3>
+		<ul>
+			<li>Im Browser <code>Strg</code>/<code>Cmd</code> + <code>P</code>, Format A4, Skalierung 100 Prozent, Ränder "keine", Hintergrundgrafiken aktivieren.</li>
+			<li>Einseitig drucken. Die Aufgabenkarte hat unten einen Moderatorenteil, der abgetrennt wird.</li>
+		</ul>
+
+		<h3>Ablauf einer Sitzung (Richtwert 45 bis 60 Minuten)</h3>
+		<ol>
+			<li>Begrüßung, Einverständnis für die Aufnahme, "wir testen die Anwendung, nicht Sie".</li>
+			<li>Persona-Karte aushändigen und laut vorlesen lassen.</li>
+			<li>Aufgabenkarten einzeln geben, lautes Denken erbitten, nicht helfen und nicht erklaeren.</li>
+			<li>Nach jeder Aufgabe die Schwierigkeit von 1 bis 7 abfragen und im Moderatorenteil notieren.</li>
+			<li>Zum Schluss offene Fragen: Was war unerwartet? Was hat gefehlt?</li>
+		</ol>
+	</section>
+
+	<!-- =================================================================
+			PAGE 1 - PERSONA CARD
+	================================================================== -->
+	<article class="page persona">
+		<header class="card-head">
+			<span class="kind">Persona</span>
+			<span class="meta">Einsatzbereit &middot; Live User Testing</span>
+		</header>
+
+		<div class="identity">
+			<div class="portrait">Foto oder<br />Illustration</div>
+			<div>
+				<h1 class="fill">[Vorname Nachname]</h1>
+				<p class="facts fill">[Alter] Jahre &middot; [Beruf] &middot; [Ort]</p>
+				<span class="chip fill">[Rolle: Freiwillige Person oder Organisierende Person]</span>
+			</div>
+		</div>
+
+		<blockquote class="quote fill">
+			&bdquo;[Ein Satz in der Ich-Form, der die Haltung dieser Person auf den Punkt bringt.]&ldquo;
+		</blockquote>
+		<p class="hint">Hinweis: Das Zitat ist der Kern der Karte. Es soll eine Haltung transportieren, keine Funktion der Anwendung.</p>
+
+		<div class="persona-body">
+			<section class="box">
+				<h2>Alltag und Lebenssituation</h2>
+				<p class="hint">Wohnsituation, Arbeitszeiten, wie viel Zeit bleibt und wann. Drei bis vier Sätze.</p>
+				<p class="fill">[...]</p>
+			</section>
+
+			<section class="box">
+				<h2>Motivation</h2>
+				<p class="hint">Warum diese Person überhaupt helfen will. Was sie davon hat.</p>
+				<p class="fill">[...]</p>
+			</section>
+
+			<section class="box">
+				<h2>Hürden heute</h2>
+				<p class="hint">Was sie bisher davon abhält. Kein Bezug auf Einsatzbereit, sondern auf ihr Leben.</p>
+				<p class="fill">[...]</p>
+			</section>
+
+			<section class="box">
+				<h2>Digitale Gewohnheiten</h2>
+				<p class="hint">Gerät, das sie zuerst greift, und wie sicher sie sich damit fühlt.</p>
+				<p class="fill">[Gerät: Smartphone / Laptop] &middot; [genutzte Dienste]</p>
+				<div class="scale">
+					unsicher <span></span><span></span><span></span><span></span><span></span> routiniert
+				</div>
+			</section>
+		</div>
+
+		<footer class="setup">
+			<div>
+				<b>Ausgangslage im Test</b>
+				<span class="hint">Was ist vorbereitet? Konto vorhanden, Organisation angelegt, Daten schon erfasst?</span>
+				<p class="fill">[...]</p>
+			</div>
+			<div>
+				<b>Zugang</b>
+				<span class="hint">Testkonto und Kennwort für diese Sitzung. Nur Testdaten, keine echten Zugangsdaten.</span>
+				<p class="fill">[Benutzer] / [Kennwort]</p>
+			</div>
+		</footer>
+	</article>
+
+	<!-- =================================================================
+			PAGE 2 - TASK CARD (duplicate this whole <article> per task)
+	================================================================== -->
+	<article class="page task">
+		<header class="card-head">
+			<span class="kind">Aufgabe <span class="fill">[N]</span></span>
+			<span class="meta">Persona <span class="fill">[Name]</span> &middot; ca. <span class="fill">[X]</span> Min.</span>
+		</header>
+
+		<section class="scenario">
+			<h2>Situation</h2>
+			<p class="hint">Zwei bis drei Sätze in der Sie-Form, die den Anlass beschreiben. Zeit, Ort, Anlass. Noch keine Aufgabe.</p>
+			<p class="fill">[...]</p>
+		</section>
+
+		<div class="task-band">
+			<h2>Ihre Aufgabe</h2>
+			<p class="fill">[Ein Satz, ein Ziel, kein Weg.]</p>
+		</div>
+
+		<section class="done-when">
+			<h2>Geschafft, wenn</h2>
+			<ul>
+				<li class="fill">[Beobachtbares Ergebnis, an dem die Aufgabe endet.]</li>
+				<li class="fill">[Optional: zweites Ergebnis, falls die Aufgabe zwei Belege braucht.]</li>
+			</ul>
+		</section>
+
+		<section class="box">
+			<h2>Startpunkt</h2>
+			<p class="hint">Wo beginnt die Testperson? Angemeldet oder abgemeldet, welche Seite ist offen?</p>
+			<p class="fill">[...]</p>
+		</section>
+
+		<p class="participant-note">Denken Sie bitte laut mit: Was suchen Sie, was erwarten Sie, was irritiert Sie?
+			Es gibt keinen falschen Weg. Wir testen die Anwendung, nicht Sie.</p>
+
+		<div class="cut">Ab hier abtrennen &middot; nur für die Moderation</div>
+
+		<section class="observation">
+			<div class="grid-2">
+				<div>
+					<h2>Ergebnis</h2>
+					<div class="row">
+						<span class="tick">ohne Hilfe gelöst</span>
+						<span class="tick">mit Hinweis gelöst</span>
+					</div>
+					<div class="row">
+						<span class="tick">abgebrochen</span>
+						<span class="tick">Aufgabe missverstanden</span>
+					</div>
+					<div class="row">
+						<span>Dauer <span class="fill">______</span> Min.</span>
+						<span>Hinweise gegeben: <span class="fill">______</span></span>
+					</div>
+				</div>
+				<div>
+					<h2>Empfundene Schwierigkeit</h2>
+					<p class="hint">Direkt nach der Aufgabe fragen: "Wie leicht oder schwer war das?" 1 sehr schwer, 7 sehr leicht.</p>
+					<div class="rating">
+						<b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b>
+					</div>
+				</div>
+			</div>
+
+			<h2 style="margin-top: 5mm;">Beobachtungen und Zitate</h2>
+			<div class="lines">
+				<i></i><i></i><i></i><i></i>
+			</div>
+		</section>
+	</article>
+
+</body>
+</html>
