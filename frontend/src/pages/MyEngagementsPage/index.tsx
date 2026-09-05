@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import ProfileSubNav from "../../components/ProfileSubNav";
 import PageHeaderBand from "../../components/PageHeaderBand";
+import TwoColumnPageLayout from "../../components/TwoColumnPageLayout";
 import ActivitySection from "./ActivitySection";
 
 export default function MyEngagementsPage() {
@@ -16,15 +17,12 @@ export default function MyEngagementsPage() {
 				compactTitle
 			/>
 
-			<div
-				data-content-wrapper
-				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			<TwoColumnPageLayout
+				variant="subNav"
+				sidebar={<ProfileSubNav active="activity" />}
 			>
-				<ProfileSubNav active="activity" />
-				<div className="min-w-0">
-					<ActivitySection />
-				</div>
-			</div>
+				<ActivitySection />
+			</TwoColumnPageLayout>
 		</>
 	);
 }

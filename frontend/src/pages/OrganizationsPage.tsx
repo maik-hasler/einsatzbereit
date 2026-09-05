@@ -10,6 +10,7 @@ import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { cardClass } from "../lib/surfaceClasses";
+import { heroSearchInputClass } from "../lib/formClasses";
 import {
 	reportIntentSigninArgs,
 	usePendingReportIntent,
@@ -134,7 +135,7 @@ export default function OrganizationsPage() {
 								value={searchInput}
 								onChange={(e) => handleSearchInputChange(e.target.value)}
 								placeholder={t("organizationsPage.searchPlaceholder")}
-								className="w-full rounded-full border-0 bg-transparent py-3 pr-4 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
+								className={heroSearchInputClass}
 							/>
 						</div>
 						<Button

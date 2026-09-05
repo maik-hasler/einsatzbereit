@@ -23,6 +23,7 @@ import Chip from "../components/Chip";
 import OrgAvatar from "../components/OrgAvatar";
 import PageHeaderBand from "../components/PageHeaderBand";
 import SubNavRail from "../components/SubNavRail";
+import TwoColumnPageLayout from "../components/TwoColumnPageLayout";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
@@ -32,6 +33,7 @@ import LoadMoreButton from "../components/LoadMoreButton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
 import Dropdown from "../components/Dropdown";
+import DatePicker from "../components/DatePicker";
 
 const PAGE_SIZE = 10;
 
@@ -85,23 +87,22 @@ export default function AdministrationPage() {
 				compactTitle
 			/>
 
-			<div
-				data-content-wrapper
-				className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12"
+			<TwoColumnPageLayout
+				variant="subNav"
+				sidebar={
+					<SubNavRail
+						ariaLabel={t("administration.subNavLabel")}
+						active={activeTab.key}
+						items={ADMIN_TABS.map((tab) => ({
+							key: tab.key,
+							href: tab.href,
+							label: t(tab.labelKey),
+						}))}
+					/>
+				}
 			>
-				<SubNavRail
-					ariaLabel={t("administration.subNavLabel")}
-					active={activeTab.key}
-					items={ADMIN_TABS.map((tab) => ({
-						key: tab.key,
-						href: tab.href,
-						label: t(tab.labelKey),
-					}))}
-				/>
-				<div className="min-w-0">
-					<Outlet />
-				</div>
-			</div>
+				<Outlet />
+			</TwoColumnPageLayout>
 		</>
 	);
 }
@@ -1446,7 +1447,8 @@ const AUDIT_SUBJECT_TYPES = [
 ] as const;
 
 /**
- * Turns a `<input type="date">` value into the instant the API filters on.
+ * Turns a date-only value ("yyyy-MM-dd", `DatePicker`'s value shape) into the
+ * instant the API filters on.
  *
  * The bounds are the admin's own local midnights - `from` inclusive, `to` exclusive, so picking
  * the same day at both ends selects exactly that day rather than an empty range.
@@ -1598,26 +1600,22 @@ function AuditLogSection() {
 					<label htmlFor="admin-audit-from" className={labelClass}>
 						{t("administration.auditLog.filters.fromLabel")}
 					</label>
-					<input
+					<DatePicker
 						id="admin-audit-from"
-						type="date"
 						value={fromDate}
 						max={toDate || undefined}
-						onChange={(e) => setFromDate(e.target.value)}
-						className={inputClass}
+						onChange={setFromDate}
 					/>
 				</div>
 				<div>
 					<label htmlFor="admin-audit-to" className={labelClass}>
 						{t("administration.auditLog.filters.toLabel")}
 					</label>
-					<input
+					<DatePicker
 						id="admin-audit-to"
-						type="date"
 						value={toDate}
 						min={fromDate || undefined}
-						onChange={(e) => setToDate(e.target.value)}
-						className={inputClass}
+						onChange={setToDate}
 					/>
 				</div>
 			</div>

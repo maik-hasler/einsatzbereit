@@ -18,6 +18,7 @@ import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 import { dispatchToast } from "../lib/toastBus";
+import { heroSearchInputClass } from "../lib/formClasses";
 import {
 	MagnifyingGlassIcon,
 	PlusIcon,
@@ -280,7 +281,7 @@ export default function HomePage() {
 										}}
 										placeholder={t("landing.heroSearchLocationPlaceholder")}
 										ariaLabel={t("landing.heroSearchLocationLabel")}
-										inputClassName="w-full rounded-full border-0 bg-transparent py-3 pr-8 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
+										inputClassName={heroSearchInputClass}
 									/>
 								</div>
 
@@ -293,7 +294,7 @@ export default function HomePage() {
 										value={heroKeyword}
 										onChange={(e) => setHeroKeyword(e.target.value)}
 										data-testid="hero-keyword-input"
-										className="w-full rounded-full border-0 bg-transparent py-3 pr-3 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none"
+										className={heroSearchInputClass}
 									/>
 								</div>
 

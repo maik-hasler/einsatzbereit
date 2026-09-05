@@ -40,6 +40,15 @@ export const selectClass = `${inputClass} appearance-none pr-9`;
 
 export const labelClass = getLabelClass();
 
+// The pill-shaped, borderless search field inside a translucent hero band -
+// HomePage's keyword field and location field, OpportunitiesPage's keyword
+// field, and OrganizationsPage's search field each hand-rolled this same
+// intent independently, and the right padding had already drifted three ways
+// (pr-3/pr-4/pr-8) with nothing to notice. One recipe, so a fourth hero search
+// field reuses it instead of typing a fourth variant.
+export const heroSearchInputClass =
+	"w-full rounded-full border-0 bg-transparent py-3 pr-4 pl-10 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none";
+
 // A native checkbox takes its checked fill from `accent-color`, and from
 // nothing else: `text-brand-*` sets a text colour the control never reads, so
 // four of the eight checkboxes in the app painted the browser default blue
@@ -47,3 +56,11 @@ export const labelClass = getLabelClass();
 // `border-*` is just as inert on a control the UA paints itself. One class, so
 // the two treatments cannot drift apart again.
 export const checkboxClass = "shrink-0 accent-brand-600";
+
+// The same fix as `checkboxClass`, for `type="radio"`: a native radio also
+// takes its checked fill from `accent-color` alone, so a radio group left
+// without this class renders the browser/OS default (blue on most platforms)
+// instead of brand green. Not needed on a radio that is itself `sr-only` and
+// styled entirely through its wrapping `<label>` (see `FormatStep.tsx`'s
+// `RadioCardGroup`) - there the native dot is never painted at all.
+export const radioClass = "shrink-0 accent-brand-600";
