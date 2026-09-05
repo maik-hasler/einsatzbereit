@@ -42,8 +42,8 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 		{
 			var start = DateTimeOffset.UtcNow.AddDays(daysFromNow);
 			var end = start.AddHours(2);
-			await step4.Locator("#slot-start").FillAsync(start.ToString("yyyy-MM-ddTHH:mm"));
-			await step4.Locator("#slot-end").FillAsync(end.ToString("yyyy-MM-ddTHH:mm"));
+			await FillDateTimePickerAsync(step4, "slot-start", start);
+			await FillDateTimePickerAsync(step4, "slot-end", end);
 			await step4.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
 		}
 

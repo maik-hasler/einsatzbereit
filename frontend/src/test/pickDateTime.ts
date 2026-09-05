@@ -46,9 +46,6 @@ export async function pickDateTime(
 	const [isoDate, time] = isoDateTimeLocal.split("T");
 	await pickDate(id, isoDate);
 
-	const trigger = document.getElementById(id);
-	const timeInput = trigger
-		?.closest(".relative")
-		?.parentElement?.querySelector('input[type="time"]');
+	const timeInput = document.getElementById(`${id}-time`);
 	fireEvent.change(timeInput as HTMLInputElement, { target: { value: time } });
 }

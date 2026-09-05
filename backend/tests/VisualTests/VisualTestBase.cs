@@ -139,6 +139,32 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		}
 	}
 
+	/// <summary>
+	/// Drives the `DateTimePicker` component the way a user does - open the
+	/// trigger, page forward to the target month if it isn't already showing,
+	/// click the day, then fill the sibling time input - instead of the
+	/// `FillAsync` a native `&lt;input type="datetime-local"&gt;` used to accept
+	/// directly (DatePicker/DateTimePicker replaced every one of those).
+	/// `fieldId` is the id passed to `DateTimePicker` (e.g. "slot-start"); the
+	/// time field is that id plus "-time".
+	/// </summary>
+	protected async Task FillDateTimePickerAsync(ILocator scope, string fieldId, DateTimeOffset value)
+	{
+		await scope.Locator($"#{fieldId}").ClickAsync();
+		var grid = Page.GetByRole(AriaRole.Grid);
+		await Expect(grid).ToBeVisibleAsync();
+
+		var targetDate = value.ToString("yyyy-MM-dd");
+		var dayCell = grid.Locator($"[data-date='{targetDate}']");
+		for (var i = 0; i < 3 && await dayCell.CountAsync() == 0; i++)
+		{
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Next month" }).ClickAsync();
+		}
+		await dayCell.ClickAsync();
+
+		await scope.Locator($"#{fieldId}-time").FillAsync(value.ToString("HH:mm"));
+	}
+
 	protected async Task<string> WarmOpportunitiesRouteThenLeaveAsync()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

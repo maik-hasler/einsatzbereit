@@ -70,6 +70,7 @@ export default function DateTimePicker({
 			/>
 			<input
 				type="time"
+				id={`${id}-time`}
 				aria-label={`${label} ${t("datePicker.time")}`}
 				value={time}
 				disabled={!date}
