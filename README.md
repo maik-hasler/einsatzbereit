@@ -67,7 +67,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 | Layer | Tech |
 |---|---|
 | Backend | .NET 10, Clean Architecture (Api -> Application -> Domain, Infrastructure -> Domain), EF Core 10, PostgreSQL 18, CQRS-style command/query handlers, transactional outbox for domain events |
-| Auth | Keycloak 26.7.2 (OIDC, JWT, Keycloak Organizations) |
+| Auth | Keycloak 26.7.3 (OIDC, JWT, Keycloak Organizations) |
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4, react-oidc-context, Leaflet/react-leaflet |
 | API client | NSwag-generated TypeScript client from the backend OpenAPI spec - never hand-edited |
 | Object storage | MinIO (avatars, organization logos, opportunity banners) |
