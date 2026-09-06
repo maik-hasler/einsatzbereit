@@ -153,7 +153,7 @@ jobs:
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.3
-          docker pull ghcr.io/axllent/mailpit:v1.31.0
+          docker pull ghcr.io/axllent/mailpit:v1.31.1
           docker pull quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772
 
       - name: Test - IntegrationTests (Aspire + Docker)
@@ -222,7 +222,7 @@ jobs:
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.3
-          docker pull ghcr.io/axllent/mailpit:v1.31.0
+          docker pull ghcr.io/axllent/mailpit:v1.31.1
           docker pull quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772
 
       - name: Resolve shard filter
