@@ -12,7 +12,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { formatDate, pickLocalizedText } from "../../lib/format";
-import { inputClass, labelClass } from "../../lib/formClasses";
+import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { cardClass } from "../../lib/surfaceClasses";
 import { orgTabPath } from "../../lib/orgTabs";
@@ -470,7 +470,7 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 						onChange={(e) => setCancelReason(e.target.value)}
 						placeholder={t("confirmDialog.cancel.reasonPlaceholder")}
 						disabled={cancelling}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
+						className={textareaClass}
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{cancelReason.length}/500

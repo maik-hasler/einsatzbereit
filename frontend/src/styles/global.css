@@ -54,22 +54,21 @@ html {
 	}
 }
 
-input[type="datetime-local"],
-input[type="date"],
+/* `date`/`datetime-local` no longer appear anywhere in the app - `DatePicker`/
+`DateTimePicker` replaced every one of them with a styled calendar-grid
+popover (see frontend/AGENTS.md's Design System table). `time` is the one
+native date/time input type still in use (`DateTimePicker`'s minute field),
+so its picker-indicator icon still needs the same treatment as before. */
 input[type="time"] {
 	color-scheme: light;
 }
 
-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
 	opacity: 0.5;
 	cursor: pointer;
 	border-radius: 2px;
 }
 
-input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
-input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
 	opacity: 1;
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	checkboxClass,
+	radioClass,
 	inputSurfaceClass,
 	inputClass,
 	textareaClass,
@@ -97,12 +98,12 @@ const sources = import.meta.glob("../**/*.tsx", {
 	eager: true,
 }) as Record<string, string>;
 
-function checkboxElements(source: string): string[] {
+function inputElementsOfType(source: string, type: string): string[] {
 	return source
 		.split("<input")
 		.slice(1)
 		.map((chunk) => chunk.slice(0, chunk.indexOf("/>")))
-		.filter((element) => element.includes('type="checkbox"'));
+		.filter((element) => element.includes(`type="${type}"`));
 }
 
 describe("the shared checkbox recipe", () => {
@@ -116,7 +117,7 @@ describe("the shared checkbox recipe", () => {
 		let checked = 0;
 		for (const [path, source] of Object.entries(sources)) {
 			if (path.includes(".test.")) continue;
-			for (const element of checkboxElements(source)) {
+			for (const element of inputElementsOfType(source, "checkbox")) {
 				checked += 1;
 				expect(
 					element,
@@ -125,5 +126,32 @@ describe("the shared checkbox recipe", () => {
 			}
 		}
 		expect(checked).toBeGreaterThanOrEqual(8);
+	});
+});
+
+// The same guardrail as above, for radios (#2329's fix never got extended to
+// `type="radio"`, and two radio groups slipped through unstyled as a result).
+// A radio that is itself `sr-only` never paints a native dot at all - its
+// wrapping `<label>` carries the visible state instead - so it's exempt.
+describe("the shared radio recipe", () => {
+	it("drives the checked fill through accent-color", () => {
+		expect(radioClass).toContain("accent-brand-600");
+		expect(radioClass).not.toMatch(/\b(text|border)-/);
+	});
+
+	it("is what every non-sr-only radio in the app is painted with", () => {
+		let checked = 0;
+		for (const [path, source] of Object.entries(sources)) {
+			if (path.includes(".test.")) continue;
+			for (const element of inputElementsOfType(source, "radio")) {
+				if (element.includes("sr-only")) continue;
+				checked += 1;
+				expect(
+					element,
+					`${path} paints a radio without the shared recipe, so it falls back to the browser's default blue`,
+				).toContain("radioClass");
+			}
+		}
+		expect(checked).toBeGreaterThanOrEqual(2);
 	});
 });

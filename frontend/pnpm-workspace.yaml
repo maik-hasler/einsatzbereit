@@ -6,3 +6,10 @@ auditConfig:
     - GHSA-v2hh-gcrm-f6hx
     - GHSA-7p8r-x3mc-p8w7
     - GHSA-4c8g-83qw-93j6
+    # Three more fast-uri advisories published later, same unreachable path
+    # re-verified (see the "Audit dependencies" step's comment in
+    # frontend-checks.yml) - `grep` over `pnpm build`'s dist/assets/*.js finds
+    # neither "fast-uri" nor "ajv" anywhere in the production bundle.
+    - GHSA-f65p-4m7j-42xc
+    - GHSA-fph4-wmhf-6fwf
+    - GHSA-jqff-g426-hqxp

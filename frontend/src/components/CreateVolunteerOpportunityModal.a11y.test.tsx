@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
+import { pickDateTime } from "../test/pickDateTime";
 import { expectNoA11yViolations } from "../test/a11y";
 
 const { api } = vi.hoisted(() => ({
@@ -79,28 +80,31 @@ describe("CreateVolunteerOpportunityModal a11y", () => {
 	}
 
 	async function addSlot(start: string, end: string) {
-		fireEvent.change(
-			document.querySelector("#slot-start") as HTMLInputElement,
-			{
-				target: { value: start },
-			},
-		);
-		fireEvent.change(document.querySelector("#slot-end") as HTMLInputElement, {
-			target: { value: end },
-		});
+		await pickDateTime("slot-start", start);
+		await pickDateTime("slot-end", end);
 		await userEvent.click(screen.getByRole("button", { name: "Add" }));
 	}
 
-	it("has no violations once a time slot is rejected inline (#2325)", async () => {
-		open();
-		await gotoDetails();
+	// See the equivalent test in CreateVolunteerOpportunityModal.test.tsx for
+	// why this no longer tries to enter a past-dated slot: `DatePicker` marks
+	// every day before today `aria-disabled`, so it can't be picked at all.
+	it("has no violations with a day disabled for being in the past (#2325)", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			open();
+			await gotoDetails();
 
-		await addSlot("2020-01-05T10:00", "2020-01-05T12:00");
-
-		expect(
-			await screen.findByText("Start date must be in the future."),
-		).toBeInTheDocument();
-		await expectNoA11yViolations();
+			await userEvent.click(screen.getByTestId("slot-start-trigger"));
+			const grid = await screen.findByRole("grid");
+			expect(within(grid).getByText("9").closest("button")).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
+			await expectNoA11yViolations();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("has no violations while the list and the add form flag an overlap (#2325)", async () => {
@@ -111,15 +115,8 @@ describe("CreateVolunteerOpportunityModal a11y", () => {
 
 		// A third overlapping range left in the boxes, so the pre-add hint and
 		// the two flagged rows are on screen at the same time.
-		fireEvent.change(
-			document.querySelector("#slot-start") as HTMLInputElement,
-			{
-				target: { value: "2026-09-10T11:30" },
-			},
-		);
-		fireEvent.change(document.querySelector("#slot-end") as HTMLInputElement, {
-			target: { value: "2026-09-10T12:30" },
-		});
+		await pickDateTime("slot-start", "2026-09-10T11:30");
+		await pickDateTime("slot-end", "2026-09-10T12:30");
 
 		expect(
 			await screen.findByText(

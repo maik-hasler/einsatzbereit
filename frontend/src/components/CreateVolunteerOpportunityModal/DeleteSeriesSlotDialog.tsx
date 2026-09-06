@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import Modal from "../Modal";
 import Button from "../Button";
 import ErrorBanner from "../ErrorBanner";
+import { radioClass } from "../../lib/formClasses";
 import type { SeriesEditScope } from "./DetailsStep";
 
 interface Props {
@@ -56,6 +57,7 @@ export default function DeleteSeriesSlotDialog({
 							value={s}
 							checked={scope === s}
 							onChange={() => setScope(s)}
+							className={radioClass}
 						/>
 						{t(`timeSlots.deleteSeries.scope${s}`)}
 					</label>

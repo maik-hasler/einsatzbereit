@@ -258,8 +258,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var start = DateTimeOffset.UtcNow.AddDays(7);
 		var end = start.AddHours(2);
 		var step4 = Page.GetByTestId("wizard-step-4");
-		await step4.Locator("#slot-start").FillAsync(start.ToString("yyyy-MM-ddTHH:mm"));
-		await step4.Locator("#slot-end").FillAsync(end.ToString("yyyy-MM-ddTHH:mm"));
+		await FillDateTimePickerAsync(step4, "slot-start", start);
+		await FillDateTimePickerAsync(step4, "slot-end", end);
 		var addSlotBtn = step4.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true });
 		await addSlotBtn.ClickAsync();
 

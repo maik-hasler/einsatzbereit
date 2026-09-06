@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import { renderWithProviders } from "../test/render";
+import { pickDate, pickDateTime } from "../test/pickDateTime";
 import { formatDate } from "../lib/format";
 
 const { api } = vi.hoisted(() => ({
@@ -321,9 +322,8 @@ describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
 		await fillBasicsAndFormat("482170");
 
 		await userEvent.click(screen.getByTestId("wizard-stepper-4"));
-		fireEvent.change(await screen.findByLabelText(/Interest deadline/i), {
-			target: { value: "2027-06-30" },
-		});
+		await screen.findByLabelText(/Interest deadline/i);
+		await pickDate("create-valid-until", "2027-06-30");
 
 		api.createVolunteerOpportunity.mockResolvedValue({ id: "new-opp-id" });
 		await userEvent.click(screen.getByTestId("modal-submit"));
@@ -452,12 +452,12 @@ describe("create-opportunity wizard: a time slot that ends before it starts (#23
 			expect(screen.getByTestId("wizard-step-4")).toBeInTheDocument(),
 		);
 
-		const start = document.querySelector("#slot-start") as HTMLInputElement;
-		const end = document.querySelector("#slot-end") as HTMLInputElement;
-		fireEvent.change(start, { target: { value: "2027-06-01T12:00" } });
-		fireEvent.change(end, { target: { value: "2027-06-01T09:00" } });
+		await pickDateTime("slot-start", "2027-06-01T12:00");
+		await pickDateTime("slot-end", "2027-06-01T09:00");
 		await userEvent.click(screen.getByRole("button", { name: "Add" }));
 
+		const start = document.querySelector("#slot-start") as HTMLElement;
+		const end = document.querySelector("#slot-end") as HTMLElement;
 		expect(
 			await screen.findByText("End date must be after start date."),
 		).toBeInTheDocument();
@@ -655,9 +655,7 @@ describe("edit wizard: time slot changes are not staged (#2315)", () => {
 });
 
 describe("create-opportunity wizard: time slot guards (#2325)", () => {
-	const slotStart = () =>
-		document.querySelector("#slot-start") as HTMLInputElement;
-	const slotEnd = () => document.querySelector("#slot-end") as HTMLInputElement;
+	const slotStart = () => document.querySelector("#slot-start") as HTMLElement;
 	const slotMax = () => document.querySelector("#slot-max") as HTMLInputElement;
 	const slotRows = () =>
 		within(screen.getByTestId("time-slot-list")).getAllByRole("listitem");
@@ -675,29 +673,43 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 	}
 
 	async function addSlot(start: string, end: string, max?: string) {
-		fireEvent.change(slotStart(), { target: { value: start } });
-		fireEvent.change(slotEnd(), { target: { value: end } });
+		await pickDateTime("slot-start", start);
+		await pickDateTime("slot-end", end);
 		if (max !== undefined)
 			fireEvent.change(slotMax(), { target: { value: max } });
 		await userEvent.click(screen.getByRole("button", { name: "Add" }));
 	}
 
-	it("refuses a past-dated slot without contacting the API at all", async () => {
-		await gotoTimeSlots();
+	// The organizer-facing "Start date must be in the future." guard (#2325)
+	// used to be reachable by typing an out-of-range value straight into a
+	// native `<input type="datetime-local">`. `DatePicker` closed that path at
+	// the source instead: a day before today is `aria-disabled` in the
+	// calendar grid and cannot be picked at all, so there is no longer a
+	// past-dated value for the guard to catch. This asserts the replacement
+	// guarantee - the day is unpickable in the first place - rather than a
+	// scenario the UI no longer allows.
+	it("disables days before today so a past-dated slot cannot be entered", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			await gotoTimeSlots();
 
-		await addSlot("2020-01-05T10:00", "2020-01-05T12:00");
+			await userEvent.click(screen.getByTestId("slot-start-trigger"));
+			const grid = await screen.findByRole("grid");
+			const yesterday = within(grid).getByText("9");
+			expect(yesterday.closest("button")).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
 
-		expect(
-			await screen.findByText("Start date must be in the future."),
-		).toBeInTheDocument();
-		// Only the start box is at fault, so only it is marked - the pair is
-		// flagged together just for "ends before it starts" (#2320).
-		expect(slotStart()).toHaveAttribute("aria-invalid", "true");
-		expect(slotStart()).toHaveAttribute("aria-describedby", "time-slot-error");
-		expect(slotEnd()).not.toHaveAttribute("aria-invalid");
-		expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
-		expect(api.createVolunteerOpportunity).not.toHaveBeenCalled();
-		expect(api.createTimeSlot).not.toHaveBeenCalled();
+			await userEvent.click(yesterday);
+			expect(slotStart()).toHaveAttribute("aria-expanded", "true");
+			expect(screen.getByText("No time slots added yet.")).toBeInTheDocument();
+			expect(api.createVolunteerOpportunity).not.toHaveBeenCalled();
+			expect(api.createTimeSlot).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("says which end of the range is wrong when it ends before it starts", async () => {
@@ -783,8 +795,8 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		await gotoTimeSlots();
 		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
 
-		fireEvent.change(slotStart(), { target: { value: "2026-09-10T11:00" } });
-		fireEvent.change(slotEnd(), { target: { value: "2026-09-10T13:00" } });
+		await pickDateTime("slot-start", "2026-09-10T11:00");
+		await pickDateTime("slot-end", "2026-09-10T13:00");
 
 		expect(
 			await screen.findByText(
@@ -826,8 +838,8 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 		await gotoTimeSlots();
 		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
 
-		fireEvent.change(slotStart(), { target: { value: "2026-09-10T12:00" } });
-		fireEvent.change(slotEnd(), { target: { value: "2026-09-10T14:00" } });
+		await pickDateTime("slot-start", "2026-09-10T12:00");
+		await pickDateTime("slot-end", "2026-09-10T14:00");
 		await userEvent.click(screen.getByRole("button", { name: "Add" }));
 
 		await waitFor(() => expect(slotRows()).toHaveLength(2));

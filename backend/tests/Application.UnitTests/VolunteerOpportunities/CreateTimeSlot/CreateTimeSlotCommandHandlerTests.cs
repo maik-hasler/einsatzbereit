@@ -238,7 +238,7 @@ public class CreateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		var start = new DateTimeOffset(2026, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
+		var start = new DateTimeOffset(2027, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
 		var end = start.AddHours(2);
 		var command = new CreateTimeSlotCommand(
 			opportunityId, start, end, 10, DefaultRequestingUserId,
@@ -248,9 +248,9 @@ public class CreateTimeSlotCommandHandlerTests
 
 		result.Should().HaveCount(9);
 
-		result[3].StartDateTime.Should().Be(new DateTimeOffset(2026, 9, 26, 10, 0, 0, TimeSpan.FromHours(2)));
+		result[3].StartDateTime.Should().Be(new DateTimeOffset(2027, 9, 26, 10, 0, 0, TimeSpan.FromHours(2)));
 
-		result[8].StartDateTime.Should().Be(new DateTimeOffset(2026, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
+		result[8].StartDateTime.Should().Be(new DateTimeOffset(2027, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
 	}
 
 	[Test]
@@ -263,7 +263,7 @@ public class CreateTimeSlotCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		var start = new DateTimeOffset(2026, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
+		var start = new DateTimeOffset(2027, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
 		var end = start.AddHours(2);
 		var command = new CreateTimeSlotCommand(
 			opportunityId, start, end, 10, DefaultRequestingUserId,
@@ -271,7 +271,7 @@ public class CreateTimeSlotCommandHandlerTests
 
 		var result = await _sut.Handle(command, cancellationToken);
 
-		result[8].StartDateTime.Should().Be(new DateTimeOffset(2026, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
+		result[8].StartDateTime.Should().Be(new DateTimeOffset(2027, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
 	}
 
 	[Test]

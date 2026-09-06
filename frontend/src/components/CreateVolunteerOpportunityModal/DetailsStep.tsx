@@ -4,14 +4,16 @@ import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
 import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
+import DatePicker from "../DatePicker";
+import DateTimePicker from "../DateTimePicker";
 import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
 import { formatDateTimeRange } from "../../lib/format";
 import {
 	checkboxClass,
-	getInputSurfaceClass,
 	inputSurfaceClass,
 	labelClass,
+	radioClass,
 } from "../../lib/formClasses";
 import {
 	CANONICAL_TIME_ZONE,
@@ -289,6 +291,7 @@ export default function DetailsStep({
 																			scope: s,
 																		})
 																	}
+																	className={radioClass}
 																/>
 																{t(`timeSlots.editScope.${s}`)}
 															</label>
@@ -305,17 +308,16 @@ export default function DetailsStep({
 														>
 															{t("timeSlots.fieldStart")}
 														</label>
-														<input
+														<DateTimePicker
 															id={`edit-slot-start-${slot.id}`}
-															type="datetime-local"
+															label={t("timeSlots.fieldStart")}
 															value={editingSlot.startDateTime}
-															onChange={(e) =>
+															onChange={(value) =>
 																onEditingSlotChange({
 																	...editingSlot,
-																	startDateTime: e.target.value,
+																	startDateTime: value,
 																})
 															}
-															className={inputSurfaceClass}
 														/>
 													</div>
 													<div>
@@ -325,17 +327,16 @@ export default function DetailsStep({
 														>
 															{t("timeSlots.fieldEnd")}
 														</label>
-														<input
+														<DateTimePicker
 															id={`edit-slot-end-${slot.id}`}
-															type="datetime-local"
+															label={t("timeSlots.fieldEnd")}
 															value={editingSlot.endDateTime}
-															onChange={(e) =>
+															onChange={(value) =>
 																onEditingSlotChange({
 																	...editingSlot,
-																	endDateTime: e.target.value,
+																	endDateTime: value,
 																})
 															}
-															className={inputSurfaceClass}
 														/>
 													</div>
 												</div>
@@ -495,29 +496,26 @@ export default function DetailsStep({
 								>
 									{t("timeSlots.fieldStart")}
 								</label>
-								<input
+								<DateTimePicker
 									id="slot-start"
-									type="datetime-local"
+									label={t("timeSlots.fieldStart")}
 									value={newSlot.startDateTime}
 									min={toZonedDatetimeLocalValue(
 										new Date(),
 										CANONICAL_TIME_ZONE,
 									)}
-									onChange={(e) =>
+									onChange={(value) =>
 										onNewSlotChange({
 											...newSlot,
-											startDateTime: e.target.value,
+											startDateTime: value,
 										})
 									}
-									aria-invalid={invalidNewSlotFields.has("start") || undefined}
+									aria-invalid={invalidNewSlotFields.has("start")}
 									aria-describedby={
 										invalidNewSlotFields.has("start")
 											? SLOT_ERROR_ID
 											: undefined
 									}
-									className={getInputSurfaceClass(
-										invalidNewSlotFields.has("start"),
-									)}
 								/>
 							</div>
 							<div>
@@ -527,23 +525,20 @@ export default function DetailsStep({
 								>
 									{t("timeSlots.fieldEnd")}
 								</label>
-								<input
+								<DateTimePicker
 									id="slot-end"
-									type="datetime-local"
+									label={t("timeSlots.fieldEnd")}
 									value={newSlot.endDateTime}
-									onChange={(e) =>
+									onChange={(value) =>
 										onNewSlotChange({
 											...newSlot,
-											endDateTime: e.target.value,
+											endDateTime: value,
 										})
 									}
-									aria-invalid={invalidNewSlotFields.has("end") || undefined}
+									aria-invalid={invalidNewSlotFields.has("end")}
 									aria-describedby={
 										invalidNewSlotFields.has("end") ? SLOT_ERROR_ID : undefined
 									}
-									className={getInputSurfaceClass(
-										invalidNewSlotFields.has("end"),
-									)}
 								/>
 							</div>
 						</div>
@@ -686,13 +681,11 @@ export default function DetailsStep({
 						name="validUntil"
 						control={control}
 						render={({ field }) => (
-							<input
+							<DatePicker
 								id="create-valid-until"
-								type="date"
 								value={field.value}
 								min={todayDateInputValue}
-								onChange={(e) => field.onChange(e.target.value)}
-								className={inputSurfaceClass}
+								onChange={field.onChange}
 							/>
 						)}
 					/>

@@ -23,6 +23,13 @@
       "contactOrganization": "Contact the organization",
       "charCount": "{{current}} / {{max}}"
     },
+    "datePicker": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "chooseDate": "Choose date",
+      "clear": "Clear date",
+      "time": "Time"
+    },
     "nav": {
       "primaryLabel": "Main navigation",
       "home": "Home",

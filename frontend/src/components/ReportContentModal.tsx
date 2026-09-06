@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
 import Button from "./Button";
+import Select from "./Select";
 import ErrorBanner from "./ErrorBanner";
 import { getApiErrorMessage } from "../lib/apiError";
-import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
+import { labelClass, textareaClass } from "../lib/formClasses";
 
 const REPORT_REASONS = [
 	"Spam",
@@ -71,18 +72,17 @@ export default function ReportContentModal({
 					<label htmlFor="report-reason" className={labelClass}>
 						{t("report.reasonLabel")}
 					</label>
-					<select
+					<Select
 						id="report-reason"
 						value={reason}
 						onChange={(e) => setReason(e.target.value as ReportReason)}
-						className={inputClass}
 					>
 						{REPORT_REASONS.map((r) => (
 							<option key={r} value={r}>
 								{t(`report.reasons.${r}`)}
 							</option>
 						))}
-					</select>
+					</Select>
 				</div>
 
 				<div>
