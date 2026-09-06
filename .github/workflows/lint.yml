@@ -45,10 +45,22 @@ jobs:
 
   editorconfig:
     runs-on: ubuntu-latest
+    env:
+      # Pinned on purpose. The npm wrapper (npx editorconfig-checker@x) bundles no
+      # binary - it resolves one from the *latest* upstream release at run time, so
+      # CI silently follows a project we do not control. That broke the job when
+      # v4.0.0 renamed the asset from ec-linux-amd64.tar.gz to the name below.
+      # Bump the two values together; the digest is from the release's checksums.txt.
+      EC_VERSION: v4.0.1
+      EC_SHA256: 90139c6ed52373c0acfc9deb2a07aa812e5184753afd4bc8252bf44eb4909155
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check EditorConfig conformance
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx --yes editorconfig-checker@6.1.1 -config .editorconfig-checker.json
+        run: |
+          ASSET=editorconfig-checker-linux-amd64.tar.gz
+          curl -sSfL -o "$RUNNER_TEMP/$ASSET" \
+            "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/$EC_VERSION/$ASSET"
+          echo "$EC_SHA256  $RUNNER_TEMP/$ASSET" | sha256sum --check --strict
+          tar xzf "$RUNNER_TEMP/$ASSET" -C "$RUNNER_TEMP" editorconfig-checker
+          "$RUNNER_TEMP/editorconfig-checker" -config .editorconfig-checker.json
