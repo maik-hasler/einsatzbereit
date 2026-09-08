@@ -467,6 +467,7 @@
           "Microsoft.Extensions.Http.Resilience": "[10.9.0, 10.9.0]",
           "Microsoft.Extensions.ServiceDiscovery": "[10.9.0, 10.9.0]",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.18.0, 1.18.0]",
+          "OpenTelemetry.Exporter.Prometheus.AspNetCore": "[1.18.0-beta.1, )",
           "OpenTelemetry.Extensions.Hosting": "[1.18.0, 1.18.0]",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.18.0, 1.18.0]",
           "OpenTelemetry.Instrumentation.Http": "[1.18.0, 1.18.0]",
@@ -628,6 +629,15 @@
         "contentHash": "Et3WAviooKGObZjUZN8d6eTsdJs1YM3ZoN+KlWSAHksTmHG1nyGi9XGo2wb0fkFMWK0g80FOPdR1njg52Dm+aw==",
         "dependencies": {
           "OpenTelemetry": "1.18.0"
+        }
+      },
+      "OpenTelemetry.Exporter.Prometheus.AspNetCore": {
+        "type": "CentralTransitive",
+        "requested": "[1.18.0-beta.1, )",
+        "resolved": "1.18.0-beta.1",
+        "contentHash": "TN/EaLh2nwk7IECKJyqBioC3+A/rYXYv6Fby0MGYStI0dQzJdgtV8+ERpLq2L3WWSM9Lah7qOEV305+1PUmLEw==",
+        "dependencies": {
+          "OpenTelemetry": "[1.18.0, 2.0.0)"
         }
       },
       "OpenTelemetry.Extensions.Hosting": {

@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -47,7 +50,8 @@ public static class ServiceDefaultsExtensions
 					.AddHttpClientInstrumentation()
 					.AddRuntimeInstrumentation()
 					.AddMeter(EmailMeterName)
-					.AddMeter(OutboxMeterName);
+					.AddMeter(OutboxMeterName)
+					.AddPrometheusExporter();
 			})
 			.WithTracing(tracing =>
 			{
@@ -77,6 +81,37 @@ public static class ServiceDefaultsExtensions
 			.AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
 		return builder;
+	}
+
+	// An explicit Kestrel Listen call replaces the base image's ASPNETCORE_HTTP_PORTS-driven
+	// binding entirely rather than adding to it, so the primary HTTP port has to be
+	// re-declared here alongside the metrics port or the API stops listening on it.
+	public static WebApplicationBuilder AddMetricsEndpoint(this WebApplicationBuilder builder)
+	{
+		var metricsPort = builder.Configuration.GetValue<int?>("Metrics:Port");
+		if (metricsPort is not int port)
+			return builder;
+
+		var httpPort = builder.Configuration.GetValue<int?>("ASPNETCORE_HTTP_PORTS") ?? 8080;
+
+		builder.WebHost.ConfigureKestrel(kestrel =>
+		{
+			kestrel.ListenAnyIP(httpPort);
+			kestrel.ListenAnyIP(port);
+		});
+
+		return builder;
+	}
+
+	// Bound to the metrics port only, so /metrics never becomes reachable through the
+	// public API port (and therefore never through the public Traefik route either).
+	public static WebApplication MapMetricsEndpoint(this WebApplication app)
+	{
+		var metricsPort = app.Configuration.GetValue<int?>("Metrics:Port");
+		if (metricsPort is int port)
+			app.MapPrometheusScrapingEndpoint().RequireHost($"*:{port}");
+
+		return app;
 	}
 
 	public static WebApplication MapDefaultEndpoints(

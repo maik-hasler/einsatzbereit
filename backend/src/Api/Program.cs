@@ -25,6 +25,7 @@ var isDesignTimeToolInvocation = args.Any(a => a.StartsWith("--applicationName="
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddMetricsEndpoint();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -239,6 +240,7 @@ app.MapDefaultEndpoints(
 		.RequireRateLimiting(RateLimitingPolicies.Read)
 		.CacheOutput(OutputCachingPolicies.HealthCheck),
 	alive => alive.RequireRateLimiting(RateLimitingPolicies.Read));
+app.MapMetricsEndpoint();
 
 app.UseForwardedHeaders();
 
