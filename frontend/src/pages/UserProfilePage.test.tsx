@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Route, Routes } from "react-router";
 import UserProfilePage from "./UserProfilePage";
 import { renderWithProviders } from "../test/render";
@@ -80,7 +80,9 @@ describe("UserProfilePage missing profile", () => {
 
 		await screen.findByTestId("user-profile-load-failure");
 
-		expect(document.title).toBe("Profile not found | Einsatzbereit");
+		await waitFor(() =>
+			expect(document.title).toBe("Profile not found | Einsatzbereit"),
+		);
 	});
 
 	it("keeps a retry for a genuine server error", async () => {
