@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import OrganizationProfilePage from "./OrganizationProfilePage";
@@ -177,7 +177,9 @@ describe("OrganizationProfilePage missing organization", () => {
 
 		await screen.findByTestId("organization-load-failure");
 
-		expect(document.title).toBe("Organization not found | Einsatzbereit");
+		await waitFor(() =>
+			expect(document.title).toBe("Organization not found | Einsatzbereit"),
+		);
 	});
 
 	it("keeps a retry for a genuine server error", async () => {
