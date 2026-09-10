@@ -3,10 +3,25 @@ import {
 	byStartDateTime,
 	capacityToInput,
 	findOverlappingSlotIds,
+	isCompleteDateTime,
 	MAX_PARTICIPANTS_LIMIT,
 	overlapsAnySlot,
 	resolveCapacity,
 } from "./timeSlots";
+
+describe("isCompleteDateTime (#2373 follow-up)", () => {
+	it("accepts a full date-time value", () => {
+		expect(isCompleteDateTime("2026-09-18T21:23")).toBe(true);
+	});
+
+	it("rejects an empty value", () => {
+		expect(isCompleteDateTime("")).toBe(false);
+	});
+
+	it("rejects a date picked without a time yet", () => {
+		expect(isCompleteDateTime("2026-09-18")).toBe(false);
+	});
+});
 
 describe("resolveCapacity (#2325)", () => {
 	it("reads a whole number inside the cap", () => {

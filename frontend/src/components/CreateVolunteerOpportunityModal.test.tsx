@@ -463,7 +463,12 @@ describe("create-opportunity wizard: a time slot that ends before it starts (#23
 		).toBeInTheDocument();
 		expect(start).toHaveAttribute("aria-invalid", "true");
 		expect(end).toHaveAttribute("aria-invalid", "true");
-		expect(end).toHaveAttribute("aria-describedby", "time-slot-error");
+		// Also references the "pick a date, then a time" hint (#2373 follow-up) -
+		// aria-describedby accepts a space-separated list of ids, and a screen
+		// reader announces every one of them.
+		expect(end.getAttribute("aria-describedby")?.split(" ")).toEqual(
+			expect.arrayContaining(["time-slot-error"]),
+		);
 	});
 });
 
@@ -679,6 +684,28 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 			fireEvent.change(slotMax(), { target: { value: max } });
 		await userEvent.click(screen.getByRole("button", { name: "Add" }));
 	}
+
+	// #2373 follow-up: the "pick a date, then a time - both are required" hint
+	// used to be plain, sequential prose with no ARIA relationship to the
+	// fields it explains. Wiring it via aria-describedby (the same pattern
+	// this file already uses for the slot-error message) means a screen-reader
+	// user hears it however they land on the field, not only by reading
+	// forward through the DOM.
+	it("describes the Start/End fields with the date-then-time hint", async () => {
+		await gotoTimeSlots();
+
+		const hint = screen.getByText(
+			"Choose a date first, then set the time - both are required before this slot can be added.",
+		);
+		expect(hint).toHaveAttribute("id", "add-slot-datetime-hint");
+		expect(slotStart().getAttribute("aria-describedby")?.split(" ")).toEqual(
+			expect.arrayContaining(["add-slot-datetime-hint"]),
+		);
+		const slotEnd = document.querySelector("#slot-end") as HTMLElement;
+		expect(slotEnd.getAttribute("aria-describedby")?.split(" ")).toEqual(
+			expect.arrayContaining(["add-slot-datetime-hint"]),
+		);
+	});
 
 	// The organizer-facing "Start date must be in the future." guard (#2325)
 	// used to be reachable by typing an out-of-range value straight into a

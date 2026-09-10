@@ -49,7 +49,16 @@ export default function DateTimePicker({
 	const surfaceClass = getInputSurfaceClass(ariaInvalid);
 
 	function handleDateChange(nextDate: string) {
-		onChange(nextDate ? `${nextDate}T${time || "00:00"}` : "");
+		if (!nextDate) {
+			onChange("");
+			return;
+		}
+		// Composing a `T${time}` suffix before the user has chosen one would
+		// silently default it to midnight - a value indistinguishable from one
+		// they picked on purpose (#2373 follow-up). Stay at the date-only shape
+		// (`isCompleteDateTime` in `timeSlots.ts` treats that as incomplete)
+		// until `handleTimeChange` actually contributes a time.
+		onChange(time ? `${nextDate}T${time}` : nextDate);
 	}
 
 	function handleTimeChange(nextTime: string) {
@@ -58,7 +67,7 @@ export default function DateTimePicker({
 	}
 
 	return (
-		<div className="flex gap-2">
+		<div className="flex flex-wrap gap-2">
 			<DatePicker
 				id={id}
 				value={date}

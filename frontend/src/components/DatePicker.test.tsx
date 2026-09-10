@@ -119,4 +119,65 @@ describe("DatePicker", () => {
 
 		expect(document.activeElement).toBe(screen.getByTestId("d-trigger"));
 	});
+
+	// #2373 follow-up: the calendar popover used to be `absolute`-positioned
+	// under its trigger, so a trigger sitting near a clipping/scrollable
+	// ancestor's edge (e.g. the "End" time-slot field in a modal) forced that
+	// ancestor to grow a scrollbar just to fit the overflowing grid. Portaling
+	// to `document.body` and positioning in viewport coordinates fixes that -
+	// this asserts the panel is no longer a DOM descendant of such an
+	// ancestor, so it can no longer be clipped or force it to scroll.
+	it("renders the popover outside a clipping ancestor, not nested inside it", async () => {
+		const user = userEvent.setup();
+		renderWithProviders(
+			<div data-testid="clipping-ancestor" className="overflow-hidden">
+				<DatePicker id="d" value="2026-03-15" onChange={() => {}} />
+			</div>,
+		);
+
+		await user.click(screen.getByTestId("d-trigger"));
+		const grid = screen.getByRole("grid");
+		const ancestor = screen.getByTestId("clipping-ancestor");
+
+		expect(ancestor.contains(grid)).toBe(false);
+		expect(document.body.contains(grid)).toBe(true);
+	});
+
+	// #2373 follow-up: portaling to `document.body` moved the panel out of
+	// whatever dialog's own focus trap it opened inside (e.g. `Modal`'s, which
+	// only walks its own DOM subtree - Modal.tsx). Tabbing off either end of
+	// the panel used to escape to whatever the browser found next in real
+	// document order, bypassing that trap entirely. The panel now closes and
+	// returns focus to the trigger instead - which was never moved, so it's
+	// still wherever the enclosing dialog's own trap expects it.
+	it("closes and returns focus to the trigger when Tab would exit the popover", async () => {
+		const user = userEvent.setup();
+		renderWithProviders(
+			<DatePicker id="d" value="2026-03-15" onChange={() => {}} />,
+		);
+
+		await user.click(screen.getByTestId("d-trigger"));
+		const grid = screen.getByRole("grid");
+		(grid.querySelector('[data-date="2026-03-15"]') as HTMLElement).focus();
+
+		await user.tab();
+
+		expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+		expect(document.activeElement).toBe(screen.getByTestId("d-trigger"));
+	});
+
+	it("closes and returns focus to the trigger on Shift+Tab from the popover's first control", async () => {
+		const user = userEvent.setup();
+		renderWithProviders(
+			<DatePicker id="d" value="2026-03-15" onChange={() => {}} />,
+		);
+
+		await user.click(screen.getByTestId("d-trigger"));
+		screen.getByRole("button", { name: /previous month/i }).focus();
+
+		await user.tab({ shift: true });
+
+		expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+		expect(document.activeElement).toBe(screen.getByTestId("d-trigger"));
+	});
 });

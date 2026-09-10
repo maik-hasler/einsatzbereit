@@ -32,6 +32,8 @@ const VARIANT_CLASSES = {
 
 	dangerOutline: "border border-red-500 text-red-700 hover:bg-red-50",
 	outline: "border border-gray-500 font-medium text-gray-700 hover:bg-gray-50",
+	brandOutline:
+		"border border-brand-600 font-medium text-brand-700 hover:bg-brand-50",
 	onDark: "bg-white font-semibold text-brand-800 hover:bg-brand-50",
 	outlineOnDark:
 		"border border-white/50 font-medium text-white hover:border-white hover:bg-white/10",

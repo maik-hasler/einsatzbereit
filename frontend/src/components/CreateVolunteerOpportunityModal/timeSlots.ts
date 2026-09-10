@@ -10,6 +10,18 @@
 export const MAX_PARTICIPANTS_LIMIT = 10000;
 
 /**
+ * Whether a `DateTimePicker` value ("" / "yyyy-MM-dd" / "yyyy-MM-ddTHH:mm")
+ * carries both a date and a time. `DateTimePicker` emits the date-only shape
+ * the moment a day is picked but no time has been chosen yet - real, but not
+ * something `zonedDatetimeLocalToUtc` can parse, and not enough to add or
+ * save a slot on (#2373 follow-up: a bare date used to silently compose with
+ * a midnight default instead of staying incomplete).
+ */
+export function isCompleteDateTime(value: string): boolean {
+	return value.includes("T") && value.split("T")[1] !== "";
+}
+
+/**
  * What the capacity box holds: `null` while "unlimited" is ticked, otherwise
  * the raw text, so a half-typed or out-of-range figure survives long enough to
  * be reported instead of being silently rewritten to 1.
