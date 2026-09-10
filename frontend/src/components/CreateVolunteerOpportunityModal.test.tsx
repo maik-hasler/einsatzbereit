@@ -819,22 +819,32 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 	});
 
 	it("warns about an overlap before it is added, and flags both slots after", async () => {
-		await gotoTimeSlots();
-		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+		// Fixture times are fixed clock-face values ("10:00", "13:00" on a fixed
+		// date) standing in for "a time slot in the future" - `DatePicker`
+		// refuses to pick a day before today (#2325), so the wall clock has to
+		// be pinned behind them for the picks below to succeed at all.
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			await gotoTimeSlots();
+			await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
 
-		await pickDateTime("slot-start", "2026-09-10T11:00");
-		await pickDateTime("slot-end", "2026-09-10T13:00");
+			await pickDateTime("slot-start", "2026-09-10T11:00");
+			await pickDateTime("slot-end", "2026-09-10T13:00");
 
-		expect(
-			await screen.findByText(
-				"This overlaps a time slot already on the list - a volunteer could sign up for both.",
-			),
-		).toBeInTheDocument();
+			expect(
+				await screen.findByText(
+					"This overlaps a time slot already on the list - a volunteer could sign up for both.",
+				),
+			).toBeInTheDocument();
 
-		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+			await userEvent.click(screen.getByRole("button", { name: "Add" }));
 
-		await waitFor(() => expect(slotRows()).toHaveLength(2));
-		expect(screen.getAllByText("Overlaps another time slot")).toHaveLength(2);
+			await waitFor(() => expect(slotRows()).toHaveLength(2));
+			expect(screen.getAllByText("Overlaps another time slot")).toHaveLength(2);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("never creates the opportunity when a staged slot has aged into the past", async () => {
@@ -862,15 +872,24 @@ describe("create-opportunity wizard: time slot guards (#2325)", () => {
 	});
 
 	it("stays quiet about slots that merely sit back to back", async () => {
-		await gotoTimeSlots();
-		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+		// Same reasoning as the overlap test above: pin the clock behind the
+		// fixed "10:00"-"14:00" fixture times so DatePicker's future-only day
+		// guard doesn't refuse the picks below.
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			await gotoTimeSlots();
+			await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
 
-		await pickDateTime("slot-start", "2026-09-10T12:00");
-		await pickDateTime("slot-end", "2026-09-10T14:00");
-		await userEvent.click(screen.getByRole("button", { name: "Add" }));
+			await pickDateTime("slot-start", "2026-09-10T12:00");
+			await pickDateTime("slot-end", "2026-09-10T14:00");
+			await userEvent.click(screen.getByRole("button", { name: "Add" }));
 
-		await waitFor(() => expect(slotRows()).toHaveLength(2));
-		expect(screen.queryByText("Overlaps another time slot")).toBeNull();
+			await waitFor(() => expect(slotRows()).toHaveLength(2));
+			expect(screen.queryByText("Overlaps another time slot")).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
 
