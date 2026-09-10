@@ -376,6 +376,7 @@
       "addTitle": "Add time slot",
       "fieldStart": "Start",
       "fieldEnd": "End",
+      "dateTimeHint": "Choose a date first, then set the time - both are required before this slot can be added.",
       "fieldMaxParticipants": "Max. participants",
       "unlimited": "Unlimited",
       "addButton": "Add",

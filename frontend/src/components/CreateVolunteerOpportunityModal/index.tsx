@@ -42,6 +42,7 @@ import type { OpportunityFormValues } from "./schema";
 import {
 	byStartDateTime,
 	capacityToInput,
+	isCompleteDateTime,
 	MAX_PARTICIPANTS_LIMIT,
 	resolveCapacity,
 } from "./timeSlots";
@@ -529,7 +530,11 @@ export default function CreateVolunteerOpportunityModal({
 	}
 
 	async function handleAddSlot() {
-		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
+		if (
+			!isCompleteDateTime(newSlot.startDateTime) ||
+			!isCompleteDateTime(newSlot.endDateTime)
+		)
+			return;
 		setSlotError(null);
 		clearInvalidNewSlotFields();
 		const start = zonedDatetimeLocalToUtc(
@@ -778,7 +783,11 @@ export default function CreateVolunteerOpportunityModal({
 			void applySlotEdit(edit);
 			return;
 		}
-		if (!edit.startDateTime || !edit.endDateTime) return;
+		if (
+			!isCompleteDateTime(edit.startDateTime) ||
+			!isCompleteDateTime(edit.endDateTime)
+		)
+			return;
 		const start = zonedDatetimeLocalToUtc(
 			edit.startDateTime,
 			CANONICAL_TIME_ZONE,

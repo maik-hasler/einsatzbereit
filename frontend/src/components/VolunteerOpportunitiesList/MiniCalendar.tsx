@@ -324,7 +324,7 @@ export default function MiniCalendar({
 												: isEdge
 													? "bg-brand-700 font-semibold text-white"
 													: isToday
-														? `font-medium text-brand-700 ring-2 ring-brand-300 ${isMarked ? "bg-brand-50 hover:bg-brand-100" : "hover:bg-brand-50"}`
+														? `font-medium text-brand-700 ring-2 ring-brand-500 ${isMarked ? "bg-brand-50 hover:bg-brand-100" : "hover:bg-brand-50"}`
 														: isMarked
 															? "bg-brand-50 text-gray-700 hover:bg-brand-100"
 															: "text-gray-700 hover:bg-gray-100",

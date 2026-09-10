@@ -75,7 +75,7 @@ describe("DateTimePicker", () => {
 		expect(screen.getByLabelText(/time/i)).toBeDisabled();
 	});
 
-	it("defaults a fresh date's time to midnight", async () => {
+	it("stays date-only on a fresh pick, without defaulting the time to midnight", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
 		renderWithProviders(
@@ -92,8 +92,41 @@ describe("DateTimePicker", () => {
 		const today = within(grid).getByRole("button", { current: "date" });
 		await user.click(today);
 
+		// No "T00:00" suffix - a picked-but-not-yet-timed value must stay
+		// distinguishable from one the user actually chose (#2373 follow-up).
 		expect(onChange).toHaveBeenCalledWith(
-			expect.stringMatching(/^\d{4}-\d{2}-\d{2}T00:00$/),
+			expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 		);
+	});
+
+	it("enables the time field once a date-only value is picked, still empty", () => {
+		renderWithProviders(
+			<DateTimePicker
+				id="slot-start"
+				label="Start"
+				value="2026-03-15"
+				onChange={() => {}}
+			/>,
+		);
+		const timeField = screen.getByLabelText(/time/i);
+		expect(timeField).toBeEnabled();
+		expect(timeField).toHaveValue("");
+	});
+
+	it("completes the value once a time is set on a date-only pick", () => {
+		const onChange = vi.fn();
+		renderWithProviders(
+			<DateTimePicker
+				id="slot-start"
+				label="Start"
+				value="2026-03-15"
+				onChange={onChange}
+			/>,
+		);
+
+		fireEvent.change(screen.getByLabelText(/time/i), {
+			target: { value: "09:30" },
+		});
+		expect(onChange).toHaveBeenCalledWith("2026-03-15T09:30");
 	});
 });

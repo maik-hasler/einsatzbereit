@@ -8,6 +8,7 @@ import DatePicker from "../DatePicker";
 import DateTimePicker from "../DateTimePicker";
 import ErrorBanner from "../ErrorBanner";
 import Chip from "../Chip";
+import Button from "../Button";
 import { formatDateTimeRange } from "../../lib/format";
 import {
 	checkboxClass,
@@ -23,12 +24,25 @@ import {
 import type { OpportunityFormValues } from "./schema";
 import {
 	findOverlappingSlotIds,
+	isCompleteDateTime,
 	MAX_PARTICIPANTS_LIMIT,
 	overlapsAnySlot,
 } from "./timeSlots";
 import type { CapacityInput, NewSlotField } from "./timeSlots";
 
 const SLOT_ERROR_ID = "time-slot-error";
+const ADD_SLOT_HINT_ID = "add-slot-datetime-hint";
+
+function editSlotHintId(slotId: string): string {
+	return `edit-slot-datetime-hint-${slotId}`;
+}
+
+function joinDescribedBy(
+	...ids: (string | undefined | false)[]
+): string | undefined {
+	const present = ids.filter((id): id is string => Boolean(id));
+	return present.length > 0 ? present.join(" ") : undefined;
+}
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
 
@@ -168,7 +182,11 @@ export default function DetailsStep({
 	);
 
 	const newSlotOverlaps = useMemo(() => {
-		if (!newSlot.startDateTime || !newSlot.endDateTime) return false;
+		if (
+			!isCompleteDateTime(newSlot.startDateTime) ||
+			!isCompleteDateTime(newSlot.endDateTime)
+		)
+			return false;
 		return overlapsAnySlot(
 			zonedDatetimeLocalToUtc(
 				newSlot.startDateTime,
@@ -318,6 +336,7 @@ export default function DetailsStep({
 																	startDateTime: value,
 																})
 															}
+															aria-describedby={editSlotHintId(slot.id)}
 														/>
 													</div>
 													<div>
@@ -337,9 +356,18 @@ export default function DetailsStep({
 																	endDateTime: value,
 																})
 															}
+															aria-describedby={editSlotHintId(slot.id)}
 														/>
 													</div>
 												</div>
+											)}
+											{editingSlot.scope === "Only" && (
+												<p
+													id={editSlotHintId(slot.id)}
+													className="text-xs text-gray-500"
+												>
+													{t("timeSlots.dateTimeHint")}
+												</p>
 											)}
 											<div>
 												<label
@@ -394,16 +422,22 @@ export default function DetailsStep({
 												>
 													{t("timeSlots.cancelEditButton")}
 												</button>
-												<button
+												<Button
 													type="button"
-													disabled={updatingSlotId === slot.id}
+													variant="brandOutline"
+													size="sm"
+													disabled={
+														updatingSlotId === slot.id ||
+														(editingSlot.scope === "Only" &&
+															(!isCompleteDateTime(editingSlot.startDateTime) ||
+																!isCompleteDateTime(editingSlot.endDateTime)))
+													}
 													onClick={() => onSaveEditSlot(slot.bookedCount)}
-													className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
 												>
 													{updatingSlotId === slot.id
 														? t("timeSlots.editing")
 														: t("timeSlots.saveButton")}
-												</button>
+												</Button>
 											</div>
 										</div>
 									</li>
@@ -511,11 +545,10 @@ export default function DetailsStep({
 										})
 									}
 									aria-invalid={invalidNewSlotFields.has("start")}
-									aria-describedby={
-										invalidNewSlotFields.has("start")
-											? SLOT_ERROR_ID
-											: undefined
-									}
+									aria-describedby={joinDescribedBy(
+										ADD_SLOT_HINT_ID,
+										invalidNewSlotFields.has("start") && SLOT_ERROR_ID,
+									)}
 								/>
 							</div>
 							<div>
@@ -536,12 +569,16 @@ export default function DetailsStep({
 										})
 									}
 									aria-invalid={invalidNewSlotFields.has("end")}
-									aria-describedby={
-										invalidNewSlotFields.has("end") ? SLOT_ERROR_ID : undefined
-									}
+									aria-describedby={joinDescribedBy(
+										ADD_SLOT_HINT_ID,
+										invalidNewSlotFields.has("end") && SLOT_ERROR_ID,
+									)}
 								/>
 							</div>
 						</div>
+						<p id={ADD_SLOT_HINT_ID} className="text-xs text-gray-500">
+							{t("timeSlots.dateTimeHint")}
+						</p>
 						<div>
 							<label
 								htmlFor="slot-max"
@@ -655,16 +692,19 @@ export default function DetailsStep({
 								{slotError}
 							</p>
 						)}
-						<button
+						<Button
 							type="button"
+							variant="brandOutline"
+							size="sm"
 							disabled={
-								addingSlot || !newSlot.startDateTime || !newSlot.endDateTime
+								addingSlot ||
+								!isCompleteDateTime(newSlot.startDateTime) ||
+								!isCompleteDateTime(newSlot.endDateTime)
 							}
 							onClick={onAddSlot}
-							className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
 						>
 							{addingSlot ? t("timeSlots.adding") : t("timeSlots.addButton")}
-						</button>
+						</Button>
 					</div>
 				</div>
 			)}

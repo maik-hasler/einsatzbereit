@@ -376,6 +376,7 @@
       "addTitle": "Zeitslot hinzufügen",
       "fieldStart": "Beginn",
       "fieldEnd": "Ende",
+      "dateTimeHint": "Wähle zuerst ein Datum, dann die Uhrzeit – beides wird benötigt, bevor der Zeitslot hinzugefügt werden kann.",
       "fieldMaxParticipants": "Max. Teilnehmer:innen",
       "unlimited": "Unbegrenzt",
       "addButton": "Hinzufügen",

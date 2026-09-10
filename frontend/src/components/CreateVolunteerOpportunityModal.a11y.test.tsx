@@ -108,23 +108,32 @@ describe("CreateVolunteerOpportunityModal a11y", () => {
 	});
 
 	it("has no violations while the list and the add form flag an overlap (#2325)", async () => {
-		open();
-		await gotoDetails();
-		await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
-		await addSlot("2026-09-10T11:00", "2026-09-10T13:00");
+		// Fixed clock-face fixture times stand in for "in the future" - pin the
+		// wall clock behind them, same as the past-dated-day test above, or
+		// DatePicker's future-only day guard (#2325) refuses every pick below.
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			vi.setSystemTime(new Date("2026-09-10T06:00:00Z"));
+			open();
+			await gotoDetails();
+			await addSlot("2026-09-10T10:00", "2026-09-10T12:00");
+			await addSlot("2026-09-10T11:00", "2026-09-10T13:00");
 
-		// A third overlapping range left in the boxes, so the pre-add hint and
-		// the two flagged rows are on screen at the same time.
-		await pickDateTime("slot-start", "2026-09-10T11:30");
-		await pickDateTime("slot-end", "2026-09-10T12:30");
+			// A third overlapping range left in the boxes, so the pre-add hint and
+			// the two flagged rows are on screen at the same time.
+			await pickDateTime("slot-start", "2026-09-10T11:30");
+			await pickDateTime("slot-end", "2026-09-10T12:30");
 
-		expect(
-			await screen.findByText(
-				"This overlaps a time slot already on the list - a volunteer could sign up for both.",
-			),
-		).toBeInTheDocument();
-		expect(screen.getAllByText("Overlaps another time slot")).toHaveLength(2);
-		await expectNoA11yViolations();
+			expect(
+				await screen.findByText(
+					"This overlaps a time slot already on the list - a volunteer could sign up for both.",
+				),
+			).toBeInTheDocument();
+			expect(screen.getAllByText("Overlaps another time slot")).toHaveLength(2);
+			await expectNoA11yViolations();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("has no violations while a banner can be replaced or removed (#2325)", async () => {
