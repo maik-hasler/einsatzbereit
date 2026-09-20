@@ -6,7 +6,8 @@ description: >
   backend/src/Application, a new page under frontend/src/pages, a new entity
   plus its migration - and whenever the user asks to grill, interrogate,
   pressure-test or poke holes in an idea, plan or decision. Not for reviewing
-  code that already exists: that is /self-review for a diff, /lens for the repo.
+  code that already exists: that is /self-review for a diff, or one of
+  this repo's review skills for the shipped app.
 license: Complete terms in LICENSE (MIT, vendored from github.com/mattpocock/skills)
 ---
 
@@ -94,7 +95,9 @@ turned on one of them:
 - Do not grill a change that is already scoped: a bug fix, a dependency bump, a
   copy change, a refactor with no user-visible surface.
 - For work that already exists, this is the wrong skill. `/self-review` reviews
-  a diff before a PR; `/lens` reviews the shipped repository.
+  a diff before a PR; the six review skills (`/walkthrough`, `/bug-hunt`,
+  `/dead-weight`, `/docs-drift`, `/untangle`, `/gates`) review the shipped
+  repository.
 
 ## Provenance
 

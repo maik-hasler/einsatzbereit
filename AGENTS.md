@@ -56,12 +56,22 @@ edit on your own initiative):
   spends a CI round on it).
 - **Skills** - `.claude/skills/self-review/` (`/self-review`, its frontmatter
   description covers what it does; run it before opening a PR).
-  `.claude/skills/lens/` is this repo's autonomous routine and on-demand
-  review tool: one lens per run - bugs, dead code, dead features, repo
-  hygiene, docs quality, test gaps, CI, security, contributor accessibility,
-  accessibility, code/comment complexity, or comment bloat - chosen by
-  triage or named by the user. Report-only: files GitHub issues (label
-  `lens`, capped at 5/run), never code or a PR.
+  Six **review skills**, each invoked by name and only by name
+  (`disable-model-invocation: true` - they file GitHub issues, so none of
+  them starts on its own): `/walkthrough` (use the running app as a person
+  would, in German, then anchor every finding in source - this is the one
+  that converts best, and it needs a reachable instance plus a browser),
+  `/bug-hunt` (trace one backend slice end to end, plus the security smells
+  no CI gate covers), `/dead-weight` (what can be deleted, with the
+  exhaustive search that proves it), `/docs-drift` (does the documentation
+  fit its reader, and is it still true), `/untangle` (code harder to change
+  than it needs to be, and the comments around it), `/gates` (what actually
+  catches a regression: CI coverage, test gaps, pipeline cost). All six are
+  report-only - GitHub issues, never code, never a PR - and all six share
+  one contract: `.claude/review/contract.md` holds the evidence bar, the
+  dedup rule, the issue cap and the filing shape, and
+  `.claude/review/repo-map.md` is the only place a repo fact may live. A
+  skill states method and cites those two; it never restates them.
   `.claude/skills/frontend-design/` (vendored from `anthropics/skills`,
   Apache-2.0, `LICENSE` alongside it) pushes frontend redesign work
   toward a deliberate, non-generic visual direction - typography, color
@@ -109,11 +119,23 @@ edit on your own initiative):
   back; each was tried here and cost something. `playwright-skill` (#141 -
   superseded by the `playwright` plugin above). `issue-triage` (#788 - it
   shipped fixes for findings nobody had reviewed end to end, which is why
-  `lens` is report-only). `persona-simulation` and `deep-lens-review` (#788 -
-  one shape wearing three names, merged into `lens`). The OKF wiki and its
-  `ingest`/`query`/`lint` skills (#1705 - a second source of truth beside
-  `docs/` that drifted from it). `live-verify` and the personas lens (#2165 -
-  both drove a staging site this repo no longer owns, see ADR-7).
+  the review skills are report-only). `persona-simulation` and
+  `deep-lens-review` (#788 - one shape wearing three names, merged into the
+  `lens` skill, which the six review skills above later replaced). The OKF
+  wiki and its `ingest`/`query`/`lint` skills (#1705 - a second source of
+  truth beside `docs/` that drifted from it). `live-verify` and the personas
+  lens (#2165 - both drove a staging site this repo no longer owns, see
+  ADR-7). The `lens` skill itself and four of its twelve lenses: an outcome
+  audit found only ~28 of the 522 issues carrying its label were its own
+  output, and that the shared contract restated per lens had already drifted
+  - the same false claim was fixed in one copy (#1879) and survived 37 days
+  in another. `contributor-dx` went with it: it simulated an arrival journey
+  that exactly one outside human has walked in 1,194 commits. `repo-hygiene`
+  survives only as `/dead-weight`'s first step, its standard-files half
+  having been closed by its own earlier findings. `ci` and `test-gaps` merged
+  into `/gates`; `dead-features` into `/dead-weight`; `comment-bloat` and
+  `complexity` into `/untangle`; `accessibility` into `/walkthrough`, where
+  the driven pass it needs actually happens.
 
 ## Sandbox Limitations (Claude Code on the web)
 
