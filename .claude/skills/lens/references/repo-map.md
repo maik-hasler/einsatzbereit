@@ -25,7 +25,7 @@ but English-documented.
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
 | `.github/workflows` | 11 workflows; `publish.yml` alone is ~800 lines. |
-| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`, and `frontend-design` vendored from `anthropics/skills`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
+| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`, plus `frontend-design` and `grilling` vendored from `anthropics/skills` and `mattpocock/skills`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
 | `renovate.json` | Dependency-update config. |
 
 ## False-positive traps

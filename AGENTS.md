@@ -67,17 +67,28 @@ edit on your own initiative):
   toward a deliberate, non-generic visual direction - typography, color
   theming, motion, spatial composition - instead of generic AI-layout
   defaults; load it before visual/layout changes to frontend components
-  or pages.
+  or pages. `.claude/skills/grilling/` (vendored from `mattpocock/skills`,
+  MIT, `LICENSE` alongside it) stress-tests a plan *before* it is built -
+  load it before starting a new vertical slice, feature or user-facing
+  flow, the class of work where #1979, #1834, #1696 and #1881 shipped and
+  were then deleted for reasons answerable up front. Report-only, like the
+  other two: it asks, it never builds.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (`frontend/src/client/api-client.ts`,
   `backend/tests/IntegrationTests/ApiClient.cs`,
   `backend/src/Api/wwwroot/openapi-v1.json`; see README.md's Tech Stack
   table, "API client" row).
-  `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
-  once before ending a turn if backend/frontend source changed, blocking
-  only on an actual failure (capped at 2 blocks per session so it fails
-  open rather than risk a loop) - a safety net since this routine has no
-  human review before a PR goes out. The `SessionStart` hook
+  `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs once before ending a
+  turn if anything under `backend/src`/`frontend/src` changed (committed,
+  uncommitted or untracked, measured against the merge-base with `main`):
+  `dotnet build` of `IntegrationTests`/`ArchitectureTests`/`Application.UnitTests`
+  - which covers all of `src` plus every test project but `VisualTests`,
+  left out because its build installs Playwright browsers - then
+  `pnpm lint`+`check`, then the pinned `editorconfig-checker` over just the
+  changed files. It blocks only on an actual failure (capped at 2 blocks per
+  session so it fails open rather than risk a loop) and stays silent when the
+  binary cannot be fetched - a safety net since this routine has no human
+  review before a PR goes out. The `SessionStart` hook
   (`.claude/scripts/session-start.sh`) installs the .NET SDK version pinned
   in `backend/global.json` via `dotnet-install.sh` whenever `dotnet` is
   absent from `PATH` (see this file's Development Setup for the SDK
@@ -94,12 +105,21 @@ edit on your own initiative):
   in the current session directly, never delegate them. Availability can
   also vary turn-to-turn even in the main session - `ToolSearch` for
   `browser_navigate` first.
+- **Removed on purpose** - read the linked PR before proposing any of these
+  back; each was tried here and cost something. `playwright-skill` (#141 -
+  superseded by the `playwright` plugin above). `issue-triage` (#788 - it
+  shipped fixes for findings nobody had reviewed end to end, which is why
+  `lens` is report-only). `persona-simulation` and `deep-lens-review` (#788 -
+  one shape wearing three names, merged into `lens`). The OKF wiki and its
+  `ingest`/`query`/`lint` skills (#1705 - a second source of truth beside
+  `docs/` that drifted from it). `live-verify` and the personas lens (#2165 -
+  both drove a staging site this repo no longer owns, see ADR-7).
 
 ## Sandbox Limitations (Claude Code on the web)
 
 - **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Aspire), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner.
 - **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
-- **Run the `editorconfig` check the way CI does** - fetch the pinned release asset directly (`curl -sSL https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v4.0.1/editorconfig-checker-linux-amd64.tar.gz | tar xz`, then run `./editorconfig-checker -config .editorconfig-checker.json`); keep the version in step with `EC_VERSION` in `.github/workflows/lint.yml`. Do not reach for `npx editorconfig-checker` - the wrapper resolves its binary through the GitHub releases API, which the sandbox's git proxy answers with 403, and it pins nothing. Worth running whenever a change adds a `.py`, `.adoc` or `.puml` file: nothing else in the local toolchain checks indentation, so the first signal is otherwise a red PR.
+- **Run the `editorconfig` check the way CI does** - fetch the pinned release asset directly (`curl -sSL https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v4.0.1/editorconfig-checker-linux-amd64.tar.gz | tar xz`, then run `./editorconfig-checker -config .editorconfig-checker.json`); keep the version in step with `EC_VERSION` in `.github/workflows/lint.yml`. Do not reach for `npx editorconfig-checker` - the wrapper resolves its binary through the GitHub releases API, which the sandbox's git proxy answers with 403, and it pins nothing. `.claude/hooks/pre-stop-verify.sh` now runs this automatically over the changed files under `backend/src`/`frontend/src` before a turn ends, so the common case is covered; run it by hand when a change touches a `.adoc`, `.puml` or shell file outside those two trees, which the hook does not look at.
 - **This repo ships fast** - `git fetch origin main` and skim recent commits before any review/analysis task, not just implementation work; assuming last week's state is current wastes most of a review's effort re-finding what already shipped.
 
 ## Releases (autonomous from Claude Code on the web)

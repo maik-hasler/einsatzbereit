@@ -95,7 +95,7 @@ chore: update NuGet dependencies
 
 Rules:
 - Imperative mood, present tense: "add" not "added" or "adds"
-- Max 72 characters in the subject line
+- Keep the subject short enough to scan, but there is no hard limit: squash merges append ` (#NNNN)`, and what actually gates a merge is the PR title, validated below
 - Reference the Issue number in the PR description, not the commit
 
 PR titles are validated against Conventional Commits in CI by the [`PR Title`](.github/workflows/pr-title.yml) workflow. Non-conforming titles fail the check.

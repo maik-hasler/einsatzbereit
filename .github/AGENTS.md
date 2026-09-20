@@ -110,14 +110,14 @@ The Claude Code on the web git proxy restricts pushes to the current working bra
 # 1. From an up-to-date main, branch with the release name as the suffix.
 git checkout -b release/v1.2.3-rc.1 main
 
-# 2. Empty commit (or any commit on this branch) carries the push.
-git commit --allow-empty -m "release: v1.2.3-rc.1"
-
-# 3. Push the branch - sandbox allows this because it is the working branch.
+# 2. Push the branch - sandbox allows this because it is the working branch.
+#    Creating the branch is itself the push event release-rc.yml triggers on;
+#    do NOT add a commit. Any commit here makes HEAD a descendant of main,
+#    which is precisely what the ancestor check below refuses.
 git push -u origin release/v1.2.3-rc.1
 ```
 
-`release-rc.yml` validates the branch suffix, verifies the branch's `HEAD` is an ancestor of `origin/main` (`git merge-base --is-ancestor`, #2204 - refuses to tag a commit that never merged into `main`), promotes it to an annotated tag pushed with `RELEASE_TOKEN`, and deletes the branch - see the workflow's own top-of-file comment for the full mechanics. Cutting the branch from an up-to-date `main` as step 1 above does, keeps this check a no-op; it only fires if the release branch drifted from `main` (a commit added after the branch point, or the branch cut from something other than `main`). After the tag exists, `publish.yml` runs end-to-end (test -> build -> GHCR -> GitHub Release) and stops there.
+`release-rc.yml` validates the branch suffix, verifies the branch's `HEAD` is an ancestor of `origin/main` (`git merge-base --is-ancestor`, #2204 - refuses to tag a commit that never merged into `main`), promotes it to an annotated tag pushed with `RELEASE_TOKEN`, and deletes the branch. Cutting the branch from an up-to-date `main` as step 1 above does, keeps this check a no-op; it only fires if the release branch drifted from `main` (a commit added after the branch point, or the branch cut from something other than `main`). After the tag exists, `publish.yml` runs end-to-end (test -> build -> GHCR -> GitHub Release) and stops there.
 
 **One-time setup the user must do:**
 
@@ -129,7 +129,7 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 **After pushing the branch:**
 
 1. Poll the publish workflow's checks for the new tag (via `mcp__github__get_commit` → check_runs, or fetch `https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs`), until `publish-backend`/`publish-frontend`/`publish-keycloak` all report success.
-2. If any publish job fails, diagnose from that job's logs here. Once all three are green the tag's images exist on GHCR and the release is done as far as this repository is concerned.
+2. If any publish job fails, diagnose from that job's logs here, then **re-run the failed jobs of that same run** (`rerun_failed_jobs`, or the Actions UI) rather than cutting a fresh `-rc`: the tag already exists and a new rc buys nothing when the failure was transient. Cut a new rc only when the commit itself is broken. Once all three are green the tag's images exist on GHCR and the release is done as far as this repository is concerned.
 
 `RELEASE_TOKEN` is the only repository secret this repo needs. There are no environment secrets and no GitHub Environments - nothing here connects to a running instance of the app.
 
