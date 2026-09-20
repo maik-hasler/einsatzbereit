@@ -222,7 +222,7 @@
       "joinWaitlist": "Für Zeitslot eintragen",
       "expressInterest": "Interesse bekunden",
       "germanOnlyNotice": "Nur auf Deutsch verfügbar",
-      "crossLocaleMatchNotice": "Trifft Ihre Suche auf {{language}} zu:",
+      "crossLocaleMatchNotice": "Trifft deine Suche auf {{language}} zu:",
       "flexibleDate": "Flexibler Termin",
       "applyBy": "Interesse bekunden bis {{date}}",
       "startsOn": "Beginnt am {{date}}",
@@ -804,8 +804,8 @@
       "withdrawErrorInterest": "Interessenbekundung konnte nicht zurückgezogen werden. Bitte versuche es erneut.",
       "withdrawSuccess": "Eintragung zurückgezogen.",
       "withdrawSuccessInterest": "Interesse zurückgezogen.",
-      "reactivate": "Erneut anmelden",
-      "reactivationLimitReached": "Du hast das Limit fürs Zurückziehen und erneute Anmelden für diesen Einsatz erreicht.",
+      "reactivate": "Erneut eintragen",
+      "reactivationLimitReached": "Du hast das Limit fürs Zurückziehen und erneute Eintragen für diesen Einsatz erreicht.",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",
@@ -1550,7 +1550,7 @@
         }
       },
       "auditLog": {
-        "scopeDescription": "Erfasst nur privilegierte Administrationsaktionen: Rollenänderungen, Sperren, Schattenlöschungen und Wiederherstellungen, abgelehnte Meldungen sowie von Admins abgesagte Eintragungen. Übliche Selbstbedienungsaktionen wie Anmelden, Abmelden oder das Versenden von Einladungen werden hier nicht erfasst.",
+        "scopeDescription": "Erfasst nur privilegierte Administrationsaktionen: Rollenänderungen, Sperren, Schattenlöschungen und Wiederherstellungen, abgelehnte Meldungen sowie von Admins abgesagte Eintragungen. Übliche Selbstbedienungsaktionen wie Eintragen, Zurückziehen oder das Versenden von Einladungen werden hier nicht erfasst.",
         "loading": "Audit-Log wird geladen…",
         "error": "Audit-Log konnte nicht geladen werden.",
         "noEntries": "Noch keine privilegierten Aktionen erfasst.",
