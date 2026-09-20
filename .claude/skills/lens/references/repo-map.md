@@ -17,10 +17,10 @@ but English-documented.
 | `backend/src/Domain` | Entities, invariants. Clean Architecture core. |
 | `backend/src/Application` | CQRS handlers per feature: Achievements, AuditLogs, Engagements, Invitations, Maps, Meta, Notifications, Organizations, Reports, Sitemap, Users, VolunteerOpportunities (plus `Common/`, shared infrastructure rather than a feature). These feature names are also the **vertical slices** for the bugs lens. |
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
-| `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see glossary). |
+| `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see `docs/Architecture/src/12_glossary.adoc`). |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
 | `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#), which drive the local Aspire stack - there is no root `package.json` and no committed `scripts/`. |
-| `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. Vitest unit-test suite (see `frontend/AGENTS.md`'s Unit Tests section) is a CI-gating quality gate alongside `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
+| `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `frontend/src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. Vitest unit-test suite (see `frontend/AGENTS.md`'s Unit Tests section) is a CI-gating quality gate alongside `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
@@ -35,7 +35,7 @@ candidate; each has produced embarrassing false positives in similar
 codebases.
 
 1. **DI/assembly scanning.** The project's own in-house `ISender`
-   dispatcher (not MediatR - see glossary) discovers handlers,
+   dispatcher (not MediatR - see the arc42 glossary) discovers handlers,
    validators, and endpoint classes without direct call sites. Zero grep
    hits for a handler type is expected, not evidence of dead code.
    Dead-handler proof requires the *request type* to be unsendable (no

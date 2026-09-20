@@ -5,9 +5,10 @@ style, not design taste.
 
 ## Scope rule - one vertical slice
 
-830 files cannot be bug-hunted in depth. Pick ONE feature slice
-(Achievements, Engagements, Invitations, Notifications, Organizations,
-Users, VolunteerOpportunities). Selection: user's choice if named,
+The whole codebase cannot be bug-hunted in depth. Pick ONE feature
+slice - `ls backend/src/Application/` is the authoritative list (every
+folder but `Common/`), and `repo-map.md` names them. Selection: user's
+choice if named,
 otherwise the slice with the highest recent churn + fix density from
 triage. State the chosen slice and the reason in "Scope & method".
 

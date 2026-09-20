@@ -46,7 +46,11 @@ take on a specific filed issue.
 3. **Never touch code, never open a branch or PR.** Output is GitHub
    issues (and comments) only - the one thing that keeps an otherwise-
    unsupervised, recurring run safe. Few and deep beats many and shallow
-   here too: cap at 5 filed issues per run, prioritized by severity/impact;
+   here too: cap at 5 filed issues per run, prioritized by severity/impact.
+   A run that genuinely has more to say files an index issue listing every
+   finding and links the filed subset to it - that is what the best-
+   converting run in this skill's history did (#1800) - rather than quietly
+   filing 30. Report the count against the cap in the closing summary;
    group related micro-findings into one issue with a table rather than
    filing one issue each.
 4. **Run browser-driving work yourself, never delegate it.** MCP tool
@@ -191,11 +195,15 @@ Severity rubric:
 
 ### Step 4 - Dedup, then file
 
-Before filing anything, `search_issues` for `label:lens` plus
-keywords from the candidate finding - don't re-report the same thing
-every run just because it's still true. If an open PR already addresses
-it, note the relationship in a comment on the existing issue instead of
-filing a duplicate.
+Before filing anything, `search_issues` for keywords from the candidate
+finding across **all** issues, open and closed, with no label filter -
+don't re-report the same thing every run just because it's still true.
+Searching `label:lens` alone is not enough and has already failed: the
+maintainer files findings by hand without that label (#2384-#2413 in
+September), and the label is also carried by issues from other review
+workflows. A finding you cannot distinguish from an existing issue is a
+comment on that issue, never a new one. If an open PR already addresses
+it, note the relationship there instead.
 
 For each finding that survives dedup and the confidence bar, use
 `issue_write` (method `create`), matching the shape of the existing
@@ -206,7 +214,15 @@ Story, Description, Acceptance Criteria, Implementation Proposal,
 Additional Information) template - whichever fits. Label every filed
 issue `lens` plus `bug` or `user-story` as appropriate (both
 labels are created automatically on first use, same as any other label in
-this repo).
+this repo), and end the body with one provenance line naming the lens and
+the date: `Filed by the <lens-name> lens, <YYYY-MM-DD>, at <short-sha>`.
+
+`label:lens` means "this skill filed it" and nothing else. Other review
+workflows that reuse it break the dedup above, because a later run cannot
+tell its own prior findings from someone else's - which is exactly what
+happened here: of the issues carrying this label, the large majority came
+from two one-off audits rather than from a lens run. A sweep that is not a
+lens run gets its own label.
 
 Route judgment calls explicitly:
 
@@ -230,7 +246,7 @@ owner.
 
 Group micro-findings (e.g. 12 unused locale keys, or the same layout bug
 repeated across 4 files) into ONE issue with a table or a list of every
-location - the 5-issue cap counts substantive findings, not individual
+location - the issue cap counts substantive findings, not individual
 occurrences.
 
 End every run with a short closing summary in chat (not a file): the lens
@@ -238,6 +254,26 @@ chosen and why, which slice was exercised, how many issues were filed vs. dedupe
 and the parking lot. That summary is the entire visible output of a run
 that filed nothing - a clean pass is a fine, common outcome, not a failure
 to find something.
+
+## Cadence, and keeping this corpus honest
+
+This skill is worth running on a slow, regular beat - weekly to
+fortnightly. It is not worth running hourly: the reference files below
+describe a repo that moves, and back-to-back runs re-read the same state.
+Longer gaps are the real risk, though: between 2026-08-14 and 2026-09-20
+nothing ran under this label while the maintainer filed 31 findings by
+hand from ordinary use, which is this skill's own territory.
+
+Repo facts - counts, file lists, sizes, tool names - belong in
+`references/repo-map.md` and nowhere else. Every other reference file
+states method and cites `repo-map.md` or the command that computes the
+number. This is not tidiness: the same wrong claim ("the frontend has no
+unit test runner") was reported by this skill as #1879, fixed in
+`repo-map.md` only, and survived 37 more days in `lens-test-gaps.md`,
+where a test-gaps run would actually read it. One copy cannot drift
+against another if there is only one copy. When a run notices a stale
+claim in its own reference file, that is a finding worth filing like any
+other.
 
 ## Boundary to the in-repo `self-review` skill
 

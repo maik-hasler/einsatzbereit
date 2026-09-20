@@ -13,7 +13,7 @@ assets. Deletion candidates, each with proof.
 2. Unused locale keys: run `node scripts/check-i18n-keys.js` first
    (repo's authority), then check dynamic key construction (repo-map
    trap 5) for anything it flags.
-3. Unused assets (`src/assets`, `public/`): grep each filename across
+3. Unused assets (`frontend/public/`): grep each filename across
    `src/` and `index.html`.
 4. CSS: selectors in `styles/global.css` never used in any `className`.
    Beware computed class strings (`formClasses.ts` composes classes) -
@@ -51,6 +51,6 @@ the evidence names the unverifiable assumption.
 ## Output guidance
 
 Group micro-findings (e.g. 12 unused locale keys) into ONE finding with
-a table - the 10-finding cap counts substantive items, not lines.
+a table - the issue cap in SKILL.md counts substantive items, not lines.
 Estimated deletion size per finding (files/LOC) helps the user
 prioritize cleanup PRs.

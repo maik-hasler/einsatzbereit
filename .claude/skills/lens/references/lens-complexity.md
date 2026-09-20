@@ -44,10 +44,11 @@ its own; unexplained or unnecessary complexity is.
    over-explained comments in their own right (regardless of what the
    surrounding code's structure looks like) are `lens-comment-bloat.md`'s
    job, not this one - see that file's boundary section.
-4. **Cross-reference against this repo's own stated preference.** Root
-   `AGENTS.md`'s "Simple code: the source code should be simple enough
-   that anyone can contribute" is a named goal, not an aspiration to
-   ignore - weight a complexity finding higher if it sits in a feature
+4. **Cross-reference against this repo's own stated preference.** The
+   arc42 quality goal "Simple code: the source code should be simple
+   enough that anyone can contribute"
+   (`docs/Architecture/src/01_introduction_and_goals.adoc`) is a named
+   goal, not an aspiration to ignore - weight a complexity finding higher if it sits in a feature
    area a new contributor would plausibly touch early (see
    `lens-contributor-dx.md`), lower if it's inherent complexity in a
    genuinely hard problem (the dashboard widget drag/resize/overlap
@@ -75,4 +76,5 @@ Generated code (`api-client.ts`, EF migrations) and test files with
 intentionally repetitive setup are out of scope - complexity there is not
 the codebase's to fix. A comment explaining *why*, not *what*, next to
 genuinely non-obvious code is the target state this repo already asks
-for (root `AGENTS.md` style guidance) - don't flag it as noise.
+for - see `CONTRIBUTING.md`'s Code Style section, and the comment bar
+#2167 set repo-wide - don't flag it as noise.

@@ -21,13 +21,16 @@ maps and reads tests, it does not execute them.
    projects. Hunt: tests without meaningful assertions, tests asserting
    mocks were called rather than outcomes, copy-paste tests that test
    the same thing, test names lying about content.
-4. **Frontend reality check:** there is NO unit test runner - the gate
-   is tsc + eslint + VisualTests. Do not dumbly report "frontend has no
-   tests". Instead: check whether any policy documents this choice
-   (CLAUDE.md, CONTRIBUTING); then identify the spots where the strategy
-   is weakest - pure logic in `src/lib/` (e.g. date/format/status
-   mapping) is cheap to test and invisible to visual tests. Recommend
-   the 3-5 highest-value first tests, with the risk each one retires.
+4. **Frontend inventory:** the frontend has Vitest (`pnpm test`, gated
+   in `frontend-checks.yml`) alongside tsc, eslint and VisualTests, so
+   apply the same enumeration as the backend rather than assuming
+   absence - count the `*.test.ts(x)` files against `src/lib/` and
+   `src/components/`, and read `frontend/AGENTS.md`'s Unit Tests section
+   for what belongs where. Mutation score is the assertion-quality
+   oracle here: `pnpm mutation:since` scores only what the diff touched,
+   and `frontend/AGENTS.md` records the baseline and how to read it.
+   Recommend the 3-5 highest-value missing tests, with the risk each
+   one retires.
 5. **Test infra friction:** can a contributor run each suite locally
    with documented commands? Missing docs here feed contributor-dx -
    parking lot, unless the command is broken.

@@ -11,8 +11,8 @@ the repo as it is - every friction point is a candidate finding.
    Is the project's state honest (active? pre-1.0? looking for help?)?
    License clear? German project name + English docs: is the language
    expectation for issues/PRs stated anywhere?
-2. **Setup (first hour):** follow the Local Development section
-   literally, as someone with none of the prerequisites. Count the
+2. **Setup (first hour):** follow `README.md`'s Getting Started
+   section literally, as someone with none of the prerequisites. Count the
    installs (.NET 10 + Docker + pnpm), note undocumented assumptions
    (pnpm version? Docker resources? Windows/WSL viable?), missing
    troubleshooting for the predictable failures (ports taken, first

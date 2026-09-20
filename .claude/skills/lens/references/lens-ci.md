@@ -1,26 +1,32 @@
 # Lens: CI health & performance
 
-Goal: the 9 workflows in `.github/workflows/` - do they gate the right
+Goal: every workflow in `.github/workflows/` - do they gate the right
 things (health), and do they waste time or minutes (performance). This
-lens reads every workflow line; ~1000 lines total, it is feasible and
-the point.
+lens reads every workflow line, which is feasible and is the point;
+size the job first with `ls .github/workflows | wc -l` and
+`cat .github/workflows/*.yml | wc -l` rather than trusting a number
+written here.
 
 ## Method - health
 
-1. **Gate completeness:** for each quality dimension the repo cares
-   about (dotnet build+tests, frontend check/lint/format, i18n parity,
-   editorconfig, security scanning, PR title convention, docs build):
-   which workflow enforces it, on which trigger? Build the matrix.
-   Holes = things a PR can break silently.
+1. **Gate completeness:** enumerate the dimensions from the workflows
+   themselves rather than from a list here - `frontend-checks.yml`
+   alone carries `pnpm audit`, Vitest and a row of bespoke
+   `frontend/scripts/check-*.js` gates, and there are also mutation
+   tests, a Keycloak realm-import check and CodeQL. For each: which
+   workflow enforces it, on which trigger? Build the matrix. Holes =
+   things a PR can break silently. Cross-check against what runs
+   *before* CI in `.claude/hooks/pre-stop-verify.sh`, since a gate
+   mirrored there fails earlier and cheaper.
 2. **Trigger & path-filter correctness:** do `paths:` filters match the
    actual layout? A filter like `backend/**` that misses the realm JSON
    lets relevant changes skip CI.
    Conversely: workflows running on changes they cannot be affected by.
 3. **Cross-workflow duplication:** same steps re-implemented in several
    workflows (checkout+setup blocks are fine; duplicated *logic* like
-   version derivation or build scripting is drift risk - publish.yml at
-   ~500 lines is the prime suspect; assess whether it should decompose
-   into reusable workflows or composite actions).
+   version derivation or build scripting is drift risk - publish.yml is
+   by far the largest and the prime suspect; assess whether it should
+   decompose into reusable workflows or composite actions).
 4. **Failure semantics:** `continue-on-error` masking real failures,
    jobs whose failure blocks nothing, missing `concurrency` groups
    (superseded pushes still burning minutes).

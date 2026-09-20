@@ -19,8 +19,9 @@ be, what is missing that should exist, what sits in the wrong place.
    (`bin/`, `obj/`, `dist/`, `node_modules/`, `.env`), IDE dirs, Aspire
    artifacts. Are all covered? Anything tracked *despite* matching?
 4. **Missing standard files:** judge, don't cargo-cult. For a solo-
-   maintained open source repo, evaluate: SECURITY.md (security.yml
-   workflow exists - where do humans report?), CODEOWNERS (single
+   maintained open source repo, evaluate: whether the files that exist
+   still say something true (SECURITY.md, CODE_OF_CONDUCT.md),
+   CODEOWNERS (single
    maintainer - probably noise), CHANGELOG (VERSIONING.md exists; is the
    release process's output discoverable?), .editorconfig ↔ prettier
    overlap/conflict.

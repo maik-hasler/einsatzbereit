@@ -25,14 +25,17 @@ no exploit development, no attack payloads in the report.
    (memory/storage?), does the API client attach them safely, any
    secrets in `import.meta.env` that ship to the bundle
    (`VITE_`-prefixed = public - check nothing sensitive is).
-5. **Headers & serving:** nginx/entrypoint config under
-   `frontend/docker-entrypoint.d` - CSP, frame, CORS on the API side
-   (who may call it?).
-6. **Supply chain & process:** what security.yml actually scans (and
+5. **Headers & serving:** `frontend/nginx.conf.template` - CSP, frame,
+   CORS on the API side (who may call it?). Several of these are
+   already asserted by `frontend/scripts/check-nginx-*.js` in CI, so
+   read those first and hunt what they do not cover.
+6. **Supply chain & process:** what `codeql.yml` actually scans (and
    what it misses - backend? containers?), Renovate coverage,
-   `pnpm audit --prod` (runnable here - run it), Dockerfile bases
-   pinned/updated, workflow permissions (`permissions:` blocks -
-   default token too broad? `pull_request_target` usage?).
+   Dockerfile bases pinned/updated, workflow permissions
+   (`permissions:` blocks - default token too broad?
+   `pull_request_target` usage?). `pnpm audit --prod` is a hard gate in
+   `frontend-checks.yml`, so a finding there is already failing CI -
+   look past it.
 7. **Keycloak themes:** FTL templates echoing user input unescaped.
 
 ## Verification bar
