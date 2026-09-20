@@ -7,10 +7,16 @@ disallowedTools: Write, Edit
 
 `frontend/src/locales/en.json` and `de.json` share one nested key structure
 under `translation` (`i18next` resources, wired up in `frontend/src/i18n.ts`)
-- there is no automated check that they stay in sync. `eslint-plugin-i18next`
-is only configured with the `no-literal-string` rule (catches hardcoded JSX
-strings, not cross-locale key parity), and nothing else in CI compares the
-two files.
+- and CI does compare them: `frontend-checks.yml` runs `pnpm i18n:check`
+(`frontend/scripts/check-i18n-keys.js`), which enforces key parity plus
+identical-value, placeholder, plural and unused-key rules. `eslint-plugin-i18next`
+is configured only with the `no-literal-string` rule, so it catches hardcoded
+JSX strings, not key parity.
+
+This agent is the local pre-flight for that CI job: it reads the diff and names
+the offending key before a push spends a CI round on it. It is not the only
+gate, so never report "nothing else checks this" - if you want certainty, run
+`pnpm i18n:check` from `frontend/` yourself.
 
 Compare the current diff (`git diff -- frontend/src/locales`):
 

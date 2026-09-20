@@ -32,6 +32,7 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 - Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in the backend (`Api/`, `Application/` and `Domain/` all repeat the same module folders). The frontend is cut by artifact kind instead (`pages/`, `components/`, `hooks/`, `lib/`), with organizer routes grouped under `pages/app/` - see chapter 5 of the arc42 docs
 - Routes: `/v{version:apiVersion}/...`, namespaces: `.v1`
 - Commits, commands/queries/DTOs, and async conventions: see `CONTRIBUTING.md`'s Code Style and Commit Messages sections
+- Domain vocabulary: `docs/Architecture/src/12_glossary.adoc` is canonical for the domain nouns (Engagement, Occurrence, Time Slot, Volunteer Opportunity) - check it before naming a type, an i18n key, or a UI string
 - **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in source files - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes. The one exception is German user-facing content - `frontend/src/locales/de.json` and `backend/src/Infrastructure/Email/Templates/de.json` - which uses the en dash (Gedankenstrich) as German typography requires; see `CONTRIBUTING.md`'s Language Convention
 - **Tab indentation is the default** (`.editorconfig`'s `[*]` rule) - shell scripts, AsciiDoc (`.adoc`), and PlantUML (`.puml`) all use tabs. Only `.md`, `.json`, `.yml`/`.yaml`, and `.py` (PEP 8) are overridden to spaces. CI's `editorconfig` job enforces this; when writing `.adoc` prose keep paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuation lines
 
@@ -45,10 +46,14 @@ edit on your own initiative):
   `nswag-check` (endpoint/DTO changes vs. generated clients),
   `ef-migration-check` (entity changes vs. EF Core migrations),
   `architecture-check` (Clean Architecture layer/naming/rate-limiting rules),
-  `a11y-check` (frontend components vs. the a11y conventions below - scoped
-  to only what ESLint's `jsx-a11y` ruleset can't already catch, see the
-  agent file for why), `i18n-check` (`en.json`/`de.json` translation key
-  parity - nothing else in CI checks this).
+  `a11y-check` (frontend components vs. the a11y conventions in
+  `frontend/AGENTS.md` - scoped to only what ESLint's `jsx-a11y` ruleset
+  can't already catch, see the agent file for why),
+  `i18n-check` (`en.json`/`de.json` translation key parity - a local
+  pre-flight for `frontend-checks.yml`'s `pnpm i18n:check`, which already
+  enforces parity plus placeholder, plural and unused-key rules in CI; the
+  agent's value is naming the offending key from the diff before a push
+  spends a CI round on it).
 - **Skills** - `.claude/skills/self-review/` (`/self-review`, its frontmatter
   description covers what it does; run it before opening a PR).
   `.claude/skills/lens/` is this repo's autonomous routine and on-demand
@@ -64,16 +69,23 @@ edit on your own initiative):
   defaults; load it before visual/layout changes to frontend components
   or pages.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
-  on the three NSwag-generated files (see "API client" row above).
+  on the three NSwag-generated files (`frontend/src/client/api-client.ts`,
+  `backend/tests/IntegrationTests/ApiClient.cs`,
+  `backend/src/Api/wwwroot/openapi-v1.json`; see README.md's Tech Stack
+  table, "API client" row).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
   once before ending a turn if backend/frontend source changed, blocking
   only on an actual failure (capped at 2 blocks per session so it fails
   open rather than risk a loop) - a safety net since this routine has no
-  human review before a PR goes out. The `SessionStart` hook installs the
-  .NET SDK version pinned in `backend/global.json` automatically via
-  `dotnet-install.sh` in Claude Code web/cloud sessions if `dotnet` is not
-  already on `PATH` (see this file's Development Setup for the SDK
-  requirement itself).
+  human review before a PR goes out. The `SessionStart` hook
+  (`.claude/scripts/session-start.sh`) installs the .NET SDK version pinned
+  in `backend/global.json` via `dotnet-install.sh` whenever `dotnet` is
+  absent from `PATH` (see this file's Development Setup for the SDK
+  requirement itself), then - every session, unconditionally - runs
+  `dotnet build` on `backend/src/Api/Api.csproj` to regenerate the NSwag
+  clients and `pnpm format:write` in `frontend/`. Both can rewrite tracked
+  files, so check `git status` before assuming a dirty tree is your own
+  doing.
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus `csharp-lsp`,
   `typescript-lsp`, and `playwright` (live browser control) are enabled in

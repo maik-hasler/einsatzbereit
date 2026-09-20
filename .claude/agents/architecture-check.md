@@ -29,5 +29,7 @@ Read the changed files (`git diff`) and check them against
 
 Flag any violation with the exact file:line and which rule it breaks, plus
 the fix (e.g. "rename to `FooEndpoint`", "add `.RequireRateLimiting(RateLimitingPolicies.Read)`").
-Recommend running `dotnet test` (the `ArchitectureTests` project) to confirm.
+Recommend running `dotnet run --project tests/ArchitectureTests` from
+`backend/` to confirm - TUnit uses Microsoft.Testing.Platform, so `dotnet test`
+is not how this repo runs its suites (see `CONTRIBUTING.md`'s Testing section).
 Never fix the violation yourself - report only.

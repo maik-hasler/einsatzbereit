@@ -107,6 +107,9 @@ The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak w
 
 ## Updating the Realm
 
+The committed JSON stays the source of truth; the UI is only a convenient
+editor for producing a valid export, which is why step 3 writes it back.
+
 1. Make changes in the running Keycloak UI at http://localhost:8080
 2. Export the realm: Admin UI → Realm Settings → Action → Partial Export (include clients, groups, roles)
 3. Replace `realms/einsatzbereit-realm.json` with the export
@@ -114,5 +117,6 @@ The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak w
 
 ## Release Tagging
 
-Tag format: `keycloak/vX.Y.Z.W` (4-part semver matching Keycloak's version scheme).  
-`-rc.N` suffix = release candidate (published but not tagged `latest`).
+A single repo-level tag (`vX.Y.Z`, optionally `-rc.N`) releases every component
+at once, this image included - there is no per-component tag. See `VERSIONING.md`
+for the tag format and `.github/AGENTS.md`'s publish workflow section.

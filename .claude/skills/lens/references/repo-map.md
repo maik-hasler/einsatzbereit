@@ -1,21 +1,21 @@
 # Repo map - read before any lens
 
-Verified facts about einsatzbereit as of 2026-07. If the repo has visibly
+Verified facts about einsatzbereit as of 2026-09. If the repo has visibly
 moved on (new top-level dirs, different stack), trust the repo over this
 file and note the drift in the report's parking lot.
 
 ## What it is
 
 Volunteering platform: connects volunteers with regional, short-term
-needs. Monorepo, MIT-adjacent open source (check LICENSE), single
-maintainer, German-named but English-documented.
+needs. Monorepo, AGPL-3.0 open source, single maintainer, German-named
+but English-documented.
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
 | `backend/src/Domain` | Entities, invariants. Clean Architecture core. |
-| `backend/src/Application` | CQRS handlers per feature: Achievements, Engagements, Invitations, Notifications, Organizations, Users, VolunteerOpportunities. These feature names are also the **vertical slices** for the bugs lens. |
+| `backend/src/Application` | CQRS handlers per feature: Achievements, AuditLogs, Engagements, Invitations, Maps, Meta, Notifications, Organizations, Reports, Sitemap, Users, VolunteerOpportunities (plus `Common/`, shared infrastructure rather than a feature). These feature names are also the **vertical slices** for the bugs lens. |
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
 | `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see glossary). |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
@@ -24,8 +24,8 @@ maintainer, German-named but English-documented.
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
-| `.github/workflows` | 10 workflows; `publish.yml` alone is ~500 lines. |
-| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
+| `.github/workflows` | 11 workflows; `publish.yml` alone is ~800 lines. |
+| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`, and `frontend-design` vendored from `anthropics/skills`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
 | `renovate.json` | Dependency-update config. |
 
 ## False-positive traps

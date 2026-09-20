@@ -14,13 +14,23 @@ if [ "$COUNT" -ge 2 ] 2>/dev/null; then
 	exit 0
 fi
 
-CHANGED=$(git diff --name-only HEAD -- backend/src frontend/src 2>/dev/null)
+# Diff against the branch point, not HEAD: AGENTS.md mandates committing to a
+# claude/... branch, so a HEAD-only diff goes empty the moment work is committed
+# - exactly the flow this hook exists to guard. Untracked files are invisible to
+# git diff entirely, so they are unioned in separately.
+BASE=$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD)
+CHANGED=$(
+	{
+		git diff --name-only "$BASE" -- backend/src frontend/src
+		git ls-files --others --exclude-standard -- backend/src frontend/src
+	} 2>/dev/null | sort -u
+)
 if [ -z "$CHANGED" ]; then
 	exit 0
 fi
 
 FAILED=""
-LOG="/tmp/claude-stop-verify.log"
+LOG="/tmp/claude-stop-verify-${SESSION_ID}.log"
 : > "$LOG"
 
 if printf '%s\n' "$CHANGED" | grep -q '^backend/src'; then
