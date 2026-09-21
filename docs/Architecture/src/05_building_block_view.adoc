@@ -50,7 +50,7 @@ Contained Building Blocks::
 |Single Page Application
 |Written here
 |React 19, Vite, TypeScript, Tailwind CSS 4
-|Provides the web UI for volunteers, organizers and platform admins. Handles OIDC login redirect and token storage. Communicates with the backend API using a NSwag-generated client.
+|Provides the web UI for volunteers, organizers and platform admins. Handles OIDC login redirect and token storage. Communicates with the backend API using a generated client (`@hey-api/openapi-ts`).
 
 |Backend API
 |Written here

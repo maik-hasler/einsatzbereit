@@ -23,7 +23,7 @@ The following table summarizes the key architectural decisions and how they addr
 |The backend's `Api/`, `Application/` and `Domain/` layers repeat the same twelve module folders, and each use case is its own `{Feature}/v1/` folder. Adding a feature means adding folders instead of editing shared service classes. The frontend is cut by artifact kind instead - see <<section-building-block-view>> for why the two ends differ.
 
 |Maintainability
-|NSwag-generated API client for the frontend
+|Generated API client for the frontend (`@hey-api/openapi-ts`)
 |Prevents manual drift between the API definition and the client - see <<section-concepts>> under Development and Build.
 
 |Maintainability
@@ -79,7 +79,7 @@ The following table summarizes the key architectural decisions and how they addr
 |Tailwind CSS 4
 
 |API client generation
-|NSwag (OpenAPI → TypeScript)
+|`@hey-api/openapi-ts` (OpenAPI → TypeScript), NSwag (OpenAPI → C#)
 
 |Local orchestration
 |.NET Aspire AppHost (Docker for service containers)

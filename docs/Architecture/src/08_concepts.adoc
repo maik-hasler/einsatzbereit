@@ -104,7 +104,7 @@ Domain and application logic signal failure with a `Result` / `Result<T>` type (
 
 * API errors are surfaced to the user via inline error messages, not generic alerts.
 * Network errors (offline, timeout) are handled gracefully with retry options where appropriate.
-* The NSwag-generated client throws typed exceptions matching the backend's HTTP status codes.
+* The generated client rejects with the backend's `ProblemDetails`, carrying its HTTP status code.
 
 === Rate Limiting
 
@@ -126,7 +126,7 @@ All API routes include the version in the URL path: `/v{version}/...`.
 * The current version is `v1`.
 * Breaking changes (removed fields, changed semantics, renamed endpoints) require a new version.
 * Non-breaking additions (new optional fields, new endpoints) can be added to the existing version.
-* The NSwag-generated client is regenerated after any API change to keep the frontend in sync.
+* The generated client is regenerated after any API change to keep the frontend in sync (`pnpm client:generate`; the backend build does not do it, see below).
 
 === Internationalization (i18n)
 

@@ -119,7 +119,23 @@ describe("OrgDashboardPage a11y", () => {
 	it("has no violations once the widgets are on the board", async () => {
 		renderDashboard();
 
-		await screen.findByTestId("widget-tile-Calendar");
+		// `widget-tile-Calendar` is the tile *wrapper*, which renders as soon as
+		// the layout resolves - and since the calendar became a lazy chunk it
+		// renders a skeleton while that chunk loads, so waiting on it scanned
+		// 142 characters of placeholder. Waiting on the widget's own container
+		// scans the widget instead.
+		//
+		// What this does NOT buy is coverage of the calendar grid: measured,
+		// react-big-calendar renders zero `rbc-*` elements under jsdom, so
+		// `syncRbcDom`'s attribute stripping has nothing to act on here and
+		// breaking it does not turn this test red. That grid is the page scan's
+		// job (backend/tests/VisualTests/AccessibilityTests.cs), which is why
+		// the scan there waits for the chunk explicitly.
+		//
+		// Generous timeout because this waits on a lazily imported chunk:
+		// Vitest transforms it on demand and that lands at about a second here,
+		// right on RTL's default.
+		await screen.findByTestId("calendar-widget", undefined, { timeout: 5000 });
 		await expectNoA11yViolations();
 	});
 

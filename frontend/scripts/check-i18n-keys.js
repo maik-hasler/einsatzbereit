@@ -300,11 +300,18 @@ function checkUnusedKeys(enKeys) {
 	function walkSourceFiles(dir, out = []) {
 		for (const entry of readdirSync(dir)) {
 			if (entry === "node_modules") continue;
+			// The generated client is ~7,300 lines of TypeScript that mentions no
+			// translation key but is full of string literals. Feeding it into the
+			// corpus that backs the unused-key check is one coincidence away from
+			// marking a genuinely unused key as used. This used to be a filename
+			// compare against NSwag's single `api-client.ts`; @hey-api emits a
+			// directory, so the skip has to be one too.
+			if (entry === "generated" && dir.endsWith("client")) continue;
 			const full = join(dir, entry);
 			const st = statSync(full);
 			if (st.isDirectory()) {
 				walkSourceFiles(full, out);
-			} else if ([".ts", ".tsx"].includes(extname(entry)) && entry !== "api-client.ts") {
+			} else if ([".ts", ".tsx"].includes(extname(entry))) {
 				out.push(full);
 			}
 		}

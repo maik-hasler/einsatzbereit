@@ -13,7 +13,7 @@ src/
 ├── lib/                    Framework-free logic and shared class recipes - the layer with no React
 │                           and no DOM in it, and the one `pnpm mutation` measures
 ├── hooks/
-│   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
+│   └── useApiClient.ts     React hook: the client module, with the current token from useAuth()
 ├── contexts/               React contexts for cross-cutting UI state - ToastContext.tsx,
 │                           AuthStatusContext.tsx, QuickActionsContext.tsx,
 │                           HeaderOverlayContext.tsx, OrgBreadcrumbContext.tsx
@@ -185,7 +185,7 @@ Two porting hazards are worth knowing before moving anything else down, both of 
 | `render.tsx` | `renderWithProviders(ui, { lng, route, auth })` - wraps the tree in the three providers every non-trivial component assumes (i18n, router, auth). Defaults to English, `/`, signed out |
 | `i18n.ts` | A synchronous i18n instance preloaded from the shipped `en.json`/`de.json`. The app's own `src/i18n.ts` loads locales through a *dynamic import*, so a component rendered in the same tick still shows raw keys - and an accessible name of "opportunities.signUp" is not the name a user gets |
 | `a11y.ts` | `expectNoA11yViolations(target?)` - see below |
-| `apiMock.ts` | `createApiMock()` - a Proxy standing in for the generated `EinsatzbereitApi`, where every endpoint resolves to a `vi.fn()` on first access. A page pulls from five or more endpoints across its own effects and its children's; listing each by hand makes a test fail on a call it never cared about every time an unrelated fetch is added |
+| `apiMock.ts` | `createApiMock()` - a Proxy standing in for the generated `ApiClient`, where every endpoint resolves to a `vi.fn()` on first access. A page pulls from five or more endpoints across its own effects and its children's; listing each by hand makes a test fail on a call it never cared about every time an unrelated fetch is added |
 | `setup.ts` | Registers jest-dom matchers and Testing Library cleanup (this config has `globals: false`, so RTL's own auto-cleanup never registers), plus the jsdom stubs axe needs |
 
 Conventions used across the existing suite:

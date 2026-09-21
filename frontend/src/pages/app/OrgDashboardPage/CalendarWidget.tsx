@@ -380,7 +380,11 @@ function CalendarWidget({
 			titleId="widget-calendar-title"
 			title={t("orgDashboard.calendarWidgetTitle")}
 		>
-			<div ref={calendarContainerRef} className="contents">
+			<div
+				ref={calendarContainerRef}
+				data-testid="calendar-widget"
+				className="contents"
+			>
 				{calLoading && (
 					<div role="status" className="space-y-3">
 						<span className="sr-only">{t("orgOverview.calendarLoading")}</span>
