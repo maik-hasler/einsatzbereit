@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { Outlet, Route, Routes } from "react-router";
 import OrgEngagementsPage from "./OrgEngagementsPage";
-import type { OrganizationDetailsResponse } from "../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../client";
 import { renderWithProviders } from "../../test/render";
 
 const { api } = await vi.hoisted(async () => {
@@ -101,13 +101,15 @@ describe("OrgEngagementsPage for an organizer", () => {
 		expect(
 			await screen.findByLabelText("Search volunteer"),
 		).toBeInTheDocument();
-		expect(api.getOrganizationEngagements).toHaveBeenCalledWith(
-			ORG_ID,
-			1,
-			10,
-			"Pending",
-			undefined,
-		);
+		expect(api.getOrganizationEngagements).toHaveBeenCalledWith({
+			path: { organizationId: ORG_ID },
+			query: {
+				pageNumber: 1,
+				pageSize: 10,
+				status: "Pending",
+				search: undefined,
+			},
+		});
 		expect(screen.queryByTestId("org-engagements-forbidden")).toBeNull();
 	});
 

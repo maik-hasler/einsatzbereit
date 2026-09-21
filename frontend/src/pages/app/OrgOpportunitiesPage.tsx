@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type {
 	VolunteerOpportunityDetails,
 	VolunteerOpportunitySummary,
-} from "../../client/api-client";
+} from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
@@ -55,6 +55,27 @@ export default function OrgOpportunitiesPage() {
 	const organizationId = org.id;
 	usePageTitle(`${t("orgOverview.tabOpportunities")} - ${org.name}`);
 
+	// The generated client types every OpenAPI integer as `number | string`,
+	// so the paging counters are narrowed back to numbers here - `useLoadMore`
+	// compares `pageCount` against the page it just asked for.
+	async function loadOpportunities(status: string, page: number) {
+		const result = await api.getOrganizationOpportunities({
+			path: { organizationId },
+			query: {
+				status,
+				pageNumber: page,
+				pageSize: OPPORTUNITIES_PAGE_SIZE,
+			},
+		});
+		return {
+			items: result.items,
+			pageCount:
+				result.pageCount === undefined ? undefined : Number(result.pageCount),
+			totalItems:
+				result.totalItems === undefined ? undefined : Number(result.totalItems),
+		};
+	}
+
 	const {
 		items: drafts,
 		loading: draftsLoading,
@@ -66,13 +87,7 @@ export default function OrgOpportunitiesPage() {
 		retryLoadMore: retryLoadMoreDrafts,
 		reset: resetDrafts,
 	} = useLoadMore<VolunteerOpportunitySummary>(
-		(page) =>
-			api.getOrganizationOpportunities(
-				organizationId,
-				"Draft",
-				page,
-				OPPORTUNITIES_PAGE_SIZE,
-			),
+		(page) => loadOpportunities("Draft", page),
 		{
 			deps: [organizationId],
 			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
@@ -90,13 +105,7 @@ export default function OrgOpportunitiesPage() {
 		retryLoadMore: retryLoadMorePublished,
 		reset: resetPublished,
 	} = useLoadMore<VolunteerOpportunitySummary>(
-		(page) =>
-			api.getOrganizationOpportunities(
-				organizationId,
-				"Published",
-				page,
-				OPPORTUNITIES_PAGE_SIZE,
-			),
+		(page) => loadOpportunities("Published", page),
 		{
 			deps: [organizationId],
 			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
@@ -114,13 +123,7 @@ export default function OrgOpportunitiesPage() {
 		retryLoadMore: retryLoadMoreUnpublished,
 		reset: resetUnpublished,
 	} = useLoadMore<VolunteerOpportunitySummary>(
-		(page) =>
-			api.getOrganizationOpportunities(
-				organizationId,
-				"Unpublished",
-				page,
-				OPPORTUNITIES_PAGE_SIZE,
-			),
+		(page) => loadOpportunities("Unpublished", page),
 		{
 			deps: [organizationId],
 			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
@@ -138,13 +141,7 @@ export default function OrgOpportunitiesPage() {
 		retryLoadMore: retryLoadMoreCancelled,
 		reset: resetCancelled,
 	} = useLoadMore<VolunteerOpportunitySummary>(
-		(page) =>
-			api.getOrganizationOpportunities(
-				organizationId,
-				"Cancelled",
-				page,
-				OPPORTUNITIES_PAGE_SIZE,
-			),
+		(page) => loadOpportunities("Cancelled", page),
 		{
 			deps: [organizationId],
 			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
@@ -224,7 +221,9 @@ export default function OrgOpportunitiesPage() {
 	async function openEdit(id: string) {
 		setEditLoadingId(id);
 		try {
-			const details = await api.getVolunteerOpportunityDetails(id);
+			const details = await api.getVolunteerOpportunityDetails({
+				path: { opportunityId: id },
+			});
 			setEditDetails(details);
 		} catch (e) {
 			dispatchToast("error", getApiErrorMessage(e, t("error.serverError")));
@@ -236,7 +235,7 @@ export default function OrgOpportunitiesPage() {
 	async function publish(id: string) {
 		setPublishingId(id);
 		try {
-			await api.publishVolunteerOpportunity(id);
+			await api.publishVolunteerOpportunity({ path: { opportunityId: id } });
 			dispatchToast("success", t("opportunities.publishSuccess"));
 			reloadAll();
 		} catch (e) {
@@ -261,7 +260,9 @@ export default function OrgOpportunitiesPage() {
 		setDeleting(true);
 		setDeleteError(null);
 		try {
-			await api.deleteVolunteerOpportunity(deleteTarget.id);
+			await api.deleteVolunteerOpportunity({
+				path: { opportunityId: deleteTarget.id },
+			});
 			setDeleteTarget(null);
 			reloadAll();
 		} catch (err) {
@@ -276,7 +277,9 @@ export default function OrgOpportunitiesPage() {
 		setUnpublishing(true);
 		setUnpublishError(null);
 		try {
-			await api.unpublishVolunteerOpportunity(unpublishTarget.id);
+			await api.unpublishVolunteerOpportunity({
+				path: { opportunityId: unpublishTarget.id },
+			});
 			setUnpublishTarget(null);
 			dispatchToast("success", t("opportunities.unpublishSuccess"));
 			reloadAll();
@@ -299,8 +302,11 @@ export default function OrgOpportunitiesPage() {
 		setCancelError(null);
 		try {
 			const trimmedReason = cancelReason.trim();
-			await api.cancelVolunteerOpportunity(cancelTarget.id, {
-				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			await api.cancelVolunteerOpportunity({
+				path: { opportunityId: cancelTarget.id },
+				body: {
+					reason: trimmedReason.length > 0 ? trimmedReason : null,
+				},
 			});
 			setCancelTarget(null);
 			setCancelReason("");
@@ -384,7 +390,17 @@ export default function OrgOpportunitiesPage() {
 						data-testid="opportunity-signup-count"
 						className="mt-1 text-xs text-gray-500"
 					>
-						{formatSignUpCount(getOpportunityCapacity(item), t)}
+						{formatSignUpCount(
+							getOpportunityCapacity({
+								totalMaxParticipants:
+									item.totalMaxParticipants === null
+										? null
+										: Number(item.totalMaxParticipants),
+								currentParticipantCount: Number(item.currentParticipantCount),
+								participationType: item.participationType,
+							}),
+							t,
+						)}
 					</p>
 				</div>
 

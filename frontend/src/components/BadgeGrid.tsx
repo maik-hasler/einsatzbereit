@@ -1,10 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-	AchievementSummary,
-	BadgeCatalogEntry,
-} from "../client/api-client";
+import type { AchievementSummary, BadgeCatalogEntry } from "../client";
 import Skeleton from "./Skeleton";
 import { formatDate } from "../lib/format";
 import { achievementTypeLabel } from "../lib/achievementType";

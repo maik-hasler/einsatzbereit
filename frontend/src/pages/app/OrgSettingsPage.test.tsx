@@ -5,7 +5,7 @@ import { Outlet, Route, Routes } from "react-router";
 import OrgSettingsPage from "./OrgSettingsPage";
 import { useQuickActionsList } from "../../contexts/QuickActionsContext";
 import { inputClass, labelClass } from "../../lib/formClasses";
-import type { OrganizationDetailsResponse } from "../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../client";
 import { renderWithProviders } from "../../test/render";
 
 const { api } = vi.hoisted(() => ({
@@ -26,7 +26,7 @@ const org: OrganizationDetailsResponse = {
 	contactEmail: "kontakt@example.test",
 	contactPhone: "+49 431 123456",
 	website: "https://example.test",
-	logoUrl: undefined,
+	logoUrl: null,
 	address: {
 		street: "Strandweg",
 		houseNumber: "1",

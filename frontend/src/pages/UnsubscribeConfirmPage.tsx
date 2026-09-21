@@ -61,7 +61,7 @@ export default function UnsubscribeConfirmPage() {
 		setSubmitting(true);
 		setError(null);
 		try {
-			await api.unsubscribe(userId, type, token);
+			await api.unsubscribe({ path: { userId }, query: { type, token } });
 			void navigate("/unsubscribed", { replace: true });
 		} catch (err) {
 			setError(getApiErrorMessage(err, t("unsubscribeConfirm.failed")));

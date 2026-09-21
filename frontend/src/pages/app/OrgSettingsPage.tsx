@@ -155,9 +155,9 @@ export default function OrgSettingsPage() {
 		setCroppingLogoFile(null);
 		setUploadingLogo(true);
 		try {
-			await api.uploadOrganizationLogo(org.id, {
-				data: croppedFile,
-				fileName: croppedFile.name,
+			await api.uploadOrganizationLogo({
+				path: { organizationId: org.id },
+				body: { file: croppedFile },
 			});
 			if (logoObjectUrlRef.current)
 				URL.revokeObjectURL(logoObjectUrlRef.current);
@@ -178,7 +178,9 @@ export default function OrgSettingsPage() {
 		setRemovingLogo(true);
 		setLogoError(null);
 		try {
-			await api.deleteOrganizationLogo(org.id);
+			await api.deleteOrganizationLogo({
+				path: { organizationId: org.id },
+			});
 			if (logoObjectUrlRef.current) {
 				URL.revokeObjectURL(logoObjectUrlRef.current);
 				logoObjectUrlRef.current = null;
@@ -204,20 +206,23 @@ export default function OrgSettingsPage() {
 			values.city.trim();
 
 		try {
-			await api.updateOrganization(org.id, {
-				name: values.name,
-				description: values.description || undefined,
-				contactEmail: values.contactEmail || undefined,
-				contactPhone: values.contactPhone || undefined,
-				website: values.website || undefined,
-				address: hasAddress
-					? {
-							street: values.street,
-							houseNumber: values.houseNumber,
-							zipCode: values.zipCode,
-							city: values.city,
-						}
-					: undefined,
+			await api.updateOrganization({
+				path: { organizationId: org.id },
+				body: {
+					name: values.name,
+					description: values.description || null,
+					contactEmail: values.contactEmail || null,
+					contactPhone: values.contactPhone || null,
+					website: values.website || null,
+					address: hasAddress
+						? {
+								street: values.street,
+								houseNumber: values.houseNumber,
+								zipCode: values.zipCode,
+								city: values.city,
+							}
+						: null,
+				},
 			});
 			setEditing(false);
 			setSuccessMessage(t("orgSettings.savedSuccess"));
@@ -233,7 +238,9 @@ export default function OrgSettingsPage() {
 	async function handleDeleteOrganization() {
 		setDeleting(true);
 		try {
-			await api.deleteOrganization(org.id);
+			await api.deleteOrganization({
+				path: { organizationId: org.id },
+			});
 			navigate("/");
 		} catch (err) {
 			setShowDeleteConfirm(false);

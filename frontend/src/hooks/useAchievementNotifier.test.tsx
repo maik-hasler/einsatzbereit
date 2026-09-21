@@ -45,7 +45,12 @@ describe("useAchievementNotifier on a fresh browser", () => {
 		]);
 
 		const { unmount } = render();
-		await waitFor(() => expect(api.getMyAchievements).toHaveBeenCalled());
+		// Wait for the first poll to be *recorded*, not merely requested: the
+		// precondition for this test is that the browser already knows about the
+		// badge the user had. Waiting on the request alone let the unmount land
+		// between the response and the write, which seeds nothing and makes the
+		// second render announce both badges as new.
+		await waitFor(() => expect(localStorage.length).toBeGreaterThan(0));
 		unmount();
 
 		api.getMyAchievements.mockResolvedValue([

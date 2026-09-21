@@ -122,22 +122,29 @@ describe("CreateOrganizationModal submission", () => {
 			expect(api.createOrganization).toHaveBeenCalledTimes(1),
 		);
 		expect(api.createOrganization).toHaveBeenCalledWith({
-			name: "Full Details Org",
-			description: "A helpful description for volunteers.",
-			contactEmail: "contact@example.com",
-			contactPhone: "+49 30 1234567",
-			website: "https://example.com",
-			address: {
-				street: "Main Street",
-				houseNumber: "1",
-				zipCode: "12345",
-				city: "Berlin",
+			body: {
+				name: "Full Details Org",
+				description: "A helpful description for volunteers.",
+				contactEmail: "contact@example.com",
+				contactPhone: "+49 30 1234567",
+				website: "https://example.com",
+				address: {
+					street: "Main Street",
+					houseNumber: "1",
+					zipCode: "12345",
+					city: "Berlin",
+				},
 			},
 		});
 		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
 	});
 
-	it("omits the address entirely when no address field was filled", async () => {
+	// Sent as an explicit null rather than omitted: the generated request type
+	// declares every optional field as required-and-nullable, mirroring the
+	// OpenAPI document. The backend record's `Address?` reads an omitted and a
+	// null property identically, so what reaches the database is unchanged -
+	// only the bytes on the wire differ.
+	it("sends no address when no address field was filled", async () => {
 		const { container } = open();
 
 		await userEvent.type(field(container, "create-org-name"), "Name Only Org");
@@ -146,9 +153,12 @@ describe("CreateOrganizationModal submission", () => {
 		await waitFor(() =>
 			expect(api.createOrganization).toHaveBeenCalledTimes(1),
 		);
-		expect(api.createOrganization).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "Name Only Org", address: undefined }),
-		);
+		expect(api.createOrganization).toHaveBeenCalledWith({
+			body: expect.objectContaining({
+				name: "Name Only Org",
+				address: null,
+			}),
+		});
 	});
 });
 

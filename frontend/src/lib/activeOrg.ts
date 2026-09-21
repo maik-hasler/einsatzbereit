@@ -1,4 +1,4 @@
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client";
 
 const COOKIE_NAME = "active-org";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;

@@ -1,8 +1,8 @@
 import { useAuth } from "react-oidc-context";
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client";
 import { getActiveOrgId, resolveActiveOrg } from "../lib/activeOrg";
 import { useApiClient } from "./useApiClient";
-import { useSharedOrgFetch } from "./useSharedOrgFetch";
+import { useCachedFetch } from "./useCachedFetch";
 
 export function useMyOrganizations(): {
 	orgs: OrganizationSummaryDto[];
@@ -15,9 +15,9 @@ export function useMyOrganizations(): {
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 
-	const [orgsData, , error] = useSharedOrgFetch<OrganizationSummaryDto[]>(
+	const [orgsData, , error] = useCachedFetch<OrganizationSummaryDto[]>(
 		`organizations:${isLoggedIn}`,
-		() => (isLoggedIn ? api.getOrganizations() : Promise.resolve([])),
+		() => (isLoggedIn ? api.getOrganizations({}) : Promise.resolve([])),
 	);
 
 	const orgs = isLoggedIn ? (orgsData ?? []) : [];

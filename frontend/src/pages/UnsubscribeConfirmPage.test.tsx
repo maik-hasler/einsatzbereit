@@ -55,11 +55,10 @@ describe("UnsubscribeConfirmPage confirming", () => {
 		await waitFor(() =>
 			expect(screen.getByTestId("path")).toHaveTextContent("/unsubscribed"),
 		);
-		expect(api.unsubscribe).toHaveBeenCalledWith(
-			USER_ID,
-			"EngagementReminder",
-			TOKEN,
-		);
+		expect(api.unsubscribe).toHaveBeenCalledWith({
+			path: { userId: USER_ID },
+			query: { type: "EngagementReminder", token: TOKEN },
+		});
 	});
 
 	it("keeps a rejected token on the page, with a message and a way on", async () => {

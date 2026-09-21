@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
-import type { PublicOrganizationSummary } from "../client/api-client";
+import type { PublicOrganizationSummary } from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { usePageDescription } from "../hooks/usePageDescription";
@@ -11,10 +11,8 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { cardClass } from "../lib/surfaceClasses";
 import { heroSearchInputClass } from "../lib/formClasses";
-import {
-	reportIntentSigninArgs,
-	usePendingReportIntent,
-} from "../lib/reportIntent";
+import { reportIntentSigninArgs } from "../lib/reportIntent";
+import { usePendingReportIntent } from "../hooks/usePendingReportIntent";
 import EmptyState from "../components/EmptyState";
 import OrgAvatar from "../components/OrgAvatar";
 import Skeleton from "../components/Skeleton";
@@ -60,7 +58,13 @@ export default function OrganizationsPage() {
 		retryLoadMore,
 	} = useLoadMore<PublicOrganizationSummary>(
 		(pageNumber) =>
-			api.getPublicOrganizations(pageNumber, PAGE_SIZE, search || undefined),
+			api.getPublicOrganizations({
+				query: {
+					PageNumber: pageNumber,
+					PageSize: PAGE_SIZE,
+					Search: search || undefined,
+				},
+			}),
 		{
 			deps: [search],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
@@ -268,9 +272,12 @@ export default function OrganizationsPage() {
 													targetLabel={org.name}
 													ariaLabel={t("orgProfile.reportOrganization")}
 													onReport={async (reason, details) => {
-														await api.reportOrganization(org.id, {
-															reason,
-															details: details || undefined,
+														await api.reportOrganization({
+															path: { organizationId: org.id },
+															body: {
+																reason,
+																details: details || null,
+															},
 														});
 													}}
 													onRequireSignIn={

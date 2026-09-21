@@ -18,13 +18,13 @@ function orgs(targetRole: string) {
 		{
 			id: ORG_A,
 			name: "Freiwillige Feuerwehr Kiel",
-			logoUrl: undefined,
+			logoUrl: null,
 			role: "Organizer",
 		},
 		{
 			id: ORG_B,
 			name: "Foerderverein Hamburg",
-			logoUrl: undefined,
+			logoUrl: null,
 			role: targetRole,
 		},
 	];
@@ -148,7 +148,7 @@ describe("OrganizationSwitcher name split", () => {
 					{
 						id: ORG_A,
 						name: "Lindenauer Nachbarschaftshilfe e.V.",
-						logoUrl: undefined,
+						logoUrl: null,
 						role: "Organizer",
 					},
 				]}

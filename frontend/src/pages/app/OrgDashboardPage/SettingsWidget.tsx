@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import type {
 	OrganizationDetailsResponse,
 	OrgInvitationDto,
-} from "../../../client/api-client";
+} from "../../../client";
 import { useApiClient } from "../../../hooks/useApiClient";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSize } from "./widgetCatalog";
 
@@ -28,9 +28,9 @@ function PendingInvitations({
 	const { t } = useTranslation();
 	const api = useApiClient();
 
-	const [invitations] = useSharedOrgFetch<OrgInvitationDto[]>(
+	const [invitations] = useCachedFetch<OrgInvitationDto[]>(
 		`orgInvitations:${organizationId}:${refreshKey}`,
-		() => api.getOrgInvitations(organizationId),
+		() => api.getOrgInvitations({ path: { organizationId } }),
 	);
 
 	// Silent while loading and silent on failure: this is a footnote under the

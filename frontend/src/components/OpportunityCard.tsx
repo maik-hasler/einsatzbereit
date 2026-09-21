@@ -27,30 +27,35 @@ import {
 } from "./icons";
 import { CategoryGlyph } from "./VolunteerOpportunitiesList/CategoryGlyph";
 
+// `null | undefined` throughout rather than one or the other: the two DTOs
+// that satisfy this interface disagree about which they use for an absent
+// value (the generated client mirrors the OpenAPI document's nullability,
+// which is not the same thing as optionality), and every field here is read
+// through a helper that treats both as "not there".
 export interface OpportunityCardItem {
 	id: string;
 	titleDe: string;
-	titleEn: string | undefined;
-	descriptionDe: string | undefined;
-	descriptionEn: string | undefined;
-	street: string | undefined;
-	houseNumber: string | undefined;
-	zipCode: string | undefined;
-	city: string | undefined;
+	titleEn: string | null | undefined;
+	descriptionDe: string | null | undefined;
+	descriptionEn: string | null | undefined;
+	street: string | null | undefined;
+	houseNumber: string | null | undefined;
+	zipCode: string | null | undefined;
+	city: string | null | undefined;
 	isRemote: boolean;
 	occurrence: string;
 	participationType: string;
-	category: string | undefined;
-	totalMaxParticipants: number | undefined;
+	category: string | null | undefined;
+	totalMaxParticipants: number | null | undefined;
 	currentParticipantCount: number;
-	validUntil: Date | undefined;
-	nextTimeSlotStart: Date | undefined;
+	validUntil: Date | null | undefined;
+	nextTimeSlotStart: Date | null | undefined;
 
-	organizationId?: string;
-	organizationName?: string;
-	organizationLogoUrl?: string;
-	tags?: string[];
-	bannerImageUrl?: string;
+	organizationId?: string | null;
+	organizationName?: string | null;
+	organizationLogoUrl?: string | null;
+	tags?: string[] | null;
+	bannerImageUrl?: string | null;
 }
 
 /**

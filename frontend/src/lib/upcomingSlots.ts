@@ -1,4 +1,4 @@
-import type { OrganizationCalendarEventDto } from "../client/api-client";
+import type { OrganizationCalendarEventDto } from "../client";
 import { pickLocalizedText } from "./format";
 
 export const MAX_UPCOMING_SLOTS = 6;

@@ -2,12 +2,13 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { OrganizationDetailsResponse } from "../client/api-client";
+import type { OrganizationDetailsResponse } from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
+import { usesCompactFooter } from "../lib/footerVariant";
 import {
 	getApiErrorMessage,
 	getApiErrorStatus,
@@ -135,7 +136,10 @@ function OrgAppShell({
 				</ErrorBoundary>
 			</main>
 
-			<Footer compact />
+			{/* Always compact here - the whole /app subtree is signed-in. Asked
+			rather than hardcoded so lib/footerVariant.ts stays the one place that
+			answers the question for both layouts. */}
+			<Footer compact={usesCompactFooter(location.pathname)} />
 		</div>
 	);
 }
@@ -166,7 +170,7 @@ export default function OrgAppLayout() {
 		const requestId = ++latestRequestRef.current;
 		if (!background) setStatus("loading");
 		api
-			.getOrganizationDetails(organizationId)
+			.getOrganizationDetails({ path: { organizationId } })
 			.then((data) => {
 				if (requestId !== latestRequestRef.current) return;
 				setOrg(data);

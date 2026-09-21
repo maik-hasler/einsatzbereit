@@ -1,4 +1,4 @@
-import type { VolunteerOpportunitySummary } from "../client/api-client";
+import type { VolunteerOpportunitySummary } from "../client";
 
 // Every published opportunity an organizer can actually check a volunteer in
 // for. `None` is the only method with nothing to do at check-in time - those
@@ -40,7 +40,7 @@ const RANK_UPCOMING = 1;
 const RANK_PAST = 2;
 const RANK_UNSCHEDULED = 3;
 
-function slotMs(value: Date | undefined): number {
+function slotMs(value: Date | null | undefined): number {
 	if (!value) return NaN;
 	return new Date(value as unknown as string).getTime();
 }

@@ -68,6 +68,27 @@ jobs:
       - name: Check i18n key parity
         run: pnpm i18n:check
 
+      - name: Check AGENTS.md inventory
+        run: pnpm check:agents-inventory
+
+      - name: Check module graph (cycles, orphans, unresolvable imports)
+        run: pnpm check:deps
+
+      - name: Check a11y rule parity between the component and page scans
+        run: pnpm check:a11y-rules
+
+      - name: Check frontend constants still match their backend counterparts
+        run: pnpm check:backend-constants
+
+      # The generated client and the OpenAPI document it comes from are both
+      # committed. Without this, an endpoint change lands with a stale client
+      # and surfaces as a type error in an unrelated PR days later.
+      - name: Check the generated API client is current
+        run: pnpm check:client-current
+
+      - name: Check the design-token mirror matches the stylesheet
+        run: pnpm check:design-tokens
+
       - name: Check nginx CSP header
         run: pnpm check:nginx-csp
 
@@ -147,6 +168,12 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # Byte budgets, not a report: a chunk that outgrows the slack recorded in
+      # .size-limit.cjs fails here rather than landing unnoticed. The build job
+      # is the only one that already has dist/, so it is where this belongs.
+      - name: Check bundle budgets
+        run: pnpm size
 
   docker-image:
     name: Container smoke test

@@ -54,19 +54,24 @@ const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
 const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
-const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
-const AdminOrganizationsPage = lazy(async () => ({
-	default: (await import("./pages/AdministrationPage")).AdminOrganizationsPage,
-}));
-const AdminUsersPage = lazy(async () => ({
-	default: (await import("./pages/AdministrationPage")).AdminUsersPage,
-}));
-const AdminReportsPage = lazy(async () => ({
-	default: (await import("./pages/AdministrationPage")).AdminReportsPage,
-}));
-const AdminAuditLogPage = lazy(async () => ({
-	default: (await import("./pages/AdministrationPage")).AdminAuditLogPage,
-}));
+// One chunk per admin route, not four routes sharing one. All five used to
+// resolve to the same module specifier, so opening the audit log downloaded
+// the organization, user and report screens with it.
+const AdministrationPage = lazy(
+	() => import("./pages/administration/AdministrationPage"),
+);
+const AdminOrganizationsPage = lazy(
+	() => import("./pages/administration/AdminOrganizationsPage"),
+);
+const AdminUsersPage = lazy(
+	() => import("./pages/administration/AdminUsersPage"),
+);
+const AdminReportsPage = lazy(
+	() => import("./pages/administration/AdminReportsPage"),
+);
+const AdminAuditLogPage = lazy(
+	() => import("./pages/administration/AdminAuditLogPage"),
+);
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
 const OrgOpportunitiesPage = lazy(

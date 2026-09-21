@@ -49,14 +49,14 @@ export default function SubmitFeedbackModal({
 		const trimmedComment = comment.trim() || null;
 		try {
 			if (isEditing) {
-				await api.updateFeedback(engagementId, {
-					rating,
-					comment: trimmedComment ?? undefined,
+				await api.updateFeedback({
+					path: { engagementId },
+					body: { rating, comment: trimmedComment },
 				});
 			} else {
-				await api.submitFeedback(engagementId, {
-					rating,
-					comment: trimmedComment ?? undefined,
+				await api.submitFeedback({
+					path: { engagementId },
+					body: { rating, comment: trimmedComment },
 				});
 			}
 			onSubmitted(rating, trimmedComment);

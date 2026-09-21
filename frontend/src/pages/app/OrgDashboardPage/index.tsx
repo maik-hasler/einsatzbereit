@@ -1,11 +1,13 @@
 import {
+	Suspense,
+	lazy,
+	type CSSProperties,
+	type MouseEvent as ReactMouseEvent,
+	type PointerEvent as ReactPointerEvent,
 	useCallback,
 	useEffect,
 	useMemo,
 	useState,
-	type CSSProperties,
-	type MouseEvent as ReactMouseEvent,
-	type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -20,8 +22,15 @@ import EmptyState from "../../../components/EmptyState";
 import Skeleton from "../../../components/Skeleton";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import ErrorBanner from "../../../components/ErrorBanner";
+// Lazy, alone among the widgets: it is the only one that pulls in
+// react-big-calendar and its date-fns locales, and those are what made this
+// route's chunk 271 kB - larger than the React vendor chunk, and paid for by
+// every organizer whether or not the Calendar tile is in their saved layout.
+// The layout comes from the server, so whether it is needed is known before
+// the first render.
+const CalendarWidget = lazy(() => import("./CalendarWidget"));
+
 import AddWidgetModal from "./AddWidgetModal";
-import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
 import ToDoWidget from "./ToDoWidget";
 import VolunteerStatsWidget from "./VolunteerStatsWidget";
@@ -99,7 +108,7 @@ export default function OrgDashboardPage() {
 
 	const loadLayout = useCallback(() => {
 		return api
-			.getDashboardLayout(organizationId)
+			.getDashboardLayout({ path: { organizationId } })
 			.then((response) => {
 				const sanitized = response.widgets
 					.map((w) => {
@@ -186,14 +195,17 @@ export default function OrgDashboardPage() {
 		if (!draftLayout) return;
 		setSaving(true);
 		try {
-			await api.saveDashboardLayout(organizationId, {
-				widgets: draftLayout.map((w) => ({
-					widgetKey: w.widgetKey,
-					x: w.x,
-					y: w.y,
-					width: w.width,
-					height: w.height,
-				})),
+			await api.saveDashboardLayout({
+				path: { organizationId },
+				body: {
+					widgets: draftLayout.map((w) => ({
+						widgetKey: w.widgetKey,
+						x: w.x,
+						y: w.y,
+						width: w.width,
+						height: w.height,
+					})),
+				},
 			});
 			setSavedLayout(draftLayout);
 			setHasCustomLayout(true);
@@ -221,7 +233,7 @@ export default function OrgDashboardPage() {
 		setResetting(true);
 		setResetError(null);
 		try {
-			await api.resetDashboardLayout(organizationId);
+			await api.resetDashboardLayout({ path: { organizationId } });
 			setSavedLayout(DEFAULT_LAYOUT);
 			setHasCustomLayout(false);
 			setConfirmingReset(false);
@@ -355,12 +367,19 @@ export default function OrgDashboardPage() {
 				);
 			case "Calendar":
 				return (
-					<CalendarWidget
-						organizationId={organizationId}
-						refreshKey={refreshKey}
-						size={size}
-						isOrganizer={isOrganizer}
-					/>
+					// The fallback fills the tile rather than collapsing it, so the
+					// board does not re-lay itself out around the gap while the
+					// chunk arrives. Not a WidgetCard: that would need a heading,
+					// and announcing an empty "Calendar" before there is one is
+					// worse than announcing nothing.
+					<Suspense fallback={<Skeleton className="h-full w-full" />}>
+						<CalendarWidget
+							organizationId={organizationId}
+							refreshKey={refreshKey}
+							size={size}
+							isOrganizer={isOrganizer}
+						/>
+					</Suspense>
 				);
 			case "Settings":
 				return (

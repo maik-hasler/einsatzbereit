@@ -38,7 +38,7 @@ export default defineConfig({
 				"src/**/*.test.{ts,tsx}",
 				"src/test/**",
 
-				"src/client/api-client.ts",
+				"src/client/generated/**",
 
 				"src/main.tsx",
 				"src/vite-env.d.ts",

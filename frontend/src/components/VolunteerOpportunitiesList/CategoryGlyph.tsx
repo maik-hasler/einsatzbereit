@@ -15,7 +15,9 @@ export function CategoryGlyph({
 	category,
 	className = "h-10 w-10",
 }: {
-	category: string | undefined;
+	// null as well as undefined: the generated DTOs mirror the OpenAPI
+	// document's nullability, and an uncategorised opportunity arrives as null.
+	category: string | null | undefined;
 	className?: string;
 }) {
 	switch (category) {

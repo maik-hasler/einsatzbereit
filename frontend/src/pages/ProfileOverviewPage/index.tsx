@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { Trans, useTranslation } from "react-i18next";
-import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
+import type { MyProfileResponse, StreakSummary } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import {
@@ -239,7 +239,7 @@ export default function ProfileOverviewPage() {
 		const retryDelaysMs = [500, 1000, 2000];
 		for (let attempt = 0; ; attempt++) {
 			try {
-				const data = await api.getUserProfile();
+				const data = await api.getUserProfile({});
 				if (profileLoadCancelledRef.current) return;
 				setProfile(data);
 				form.reset(data);
@@ -279,7 +279,7 @@ export default function ProfileOverviewPage() {
 
 	useEffect(() => {
 		api
-			.getMyStreaks()
+			.getMyStreaks({})
 			.then(setStreaks)
 			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -289,7 +289,7 @@ export default function ProfileOverviewPage() {
 	useEffect(() => {
 		if (!userId) return;
 		api
-			.getPublicUserProfile(userId)
+			.getPublicUserProfile({ path: { userId } })
 			.then((p) => setEngagementCount(p.engagementCount))
 			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,16 +342,20 @@ export default function ProfileOverviewPage() {
 		// own, so both run and are reported separately rather than one bailing
 		// out the other (#2354).
 		const [profileResult, preferencesResult] = await Promise.allSettled([
-			api.updateUserProfile(savedValues),
+			api.updateUserProfile({ body: savedValues }),
 			notificationPrefs.preferences
-				? api.updateNotificationPreferences(notificationPrefs.preferences)
+				? api.updateNotificationPreferences({
+						body: notificationPrefs.preferences,
+					})
 				: Promise.resolve(undefined),
 		]);
 
 		let bothSucceeded = true;
 
 		if (profileResult.status === "fulfilled") {
-			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
+			setProfile((prev) =>
+				prev ? ({ ...prev, ...savedValues } as MyProfileResponse) : prev,
+			);
 			// The header reads the id_token, which Keycloak will not re-issue
 			// until the next sign-in - hand it the new name directly (#2330).
 			if (userId) {

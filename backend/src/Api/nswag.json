@@ -25,19 +25,6 @@
       "additionalNamespaceUsages": [
         "System.Collections.Generic"
       ]
-    },
-    "openApiToTypeScriptClient": {
-      "output": "../../../frontend/src/client/api-client.ts",
-      "className": "EinsatzbereitApi",
-      "template": "fetch",
-      "operationGenerationMode": "SingleClientFromOperationId",
-      "typeStyle": "Interface",
-      "markOptionalProperties": true,
-      "generateDefaultValues": false,
-      "generateClientInterfaces": false,
-      "generateConstructorInterface": false,
-      "useAbortSignal": true,
-      "newLineBehavior": "Auto"
     }
   }
 }

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type {
-	EinsatzbereitApi,
+	ApiClient,
 	PagedListOfVolunteerOpportunitySummary,
 	VolunteerOpportunityAvailableDate,
-} from "../client/api-client";
+} from "../client";
 import {
 	fetchVolunteerOpportunities,
 	fetchVolunteerOpportunityDateAvailability,
@@ -30,37 +30,39 @@ function fakeAvailabilityApi(): {
 describe("fetchVolunteerOpportunities", () => {
 	it("forwards required options and leaves the rest undefined", async () => {
 		const api = fakeApi();
-		await fetchVolunteerOpportunities(api as unknown as EinsatzbereitApi, {
+		await fetchVolunteerOpportunities(api as unknown as ApiClient, {
 			pageNumber: 1,
 			pageSize: 10,
 		});
 
-		expect(api.getVolunteerOpportunities).toHaveBeenCalledWith(
-			1,
-			10,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-		);
+		expect(api.getVolunteerOpportunities).toHaveBeenCalledWith({
+			query: {
+				PageNumber: 1,
+				PageSize: 10,
+				Occurrence: undefined,
+				ParticipationType: undefined,
+				IsRemote: undefined,
+				DateFrom: undefined,
+				DateTo: undefined,
+				CenterLatitude: undefined,
+				CenterLongitude: undefined,
+				RadiusKm: undefined,
+				Categories: undefined,
+				Tag: undefined,
+				Keyword: undefined,
+			},
+			signal: undefined,
+		});
 	});
 
-	it("forwards every option in the positional order the generated client expects", async () => {
+	it("forwards every option in the query shape the generated client expects", async () => {
 		const api = fakeApi();
 		const dateFrom = new Date("2024-01-01");
 		const dateTo = new Date("2024-02-01");
 		const signal = new AbortController().signal;
 
 		await fetchVolunteerOpportunities(
-			api as unknown as EinsatzbereitApi,
+			api as unknown as ApiClient,
 			{
 				pageNumber: 2,
 				pageSize: 20,
@@ -79,22 +81,24 @@ describe("fetchVolunteerOpportunities", () => {
 			signal,
 		);
 
-		expect(api.getVolunteerOpportunities).toHaveBeenCalledWith(
-			2,
-			20,
-			"Recurring",
-			"ScheduledSlots",
-			true,
-			dateFrom,
-			dateTo,
-			5,
-			6,
-			7,
-			["environment"],
-			"cleanup",
-			"beach",
+		expect(api.getVolunteerOpportunities).toHaveBeenCalledWith({
+			query: {
+				PageNumber: 2,
+				PageSize: 20,
+				Occurrence: "Recurring",
+				ParticipationType: "ScheduledSlots",
+				IsRemote: true,
+				DateFrom: dateFrom,
+				DateTo: dateTo,
+				CenterLatitude: 5,
+				CenterLongitude: 6,
+				RadiusKm: 7,
+				Categories: ["environment"],
+				Tag: "cleanup",
+				Keyword: "beach",
+			},
 			signal,
-		);
+		});
 	});
 
 	it("returns whatever the underlying API call resolves with", async () => {
@@ -106,7 +110,7 @@ describe("fetchVolunteerOpportunities", () => {
 		api.getVolunteerOpportunities.mockResolvedValue(page);
 
 		const result = await fetchVolunteerOpportunities(
-			api as unknown as EinsatzbereitApi,
+			api as unknown as ApiClient,
 			{ pageNumber: 1, pageSize: 10 },
 		);
 
@@ -121,38 +125,40 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 		const to = new Date("2026-08-31T23:59:59.999");
 
 		await fetchVolunteerOpportunityDateAvailability(
-			api as unknown as EinsatzbereitApi,
+			api as unknown as ApiClient,
 			{ from, to },
 		);
 
-		// The 3rd positional slot is the generated client's legacy utcOffsetMinutes
-		// param - always undefined now that the server derives the caller's zone
-		// from the X-Timezone header instead (see volunteerOpportunities.ts, #2203).
-		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
-			from,
-			to,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-		);
+		// UtcOffsetMinutes is the generated client's legacy timezone param -
+		// always undefined now that the server derives the caller's zone from
+		// the X-Timezone header instead (see volunteerOpportunities.ts, #2203).
+		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith({
+			query: {
+				From: from,
+				To: to,
+				UtcOffsetMinutes: undefined,
+				Occurrence: undefined,
+				ParticipationType: undefined,
+				IsRemote: undefined,
+				CenterLatitude: undefined,
+				CenterLongitude: undefined,
+				RadiusKm: undefined,
+				Categories: undefined,
+				Tag: undefined,
+				Keyword: undefined,
+			},
+			signal: undefined,
+		});
 	});
 
-	it("forwards every option in the positional order the generated client expects", async () => {
+	it("forwards every option in the query shape the generated client expects", async () => {
 		const api = fakeAvailabilityApi();
 		const from = new Date("2026-08-01T00:00:00");
 		const to = new Date("2026-08-31T23:59:59.999");
 		const signal = new AbortController().signal;
 
 		await fetchVolunteerOpportunityDateAvailability(
-			api as unknown as EinsatzbereitApi,
+			api as unknown as ApiClient,
 			{
 				from,
 				to,
@@ -169,21 +175,23 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 			signal,
 		);
 
-		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith(
-			from,
-			to,
-			undefined,
-			"Recurring",
-			"ScheduledSlots",
-			false,
-			5,
-			6,
-			7,
-			["Environment"],
-			"cleanup",
-			"beach",
+		expect(api.getVolunteerOpportunityDateAvailability).toHaveBeenCalledWith({
+			query: {
+				From: from,
+				To: to,
+				UtcOffsetMinutes: undefined,
+				Occurrence: "Recurring",
+				ParticipationType: "ScheduledSlots",
+				IsRemote: false,
+				CenterLatitude: 5,
+				CenterLongitude: 6,
+				RadiusKm: 7,
+				Categories: ["Environment"],
+				Tag: "cleanup",
+				Keyword: "beach",
+			},
 			signal,
-		);
+		});
 	});
 
 	it("returns whatever the underlying API call resolves with", async () => {
@@ -194,7 +202,7 @@ describe("fetchVolunteerOpportunityDateAvailability", () => {
 		api.getVolunteerOpportunityDateAvailability.mockResolvedValue(days);
 
 		const result = await fetchVolunteerOpportunityDateAvailability(
-			api as unknown as EinsatzbereitApi,
+			api as unknown as ApiClient,
 			{
 				from: new Date("2026-08-01T00:00:00"),
 				to: new Date("2026-08-31T23:59:59.999"),

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import type { PublicOrganizationProfileResponse } from "../client/api-client";
+import type { PublicOrganizationProfileResponse } from "../client";
 import OrganizationProfileView from "../components/OrganizationProfileView";
 import SectionHeading from "../components/SectionHeading";
 import ReportContentModal, {
@@ -15,10 +15,8 @@ import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageDescription } from "../hooks/usePageDescription";
 import { usePageTitle } from "../hooks/usePageTitle";
-import {
-	reportIntentSigninArgs,
-	usePendingReportIntent,
-} from "../lib/reportIntent";
+import { reportIntentSigninArgs } from "../lib/reportIntent";
+import { usePendingReportIntent } from "../hooks/usePendingReportIntent";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
 	classifyLoadFailure,
@@ -80,7 +78,7 @@ export default function OrganizationProfilePage() {
 		setError(null);
 		setFailure(null);
 		return api
-			.getPublicOrganizationProfile(organizationId)
+			.getPublicOrganizationProfile({ path: { organizationId } })
 			.then((data) => {
 				setProfile(data);
 				setError(null);
@@ -133,9 +131,12 @@ export default function OrganizationProfilePage() {
 
 	async function handleReportSubmit(reason: ReportReason, details: string) {
 		if (!organizationId) return;
-		await api.reportOrganization(organizationId, {
-			reason,
-			details: details || undefined,
+		await api.reportOrganization({
+			path: { organizationId },
+			body: {
+				reason,
+				details: details || null,
+			},
 		});
 		dispatchToast("success", t("report.submitSuccess"));
 	}

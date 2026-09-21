@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Outlet, Route, Routes } from "react-router";
 import OrgOpportunitiesPage from "./OrgOpportunitiesPage";
-import type { OrganizationDetailsResponse } from "../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../client";
 import { renderWithProviders } from "../../test/render";
 
 const { api } = await vi.hoisted(async () => {
@@ -52,8 +52,8 @@ function mockByStatus(
 	byStatus: Record<string, ReturnType<typeof opportunity>[]>,
 ) {
 	api.getOrganizationOpportunities.mockImplementation(
-		(_orgId: string, status: string) => {
-			const items = byStatus[status] ?? [];
+		(options: { query: { status: string } }) => {
+			const items = byStatus[options.query.status] ?? [];
 			return Promise.resolve({
 				items,
 				pageCount: items.length ? 1 : 0,

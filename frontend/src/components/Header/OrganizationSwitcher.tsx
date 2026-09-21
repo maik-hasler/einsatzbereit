@@ -1,10 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	Organization,
-	OrganizationSummaryDto,
-} from "../../client/api-client";
+import type { Organization, OrganizationSummaryDto } from "../../client";
 import { canViewOrgTab, orgTabPath } from "../../lib/orgTabs";
 import { splitForMiddleTruncation } from "../../lib/middleTruncateSplit";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";

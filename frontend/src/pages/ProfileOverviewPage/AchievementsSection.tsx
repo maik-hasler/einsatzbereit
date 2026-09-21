@@ -4,7 +4,7 @@ import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
 	StreakSummary,
-} from "../../client/api-client";
+} from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
 import BadgeGrid from "../../components/BadgeGrid";
@@ -29,7 +29,7 @@ export default function AchievementsSection({
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		Promise.all([api.getMyAchievements(), api.getBadgeCatalog()])
+		Promise.all([api.getMyAchievements({}), api.getBadgeCatalog({})])
 			.then(([ach, cat]) => {
 				setAchievements(ach);
 				setCatalog(cat);

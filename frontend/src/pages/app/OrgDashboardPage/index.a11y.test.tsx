@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { Outlet, Route, Routes } from "react-router";
 import OrgDashboardPage from "./index";
 import { useQuickActionsList } from "../../../contexts/QuickActionsContext";
-import type { OrganizationDetailsResponse } from "../../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../../client";
 import { renderWithProviders } from "../../../test/render";
 import { expectNoA11yViolations } from "../../../test/a11y";
 

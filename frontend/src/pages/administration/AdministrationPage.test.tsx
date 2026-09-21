@@ -2,21 +2,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import AdministrationPage, {
-	AdminAuditLogPage,
-	AdminOrganizationsPage,
-	AdminReportsPage,
-	AdminUsersPage,
-} from "./AdministrationPage";
-import ProtectedRoute from "../layouts/ProtectedRoute";
-import { renderWithProviders } from "../test/render";
+import AdministrationPage from "./AdministrationPage";
+import AdminAuditLogPage from "./AdminAuditLogPage";
+import AdminOrganizationsPage from "./AdminOrganizationsPage";
+import AdminReportsPage from "./AdminReportsPage";
+import AdminUsersPage from "./AdminUsersPage";
+import ProtectedRoute from "../../layouts/ProtectedRoute";
+import { renderWithProviders } from "../../test/render";
 
 const { api } = await vi.hoisted(async () => {
-	const { createApiMock } = await import("../test/apiMock");
+	const { createApiMock } = await import("../../test/apiMock");
 	return { api: createApiMock() };
 });
 
-vi.mock("../hooks/useApiClient", () => ({ useApiClient: () => api }));
+vi.mock("../../hooks/useApiClient", () => ({ useApiClient: () => api }));
 
 function LocationProbe() {
 	const location = useLocation();
@@ -165,14 +164,18 @@ describe("moderation queue", () => {
 		renderAdministration("/administration/reports", ["admin"]);
 
 		await screen.findByRole("link", { name: "Dog Walking for Shelter Dogs" });
-		expect(api.listFlaggedTargets).toHaveBeenLastCalledWith(1, 10, false);
+		expect(api.listFlaggedTargets).toHaveBeenLastCalledWith({
+			query: { pageNumber: 1, pageSize: 10, includeResolved: false },
+		});
 
 		await userEvent.click(
 			screen.getByRole("checkbox", { name: /Include resolved targets/ }),
 		);
 
 		await waitFor(() =>
-			expect(api.listFlaggedTargets).toHaveBeenLastCalledWith(1, 10, true),
+			expect(api.listFlaggedTargets).toHaveBeenLastCalledWith({
+				query: { pageNumber: 1, pageSize: 10, includeResolved: true },
+			}),
 		);
 	});
 
@@ -277,16 +280,18 @@ describe("audit log filtering", () => {
 		renderAdministration("/administration/audit-log", ["admin"]);
 
 		await waitFor(() =>
-			expect(api.listAuditLogs).toHaveBeenCalledWith(
-				1,
-				10,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				false,
-			),
+			expect(api.listAuditLogs).toHaveBeenCalledWith({
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					actionType: undefined,
+					subjectType: undefined,
+					actorUserId: undefined,
+					from: undefined,
+					to: undefined,
+					oldestFirst: false,
+				},
+			}),
 		);
 
 		await userEvent.click(screen.getByRole("combobox", { name: "Action" }));
@@ -295,16 +300,18 @@ describe("audit log filtering", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.listAuditLogs).toHaveBeenLastCalledWith(
-				1,
-				10,
-				"ReportDismissed",
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				false,
-			),
+			expect(api.listAuditLogs).toHaveBeenLastCalledWith({
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					actionType: "ReportDismissed",
+					subjectType: undefined,
+					actorUserId: undefined,
+					from: undefined,
+					to: undefined,
+					oldestFirst: false,
+				},
+			}),
 		);
 
 		await userEvent.click(
@@ -312,16 +319,18 @@ describe("audit log filtering", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.listAuditLogs).toHaveBeenLastCalledWith(
-				1,
-				10,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				false,
-			),
+			expect(api.listAuditLogs).toHaveBeenLastCalledWith({
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					actionType: undefined,
+					subjectType: undefined,
+					actorUserId: undefined,
+					from: undefined,
+					to: undefined,
+					oldestFirst: false,
+				},
+			}),
 		);
 	});
 
@@ -333,16 +342,18 @@ describe("audit log filtering", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.listAuditLogs).toHaveBeenLastCalledWith(
-				1,
-				10,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				true,
-			),
+			expect(api.listAuditLogs).toHaveBeenLastCalledWith({
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					actionType: undefined,
+					subjectType: undefined,
+					actorUserId: undefined,
+					from: undefined,
+					to: undefined,
+					oldestFirst: true,
+				},
+			}),
 		);
 	});
 
@@ -374,16 +385,18 @@ describe("audit log filtering", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.listAuditLogs).toHaveBeenLastCalledWith(
-				1,
-				10,
-				undefined,
-				undefined,
-				actorUserId,
-				undefined,
-				undefined,
-				false,
-			),
+			expect(api.listAuditLogs).toHaveBeenLastCalledWith({
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					actionType: undefined,
+					subjectType: undefined,
+					actorUserId: actorUserId,
+					from: undefined,
+					to: undefined,
+					oldestFirst: false,
+				},
+			}),
 		);
 		expect(
 			screen.getByRole("button", { name: /Stop filtering by Admina Admin/ }),
@@ -410,7 +423,9 @@ describe("administration empty states", () => {
 
 		expect(await screen.findByText("No users found.")).toBeInTheDocument();
 		await waitFor(() =>
-			expect(api.listUsers).toHaveBeenLastCalledWith(undefined, 1, 10),
+			expect(api.listUsers).toHaveBeenLastCalledWith({
+				query: { search: undefined, pageNumber: 1, pageSize: 10 },
+			}),
 		);
 	});
 });

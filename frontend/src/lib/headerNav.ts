@@ -1,4 +1,4 @@
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client";
 import { orgTabPath } from "./orgTabs";
 
 export type StaticNavLinkKey = "home" | "findOpportunities" | "organizations";

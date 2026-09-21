@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { NotificationPreferencesResponse } from "../../client/api-client";
+import type { NotificationPreferencesResponse } from "../../client";
 import { useMyOrganizations } from "../../hooks/useMyOrganizations";
 import { cardClass } from "../../lib/surfaceClasses";
 import PageSectionHeading from "../../components/PageSectionHeading";

@@ -7,7 +7,7 @@ import type { DateHeaderProps, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enGB, de } from "date-fns/locale";
 
-import type { OrganizationCalendarEventDto } from "../../../client/api-client";
+import type { OrganizationCalendarEventDto } from "../../../client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { useScrollFade } from "../../../hooks/useScrollFade";
 import Modal from "../../../components/Modal";
@@ -15,7 +15,7 @@ import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import {
 	formatDate,
@@ -64,7 +64,7 @@ interface CalEvent {
 	start: Date;
 	end: Date;
 	opportunityId: string;
-	color: string | undefined;
+	color: string | null;
 	bookedCount: number;
 	maxParticipants: number | null;
 }
@@ -221,11 +221,15 @@ function CalendarWidget({
 		() => visibleCalendarRange(calDate, calView),
 		[calDate, calView],
 	);
-	const [calData, setCalData, calError] = useSharedOrgFetch<
+	const [calData, setCalData, calError] = useCachedFetch<
 		OrganizationCalendarEventDto[]
 	>(
 		`calendarEvents:${organizationId}:${refreshKey}:${rangeFrom.toISOString()}:${rangeTo.toISOString()}`,
-		() => api.getOrganizationCalendarEvents(organizationId, rangeFrom, rangeTo),
+		() =>
+			api.getOrganizationCalendarEvents({
+				path: { organizationId },
+				query: { from: rangeFrom, to: rangeTo },
+			}),
 	);
 
 	const lastLoadedRef = useRef<OrganizationCalendarEventDto[] | null>(null);
@@ -350,13 +354,14 @@ function CalendarWidget({
 		setSavingColor(true);
 		setColorSaveError(null);
 		try {
-			await api.setOpportunityColor(selectedEvent.opportunityId, {
-				color: pickerColor || undefined,
+			await api.setOpportunityColor({
+				path: { opportunityId: selectedEvent.opportunityId },
+				body: { color: pickerColor || null },
 			});
 			setCalData((prev) =>
 				(prev ?? []).map((opp) =>
 					opp.opportunityId === selectedEvent.opportunityId
-						? { ...opp, color: pickerColor || undefined }
+						? { ...opp, color: pickerColor || null }
 						: opp,
 				),
 			);

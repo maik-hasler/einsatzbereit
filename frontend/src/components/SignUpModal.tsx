@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import type { TimeSlotDetail } from "../client/api-client";
+import type { TimeSlotDetail } from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
 	computeSpotsLeft,
@@ -96,13 +96,14 @@ export default function SignUpModal({
 		setSubmitting(true);
 
 		try {
-			await api.createEngagement(opportunityId, {
-				type: isScheduledSlots ? "ScheduledSlots" : "IndividualContact",
-				timeSlotId:
-					isScheduledSlots && selectedTimeSlotId
-						? selectedTimeSlotId
-						: undefined,
-				message: !isScheduledSlots ? message : undefined,
+			await api.createEngagement({
+				path: { opportunityId },
+				body: {
+					type: isScheduledSlots ? "ScheduledSlots" : "IndividualContact",
+					timeSlotId:
+						isScheduledSlots && selectedTimeSlotId ? selectedTimeSlotId : null,
+					message: !isScheduledSlots ? message : null,
+				},
 			});
 			onSuccess();
 			onClose();

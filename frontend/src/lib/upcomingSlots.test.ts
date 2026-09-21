@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { OrganizationCalendarEventDto } from "../client/api-client";
+import type { OrganizationCalendarEventDto } from "../client";
 import { selectUpcomingSlots, MAX_UPCOMING_SLOTS } from "./upcomingSlots";
 
 const NOW = Date.UTC(2026, 8, 14, 12, 0, 0);

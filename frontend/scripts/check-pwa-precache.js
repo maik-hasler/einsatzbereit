@@ -102,14 +102,14 @@ if (lazyPageImports.length < 9) {
 if (!/^import HomePage from ["']\.\/pages\/HomePage["'];?$/m.test(appTsx)) {
 	fail(
 		"src/App.tsx no longer has a plain `import HomePage from \"./pages/HomePage\"` - if it's " +
-			"lazy-loaded again, it and Header's shared useSharedOrgFetch(\"organizations:...\") call " +
+			"lazy-loaded again, it and Header's shared useCachedFetch(\"organizations:...\") call " +
 			"will race and fire GET /v1/organizations twice per authenticated home page load (#1396).",
 	);
 }
 if (/lazy\(\s*\(\)\s*=>\s*import\(["']\.\/pages\/HomePage["']/.test(appTsx)) {
 	fail(
 		"src/App.tsx lazy-loads HomePage - see the comment above it for why this races Header's " +
-			"shared useSharedOrgFetch(\"organizations:...\") call and must stay a plain eager import.",
+			"shared useCachedFetch(\"organizations:...\") call and must stay a plain eager import.",
 	);
 }
 

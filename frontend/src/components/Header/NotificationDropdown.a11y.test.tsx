@@ -4,7 +4,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import NotificationDropdown from "./NotificationDropdown";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
-import type { NotificationSummary } from "../../client/api-client";
+import type { NotificationSummary } from "../../client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 

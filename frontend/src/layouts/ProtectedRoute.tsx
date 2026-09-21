@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { ReactNode } from "react";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { hasRole } from "../lib/authRoles";
 import Spinner from "../components/Spinner";
 import ErrorBanner from "../components/ErrorBanner";
 import Button from "../components/Button";
@@ -80,10 +81,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 	}
 
 	if (requiredRole) {
-		const roles = (
-			Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
-		) as string[];
-		if (!roles.includes(requiredRole)) {
+		if (!hasRole(auth.user?.profile?.roles, requiredRole)) {
 			const copy = ROLE_COPY[requiredRole];
 			return (
 				<RouteState

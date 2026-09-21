@@ -221,9 +221,12 @@ describe("ProfileOverviewPage identity fields", () => {
 		await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
 
 		await waitFor(() =>
-			expect(api.updateUserProfile).toHaveBeenCalledWith(
-				expect.objectContaining({ firstName: "Vera", lastName: "Sample" }),
-			),
+			expect(api.updateUserProfile).toHaveBeenCalledWith({
+				body: expect.objectContaining({
+					firstName: "Vera",
+					lastName: "Sample",
+				}),
+			}),
 		);
 	});
 });
@@ -302,12 +305,12 @@ describe("ProfileOverviewPage failed save", () => {
 		await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
 
 		await waitFor(() =>
-			expect(api.updateUserProfile).toHaveBeenLastCalledWith(
-				expect.objectContaining({
+			expect(api.updateUserProfile).toHaveBeenLastCalledWith({
+				body: expect.objectContaining({
 					bio: "Precious unsaved text.",
 					phone: "+49 341 555 0100",
 				}),
-			),
+			}),
 		);
 		expect(screen.queryByTestId("profile-save-error")).toBeNull();
 	});

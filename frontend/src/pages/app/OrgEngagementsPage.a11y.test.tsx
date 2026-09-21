@@ -2,7 +2,7 @@ import { describe, it, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { Outlet, Route, Routes } from "react-router";
 import OrgEngagementsPage from "./OrgEngagementsPage";
-import type { OrganizationDetailsResponse } from "../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 

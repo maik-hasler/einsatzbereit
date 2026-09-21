@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { NotificationPreferencesResponse } from "../../client/api-client";
+import type { NotificationPreferencesResponse } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 
 export type PreferenceKey =
@@ -21,7 +21,7 @@ export function useNotificationPreferencesForm() {
 	useEffect(() => {
 		let cancelled = false;
 		api
-			.getNotificationPreferences()
+			.getNotificationPreferences({})
 			.then((data) => {
 				if (cancelled) return;
 				setPreferences(data);

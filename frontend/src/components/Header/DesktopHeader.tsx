@@ -7,7 +7,7 @@ import Button from "../Button";
 import { SpinnerIcon } from "../Spinner";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
-import type { OrganizationSummaryDto } from "../../client/api-client";
+import type { OrganizationSummaryDto } from "../../client";
 import { buildPrimaryNav } from "../../lib/headerNav";
 
 export default function DesktopHeader({

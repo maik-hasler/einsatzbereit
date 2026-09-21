@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { Outlet, Route, Routes } from "react-router";
 import OrgDashboardPage from "./index";
 import { useQuickActionsList } from "../../../contexts/QuickActionsContext";
-import type { OrganizationDetailsResponse } from "../../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../../client";
 import { renderWithProviders } from "../../../test/render";
 
 const { api } = await vi.hoisted(async () => {
@@ -17,12 +17,12 @@ vi.mock("../../../hooks/useApiClient", () => ({ useApiClient: () => api }));
 const org = {
 	id: "11111111-1111-1111-1111-111111111111",
 	name: "Freiwillige Feuerwehr Kiel",
-	description: undefined,
-	contactEmail: undefined,
-	contactPhone: undefined,
-	website: undefined,
-	logoUrl: undefined,
-	address: undefined,
+	description: null,
+	contactEmail: null,
+	contactPhone: null,
+	website: null,
+	logoUrl: null,
+	address: null,
 	createdOn: new Date(Date.UTC(2026, 0, 1)),
 	members: [
 		{
@@ -247,7 +247,7 @@ describe("OrgDashboardPage edit mode", () => {
 		await waitFor(() =>
 			expect(api.saveDashboardLayout).toHaveBeenCalledTimes(1),
 		);
-		const [, body] = api.saveDashboardLayout.mock.calls[0];
+		const [{ body }] = api.saveDashboardLayout.mock.calls[0];
 		expect(
 			(body.widgets as { widgetKey: string }[]).map((w) => w.widgetKey),
 		).toEqual(["CreateOpportunity"]);
@@ -289,7 +289,7 @@ describe("OrgDashboardPage edit mode", () => {
 		await waitFor(() =>
 			expect(api.saveDashboardLayout).toHaveBeenCalledTimes(1),
 		);
-		const [, body] = api.saveDashboardLayout.mock.calls[0];
+		const [{ body }] = api.saveDashboardLayout.mock.calls[0];
 		expect(
 			(body.widgets as { widgetKey: string }[]).map((w) => w.widgetKey),
 		).toContain("QuickCheckIn");
@@ -389,7 +389,9 @@ describe("OrgDashboardPage layout reset", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.resetDashboardLayout).toHaveBeenCalledWith(org.id),
+			expect(api.resetDashboardLayout).toHaveBeenCalledWith({
+				path: { organizationId: org.id },
+			}),
 		);
 		// Back on the default layout, which the two-widget saved one lacks.
 		expect(await screen.findByTestId("widget-tile-Calendar")).toBeVisible();
@@ -660,7 +662,9 @@ describe("OrgDashboardPage widgets for a fresh organization", () => {
 		await userEvent.click(await screen.findByTestId("todo-widget-confirm-e-1"));
 
 		await waitFor(() =>
-			expect(api.confirmEngagement).toHaveBeenCalledWith("e-1"),
+			expect(api.confirmEngagement).toHaveBeenCalledWith({
+				path: { engagementId: "e-1" },
+			}),
 		);
 		expect(
 			await screen.findByTestId("todo-widget-confirmed-e-1"),
@@ -767,8 +771,10 @@ describe("OrgDashboardPage request volume", () => {
 		// so two requests are correct - what would be the #2322 F7 duplicate is
 		// the SAME window asked for twice, which is what this asserts against.
 		const ranges = api.getOrganizationCalendarEvents.mock.calls.map(
-			(call: unknown[]) =>
-				`${(call[1] as Date).toISOString()}..${(call[2] as Date).toISOString()}`,
+			(call: unknown[]) => {
+				const { query } = call[0] as { query: { from: Date; to: Date } };
+				return `${query.from.toISOString()}..${query.to.toISOString()}`;
+			},
 		);
 		expect(new Set(ranges).size).toBe(ranges.length);
 	});

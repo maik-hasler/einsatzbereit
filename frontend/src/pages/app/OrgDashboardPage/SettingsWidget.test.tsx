@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import SettingsWidget from "./SettingsWidget";
 import { renderWithProviders } from "../../../test/render";
-import type { OrganizationDetailsResponse } from "../../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../../client";
 import type { WidgetSize } from "./widgetCatalog";
 
 const { api } = await vi.hoisted(async () => {

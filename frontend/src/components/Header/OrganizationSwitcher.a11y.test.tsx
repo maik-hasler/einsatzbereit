@@ -12,13 +12,13 @@ const ORGS = [
 	{
 		id: ORG_A,
 		name: "Freiwillige Feuerwehr Kiel",
-		logoUrl: undefined,
+		logoUrl: null,
 		role: "Organizer",
 	},
 	{
 		id: ORG_B,
 		name: "Foerderverein Hamburg",
-		logoUrl: undefined,
+		logoUrl: null,
 		role: "Member",
 	},
 ];

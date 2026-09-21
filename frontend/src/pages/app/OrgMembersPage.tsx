@@ -3,10 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
-import type {
-	MemberCandidateDto,
-	OrgInvitationDto,
-} from "../../client/api-client";
+import type { MemberCandidateDto, OrgInvitationDto } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
@@ -158,7 +155,11 @@ export default function OrgMembersPage() {
 			setMemberSearchLoading(true);
 			setMemberSearchError(null);
 			api
-				.searchMemberCandidates(org.id, memberSearch, controller.signal)
+				.searchMemberCandidates({
+					path: { organizationId: org.id },
+					query: { q: memberSearch },
+					signal: controller.signal,
+				})
 				.then((results) => {
 					if (controller.signal.aborted) return;
 					setMemberCandidates(results);
@@ -204,7 +205,7 @@ export default function OrgMembersPage() {
 	useEffect(() => {
 		if (!isOrganizer) return;
 		api
-			.getOrgInvitations(org.id)
+			.getOrgInvitations({ path: { organizationId: org.id } })
 			.then(setInvitations)
 			.catch((err) => {
 				setSettingsError(
@@ -223,9 +224,12 @@ export default function OrgMembersPage() {
 	async function handleInviteMember(userId: string) {
 		setInvitingUserId(userId);
 		try {
-			const response = await api.createInvitation(org.id, {
-				inviteeId: userId,
-				role: inviteRole,
+			const response = await api.createInvitation({
+				path: { organizationId: org.id },
+				body: {
+					inviteeId: userId,
+					role: inviteRole,
+				},
 			});
 			const invited = memberCandidates.find((c) => c.userId === userId);
 			setInvitations((prev) => [
@@ -261,7 +265,10 @@ export default function OrgMembersPage() {
 	) {
 		setChangingRoleUserId(userId);
 		try {
-			await api.changeMemberRole(org.id, userId, { role });
+			await api.changeMemberRole({
+				path: { organizationId: org.id, userId },
+				body: { role },
+			});
 			setMembers((prev) =>
 				prev.map((m) =>
 					m.userId === userId
@@ -283,7 +290,9 @@ export default function OrgMembersPage() {
 	async function handleDismissInvitation(invitationId: string) {
 		setDismissingInvitationId(invitationId);
 		try {
-			await api.dismissInvitation(org.id, invitationId);
+			await api.dismissInvitation({
+				path: { organizationId: org.id, invitationId },
+			});
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 
 			// Whatever the banner was still announcing (an invitation sent, one
@@ -304,7 +313,9 @@ export default function OrgMembersPage() {
 		setRevokingInvitation(true);
 		setRevokeError(null);
 		try {
-			await api.dismissInvitation(org.id, invitationId);
+			await api.dismissInvitation({
+				path: { organizationId: org.id, invitationId },
+			});
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 			setSettingsError(null);
 			setSuccessMessage(t("orgSettings.invitationRevoked"));
@@ -319,11 +330,15 @@ export default function OrgMembersPage() {
 	async function handleResendInvitation(invitationId: string) {
 		setResendingInvitationId(invitationId);
 		try {
-			await api.resendInvitation(org.id, invitationId);
+			await api.resendInvitation({
+				path: { organizationId: org.id, invitationId },
+			});
 
 			// The 204 carries no body, so re-read the list rather than guessing
 			// the expiry date the domain just stamped on the invitation (#2324).
-			const refreshed = await api.getOrgInvitations(org.id).catch(() => null);
+			const refreshed = await api
+				.getOrgInvitations({ path: { organizationId: org.id } })
+				.catch(() => null);
 			setInvitations(
 				(prev) =>
 					refreshed ??
@@ -347,7 +362,9 @@ export default function OrgMembersPage() {
 		setRemovingMember(true);
 		setRemoveMemberError(null);
 		try {
-			await api.removeMember(org.id, userId);
+			await api.removeMember({
+				path: { organizationId: org.id, userId },
+			});
 
 			setMembers((prev) => prev.filter((m) => m.userId !== userId));
 			reloadOrg();
@@ -365,7 +382,9 @@ export default function OrgMembersPage() {
 		if (!currentUserId) return;
 		setLeaving(true);
 		try {
-			await api.removeMember(org.id, currentUserId);
+			await api.removeMember({
+				path: { organizationId: org.id, userId: currentUserId },
+			});
 			navigate("/");
 		} catch (err) {
 			setShowLeaveConfirm(false);

@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { addDays, endOfDay, startOfDay } from "date-fns";
-import type { OrganizationCalendarEventDto } from "../../../client/api-client";
+import type { OrganizationCalendarEventDto } from "../../../client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Skeleton from "../../../components/Skeleton";
 import ErrorBanner from "../../../components/ErrorBanner";
@@ -10,7 +10,7 @@ import EmptyState from "../../../components/EmptyState";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import SeatsBar from "./SeatsBar";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 import {
 	formatDateTimeRange,
 	formatSlotSignUpCount,
@@ -61,9 +61,13 @@ function UpcomingOpportunitiesWidget({
 		return { from: today, to: endOfDay(addDays(today, HORIZON_DAYS)) };
 	}, []);
 
-	const [events, , error] = useSharedOrgFetch<OrganizationCalendarEventDto[]>(
+	const [events, , error] = useCachedFetch<OrganizationCalendarEventDto[]>(
 		`upcomingSlots:${organizationId}:${refreshKey}:${from.toISOString()}`,
-		() => api.getOrganizationCalendarEvents(organizationId, from, to),
+		() =>
+			api.getOrganizationCalendarEvents({
+				path: { organizationId },
+				query: { from, to },
+			}),
 	);
 
 	const slots = useMemo(

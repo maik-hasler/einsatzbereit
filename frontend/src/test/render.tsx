@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { AuthContext } from "react-oidc-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderResult } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import type { AuthContextProps } from "react-oidc-context";
@@ -82,6 +83,32 @@ function buildAuthValue(auth: TestAuth): AuthContextProps {
 	} as unknown as AuthContextProps;
 }
 
+/**
+ * A cache with every default that helps a real user turned off.
+ *
+ * Retries turn one rejected mock into three and a failing assertion into a
+ * timeout that says nothing. A shared cache leaks one test's data into the
+ * next. A refetch on focus fires when jsdom's window takes focus, which is
+ * never a thing the test asked for.
+ *
+ * A fresh instance per render keeps tests independent without any cleanup.
+ */
+function createTestQueryClient(): QueryClient {
+	return new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: false,
+				gcTime: Infinity,
+				staleTime: 0,
+				refetchOnWindowFocus: false,
+				refetchOnReconnect: false,
+				networkMode: "always",
+			},
+			mutations: { retry: false, networkMode: "always" },
+		},
+	});
+}
+
 export interface RenderOptions {
 	lng?: "de" | "en";
 
@@ -103,25 +130,28 @@ export function renderWithProviders(
 ): RenderResult {
 	const i18n = createTestI18n(lng);
 	const authValue = buildAuthValue(auth);
+	const queryClient = createTestQueryClient();
 
 	function Wrapper({ children }: { children: ReactNode }) {
 		return (
 			<ToastProvider>
 				<AuthContext.Provider value={authValue}>
-					<I18nextProvider i18n={i18n}>
-						<MemoryRouter initialEntries={[route]}>
-							<AuthStatusProvider
-								initialSessionExpired={sessionExpired}
-								initialAuthRecoveryFailed={authRecoveryFailed}
-							>
-								<QuickActionsProvider>
-									<HeaderOverlayProvider>
-										<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>
-									</HeaderOverlayProvider>
-								</QuickActionsProvider>
-							</AuthStatusProvider>
-						</MemoryRouter>
-					</I18nextProvider>
+					<QueryClientProvider client={queryClient}>
+						<I18nextProvider i18n={i18n}>
+							<MemoryRouter initialEntries={[route]}>
+								<AuthStatusProvider
+									initialSessionExpired={sessionExpired}
+									initialAuthRecoveryFailed={authRecoveryFailed}
+								>
+									<QuickActionsProvider>
+										<HeaderOverlayProvider>
+											<OrgBreadcrumbProvider>{children}</OrgBreadcrumbProvider>
+										</HeaderOverlayProvider>
+									</QuickActionsProvider>
+								</AuthStatusProvider>
+							</MemoryRouter>
+						</I18nextProvider>
+					</QueryClientProvider>
 				</AuthContext.Provider>
 			</ToastProvider>
 		);

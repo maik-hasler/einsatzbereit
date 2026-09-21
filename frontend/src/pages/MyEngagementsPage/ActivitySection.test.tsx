@@ -127,11 +127,9 @@ describe("my-signups scope toggle", () => {
 
 		await waitFor(() => expect(past).toHaveAttribute("aria-pressed", "true"));
 		expect(upcoming).toHaveAttribute("aria-pressed", "false");
-		expect(api.getMyEngagements).toHaveBeenLastCalledWith(
-			expect.anything(),
-			expect.anything(),
-			false,
-		);
+		expect(api.getMyEngagements).toHaveBeenLastCalledWith({
+			query: expect.objectContaining({ Upcoming: false }),
+		});
 	});
 
 	it("reads the initial segment from the URL, so it survives a reload (#2240)", async () => {
@@ -149,11 +147,9 @@ describe("my-signups scope toggle", () => {
 			"false",
 		);
 		await waitFor(() =>
-			expect(api.getMyEngagements).toHaveBeenLastCalledWith(
-				expect.anything(),
-				expect.anything(),
-				false,
-			),
+			expect(api.getMyEngagements).toHaveBeenLastCalledWith({
+				query: expect.objectContaining({ Upcoming: false }),
+			}),
 		);
 	});
 });
@@ -519,7 +515,9 @@ describe("my-signups invitations (#2206)", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.acceptInvitation).toHaveBeenCalledWith(invitation().id),
+			expect(api.acceptInvitation).toHaveBeenCalledWith({
+				path: { invitationId: invitation().id },
+			}),
 		);
 		expect(signinSilent).toHaveBeenCalledTimes(1);
 	});

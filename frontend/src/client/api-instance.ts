@@ -2,8 +2,9 @@ import { dispatchToast } from "../lib/toastBus";
 import { notifySessionExpired } from "../lib/sessionExpiryBus";
 import { clearAuthRecoveryAttempts } from "../lib/authRecovery";
 import { runtimeConfig } from "../lib/runtimeConfig";
-import { EinsatzbereitApi } from "./api-client";
+import { getAccessToken } from "../lib/accessToken";
 import i18next from "../i18n";
+import type { CreateClientConfig } from "./generated/client.gen";
 
 // Fallback wait when the server doesn't send Retry-After - matches the
 // default rate-limit window (RateLimitingOptions.ReadOptions.WindowSeconds).
@@ -84,20 +85,65 @@ export async function handleErrorResponse(
 	}
 }
 
-export function createApiClient(accessToken?: string): EinsatzbereitApi {
-	return new EinsatzbereitApi(runtimeConfig.apiUrl, {
-		fetch: async (url: RequestInfo, init?: RequestInit) => {
-			const response = await globalThis.fetch(url, {
-				...init,
-				headers: {
-					...init?.headers,
-					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-					"X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-					"X-Language": i18next.language.split("-")[0],
-				},
-			});
-			await handleErrorResponse(response, Boolean(accessToken));
-			return response;
+/**
+ * Guarantees that whatever the generated client throws carries an HTTP status.
+ *
+ * The client throws the parsed error body when it is JSON, and the raw text
+ * when it is not. The backend's own failures are always `ProblemDetails`, which
+ * carries `status` - but a failure in front of it (an nginx 502, a gateway
+ * timeout) answers with HTML, and `lib/apiError.ts` reads a missing status as
+ * "no response at all" and shows the offline state. Re-wrapping a non-JSON
+ * error body as a minimal ProblemDetails keeps that classification honest.
+ */
+async function withJsonErrorBody(response: Response): Promise<Response> {
+	if (response.headers.get("Content-Type")?.includes("json")) return response;
+
+	const detail = await response
+		.clone()
+		.text()
+		.catch(() => "");
+
+	return new Response(
+		JSON.stringify({ status: response.status, detail: detail.slice(0, 500) }),
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: { "Content-Type": "application/problem+json" },
 		},
-	});
+	);
 }
+
+/**
+ * Called once by the generated `client.gen.ts` to build the client's config.
+ *
+ * Everything the app needs on top of plain `fetch` is here, in one place, for
+ * the same reason it was before: a 401 has to reach the session-expiry handler
+ * and a 5xx has to reach a toast no matter which of the hundred endpoints
+ * produced it, and a per-call-site version of that would be a hundred chances
+ * to forget.
+ *
+ * A `fetch` override rather than the client's request/response interceptors:
+ * `client.gen.ts` imports this module, so importing the client back from here
+ * to attach interceptors would close a cycle (`pnpm check:deps` would say so).
+ */
+export const createClientConfig: CreateClientConfig = (config) => ({
+	...config,
+	baseUrl: runtimeConfig.apiUrl,
+	throwOnError: true,
+	fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+		const accessToken = getAccessToken();
+
+		const headers = new Headers(
+			input instanceof Request ? input.headers : init?.headers,
+		);
+		if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+		headers.set("X-Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+		headers.set("X-Language", i18next.language.split("-")[0]);
+
+		const response = await globalThis.fetch(input, { ...init, headers });
+
+		await handleErrorResponse(response, Boolean(accessToken));
+
+		return response.ok ? response : withJsonErrorBody(response);
+	},
+});

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
-import type { Organization } from "../client/api-client";
+import type { Organization } from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
 	getInputClass,
@@ -107,19 +107,21 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 
 		try {
 			const organization = await api.createOrganization({
-				name: values.name,
-				description: values.description || undefined,
-				contactEmail: values.contactEmail || undefined,
-				contactPhone: values.contactPhone || undefined,
-				website: values.website || undefined,
-				address: hasAddress
-					? {
-							street: values.street,
-							houseNumber: values.houseNumber,
-							zipCode: values.zipCode,
-							city: values.city,
-						}
-					: undefined,
+				body: {
+					name: values.name,
+					description: values.description || null,
+					contactEmail: values.contactEmail || null,
+					contactPhone: values.contactPhone || null,
+					website: values.website || null,
+					address: hasAddress
+						? {
+								street: values.street,
+								houseNumber: values.houseNumber,
+								zipCode: values.zipCode,
+								city: values.city,
+							}
+						: null,
+				},
 			});
 
 			// Founding an organization grants the organizer role server-side -
@@ -130,9 +132,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			const organizationId = organization.id?.value;
 			if (logoFile && organizationId) {
 				try {
-					await api.uploadOrganizationLogo(organizationId, {
-						data: logoFile,
-						fileName: logoFile.name,
+					await api.uploadOrganizationLogo({
+						path: { organizationId },
+						body: { file: logoFile },
 					});
 				} catch {
 					dispatchToast("warning", t("organization.logoUploadFailedWarning"));

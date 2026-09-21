@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
-import type { NotificationSummary } from "../../client/api-client";
+import type { NotificationSummary } from "../../client";
 import { useScrollFade } from "../../hooks/useScrollFade";
 import EmptyState from "../EmptyState";
 import ErrorBanner from "../ErrorBanner";

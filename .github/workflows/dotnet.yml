@@ -165,11 +165,14 @@ jobs:
             exit 1
           fi
 
+      # Only what the backend build itself produces. The TypeScript client is
+      # generated separately (@hey-api/openapi-ts) and guarded by
+      # `pnpm check:client-current` in frontend-checks.yml, which regenerates
+      # and compares rather than relying on this build having run.
       - name: Verify generated API client and OpenAPI doc are committed
         run: |
           if ! git diff --exit-code -- \
             backend/src/Api/wwwroot/openapi-v1.json \
-            frontend/src/client/api-client.ts \
             backend/tests/IntegrationTests/ApiClient.cs
           then
             echo "::error::Generated NSwag client/OpenAPI doc is out of date - run 'dotnet build' in backend/ (Debug configuration) and commit the result."

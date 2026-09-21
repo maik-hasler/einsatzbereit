@@ -37,7 +37,7 @@ export default function LanguageSelector({
 	async function warnIfEmailLanguageDiffers(uiLanguage: LangCode) {
 		if (!auth.isAuthenticated) return;
 		try {
-			const profile = await api.getUserProfile();
+			const profile = await api.getUserProfile({});
 			const emailLanguage = profile.preferredLanguage === "en" ? "en" : "de";
 			if (emailLanguage === uiLanguage) return;
 			dispatchToast(

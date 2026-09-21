@@ -106,9 +106,11 @@ describe("LatestOpportunitiesSection preview", () => {
 		const list = await screen.findByTestId("landing-latest-opportunities");
 		expect(within(list).getAllByRole("listitem")).toHaveLength(3);
 
-		expect(api.getVolunteerOpportunities.mock.calls[0].slice(0, 2)).toEqual([
-			1, 3,
-		]);
+		expect(api.getVolunteerOpportunities).toHaveBeenCalledWith(
+			expect.objectContaining({
+				query: expect.objectContaining({ PageNumber: 1, PageSize: 3 }),
+			}),
+		);
 	});
 
 	it("offers a way through to the full list", async () => {

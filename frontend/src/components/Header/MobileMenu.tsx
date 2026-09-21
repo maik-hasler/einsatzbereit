@@ -7,7 +7,7 @@ import { FOCUSABLE_SELECTOR } from "../Modal";
 import LanguageSelector from "./LanguageSelector";
 import OrgAvatar from "../OrgAvatar";
 import { SpinnerIcon } from "../Spinner";
-import type { OrganizationSummaryDto } from "../../client/api-client";
+import type { OrganizationSummaryDto } from "../../client";
 import type { AuthDisplayStatus } from "../../hooks/useAuthDisplayStatus";
 import { visibleOrgTabs, orgTabPath } from "../../lib/orgTabs";
 import { buildPrimaryNav } from "../../lib/headerNav";

@@ -1,8 +1,8 @@
 import { useId } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { VolunteerOpportunitySummary } from "../client/api-client";
-import OpportunityCard from "./OpportunityCard";
+import type { VolunteerOpportunitySummary } from "../client";
+import OpportunityCard, { type OpportunityCardItem } from "./OpportunityCard";
 import OpportunityCardSkeleton from "./OpportunityCardSkeleton";
 import RouteState from "./RouteState";
 import { useApiClient } from "../hooks/useApiClient";
@@ -14,6 +14,27 @@ const PREVIEW_COUNT = 3;
 
 const GRID_CLASS =
 	"mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3";
+
+/** Widens the summary's nullable fields to the card's item shape, which
+ * reads `undefined`. */
+function toCardItem(item: VolunteerOpportunitySummary): OpportunityCardItem {
+	return {
+		...item,
+		titleEn: item.titleEn ?? undefined,
+		descriptionDe: item.descriptionDe ?? undefined,
+		descriptionEn: item.descriptionEn ?? undefined,
+		street: item.street ?? undefined,
+		houseNumber: item.houseNumber ?? undefined,
+		zipCode: item.zipCode ?? undefined,
+		city: item.city ?? undefined,
+		category: item.category ?? undefined,
+		validUntil: item.validUntil ?? undefined,
+		nextTimeSlotStart: item.nextTimeSlotStart ?? undefined,
+		totalMaxParticipants: item.totalMaxParticipants ?? undefined,
+		bannerImageUrl: item.bannerImageUrl ?? undefined,
+		organizationLogoUrl: item.organizationLogoUrl ?? undefined,
+	};
+}
 
 export default function LatestOpportunitiesSection() {
 	const { t } = useTranslation();
@@ -82,7 +103,7 @@ export default function LatestOpportunitiesSection() {
 					{items.map((item) => (
 						<OpportunityCard
 							key={item.id}
-							item={item}
+							item={toCardItem(item)}
 							headingLevel={3}
 							withMedia
 						/>

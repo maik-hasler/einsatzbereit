@@ -1,3 +1,5 @@
+import { createEventBus } from "./createEventBus";
+
 export type ToastLevel = "error" | "warning" | "success" | "info";
 
 export interface ToastEvent {
@@ -6,19 +8,10 @@ export interface ToastEvent {
 	message: string;
 }
 
-type Listener = (event: ToastEvent) => void;
+const bus = createEventBus<ToastEvent>();
 
-const listeners: Listener[] = [];
-
-export function subscribeToasts(listener: Listener): () => void {
-	listeners.push(listener);
-	return () => {
-		const idx = listeners.indexOf(listener);
-		if (idx !== -1) listeners.splice(idx, 1);
-	};
-}
+export const subscribeToasts = bus.subscribe;
 
 export function dispatchToast(level: ToastLevel, message: string): void {
-	const event: ToastEvent = { id: crypto.randomUUID(), level, message };
-	listeners.forEach((l) => l(event));
+	bus.publish({ id: crypto.randomUUID(), level, message });
 }
