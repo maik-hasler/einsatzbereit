@@ -133,6 +133,64 @@ function pluralBaseKey(key) {
 	return null;
 }
 
+// "Anmelden" is reserved for authentication; participation uses "eintragen"
+// (CONTRIBUTING.md's German copy conventions, #2237). A hand sweep cannot hold
+// this: #2261 swept these strings out and #2257 put two back the same day.
+// Keys here are legitimately about signing in, where the English twin does not
+// happen to carry the vocabulary this check looks for.
+const ANMELDEN_AUTH_ALLOWLIST = new Set([
+	// The 7-day *login* streak badge (LoginStreakMiddleware); EN name is "On a Roll".
+	"translation.achievements.badges.on-a-roll-7.name",
+]);
+
+// German register is "du" throughout, never "Sie" (CONTRIBUTING.md). Keys here
+// use a capitalised "Sie"/"Ihr*" as third-person plural about other people,
+// not as formal address of the reader.
+const SIE_EXEMPT_KEYS = new Set([
+	// "Sie werden automatisch als eingecheckt markiert" - the participants, not you.
+	"translation.createOpportunity.checkInMethodNoneHint",
+	// "Sie bekommen eine E-Mail" - the invited people, not you.
+	"translation.help.organizersA5",
+]);
+
+const AUTH_VOCABULARY =
+	/\bsign(s|ing|ed)? ?-?in\b|\bsign(s|ing|ed)? ?-?out\b|\blog ?in\b|\blogged ?in\b|authenticat|\bsession\b|\bpassword\b|\baccount\b|\bcredential/i;
+
+function checkAnmeldenReservedForAuth(enValues, deValues, label) {
+	const violations = [];
+	for (const key of Object.keys(deValues)) {
+		if (typeof deValues[key] !== "string") continue;
+		if (!/anmeld/i.test(deValues[key])) continue;
+		if (ANMELDEN_AUTH_ALLOWLIST.has(key)) continue;
+		if (AUTH_VOCABULARY.test(enValues[key] ?? "")) continue;
+		violations.push(key);
+	}
+	if (violations.length === 0) return [];
+	return [
+		`${label}: German uses "anmelden" where the English is not about authentication - participation is "eintragen"/"Eintragung" (CONTRIBUTING.md, #2237):\n` +
+			violations
+				.map((k) => `  - ${k}\n      de: ${JSON.stringify(deValues[k])}\n      en: ${JSON.stringify(enValues[k] ?? "")}`)
+				.join("\n") +
+			"\nIf the string really is about signing in, add it to ANMELDEN_AUTH_ALLOWLIST in this script.",
+	];
+}
+
+function checkGermanRegister(deValues, label) {
+	const violations = [];
+	for (const key of Object.keys(deValues)) {
+		if (typeof deValues[key] !== "string") continue;
+		if (!/\b(Sie|Ihre|Ihrem|Ihren|Ihnen|Ihrer|Ihres)\b/.test(deValues[key])) continue;
+		if (SIE_EXEMPT_KEYS.has(key)) continue;
+		violations.push(key);
+	}
+	if (violations.length === 0) return [];
+	return [
+		`${label}: German uses the formal "Sie"/"Ihr" register - this product says "du" throughout (CONTRIBUTING.md):\n` +
+			violations.map((k) => `  - ${k} = ${JSON.stringify(deValues[k])}`).join("\n") +
+			"\nIf the word is third-person plural about other people rather than formal address, add the key to SIE_EXEMPT_KEYS in this script.",
+	];
+}
+
 function checkKeyParity(enKeys, deKeys) {
 	const missingInDe = [...enKeys].filter((k) => !deKeys.has(k));
 	const missingInEn = [...deKeys].filter((k) => !enKeys.has(k));
@@ -312,6 +370,8 @@ function runParityChecks(enPath, dePath, label) {
 		...checkPlaceholderDrift(enValues, deValues, enKeys, label),
 		...checkPluralCompleteness(enValues, deValues, label),
 		...checkPluralSuffixParity(enKeys, deKeys, label),
+		...checkAnmeldenReservedForAuth(enValues, deValues, label),
+		...checkGermanRegister(deValues, label),
 		...(label === "locales" ? checkUnusedKeys(enKeys) : []),
 	];
 }
