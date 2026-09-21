@@ -166,7 +166,10 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - `ArchitectureLayerTests.cs` - layer dependency rules
 - `EndpointConventionTests.cs` - endpoint naming/structure rules
 - `MessagingConventionTests.cs` - handler/command/query naming rules
-- Run these if you rename namespaces or move files between layers
+- `ResponseDeclarationConventionTests.cs` - every endpoint declares the responses it can
+  actually return. The committed OpenAPI document is the only input both generated clients
+  are built from, so an undeclared response is invisible to every caller (#2158)
+- Run these if you rename namespaces or move files between layers, or if you add an endpoint
 
 ### Visual tests (`VisualTests`)
 - TUnit.Playwright + Aspire: boots the full stack (Postgres, Keycloak, backend API, frontend) and drives it through a real browser - E2E flows plus axe-core a11y checks

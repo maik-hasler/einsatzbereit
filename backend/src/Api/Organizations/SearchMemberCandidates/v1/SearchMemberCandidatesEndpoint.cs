@@ -20,6 +20,7 @@ internal sealed class SearchMemberCandidatesEndpoint
 			.WithName("SearchMemberCandidates")
 			.Produces<IReadOnlyList<MemberCandidateDto>>()
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);

@@ -17,6 +17,7 @@ internal sealed class UpdateNotificationPreferencesEndpoint
 			.WithName("UpdateNotificationPreferences")
 			.WithTags("Users")
 			.Produces(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)

@@ -14,6 +14,7 @@ internal sealed class SetUserAdminStatusEndpoint : IEndpoint
 			.WithName("SetUserAdminStatus")
 			.WithTags("Admin")
 			.Produces(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status409Conflict)
