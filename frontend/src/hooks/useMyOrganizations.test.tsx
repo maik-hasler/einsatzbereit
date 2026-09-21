@@ -59,7 +59,8 @@ describe("useMyOrganizations", () => {
 	// queryKeys.organizations.all })` did not reach it. Creating an
 	// organization then left the switcher resolving the active one out of a
 	// list that predated it, and it rendered the *previously* active
-	// organization's name for a full staleTime (14 VisualTests cases).
+	// organization's name for a full staleTime (20 VisualTests cases across
+	// three shards).
 	it("refetches the list when a mutation invalidates the organizations key", async () => {
 		const user = userEvent.setup();
 		renderWithProviders(

@@ -198,7 +198,7 @@ describe("CreateOrganizationModal auth refresh (#2206)", () => {
 	// that dashboard's switcher resolves the active organization out of the
 	// cached list. Invalidating after the navigation is too late: the switcher
 	// renders the *previously* active organization's name until the refetch
-	// lands, which is what 14 VisualTests cases caught.
+	// lands, which is what 20 VisualTests cases caught.
 	it("invalidates the cached organization list before reporting success", async () => {
 		const callOrder: string[] = [];
 		invalidateMyOrganizations.mockImplementation(async () => {
