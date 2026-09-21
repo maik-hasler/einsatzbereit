@@ -175,7 +175,7 @@ jobs:
             backend/src/Api/wwwroot/openapi-v1.json \
             backend/tests/IntegrationTests/ApiClient.cs
           then
-            echo "::error::Generated NSwag client/OpenAPI doc is out of date - run 'dotnet build' in backend/ (Debug configuration) and commit the result."
+            echo "::error::The committed OpenAPI document or API client is out of date - run 'dotnet build tests/IntegrationTests' in backend/ and commit the result."
             exit 1
           fi
 

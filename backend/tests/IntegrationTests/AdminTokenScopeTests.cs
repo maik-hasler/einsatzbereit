@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -14,7 +13,7 @@ public class AdminTokenScopeTests(IntegrationTestFixture fixture)
 	public async Task AdminToken_IsAcceptedOnABaselineAuthenticatedEndpoint(
 		CancellationToken cancellationToken)
 	{
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var act = () => adminClient.GetUserProfileAsync(cancellationToken);
 
@@ -25,8 +24,8 @@ public class AdminTokenScopeTests(IntegrationTestFixture fixture)
 	public async Task AdminOrganizationsListing_IsNotScopedToTheCallingUser(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var name = $"AdminTokenScope {Guid.NewGuid():N}";
 		await olafClient.CreateOrganizationAsync(
@@ -36,15 +35,5 @@ public class AdminTokenScopeTests(IntegrationTestFixture fixture)
 			1, 100, name, null, null, cancellationToken);
 
 		page.Items.Select(o => o.Name).Should().Contain(name);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 using TUnit.Core.Interfaces;
 
@@ -15,7 +14,7 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldReturnAllZeros_WhenOrganizationHasNoOpportunities(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var kpis = await olafClient.GetOrganizationDashboardAsync(orgId, cancellationToken);
@@ -31,8 +30,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldReturnAccurateKpis_ForOrganizationWithMixedEngagementStatuses(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var opportunityA = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -100,8 +99,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldCountOneVolunteerOnce_WhenTheyTakeSeveralSlots(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -143,8 +142,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldNotCountAnotherOrganizationsEngagements(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity1 = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -155,7 +154,7 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		await olafClient.ConfirmEngagementAsync(engagement1.Id, cancellationToken);
 
 		var org2Id = await CreateOrganizationAsync(veraClient, cancellationToken);
-		var veraOrganizerClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraOrganizerClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var opportunity2 = await CreateOpportunityAsync(veraOrganizerClient, org2Id, cancellationToken);
 		await olafClient.CreateEngagementAsync(
 			opportunity2.Id,
@@ -174,8 +173,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationDashboard_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
@@ -191,8 +190,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 	public async Task GetDashboardLayout_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
@@ -201,16 +200,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		var layout = await veraClient.GetDashboardLayoutAsync(orgId, cancellationToken);
 
 		layout.HasCustomLayout.Should().BeFalse();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

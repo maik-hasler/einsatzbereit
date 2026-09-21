@@ -2,17 +2,17 @@
   "runtime": "Net100",
   "documentGenerator": {
     "fromDocument": {
-      "json": "wwwroot/openapi-$(ApiVersion).json"
+      "json": "../../src/Api/wwwroot/openapi-$(ApiVersion).json"
     }
   },
   "codeGenerators": {
     "openApiToCSharpClient": {
-      "output": "../../tests/IntegrationTests/ApiClient.cs",
+      "output": "ApiClient.cs",
       "namespace": "IntegrationTests",
       "className": "EinsatzbereitApi",
       "injectHttpClient": true,
       "disposeHttpClient": false,
-      "generateClientInterfaces": true,
+      "generateClientInterfaces": false,
       "jsonLibrary": "SystemTextJson",
       "useBaseUrl": false,
       "generateBaseUrlProperty": false,

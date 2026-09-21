@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldPersistChanges_WhenAuthenticated(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		await client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { FirstName = "Vera", LastName = "Sample" },
@@ -30,7 +29,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldClearNames_WhenNullValuesProvided(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		await client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { FirstName = null, LastName = null },
@@ -59,7 +58,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldReturn400_WhenBioExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { Bio = new string('a', 1001) },
@@ -73,7 +72,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldReturn400_WhenSkillsExceedMaxCount(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { Skills = Enumerable.Range(0, 51).Select(i => $"skill-{i}").ToList() },
@@ -87,7 +86,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldReturn400_WhenASkillExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { Skills = [new string('a', 101)] },
@@ -101,7 +100,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldReturn400_WhenLanguagesExceedMaxCount(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { Languages = Enumerable.Range(0, 21).Select(i => $"lang-{i}").ToList() },
@@ -115,7 +114,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldReturn400_WhenALanguageExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { Languages = [new string('a', 51)] },
@@ -132,7 +131,7 @@ public class UpdateUserProfileTests(
 	public async Task DeleteUserAvatar_ShouldClearAvatarUrl(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		using var avatar = new MemoryStream(TinyPng);
 		await client.UploadUserAvatarAsync(
@@ -145,14 +144,5 @@ public class UpdateUserProfileTests(
 
 		var afterDelete = await client.GetUserProfileAsync(cancellationToken);
 		afterDelete.AvatarUrl.Should().BeNull();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

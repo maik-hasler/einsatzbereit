@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -27,7 +26,7 @@ public class AdminEndpointAuthorizationTests(
 	public async Task ListOrganizations_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.ListOrganizationsAsync(1, 20, cancellationToken: cancellationToken);
 
@@ -51,7 +50,7 @@ public class AdminEndpointAuthorizationTests(
 	public async Task ListUsers_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.ListUsersAsync(1, 20, null, cancellationToken);
 
@@ -76,8 +75,8 @@ public class AdminEndpointAuthorizationTests(
 	public async Task SetUserAdminStatus_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var act = () => olafClient.SetUserAdminStatusAsync(
@@ -104,8 +103,8 @@ public class AdminEndpointAuthorizationTests(
 	public async Task SetUserEnabled_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var act = () => olafClient.SetUserEnabledAsync(
@@ -131,20 +130,11 @@ public class AdminEndpointAuthorizationTests(
 	public async Task ListAuditLogs_ShouldReturn403_WhenRequestingUserIsNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

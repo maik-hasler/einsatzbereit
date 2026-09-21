@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class AuditLogTests(
 	public async Task ListAuditLogs_ShouldContainEntry_AfterAdminShadowDeletesOrganization(
 		CancellationToken cancellationToken)
 	{
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		var admin = await adminClient.GetUserProfileAsync(cancellationToken);
 
 		var organizationName = $"TestOrg_{Guid.NewGuid()}";
@@ -42,7 +41,7 @@ public class AuditLogTests(
 	public async Task ListAuditLogs_ShouldContainEntry_AfterAdminRestoresOrganization(
 		CancellationToken cancellationToken)
 	{
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		var admin = await adminClient.GetUserProfileAsync(cancellationToken);
 
 		var organization = await adminClient.CreateOrganizationAsync(
@@ -61,7 +60,7 @@ public class AuditLogTests(
 	public async Task ListAuditLogs_ShouldResolveSubjectDisplayName_ForEngagementSubject_ToItsOpportunityTitle(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organization = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"TestOrg_{Guid.NewGuid()}" }, cancellationToken);
 		var opportunityTitle = $"TestOpportunity_{Guid.NewGuid()}";
@@ -82,7 +81,7 @@ public class AuditLogTests(
 			},
 			cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -93,19 +92,10 @@ public class AuditLogTests(
 			new CancelEngagementRequest { Reason = "Event cancelled" },
 			cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		var result = await adminClient.ListAuditLogsAsync(1, 20, cancellationToken: cancellationToken);
 
 		result.Items.Should().ContainSingle(a => a.SubjectId == engagement.Id && a.ActionType == "EngagementCancelled")
 			.Which.SubjectDisplayName.Should().Be(opportunityTitle);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

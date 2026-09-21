@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 using TUnit.Core.Interfaces;
 
@@ -15,11 +14,11 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 	public async Task GetOpportunityCheckInPin_ShouldReturn403_WhenOrganizerAccessesOtherOrgsOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken, checkInPin: "135790");
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		var act = () => veraClient.GetOpportunityCheckInPinAsync(opportunity.Id, cancellationToken);
@@ -32,11 +31,11 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 	public async Task DeleteVolunteerOpportunity_ShouldReturn403_WhenOrganizerDeletesOtherOrgsOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		var act = () => veraClient.DeleteVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
@@ -52,7 +51,7 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 	public async Task UpdateTimeSlot_ShouldReturn403_WhenOrganizerUpdatesOtherOrgsTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
@@ -66,7 +65,7 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var timeSlotId = timeSlots.Single().Id;
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		var act = () => veraClient.UpdateTimeSlotAsync(
@@ -82,16 +81,6 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

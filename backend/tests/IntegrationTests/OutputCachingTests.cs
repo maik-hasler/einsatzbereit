@@ -67,7 +67,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		var beforeBody = await before.Content.ReadAsStringAsync(cancellationToken);
 		beforeBody.Should().NotContain("Freshly published opportunity");
 
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, "Cache Eviction Org", cancellationToken);
 
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -106,7 +106,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	public async Task GetPublicOrganizationProfile_ShouldCacheEachOrganizationSeparately(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var firstOrgId = await CreateOrganizationAsync(authenticatedClient, "Org One", cancellationToken);
 		var secondOrgId = await CreateOrganizationAsync(authenticatedClient, "Org Two", cancellationToken);
 
@@ -153,7 +153,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldNotBeOutputCached(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, "Org", cancellationToken);
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
 
@@ -165,14 +165,6 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 		var second = await httpClient.GetAsync(route, cancellationToken);
 
 		second.Headers.TryGetValues("Age", out _).Should().BeFalse();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class ListUsersTests(
 	public async Task ListUsers_ShouldReturnEachUsersOwnRoles_WhenFetchedConcurrently(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var client = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var result = await client.ListUsersAsync(
 			pageNumber: 1, pageSize: 100, cancellationToken: cancellationToken);
@@ -34,7 +33,7 @@ public class ListUsersTests(
 	public async Task ListUsers_ShouldFilterBySearchTerm(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var client = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var result = await client.ListUsersAsync(
 			pageNumber: 1, pageSize: 10, search: "vera", cancellationToken: cancellationToken);
@@ -46,7 +45,7 @@ public class ListUsersTests(
 	public async Task ListUsers_ShouldReturn403_WhenNotAdmin(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.ListUsersAsync(
 			pageNumber: 1, pageSize: 10, cancellationToken: cancellationToken);
@@ -66,14 +65,5 @@ public class ListUsersTests(
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(401);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

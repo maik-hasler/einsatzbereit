@@ -20,7 +20,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
@@ -47,7 +47,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnAll_WhenOpportunitiesExist(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", cancellationToken);
@@ -65,7 +65,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnCorrectPageSize_WhenPaginationIsApplied(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", cancellationToken);
@@ -86,7 +86,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnRemainingItems_WhenRequestingLastPage(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", cancellationToken);
@@ -106,7 +106,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnOrderedByCreatedOnDescending(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var first = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "First", "Created first", cancellationToken);
@@ -128,7 +128,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnOrganizationName(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", cancellationToken);
@@ -145,7 +145,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnAddressAndOccurrence(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", cancellationToken);
@@ -168,7 +168,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnNextTimeSlotStartAndEnd_WhenTimeSlotExists(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -213,7 +213,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnEarliestUpcomingTimeSlot_WhenMultipleSlotsExist(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -257,7 +257,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnNullNextTimeSlot_WhenNoTimeSlotsExist(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -287,7 +287,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldExcludeOpportunitiesWhoseOnlyTimeSlotsHaveExpired(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var expired = await CreateOpportunityWithExpiredTimeSlotAsync(authenticatedClient, orgId, cancellationToken);
@@ -347,7 +347,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldStillAppear_WhenOnlySomeOfItsTimeSlotsHaveExpired(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -393,7 +393,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenDateFromFilterApplied(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
@@ -416,7 +416,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenDateToFilterApplied(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
@@ -439,7 +439,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterScheduledSlotsOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
@@ -472,7 +472,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		// DateFrom and DateTo used to be two independent existence tests, so a series with
 		// slots on either side of the window satisfied "has a slot >= from" and "has a slot
 		// <= to" with two *different* slots and matched a window it has no slot in (#2319).
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var straddling = await CreateOpportunityWithTimeSlotsAsync(
@@ -503,7 +503,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		// listed at all while its ValidUntil is in the future, so it is on offer over
 		// [now, ValidUntil]. Exempting it from every date filter let it match impossible
 		// windows - including ones that ended years ago (#2319).
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotless = await CreateSlotlessOpportunityAsync(
@@ -523,7 +523,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldExcludeSlotlessOpportunity_WhenTheWindowStartsAfterItExpires(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		// CreateSlotlessOpportunityAsync sets ValidUntil 30 days out.
@@ -546,7 +546,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenTheWindowOverlapsItsValidity(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotless = await CreateSlotlessOpportunityAsync(
@@ -597,7 +597,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task CreateVolunteerOpportunity_ShouldPersistAddressAndOccurrence(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var result = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -627,7 +627,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByIsRemote(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "On-site task", "Description", cancellationToken);
@@ -697,7 +697,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByOccurrenceAndParticipationTypeAndCategory_WhenValid(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -744,7 +744,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByTag(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateOpportunityWithTagsAsync(
@@ -764,7 +764,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_MatchingTitleOrDescription(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(
@@ -787,7 +787,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_MatchingOrganizationName(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var matchingOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken, "Riverside Wildlife Rescue");
 		var otherOrgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
@@ -808,7 +808,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword_NormalizingGermanUmlautsAndEszett(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await CreateVolunteerOpportunityAsync(
@@ -832,7 +832,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldFilterByRadius_AndOrderResultsByDistanceAscending(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		const double centerLat = 52.52;
@@ -861,7 +861,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturn200_WhenPublishedOpportunitiesExist(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		await CreateVolunteerOpportunityAsync(
 			authenticatedClient, orgId, "Translation probe", "Description", cancellationToken);
@@ -872,15 +872,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		page.Items.Should().ContainSingle();
 		page.TotalItems.Should().Be(1);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

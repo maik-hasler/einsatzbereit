@@ -7,7 +7,7 @@ Accepted
 2026-09-21
 
 === Context
-One OpenAPI document, `backend/src/Api/wwwroot/openapi-v1.json`, fed two generated clients, both produced by NSwag from the same MSBuild target on every backend build: a C# one for the integration tests, and a TypeScript one for the SPA.
+One OpenAPI document, `backend/src/Api/wwwroot/openapi-v1.json` - itself produced by ASP.NET's `GenerateOpenApiDocuments`, not by NSwag - fed two generated clients, both produced by NSwag from the same MSBuild target on every backend build: a C# one for the integration tests, and a TypeScript one for the SPA.
 
 The TypeScript half had three properties worth naming:
 

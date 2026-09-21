@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -16,8 +15,8 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	public async Task CheckInEngagement_Returns400_WhenEngagementIsNotConfirmed(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var opportunityId = await CreateOpportunityAsync(
 			olaf, "CheckInStatusCode", checkInPin: null, cancellationToken);
@@ -38,8 +37,8 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	public async Task CheckInWithPin_Returns400_WhenCheckingInSomeoneElsesEngagement(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var engagementId = await SeedConfirmedPinEngagementAsync(
 			olaf, vera, "CheckInPinOwner", cancellationToken);
@@ -57,8 +56,8 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	public async Task CheckInWithPin_ReturnsIdenticalNotOwnerError_RegardlessOfPinCorrectness_ForNonOwner(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var engagementId = await SeedConfirmedPinEngagementAsync(
 			olaf, vera, "CheckInPinOracle", cancellationToken);
@@ -80,8 +79,8 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 	public async Task CheckInWithPin_Returns403_AfterTooManyFailedAttempts(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var engagementId = await SeedConfirmedPinEngagementAsync(
 			olaf, vera, "CheckInPinLockout", cancellationToken);
@@ -158,15 +157,5 @@ public class EngagementCheckInStatusCodeTests(IntegrationTestFixture fixture)
 		ex.Result.AdditionalProperties.Should().ContainKey("errorCode",
 			"a Result-pattern failure must carry an errorCode in its ProblemDetails");
 		return ex.Result.AdditionalProperties["errorCode"]?.ToString();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

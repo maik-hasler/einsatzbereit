@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class GetPublicOrganizationsTests(
 	public async Task GetPublicOrganizations_ShouldCountOnlyPublishedOpportunities(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, "OpenCount", cancellationToken);
 
 		await PublishOpportunityAsync(client, organizationId, "Published one", cancellationToken);
@@ -46,7 +45,7 @@ public class GetPublicOrganizationsTests(
 	public async Task GetPublicOrganizations_ShouldReportZeroOpenOpportunities_ForABareOrganization(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		await CreateOrganizationAsync(client, "BareOrg", cancellationToken);
 
 		var directory = new EinsatzbereitApi(fixture.CreateHttpClient());
@@ -85,14 +84,5 @@ public class GetPublicOrganizationsTests(
 			}, cancellationToken);
 
 		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

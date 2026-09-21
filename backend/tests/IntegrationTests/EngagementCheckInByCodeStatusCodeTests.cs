@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -14,8 +13,8 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns200_AndChecksIn_WhenCodeMatchesExactlyOne(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, engagementId) = await SeedConfirmedQrEngagementAsync(
 			olaf, vera, "CheckInByCodeHappyPath", cancellationToken);
@@ -32,8 +31,8 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns404_WhenNoEngagementMatchesCode(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, _) = await SeedConfirmedQrEngagementAsync(
 			olaf, vera, "CheckInByCodeNotFound", cancellationToken);
@@ -49,8 +48,8 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns400_WhenCodeIsNotEightHexCharacters(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, _) = await SeedConfirmedQrEngagementAsync(
 			olaf, vera, "CheckInByCodeInvalidFormat", cancellationToken);
@@ -66,7 +65,7 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns409_WhenOpportunityDoesNotUseQrCodeCheckIn(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var suffix = Guid.NewGuid().ToString("N");
 		var org = await olaf.CreateOrganizationAsync(
@@ -96,8 +95,8 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns403_WhenRequestingUserIsNotAnOrganizerOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, engagementId) = await SeedConfirmedQrEngagementAsync(
 			olaf, vera, "CheckInByCodeNotOrganizer", cancellationToken);
@@ -113,8 +112,8 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 	public async Task CheckInEngagementByCode_Returns409_WhenTheCodeMatchesMoreThanOneEngagement(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var opportunityId = await CreateQrOpportunityAsync(olaf, "CheckInByCodeAmbiguous", cancellationToken);
 
@@ -178,15 +177,5 @@ public class EngagementCheckInByCodeStatusCodeTests(IntegrationTestFixture fixtu
 			cancellationToken);
 
 		return opportunity.Id;
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

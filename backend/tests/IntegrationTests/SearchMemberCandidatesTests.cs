@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -19,7 +18,7 @@ public class SearchMemberCandidatesTests(
 		string query,
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var candidates = await client.SearchMemberCandidatesAsync(
@@ -32,7 +31,7 @@ public class SearchMemberCandidatesTests(
 	public async Task SearchMemberCandidates_ShouldFindTheUser_WhenQueryIsTheExactUsername(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var candidates = await client.SearchMemberCandidatesAsync(
@@ -47,7 +46,7 @@ public class SearchMemberCandidatesTests(
 	public async Task SearchMemberCandidates_ShouldFindTheUser_WhenQueryIsTheExactEmail(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
@@ -64,7 +63,7 @@ public class SearchMemberCandidatesTests(
 		// This is the regression test for the realm-wide enumeration this endpoint used to allow
 		// (#2205): a query that used to match dozens of users via Keycloak's infix `search` must
 		// now match nobody unless it names one user's full username or email exactly.
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var (_, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var prefix = username[..^1];
@@ -79,7 +78,7 @@ public class SearchMemberCandidatesTests(
 	public async Task SearchMemberCandidates_ShouldReportAlreadyMember_WhenTheExactMatchIsAlreadyInTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		await fixture.AddPlainMemberDirectlyAsync(organizationId, userId, cancellationToken);
@@ -94,7 +93,7 @@ public class SearchMemberCandidatesTests(
 	public async Task SearchMemberCandidates_ShouldReportAlreadyInvited_WhenTheExactMatchHasAPendingInvitation(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var (userId, username, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
@@ -111,7 +110,7 @@ public class SearchMemberCandidatesTests(
 	public async Task SearchMemberCandidates_ShouldNeverCarryAnEmailAddress(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var candidates = await client.SearchMemberCandidatesAsync(
@@ -137,14 +136,5 @@ public class SearchMemberCandidatesTests(
 			new CreateOrganizationRequest { Name = $"Member search {Guid.NewGuid()}" },
 			cancellationToken);
 		return organization.Id.Value;
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

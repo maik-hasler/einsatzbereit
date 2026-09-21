@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -27,7 +26,7 @@ public class GetOrganizationMetaTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationMeta_ShouldReturnHtml_WithOrganizationNameAndDescription(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var uniqueName = $"Küstenschutz {Guid.NewGuid():N}";
 		var organization = await authenticatedClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest
@@ -49,14 +48,5 @@ public class GetOrganizationMetaTests(IntegrationTestFixture fixture)
 		html.Should().Contain($"/organizations/{organization.Id.Value}");
 
 		html.Should().Contain("/og-image.png");
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,8 +14,8 @@ public class MilestoneAchievementTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var volunteerClient = await fixture.CreateAuthenticatedClientAsync(username, password);
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var engagementIds = new List<Guid>();
 		var opportunityIds = new List<Guid>();
@@ -70,15 +69,5 @@ public class MilestoneAchievementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		return opportunity.Id;
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

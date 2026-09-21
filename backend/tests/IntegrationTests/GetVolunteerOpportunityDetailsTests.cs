@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -14,7 +13,7 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityDetails_ShouldReturn404_WhenOpportunityIsDraftAndRequesterIsAnonymous(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -30,11 +29,11 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityDetails_ShouldReturn404_WhenOpportunityIsDraftAndRequesterIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => veraClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
 
@@ -46,7 +45,7 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityDetails_ShouldReturnDetails_WhenOpportunityIsDraftAndRequesterIsOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -60,7 +59,7 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityDetails_ShouldReturnDetails_WhenOpportunityIsPublishedAndRequesterIsAnonymous(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
@@ -77,12 +76,12 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityDetails_ShouldExcludeViewerFromParticipantCount_WhenViewerHasSignedUp(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -93,16 +92,6 @@ public class GetVolunteerOpportunityDetailsTests(IntegrationTestFixture fixture)
 
 		detailsForVera.CurrentParticipantCount.Should().Be(0);
 		detailsForOlaf.CurrentParticipantCount.Should().Be(1);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

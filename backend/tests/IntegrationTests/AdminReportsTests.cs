@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -16,7 +15,7 @@ public class AdminReportsTests(
 		CancellationToken cancellationToken)
 	{
 		var (opportunity, title) = await CreateReportedOpportunityAsync(cancellationToken);
-		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var admin = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var page = await admin.ListFlaggedTargetsAsync(1, 20, null, cancellationToken);
 
@@ -33,11 +32,11 @@ public class AdminReportsTests(
 	{
 		var (opportunity, _) = await CreateReportedOpportunityAsync(cancellationToken);
 
-		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var admin = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		var history = await admin.GetReportHistoryForTargetAsync("VolunteerOpportunity", opportunity.Id, cancellationToken);
 		await admin.DismissReportAsync(history.Single().Id, cancellationToken);
 
-		var reporter = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var reporter = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var act = () => reporter.ReportVolunteerOpportunityAsync(
 			opportunity.Id,
 			new ReportVolunteerOpportunityRequest { Reason = "Spam", Details = "Re-filed after dismissal." },
@@ -55,7 +54,7 @@ public class AdminReportsTests(
 		CancellationToken cancellationToken)
 	{
 		var (opportunity, title) = await CreateReportedOpportunityAsync(cancellationToken);
-		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var admin = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var history = await admin.GetReportHistoryForTargetAsync("VolunteerOpportunity", opportunity.Id, cancellationToken);
 		await admin.DismissReportAsync(history.Single().Id, cancellationToken);
@@ -77,7 +76,7 @@ public class AdminReportsTests(
 		CancellationToken cancellationToken)
 	{
 		var (opportunity, _) = await CreateReportedOpportunityAsync(cancellationToken);
-		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var admin = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		var adminProfile = await admin.GetUserProfileAsync(cancellationToken);
 
 		var history = await admin.GetReportHistoryForTargetAsync("VolunteerOpportunity", opportunity.Id, cancellationToken);
@@ -99,7 +98,7 @@ public class AdminReportsTests(
 	private async Task<(CreateVolunteerOpportunityResponse Opportunity, string Title)> CreateReportedOpportunityAsync(
 		CancellationToken cancellationToken)
 	{
-		var organizer = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var organizer = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var suffix = Guid.NewGuid().ToString("N")[..8];
 
 		var organization = await organizer.CreateOrganizationAsync(
@@ -121,21 +120,12 @@ public class AdminReportsTests(
 			}, cancellationToken);
 		await organizer.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
-		var reporter = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var reporter = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await reporter.ReportVolunteerOpportunityAsync(
 			opportunity.Id,
 			new ReportVolunteerOpportunityRequest { Reason = "Spam", Details = $"Regression coverage {suffix}." },
 			cancellationToken);
 
 		return (opportunity, title);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

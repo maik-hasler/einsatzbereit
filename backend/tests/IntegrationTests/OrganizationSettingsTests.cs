@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
@@ -18,7 +17,7 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturnDetails_AfterCreation(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Organization Details Test" }, cancellationToken);
@@ -47,8 +46,8 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserHasNoRelationToTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Stranger 403 Test Org" }, cancellationToken);
@@ -63,8 +62,8 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldSucceed_WhenRequestingUserIsAPlainMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -82,7 +81,7 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn404_WhenOrganizationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
 
@@ -94,7 +93,7 @@ public class OrganizationSettingsTests(
 	public async Task UpdateOrganization_ShouldReturn204_WithValidData(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Before Update" }, cancellationToken);
@@ -129,7 +128,7 @@ public class OrganizationSettingsTests(
 	public async Task UpdateOrganization_ShouldReturn400_WhenContactEmailExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Oversized Contact Email Org" }, cancellationToken);
@@ -163,7 +162,7 @@ public class OrganizationSettingsTests(
 	public async Task UpdateOrganization_ShouldClearAddress_WhenNullPassed(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Org with Address" }, cancellationToken);
@@ -206,14 +205,14 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraOrg = await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Unrelated Org" }, cancellationToken);
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
 		var veraUserId = veraOrgDetails.Members.Single().UserId;
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.RemoveMemberAsync(veraOrg.Id.Value, veraUserId, cancellationToken);
 
@@ -228,13 +227,13 @@ public class OrganizationSettingsTests(
 	public async Task UpdateOrganization_ShouldReturn403_WhenRequestingUserIsAPlainMemberHoldingOrganizerRoleFromAnUnrelatedOrg(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 4" }, cancellationToken);
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
@@ -257,9 +256,9 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldNotFlagMemberAsOrganisator_WhenTheyOnlyOrganizeAnUnrelatedOrg(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		await veraClient.CreateOrganizationAsync(
@@ -280,8 +279,8 @@ public class OrganizationSettingsTests(
 	public async Task CreateInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Invite 403 Test Org" }, cancellationToken);
@@ -300,8 +299,8 @@ public class OrganizationSettingsTests(
 	public async Task CreateInvitation_ShouldReturn201AndListAsPending_WhenRequestingUserIsOrgMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -320,8 +319,8 @@ public class OrganizationSettingsTests(
 	public async Task CreateInvitation_ThenAccept_ShouldPersistMemberRole_NotSilentlyCoerceToOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -343,8 +342,8 @@ public class OrganizationSettingsTests(
 	public async Task AcceptInvitation_ShouldGrantOrganizerCapability_NotJustKeycloakMembership(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -365,8 +364,8 @@ public class OrganizationSettingsTests(
 	public async Task DeclineInvitation_ShouldReturn204AndMarkDeclined_WhenRequestingUserIsTheInvitee(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -385,8 +384,8 @@ public class OrganizationSettingsTests(
 	public async Task DeclineInvitation_ShouldReturn403_WhenRequestingUserIsNotTheInvitee(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -395,7 +394,7 @@ public class OrganizationSettingsTests(
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var act = () => adminClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
 
@@ -410,7 +409,7 @@ public class OrganizationSettingsTests(
 	public async Task DeclineInvitation_ShouldReturn404_WhenInvitationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.DeclineInvitationAsync(Guid.NewGuid(), cancellationToken);
 
@@ -422,8 +421,8 @@ public class OrganizationSettingsTests(
 	public async Task DeclineInvitation_ShouldReturn409_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -443,8 +442,8 @@ public class OrganizationSettingsTests(
 	public async Task AcceptInvitation_ShouldReturn403_WhenRequestingUserIsNotTheInvitee(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -453,7 +452,7 @@ public class OrganizationSettingsTests(
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var act = () => adminClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
@@ -468,7 +467,7 @@ public class OrganizationSettingsTests(
 	public async Task AcceptInvitation_ShouldReturn404_WhenInvitationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.AcceptInvitationAsync(Guid.NewGuid(), cancellationToken);
 
@@ -480,8 +479,8 @@ public class OrganizationSettingsTests(
 	public async Task GetOrgInvitations_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Invitations List 403 Test Org" }, cancellationToken);
@@ -499,8 +498,8 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -523,8 +522,8 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsDeclined(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -544,8 +543,8 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsPending(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -568,8 +567,8 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn409_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -589,8 +588,8 @@ public class OrganizationSettingsTests(
 	public async Task ResendInvitation_ShouldReturn204AndExtendExpiry_WhenInvitationIsStillPending(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -614,8 +613,8 @@ public class OrganizationSettingsTests(
 	public async Task ResendInvitation_ShouldReturn409_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -635,8 +634,8 @@ public class OrganizationSettingsTests(
 	public async Task ResendInvitation_ShouldReturn204AndResetToPending_WhenInvitationIsExpired(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -662,8 +661,8 @@ public class OrganizationSettingsTests(
 	public async Task ResendInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -686,7 +685,7 @@ public class OrganizationSettingsTests(
 	public async Task ResendInvitation_ShouldReturn404_WhenInvitationDoesNotExist(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Resend 404 Test Org" }, cancellationToken);
 
@@ -700,8 +699,8 @@ public class OrganizationSettingsTests(
 	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsExpired(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -724,7 +723,7 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganizationLogo_ShouldClearLogoUrl(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Logo removal {Guid.NewGuid():N}" },
 			cancellationToken);
@@ -756,8 +755,8 @@ public class OrganizationSettingsTests(
 	public async Task ChangeMemberRole_ShouldReturn204AndPromoteThenDemote_WhenRequestingUserIsOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -782,7 +781,7 @@ public class OrganizationSettingsTests(
 	public async Task ChangeMemberRole_ShouldReturn409_WhenDemotingTheOnlyOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "ChangeMemberRole SoleOrganizer Test Org" }, cancellationToken);
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
@@ -801,8 +800,8 @@ public class OrganizationSettingsTests(
 	public async Task ChangeMemberRole_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -810,7 +809,7 @@ public class OrganizationSettingsTests(
 
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 6" }, cancellationToken);
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
 
@@ -828,7 +827,7 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn409_WhenRemovingTheLastRemainingMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Last Member Test Org" }, cancellationToken);
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
@@ -846,8 +845,8 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -869,8 +868,8 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldSucceed_WhenAPlainMemberLeavesTheirOwnMembership(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -888,8 +887,8 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn403_WhenAPlainMemberTriesToRemoveSomeoneElse(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
 
@@ -923,7 +922,7 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganization_ShouldReturn204AndRemoveOrganization_WhenSoleMemberWithNoBlockingOpportunities(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Delete Success Test Org" }, cancellationToken);
 
@@ -938,8 +937,8 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganization_ShouldReturn409_WhenOtherMembersRemain(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -962,7 +961,7 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganization_ShouldReturn409_WhenOpportunityHasFutureTimeSlot(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Delete 409 Opportunity Test Org" }, cancellationToken);
 
@@ -1007,7 +1006,7 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganization_ShouldReturn204_WhenOpportunityHasOnlyPastTimeSlotAndNoActiveEngagement(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Delete 204 Past Slot Test Org" }, cancellationToken);
 
@@ -1041,7 +1040,7 @@ public class OrganizationSettingsTests(
 	public async Task DeleteOrganization_ShouldReturn409AndOnlyListBlockingTitle_WhenOnlySomeOpportunitiesAreBlocking(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Delete 409 Mixed Opportunities Test Org" }, cancellationToken);
 
@@ -1116,14 +1115,5 @@ public class OrganizationSettingsTests(
 		aggregate.AddTimeSlot(start, start.AddHours(2), maxParticipants: 10, now: start.AddDays(-1)).GetValueOrThrow();
 
 		await dbContext.SaveChangesAsync(cancellationToken);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

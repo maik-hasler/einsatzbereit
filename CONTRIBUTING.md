@@ -139,10 +139,10 @@ dotnet run --project tests/VisualTests
 
 Two clients are generated from one OpenAPI document, and none of the three artefacts is ever hand-edited.
 
-`backend/src/Api/wwwroot/openapi-v1.json` and the C# client used by the integration tests (`backend/tests/IntegrationTests/ApiClient.cs`) both regenerate the next time the backend builds in the Debug configuration (the `NSwag` MSBuild target in `src/Api/Api.csproj`, gated on `Configuration == Debug`):
+`backend/src/Api/wwwroot/openapi-v1.json` comes from ASP.NET's own `GenerateOpenApiDocuments` target in `src/Api/Api.csproj`; the C# client used by the integration tests (`backend/tests/IntegrationTests/ApiClient.cs`) comes from the `GenerateApiClient` target in `tests/IntegrationTests/IntegrationTests.csproj`, which runs NSwag over that document. IntegrationTests references Api, so building it refreshes both, in any configuration:
 ```bash
 cd backend
-dotnet build
+dotnet build tests/IntegrationTests
 ```
 
 The frontend client (`frontend/src/client/generated/`) is generated from that same document by `@hey-api/openapi-ts`, and **not** by the backend build - so it is the one that goes stale. Regenerate it after any endpoint or DTO change:
