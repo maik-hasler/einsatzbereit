@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -27,7 +26,7 @@ public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityMeta_ShouldReturnNotFound_WhenOpportunityIsDraft(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		var draft = await CreateOpportunityAsync(authenticatedClient, orgId, isDraft: true, cancellationToken);
 
@@ -42,7 +41,7 @@ public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunityMeta_ShouldReturnHtml_WithOpportunityTitleAndDescription(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(authenticatedClient, orgId, isDraft: false, cancellationToken);
 
@@ -58,15 +57,6 @@ public class GetVolunteerOpportunityMetaTests(IntegrationTestFixture fixture)
 		html.Should().Contain($"/volunteer-opportunities/{opportunity.Id}");
 
 		html.Should().Contain("/og-image.png");
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

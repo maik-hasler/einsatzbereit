@@ -15,7 +15,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturnEmptyPagedList_WhenNoneExistForStatus(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var result = await client.GetOrganizationOpportunitiesAsync(orgId, "Published", 1, 10, cancellationToken);
@@ -30,7 +30,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturnOnlyDrafts_WhenStatusIsDraft(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		await CreateDraftOpportunityAsync(client, orgId, "Draft 1", cancellationToken);
@@ -46,7 +46,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturnOnlyPublished_WhenStatusIsPublished(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		await CreateDraftOpportunityAsync(client, orgId, "Draft 1", cancellationToken);
@@ -62,7 +62,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturnCorrectPageSize_WhenPaginationIsApplied(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		await CreatePublishedOpportunityAsync(client, orgId, "Opportunity 1", cancellationToken);
@@ -81,7 +81,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturnRemainingItems_WhenRequestingLastPage(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		await CreatePublishedOpportunityAsync(client, orgId, "Opportunity 1", cancellationToken);
@@ -99,7 +99,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturn400_WhenStatusIsInvalid(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var act = () => client.GetOrganizationOpportunitiesAsync(orgId, "NotAStatus", 1, 10, cancellationToken);
@@ -112,7 +112,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturn400_WhenPageNumberIsLessThanOne(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var act = () => client.GetOrganizationOpportunitiesAsync(orgId, "Published", 0, 10, cancellationToken);
@@ -125,7 +125,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturn400_WhenPageSizeIsOutOfRange(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync(cancellationToken);
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(client, cancellationToken);
 
 		var act = () => client.GetOrganizationOpportunitiesAsync(orgId, "Published", 1, 101, cancellationToken);
@@ -150,7 +150,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldReturn403_WhenOrganisatorAccessesOtherOrgsOpportunities(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var veraToken = await fixture.GetAccessTokenAsync("vera", "vera123");
@@ -170,7 +170,7 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationOpportunities_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		await CreatePublishedOpportunityAsync(olafClient, orgId, "Published 1", cancellationToken);
 
@@ -186,15 +186,6 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 
 		result.TotalItems.Should().Be(1);
 		result.Items.Single().TitleDe.Should().Be("Published 1");
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

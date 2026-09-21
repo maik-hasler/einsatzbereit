@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldReturnTheDayASlotStartsOn_WithItsOpportunityCount(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotStart = UtcDayAt(daysFromToday: 5, hour: 10);
@@ -37,7 +36,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldCountAnOpportunityOnce_WhenItHasSeveralSlotsOnTheSameDay(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotStart = UtcDayAt(daysFromToday: 6, hour: 9);
@@ -71,7 +70,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldAttributeASlotToTheCallersLocalDay_NotTheUtcOne(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		// Asia/Kolkata (UTC+5:30, no DST) rather than Europe/Berlin here - this test is
@@ -98,7 +97,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		// Germany's 2027 DST starts 2027-03-28 (clocks 02:00 -> 03:00 CEST); by
 		// 2027-03-31 Berlin is at UTC+2. A single offset computed earlier in March
 		// (still UTC+1) would shift this slot into the wrong, earlier day (#2203).
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		// 2027-03-31 00:30 Berlin (CEST, UTC+2) as its UTC instant - Npgsql's
@@ -125,7 +124,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 		// Germany's 2026 DST ends 2026-10-25 (clocks 03:00 -> 02:00 CET); by
 		// 2026-10-31 Berlin is back at UTC+1. A single offset computed earlier in
 		// October (still UTC+2) would shift this slot into November instead (#2203).
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		// 2026-10-31 23:30 Berlin (CET, UTC+1) as its UTC instant - see the
@@ -148,7 +147,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldExcludeSlotsOutsideTheRequestedWindow(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var inside = UtcDayAt(daysFromToday: 3, hour: 10);
@@ -170,7 +169,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldNotMarkAnyDay_ForAnOpportunityWithoutTimeSlots(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
@@ -203,7 +202,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldNotMarkADay_ForAnUnpublishedOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var slotStart = UtcDayAt(daysFromToday: 4, hour: 10);
@@ -248,7 +247,7 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 	public async Task GetDateAvailability_ShouldHonourTheSameFilters_AsTheListingItself(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync();
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var matching = UtcDayAt(daysFromToday: 3, hour: 10);
@@ -323,21 +322,17 @@ public class GetVolunteerOpportunityDateAvailabilityTests(IntegrationTestFixture
 			.AddHours(hour)
 			.AddMinutes(minute);
 
+	// Stays local while the authenticated helper moved to the fixture: this one is the
+	// subject of these tests, not boilerplate. Every case drives the endpoint anonymously
+	// from its own X-Forwarded-For (so neighbours' requests cannot exhaust its rate-limit
+	// bucket) and, for the timezone cases, its own X-Timezone - per-test headers a shared
+	// helper has no business setting.
 	private EinsatzbereitApi CreateAnonymousClient(string clientIp, string? timezone = null)
 	{
 		var httpClient = fixture.CreateHttpClient();
 		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", clientIp);
 		if (timezone is not null)
 			httpClient.DefaultRequestHeaders.Add("X-Timezone", timezone);
-		return new EinsatzbereitApi(httpClient);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync()
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
 		return new EinsatzbereitApi(httpClient);
 	}
 

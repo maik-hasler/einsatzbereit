@@ -62,7 +62,7 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 	public async Task CreateEngagement_ShouldIncludeBaselineSecurityHeaders_OnErrorResponse(
 		CancellationToken cancellationToken)
 	{
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => veraClient.CreateEngagementAsync(
 			Guid.NewGuid(),
@@ -80,14 +80,5 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 
 		exception.Which.Headers.TryGetValue("Cache-Control", out var cacheControl).Should().BeTrue();
 		cacheControl.Should().Contain(value => value.Contains("no-store"));
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

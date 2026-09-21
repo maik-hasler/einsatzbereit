@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -21,17 +20,17 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 		var (coOrganizerId, coOrganizerUsername, coOrganizerPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 
-		var soleOrganizerClient = await CreateAuthenticatedClientAsync(soleOrganizerUsername, soleOrganizerPassword);
+		var soleOrganizerClient = await fixture.CreateAuthenticatedClientAsync(soleOrganizerUsername, soleOrganizerPassword);
 		var org = await soleOrganizerClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Sole Organizer Removal {Guid.NewGuid()}" }, cancellationToken);
 
-		soleOrganizerClient = await CreateAuthenticatedClientAsync(soleOrganizerUsername, soleOrganizerPassword);
+		soleOrganizerClient = await fixture.CreateAuthenticatedClientAsync(soleOrganizerUsername, soleOrganizerPassword);
 		var invitation = await soleOrganizerClient.CreateInvitationAsync(
 			org.Id.Value,
 			new CreateInvitationRequest { InviteeId = coOrganizerId, Role = "Organizer" },
 			cancellationToken);
 
-		var coOrganizerClient = await CreateAuthenticatedClientAsync(coOrganizerUsername, coOrganizerPassword);
+		var coOrganizerClient = await fixture.CreateAuthenticatedClientAsync(coOrganizerUsername, coOrganizerPassword);
 		await coOrganizerClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		// Act
@@ -49,12 +48,12 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 	{
 		// Arrange
 		var (userId, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var client = await CreateAuthenticatedClientAsync(username, password);
+		var client = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		var org = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Sole Organizer Deletion {Guid.NewGuid()}" }, cancellationToken);
 
-		client = await CreateAuthenticatedClientAsync(username, password);
+		client = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		// Act
 		await client.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
@@ -75,19 +74,19 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 		var (coOrganizerId, coOrganizerUsername, coOrganizerPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 
-		var twoOrgOrganizerClient = await CreateAuthenticatedClientAsync(twoOrgOrganizerUsername, twoOrgOrganizerPassword);
+		var twoOrgOrganizerClient = await fixture.CreateAuthenticatedClientAsync(twoOrgOrganizerUsername, twoOrgOrganizerPassword);
 		var orgA = await twoOrgOrganizerClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Two Org Organizer A {Guid.NewGuid()}" }, cancellationToken);
 		var orgB = await twoOrgOrganizerClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Two Org Organizer B {Guid.NewGuid()}" }, cancellationToken);
 
-		twoOrgOrganizerClient = await CreateAuthenticatedClientAsync(twoOrgOrganizerUsername, twoOrgOrganizerPassword);
+		twoOrgOrganizerClient = await fixture.CreateAuthenticatedClientAsync(twoOrgOrganizerUsername, twoOrgOrganizerPassword);
 		var invitation = await twoOrgOrganizerClient.CreateInvitationAsync(
 			orgA.Id.Value,
 			new CreateInvitationRequest { InviteeId = coOrganizerId, Role = "Organizer" },
 			cancellationToken);
 
-		var coOrganizerClient = await CreateAuthenticatedClientAsync(coOrganizerUsername, coOrganizerPassword);
+		var coOrganizerClient = await fixture.CreateAuthenticatedClientAsync(coOrganizerUsername, coOrganizerPassword);
 		await coOrganizerClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		// Act
@@ -99,15 +98,5 @@ public class OrganizerRoleRevocationTests(IntegrationTestFixture fixture)
 
 		var orgBDetails = await twoOrgOrganizerClient.GetOrganizationDetailsAsync(orgB.Id.Value, cancellationToken);
 		orgBDetails.Members.Should().ContainSingle(m => m.UserId == twoOrgOrganizerId);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }
