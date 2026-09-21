@@ -11,6 +11,12 @@
  * the precompressed `.gz` siblings vite-plugin-compression2 emits
  * (`check:nginx-gzip-static` guards the wiring).
  *
+ * The one entry that grew rather than shrank when these were introduced is the
+ * first load, by about 10 kB: that is TanStack Query, and ADR-9 argues the
+ * trade. Everything else moved the other way - the organizer dashboard from
+ * 76 kB to 12, the administration area from one 6.3 kB chunk to a 0.6 kB shell
+ * plus the one tab the visitor opened.
+ *
  * "First load" is not a guess: it is exactly the set VitePWA precaches
  * (`workbox.globPatterns` in vite.config.ts - index/vendor JS plus the single
  * stylesheet `cssCodeSplit: false` produces), which is what a visitor
@@ -25,7 +31,7 @@ module.exports = [
 			"dist/assets/vendor-router-*.js",
 			"dist/assets/style-*.css",
 		],
-		limit: "145 kB",
+		limit: "154 kB",
 		gzip: true,
 	},
 	{
@@ -37,7 +43,7 @@ module.exports = [
 	{
 		name: "Generated API client",
 		path: "dist/assets/apiError-*.js",
-		limit: "13 kB",
+		limit: "12 kB",
 		gzip: true,
 	},
 	{
@@ -61,7 +67,25 @@ module.exports = [
 	{
 		name: "Route: organizer dashboard",
 		path: "dist/assets/OrgDashboardPage-*.js",
-		limit: "80 kB",
+		limit: "13 kB",
+		gzip: true,
+	},
+	{
+		// Lazy, and the reason the dashboard above is 12 kB rather than 76:
+		// react-big-calendar plus its date-fns locales. Only organizers whose
+		// saved layout holds the Calendar tile pay for it.
+		name: "Widget: calendar (lazy)",
+		path: "dist/assets/CalendarWidget-*.js",
+		limit: "68 kB",
+		gzip: true,
+	},
+	{
+		// The sum of the shell and all four tabs, which is the number that would
+		// move if they ever merged back into one module: no visitor loads more
+		// than the shell plus the one tab they opened.
+		name: "Administration (shell + four tabs)",
+		path: ["dist/assets/Administration*-*.js", "dist/assets/Admin*-*.js"],
+		limit: "12 kB",
 		gzip: true,
 	},
 	{

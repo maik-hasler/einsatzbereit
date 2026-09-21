@@ -141,8 +141,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Coverage rather than a bare run: vitest.config.ts carries per-directory
+      # thresholds, and they only mean anything if something fails on them.
       - name: Unit tests
-        run: pnpm test
+        run: pnpm test:coverage
 
   build:
     runs-on: ubuntu-latest

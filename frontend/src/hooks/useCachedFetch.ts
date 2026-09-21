@@ -38,9 +38,13 @@ export function useCachedFetch<T>(
 					typeof update === "function"
 						? (update as (previous: T | null) => T | null)(previous ?? null)
 						: update;
-				// `undefined` is how the cache says "nothing here"; `null` from a
-				// caller means the same thing, and storing it as-is would make
-				// `data ?? null` report a value that was never fetched.
+				// The cache stores `undefined` for "nothing here", and
+				// `setQueryData` treats an `undefined` update as "leave it
+				// alone" - so a `null` update is a no-op rather than a clear.
+				// That is the one place this differs from the `useState` the
+				// tuple used to wrap, and no caller relies on it: both
+				// optimistic updaters return either a mapped value or `prev`
+				// untouched.
 				return next ?? undefined;
 			});
 		},

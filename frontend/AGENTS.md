@@ -142,9 +142,9 @@ pnpm dev             # dev server on :4321
 pnpm build           # build to dist/ (static files)
 pnpm preview         # preview production build
 pnpm check           # tsc --noEmit
-pnpm test            # vitest run - CI hard gate (frontend.yml's test job)
+pnpm test            # vitest run - the fast local loop; CI runs test:coverage instead
 pnpm test:watch      # vitest in watch mode, for local development
-pnpm test:coverage   # vitest run --coverage
+pnpm test:coverage   # vitest run --coverage - CI hard gate (frontend-checks.yml's test job), enforces vitest.config.ts's thresholds
 pnpm mutation        # StrykerJS over src/lib - report-only, minutes, never a gate
 pnpm mutation:since  # only files changed since origin/main
 pnpm mutation:components  # StrykerJS over the design-system primitives (stryker.components.json)
@@ -184,6 +184,14 @@ Conventions used across the existing suite:
 - Prefer computing the expected value with the same underlying call (e.g. `new Date(iso).toLocaleString(...)`) over hardcoding a formatted string, when the result depends on the host timezone or locale data.
 - For module-level singletons/config computed at import time (e.g. `lib/runtimeConfig.ts`, `lib/keycloakRegistration.ts`), call `vi.resetModules()` in `beforeEach` and re-`import()` the module inside each test to get a fresh instance.
 - `vi.spyOn` on an already-spied method (e.g. `console.error` spied in a previous test) returns the *same* mock and keeps its call history - restore with `vi.restoreAllMocks()` in `afterEach` rather than only resetting the fake in `beforeEach`.
+
+## Coverage
+
+`pnpm test:coverage` is the CI gate (`frontend-checks.yml`'s `test` job) and enforces the per-directory thresholds in `vitest.config.ts`. They are a ratchet on what is covered today - each number sits about two points under the measurement it was taken from - not a target anyone should be chasing. The slack is deliberate: at zero margin the gate goes red on a rounding difference, and the first thing anyone does then is delete it.
+
+Per-directory rather than one global number on purpose: `lib/` is pure logic and cheap to cover (94 %), while `components/` (71 %) carries the ones that structurally cannot be covered here. `SingleMarkerMap` needs a layout engine and `ImageCropModal` needs a canvas; both have `backend/tests/VisualTests` cases, and a jsdom test for either would assert that a mock was called. One average would hide both facts.
+
+Raise a threshold when a change raises coverage. Lowering one is a decision, and it belongs in the diff that needs it with a reason.
 
 ## Mutation Testing
 
