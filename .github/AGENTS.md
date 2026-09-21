@@ -110,14 +110,14 @@ The Claude Code on the web git proxy restricts pushes to the current working bra
 # 1. From an up-to-date main, branch with the release name as the suffix.
 git checkout -b release/v1.2.3-rc.1 main
 
-# 2. Empty commit (or any commit on this branch) carries the push.
-git commit --allow-empty -m "release: v1.2.3-rc.1"
-
-# 3. Push the branch - sandbox allows this because it is the working branch.
+# 2. Push the branch - sandbox allows this because it is the working branch.
+#    Creating the branch is itself the push event release-rc.yml triggers on;
+#    do NOT add a commit. Any commit here makes HEAD a descendant of main,
+#    which is precisely what the ancestor check below refuses.
 git push -u origin release/v1.2.3-rc.1
 ```
 
-`release-rc.yml` validates the branch suffix, verifies the branch's `HEAD` is an ancestor of `origin/main` (`git merge-base --is-ancestor`, #2204 - refuses to tag a commit that never merged into `main`), promotes it to an annotated tag pushed with `RELEASE_TOKEN`, and deletes the branch - see the workflow's own top-of-file comment for the full mechanics. Cutting the branch from an up-to-date `main` as step 1 above does, keeps this check a no-op; it only fires if the release branch drifted from `main` (a commit added after the branch point, or the branch cut from something other than `main`). After the tag exists, `publish.yml` runs end-to-end (test -> build -> GHCR -> GitHub Release) and stops there.
+`release-rc.yml` validates the branch suffix, verifies the branch's `HEAD` is an ancestor of `origin/main` (`git merge-base --is-ancestor`, #2204 - refuses to tag a commit that never merged into `main`), promotes it to an annotated tag pushed with `RELEASE_TOKEN`, and deletes the branch. Cutting the branch from an up-to-date `main` as step 1 above does, keeps this check a no-op; it only fires if the release branch drifted from `main` (a commit added after the branch point, or the branch cut from something other than `main`). After the tag exists, `publish.yml` runs end-to-end (test -> build -> GHCR -> GitHub Release) and stops there.
 
 **One-time setup the user must do:**
 
@@ -129,7 +129,7 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 **After pushing the branch:**
 
 1. Poll the publish workflow's checks for the new tag (via `mcp__github__get_commit` → check_runs, or fetch `https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs`), until `publish-backend`/`publish-frontend`/`publish-keycloak` all report success.
-2. If any publish job fails, diagnose from that job's logs here. Once all three are green the tag's images exist on GHCR and the release is done as far as this repository is concerned.
+2. If any publish job fails, diagnose from that job's logs here, then **re-run the failed jobs of that same run** (`rerun_failed_jobs`, or the Actions UI) rather than cutting a fresh `-rc`: the tag already exists and a new rc buys nothing when the failure was transient. Cut a new rc only when the commit itself is broken. Once all three are green the tag's images exist on GHCR and the release is done as far as this repository is concerned.
 
 `RELEASE_TOKEN` is the only repository secret this repo needs. There are no environment secrets and no GitHub Environments - nothing here connects to a running instance of the app.
 
@@ -138,7 +138,7 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 `mutation-tests.yml` runs Stryker.NET over the two layers that `Application.UnitTests` can drive without Docker, plus a separate StrykerJS job over the frontend.
 
 - **Trigger:** `workflow_dispatch` only - never on push or pull request, so it can never gate a merge
-- **Jobs:** one `mutation-tests` job, a `fail-fast: false` matrix over `project: [Domain, Application]`, so it reports as two checks. Each leg installs `dotnet-stryker` (pinned to 4.16.0) and runs it from `backend/tests/Application.UnitTests/`, mutating one source project while `Application.UnitTests` (1017 tests, no Docker) does the killing. Measured ~4 min (`Domain`) and ~8 min (`Application`)
+- **Jobs:** one `mutation-tests` job, a `fail-fast: false` matrix over `project: [Domain, Application]`, so it reports as two checks. Each leg installs `dotnet-stryker` (pinned to 4.16.0) and runs it from `backend/tests/Application.UnitTests/`, mutating one source project while `Application.UnitTests` (the full no-Docker unit suite) does the killing. Measured ~4 min (`Domain`) and ~8 min (`Application`)
 - **Report-only (#2147), by two independent mechanisms:** the workflow is manual so it is never a required check, and `stryker-config.json` pins `thresholds.break` to `0` so a low score exits 0 anyway. Same posture as the coverage summary in `fast-tests` (#1327). **Do not add a break threshold** - the whole point of the number is that it is allowed to move
 - **Why manual and not on the PR path:** it is roughly two orders of magnitude more expensive than the `fast-tests` job whose test suite it reuses. It exists as the guardrail for the E2E rebalance (#2148) - record the score, migrate a wave of end-to-end tests down the pyramid, re-run, and if the score held, the removed coverage was redundant. See `docs/TDRs/2_slow_ci_pipeline.adoc` for the recorded baseline, the wall-clock, and how to read the number
 - **Run it from `backend/tests/Application.UnitTests/`, never from `backend/`** - from `backend/` Stryker finds `Einsatzbereit.slnx`, switches to solution mode, and builds the whole solution including `VisualTests` and its ~290 MiB Playwright download, for a run that never opens a browser
@@ -149,7 +149,7 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 
 A separate job rather than a matrix leg on the one above - the two toolchains share nothing but the trigger and the report-only posture. StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`, both pinned in `frontend/package.json`) mutating `frontend/src/lib/**` while the Vitest suite does the killing. Config: `frontend/stryker.config.json`; run locally with `pnpm mutation`.
 
-- **Scoped to `src/lib/**` on purpose, and that scope is the whole design decision.** Mutating all of `src/**` instruments 182 files into **14 851 mutants** - 5.5x the backend's 2 690, against a suite that renders components in jsdom rather than calling pure functions. A full pass is hours. `src/lib/**` is 37 files / 897 mutants of pure logic, which is the tier that is both cheap to mutate and directly comparable to the backend's `Domain`/`Application`
+- **Scoped to `src/lib/**` on purpose, and that scope is the whole design decision.** Mutating all of `src/**` instruments **14 851 mutants** (182 files at #2148's head) - 5.5x the backend's 2 690, against a suite that renders components in jsdom rather than calling pure functions. A full pass is hours. `src/lib/**` is 897 mutants of pure logic (37 files at the same commit), which is the tier that is both cheap to mutate and directly comparable to the backend's `Domain`/`Application`
 - **The component tier is on-demand, not scheduled:** `pnpm mutation --mutate "src/components/Foo.tsx"` scores one component in minutes. That is how the per-component figures in `docs/TDRs/2_slow_ci_pipeline.adoc` were taken, and it is the right granularity - a component's score is actionable, a whole-app average is not
 - **`plugins` must list `@stryker-mutator/vitest-runner` explicitly.** Under pnpm's strict `node_modules` Stryker cannot discover it by convention and fails with "no TestRunner plugins were loaded", which reads like a missing install rather than a resolution problem
 - **`thresholds.break` is `0`**, same as the backend config, so a low score always exits 0. Do not add a break threshold

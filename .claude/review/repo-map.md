@@ -1,31 +1,31 @@
-# Repo map - read before any lens
+# Repo map - read before any review run
 
-Verified facts about einsatzbereit as of 2026-07. If the repo has visibly
+Verified facts about einsatzbereit as of 2026-09. If the repo has visibly
 moved on (new top-level dirs, different stack), trust the repo over this
 file and note the drift in the report's parking lot.
 
 ## What it is
 
 Volunteering platform: connects volunteers with regional, short-term
-needs. Monorepo, MIT-adjacent open source (check LICENSE), single
-maintainer, German-named but English-documented.
+needs. Monorepo, AGPL-3.0 open source, single maintainer, German-named
+but English-documented.
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
 | `backend/src/Domain` | Entities, invariants. Clean Architecture core. |
-| `backend/src/Application` | CQRS handlers per feature: Achievements, Engagements, Invitations, Notifications, Organizations, Users, VolunteerOpportunities. These feature names are also the **vertical slices** for the bugs lens. |
+| `backend/src/Application` | CQRS handlers per feature: Achievements, AuditLogs, Engagements, Invitations, Maps, Meta, Notifications, Organizations, Reports, Sitemap, Users, VolunteerOpportunities (plus `Common/`, shared infrastructure rather than a feature). These feature names are also the **vertical slices** `/bug-hunt` picks one of. |
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
-| `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see glossary). |
+| `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via the project's own in-house `ISender` dispatcher (not MediatR - see `docs/Architecture/src/12_glossary.adoc`). |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
 | `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#), which drive the local Aspire stack - there is no root `package.json` and no committed `scripts/`. |
-| `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. Vitest unit-test suite (see `frontend/AGENTS.md`'s Unit Tests section) is a CI-gating quality gate alongside `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
+| `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `frontend/src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. Vitest unit-test suite (see `frontend/AGENTS.md`'s Unit Tests section) is a CI-gating quality gate alongside `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
-| `.github/workflows` | 10 workflows; `publish.yml` alone is ~500 lines. |
-| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
+| `.github/workflows` | 11 workflows; `publish.yml` alone is ~800 lines. |
+| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (the six review skills `/walkthrough`, `/bug-hunt`, `/dead-weight`, `/docs-drift`, `/untangle` and `/gates`, which share `.claude/review/contract.md` and this file; plus `self-review`, and `frontend-design` and `grilling` vendored from `anthropics/skills` and `mattpocock/skills`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
 | `renovate.json` | Dependency-update config. |
 
 ## False-positive traps
@@ -35,7 +35,7 @@ candidate; each has produced embarrassing false positives in similar
 codebases.
 
 1. **DI/assembly scanning.** The project's own in-house `ISender`
-   dispatcher (not MediatR - see glossary) discovers handlers,
+   dispatcher (not MediatR - see the arc42 glossary) discovers handlers,
    validators, and endpoint classes without direct call sites. Zero grep
    hits for a handler type is expected, not evidence of dead code.
    Dead-handler proof requires the *request type* to be unsendable (no
@@ -73,7 +73,7 @@ node scripts/check-i18n-keys.js                     # i18n parity
 npx knip                                            # dead exports/files/deps (no repo config; interpret defaults cautiously)
 ```
 
-Backend: probe the toolchain first (see SKILL.md). Where restore/build
+Backend: probe the toolchain first (see `contract.md` section 5). Where restore/build
 works, prefer compiler and test evidence; where NuGet is blocked, read
 `.csproj` files for package and analyzer configuration instead of
 restoring.
