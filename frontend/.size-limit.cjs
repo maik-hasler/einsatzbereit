@@ -31,7 +31,14 @@ module.exports = [
 			"dist/assets/vendor-router-*.js",
 			"dist/assets/style-*.css",
 		],
-		limit: "154 kB",
+		// Raised from 154 kB when main's React 19.2.8 -> 19.3.0 bump (#2439) was
+		// merged in. Measured on identical sources either side of that merge:
+		// 146.9 kB -> 155.5 kB, and the whole 8.6 kB sits in `vendor-react`
+		// (58.9 -> 67.5 kB) while `index` and `vendor-router` moved by bytes.
+		// Recorded rather than silently bumped, because "the dependency grew"
+		// is the one explanation that makes a ratchet meaningless if nobody
+		// ever checks it.
+		limit: "163 kB",
 		gzip: true,
 	},
 	{
