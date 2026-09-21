@@ -118,7 +118,14 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Open invitations" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var invitationCard = Page.Locator("li", new() { HasText = orgName });
+		// Scoped to the invitations list rather than the page: accepting joins
+		// the organization, and the header's organization entry then renders its
+		// name in an <li> of its own. A page-wide "li that mentions this org"
+		// would match that entry and never go invisible, while asserting
+		// something this test does not mean.
+		var invitationCard = Page
+			.GetByTestId("open-invitations")
+			.Locator("li", new() { HasText = orgName });
 		await Expect(invitationCard).ToBeVisibleAsync();
 
 		await invitationCard.GetByRole(AriaRole.Button, new() { Name = "Accept" }).ClickAsync();
