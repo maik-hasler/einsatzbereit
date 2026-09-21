@@ -1,0 +1,63 @@
+== 11. Frontend Architecture Rules Are Enforced, Not Described
+
+=== Status
+Accepted
+
+=== Date
+2026-09-21
+
+=== Context
+The frontend's module graph was in unusually good shape and nothing was keeping it there. Measured before this decision: 379 modules, 1,445 edges, zero cycles, and exactly one import that ran against the direction the folders imply. The intended direction was not written down anywhere - `frontend/AGENTS.md`'s folder map did not state one, and did not list `lib/`, `contexts/` or `test/` at all.
+
+Nothing enforced it either. A search across the monorepo for `no-restricted-imports`, `import/no-restricted-paths`, `eslint-plugin-boundaries`, `dependency-cruiser` or `madge` returned nothing.
+
+Bundle size had the same shape of gap. `.github/workflows/frontend-checks.yml` ran `pnpm build` in its own job and threw the output away. Ten bespoke `check:*` scripts guarded nginx headers, PWA precaching and translation parity - and not one asserted a byte count. Vite's own 500 kB chunk warning had not been tuned or wired to fail.
+
+This matters more here than in most projects. A large share of the commits are written by coding agents, and an agent has no reason to preserve a convention that exists only as a habit.
+
+=== Decision
+Write the rules down as checks.
+
+**Layering, in `eslint.config.js`** (`@typescript-eslint/no-restricted-imports`, production files only):
+
+....
+lib/ + client/  ->  hooks/  ->  components/ + contexts/  ->  layouts/  ->  pages/
+....
+
+`lib/` and `client/` are one rank rather than two: `client/api-instance.ts` turns HTTP failures into toasts and session-expiry signals and so imports four `lib/` modules, while six `lib/` modules import DTO *types* back out of the generated client. The type edges erase at build time, so there is no runtime cycle - but calling them separate ranks would make one of those directions a lie whichever way round they went. `components/` and `contexts/` are one rank for the same reason: a provider renders its own UI, and a component consumes providers.
+
+`lib/` additionally may not import `react`, `react-dom`, `react-router`, `react-i18next` or `react-oidc-context` at runtime (type-only imports are allowed). A hook that lived there has moved to `hooks/` as a result.
+
+**Browser globals, in `eslint.config.js`** (`no-restricted-globals`, scoped to `lib/` and `client/`): a ratchet, not a sweep. Seventeen of the sixty production modules under `lib/` touch the DOM today. What is banned is every browser global those two folders do *not* already use, so the surface cannot grow without a reviewer in the loop.
+
+**Graph-level rules, in `.dependency-cruiser.cjs`** (`pnpm check:deps`): no cycles, no orphans, no unresolvable imports. Cycles and orphans are properties of the whole graph rather than of one import, which is why they are not in ESLint. Type-only edges are excluded from the cycle rule, because a cycle that exists only in the type graph cannot deadlock module initialisation.
+
+**Byte budgets, in `.size-limit.cjs`** (`pnpm size`, run in CI's build job): each limit is the size measured when it was introduced plus about five per cent, rounded up. A ratchet: growing past the slack has to be argued in the diff, and shrinking a chunk should lower its number in the same commit.
+
+=== Rationale
+* The layering is the frontend's most valuable structural property and the cheapest thing in the repository to lose. The rule that earns the rest is the first one: nothing under `lib/` or `client/` may reach into a UI layer, which is what keeps those two extractable - as a package, or onto a runtime with no DOM at all.
+* All four checks were introduced at zero violations except one, which is disabled at the line with its reason. That makes them ratchets rather than a cleanup with a deadline.
+* Each check is scoped to what it can actually prove. The globals rule bans what is unused rather than what is undesirable; the size budgets record measurements rather than aspirations. A check that fails for a reason nobody can act on gets disabled, and then everything it guarded goes with it.
+
+=== Considered Alternatives
+
+==== eslint-plugin-boundaries instead of no-restricted-imports
+* Pros
+** Element types and an explicit allowed-import matrix read more like an architecture description than a set of glob patterns
+* Cons
+** A new dependency for something `typescript-eslint` already does. The matrix here has five ranks and one exception - small enough that four `files`-scoped blocks say it plainly
+
+==== Lighthouse CI alongside size-limit
+* Pros
+** Measures what users experience (LCP, CLS, TBT) rather than bytes, which is the thing bytes are a proxy for
+* Cons
+** Needs a served instance on every PR. The build job has `dist/` and no server; the container smoke-test job has a server and is already the slowest non-Docker check
+** Lab metrics on a shared CI runner are noisy enough that a threshold either fails intermittently or is set so loose it catches nothing
+** ADR-7 removed this repository's staging environment, so there is no stable instance to measure against
+* Rejected for now. Byte budgets are the part that can be measured reliably here, and they catch the regressions that actually happen: a route that statically imports a heavy library
+
+=== Consequences
+* `dependency-cruiser` and `size-limit` are new devDependencies, and `pnpm check:deps` and `pnpm size` are new CI steps.
+* `pnpm lint` fails on a new import that crosses a layer, in the editor as it is typed.
+* `hooks/useEditModeQuickActions.tsx` carries the one documented exception: it builds a toolbar action that carries its glyph as a `ReactNode`, so it has to name an icon component. The comment at that line records what the real fix is (a semantic icon key resolved by the toolbar) and why it is not in this change.
+* The size budgets need updating whenever a chunk legitimately grows or shrinks. That is the cost of the check, and it is the point of it.

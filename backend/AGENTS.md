@@ -78,7 +78,9 @@ tests/
        ├── {UseCase}Request.cs    - request body record (omit if no body)
        └── {UseCase}Endpoint.cs  - implements IEndpoint, maps route, calls ISender
 
-4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj), which regenerates `api-client.ts` in turn
+4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj), along with the C# client
+   the integration tests use. The frontend's TypeScript client does NOT come from that build -
+   run `pnpm --dir frontend client:generate` as well (`pnpm check:client-current` fails CI otherwise)
 ```
 
 Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`.
@@ -207,7 +209,7 @@ All versions centrally managed in `Directory.Packages.props`.
 | `Asp.Versioning.Http` | Api - URL-segment versioning |
 | `Asp.Versioning.OpenApi` | Api - one OpenAPI document per API version |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Api - JWT validation |
-| `NSwag.MSBuild` | Api - generates OpenAPI spec + TS client on build |
+| `NSwag.MSBuild` | Api - generates the OpenAPI document and the integration tests' C# client on build |
 | `EFCore.NamingConventions` | Infrastructure - snake_case |
 | `Npgsql.EntityFrameworkCore.PostgreSQL` | Infrastructure - Postgres provider |
 | `Aspire.Hosting.Testing` | IntegrationTests + VisualTests - boots the real AppHost (Postgres, Keycloak, MinIO, Mailpit, API) once per test session |

@@ -7,19 +7,25 @@ Vite SPA. React Router v8 for routing. Client-side OIDC via `react-oidc-context`
 ```
 src/
 ├── client/
-│   ├── api-client.ts       NSwag-generated TypeScript client - DO NOT HAND-EDIT
-│   └── api-instance.ts     Creates EinsatzbereitApi with Bearer token (accepts optional token string)
+│   ├── generated/          @hey-api/openapi-ts output - DO NOT HAND-EDIT
+│   ├── index.ts            The client every call site uses: one typed function per endpoint
+│   └── api-instance.ts     Base URL, auth/locale headers and the shared HTTP error handling
+├── lib/                    Framework-free logic and shared class recipes - the layer with no React
+│                           and no DOM in it, and the one `pnpm mutation` measures
 ├── hooks/
 │   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
+├── contexts/               React contexts for cross-cutting UI state - ToastContext.tsx,
+│                           AuthStatusContext.tsx, QuickActionsContext.tsx,
+│                           HeaderOverlayContext.tsx, OrgBreadcrumbContext.tsx
 ├── components/
-│   ├── Header/             Header with auth state (login/logout buttons, org switcher, notifications) + optional per-page breadcrumb/action bar (see `breadcrumb` prop) - split across Header.tsx (orchestrator), DesktopHeader.tsx, MobileHeader.tsx, MobileMenu.tsx, AccountControls.tsx, NotificationDropdown.tsx, NotificationItem.tsx, OrganizationSwitcher.tsx, LanguageSelector.tsx, BreadcrumbBar.tsx - all exclusive to Header, nothing here is imported outside this folder
+│   ├── Header/             Header with auth state (login/logout buttons, org switcher, notifications) + optional per-page breadcrumb/action bar (see `breadcrumb` prop) - split across Header.tsx (orchestrator), DesktopHeader.tsx, MobileHeader.tsx, MobileMenu.tsx, AccountControls.tsx, NotificationDropdown.tsx, NotificationItem.tsx, OrganizationSwitcher.tsx, LanguageSelector.tsx - all exclusive to Header, nothing here is imported outside this folder
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
 │   ├── OpportunityCard.tsx     The one opportunity card, shared by every surface that shows one (#2054) - /opportunities, the landing page's three-card preview, the org profile's "current needs" list, and the opportunity detail page's "more from this organization" rail. Takes a `headingLevel` (2|3) prop and an `item` that either DTO (`VolunteerOpportunitySummary` or the leaner `PublicOpportunitySummaryDto`) satisfies structurally - fields absent on the leaner DTO (organization identity, tags, banner) gate the blocks that need them rather than switching components. The 128px media band is gated on a `withMedia` prop instead, which is a **per-list** decision, not a per-item one: rendering it only for the items that happen to carry a `bannerImageUrl` gave one grid row two card anatomies and stretched the banner-less siblings to the tallest card's height (#2329). Pass it on the surfaces whose DTO has the field at all (browse grid, landing preview); items without an image get the brand gradient and their category glyph
 │   ├── OpportunityCardSkeleton.tsx  The one loading stand-in for the card above - same shell, same blocks in the same order, same `withMedia` gate, so a grid does not re-lay itself out when the results land. Render one per card the page will hold (`pageSize`), not a fixed three (#2329)
 │   ├── OpportunityActionPanel.tsx  The opportunity detail page's sign-up rail - a status strip whose tone says whether a visitor can still take part (`open`/`urgent`/`closed`, never `accent-400`: warning states belong on the amber scale), the three facts that decide it (when/how/where) as a `<dl>`, then the call to action. It holds the facts *because* they used to sit in a separate "at a glance" band restating the schedule and location sections directly below it (#2330). Keep `<dt>`/`<dd>` one level under the `<dl>` - a wrapper column for the icon puts them two deep and fails axe's `dlitem`
-│   ├── VolunteerOpportunitiesList/     Paginated list (size=10), filter bar - split across VolunteerOpportunitiesList.tsx (orchestrator), icons.tsx, MiniCalendar.tsx, FilterDropdown.tsx, OpportunityResultsList.tsx, useVolunteerOpportunitiesData.ts, useOpportunityDateAvailability.ts, useCitySuggestions.ts - exclusive to this folder, all consuming the shared `OpportunityCard` above
-│   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
+│   ├── VolunteerOpportunitiesList/     Paginated list (size=10), filter bar - split across VolunteerOpportunitiesList.tsx (orchestrator), CategoryGlyph.tsx, MiniCalendar.tsx, FilterDropdown.tsx, OpportunityResultsList.tsx, useVolunteerOpportunitiesData.ts, useOpportunityDateAvailability.ts, useCitySuggestions.ts - exclusive to this folder, all consuming the shared `OpportunityCard` above
+│   └── CreateVolunteerOpportunityModal/  Multi-step modal form for opportunity creation - split across index.tsx (orchestrator: form state, step navigation, banner upload, recurrence), BasicsStep.tsx, FormatStep.tsx, LocationStep.tsx, DetailsStep.tsx, shared.tsx, schema.ts (zod), timeSlots.ts (recurrence expansion), DeleteSeriesSlotDialog.tsx
 ├── layouts/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
@@ -27,7 +33,12 @@ src/
 │   ├── HomePage.tsx                    Landing page: hero search, LatestOpportunitiesSection preview, org CTA, founder band, FAQ
 │   ├── OpportunitiesPage.tsx           /opportunities - the browse/search route that owns VolunteerOpportunitiesList
 │   ├── app/OrgDashboardPage/           Customizable widget dashboard - org app shell's landing tab. `widgetCatalog.ts` holds the roster, each tile's default/minimum footprint and `DEFAULT_LAYOUT`; `WidgetCard.tsx` is the shared shell (condensed uppercase title, optional single footer affordance, vertical scroll fades). A widget is handed a `WidgetSize` of BOTH a width class and a height class - a one-row tile is a `strip` and has room for a number, not a list, so tiles that carry rows fall back to a count there (see `ToDoWidget`). Widget keys are persisted (`DashboardWidgetKey` in the backend) and in saved layouts: retitle and redesign a tile in place rather than renaming its key, and drop a retired key from the catalog so `sanitizeWidgetKey` degrades old layouts gracefully
-│   ├── AdministrationPage.tsx          Platform-admin only: list/verify organizations, list users, toggle admin/enabled status
+│   ├── administration/                 Platform-admin area - AdministrationPage.tsx is the shell (sub-nav rail plus
+│                                       <Outlet />), and each of the four tabs is its own module and its own lazy
+│                                       chunk: AdminOrganizationsPage.tsx (list/verify organizations),
+│                                       AdminUsersPage.tsx (toggle admin/enabled status), AdminReportsPage.tsx
+│                                       (moderation queue), AdminAuditLogPage.tsx. They share nothing but
+│                                       pageSize.ts
 │   ├── PrivacyPolicyPage.tsx           Privacy policy (static)
 │   └── ImprintPage.tsx                 Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
@@ -55,13 +66,49 @@ User clicks "Anmelden"
 
 ## API Client
 
-`src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually - changes will be overwritten.
+`src/client/generated/` is generated from `backend/src/Api/wwwroot/openapi-v1.json` by `@hey-api/openapi-ts` (`openapi-ts.config.ts`). Never edit it manually - changes will be overwritten.
 
-Use the `useApiClient()` hook in components to get an authenticated `EinsatzbereitApi` client instance, then call its generated methods directly (e.g. `api.getVolunteerOpportunities(...)`, `api.createOrganization(...)`).
+It is **not** regenerated by the backend build, unlike the OpenAPI document and the integration tests' C# client. After any endpoint or DTO change run `pnpm client:generate` and commit the result; `pnpm check:client-current` regenerates into a scratch directory and fails CI when the committed output differs.
 
-For one-off calls outside React (e.g., scripts), use `createApiClient(token)` directly.
+`client:generate` is two steps. `scripts/normalize-openapi.js` runs first and narrows the `["integer", "string"]` unions ASP.NET emits for every numeric property - 112 of them - down to the numeric type, then the generator reads that. Those unions describe `JsonNumberHandling.AllowReadingFromString` (the server *accepts* `"42"` on the way in) and say nothing true about a response, and generating them verbatim leaves every numeric read in the app choosing between a cast and threading a union through its arithmetic. The script explains the reasoning and fails loudly if it ever finds nothing to narrow.
 
-For endpoints with many optional query params (e.g. `getVolunteerOpportunities`, 17 positional params), don't call the generated client method directly - write a named-options wrapper instead, see `lib/volunteerOpportunities.ts`'s `fetchVolunteerOpportunities`.
+Use the `useApiClient()` hook in components. It returns the client with the current bearer token in place, and every operation takes one options object:
+
+```ts
+const api = useApiClient();
+const details = await api.getVolunteerOpportunityDetails({ path: { opportunityId } });
+const page = await api.getVolunteerOpportunities({ query: { pageNumber: 1, pageSize: 10 } });
+await api.createInvitation({ path: { organizationId }, body: { email } });
+```
+
+Two things that are deliberately not what the generator ships by default, both in `src/client/index.ts`:
+
+- **The body comes back directly.** The generated SDK resolves to `{ data, request, response }`; `index.ts` unwraps it, so `await api.getUserProfile({})` is the profile. Nothing in the app reads the `Request` or `Response` back - everything that looks at one already happens in `api-instance.ts`'s `fetch`.
+- **A failure rejects with the parsed `ProblemDetails`**, carrying `status`, `errorCode`, `detail` and `errors`. That is the shape every `catch` and every helper in `lib/apiError.ts` reads.
+
+`date-time` fields come back as `Date` objects (a generated transformer, configured in `openapi-ts.config.ts`). Query parameters that take a date want an ISO string.
+
+For endpoints with many optional query params, a named-options wrapper is still worth writing - see `lib/volunteerOpportunities.ts`'s `fetchVolunteerOpportunities`.
+
+## Server State
+
+Server data lives in a TanStack Query cache, not in a component's `useState`. `src/queryClient.ts` holds the defaults and argues each of them; `src/lib/queryKeys.ts` is the only place a query key is spelled, so a mutation and the queries it invalidates cannot drift apart. ADR-9 has the reasoning.
+
+```tsx
+const api = useApiClient();
+const { data, error, isPending } = useQuery({
+	queryKey: queryKeys.organizations.detail(organizationId),
+	queryFn: ({ signal }) => api.getOrganizationDetails({ path: { organizationId }, signal }),
+});
+```
+
+Three things worth knowing before writing one:
+
+- **Do not poll by hand.** `refetchInterval` already stops while the tab is hidden, which is what the `setInterval` + `visibilitychange` + `AbortController` scaffolding in `useAccountMenu` and `useAchievementNotifier` used to do - twice, identically.
+- **`hooks/useCachedFetch.ts` is for the call sites that predate the cache.** It returns the `[data, setData, error]` tuple `useSharedOrgFetch` did, backed by the query cache. New code calls `useQuery` directly.
+- **`hooks/useLoadMore.ts` still hand-rolls pagination** (page, items, has-more, out-of-order guard). It has not moved to `useInfiniteQuery` yet; when it does, its fifteen call sites move with it.
+
+Tests do not change shape: they mock `hooks/useApiClient` as before, and `src/test/render.tsx` wraps every render in a fresh `QueryClient` with retries, focus refetching and cross-test cache sharing turned off.
 
 ## Environment Variables
 
@@ -69,22 +116,24 @@ Dev values are defined in `.env.development` - see that file for the current lis
 
 ## Role Checks
 
-Roles come from `auth.user?.profile?.roles` (flat string array, custom Keycloak mapper).
+Roles come from `auth.user?.profile?.roles` - a flat string array put there by a custom Keycloak mapper, and typed `unknown` by `oidc-client-ts`. Don't unwrap it at the call site; `lib/authRoles.ts` does it defensively in one place.
 
 ```tsx
-const roles = (
-	Array.isArray(auth.user?.profile?.roles) ? auth.user!.profile.roles : []
-) as string[];
-const isOrganisator = roles.includes("organisator");
+const roles = useAuthRoles();
+const isOrganisator = roles.has("organisator");
 ```
 
-Known roles: `user`, `organisator`, `admin`.
+Outside a component (or where the `User` is already in hand), use `hasRole(claim, role)` / `readRoles(claim)` from `lib/authRoles.ts` directly - `layouts/ProtectedRoute.tsx` is the example.
+
+Known roles: `user`, `organisator`, `admin` (`KNOWN_ROLES`, and the `KnownRole` type the helpers take, so a typo is a compile error).
+
+A role check here decides what the UI offers, never what the API allows: every endpoint re-checks its own authorization policy (see `backend/AGENTS.md`). Treating it as a security boundary is the mistake to avoid.
 
 ## Routing
 
 Routes declared in `src/App.tsx`. Add new routes there, following the file's existing pattern: lazy-load the page component (`const MyPage = lazy(() => import("./pages/MyPage"))`) and declare the route (`<Route path="/my-page" element={<MyPage />} />`, wrapped in `<ProtectedRoute>` if it requires login) - see the file's own top-of-file comments for why pages are lazy-loaded (per-route build chunks, PWA precache size, Vite's `INEFFECTIVE_DYNAMIC_IMPORT` warning) and which pages are the deliberate exceptions.
 
-**Note:** During development, new page code may use `(api as any)` until the backend rebuilds and `api-client.ts` regenerates with the new method (see API Client above).
+**Note:** During development, new page code may use `(api as any)` until the OpenAPI document is rebuilt and `pnpm client:generate` regenerates the client with the new operation (see API Client above).
 
 ## Scripts
 
@@ -98,6 +147,7 @@ pnpm test:watch      # vitest in watch mode, for local development
 pnpm test:coverage   # vitest run --coverage
 pnpm mutation        # StrykerJS over src/lib - report-only, minutes, never a gate
 pnpm mutation:since  # only files changed since origin/main
+pnpm mutation:components  # StrykerJS over the design-system primitives (stryker.components.json)
 pnpm lint            # eslint, zero warnings allowed
 pnpm format:write    # apply Prettier formatting - run before every commit
 pnpm format:check    # check Prettier formatting (used by CI)
@@ -113,6 +163,8 @@ Vitest (`vitest.config.ts`, jsdom environment) covers three things, colocated ne
 - **Component accessibility**, as `*.a11y.test.tsx` (e.g. `src/components/ConfirmDialog.a11y.test.tsx`) - see "Accessibility (a11y)" below.
 
 What stays in the Playwright suite in `backend/tests/VisualTests/` is what a browser is genuinely needed for: rendered layout (jsdom has no layout engine, so anything measuring a width, a computed colour or a bounding box cannot move), real keyboard and pointer input, real focus movement, a real Keycloak round trip, real offline, page-level axe scans, and multi-page journeys that are not any one component's output. #2148 moved everything else down; `backend/AGENTS.md`'s Visual tests section owns the current counts, and `docs/TDRs/2_slow_ci_pipeline.adoc` has the per-category breakdown of what is left and why.
+
+**Vitest Browser Mode: evaluated, not adopted (2026-09).** It would close the two gaps jsdom structurally cannot cover - `color-contrast`, which needs a layout engine and computed styles, and real focus movement - by running the component suite in a real browser instead. The reason not to is not the feature; it is where this project's pain already is. `docs/TDRs/2_slow_ci_pipeline.adoc` records `VisualTests` growing from 117 to 542 cases, a median backend gate of 21 min 58 s and a 53 % failure rate before it was sharded, and #2148 moved 328 cases *out* of the browser in response. Browser Mode would add a third tier that needs its own Chromium download in the one frontend job that currently finishes in about a minute, to assert things the Playwright suite already asserts - `AccessibilityTests.cs` runs page-level axe scans with contrast enabled, and `CalendarToolbarContrastTests.cs` exists for exactly the contrast case jsdom drops. Revisit if `VisualTests` is ever migrated off Aspire, at which point Browser Mode stops being a third tier and becomes a cheaper second one.
 
 Two porting hazards are worth knowing before moving anything else down, both of which produced green-but-vacuous tests during #2148: **Playwright matches accessible names by substring, RTL matches them exactly** (so a `getByRole("button", { name: "Remove" })` that worked end-to-end matches nothing here when the real name is an `aria-label` reading "Remove Vera Volunteer"), and **an `alt=""` image has no `img` role** (query it by tag, and say why in a comment).
 
@@ -135,13 +187,14 @@ Conventions used across the existing suite:
 
 ## Mutation Testing
 
-`pnpm mutation` runs StrykerJS over `src/lib/**` and reports a mutation score - how many deliberate defects the suite actually catches, which is the question line coverage cannot answer. Report-only, never a gate (`thresholds.break: 0`), same posture as the backend's Stryker.NET (#2147). CI equivalent: `mutation-tests.yml`'s `mutation-tests-frontend` job, `workflow_dispatch` only.
+`pnpm mutation` runs StrykerJS over `src/lib/**` (and `pnpm mutation:components` over the design-system primitives, see below) and reports a mutation score - how many deliberate defects the suite actually catches, which is the question line coverage cannot answer. Report-only, never a gate (`thresholds.break: 0`), same posture as the backend's Stryker.NET (#2147). CI equivalent: `mutation-tests.yml`'s `mutation-tests-frontend` job, `workflow_dispatch` only.
 
 - **Baseline: 80.95 %** (897 generated / 840 scored / 680 killed / 126 survived / 34 no-coverage / 57 ignored). Recorded on #2148's head, and confirmed by CI [run `32479000847`](https://github.com/maik-hasler/einsatzbereit/actions/runs/32479000847) at the same commit. Comparable only against another StrykerJS 10.0.0 run of the same `mutate` scope - a version bump or a scope change makes the number a different number.
 - **Runtime: 28 min 59 s on a GitHub runner**, 36 min 24 s on a contended 4-core sandbox. Either way it is the slow leg - the two .NET legs are 4 min 23 s and 7 min 34 s - which is why the component tier stays on demand.
 - **`concurrency: 2` is reproducible here, unlike on the .NET side.** Two runs of this config on very different hardware (a 4-core sandbox and a clean `ubuntu-latest`) produced 80.95 % with a bit-for-bit identical per-file table. That matters because `backend/tests/Application.UnitTests/stryker-config.json` pins `concurrency: 1` precisely *because* Stryker.NET's preview MTP runner invents kills at 2 (#2147). Do not copy that constraint over here by analogy - it is a different runner with a different bug, and n=2 agreement is the evidence for leaving this at 2.
 - **Scoped to `src/lib/**` deliberately.** All of `src/**` was 182 files / 14 851 mutants at #2148's head, against a suite that renders components in jsdom - a full pass is hours, where the backend's 2 690 mutants over pure functions take ~12 minutes. `src/lib/**` (37 files, 897 mutants at that commit) is the tier that is cheap to mutate and comparable to the backend's.
 - **Score one component on demand:** `pnpm mutation --mutate "src/components/OpportunityCard.tsx"`. That is the useful granularity - a single component's survivors point at specific unasserted branches, where a whole-app average points at nothing. Measured: `OpportunityCard.tsx` 39.68 %, `NotificationItem.tsx` 57.69 %, `Footer.tsx` 4.76 %.
+- **`pnpm mutation:components` (`stryker.components.json`) covers the design-system primitives** - `Button`, `Chip`, the three banners, `EmptyState`, `RouteState`, `Skeleton`, `RequiredMark`. A separate config rather than an addition to the default `mutate` scope, for the reason in the bullet above this one: the default run is already the slow leg at ~29 minutes, and a primitive's survivors are read one file at a time anyway. Everything else about the two configs is identical, so their numbers are comparable.
 - **Read the survivors, not the number.** Only 5 of `OpportunityCard`'s 76 survivors sat on a `className` line - the rest were real branches the tests never exercise (`capacity.isFull`, the `unlimited` case, the `FEW_SPOTS_THRESHOLD` tone). The score is a pointer to those, not a target to raise.
 - **`plugins` in `stryker.config.json` must name `@stryker-mutator/vitest-runner`.** pnpm's strict `node_modules` stops Stryker discovering it by convention; without it the error reads "no TestRunner plugins were loaded", which looks like a missing install.
 - **`ignoreStatic: true` changes the denominator, and buys less than Stryker's warning implies.** A static mutant sits in module-level code, so killing it needs a full test-file reload rather than a re-run of the covering tests; Stryker warns that 111 of `src/lib`'s 897 mutants (12 %) are static and estimates them at 69 % of the run. Two things measured against that estimate: the flag actually excluded **57** mutants, not 111, and the run still took 36 minutes. The pass without the flag was killed at 35 minutes before finishing, so the saving is real but unquantified - what is certain is that it does not make the run cheap. Keep the flag (module-scope initialisation is excluded from the score as a result), and do not read the 69 % as headroom anyone can reclaim.

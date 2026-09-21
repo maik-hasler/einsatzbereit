@@ -1,0 +1,64 @@
+== 9. Server State Belongs in a Query Cache
+
+=== Status
+Accepted
+
+=== Date
+2026-09-21
+
+=== Context
+The frontend had no server-state layer. Every component that needed data from the API fetched it itself, in a `useEffect`, into its own `useState`. Measured on the tree this decision was taken against: 32 non-test modules fetch that way, `EngagementManagementPage.tsx` alone holds 26 `useState` calls, and 27 call sites reach into an already-fetched array to apply the result of a mutation by hand.
+
+Two homegrown pieces had grown up around the gap, and both are the shape of a cache without being one.
+
+`hooks/useSharedOrgFetch.ts` (7 call sites) keeps a module-level `Map` of in-flight promises so two components asking for the same thing in the same tick make one request. Its own comment records that the entry is dropped the moment the promise settles - so the *next* mount fetches again. It deduplicates concurrent requests and nothing else.
+
+`hooks/useLoadMore.ts` (15 call sites, 13 `useState` inside it) re-implements pagination bookkeeping: page, items, loading, loading-more, has-more, error, and a request-id guard against out-of-order responses.
+
+Invalidation was a counter. `pages/app/OrgDashboardPage/index.tsx` holds a `refreshKey` in state, passes it as a prop to six widgets, and each interpolates it into its own cache key so that bumping it re-runs their effects.
+
+Two hooks that are mounted on every authenticated page, `useAccountMenu.ts` and `useAchievementNotifier.ts`, each run their own `setInterval(..., 60_000)` with byte-for-byte identical visibility-gated start/stop and `AbortController` scaffolding.
+
+The symptoms all follow from the same missing piece: navigating back to a page re-fetches data it already showed and flickers through a skeleton; two components wanting the same list make two requests; a mutation has to know which arrays to patch; and loading and error state is spelled out per component.
+
+=== Decision
+Adopt TanStack Query v5 as the server-state layer.
+
+* A single `QueryClient`, created in `main.tsx` and configured in `src/queryClient.ts`, holds the cache for the tab's lifetime.
+* `src/lib/queryKeys.ts` is the one place a query key is spelled. Keys are hierarchical, so a mutation can invalidate a whole subtree (`queryKeys.organizations.all`) without listing its members.
+* Query functions call the generated API client through `hooks/useApiClient.ts`, the same seam component tests already mock. The generated TanStack Query plugin from `@hey-api/openapi-ts` is deliberately *not* used: its `queryOptions()` call the SDK directly, which bypasses that seam and the bearer token it installs (see ADR-10).
+* The client's defaults are the policy, and each is argued in `src/queryClient.ts`: a 30 second `staleTime`, refetch on window focus, `networkMode: "offlineFirst"` so the service worker's cached responses can answer a query while the device is offline, no retry on a 4xx, and no retry at all on mutations.
+
+=== Rationale
+* It replaces all four homegrown pieces with one mechanism: deduplication, caching across mounts, invalidation and optimistic updates are what the library is.
+* `networkMode: "offlineFirst"` connects the cache to the offline story this app already has. The service worker answers the opportunity list and detail routes from cache (see `vite.config.ts`'s `runtimeCaching`); the default `"online"` mode would pause a query before it ever reached the service worker, so a volunteer with no signal would see a spinner over data sitting in the cache.
+* The offline *policy* - what is cached, for how long, what invalidates it - moves out of Workbox configuration and into ordinary TypeScript. That is the one part of the frontend's offline behaviour that a non-browser runtime could reuse unchanged.
+* It is framework-agnostic and runs identically under React Native, which is the cheapest thing this codebase can do today to keep that door open without writing any mobile code (see ADR-12).
+
+=== Considered Alternatives
+
+==== SWR
+* Pros
+** Roughly a third of the bundle size
+** Smaller API surface to learn
+* Cons
+** No dedicated mutation primitive: optimistic updates are hand-rolled through `mutate`, which is most of what this codebase is trying to stop doing by hand
+** Weaker invalidation patterns, and this app's mutation-heavy organizer flows are exactly where that shows
+
+==== RTK Query
+* Pros
+** Colocates endpoint definitions with the store
+* Cons
+** Requires Redux. This project has deliberately never had a global store, and introducing one to get a query cache is the heaviest available answer to the question
+
+==== Grow `useSharedOrgFetch` into a real cache
+* Pros
+** No new dependency
+* Cons
+** It is a query library, written here, with no tests for the cases a query library has already found: garbage collection, focus and reconnect refetching, request cancellation, structural sharing, retry policy. Each is a decision this project would be making alone
+
+=== Consequences
+* `@tanstack/react-query` is a production dependency, and the entry chunk grows by roughly 12 kB gzipped. `.size-limit.cjs` (ADR-11) is what keeps that visible.
+* The migration is incremental and not finished by this decision. What has moved: both 60-second pollers (`useAccountMenu`, `useAchievementNotifier`) now use `refetchInterval`, which deleted 80 lines of duplicated `setInterval`/`visibilitychange`/`AbortController` scaffolding; and `hooks/useSharedOrgFetch.ts` is gone, replaced by `hooks/useCachedFetch.ts` - the same tuple, backed by the query cache, so its seven call sites keep working while their data now survives unmounting and their `setData` writes to the cache rather than to one component's state. What has not: those seven still read a tuple rather than calling `useQuery` directly, and `hooks/useLoadMore.ts` still hand-rolls pagination. Both are follow-ups, and `useCachedFetch`'s own comment says so.
+* Component tests keep mocking `hooks/useApiClient`; `src/test/render.tsx` wraps every render in a fresh `QueryClient` with retries, focus refetching and cross-test cache sharing turned off.
+* `staleTime` and `refetchOnWindowFocus` are a behaviour change, not only a refactor: a tab left open now refetches when it regains focus, where before it showed whatever it had loaded on mount.

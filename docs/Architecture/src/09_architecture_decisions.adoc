@@ -66,6 +66,34 @@ The following table lists the relevant architecture decisions. Each decision lin
 |2026-07-29
 |link:ADRs/8_distributed_tracing_via_tempo.html[Distributed tracing]
 
+|9
+|Server state
+|Hold server state in a TanStack Query cache instead of per-component `useEffect` + `useState`, with one place where query keys are spelled.
+|Accepted
+|2026-09-21
+|link:ADRs/9_server_state_with_tanstack_query.html[Server state]
+
+|10
+|Frontend API client
+|Generate the frontend's TypeScript client with `@hey-api/openapi-ts`; NSwag keeps generating the OpenAPI document and the integration tests' C# client.
+|Accepted
+|2026-09-21
+|link:ADRs/10_frontend_api_client_generated_by_hey_api.html[Frontend API client]
+
+|11
+|Enforced frontend rules
+|Encode the frontend's layering, its browser-global surface, its module graph and its byte budgets as CI checks rather than conventions.
+|Accepted
+|2026-09-21
+|link:ADRs/11_frontend_architecture_rules_are_enforced.html[Enforced frontend rules]
+
+|12
+|Mobile
+|Keep the PWA as the mobile story until App Store presence or guaranteed push reach is a stated need; take only the portability measures that pay for themselves on the web.
+|Accepted
+|2026-09-21
+|link:ADRs/12_mobile_stays_a_pwa_until_distribution_demands_otherwise.html[Mobile]
+
 |===
 
 See <<section-solution-strategy>> for how the key decisions map to the quality goals.

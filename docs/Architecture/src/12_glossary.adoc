@@ -121,7 +121,7 @@ These are the terms the domain model in <<section-concepts>> is built from. They
 |A functional building block of the backend, cut by business function and repeated as a folder in `Api/`, `Application/` and `Domain/`. Listed in full in <<section-building-block-view>>.
 
 |NSwag
-|A .NET toolchain for generating API clients from OpenAPI specifications. The frontend TypeScript client (`api-client.ts`) is generated via NSwag and must never be hand-edited.
+|A .NET toolchain for generating API clients from OpenAPI specifications. It generates the OpenAPI document itself and the integration tests' C# client (`ApiClient.cs`), both of which must never be hand-edited. The frontend's TypeScript client comes from `@hey-api/openapi-ts` instead.
 
 |OIDC
 |OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.

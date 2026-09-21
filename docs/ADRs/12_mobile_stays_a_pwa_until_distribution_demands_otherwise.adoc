@@ -1,0 +1,65 @@
+== 12. Mobile Stays a PWA Until Distribution Demands Otherwise
+
+=== Status
+Accepted
+
+=== Date
+2026-09-21
+
+=== Context
+A frontend architecture review asked what it would cost to ship this app as a native mobile app, and what could be done now to keep that option open.
+
+The honest answer to the first question starts with a different one: what would a native app give a volunteer that the installed PWA does not?
+
+* **Push notifications.** Web Push has worked on iOS since 16.4 for web apps added to the Home Screen. It uses standard Web Push rather than an APNs certificate. The catch is upstream of the API: Safari offers no `beforeinstallprompt`, and the permission prompt can only be requested from a standalone-mode web app - so the user must install it by hand first.
+* **QR check-in.** `getUserMedia` works in an installed PWA, which is all `QRScannerModal` needs.
+* **Offline reading.** The service worker already caches the opportunity list and detail routes. iOS evicts storage after long disuse and has no Background Sync, so an action taken offline has to be replayed on the next foreground - which is true of the web app and would be a feature to build either way.
+* **Background geolocation.** Genuinely needs native. Nothing in this product asks for it.
+
+So a native app is not technically forced. It buys two things: App Store presence, and a shorter path to push notifications than "ask the user to install a web app from Safari's share sheet". Both are distribution questions, not engineering ones.
+
+=== Decision
+Do not build a native app, and do not build for one. Keep the PWA as the mobile story until App Store presence or guaranteed push reach is a stated business need.
+
+Separately, take the portability measures that are worth doing on their own merits regardless - and only those. At the time of this decision, taken:
+
+* **A server-state layer** (ADR-9). TanStack Query runs identically under React Native, and the offline policy moves out of Workbox configuration into ordinary TypeScript. Worth doing for the web app alone; the portability is a side effect.
+* **An API client with no `window` in its transport** (ADR-10).
+* **`lib/` and `client/` fenced off from the UI layers and from React, with their browser-global surface frozen** (ADR-11). This is the measure that makes `lib/` extractable at all.
+* **Design tokens generated from the stylesheet** into `lib/designTokens.ts`, so the brand colour is declared once and read by the CSS, the PWA manifests and the code that draws a map marker. It also removed a `getComputedStyle` call from `lib/`.
+
+Not taken, deliberately: a pnpm-workspaces restructure, NativeWind, a Capacitor project, or any React Native code.
+
+=== Rationale
+* The three measures above improve testability, encapsulation and bundle discipline in the web app today. If mobile never happens, none of them was wasted. That is the test a portability measure has to pass.
+* A monorepo restructure has the opposite property: it costs real work now and buys nothing until a second consumer exists. The backend already lives in this repository without needing workspaces.
+* Writing React Native code before the distribution question is answered would commit to one of two very different paths. A Capacitor shell reuses nearly the whole SPA and risks App Store guideline 4.2 ("Minimum Functionality") rejection; Expo/React Native shares the logic and none of the UI, and costs a second implementation of every screen. Which is right depends entirely on *why* mobile is wanted.
+
+=== Considered Alternatives
+
+==== Build a Capacitor proof of concept now
+* Pros
+** Cheapest real path to the App Store: the existing SPA runs in a WebView, native capability comes through plugins
+** Would answer the guideline 4.2 question with a real submission rather than a guess
+* Cons
+** Creates Xcode and Android Studio projects, a signing story and a release process, for a decision nobody has taken
+** A rejection would be evidence about an app nobody has asked for yet
+
+==== Restructure into pnpm workspaces now, ahead of a shared core
+* Pros
+** The shared packages would exist before they are needed
+* Cons
+** There is no second consumer. The package boundaries would be guesses, and a guessed boundary is harder to move than no boundary
+
+==== Commit to React Native / Expo now
+* Pros
+** Best native performance and platform fit
+* Cons
+** The UI layer shares nothing: realistically 30-50 per cent of the code, and a second implementation of every screen for a very small team
+** Authentication would need replacing: `oidc-client-ts` reaches for `crypto.subtle` with no injection hook, so bare React Native needs a polyfill, and the silent-renew iframe has no native equivalent (a refresh token does, which is the portable half)
+
+=== Consequences
+* The mobile experience stays the installed PWA, with its known cost: iOS installation is a manual, discoverable-only step, and that is a conversion hurdle nobody has measured here.
+* Revisiting this decision needs an answer to one question: is the driver App Store visibility, guaranteed push reach, or UX and performance? The first two point at Capacitor, the third at Expo/React Native.
+* Four things remain unportable by design and would be real work on the day: the OIDC silent-renew iframe and `silent-renew.html`, the Workbox service worker, Tailwind, and the DOM-bound libraries (Leaflet, react-big-calendar, jsqr, qrcode.react). Each is isolated behind a component today, which is the most that can be done without guessing at a replacement.
+* React Strict DOM is the direction worth watching rather than betting on: React Native for Web is in maintenance mode and RSD is in production at Meta, but its native layout support is documented as incomplete. Re-evaluate it, not adopt it, if this decision is revisited.

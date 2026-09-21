@@ -137,12 +137,20 @@ dotnet run --project tests/VisualTests
 
 ### API Client
 
-The frontend API client (`frontend/src/client/api-client.ts`) is **NSwag-generated**.
-**Never hand-edit this file.** It regenerates automatically the next time the backend builds in the Debug configuration (the `NSwag` MSBuild target in `src/Api/Api.csproj`, gated on `Configuration == Debug`):
+Two clients are generated from one OpenAPI document, and none of the three artefacts is ever hand-edited.
+
+`backend/src/Api/wwwroot/openapi-v1.json` and the C# client used by the integration tests (`backend/tests/IntegrationTests/ApiClient.cs`) both regenerate the next time the backend builds in the Debug configuration (the `NSwag` MSBuild target in `src/Api/Api.csproj`, gated on `Configuration == Debug`):
 ```bash
 cd backend
 dotnet build
 ```
+
+The frontend client (`frontend/src/client/generated/`) is generated from that same document by `@hey-api/openapi-ts`, and **not** by the backend build - so it is the one that goes stale. Regenerate it after any endpoint or DTO change:
+```bash
+cd frontend
+pnpm client:generate
+```
+`pnpm check:client-current` regenerates into a scratch directory and fails CI when the committed output differs, so a forgotten run is caught in the PR that caused it rather than in the next one.
 
 ## Code Style
 

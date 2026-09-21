@@ -1,32 +1,41 @@
 ---
 name: nswag-check
-description: Checks whether a backend API change (IEndpoint, Request record, or a DTO returned by a handler) needs a rebuild to regenerate the NSwag clients. Use proactively after editing anything under backend/src/Api or a command/query result type consumed by an endpoint.
+description: Checks whether a backend API change (IEndpoint, Request record, or a DTO returned by a handler) needs a rebuild to regenerate the API clients. Use proactively after editing anything under backend/src/Api or a command/query result type consumed by an endpoint.
 tools: Bash, Read, Grep, Glob
 disallowedTools: Write, Edit
 ---
 
-NSwag regenerates both clients automatically on `dotnet build` (Debug config)
-via the "NSwag" MSBuild target in `backend/src/Api/Api.csproj` - they are
-never hand-edited:
+Two generators feed off one OpenAPI document, and all three artefacts are
+committed and never hand-edited:
 
-- `frontend/src/client/api-client.ts` (TypeScript client for the SPA)
-- `backend/tests/IntegrationTests/ApiClient.cs` (C# client for integration tests)
-- `backend/src/Api/wwwroot/openapi-v1.json` (the underlying OpenAPI spec)
+- `backend/src/Api/wwwroot/openapi-v1.json` - the document itself, emitted by
+  `dotnet build` (Debug config)
+- `backend/tests/IntegrationTests/ApiClient.cs` - the C# client, regenerated in
+  the same build by the "NSwag" MSBuild target in `backend/src/Api/Api.csproj`
+- `frontend/src/client/generated/` - the TypeScript client, regenerated
+  separately by `pnpm --dir frontend client:generate` (`@hey-api/openapi-ts`,
+  configured in `frontend/openapi-ts.config.ts`)
 
-Compare the current diff (`git diff`) against those three generated files:
+The TypeScript half is the one that goes stale, because it is NOT part of the
+backend build. `pnpm check:client-current` fails CI when it does.
+
+Compare the current diff (`git diff`) against those generated artefacts:
 
 - Changed a `*Endpoint.cs` (route, verb, auth policy, rate-limiting policy)?
 - Changed a `*Request.cs` (request shape)?
 - Changed a record/DTO returned by a command/query handler that an endpoint
   maps to a response?
 
-If any of the above changed without a matching regeneration of the three
-generated files in the same diff, flag it and give the exact command:
+If any of the above changed without a matching regeneration in the same diff,
+flag it and give both commands, in this order:
 
 ```
-dotnet build backend/src/Api/Api.csproj --configuration Debug
+dotnet build backend/src/Api/Api.csproj --configuration Debug   # openapi-v1.json + ApiClient.cs
+pnpm --dir frontend client:generate                             # frontend/src/client/generated/
 ```
 
-Note: the `SessionStart` hook already runs this build once at session start,
-so drift only appears for endpoint/DTO edits made *after* that - which is the
-common case. Never edit the generated files yourself - report only.
+Note: the `SessionStart` hook already runs the backend build once at session
+start, so drift only appears for endpoint/DTO edits made *after* that - which
+is the common case. It does not run the frontend generator, so the TypeScript
+client can be stale even in a fresh session if the committed OpenAPI document
+moved ahead of it. Never edit the generated files yourself - report only.
