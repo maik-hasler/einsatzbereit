@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignUpModal from "./SignUpModal";
-import type { TimeSlotDetail } from "../client/api-client";
+import type { TimeSlotDetail } from "../client";
 import { renderWithProviders } from "../test/render";
 import { formatDateTimeRange } from "../lib/format";
 
@@ -20,9 +20,9 @@ function slot(id: string, hour: number, booked = 0): TimeSlotDetail {
 		endDateTime: new Date(Date.UTC(2026, 7, 27, hour + 4, 0)),
 		maxParticipants: 4,
 		bookedCount: booked,
-		seriesId: undefined,
-		recurrenceFrequency: undefined,
-		recurrenceCount: undefined,
+		seriesId: null,
+		recurrenceFrequency: null,
+		recurrenceCount: null,
 	};
 }
 

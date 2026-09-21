@@ -55,12 +55,6 @@
         "resolved": "10.0.12",
         "contentHash": "Z/bU4AL/E4m0j5tduRjIuqZrVMK//wRAM+iq+UcQtjQuEMwBnMY8AQ+MvK4IQZAdKb5Zlk9PUglfsN53xOmU3A=="
       },
-      "NSwag.MSBuild": {
-        "type": "Direct",
-        "requested": "[14.7.1, 14.7.1]",
-        "resolved": "14.7.1",
-        "contentHash": "4ks/+vtuFoP5D1Vsc0h7yCYyL8Rhhmnvwb9iHEm1//1y9oluQViQD9spqLaGjPv2Itjz5TQPLdkeky/wgRx8dg=="
-      },
       "Asp.Versioning.Abstractions": {
         "type": "Transitive",
         "resolved": "10.2.1",

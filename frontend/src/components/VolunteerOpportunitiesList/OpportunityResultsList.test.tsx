@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { VolunteerOpportunitySummary } from "../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../client";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { renderWithProviders } from "../../test/render";
 

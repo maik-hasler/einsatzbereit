@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import NotificationItem from "./NotificationItem";
-import type { NotificationSummary } from "../../client/api-client";
+import type { NotificationSummary } from "../../client";
 import { renderWithProviders } from "../../test/render";
 
 const notification = (isRead: boolean): NotificationSummary =>
@@ -85,7 +85,7 @@ describe("NotificationItem navigation", () => {
 		renderWithProviders(
 			<ul>
 				<NotificationItem
-					notification={{ ...notification(false), actionUrl: undefined }}
+					notification={{ ...notification(false), actionUrl: null }}
 					onSelect={vi.fn()}
 					onMarkUnread={vi.fn()}
 					onDelete={vi.fn()}

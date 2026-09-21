@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Outlet, Route, Routes } from "react-router";
 import EngagementManagementPage from "./EngagementManagementPage";
-import type { OrganizationDetailsResponse } from "../client/api-client";
+import type { OrganizationDetailsResponse } from "../client";
 import { renderWithProviders } from "../test/render";
 
 const { api } = await vi.hoisted(async () => {
@@ -192,20 +192,23 @@ describe("EngagementManagementPage status filter", () => {
 			"Vera",
 			{ status: "Confirmed" },
 		);
-		api.getEngagements.mockImplementation((_id, _page, _size, status) => {
-			const items =
-				status === "Pending"
-					? [pending]
-					: status === "Confirmed"
-						? [confirmed]
-						: [pending, confirmed];
-			return Promise.resolve({
-				items,
-				pageCount: 1,
-				totalCount: items.length,
-				currentPage: 1,
-			});
-		});
+		api.getEngagements.mockImplementation(
+			(options: { query: { status?: string } }) => {
+				const status = options.query.status;
+				const items =
+					status === "Pending"
+						? [pending]
+						: status === "Confirmed"
+							? [confirmed]
+							: [pending, confirmed];
+				return Promise.resolve({
+					items,
+					pageCount: 1,
+					totalCount: items.length,
+					currentPage: 1,
+				});
+			},
+		);
 
 		renderPage();
 
@@ -216,14 +219,16 @@ describe("EngagementManagementPage status filter", () => {
 
 		await userEvent.selectOptions(screen.getByLabelText("Status"), "Confirmed");
 		await waitFor(() =>
-			expect(api.getEngagements).toHaveBeenLastCalledWith(
-				OPPORTUNITY_ID,
-				1,
-				10,
-				"Confirmed",
-				undefined,
-				undefined,
-			),
+			expect(api.getEngagements).toHaveBeenLastCalledWith({
+				path: { opportunityId: OPPORTUNITY_ID },
+				query: {
+					pageNumber: 1,
+					pageSize: 10,
+					status: "Confirmed",
+					timeSlotId: undefined,
+					search: undefined,
+				},
+			}),
 		);
 		expect(await screen.findAllByText("Vera")).toHaveLength(1);
 	});
@@ -314,10 +319,10 @@ describe("EngagementManagementPage cancellation reason", () => {
 		);
 
 		await waitFor(() => expect(api.cancelEngagement).toHaveBeenCalledTimes(1));
-		expect(api.cancelEngagement).toHaveBeenCalledWith(
-			confirmed.id,
-			expect.objectContaining({ reason: "Shift is overstaffed." }),
-		);
+		expect(api.cancelEngagement).toHaveBeenCalledWith({
+			path: { engagementId: confirmed.id },
+			body: expect.objectContaining({ reason: "Shift is overstaffed." }),
+		});
 	});
 });
 

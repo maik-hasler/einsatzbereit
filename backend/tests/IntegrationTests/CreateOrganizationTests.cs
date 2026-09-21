@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldReturnOrganization_WhenNameIsValid(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var result = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Sample Fire Department" }, cancellationToken);
@@ -27,7 +26,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldSucceed_WhenNameContainsGermanCharacters(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var result = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Ärztlicher Übungsdienst Straße" }, cancellationToken);
@@ -39,7 +38,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldSucceed_WhenNameContainsSpecialCharacters(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var result = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Org (Test) & Co. #1" }, cancellationToken);
@@ -51,7 +50,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldReturn400_WhenAddressStreetExceedsMaxLength(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => client.CreateOrganizationAsync(
 			new CreateOrganizationRequest
@@ -88,7 +87,7 @@ public class CreateOrganizationTests(
 	public async Task GetOrganizations_ShouldReturnCreatedOrganization(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Test Organization" }, cancellationToken);
@@ -105,8 +104,8 @@ public class CreateOrganizationTests(
 	public async Task GetOrganizations_ShouldReportThePlainMemberRole_ForAnOrganizationTheUserOnlyBelongsTo(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
 		var org = await olafClient.CreateOrganizationAsync(
@@ -124,7 +123,7 @@ public class CreateOrganizationTests(
 	public async Task GetOrganizations_ShouldReturnEmpty_WhenUserHasNoOrganizations(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var result = await client.GetOrganizationsAsync(cancellationToken);
 
@@ -135,7 +134,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldPersistEveryOptionalField_AndReturnThemFromDetails(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(new CreateOrganizationRequest
 		{
@@ -171,7 +170,7 @@ public class CreateOrganizationTests(
 	public async Task CreateOrganization_ShouldLeaveOptionalFieldsNull_WhenOnlyANameWasGiven(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Name Only Org" }, cancellationToken);
@@ -194,7 +193,7 @@ public class CreateOrganizationTests(
 		// the very token that just created the organization - and so far has
 		// never held the organisator role - still doesn't hold it (einsatzbereit#2206).
 		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var client = await CreateAuthenticatedClientAsync(username, password);
+		var client = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		var org = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Stale Token Org {Guid.NewGuid()}" }, cancellationToken);
@@ -215,12 +214,12 @@ public class CreateOrganizationTests(
 		// organisator role Keycloak just granted, so the caller's very next
 		// request carries it (einsatzbereit#2206).
 		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var client = await CreateAuthenticatedClientAsync(username, password);
+		var client = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		var org = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Refreshed Token Org {Guid.NewGuid()}" }, cancellationToken);
 
-		client = await CreateAuthenticatedClientAsync(username, password);
+		client = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		var opportunity = await client.CreateVolunteerOpportunityAsync(
 			BuildOpportunityRequest(org.Id.Value), cancellationToken);
@@ -243,13 +242,4 @@ public class CreateOrganizationTests(
 			CheckInMethod = "None",
 			IsDraft = true,
 		};
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
-	}
 }

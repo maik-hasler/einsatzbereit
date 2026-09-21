@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,7 +14,7 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldReturnProfile_WhenAuthenticated(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var result = await client.GetUserProfileAsync(cancellationToken);
 
@@ -28,7 +27,7 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldReturnProfile_WhenAuthenticatedAsAdmin(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var client = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var result = await client.GetUserProfileAsync(cancellationToken);
 
@@ -40,7 +39,7 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldNotFail_WhenTwoConcurrentRequestsRaceTheFirstEverLoad(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var client = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var first = client.GetUserProfileAsync(cancellationToken);
 		var second = client.GetUserProfileAsync(cancellationToken);
@@ -60,14 +59,5 @@ public class GetUserProfileTests(
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(401);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

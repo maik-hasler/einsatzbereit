@@ -38,10 +38,7 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 		setCroppingFile(null);
 		setUploading(true);
 		try {
-			await api.uploadUserAvatar({
-				data: croppedFile,
-				fileName: croppedFile.name,
-			});
+			await api.uploadUserAvatar({ body: { file: croppedFile } });
 			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
 			const url = URL.createObjectURL(croppedFile);
 			objectUrlRef.current = url;
@@ -63,7 +60,7 @@ export function useAvatarUpload(onChange: (url: string | null) => void) {
 		setRemoving(true);
 		setError(null);
 		try {
-			await api.deleteUserAvatar();
+			await api.deleteUserAvatar({});
 			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
 			objectUrlRef.current = null;
 			onChange(null);

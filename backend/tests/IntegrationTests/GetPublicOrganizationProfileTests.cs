@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
@@ -17,7 +16,7 @@ public class GetPublicOrganizationProfileTests(
 	public async Task GetPublicOrganizationProfile_ShouldCarryNextTimeSlotStart_ForASlotBasedOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var slotStart = DateTimeOffset.UtcNow.AddDays(7);
 		await PublishSlotBasedOpportunityAsync(
@@ -37,7 +36,7 @@ public class GetPublicOrganizationProfileTests(
 	public async Task GetPublicOrganizationProfile_ShouldCarryValidUntil_ForAnInterestBasedOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var deadline = DateTimeOffset.UtcNow.AddDays(30);
 		await PublishInterestBasedOpportunityAsync(
@@ -57,7 +56,7 @@ public class GetPublicOrganizationProfileTests(
 	public async Task GetPublicOrganizationProfile_ShouldCarryCategoryAndCapacity(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		await PublishSlotBasedOpportunityAsync(
 			client, organizationId, "Categorised", DateTimeOffset.UtcNow.AddDays(7),
@@ -77,7 +76,7 @@ public class GetPublicOrganizationProfileTests(
 	public async Task GetPublicOrganizationProfile_ShouldExcludeOpportunity_WhenIndividualContactDeadlineHasPassed(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		var opportunity = await PublishInterestBasedOpportunityAsync(
 			client, organizationId, "Expired interest based", DateTimeOffset.UtcNow.AddDays(30), cancellationToken);
@@ -93,7 +92,7 @@ public class GetPublicOrganizationProfileTests(
 	public async Task GetPublicOrganizationProfile_ShouldExcludeEndedTimeSlots_FromTheAdvertisedCapacity(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var client = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var organizationId = await CreateOrganizationAsync(client, cancellationToken);
 		await PublishSlotBasedOpportunityAsync(
 			client, organizationId, "Half expired", DateTimeOffset.UtcNow.AddDays(7),
@@ -208,14 +207,5 @@ public class GetPublicOrganizationProfileTests(
 
 		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 		return opportunity;
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

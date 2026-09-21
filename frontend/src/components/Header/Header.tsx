@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
+import { useAuthRoles } from "../../hooks/useAuthRoles";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
@@ -40,10 +41,7 @@ export default function Header({
 		"User") as string;
 	const displayName = useDisplayName(user?.sub, claimedName);
 	const initials = isLoggedIn ? getInitials(displayName) : "";
-	const roles = (
-		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
-	) as string[];
-	const isAdmin = roles.includes("admin");
+	const isAdmin = useAuthRoles().has("admin");
 
 	const {
 		orgs,

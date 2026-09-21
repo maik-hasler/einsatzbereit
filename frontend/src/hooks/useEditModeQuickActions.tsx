@@ -4,6 +4,14 @@ import {
 	useQuickActions,
 	type QuickAction,
 } from "../contexts/QuickActionsContext";
+// The one place a hook reaches up into components/, and the reason this file is
+// the only .tsx under hooks/: a QuickAction carries its glyph as a ReactNode, so
+// whoever builds the action has to name one. The layering fix is to let
+// QuickAction carry a semantic icon key and have the toolbar that renders it
+// (components/) resolve the glyph - a change to QuickActionsContext's public
+// shape and every producer of actions, which does not belong in the change that
+// introduced this rule. Kept visible here rather than widened into the rule.
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { CancelIcon, EditIcon, SaveIcon } from "../components/QuickActionIcons";
 
 interface Options {

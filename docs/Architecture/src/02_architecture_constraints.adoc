@@ -22,7 +22,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |PlantUML for architecture diagrams
 |All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.
 
-|NSwag-generated API client - never hand-edited
+|Generated API clients - `@hey-api/openapi-ts` for the frontend, NSwag for the C# one - never hand-edited
 |Enforced by the OpenAPI-to-client generation pipeline - see <<section-concepts>> under Development and Build.
 
 |AsciiDoc for documentation

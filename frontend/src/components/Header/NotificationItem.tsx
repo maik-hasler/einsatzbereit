@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import type { NotificationSummary } from "../../client/api-client";
+import type { NotificationSummary } from "../../client";
 import { formatDateTime, pickLocalizedText } from "../../lib/format";
 import { EyeSlashIcon, TrashIcon } from "../icons";
 

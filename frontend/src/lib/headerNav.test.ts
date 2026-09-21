@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client";
 import { buildPrimaryNav } from "./headerNav";
 import { orgTabPath } from "./orgTabs";
 
 function org(id: string, name: string): OrganizationSummaryDto {
-	return { id, name, logoUrl: undefined, role: "Organizer" };
+	return { id, name, logoUrl: null, role: "Organizer" };
 }
 
 describe("buildPrimaryNav", () => {

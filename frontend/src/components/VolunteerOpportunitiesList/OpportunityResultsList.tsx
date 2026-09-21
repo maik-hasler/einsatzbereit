@@ -1,11 +1,32 @@
 import { useTranslation } from "react-i18next";
-import type { VolunteerOpportunitySummary } from "../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../client";
 import EmptyState from "../EmptyState";
 import OpportunityCardSkeleton from "../OpportunityCardSkeleton";
 import LoadMoreError from "../LoadMoreError";
 import LoadMoreButton from "../LoadMoreButton";
 import RouteState from "../RouteState";
-import OpportunityCard from "../OpportunityCard";
+import OpportunityCard, { type OpportunityCardItem } from "../OpportunityCard";
+
+/** Widens the summary's nullable fields to the card's item shape, which
+ * reads `undefined`. */
+function toCardItem(item: VolunteerOpportunitySummary): OpportunityCardItem {
+	return {
+		...item,
+		titleEn: item.titleEn ?? undefined,
+		descriptionDe: item.descriptionDe ?? undefined,
+		descriptionEn: item.descriptionEn ?? undefined,
+		street: item.street ?? undefined,
+		houseNumber: item.houseNumber ?? undefined,
+		zipCode: item.zipCode ?? undefined,
+		city: item.city ?? undefined,
+		category: item.category ?? undefined,
+		validUntil: item.validUntil ?? undefined,
+		nextTimeSlotStart: item.nextTimeSlotStart ?? undefined,
+		totalMaxParticipants: item.totalMaxParticipants ?? undefined,
+		bannerImageUrl: item.bannerImageUrl ?? undefined,
+		organizationLogoUrl: item.organizationLogoUrl ?? undefined,
+	};
+}
 
 export default function OpportunityResultsList({
 	loading,
@@ -119,7 +140,7 @@ export default function OpportunityResultsList({
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<OpportunityCard
 									key={item.id}
-									item={item}
+									item={toCardItem(item)}
 									headingLevel={3}
 									keyword={keyword}
 									withMedia

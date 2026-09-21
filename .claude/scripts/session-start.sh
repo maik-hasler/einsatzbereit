@@ -15,8 +15,14 @@ if ! command -v dotnet &>/dev/null; then
 		echo 'export PATH="$HOME/.dotnet:$PATH"' >> "$HOME/.bashrc"
 fi
 
-echo "[SessionStart] Building backend (NSwag regeneration)..."
-dotnet build backend/src/Api/Api.csproj --configuration Debug --verbosity quiet
+# IntegrationTests, not Api: the OpenAPI document regenerates from Api's own
+# GenerateOpenApiDocuments target, but ApiClient.cs regenerates from the NSwag
+# target that now lives in IntegrationTests.csproj. Building Api alone would
+# refresh one committed artifact and leave the other stale, and the line above
+# would still read as though it had done its job. IntegrationTests references
+# Api, so this refreshes both.
+echo "[SessionStart] Building backend (OpenAPI document + API client regeneration)..."
+dotnet build backend/tests/IntegrationTests/IntegrationTests.csproj --configuration Debug --verbosity quiet
 
 echo "[SessionStart] Formatting frontend..."
 cd frontend && pnpm format:write

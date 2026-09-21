@@ -1,15 +1,9 @@
-type Listener = () => void;
+import { createEventBus } from "./createEventBus";
 
-const listeners: Listener[] = [];
+const bus = createEventBus();
 
-export function subscribeSessionExpired(listener: Listener): () => void {
-	listeners.push(listener);
-	return () => {
-		const idx = listeners.indexOf(listener);
-		if (idx !== -1) listeners.splice(idx, 1);
-	};
-}
+export const subscribeSessionExpired = bus.subscribe;
 
 export function notifySessionExpired(): void {
-	listeners.forEach((l) => l());
+	bus.publish();
 }

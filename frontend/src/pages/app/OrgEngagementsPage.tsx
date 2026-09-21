@@ -5,7 +5,7 @@ import { useState } from "react";
 import type {
 	EngagementSummary,
 	OrganizationDetailsResponse,
-} from "../../client/api-client";
+} from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
@@ -100,14 +100,26 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 		loadMore,
 		retryLoadMore,
 	} = useLoadMore<EngagementSummary>(
-		(page) =>
-			api.getOrganizationEngagements(
-				organizationId,
-				page,
-				ENGAGEMENTS_PAGE_SIZE,
-				statusFilter || undefined,
-				appliedSearch.trim() || undefined,
-			),
+		async (page) => {
+			const result = await api.getOrganizationEngagements({
+				path: { organizationId },
+				query: {
+					pageNumber: page,
+					pageSize: ENGAGEMENTS_PAGE_SIZE,
+					status: statusFilter || undefined,
+					search: appliedSearch.trim() || undefined,
+				},
+			});
+			return {
+				items: result.items,
+				pageCount:
+					result.pageCount === undefined ? undefined : Number(result.pageCount),
+				totalItems:
+					result.totalItems === undefined
+						? undefined
+						: Number(result.totalItems),
+			};
+		},
 		{
 			deps: [organizationId, statusFilter, appliedSearch],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
@@ -144,7 +156,9 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 	async function handleConfirm(engagementId: string) {
 		setConfirming(engagementId);
 		try {
-			const updated = await api.confirmEngagement(engagementId);
+			const updated = await api.confirmEngagement({
+				path: { engagementId },
+			});
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId ? { ...e, status: updated.status } : e,
@@ -176,8 +190,11 @@ function OrgEngagementsList({ org }: { org: OrganizationDetailsResponse }) {
 		setCancelError(null);
 		try {
 			const trimmedReason = cancelReason.trim();
-			const updated = await api.cancelEngagement(confirmCancelId, {
-				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			const updated = await api.cancelEngagement({
+				path: { engagementId: confirmCancelId },
+				body: {
+					reason: trimmedReason.length > 0 ? trimmedReason : null,
+				},
 			});
 			setEngagements((prev) =>
 				prev.map((e) =>

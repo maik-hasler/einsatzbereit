@@ -62,6 +62,12 @@
           "Microsoft.Extensions.Telemetry.Abstractions": "10.10.0"
         }
       },
+      "NSwag.MSBuild": {
+        "type": "Direct",
+        "requested": "[14.7.1, 14.7.1]",
+        "resolved": "14.7.1",
+        "contentHash": "4ks/+vtuFoP5D1Vsc0h7yCYyL8Rhhmnvwb9iHEm1//1y9oluQViQD9spqLaGjPv2Itjz5TQPLdkeky/wgRx8dg=="
+      },
       "Respawn": {
         "type": "Direct",
         "requested": "[7.0.0, 7.0.0]",
@@ -1167,7 +1173,6 @@
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.12, 10.0.12]",
           "Microsoft.AspNetCore.OpenApi": "[10.0.12, 10.0.12]",
           "Microsoft.Extensions.ApiDescription.Server": "[10.0.12, 10.0.12]",
-          "NSwag.MSBuild": "[14.7.1, 14.7.1]",
           "ServiceDefaults": "[1.0.0, )"
         }
       },
@@ -1568,12 +1573,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.4, 11.0.0)",
           "Npgsql": "10.0.3"
         }
-      },
-      "NSwag.MSBuild": {
-        "type": "CentralTransitive",
-        "requested": "[14.7.1, 14.7.1]",
-        "resolved": "14.7.1",
-        "contentHash": "4ks/+vtuFoP5D1Vsc0h7yCYyL8Rhhmnvwb9iHEm1//1y9oluQViQD9spqLaGjPv2Itjz5TQPLdkeky/wgRx8dg=="
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "CentralTransitive",

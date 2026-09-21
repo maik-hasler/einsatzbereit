@@ -302,6 +302,20 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
 
+		// The calendar is a lazy chunk, requested only once the saved layout has
+		// resolved and its tile has rendered - so it can be fetched after the
+		// first quiet window that satisfies NetworkIdle. Without this wait the
+		// scan can run while the tile still holds a skeleton, and this is the
+		// only altitude that sees the widget at all: react-big-calendar renders
+		// nothing under jsdom, so the component suite cannot cover the grid or
+		// the bogus roles `syncRbcDom` strips from it.
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+		});
+		await Expect(calendarWidget.Locator(".rbc-toolbar-label"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}

@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
-import type {
-	BadgeCatalogEntry,
-	PublicUserProfileResponse,
-} from "../client/api-client";
+import type { BadgeCatalogEntry, PublicUserProfileResponse } from "../client";
 import BadgeGrid from "../components/BadgeGrid";
 import EmptyState from "../components/EmptyState";
 import PageHeaderBand from "../components/PageHeaderBand";
@@ -23,10 +20,8 @@ import {
 	type LoadFailureKind,
 } from "../lib/apiError";
 import { getInitials } from "../lib/initials";
-import {
-	reportIntentSigninArgs,
-	usePendingReportIntent,
-} from "../lib/reportIntent";
+import { reportIntentSigninArgs } from "../lib/reportIntent";
+import { usePendingReportIntent } from "../hooks/usePendingReportIntent";
 
 export default function UserProfilePage() {
 	const { userId } = useParams<{ userId: string }>();
@@ -67,8 +62,8 @@ export default function UserProfilePage() {
 		setError(null);
 		setFailure(null);
 		return Promise.all([
-			api.getPublicUserProfile(userId),
-			api.getBadgeCatalog(),
+			api.getPublicUserProfile({ path: { userId } }),
+			api.getBadgeCatalog({}),
 		])
 			.then(([prof, cat]) => {
 				setProfile(prof);
@@ -165,9 +160,12 @@ export default function UserProfilePage() {
 							targetLabel={profile.displayName}
 							ariaLabel={t("userProfile.reportUser")}
 							onReport={async (reason, details) => {
-								await api.reportUser(userId, {
-									reason,
-									details: details || undefined,
+								await api.reportUser({
+									path: { userId },
+									body: {
+										reason,
+										details: details || null,
+									},
 								});
 							}}
 							onRequireSignIn={

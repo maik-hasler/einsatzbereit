@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApiClient } from "./useApiClient";
+import { queryKeys } from "../lib/queryKeys";
+import { NOTIFICATION_POLL_INTERVAL_MS } from "../lib/pollIntervals";
 import { useDismissableOverlay } from "./useDismissableOverlay";
 import { getApiErrorMessage, getApiErrorStatus } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { notifySessionExpired } from "../lib/sessionExpiryBus";
 import { subscribeAvatarChanged } from "../lib/avatarBus";
-import type { NotificationSummary } from "../client/api-client";
+import type { NotificationSummary } from "../client";
 
 export interface AccountMenuState {
 	avatarUrl: string | null;
@@ -50,7 +53,28 @@ export function useAccountMenu(
 	const [notifLoadingMore, setNotifLoadingMore] = useState(false);
 	const [notifError, setNotifError] = useState<string | null>(null);
 	const [notifLoading, setNotifLoading] = useState(false);
-	const [unreadCount, setUnreadCount] = useState(0);
+	const queryClient = useQueryClient();
+
+	// Was 44 lines of setInterval, visibilitychange listener and AbortController
+	// - duplicated byte for byte in useAchievementNotifier, which polls the same
+	// way on the same page. `refetchInterval` already stops while the tab is
+	// hidden (refetchIntervalInBackground defaults to false), which is what the
+	// visibility listener was for.
+	const { data: unreadCount = 0 } = useQuery({
+		queryKey: queryKeys.notifications.unreadCount(),
+		queryFn: ({ signal }) => api.getUnreadNotificationCount({ signal }),
+		enabled: isLoggedIn,
+		refetchInterval: NOTIFICATION_POLL_INTERVAL_MS,
+		staleTime: NOTIFICATION_POLL_INTERVAL_MS,
+	});
+
+	function setUnreadCount(update: number | ((previous: number) => number)) {
+		queryClient.setQueryData<number>(
+			queryKeys.notifications.unreadCount(),
+			(previous) =>
+				typeof update === "function" ? update(previous ?? 0) : update,
+		);
+	}
 	const [deletingAllRead, setDeletingAllRead] = useState(false);
 	const dropdownRef = useDismissableOverlay<HTMLDivElement>(dropdownOpen, () =>
 		setDropdownOpen(false),
@@ -62,52 +86,6 @@ export function useAccountMenu(
 	);
 
 	useEffect(() => {
-		if (!isLoggedIn) return;
-		const controller = new AbortController();
-		let intervalId: ReturnType<typeof setInterval> | null = null;
-
-		const fetchUnreadCount = async () => {
-			try {
-				const count = await api.getUnreadNotificationCount(controller.signal);
-				setUnreadCount(count);
-			} catch {
-				// silently ignore (includes AbortError on cleanup)
-			}
-		};
-
-		const startPolling = () => {
-			if (intervalId !== null) return;
-			intervalId = setInterval(() => void fetchUnreadCount(), 60_000);
-		};
-
-		const stopPolling = () => {
-			if (intervalId === null) return;
-			clearInterval(intervalId);
-			intervalId = null;
-		};
-
-		const handleVisibilityChange = () => {
-			if (document.visibilityState === "visible") {
-				void fetchUnreadCount();
-				startPolling();
-			} else {
-				stopPolling();
-			}
-		};
-
-		void fetchUnreadCount();
-		if (document.visibilityState === "visible") startPolling();
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-
-		return () => {
-			controller.abort();
-			stopPolling();
-			document.removeEventListener("visibilitychange", handleVisibilityChange);
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isLoggedIn]);
-
-	useEffect(() => {
 		if (!isLoggedIn) {
 			setAvatarUrl(null);
 			return;
@@ -115,7 +93,7 @@ export function useAccountMenu(
 		const controller = new AbortController();
 		void (async () => {
 			try {
-				const profile = await api.getUserProfile(controller.signal);
+				const profile = await api.getUserProfile({ signal: controller.signal });
 				setAvatarUrl(profile.avatarUrl ?? null);
 			} catch {
 				// silently ignore (includes AbortError on cleanup)
@@ -129,7 +107,7 @@ export function useAccountMenu(
 		if (!isLoggedIn) return;
 		return subscribeAvatarChanged(() => {
 			void api
-				.getUserProfile()
+				.getUserProfile({})
 				.then((profile) => setAvatarUrl(profile.avatarUrl ?? null))
 				.catch(() => {});
 		});
@@ -143,7 +121,7 @@ export function useAccountMenu(
 		setNotifLoading(true);
 		setNotifError(null);
 		try {
-			const result = await api.getMyNotifications(undefined, undefined);
+			const result = await api.getMyNotifications({});
 			if (requestId !== notifRequestRef.current) return;
 			setNotifications(result.items);
 			setNotifHasMore(result.hasMore);
@@ -174,10 +152,9 @@ export function useAccountMenu(
 		setNotifLoadingMore(true);
 		try {
 			const last = notifications[notifications.length - 1];
-			const result = await api.getMyNotifications(
-				last.createdOn.getTime(),
-				last.id,
-			);
+			const result = await api.getMyNotifications({
+				query: { beforeUnixMs: last.createdOn.getTime(), beforeId: last.id },
+			});
 			setNotifications((prev) => [...prev, ...result.items]);
 			setNotifHasMore(result.hasMore);
 		} catch {
@@ -189,7 +166,7 @@ export function useAccountMenu(
 
 	async function markAllRead() {
 		try {
-			await api.markAllNotificationsRead();
+			await api.markAllNotificationsRead({});
 			setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 			setUnreadCount(0);
 		} catch (err) {
@@ -202,7 +179,7 @@ export function useAccountMenu(
 
 	async function markOneRead(id: string) {
 		try {
-			await api.markNotificationRead(id);
+			await api.markNotificationRead({ path: { id } });
 			setNotifications((prev) =>
 				prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
 			);
@@ -217,7 +194,7 @@ export function useAccountMenu(
 
 	async function markOneUnread(id: string) {
 		try {
-			await api.markNotificationUnread(id);
+			await api.markNotificationUnread({ path: { id } });
 			setNotifications((prev) =>
 				prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
 			);
@@ -233,7 +210,7 @@ export function useAccountMenu(
 	async function deleteOne(id: string) {
 		const target = notifications.find((n) => n.id === id);
 		try {
-			await api.deleteNotification(id);
+			await api.deleteNotification({ path: { id } });
 			setNotifications((prev) => prev.filter((n) => n.id !== id));
 			if (target && !target.isRead) {
 				setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -249,7 +226,7 @@ export function useAccountMenu(
 	async function deleteAllRead() {
 		setDeletingAllRead(true);
 		try {
-			await api.deleteReadNotifications();
+			await api.deleteReadNotifications({});
 			setNotifications((prev) => prev.filter((n) => !n.isRead));
 		} catch (err) {
 			dispatchToast(

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client";
 import {
 	getActiveOrgId,
 	setActiveOrgId,
@@ -18,7 +18,7 @@ function clearCookies(): void {
 }
 
 function org(id: string, name: string): OrganizationSummaryDto {
-	return { id, name, logoUrl: undefined, role: "Organizer" };
+	return { id, name, logoUrl: null, role: "Organizer" };
 }
 
 describe("getActiveOrgId / setActiveOrgId", () => {

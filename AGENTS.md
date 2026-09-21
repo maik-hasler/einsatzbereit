@@ -84,10 +84,11 @@ edit on your own initiative):
   were then deleted for reasons answerable up front. Report-only, like the
   other two: it asks, it never builds.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
-  on the three NSwag-generated files (`frontend/src/client/api-client.ts`,
-  `backend/tests/IntegrationTests/ApiClient.cs`,
-  `backend/src/Api/wwwroot/openapi-v1.json`; see README.md's Tech Stack
-  table, "API client" row).
+  on the generated clients (`frontend/src/client/generated/*` from
+  `@hey-api/openapi-ts`, `backend/tests/IntegrationTests/ApiClient.cs` from NSwag, and
+  `backend/src/Api/wwwroot/openapi-v1.json` from GenerateOpenApiDocuments - not
+  NSwag, which only reads it; see README.md's Tech Stack table, "API client"
+  row).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs once before ending a
   turn if anything under `backend/src`/`frontend/src` changed (committed,
   uncommitted or untracked, measured against the merge-base with `main`):
@@ -103,8 +104,10 @@ edit on your own initiative):
   in `backend/global.json` via `dotnet-install.sh` whenever `dotnet` is
   absent from `PATH` (see this file's Development Setup for the SDK
   requirement itself), then - every session, unconditionally - runs
-  `dotnet build` on `backend/src/Api/Api.csproj` to regenerate the NSwag
-  clients and `pnpm format:write` in `frontend/`. Both can rewrite tracked
+  `dotnet build` on `backend/tests/IntegrationTests/IntegrationTests.csproj`
+  to regenerate both the OpenAPI document and the C# client (that project
+  references Api, so one build refreshes both) and `pnpm format:write` in
+  `frontend/`. Both can rewrite tracked
   files, so check `git status` before assuming a dirty tree is your own
   doing.
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,

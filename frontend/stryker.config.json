@@ -24,7 +24,8 @@
   },
   "mutate": [
     "src/lib/**/*.ts",
-    "!src/lib/**/*.test.ts"
+    "!src/lib/**/*.test.ts",
+    "!src/lib/designTokens.ts"
   ],
   "ignoreStatic": true
 }

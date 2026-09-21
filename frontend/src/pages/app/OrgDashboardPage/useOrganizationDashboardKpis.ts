@@ -1,5 +1,5 @@
 import { useApiClient } from "../../../hooks/useApiClient";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 
 export interface DashboardKpis {
 	pendingEngagements: number;
@@ -33,15 +33,17 @@ export function useOrganizationDashboardKpis(
 	// switcher issues a second request while the first is still open, and
 	// without a guard the slower response wins whichever order they land in,
 	// so one org's dashboard can end up showing another's counts.
-	const [kpis, , error] = useSharedOrgFetch<DashboardKpis>(
+	const [kpis, , error] = useCachedFetch<DashboardKpis>(
 		`organizationDashboard:${organizationId}:${refreshKey}`,
 		() =>
-			api.getOrganizationDashboard(organizationId).then((data) => ({
-				pendingEngagements: data.pendingEngagements,
-				distinctVolunteersTotal: data.distinctVolunteersTotal,
-				signUpsLast30Days: data.signUpsLast30Days,
-				signUpsPrevious30Days: data.signUpsPrevious30Days,
-			})),
+			api
+				.getOrganizationDashboard({ path: { organizationId } })
+				.then((data) => ({
+					pendingEngagements: data.pendingEngagements,
+					distinctVolunteersTotal: data.distinctVolunteersTotal,
+					signUpsLast30Days: data.signUpsLast30Days,
+					signUpsPrevious30Days: data.signUpsPrevious30Days,
+				})),
 	);
 
 	return {

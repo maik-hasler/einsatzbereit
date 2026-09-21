@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../../hooks/useMyOrganizations";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import {
@@ -37,6 +38,7 @@ export default function OrgSettingsPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const navigate = useNavigate();
 	usePageTitle(`${t("orgOverview.tabSettings")} - ${org.name}`);
 
@@ -155,9 +157,9 @@ export default function OrgSettingsPage() {
 		setCroppingLogoFile(null);
 		setUploadingLogo(true);
 		try {
-			await api.uploadOrganizationLogo(org.id, {
-				data: croppedFile,
-				fileName: croppedFile.name,
+			await api.uploadOrganizationLogo({
+				path: { organizationId: org.id },
+				body: { file: croppedFile },
 			});
 			if (logoObjectUrlRef.current)
 				URL.revokeObjectURL(logoObjectUrlRef.current);
@@ -165,6 +167,7 @@ export default function OrgSettingsPage() {
 			logoObjectUrlRef.current = url;
 			setLogoUrl(url);
 
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
@@ -178,12 +181,15 @@ export default function OrgSettingsPage() {
 		setRemovingLogo(true);
 		setLogoError(null);
 		try {
-			await api.deleteOrganizationLogo(org.id);
+			await api.deleteOrganizationLogo({
+				path: { organizationId: org.id },
+			});
 			if (logoObjectUrlRef.current) {
 				URL.revokeObjectURL(logoObjectUrlRef.current);
 				logoObjectUrlRef.current = null;
 			}
 			setLogoUrl(null);
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoRemoveError"));
@@ -204,23 +210,27 @@ export default function OrgSettingsPage() {
 			values.city.trim();
 
 		try {
-			await api.updateOrganization(org.id, {
-				name: values.name,
-				description: values.description || undefined,
-				contactEmail: values.contactEmail || undefined,
-				contactPhone: values.contactPhone || undefined,
-				website: values.website || undefined,
-				address: hasAddress
-					? {
-							street: values.street,
-							houseNumber: values.houseNumber,
-							zipCode: values.zipCode,
-							city: values.city,
-						}
-					: undefined,
+			await api.updateOrganization({
+				path: { organizationId: org.id },
+				body: {
+					name: values.name,
+					description: values.description || null,
+					contactEmail: values.contactEmail || null,
+					contactPhone: values.contactPhone || null,
+					website: values.website || null,
+					address: hasAddress
+						? {
+								street: values.street,
+								houseNumber: values.houseNumber,
+								zipCode: values.zipCode,
+								city: values.city,
+							}
+						: null,
+				},
 			});
 			setEditing(false);
 			setSuccessMessage(t("orgSettings.savedSuccess"));
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setSettingsError(t("orgSettings.saveError"));
@@ -233,7 +243,10 @@ export default function OrgSettingsPage() {
 	async function handleDeleteOrganization() {
 		setDeleting(true);
 		try {
-			await api.deleteOrganization(org.id);
+			await api.deleteOrganization({
+				path: { organizationId: org.id },
+			});
+			await invalidateMyOrganizations();
 			navigate("/");
 		} catch (err) {
 			setShowDeleteConfirm(false);

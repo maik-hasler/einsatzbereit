@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { VolunteerOpportunitySummary } from "../../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../../client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
 import { inputSurfaceClass } from "../../../lib/formClasses";
@@ -18,7 +18,7 @@ import EmptyState from "../../../components/EmptyState";
 import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 
 const OPPORTUNITY_PAGE_SIZE = 100;
 
@@ -38,16 +38,18 @@ function QuickCheckInWidget({
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
-	const [opportunities, , error] = useSharedOrgFetch<
+	const [opportunities, , error] = useCachedFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
 		api
-			.getOrganizationOpportunities(
-				organizationId,
-				"Published",
-				1,
-				OPPORTUNITY_PAGE_SIZE,
-			)
+			.getOrganizationOpportunities({
+				path: { organizationId },
+				query: {
+					status: "Published",
+					pageNumber: 1,
+					pageSize: OPPORTUNITY_PAGE_SIZE,
+				},
+			})
 			.then((page) => page.items),
 	);
 

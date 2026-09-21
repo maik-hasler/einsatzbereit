@@ -17,16 +17,53 @@ vi.mock("../lib/sessionExpiryBus", () => ({
 vi.mock("../lib/authRecovery", () => ({
 	clearAuthRecoveryAttempts: () => clearAuthRecoveryAttempts(),
 }));
+vi.mock("../lib/runtimeConfig", () => ({
+	runtimeConfig: { apiUrl: "https://api.test" },
+}));
+vi.mock("../lib/accessToken", () => ({
+	getAccessToken: () => accessToken,
+}));
 vi.mock("../i18n", () => ({
 	// A rest/spread forward (rather than a fixed (key, options) signature)
 	// preserves whether the real call site actually passed a second
 	// argument - toHaveBeenCalledWith is exact about arity, and the source
 	// calls t() with just one argument in the no-Retry-After-header path.
-	default: { t: (...args: Parameters<typeof t>) => t(...args) },
+	default: {
+		t: (...args: Parameters<typeof t>) => t(...args),
+		// The fetch wrapper reads this for the X-Language header. Regional
+		// variants are deliberate here: the header carries the base tag only.
+		get language() {
+			return language;
+		},
+	},
 }));
+
+let accessToken: string | undefined;
+let language = "de-DE";
 
 function makeResponse(status: number, headers: Record<string, string> = {}) {
 	return new Response(null, { status, headers });
+}
+
+async function loadCreateClientConfig() {
+	vi.resetModules();
+	const module = await import("./api-instance");
+	return module.createClientConfig;
+}
+
+/** The `fetch` the client config installs, with `globalThis.fetch` stubbed. */
+async function loadFetch(response: Response) {
+	const createClientConfig = await loadCreateClientConfig();
+	const underlying = vi.fn().mockResolvedValue(response);
+	vi.stubGlobal("fetch", underlying);
+	const config = createClientConfig({});
+	return { fetch: config.fetch as typeof globalThis.fetch, underlying };
+}
+
+function sentHeaders(underlying: ReturnType<typeof vi.fn>): Headers {
+	return new Headers(
+		(underlying.mock.calls[0][1] as RequestInit).headers as HeadersInit,
+	);
 }
 
 // rateLimitSuppressedUntil is module-level state in api-instance.ts, scoped
@@ -41,10 +78,13 @@ async function loadHandleErrorResponse() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	accessToken = undefined;
+	language = "de-DE";
 });
 
 afterEach(() => {
 	vi.useRealTimers();
+	vi.unstubAllGlobals();
 });
 
 describe("handleErrorResponse", () => {
@@ -123,5 +163,127 @@ describe("handleErrorResponse", () => {
 		const handleErrorResponse = await loadHandleErrorResponse();
 		await handleErrorResponse(makeResponse(503), true);
 		expect(dispatchToast).toHaveBeenCalledWith("error", "error.serverError");
+	});
+});
+
+describe("the client's fetch", () => {
+	it("points the client at the runtime-configured API origin", async () => {
+		const createClientConfig = await loadCreateClientConfig();
+
+		expect(createClientConfig({}).baseUrl).toBe("https://api.test");
+	});
+
+	it("throws on a failed response rather than returning it beside the data", async () => {
+		const createClientConfig = await loadCreateClientConfig();
+
+		expect(createClientConfig({}).throwOnError).toBe(true);
+	});
+
+	it("sends no Authorization header while signed out", async () => {
+		const { fetch, underlying } = await loadFetch(makeResponse(200));
+
+		await fetch("https://api.test/v1/organizations");
+
+		expect(sentHeaders(underlying).has("Authorization")).toBe(false);
+	});
+
+	it("sends the current bearer token while signed in", async () => {
+		accessToken = "token-abc";
+		const { fetch, underlying } = await loadFetch(makeResponse(200));
+
+		await fetch("https://api.test/v1/organizations");
+
+		expect(sentHeaders(underlying).get("Authorization")).toBe(
+			"Bearer token-abc",
+		);
+	});
+
+	// The backend resolves wall-clock times and localised copy from these, so
+	// every request carries them whether or not anyone is signed in.
+	it("always sends the timezone and language headers", async () => {
+		const { fetch, underlying } = await loadFetch(makeResponse(200));
+
+		await fetch("https://api.test/v1/organizations");
+
+		const headers = sentHeaders(underlying);
+		expect(headers.get("X-Timezone")).toBe(
+			Intl.DateTimeFormat().resolvedOptions().timeZone,
+		);
+		expect(headers.get("X-Language")).toBe("de");
+	});
+
+	it("sends the base language tag, not the regional variant", async () => {
+		language = "en-GB";
+		const { fetch, underlying } = await loadFetch(makeResponse(200));
+
+		await fetch("https://api.test/v1/organizations");
+
+		expect(sentHeaders(underlying).get("X-Language")).toBe("en");
+	});
+
+	it("keeps the headers the caller already set", async () => {
+		const { fetch, underlying } = await loadFetch(makeResponse(200));
+
+		await fetch("https://api.test/v1/organizations", {
+			headers: { "Content-Type": "application/json" },
+		});
+
+		expect(sentHeaders(underlying).get("Content-Type")).toBe(
+			"application/json",
+		);
+	});
+
+	it("runs the shared error handling for a failed response", async () => {
+		accessToken = "token-abc";
+		const { fetch } = await loadFetch(makeResponse(401));
+
+		await fetch("https://api.test/v1/organizations");
+
+		expect(notifySessionExpired).toHaveBeenCalledTimes(1);
+	});
+
+	it("passes a successful response through untouched", async () => {
+		const body = new Response(JSON.stringify({ id: "1" }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+		const { fetch } = await loadFetch(body);
+
+		expect(await fetch("https://api.test/v1/organizations")).toBe(body);
+	});
+
+	// lib/apiError.ts reads a missing status as "no response at all" and shows
+	// the offline state. A gateway that answers with HTML would otherwise be
+	// misreported as a lost connection.
+	it("gives a non-JSON error body a status the app can classify", async () => {
+		const { fetch } = await loadFetch(
+			new Response("<html>502 Bad Gateway</html>", {
+				status: 502,
+				headers: { "Content-Type": "text/html" },
+			}),
+		);
+
+		const response = await fetch("https://api.test/v1/organizations");
+
+		expect(response.status).toBe(502);
+		expect(await response.json()).toMatchObject({ status: 502 });
+	});
+
+	it("leaves a JSON error body exactly as the backend sent it", async () => {
+		const problem = {
+			status: 409,
+			errorCode: "Engagement.AlreadySignedUp",
+			detail: "internal detail",
+		};
+		const { fetch } = await loadFetch(
+			new Response(JSON.stringify(problem), {
+				status: 409,
+				headers: { "Content-Type": "application/problem+json" },
+			}),
+		);
+
+		const response = await fetch("https://api.test/v1/engagements");
+
+		expect(await response.json()).toEqual(problem);
 	});
 });

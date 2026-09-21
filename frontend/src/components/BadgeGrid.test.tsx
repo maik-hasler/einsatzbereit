@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BadgeGrid from "./BadgeGrid";
-import type {
-	AchievementSummary,
-	BadgeCatalogEntry,
-} from "../client/api-client";
+import type { AchievementSummary, BadgeCatalogEntry } from "../client";
 import { renderWithProviders } from "../test/render";
 
 const pendingGrantCatalog: BadgeCatalogEntry[] = [

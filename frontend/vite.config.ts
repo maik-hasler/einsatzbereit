@@ -6,8 +6,14 @@ import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression } from "vite-plugin-compression2";
+import { designTokens } from "./src/lib/designTokens";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// The installed app's title bar and splash screen, from the same @theme block
+// the stylesheet is built from (see scripts/generate-design-tokens.js). It was
+// the brand green spelled out a third and fourth time before that.
+const themeColor = designTokens["--color-brand-700"];
 
 const manifestIcons = [
 	{
@@ -38,7 +44,7 @@ const deManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#226947",
+	theme_color: themeColor,
 	icons: manifestIcons,
 
 	screenshots: [
@@ -119,7 +125,7 @@ const enManifest = {
 	start_url: "/",
 	display: "standalone",
 	background_color: "#ffffff",
-	theme_color: "#226947",
+	theme_color: themeColor,
 	icons: manifestIcons,
 	screenshots: [
 		{

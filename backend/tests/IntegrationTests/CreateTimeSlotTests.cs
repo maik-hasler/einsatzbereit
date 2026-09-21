@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 using TUnit.Core.Interfaces;
 
@@ -15,7 +14,7 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	public async Task CreateTimeSlot_ShouldReturn400_WhenRecurrenceCountGreaterThan1AndFrequencyIsNull(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -39,7 +38,7 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	public async Task CreateTimeSlot_ShouldReturn1Slot_WhenFrequencyIsNullAndCountIsOne(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -62,7 +61,7 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	public async Task CreateTimeSlot_ShouldSucceed_WithUnlimitedCapacity_WhenMaxParticipantsIsNull(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -80,16 +79,6 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 
 		timeSlots.Should().HaveCount(1);
 		timeSlots.Single().MaxParticipants.Should().BeNull();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

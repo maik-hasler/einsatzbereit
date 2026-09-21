@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
-import type { VolunteerOpportunityDetails } from "../client/api-client";
+import type { VolunteerOpportunityDetails } from "../client";
 import { getApiErrorMessage } from "../lib/apiError";
 import { getCheckInWindow, type SlotDateTime } from "../lib/engagementTiming";
 import { formatDateTimeRange } from "../lib/format";
@@ -57,7 +57,7 @@ export default function CheckInModal({
 
 	useEffect(() => {
 		api
-			.getVolunteerOpportunityDetails(opportunityId)
+			.getVolunteerOpportunityDetails({ path: { opportunityId } })
 			.then(setDetails)
 			.catch(() => setLoadError(true));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,7 +68,7 @@ export default function CheckInModal({
 		setSubmitting(true);
 		setError(null);
 		try {
-			await api.checkInWithPin(engagementId, { pin });
+			await api.checkInWithPin({ path: { engagementId }, body: { pin } });
 			setSuccess(true);
 			onCheckedIn();
 		} catch (e) {

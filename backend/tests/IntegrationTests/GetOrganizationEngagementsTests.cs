@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Application.Common.Exceptions;
 using AwesomeAssertions;
 using TUnit.Core.Interfaces;
@@ -16,8 +15,8 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturnEngagementsAcrossAllOpportunities_InTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunityA = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -39,8 +38,8 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldFilterByStatus(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -62,8 +61,8 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldNotReturnAnotherOrganizationsEngagements(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity1 = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
@@ -71,7 +70,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 			opportunity1.Id, new CreateEngagementRequest { Message = "Helping org1" }, cancellationToken);
 
 		var org2Id = await CreateOrganizationAsync(veraClient, cancellationToken);
-		var veraOrganizerClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraOrganizerClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var opportunity2 = await CreateOpportunityAsync(veraOrganizerClient, org2Id, cancellationToken);
 		await olafClient.CreateEngagementAsync(
 			opportunity2.Id, new CreateEngagementRequest { Message = "Helping org2" }, cancellationToken);
@@ -87,10 +86,10 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturn403_WhenRequestingUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var act = () => veraClient.GetOrganizationEngagementsAsync(
 			orgId, 1, 10, status: null, search: null, cancellationToken: cancellationToken);
 
@@ -102,7 +101,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturn404_WhenOrganizationNotFound(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var act = () => olafClient.GetOrganizationEngagementsAsync(
 			Guid.NewGuid(), 1, 10, status: null, search: null, cancellationToken: cancellationToken);
@@ -115,7 +114,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturn400_ForInvalidPageNumber(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var act = () => olafClient.GetOrganizationEngagementsAsync(
@@ -129,7 +128,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturn400_ForInvalidPageSize(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var act = () => olafClient.GetOrganizationEngagementsAsync(
@@ -143,7 +142,7 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldReturn400_ForInvalidStatus(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var act = () => olafClient.GetOrganizationEngagementsAsync(
@@ -157,8 +156,8 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationEngagements_ShouldPaginate_AcrossMultipleOpportunities(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunityA = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
@@ -183,16 +182,6 @@ public class GetOrganizationEngagementsTests(IntegrationTestFixture fixture)
 
 		var allIds = firstPage.Items.Concat(secondPage.Items).Select(e => e.Id).ToList();
 		allIds.Should().OnlyHaveUniqueItems();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

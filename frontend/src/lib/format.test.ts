@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { TFunction } from "i18next";
-import type { TimeSlotDetail } from "../client/api-client";
+import type { TimeSlotDetail } from "../client";
+import { CANONICAL_TIME_ZONE } from "./timezone";
 import {
 	computeSpotsLeft,
 	findNextTimeSlot,
@@ -28,11 +29,11 @@ function makeTimeSlot(overrides: Partial<TimeSlotDetail>): TimeSlotDetail {
 		id: "slot-1",
 		startDateTime: "2026-01-01T09:00:00Z" as unknown as Date,
 		endDateTime: "2026-01-01T12:00:00Z" as unknown as Date,
-		maxParticipants: undefined,
+		maxParticipants: null,
 		bookedCount: 0,
-		seriesId: undefined,
-		recurrenceFrequency: undefined,
-		recurrenceCount: undefined,
+		seriesId: null,
+		recurrenceFrequency: null,
+		recurrenceCount: null,
 		...overrides,
 	};
 }
@@ -410,10 +411,10 @@ function expectedDateTimeWithZone(iso: string, locale: string): string {
 	const base = date.toLocaleString(locale, {
 		dateStyle: "medium",
 		timeStyle: "short",
-		timeZone: "Europe/Berlin",
+		timeZone: CANONICAL_TIME_ZONE,
 	});
 	const zoneName = new Intl.DateTimeFormat(locale, {
-		timeZone: "Europe/Berlin",
+		timeZone: CANONICAL_TIME_ZONE,
 		timeZoneName: "short",
 	})
 		.formatToParts(date)
@@ -462,7 +463,7 @@ describe("formatDate", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString(resolveDateLocale("en"), {
 			dateStyle: "medium",
-			timeZone: "Europe/Berlin",
+			timeZone: CANONICAL_TIME_ZONE,
 		});
 		expect(formatDate(iso, "en")).toBe(expected);
 	});
@@ -471,7 +472,7 @@ describe("formatDate", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString("de-DE", {
 			dateStyle: "medium",
-			timeZone: "Europe/Berlin",
+			timeZone: CANONICAL_TIME_ZONE,
 		});
 		expect(formatDate(iso, "de")).toBe(expected);
 	});
@@ -492,7 +493,7 @@ describe("formatDateTimeRange", () => {
 		const endIso = "2026-08-27T15:00:00Z";
 		const start = new Date(startIso);
 		const end = new Date(endIso);
-		const options = { timeZone: "Europe/Berlin" } as const;
+		const options = { timeZone: CANONICAL_TIME_ZONE } as const;
 		const datePart = new Intl.DateTimeFormat("de-DE", {
 			dateStyle: "medium",
 			...options,

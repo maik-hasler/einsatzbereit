@@ -329,9 +329,9 @@ describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
 		await userEvent.click(screen.getByTestId("modal-submit"));
 
 		await waitFor(() =>
-			expect(api.createVolunteerOpportunity).toHaveBeenCalledWith(
-				expect.objectContaining({ checkInPin: "482170" }),
-			),
+			expect(api.createVolunteerOpportunity).toHaveBeenCalledWith({
+				body: expect.objectContaining({ checkInPin: "482170" }),
+			}),
 		);
 	});
 
@@ -379,10 +379,10 @@ describe("create-opportunity wizard: organizer-set check-in PIN (#549)", () => {
 		await userEvent.click(screen.getByTestId("modal-submit"));
 
 		await waitFor(() =>
-			expect(api.updateVolunteerOpportunity).toHaveBeenCalledWith(
-				"existing-opp-id",
-				expect.objectContaining({ checkInPin: generatedPin }),
-			),
+			expect(api.updateVolunteerOpportunity).toHaveBeenCalledWith({
+				path: { opportunityId: "existing-opp-id" },
+				body: expect.objectContaining({ checkInPin: generatedPin }),
+			}),
 		);
 	});
 });
@@ -572,11 +572,10 @@ describe("edit wizard: time slot changes are not staged (#2315)", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.deleteTimeSlot).toHaveBeenCalledWith(
-				"existing-opp-id",
-				"slot-1",
-				"Only",
-			),
+			expect(api.deleteTimeSlot).toHaveBeenCalledWith({
+				path: { opportunityId: "existing-opp-id", timeSlotId: "slot-1" },
+				query: { scope: "Only" },
+			}),
 		);
 		await waitFor(() =>
 			expect(screen.queryByRole("button", { name: "Remove" })).toBeNull(),

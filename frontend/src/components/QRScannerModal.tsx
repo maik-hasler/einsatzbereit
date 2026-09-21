@@ -144,7 +144,9 @@ export default function QRScannerModal({
 					if (raw && UUID_RE.test(raw)) {
 						alive = false;
 						try {
-							await api.checkInEngagement(opportunityId, raw);
+							await api.checkInEngagement({
+								path: { opportunityId, engagementId: raw },
+							});
 							completeCheckIn(raw);
 						} catch (err) {
 							setScanError(
@@ -176,8 +178,9 @@ export default function QRScannerModal({
 		setFallbackCodeSubmitting(true);
 		setFallbackCodeError(null);
 		try {
-			const result = await api.checkInEngagementByCode(opportunityId, {
-				code: fallbackCode,
+			const result = await api.checkInEngagementByCode({
+				path: { opportunityId },
+				body: { code: fallbackCode },
 			});
 			completeCheckIn(result.id);
 		} catch (err) {

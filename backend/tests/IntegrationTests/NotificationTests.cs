@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -16,11 +15,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Deep-Link Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -41,12 +40,12 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		const string opportunityTitleDe = "Notification Deep-Link Test (DE)";
 		const string opportunityTitleEn = "Notification Deep-Link Test (EN)";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(
 			olafClient, orgId, opportunityTitleDe, cancellationToken, opportunityTitleEn);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -63,12 +62,12 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_EngagementCreated_DropsTitleAndDeepLink_AfterOpportunityDeleted(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(
 			olafClient, orgId, "Notification Deleted-Opportunity Test", cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "Please let me help." },
@@ -93,12 +92,12 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string OpportunityTitle = "Notification Snapshot-Title Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(
 			olafClient, orgId, OpportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "Please let me help." },
@@ -121,11 +120,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Confirm Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "Ready to help!" },
@@ -146,11 +145,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Cancel Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -171,11 +170,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Opportunity Cancel Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -203,11 +202,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Withdraw Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -229,11 +228,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Notification Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -252,11 +251,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Accepted Notification Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -280,11 +279,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Declined Notification Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -308,11 +307,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Accept Cleanup Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -332,11 +331,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Decline Cleanup Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -356,11 +355,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string organizationName = "Invitation Dismiss Cleanup Test Org";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
@@ -380,11 +379,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Feedback Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -411,12 +410,12 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetMyNotifications_BeforeCursor_ReturnsOnlyOlderNotifications(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunityOne = await CreateOpportunityAsync(olafClient, orgId, "Cursor Test One", cancellationToken);
 		var opportunityTwo = await CreateOpportunityAsync(olafClient, orgId, "Cursor Test Two", cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunityOne.Id, new CreateEngagementRequest { Message = "First" }, cancellationToken);
 		await veraClient.CreateEngagementAsync(
@@ -440,11 +439,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task GetUnreadNotificationCount_ReflectsUnreadNotificationsAndMarkAllRead(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "Unread Count Test", cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 
@@ -463,11 +462,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Mark Read Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -488,11 +487,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Cross-User Mark Read Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -516,11 +515,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Mark Unread Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -542,11 +541,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Cross-User Mark Unread Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -571,11 +570,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Delete Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -596,11 +595,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Notification Cross-User Delete Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -622,12 +621,12 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	public async Task DeleteReadNotifications_ShouldRemoveOnlyReadNotifications_ForTheRequestingUser(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunityOne = await CreateOpportunityAsync(olafClient, orgId, "Delete Read Test One", cancellationToken);
 		var opportunityTwo = await CreateOpportunityAsync(olafClient, orgId, "Delete Read Test Two", cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunityOne.Id, new CreateEngagementRequest { Message = "First" }, cancellationToken);
 		await veraClient.CreateEngagementAsync(
@@ -651,11 +650,11 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	{
 		const string opportunityTitle = "Delete Read Cross-User Test";
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
 
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -669,16 +668,6 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 		unchangedNotifications.Items.Should().Contain(n => n.Id == notification.Id);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

@@ -14,6 +14,7 @@ internal sealed class SetUserEnabledEndpoint : IEndpoint
 			.WithName("SetUserEnabled")
 			.WithTags("Admin")
 			.Produces(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status409Conflict)

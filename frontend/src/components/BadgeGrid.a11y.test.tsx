@@ -1,9 +1,6 @@
 import { describe, it } from "vitest";
 import BadgeGrid from "./BadgeGrid";
-import type {
-	AchievementSummary,
-	BadgeCatalogEntry,
-} from "../client/api-client";
+import type { AchievementSummary, BadgeCatalogEntry } from "../client";
 import { renderWithProviders } from "../test/render";
 import { expectNoA11yViolations } from "../test/a11y";
 

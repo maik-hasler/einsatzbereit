@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { UseFormRegister, UseFormWatch } from "react-hook-form";
-import type { AddressDto } from "../../client/api-client";
+import type { AddressDto } from "../../client";
 import { FloatingField } from "./shared";
 import type { OpportunityFormValues } from "./schema";
 import { checkboxClass } from "../../lib/formClasses";

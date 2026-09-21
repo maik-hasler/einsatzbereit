@@ -3,11 +3,9 @@ import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { quoteMarks } from "../../lib/quotes";
 import { useAuth } from "react-oidc-context";
-import type {
-	EngagementSummary,
-	MyInvitationDto,
-} from "../../client/api-client";
+import type { EngagementSummary, MyInvitationDto } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../../hooks/useMyOrganizations";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { refreshAccessTokenAfterRoleGrant } from "../../lib/authRefresh";
@@ -67,6 +65,7 @@ function isInterestEngagement(e: EngagementSummary): boolean {
 
 export default function ActivitySection() {
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const quotes = quoteMarks(i18n.language);
@@ -93,11 +92,21 @@ export default function ActivitySection() {
 		retryLoadMore: retryLoadMoreEngagements,
 	} = useLoadMore<EngagementSummary>(
 		(pageNumber) =>
-			api.getMyEngagements(
-				pageNumber,
-				ENGAGEMENTS_PAGE_SIZE,
-				engagementsScope === "upcoming",
-			),
+			api
+				.getMyEngagements({
+					query: {
+						PageNumber: pageNumber,
+						PageSize: ENGAGEMENTS_PAGE_SIZE,
+						Upcoming: engagementsScope === "upcoming",
+					},
+				})
+				.then((page) => ({
+					items: page.items,
+					pageCount:
+						page.pageCount === undefined ? undefined : Number(page.pageCount),
+					totalItems:
+						page.totalItems === undefined ? undefined : Number(page.totalItems),
+				})),
 		{
 			deps: [engagementsScope],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
@@ -145,7 +154,7 @@ export default function ActivitySection() {
 	useEffect(() => {
 		setInvitationsLoading(true);
 		api
-			.getMyInvitations()
+			.getMyInvitations({})
 			.then(setInvitations)
 			.catch(() => setInvitationsError(t("invitations.loadError")))
 			.finally(() => setInvitationsLoading(false));
@@ -160,7 +169,9 @@ export default function ActivitySection() {
 		setWithdrawing(true);
 		setWithdrawError(null);
 		try {
-			const updated = await api.withdrawEngagement(confirmWithdrawId);
+			const updated = await api.withdrawEngagement({
+				path: { engagementId: confirmWithdrawId },
+			});
 
 			// Withdrawing changes status only, not the engagement's own
 			// timeframe, so it no longer moves the card to a different
@@ -232,7 +243,7 @@ export default function ActivitySection() {
 		setDeletingFeedback(true);
 		setDeleteFeedbackError(null);
 		try {
-			await api.deleteFeedback(engagementId);
+			await api.deleteFeedback({ path: { engagementId } });
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId
@@ -277,12 +288,16 @@ export default function ActivitySection() {
 		setAcceptingId(invitationId);
 		setInvitationActionError(null);
 		try {
-			await api.acceptInvitation(invitationId);
+			await api.acceptInvitation({ path: { invitationId } });
 
 			// The invitation may have granted the organizer role - this DTO
 			// doesn't say which, so refresh unconditionally rather than 403 on
 			// the caller's next organizer action (#2206).
 			await refreshAccessTokenAfterRoleGrant(auth);
+
+			// Accepting an invitation joins an organization, so it belongs in
+			// the switcher's list from here on.
+			await invalidateMyOrganizations();
 
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 		} catch {
@@ -296,7 +311,7 @@ export default function ActivitySection() {
 		setDecliningId(invitationId);
 		setInvitationActionError(null);
 		try {
-			await api.declineInvitation(invitationId);
+			await api.declineInvitation({ path: { invitationId } });
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 		} catch {
 			setInvitationActionError(t("invitations.declineError"));
@@ -325,8 +340,8 @@ export default function ActivitySection() {
 	// last one before the limit gets the stronger withdrawLimitWarning above.
 	const withdrawRemainingReactivations =
 		withdrawTarget?.remainingReactivations !== undefined &&
-		withdrawTarget.remainingReactivations > 1
-			? withdrawTarget.remainingReactivations
+		Number(withdrawTarget.remainingReactivations) > 1
+			? Number(withdrawTarget.remainingReactivations)
 			: null;
 
 	const limitWarningRef = useRef<HTMLParagraphElement>(null);
@@ -348,6 +363,7 @@ export default function ActivitySection() {
 						{t("profileOverview.invitationsHeading")}
 					</SectionHeading>
 					<ul
+						data-testid="open-invitations"
 						className={`grid grid-cols-1 gap-4 @sm:grid-cols-2 ${
 							invitations.length >= 3 ? "@4xl:grid-cols-3" : ""
 						}`}
@@ -800,7 +816,7 @@ export default function ActivitySection() {
 										engagementsScope === "upcoming" &&
 										e.opportunityTitle &&
 										(e.remainingReactivations === undefined ||
-											e.remainingReactivations > 0) && (
+											Number(e.remainingReactivations) > 0) && (
 											<Button
 												to={buildSignUpLink(e.opportunityId, e.timeSlotId)}
 												variant="outline"
@@ -813,7 +829,7 @@ export default function ActivitySection() {
 										engagementsScope === "upcoming" &&
 										e.opportunityTitle &&
 										e.remainingReactivations !== undefined &&
-										e.remainingReactivations <= 0 && (
+										Number(e.remainingReactivations) <= 0 && (
 											<span className="text-xs text-gray-500">
 												{t("myEngagements.reactivationLimitReached")}{" "}
 												{e.organizationId && (
@@ -935,8 +951,9 @@ export default function ActivitySection() {
 						)?.text ?? t("myEngagements.deletedOpportunityTitle")
 					}
 					initialRating={
-						feedbackEngagement.hasFeedback
-							? feedbackEngagement.feedbackRating
+						feedbackEngagement.hasFeedback &&
+						feedbackEngagement.feedbackRating !== undefined
+							? Number(feedbackEngagement.feedbackRating)
 							: undefined
 					}
 					initialComment={

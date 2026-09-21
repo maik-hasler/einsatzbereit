@@ -4,11 +4,15 @@ import userEvent from "@testing-library/user-event";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 import { renderWithProviders, type TestAuth } from "../test/render";
 
-const { api } = vi.hoisted(() => ({
+const { api, invalidateMyOrganizations } = vi.hoisted(() => ({
 	api: { createOrganization: vi.fn(), uploadOrganizationLogo: vi.fn() },
+	invalidateMyOrganizations: vi.fn(async () => {}),
 }));
 
 vi.mock("../hooks/useApiClient", () => ({ useApiClient: () => api }));
+vi.mock("../hooks/useMyOrganizations", () => ({
+	useInvalidateMyOrganizations: () => invalidateMyOrganizations,
+}));
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -122,22 +126,29 @@ describe("CreateOrganizationModal submission", () => {
 			expect(api.createOrganization).toHaveBeenCalledTimes(1),
 		);
 		expect(api.createOrganization).toHaveBeenCalledWith({
-			name: "Full Details Org",
-			description: "A helpful description for volunteers.",
-			contactEmail: "contact@example.com",
-			contactPhone: "+49 30 1234567",
-			website: "https://example.com",
-			address: {
-				street: "Main Street",
-				houseNumber: "1",
-				zipCode: "12345",
-				city: "Berlin",
+			body: {
+				name: "Full Details Org",
+				description: "A helpful description for volunteers.",
+				contactEmail: "contact@example.com",
+				contactPhone: "+49 30 1234567",
+				website: "https://example.com",
+				address: {
+					street: "Main Street",
+					houseNumber: "1",
+					zipCode: "12345",
+					city: "Berlin",
+				},
 			},
 		});
 		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
 	});
 
-	it("omits the address entirely when no address field was filled", async () => {
+	// Sent as an explicit null rather than omitted: the generated request type
+	// declares every optional field as required-and-nullable, mirroring the
+	// OpenAPI document. The backend record's `Address?` reads an omitted and a
+	// null property identically, so what reaches the database is unchanged -
+	// only the bytes on the wire differ.
+	it("sends no address when no address field was filled", async () => {
 		const { container } = open();
 
 		await userEvent.type(field(container, "create-org-name"), "Name Only Org");
@@ -146,9 +157,12 @@ describe("CreateOrganizationModal submission", () => {
 		await waitFor(() =>
 			expect(api.createOrganization).toHaveBeenCalledTimes(1),
 		);
-		expect(api.createOrganization).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "Name Only Org", address: undefined }),
-		);
+		expect(api.createOrganization).toHaveBeenCalledWith({
+			body: expect.objectContaining({
+				name: "Name Only Org",
+				address: null,
+			}),
+		});
 	});
 });
 
@@ -178,5 +192,25 @@ describe("CreateOrganizationModal auth refresh (#2206)", () => {
 		await userEvent.click(screen.getByTestId("modal-submit"));
 
 		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+	});
+
+	// `onSuccess` is what navigates into the new organization's dashboard, and
+	// that dashboard's switcher resolves the active organization out of the
+	// cached list. Invalidating after the navigation is too late: the switcher
+	// renders the *previously* active organization's name until the refetch
+	// lands, which is what 20 VisualTests cases caught.
+	it("invalidates the cached organization list before reporting success", async () => {
+		const callOrder: string[] = [];
+		invalidateMyOrganizations.mockImplementation(async () => {
+			callOrder.push("invalidate");
+		});
+		const { container, onSuccess } = open();
+		onSuccess.mockImplementation(() => callOrder.push("onSuccess"));
+
+		await userEvent.type(field(container, "create-org-name"), "Fresh Org");
+		await userEvent.click(screen.getByTestId("modal-submit"));
+
+		await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+		expect(callOrder).toEqual(["invalidate", "onSuccess"]);
 	});
 });

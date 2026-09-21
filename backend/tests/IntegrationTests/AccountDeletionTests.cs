@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -16,11 +15,11 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	{
 		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		var ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var (thirdPartyUserId, _, _) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Account Deletion Test Org" }, cancellationToken);
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
@@ -55,7 +54,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await ephemeralClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
-		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		await ephemeralClient.SaveDashboardLayoutAsync(
 			sharedOrg.Id.Value,
@@ -121,11 +120,11 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	{
 		var (ephemeralUserId, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		var ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		await ephemeralClient.GetUserProfileAsync(cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		await adminClient.AdminShadowDeleteUserAsync(ephemeralUserId, cancellationToken);
 
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
@@ -148,7 +147,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	{
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		var ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
@@ -162,12 +161,12 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	{
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		var ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var org = await ephemeralClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
 
-		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
@@ -186,11 +185,11 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 	{
 		var (_, ephemeralUsername, ephemeralPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+		var ephemeralClient = await fixture.CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		await ephemeralClient.GetUserProfileAsync(cancellationToken);
 
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Anonymized Checked-In Engagement Test Org" }, cancellationToken);
 		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
@@ -226,15 +225,5 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 
 		(await fixture.CountRowsWhereAsync("engagement", "id", engagement.Id))
 			.Should().Be(1);
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 }

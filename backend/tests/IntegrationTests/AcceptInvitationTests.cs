@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -20,17 +19,17 @@ public class AcceptInvitationTests(IntegrationTestFixture fixture)
 		var (_, inviterUsername, inviterPassword) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var (inviteeId, inviteeUsername, inviteePassword) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
-		var inviterClient = await CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
+		var inviterClient = await fixture.CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
 		var org = await inviterClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Invitation Org {Guid.NewGuid()}" }, cancellationToken);
 
-		inviterClient = await CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
+		inviterClient = await fixture.CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
 		var invitation = await inviterClient.CreateInvitationAsync(
 			org.Id.Value,
 			new CreateInvitationRequest { InviteeId = inviteeId, Role = "Organizer" },
 			cancellationToken);
 
-		var inviteeClient = await CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
+		var inviteeClient = await fixture.CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
 		await inviteeClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		var act = () => inviteeClient.CreateVolunteerOpportunityAsync(
@@ -51,20 +50,20 @@ public class AcceptInvitationTests(IntegrationTestFixture fixture)
 		var (_, inviterUsername, inviterPassword) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var (inviteeId, inviteeUsername, inviteePassword) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 
-		var inviterClient = await CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
+		var inviterClient = await fixture.CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
 		var org = await inviterClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = $"Invitation Org {Guid.NewGuid()}" }, cancellationToken);
 
-		inviterClient = await CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
+		inviterClient = await fixture.CreateAuthenticatedClientAsync(inviterUsername, inviterPassword);
 		var invitation = await inviterClient.CreateInvitationAsync(
 			org.Id.Value,
 			new CreateInvitationRequest { InviteeId = inviteeId, Role = "Organizer" },
 			cancellationToken);
 
-		var inviteeClient = await CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
+		var inviteeClient = await fixture.CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
 		await inviteeClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
-		inviteeClient = await CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
+		inviteeClient = await fixture.CreateAuthenticatedClientAsync(inviteeUsername, inviteePassword);
 
 		var opportunity = await inviteeClient.CreateVolunteerOpportunityAsync(
 			BuildOpportunityRequest(org.Id.Value), cancellationToken);
@@ -87,14 +86,4 @@ public class AcceptInvitationTests(IntegrationTestFixture fixture)
 			CheckInMethod = "None",
 			IsDraft = true,
 		};
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
-	}
 }

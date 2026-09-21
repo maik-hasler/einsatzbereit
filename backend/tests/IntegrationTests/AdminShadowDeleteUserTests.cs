@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -15,11 +14,11 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var (userId, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
+		var volunteerClient = await fixture.CreateAuthenticatedClientAsync(username, password);
 
 		await volunteerClient.GetUserProfileAsync(cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		await adminClient.AdminShadowDeleteUserAsync(userId, cancellationToken);
 
 		var profile = await volunteerClient.GetUserProfileAsync(cancellationToken);
@@ -32,13 +31,13 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 	public async Task UpdateVolunteerOpportunity_ShouldNotFail_WhenSignedUpVolunteerWasShadowDeleted(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var (volunteerUserId, volunteerUsername, volunteerPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var volunteerClient = await CreateAuthenticatedClientAsync(volunteerUsername, volunteerPassword);
+		var volunteerClient = await fixture.CreateAuthenticatedClientAsync(volunteerUsername, volunteerPassword);
 
 		await volunteerClient.GetUserProfileAsync(cancellationToken);
 		await volunteerClient.CreateEngagementAsync(
@@ -46,7 +45,7 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 		await adminClient.AdminShadowDeleteUserAsync(volunteerUserId, cancellationToken);
 
 		var act = () => olafClient.UpdateVolunteerOpportunityAsync(
@@ -68,16 +67,6 @@ public class AdminShadowDeleteUserTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await act.Should().NotThrowAsync();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

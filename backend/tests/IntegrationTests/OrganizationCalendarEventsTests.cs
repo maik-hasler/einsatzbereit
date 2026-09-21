@@ -15,7 +15,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldReturnOnlySlotsWithinRange_ExcludingSlotsOutsideRange(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateScheduledSlotsDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -58,8 +58,8 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldReturnBookedCount_ForPendingAndConfirmedEngagementsOnly(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateScheduledSlotsDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
@@ -103,7 +103,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldReturnEmptyList_WhenNoSlotsFallWithinRange(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var events = await olafClient.GetOrganizationCalendarEventsAsync(
@@ -119,7 +119,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldReturn400_WhenToIsBeforeFrom(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var act = () => olafClient.GetOrganizationCalendarEventsAsync(
@@ -152,7 +152,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldReturn403_WhenOrganisatorAccessesOtherOrgsEvents(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
 
 		var veraToken = await fixture.GetAccessTokenAsync("vera", "vera123");
@@ -176,8 +176,8 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	public async Task GetOrganizationCalendarEvents_ShouldSucceed_WhenRequestingUserIsAPlainMember(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
@@ -190,16 +190,6 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		events.Should().BeEmpty();
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

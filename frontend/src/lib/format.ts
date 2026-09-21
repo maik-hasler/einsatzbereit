@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { differenceInCalendarDays } from "date-fns";
-import type { TimeSlotDetail } from "../client/api-client";
+import type { TimeSlotDetail } from "../client";
 import type { OpportunityCapacity } from "./opportunityCapacity";
 import { CANONICAL_TIME_ZONE } from "./timezone";
 

@@ -6,9 +6,11 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type {
 	CurrentUserEngagementInfo,
+	PublicOpportunitySummaryDto,
 	PublicOrganizationProfileResponse,
+	TimeSlotDetail,
 	VolunteerOpportunityDetails,
-} from "../client/api-client";
+} from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import {
@@ -28,6 +30,7 @@ import {
 	FEW_SPOTS_THRESHOLD,
 	getCapacityFromTimeSlots,
 	type OpportunityCapacity,
+	type TimeSlotCapacityInput,
 } from "../lib/opportunityCapacity";
 import { SIGN_UP_INTEREST, SIGN_UP_PARAM } from "../lib/signUpDeepLink";
 import Chip from "../components/Chip";
@@ -47,7 +50,9 @@ import LoadMoreError from "../components/LoadMoreError";
 import DetailLoadFailure from "../components/DetailLoadFailure";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import PageHeaderBand from "../components/PageHeaderBand";
-import OpportunityCard from "../components/OpportunityCard";
+import OpportunityCard, {
+	type OpportunityCardItem,
+} from "../components/OpportunityCard";
 import RouteState from "../components/RouteState";
 import WarningBanner from "../components/WarningBanner";
 import { usePageDescription } from "../hooks/usePageDescription";
@@ -59,10 +64,8 @@ import {
 	type LoadFailureKind,
 } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
-import {
-	reportIntentSigninArgs,
-	usePendingReportIntent,
-} from "../lib/reportIntent";
+import { reportIntentSigninArgs } from "../lib/reportIntent";
+import { usePendingReportIntent } from "../hooks/usePendingReportIntent";
 import { cardClass, cardSubtleClass } from "../lib/surfaceClasses";
 import { inlineLinkClass } from "../lib/linkClasses";
 import {
@@ -205,10 +208,41 @@ function describeCapacity(
 	}
 }
 
-function slotCapacityLabel(
-	slot: { maxParticipants?: number | undefined; bookedCount: number },
-	t: TFunction,
-): string {
+/**
+ * The generated DTO widens every integer to `number | string` and spells an
+ * absent one `null`; the capacity helpers take plain numbers.
+ */
+function toCapacityInput(slot: TimeSlotDetail): TimeSlotCapacityInput {
+	return {
+		maxParticipants:
+			slot.maxParticipants == null ? null : Number(slot.maxParticipants),
+		bookedCount: Number(slot.bookedCount),
+	};
+}
+
+/** The same widening for the card's item shape, which reads `undefined`. */
+function toCardItem(opp: PublicOpportunitySummaryDto): OpportunityCardItem {
+	return {
+		...opp,
+		titleEn: opp.titleEn ?? undefined,
+		descriptionDe: opp.descriptionDe ?? undefined,
+		descriptionEn: opp.descriptionEn ?? undefined,
+		street: opp.street ?? undefined,
+		houseNumber: opp.houseNumber ?? undefined,
+		zipCode: opp.zipCode ?? undefined,
+		city: opp.city ?? undefined,
+		category: opp.category ?? undefined,
+		validUntil: opp.validUntil ?? undefined,
+		nextTimeSlotStart: opp.nextTimeSlotStart ?? undefined,
+		totalMaxParticipants:
+			opp.totalMaxParticipants == null
+				? undefined
+				: Number(opp.totalMaxParticipants),
+		currentParticipantCount: Number(opp.currentParticipantCount),
+	};
+}
+
+function slotCapacityLabel(slot: TimeSlotCapacityInput, t: TFunction): string {
 	const spotsLeft = computeSpotsLeft(slot.maxParticipants, slot.bookedCount);
 	if (spotsLeft === null) return t("opportunities.unlimitedSpots");
 	return isSlotFull(slot.maxParticipants, slot.bookedCount)
@@ -331,7 +365,7 @@ export default function VolunteerOpportunityDetailPage() {
 	useEffect(() => {
 		if (!isOrganisator) return;
 		api
-			.getOrganizations()
+			.getOrganizations({})
 			.then((orgs) => setUserOrgIds(orgs.map((o) => o.id)))
 			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -370,7 +404,9 @@ export default function VolunteerOpportunityDetailPage() {
 		if (!opportunity?.organizationId) return Promise.resolve();
 		setOrgProfileError(null);
 		return api
-			.getPublicOrganizationProfile(opportunity.organizationId)
+			.getPublicOrganizationProfile({
+				path: { organizationId: opportunity.organizationId },
+			})
 			.then(setOrgProfile)
 			.catch((err) => {
 				setOrgProfileError(
@@ -411,7 +447,7 @@ export default function VolunteerOpportunityDetailPage() {
 		setError(null);
 		setFailure(null);
 		api
-			.getVolunteerOpportunityDetails(opportunityId)
+			.getVolunteerOpportunityDetails({ path: { opportunityId } })
 			.then((details) => {
 				if (requestId !== latestRequestRef.current) return;
 				setOpportunity(details);
@@ -429,9 +465,12 @@ export default function VolunteerOpportunityDetailPage() {
 
 	async function handleReportSubmit(reason: ReportReason, details: string) {
 		if (!opportunity) return;
-		await api.reportVolunteerOpportunity(opportunity.id, {
-			reason,
-			details: details || undefined,
+		await api.reportVolunteerOpportunity({
+			path: { opportunityId: opportunity.id },
+			body: {
+				reason,
+				details: details || null,
+			},
 		});
 		dispatchToast("success", t("report.submitSuccess"));
 	}
@@ -440,7 +479,9 @@ export default function VolunteerOpportunityDetailPage() {
 		if (!opportunity) return;
 		setPublishing(true);
 		try {
-			await api.publishVolunteerOpportunity(opportunity.id);
+			await api.publishVolunteerOpportunity({
+				path: { opportunityId: opportunity.id },
+			});
 			dispatchToast("success", t("opportunities.publishSuccess"));
 			load();
 		} catch (err) {
@@ -455,7 +496,9 @@ export default function VolunteerOpportunityDetailPage() {
 		setWithdrawing(true);
 		setWithdrawError(null);
 		try {
-			await api.withdrawEngagement(withdrawTarget.id);
+			await api.withdrawEngagement({
+				path: { engagementId: withdrawTarget.id },
+			});
 			dispatchToast(
 				"success",
 				t(
@@ -546,8 +589,8 @@ export default function VolunteerOpportunityDetailPage() {
 	// Only the slots a visitor can still book: an ended slot's seats are gone, so
 	// counting them advertised spots that could never be taken (#2318).
 	const capacity = getCapacityFromTimeSlots(
-		upcomingTimeSlots,
-		opportunity.currentParticipantCount,
+		upcomingTimeSlots.map(toCapacityInput),
+		Number(opportunity.currentParticipantCount),
 		opportunity.participationType,
 	);
 	const isFull = capacity.kind === "capped" && capacity.isFull;
@@ -990,10 +1033,14 @@ export default function VolunteerOpportunityDetailPage() {
 									{upcomingTimeSlots.length > 0 && (
 										<ul className="space-y-2">
 											{upcomingTimeSlots.map((ts) => {
+												const capacityInput = toCapacityInput(ts);
 												const clickable =
 													canInteract &&
 													!engagementsBySlot.has(ts.id) &&
-													!isSlotFull(ts.maxParticipants, ts.bookedCount);
+													!isSlotFull(
+														capacityInput.maxParticipants,
+														capacityInput.bookedCount,
+													);
 												const rowContent = (
 													<>
 														<span>
@@ -1005,7 +1052,7 @@ export default function VolunteerOpportunityDetailPage() {
 														</span>
 
 														<span className="flex shrink-0 items-center gap-1.5 text-xs text-gray-600">
-															{slotCapacityLabel(ts, t)}
+															{slotCapacityLabel(capacityInput, t)}
 															{clickable && (
 																<ChevronRightIcon className="h-3.5 w-3.5 text-gray-400" />
 															)}
@@ -1101,8 +1148,8 @@ export default function VolunteerOpportunityDetailPage() {
 										<div data-testid="opportunity-map">
 											<Suspense fallback={<Skeleton className="h-64 w-full" />}>
 												<SingleMarkerMap
-													latitude={opportunity.latitude}
-													longitude={opportunity.longitude}
+													latitude={Number(opportunity.latitude)}
+													longitude={Number(opportunity.longitude)}
 													label={address}
 												/>
 											</Suspense>
@@ -1257,7 +1304,11 @@ export default function VolunteerOpportunityDetailPage() {
 							>
 								<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									{otherOrgOpportunities.map((opp) => (
-										<OpportunityCard key={opp.id} item={opp} headingLevel={3} />
+										<OpportunityCard
+											key={opp.id}
+											item={toCardItem(opp)}
+											headingLevel={3}
+										/>
 									))}
 								</ul>
 							</DetailSection>

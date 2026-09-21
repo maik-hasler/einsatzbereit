@@ -5,10 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import type {
 	AddressDto,
-	EinsatzbereitApi,
+	ApiClient,
 	TimeSlotDetail,
 	VolunteerOpportunityDetails,
-} from "../../client/api-client";
+} from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
@@ -88,15 +88,15 @@ function resolveCheckInPin(
 }
 
 async function uploadBanner(
-	api: EinsatzbereitApi,
+	api: ApiClient,
 	opportunityId: string,
 	bannerFile: File,
 	onError: () => void,
 ): Promise<void> {
 	try {
-		await api.uploadOpportunityBanner(opportunityId, {
-			data: bannerFile,
-			fileName: bannerFile.name,
+		await api.uploadOpportunityBanner({
+			path: { opportunityId },
+			body: { file: bannerFile },
 		});
 	} catch {
 		onError();
@@ -352,7 +352,7 @@ export default function CreateVolunteerOpportunityModal({
 		if (isEditMode) return;
 		let cancelled = false;
 		api
-			.getOrganizationDetails(organizationId)
+			.getOrganizationDetails({ path: { organizationId } })
 			.then((org) => {
 				if (cancelled || !org.address) return;
 				setOrgAddress(org.address);
@@ -381,7 +381,9 @@ export default function CreateVolunteerOpportunityModal({
 			return;
 		let cancelled = false;
 		api
-			.getOpportunityCheckInPin(initialOpportunity.id)
+			.getOpportunityCheckInPin({
+				path: { opportunityId: initialOpportunity.id },
+			})
 			.then((pin) => {
 				if (cancelled || !pin) return;
 				setValue("checkInPin", pin);
@@ -571,12 +573,15 @@ export default function CreateVolunteerOpportunityModal({
 		if (isEditMode && initialOpportunity) {
 			setAddingSlot(true);
 			try {
-				const responses = await api.createTimeSlot(initialOpportunity.id, {
-					startDateTime: start,
-					endDateTime: end,
-					maxParticipants: maxParticipants ?? undefined,
-					recurrenceFrequency: isRecurring ? recurrenceFrequency : undefined,
-					recurrenceCount: isRecurring ? recurrenceCount : 1,
+				const responses = await api.createTimeSlot({
+					path: { opportunityId: initialOpportunity.id },
+					body: {
+						startDateTime: start,
+						endDateTime: end,
+						maxParticipants: maxParticipants ?? null,
+						recurrenceFrequency: isRecurring ? recurrenceFrequency : null,
+						recurrenceCount: isRecurring ? recurrenceCount : 1,
+					},
 				});
 				setExistingSlots((prev) => [
 					...prev,
@@ -651,7 +656,10 @@ export default function CreateVolunteerOpportunityModal({
 		clearInvalidNewSlotFields();
 		setSlotDeleteError(null);
 		try {
-			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId, "Only");
+			await api.deleteTimeSlot({
+				path: { opportunityId: initialOpportunity.id, timeSlotId },
+				query: { scope: "Only" },
+			});
 			setExistingSlots((prev) => prev.filter((s) => s.id !== timeSlotId));
 			setSlotChangesApplied(true);
 			setPendingSlotDelete(null);
@@ -675,11 +683,13 @@ export default function CreateVolunteerOpportunityModal({
 		setDeletingSeriesSlot(true);
 		setSeriesDeleteError(null);
 		try {
-			const result = await api.deleteTimeSlot(
-				initialOpportunity.id,
-				pendingSeriesDelete.id,
-				scope,
-			);
+			const result = await api.deleteTimeSlot({
+				path: {
+					opportunityId: initialOpportunity.id,
+					timeSlotId: pendingSeriesDelete.id,
+				},
+				query: { scope },
+			});
 			setExistingSlots((prev) =>
 				prev.filter((s) => !result.deletedTimeSlotIds.includes(s.id)),
 			);
@@ -715,17 +725,20 @@ export default function CreateVolunteerOpportunityModal({
 		setSlotError(null);
 		clearInvalidNewSlotFields();
 		try {
-			const result = await api.updateTimeSlot(initialOpportunity.id, edit.id, {
-				startDateTime:
-					edit.scope === "Only"
-						? zonedDatetimeLocalToUtc(edit.startDateTime, CANONICAL_TIME_ZONE)
-						: undefined,
-				endDateTime:
-					edit.scope === "Only"
-						? zonedDatetimeLocalToUtc(edit.endDateTime, CANONICAL_TIME_ZONE)
-						: undefined,
-				maxParticipants: edit.maxParticipants ?? undefined,
-				scope: edit.scope,
+			const result = await api.updateTimeSlot({
+				path: { opportunityId: initialOpportunity.id, timeSlotId: edit.id },
+				body: {
+					startDateTime:
+						edit.scope === "Only"
+							? zonedDatetimeLocalToUtc(edit.startDateTime, CANONICAL_TIME_ZONE)
+							: null,
+					endDateTime:
+						edit.scope === "Only"
+							? zonedDatetimeLocalToUtc(edit.endDateTime, CANONICAL_TIME_ZONE)
+							: null,
+					maxParticipants: edit.maxParticipants ?? null,
+					scope: edit.scope,
+				},
 			});
 			if (edit.scope === "Only") {
 				setExistingSlots((prev) =>
@@ -741,15 +754,15 @@ export default function CreateVolunteerOpportunityModal({
 										edit.endDateTime,
 										CANONICAL_TIME_ZONE,
 									),
-									maxParticipants: edit.maxParticipants ?? undefined,
+									maxParticipants: edit.maxParticipants,
 								}
 							: s,
 					),
 				);
 			} else {
-				const fresh = await api.getVolunteerOpportunityDetails(
-					initialOpportunity.id,
-				);
+				const fresh = await api.getVolunteerOpportunityDetails({
+					path: { opportunityId: initialOpportunity.id },
+				});
 				setExistingSlots(fresh.timeSlots);
 				if (result.skippedTimeSlotIds.length > 0) {
 					setSlotError(
@@ -856,25 +869,28 @@ export default function CreateVolunteerOpportunityModal({
 		let createdDraftId: string | undefined;
 		try {
 			if (isEditMode && initialOpportunity) {
-				await api.updateVolunteerOpportunity(initialOpportunity.id, {
-					titleDe: values.titleDe,
-					titleEn: values.titleEn || undefined,
-					descriptionDe: values.descriptionDe,
-					descriptionEn: values.descriptionEn || undefined,
-					isRemote: values.isRemote,
-					street: values.isRemote ? undefined : values.street,
-					houseNumber: values.isRemote ? undefined : values.houseNumber,
-					zipCode: values.isRemote ? undefined : values.zipCode,
-					city: values.isRemote ? undefined : values.city,
-					occurrence: values.occurrence,
-					participationType: values.participationType,
-					checkInMethod: values.checkInMethod,
-					checkInPin: resolveCheckInPin(values),
-					category: values.category || undefined,
-					tags: values.tags,
-					validUntil: values.validUntil
-						? endOfDayFromDateInput(values.validUntil)
-						: undefined,
+				await api.updateVolunteerOpportunity({
+					path: { opportunityId: initialOpportunity.id },
+					body: {
+						titleDe: values.titleDe,
+						titleEn: values.titleEn || null,
+						descriptionDe: values.descriptionDe,
+						descriptionEn: values.descriptionEn || null,
+						isRemote: values.isRemote,
+						street: values.isRemote ? null : values.street,
+						houseNumber: values.isRemote ? null : values.houseNumber,
+						zipCode: values.isRemote ? null : values.zipCode,
+						city: values.isRemote ? null : values.city,
+						occurrence: values.occurrence,
+						participationType: values.participationType,
+						checkInMethod: values.checkInMethod,
+						checkInPin: resolveCheckInPin(values) ?? null,
+						category: values.category || null,
+						tags: values.tags,
+						validUntil: values.validUntil
+							? endOfDayFromDateInput(values.validUntil)
+							: null,
+					},
 				});
 				if (bannerFile) {
 					await uploadBanner(api, initialOpportunity.id, bannerFile, () =>
@@ -882,7 +898,9 @@ export default function CreateVolunteerOpportunityModal({
 					);
 				} else if (bannerRemoved) {
 					try {
-						await api.deleteOpportunityBanner(initialOpportunity.id);
+						await api.deleteOpportunityBanner({
+							path: { opportunityId: initialOpportunity.id },
+						});
 					} catch {
 						dispatchToast("error", t("editOpportunity.bannerRemoveFailed"));
 					}
@@ -892,48 +910,53 @@ export default function CreateVolunteerOpportunityModal({
 
 				let opportunityId = createdOpportunityIdRef.current;
 				if (opportunityId) {
-					await api.updateVolunteerOpportunity(opportunityId, {
-						titleDe: values.titleDe,
-						titleEn: values.titleEn || undefined,
-						descriptionDe: values.descriptionDe,
-						descriptionEn: values.descriptionEn || undefined,
-						isRemote: values.isRemote,
-						street: values.isRemote ? undefined : values.street,
-						houseNumber: values.isRemote ? undefined : values.houseNumber,
-						zipCode: values.isRemote ? undefined : values.zipCode,
-						city: values.isRemote ? undefined : values.city,
-						occurrence: values.occurrence,
-						participationType: values.participationType,
-						checkInMethod: values.checkInMethod,
-						checkInPin: resolveCheckInPin(values),
-						category: values.category || undefined,
-						tags: values.tags,
-						validUntil: values.validUntil
-							? endOfDayFromDateInput(values.validUntil)
-							: undefined,
+					await api.updateVolunteerOpportunity({
+						path: { opportunityId },
+						body: {
+							titleDe: values.titleDe,
+							titleEn: values.titleEn || null,
+							descriptionDe: values.descriptionDe,
+							descriptionEn: values.descriptionEn || null,
+							isRemote: values.isRemote,
+							street: values.isRemote ? null : values.street,
+							houseNumber: values.isRemote ? null : values.houseNumber,
+							zipCode: values.isRemote ? null : values.zipCode,
+							city: values.isRemote ? null : values.city,
+							occurrence: values.occurrence,
+							participationType: values.participationType,
+							checkInMethod: values.checkInMethod,
+							checkInPin: resolveCheckInPin(values) ?? null,
+							category: values.category || null,
+							tags: values.tags,
+							validUntil: values.validUntil
+								? endOfDayFromDateInput(values.validUntil)
+								: null,
+						},
 					});
 				} else {
 					const opportunity = await api.createVolunteerOpportunity({
-						titleDe: values.titleDe,
-						titleEn: values.titleEn || undefined,
-						descriptionDe: values.descriptionDe,
-						descriptionEn: values.descriptionEn || undefined,
-						organizationId,
-						isRemote: values.isRemote,
-						street: values.isRemote ? undefined : values.street,
-						houseNumber: values.isRemote ? undefined : values.houseNumber,
-						zipCode: values.isRemote ? undefined : values.zipCode,
-						city: values.isRemote ? undefined : values.city,
-						occurrence: values.occurrence,
-						participationType: values.participationType,
-						checkInMethod: values.checkInMethod,
-						checkInPin: resolveCheckInPin(values),
-						category: values.category,
-						tags: values.tags,
-						validUntil: values.validUntil
-							? endOfDayFromDateInput(values.validUntil)
-							: undefined,
-						isDraft: asDraft || publishScheduledSlotsAfterCreate,
+						body: {
+							titleDe: values.titleDe,
+							titleEn: values.titleEn || null,
+							descriptionDe: values.descriptionDe,
+							descriptionEn: values.descriptionEn || null,
+							organizationId,
+							isRemote: values.isRemote,
+							street: values.isRemote ? null : values.street,
+							houseNumber: values.isRemote ? null : values.houseNumber,
+							zipCode: values.isRemote ? null : values.zipCode,
+							city: values.isRemote ? null : values.city,
+							occurrence: values.occurrence,
+							participationType: values.participationType,
+							checkInMethod: values.checkInMethod,
+							checkInPin: resolveCheckInPin(values) ?? null,
+							category: values.category ?? null,
+							tags: values.tags,
+							validUntil: values.validUntil
+								? endOfDayFromDateInput(values.validUntil)
+								: null,
+							isDraft: asDraft || publishScheduledSlotsAfterCreate,
+						},
 					});
 					opportunityId = opportunity.id;
 					createdOpportunityIdRef.current = opportunityId;
@@ -959,23 +982,29 @@ export default function CreateVolunteerOpportunityModal({
 						first.batchCount > 1 && sorted.length === first.batchCount;
 					if (isIntactRecurringBatch) {
 						if (createdBatchIdsRef.current.has(batchId)) continue;
-						await api.createTimeSlot(opportunityId, {
-							startDateTime: new Date(first.startDateTime),
-							endDateTime: new Date(first.endDateTime),
-							maxParticipants: first.maxParticipants ?? undefined,
-							recurrenceFrequency: first.batchFrequency,
-							recurrenceCount: first.batchCount,
+						await api.createTimeSlot({
+							path: { opportunityId },
+							body: {
+								startDateTime: new Date(first.startDateTime),
+								endDateTime: new Date(first.endDateTime),
+								maxParticipants: first.maxParticipants ?? null,
+								recurrenceFrequency: first.batchFrequency ?? null,
+								recurrenceCount: first.batchCount,
+							},
 						});
 						createdBatchIdsRef.current.add(batchId);
 					} else {
 						for (const slot of sorted) {
 							if (createdSlotIdsRef.current.has(slot.id)) continue;
-							await api.createTimeSlot(opportunityId, {
-								startDateTime: new Date(slot.startDateTime),
-								endDateTime: new Date(slot.endDateTime),
-								maxParticipants: slot.maxParticipants ?? undefined,
-								recurrenceFrequency: undefined,
-								recurrenceCount: 1,
+							await api.createTimeSlot({
+								path: { opportunityId },
+								body: {
+									startDateTime: new Date(slot.startDateTime),
+									endDateTime: new Date(slot.endDateTime),
+									maxParticipants: slot.maxParticipants ?? null,
+									recurrenceFrequency: null,
+									recurrenceCount: 1,
+								},
 							});
 							createdSlotIdsRef.current.add(slot.id);
 						}
@@ -983,7 +1012,7 @@ export default function CreateVolunteerOpportunityModal({
 				}
 				if (publishScheduledSlotsAfterCreate) {
 					try {
-						await api.publishVolunteerOpportunity(opportunityId);
+						await api.publishVolunteerOpportunity({ path: { opportunityId } });
 					} catch (publishErr) {
 						if (
 							!isApiErrorCode(
@@ -1089,12 +1118,14 @@ export default function CreateVolunteerOpportunityModal({
 						s.endDateTime instanceof Date
 							? s.endDateTime.toISOString()
 							: String(s.endDateTime),
-					maxParticipants: s.maxParticipants ?? null,
-					bookedCount: s.bookedCount,
+					maxParticipants:
+						s.maxParticipants === null ? null : Number(s.maxParticipants),
+					bookedCount: Number(s.bookedCount),
 					persisted: true as const,
-					seriesId: s.seriesId,
-					recurrenceFrequency: s.recurrenceFrequency,
-					recurrenceCount: s.recurrenceCount,
+					seriesId: s.seriesId ?? undefined,
+					recurrenceFrequency: s.recurrenceFrequency ?? undefined,
+					recurrenceCount:
+						s.recurrenceCount === null ? undefined : Number(s.recurrenceCount),
 					seriesPosition: s.seriesId ? seriesPositionById.get(s.id) : undefined,
 				}))
 			: pendingSlots.map((s) => ({

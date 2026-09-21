@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Outlet, Route, Routes } from "react-router";
 import OrgMembersPage from "./OrgMembersPage";
-import type { OrganizationDetailsResponse } from "../../client/api-client";
+import type { OrganizationDetailsResponse } from "../../client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
@@ -304,7 +304,9 @@ describe("OrgMembersPage member removal", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.removeMember).toHaveBeenCalledWith(org.id, OTHER_ID),
+			expect(api.removeMember).toHaveBeenCalledWith({
+				path: { organizationId: org.id, userId: OTHER_ID },
+			}),
 		);
 		await waitFor(() => expect(reloadOrg).toHaveBeenCalled());
 	});
@@ -322,8 +324,9 @@ describe("OrgMembersPage role changes", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.changeMemberRole).toHaveBeenCalledWith(org.id, OTHER_ID, {
-				role: "Organizer",
+			expect(api.changeMemberRole).toHaveBeenCalledWith({
+				path: { organizationId: org.id, userId: OTHER_ID },
+				body: { role: "Organizer" },
 			}),
 		);
 	});
@@ -339,8 +342,9 @@ describe("OrgMembersPage role changes", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.changeMemberRole).toHaveBeenCalledWith(org.id, OTHER_ID, {
-				role: "Member",
+			expect(api.changeMemberRole).toHaveBeenCalledWith({
+				path: { organizationId: org.id, userId: OTHER_ID },
+				body: { role: "Member" },
 			}),
 		);
 	});
@@ -366,10 +370,10 @@ describe("OrgMembersPage invitations", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.createInvitation).toHaveBeenCalledWith(
-				org.id,
-				expect.objectContaining({ role: "Organizer" }),
-			),
+			expect(api.createInvitation).toHaveBeenCalledWith({
+				path: { organizationId: org.id },
+				body: expect.objectContaining({ role: "Organizer" }),
+			}),
 		);
 	});
 
@@ -389,7 +393,9 @@ describe("OrgMembersPage invitations", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.dismissInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+			expect(api.dismissInvitation).toHaveBeenCalledWith({
+				path: { organizationId: org.id, invitationId: invitation.id },
+			}),
 		);
 		expect(await screen.findByText("Invitation revoked.")).toBeInTheDocument();
 	});
@@ -488,7 +494,9 @@ describe("OrgMembersPage invitations", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.dismissInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+			expect(api.dismissInvitation).toHaveBeenCalledWith({
+				path: { organizationId: org.id, invitationId: invitation.id },
+			}),
 		);
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
@@ -506,10 +514,10 @@ describe("OrgMembersPage inviting rather than adding", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.createInvitation).toHaveBeenCalledWith(
-				org.id,
-				expect.objectContaining({ inviteeId: candidate.userId }),
-			),
+			expect(api.createInvitation).toHaveBeenCalledWith({
+				path: { organizationId: org.id },
+				body: expect.objectContaining({ inviteeId: candidate.userId }),
+			}),
 		);
 
 		const pending = await screen.findByRole("heading", {
@@ -612,7 +620,9 @@ describe("OrgMembersPage invitation lifecycle", () => {
 		);
 
 		await waitFor(() =>
-			expect(api.resendInvitation).toHaveBeenCalledWith(org.id, invitation.id),
+			expect(api.resendInvitation).toHaveBeenCalledWith({
+				path: { organizationId: org.id, invitationId: invitation.id },
+			}),
 		);
 		expect(api.getOrgInvitations).toHaveBeenCalledTimes(2);
 	});

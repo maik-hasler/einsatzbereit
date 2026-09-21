@@ -107,7 +107,10 @@ export default function VolunteerOpportunitiesList() {
 				// First match wins: the server already ranks them, and a postal code
 				// resolves to a label the client cannot re-match against ("26129" ->
 				// "26129 Oldenburg").
-				const [best] = await api.searchCities(city, controller.signal);
+				const [best] = await api.searchCities({
+					query: { Q: city },
+					signal: controller.signal,
+				});
 				if (!best) {
 					setCityUnresolved(true);
 					return;

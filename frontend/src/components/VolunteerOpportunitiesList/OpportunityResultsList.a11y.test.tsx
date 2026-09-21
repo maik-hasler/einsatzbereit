@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import OpportunityResultsList from "./OpportunityResultsList";
-import type { VolunteerOpportunitySummary } from "../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../client";
 import { renderWithProviders } from "../../test/render";
 import { expectNoA11yViolations } from "../../test/a11y";
 
@@ -25,13 +25,13 @@ const item: VolunteerOpportunitySummary = {
 	category: "Environment",
 	tags: [],
 	createdOn: new Date(Date.UTC(2026, 7, 1)),
-	validUntil: undefined,
+	validUntil: null,
 	nextTimeSlotStart: new Date(Date.UTC(2026, 7, 27, 9, 0)),
 	nextTimeSlotEnd: new Date(Date.UTC(2026, 7, 27, 17, 0)),
 	totalMaxParticipants: 10,
 	currentParticipantCount: 0,
 	status: "Published",
-	bannerImageUrl: undefined,
+	bannerImageUrl: null,
 	organizationLogoUrl: undefined,
 };
 

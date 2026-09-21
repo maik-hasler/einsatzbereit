@@ -50,7 +50,7 @@ Contained Building Blocks::
 |Single Page Application
 |Written here
 |React 19, Vite, TypeScript, Tailwind CSS 4
-|Provides the web UI for volunteers, organizers and platform admins. Handles OIDC login redirect and token storage. Communicates with the backend API using a NSwag-generated client.
+|Provides the web UI for volunteers, organizers and platform admins. Handles OIDC login redirect and token storage. Communicates with the backend API using a generated client (`@hey-api/openapi-ts`).
 
 |Backend API
 |Written here
@@ -202,15 +202,15 @@ This asymmetry with the backend is deliberate, but it is an asymmetry: a feature
 |`frontend/src/components/`
 
 |API Client
-|NSwag-generated TypeScript client providing typed methods for all backend endpoints - see <<section-concepts>> under Development and Build.
-|`frontend/src/client/api-client.ts`
+|TypeScript client generated from the backend's OpenAPI document by `@hey-api/openapi-ts`, providing a typed function per endpoint - see <<section-concepts>> under Development and Build.
+|`frontend/src/client/generated/`, wrapped by `frontend/src/client/index.ts`
 
 |Layouts
 |App shells (`AppLayout`, `OrgAppLayout`) and the `ProtectedRoute` authentication gate that guards routes requiring a signed-in user.
 |`frontend/src/layouts/`
 
 |Contexts and Hooks
-|Global UI state (`ToastContext`, `ToolbarContext`, `QuickActionsContext`) and reusable logic (`useApiClient`, `useAchievementNotifier`, `useLoadMore`).
+|Global UI state (`ToastContext`, `QuickActionsContext`, `HeaderOverlayContext`, `OrgBreadcrumbContext`, `AuthStatusContext`) and reusable logic (`useApiClient`, `useAchievementNotifier`, `useLoadMore`).
 |`frontend/src/contexts/`, `frontend/src/hooks/`
 
 |Helpers

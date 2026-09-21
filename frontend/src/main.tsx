@@ -2,8 +2,9 @@ import i18n from "./i18n";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
-import { WebStorageStateStore, type User } from "oidc-client-ts";
+import { type User } from "oidc-client-ts";
 import { BrowserRouter } from "react-router";
+import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import ConfigGate from "./components/ConfigGate";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -13,12 +14,18 @@ import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
 import { dispatchToast } from "./lib/toastBus";
 import { handleUnhandledRejection } from "./lib/unhandledRejection";
+import { createQueryClient } from "./queryClient";
+import { createTokenStore } from "./lib/tokenStorage";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "@fontsource-variable/source-sans-3";
 
 import "@fontsource/barlow-condensed/700.css";
 import "./styles/global.css";
+
+// One cache for the lifetime of the tab. Created out here rather than inside a
+// component so a re-render can never swap it and throw the whole cache away.
+const queryClient = createQueryClient();
 
 const oidcConfig = {
 	authority: runtimeConfig.keycloakAuthorityUrl,
@@ -29,13 +36,8 @@ const oidcConfig = {
 	automaticSilentRenew: true,
 
 	silent_redirect_uri: window.location.origin + "/silent-renew.html",
-	// sessionStorage, not localStorage: tokens (incl. refresh_token, since the
-	// realm has "rememberMe": true) must not survive tab close or browser
-	// restart on a shared/kiosk machine - a realistic setting for a
-	// volunteer-coordination app used at events (#1171). Playwright seeds
-	// sessionStorage directly via page.addInitScript instead of relying on
-	// storageState (see AuthHelper.FastSignInAsync in backend/tests/VisualTests).
-	userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+	// See lib/tokenStorage.ts for why this is sessionStorage.
+	userStore: createTokenStore(),
 	onSigninCallback: async (user: User | undefined) => {
 		const hasExplicitLanguageChoice =
 			localStorage.getItem("einsatzbereit:language-explicit") === "true";
@@ -89,9 +91,14 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 				<Suspense fallback={<AppBoot />}>
 					<ToastProvider>
 						<AuthProvider {...oidcConfig}>
-							<BrowserRouter>
-								<App />
-							</BrowserRouter>
+							{/* Inside AuthProvider: a query's fetcher reads the current
+							bearer token through useApiClient(), which needs the auth
+							context above it. */}
+							<QueryClientProvider client={queryClient}>
+								<BrowserRouter>
+									<App />
+								</BrowserRouter>
+							</QueryClientProvider>
 						</AuthProvider>
 					</ToastProvider>
 				</Suspense>

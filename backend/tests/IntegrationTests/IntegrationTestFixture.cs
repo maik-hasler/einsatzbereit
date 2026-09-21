@@ -139,6 +139,30 @@ public class IntegrationTestFixture
 		return token.AccessToken;
 	}
 
+	// The one way these tests get an authenticated client: token, HttpClient, Bearer
+	// header, typed client. It belongs on the fixture because both halves of it already
+	// do - the 39 private copies this replaces each called CreateHttpClient and
+	// GetAccessTokenAsync, so the duplication was never more than a wrapper over two
+	// methods that live here.
+	//
+	// Two arguments, and deliberately no "sign in as olaf" convenience overload: 242
+	// call sites across 32 files already spell that pair out, so the seven copies that
+	// baked it into the helper were the minority dialect, not the convention. Their
+	// call sites now say which user they are, like every other one does.
+	//
+	// No CancellationToken parameter either. GetAccessTokenAsync above takes none, so
+	// one here could only be accepted and dropped - exactly what six of the deleted
+	// copies did, taking a token their body never passed on.
+	public async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
+		string username, string password)
+	{
+		var token = await GetAccessTokenAsync(username, password);
+		var httpClient = CreateHttpClient();
+		httpClient.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", token);
+		return new EinsatzbereitApi(httpClient);
+	}
+
 	public async Task ResetDatabaseAsync()
 	{
 		const int maxAttempts = 3;

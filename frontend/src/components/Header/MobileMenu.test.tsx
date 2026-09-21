@@ -27,7 +27,7 @@ function renderMenu(role: string, route = "/") {
 			activeOrg={{
 				id: ORG_ID,
 				name: "Lindenauer Nachbarschaftshilfe e.V.",
-				logoUrl: undefined,
+				logoUrl: null,
 				role,
 			}}
 		/>,

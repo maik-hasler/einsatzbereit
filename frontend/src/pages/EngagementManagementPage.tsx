@@ -7,7 +7,7 @@ import type {
 	FeedbackItemDto,
 	TimeSlotDetail,
 	VolunteerOpportunityDetails,
-} from "../client/api-client";
+} from "../client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -137,14 +137,21 @@ export default function EngagementManagementPage() {
 		async (page) => {
 			if (!opportunityId) return { items: [], pageCount: 0 };
 			try {
-				return await api.getEngagements(
-					opportunityId,
-					page,
-					ENGAGEMENTS_PAGE_SIZE,
-					statusFilter || undefined,
-					timeSlotFilter || undefined,
-					appliedSearch.trim() || undefined,
-				);
+				const result = await api.getEngagements({
+					path: { opportunityId },
+					query: {
+						pageNumber: page,
+						pageSize: ENGAGEMENTS_PAGE_SIZE,
+						status: statusFilter || undefined,
+						timeSlotId: timeSlotFilter || undefined,
+						search: appliedSearch.trim() || undefined,
+					},
+				});
+				return {
+					items: result.items,
+					pageCount: result.pageCount,
+					totalItems: result.totalItems,
+				};
 			} catch (err) {
 				if (isApiNotFoundError(err)) setNotFound(true);
 				throw err;
@@ -203,8 +210,9 @@ export default function EngagementManagementPage() {
 		if (!opportunityId || idsToConfirm.length === 0) return;
 		setBulkConfirming(true);
 		try {
-			const result = await api.bulkConfirmEngagements(opportunityId, {
-				engagementIds: idsToConfirm,
+			const result = await api.bulkConfirmEngagements({
+				path: { opportunityId },
+				body: { engagementIds: idsToConfirm },
 			});
 			const statusById = new Map(result.succeeded.map((s) => [s.id, s.status]));
 			setEngagements((prev) =>
@@ -251,9 +259,12 @@ export default function EngagementManagementPage() {
 		try {
 			const idsToCancel = Array.from(selectedIds);
 			const trimmedReason = bulkCancelReason.trim();
-			const result = await api.bulkCancelEngagements(opportunityId, {
-				engagementIds: idsToCancel,
-				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			const result = await api.bulkCancelEngagements({
+				path: { opportunityId },
+				body: {
+					engagementIds: idsToCancel,
+					reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+				},
 			});
 			const succeededById = new Map(result.succeeded.map((s) => [s.id, s]));
 			setEngagements((prev) =>
@@ -318,22 +329,24 @@ export default function EngagementManagementPage() {
 		retryLoadMore: retryLoadMoreFeedback,
 	} = useLoadMore<FeedbackItemDto>(async (page) => {
 		if (!opportunityId) return { items: [], pageCount: 0 };
-		const result = await api.getOpportunityFeedback(
-			opportunityId,
-			page,
-			FEEDBACK_PAGE_SIZE,
-		);
+		const result = await api.getOpportunityFeedback({
+			path: { opportunityId },
+			query: { pageNumber: page, pageSize: FEEDBACK_PAGE_SIZE },
+		});
 		setFeedbackStats({
 			averageRating: result.averageRating ?? null,
 			feedbackCount: result.feedbackCount,
 		});
-		return { items: result.items.items, pageCount: result.items.pageCount };
+		return {
+			items: result.items.items,
+			pageCount: result.items.pageCount,
+		};
 	});
 
 	function loadOpportunity() {
 		if (!opportunityId) return Promise.resolve();
 		return api
-			.getVolunteerOpportunityDetails(opportunityId)
+			.getVolunteerOpportunityDetails({ path: { opportunityId } })
 			.then((data) => {
 				setOpportunity(data);
 				setOpportunityError(null);
@@ -366,7 +379,7 @@ export default function EngagementManagementPage() {
 		)
 			return Promise.resolve();
 		return api
-			.getOpportunityCheckInPin(opportunityId)
+			.getOpportunityCheckInPin({ path: { opportunityId } })
 			.then((pin) => {
 				setCheckInPin(pin);
 				setCheckInPinError(null);
@@ -409,7 +422,9 @@ export default function EngagementManagementPage() {
 	async function handleConfirm(engagementId: string) {
 		setConfirming(engagementId);
 		try {
-			const updated = await api.confirmEngagement(engagementId);
+			const updated = await api.confirmEngagement({
+				path: { engagementId },
+			});
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId ? { ...e, status: updated.status } : e,
@@ -433,7 +448,9 @@ export default function EngagementManagementPage() {
 		if (!opportunityId) return;
 		setCheckingIn(engagementId);
 		try {
-			await api.checkInEngagement(opportunityId, engagementId);
+			await api.checkInEngagement({
+				path: { opportunityId, engagementId },
+			});
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId ? { ...e, isCheckedIn: true } : e,
@@ -454,7 +471,7 @@ export default function EngagementManagementPage() {
 	async function handleUndoCheckIn(engagementId: string) {
 		setUndoingCheckIn(engagementId);
 		try {
-			await api.undoCheckInEngagement(engagementId);
+			await api.undoCheckInEngagement({ path: { engagementId } });
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === engagementId ? { ...e, isCheckedIn: false } : e,
@@ -476,8 +493,9 @@ export default function EngagementManagementPage() {
 		setCancelError(null);
 		try {
 			const trimmedReason = cancelReason.trim();
-			const updated = await api.cancelEngagement(confirmCancelId, {
-				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			const updated = await api.cancelEngagement({
+				path: { engagementId: confirmCancelId },
+				body: { reason: trimmedReason.length > 0 ? trimmedReason : null },
 			});
 			setEngagements((prev) =>
 				prev.map((e) =>
@@ -1031,7 +1049,7 @@ export default function EngagementManagementPage() {
 						{feedbackItems.map((item, idx) => (
 							<li key={idx} className={cardClass}>
 								<div className="flex items-center gap-1">
-									<StarRating rating={item.rating} />
+									<StarRating rating={item.rating as number} />
 									<span className="ml-1 text-xs text-gray-500">
 										{formatDate(
 											item.submittedAt as unknown as string,

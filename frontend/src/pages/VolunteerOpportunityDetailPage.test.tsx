@@ -777,13 +777,13 @@ describe("opportunity detail page slot rows", () => {
 		);
 
 		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
-		expect(api.createEngagement).toHaveBeenCalledWith(
-			OPPORTUNITY_ID,
-			expect.objectContaining({
+		expect(api.createEngagement).toHaveBeenCalledWith({
+			path: { opportunityId: OPPORTUNITY_ID },
+			body: expect.objectContaining({
 				type: "ScheduledSlots",
 				timeSlotId: scheduledSlots.timeSlots[0].id,
 			}),
-		);
+		});
 	});
 
 	it("preselects the row that was clicked, not the first one", async () => {
@@ -801,12 +801,12 @@ describe("opportunity detail page slot rows", () => {
 		);
 
 		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
-		expect(api.createEngagement).toHaveBeenCalledWith(
-			OPPORTUNITY_ID,
-			expect.objectContaining({
+		expect(api.createEngagement).toHaveBeenCalledWith({
+			path: { opportunityId: OPPORTUNITY_ID },
+			body: expect.objectContaining({
 				timeSlotId: scheduledSlots.timeSlots[1].id,
 			}),
-		);
+		});
 	});
 });
 
@@ -844,12 +844,12 @@ describe("opportunity detail page per-slot sign-up gating (#2199)", () => {
 		);
 
 		await waitFor(() => expect(api.createEngagement).toHaveBeenCalledTimes(1));
-		expect(api.createEngagement).toHaveBeenCalledWith(
-			OPPORTUNITY_ID,
-			expect.objectContaining({
+		expect(api.createEngagement).toHaveBeenCalledWith({
+			path: { opportunityId: OPPORTUNITY_ID },
+			body: expect.objectContaining({
 				timeSlotId: scheduledSlots.timeSlots[1].id,
 			}),
-		);
+		});
 	});
 
 	it("hides the sign-up CTA and every slot row once the volunteer has signed up for all of them", async () => {
@@ -980,7 +980,9 @@ describe("opportunity detail page multiple sign-ups in one series (#2199)", () =
 		);
 
 		await waitFor(() =>
-			expect(api.withdrawEngagement).toHaveBeenCalledWith("engagement-2"),
+			expect(api.withdrawEngagement).toHaveBeenCalledWith({
+				path: { engagementId: "engagement-2" },
+			}),
 		);
 	});
 });

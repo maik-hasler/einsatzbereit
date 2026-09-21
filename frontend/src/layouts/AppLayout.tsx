@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import SkipLink from "../components/SkipLink";
 import ErrorBoundary from "../components/ErrorBoundary";
-import { isAuthenticatedRoute } from "../lib/authenticatedRoutes";
+import { usesCompactFooter } from "../lib/footerVariant";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { QuickActionsProvider } from "../contexts/QuickActionsContext";
 import {
@@ -41,7 +41,7 @@ function AppLayoutInner() {
 				</ErrorBoundary>
 			</main>
 
-			{isAuthenticatedRoute(location.pathname) ? (
+			{usesCompactFooter(location.pathname) ? (
 				<Footer compact />
 			) : (
 				<Footer headingLevel={location.pathname === "/opportunities" ? 3 : 2} />

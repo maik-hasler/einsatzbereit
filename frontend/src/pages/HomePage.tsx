@@ -25,7 +25,7 @@ import {
 	UserGroupIcon,
 	ShieldCheckIcon,
 } from "../components/icons";
-import type { Organization } from "../client/api-client";
+import type { Organization } from "../client";
 
 const CreateOrganizationModal = lazy(
 	() => import("../components/CreateOrganizationModal"),
@@ -94,7 +94,9 @@ export default function HomePage() {
 				// The server ranks the matches, so the first one is the best one -
 				// including for a postal code, whose label ("26129 Oldenburg") does
 				// not contain what was typed in a way the client could re-check.
-				const [best] = await api.searchCities(heroCityInput.trim());
+				const [best] = await api.searchCities({
+					query: { Q: heroCityInput.trim() },
+				});
 				location = best
 					? { label: best.label, lat: best.latitude, lng: best.longitude }
 					: null;

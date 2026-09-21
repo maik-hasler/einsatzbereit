@@ -176,8 +176,9 @@ describe("QRScannerModal fallback code input", () => {
 		expect(
 			await screen.findByText("Volunteer checked in successfully!"),
 		).toBeVisible();
-		expect(api.checkInEngagementByCode).toHaveBeenCalledWith(OPPORTUNITY_ID, {
-			code: "abcd1234",
+		expect(api.checkInEngagementByCode).toHaveBeenCalledWith({
+			path: { opportunityId: OPPORTUNITY_ID },
+			body: { code: "abcd1234" },
 		});
 		expect(onCheckedIn).toHaveBeenCalledWith(
 			"abcd1234-0000-0000-0000-000000000000",

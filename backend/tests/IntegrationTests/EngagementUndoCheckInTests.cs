@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -14,8 +13,8 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	public async Task UndoCheckIn_ClearsTheFlagButKeepsConfirmed_WhenCalledByOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, _) = await CreateOpportunityAsync(
 			olaf, "UndoCheckInHappyPath", cancellationToken);
@@ -37,8 +36,8 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	public async Task UndoCheckIn_Returns409_WhenEngagementIsNotCheckedIn(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, _) = await CreateOpportunityAsync(
 			olaf, "UndoCheckInNotCheckedIn", cancellationToken);
@@ -56,8 +55,8 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	public async Task UndoCheckIn_Returns409_WhenEngagementIsTerminated(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var (opportunityId, _) = await CreateOpportunityAsync(
 			olaf, "UndoCheckInTerminated", cancellationToken);
@@ -78,9 +77,9 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 	public async Task UndoCheckIn_Returns403_AndLeavesTheFlagSet_WhenCallerIsNotTheOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var olaf = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var vera = await CreateAuthenticatedClientAsync("vera", "vera123");
-		var admin = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olaf = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var vera = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
+		var admin = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var (opportunityId, _) = await CreateOpportunityAsync(
 			olaf, "UndoCheckInForbidden", cancellationToken);
@@ -96,16 +95,6 @@ public class EngagementUndoCheckInTests(IntegrationTestFixture fixture)
 		var engagement = await GetEngagementAsync(olaf, opportunityId, engagementId, cancellationToken);
 		engagement.IsCheckedIn.Should().BeTrue(
 			"a rejected undo must leave the engagement exactly as it found it");
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<(Guid OpportunityId, Guid OrganizationId)> CreateOpportunityAsync(

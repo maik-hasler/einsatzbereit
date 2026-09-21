@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AwesomeAssertions;
 
 namespace IntegrationTests;
@@ -14,8 +13,8 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 	public async Task ListOrganizations_ShouldFilterByCaseInsensitiveNameSearch(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var matchName = $"Feuerwehr Alpha {Guid.NewGuid()}";
 		var otherName = $"Wasserwacht Beta {Guid.NewGuid()}";
@@ -32,8 +31,8 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 	public async Task ListOrganizations_ShouldExcludeDeletedOrganizations_ByDefault(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var name = $"ToDelete {Guid.NewGuid()}";
 		var orgId = await CreateOrganizationAsync(olafClient, name, cancellationToken);
@@ -49,8 +48,8 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 	public async Task ListOrganizations_ShouldReturnOnlyDeletedOrganizations_WhenDeletedFilterIsTrue(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var deletedName = $"Deleted {Guid.NewGuid()}";
 		var activeName = $"Active {Guid.NewGuid()}";
@@ -69,9 +68,9 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 	public async Task ListOrganizations_ShouldReturnOnlyFlaggedOrganizations_WhenFlaggedFilterIsTrue(
 		CancellationToken cancellationToken)
 	{
-		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
-		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await fixture.CreateAuthenticatedClientAsync("vera", "vera123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
 		var flaggedName = $"Flagged {Guid.NewGuid()}";
 		var unflaggedName = $"Unflagged {Guid.NewGuid()}";
@@ -102,27 +101,27 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var (memberTwoId, memberTwoUsername, memberTwoPassword) =
 			await fixture.CreateEphemeralUserAsync(cancellationToken);
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var adminClient = await fixture.CreateAuthenticatedClientAsync("admin", "admin123");
 
-		var organizerClient = await CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
+		var organizerClient = await fixture.CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
 		var orgName = $"Multi Member Org {Guid.NewGuid()}";
 		var org = await organizerClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = orgName }, cancellationToken);
 
-		organizerClient = await CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
+		organizerClient = await fixture.CreateAuthenticatedClientAsync(organizerUsername, organizerPassword);
 
 		var invitationOne = await organizerClient.CreateInvitationAsync(
 			org.Id.Value,
 			new CreateInvitationRequest { InviteeId = memberOneId, Role = "Member" },
 			cancellationToken);
-		var memberOneClient = await CreateAuthenticatedClientAsync(memberOneUsername, memberOnePassword);
+		var memberOneClient = await fixture.CreateAuthenticatedClientAsync(memberOneUsername, memberOnePassword);
 		await memberOneClient.AcceptInvitationAsync(invitationOne.InvitationId, cancellationToken);
 
 		var invitationTwo = await organizerClient.CreateInvitationAsync(
 			org.Id.Value,
 			new CreateInvitationRequest { InviteeId = memberTwoId, Role = "Member" },
 			cancellationToken);
-		var memberTwoClient = await CreateAuthenticatedClientAsync(memberTwoUsername, memberTwoPassword);
+		var memberTwoClient = await fixture.CreateAuthenticatedClientAsync(memberTwoUsername, memberTwoPassword);
 		await memberTwoClient.AcceptInvitationAsync(invitationTwo.InvitationId, cancellationToken);
 
 		// Act
@@ -133,16 +132,6 @@ public class ListOrganizationsFilterTests(IntegrationTestFixture fixture)
 		var summary = result.Items.Should().ContainSingle(o => o.Id == org.Id.Value).Which;
 		summary.MemberCount.Should().Be(3);
 		summary.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
-	}
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-		string username, string password)
-	{
-		var token = await fixture.GetAccessTokenAsync(username, password);
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
 	}
 
 	private static async Task<Guid> CreateOrganizationAsync(

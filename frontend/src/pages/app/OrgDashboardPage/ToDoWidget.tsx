@@ -1,9 +1,9 @@
 import { memo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { EngagementSummary } from "../../../client/api-client";
+import type { EngagementSummary } from "../../../client";
 import { useApiClient } from "../../../hooks/useApiClient";
-import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { useCachedFetch } from "../../../hooks/useCachedFetch";
 import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import Chip from "../../../components/Chip";
@@ -186,17 +186,18 @@ function ReviewQueue({
 	const [declining, setDeclining] = useState(false);
 	const [declineError, setDeclineError] = useState<string | null>(null);
 
-	const [queue, setQueue, queueError] = useSharedOrgFetch<QueueState>(
+	const [queue, setQueue, queueError] = useCachedFetch<QueueState>(
 		`pendingEngagements:${organizationId}:${refreshKey}`,
 		() =>
 			api
-				.getOrganizationEngagements(
-					organizationId,
-					1,
-					QUEUE_PAGE_SIZE,
-					"Pending",
-					undefined,
-				)
+				.getOrganizationEngagements({
+					path: { organizationId },
+					query: {
+						pageNumber: 1,
+						pageSize: QUEUE_PAGE_SIZE,
+						status: "Pending",
+					},
+				})
 				.then((page) => ({
 					items: page.items,
 					total: page.totalItems ?? page.items.length,
@@ -208,7 +209,7 @@ function ReviewQueue({
 	async function handleConfirm(engagement: EngagementSummary) {
 		setConfirming(engagement.id);
 		try {
-			await api.confirmEngagement(engagement.id);
+			await api.confirmEngagement({ path: { engagementId: engagement.id } });
 			// The row stays put and reads "Confirmed" rather than vanishing under
 			// the click: an organizer working down four rows needs to see which one
 			// their verdict landed on before the list closes over the gap. The
@@ -236,8 +237,9 @@ function ReviewQueue({
 		setDeclineError(null);
 		try {
 			const reason = declineReason.trim();
-			await api.cancelEngagement(decliningId, {
-				reason: reason.length > 0 ? reason : undefined,
+			await api.cancelEngagement({
+				path: { engagementId: decliningId },
+				body: { reason: reason.length > 0 ? reason : null },
 			});
 			const declined = decliningId;
 			setQueue((prev) =>

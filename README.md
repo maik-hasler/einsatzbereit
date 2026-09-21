@@ -69,7 +69,7 @@ The app itself is served in German by default, since Einsatzbereit's primary aud
 | Backend | .NET 10, Clean Architecture (Api -> Application -> Domain, Infrastructure -> Domain), EF Core 10, PostgreSQL 18, CQRS-style command/query handlers, transactional outbox for domain events |
 | Auth | Keycloak 26.7.4 (OIDC, JWT, Keycloak Organizations) |
 | Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4, react-oidc-context, Leaflet/react-leaflet |
-| API client | NSwag-generated TypeScript client from the backend OpenAPI spec - never hand-edited |
+| API client | TypeScript client generated from the backend OpenAPI spec by `@hey-api/openapi-ts`, and a C# one for the integration tests by NSwag - neither is hand-edited |
 | Object storage | MinIO (avatars, organization logos, opportunity banners) |
 | Tests | TUnit + Aspire.Hosting.Testing + Respawn + NetArchTest (Application.UnitTests, IntegrationTests, ArchitectureTests), Vitest (frontend pure-logic units), Playwright + axe-core (E2E and accessibility, `backend/tests/VisualTests`) |
 | CI | GitHub Actions (build and test on every PR, Docker images to GHCR on tag push) |

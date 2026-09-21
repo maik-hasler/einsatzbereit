@@ -23,7 +23,7 @@ export default function DangerZoneCard() {
 		setDeleting(true);
 		setDeleteError(null);
 		try {
-			await api.deleteMyAccount();
+			await api.deleteMyAccount({});
 
 			clearActiveOrgId();
 			clearSeenAchievements(auth.user?.profile?.sub);

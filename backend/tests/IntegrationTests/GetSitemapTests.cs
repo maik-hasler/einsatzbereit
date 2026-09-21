@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Application.Common.Exceptions;
 using Application.Common.StaticPages;
 using AwesomeAssertions;
@@ -44,7 +43,7 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	public async Task GetSitemap_ShouldIncludeOrganization(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		using var httpClient = fixture.CreateHttpClient();
@@ -58,7 +57,7 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	public async Task GetSitemap_ShouldIncludePublishedOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		var opportunity = await CreatePublishedOpportunityAsync(authenticatedClient, orgId, cancellationToken);
 
@@ -73,7 +72,7 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	public async Task GetSitemap_ShouldNotIncludeDraftOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		var draft = await CreateDraftOpportunityAsync(authenticatedClient, orgId, cancellationToken);
 
@@ -88,7 +87,7 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	public async Task GetSitemap_ShouldNotIncludeExpiredOpportunity(
 		CancellationToken cancellationToken)
 	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var authenticatedClient = await fixture.CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 		var expired = await CreateOpportunityWithExpiredTimeSlotAsync(authenticatedClient, orgId, cancellationToken);
 
@@ -100,15 +99,6 @@ public class GetSitemapTests(IntegrationTestFixture fixture)
 	}
 
 	private static string SitemapRoute() => $"/v1/sitemap.xml?_={Guid.NewGuid()}";
-
-	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
-	{
-		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-		var httpClient = fixture.CreateHttpClient();
-		httpClient.DefaultRequestHeaders.Authorization =
-			new AuthenticationHeaderValue("Bearer", token);
-		return new EinsatzbereitApi(httpClient);
-	}
 
 	private static async Task<Guid> CreateOrganizationAsync(
 		EinsatzbereitApi client, CancellationToken cancellationToken)

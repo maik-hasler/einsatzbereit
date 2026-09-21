@@ -3,7 +3,7 @@
     "LICENSE$",
     "\\.md$",
     "ApiClient\\.cs$",
-    "api-client\\.ts$",
+    "frontend/src/client/generated/",
     "openapi-v1\\.json$",
     "packages\\.lock\\.json$",
     "node_modules"

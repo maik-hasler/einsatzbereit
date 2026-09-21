@@ -1,5 +1,5 @@
 import { useReducer, useRef } from "react";
-import type { MyProfileResponse } from "../../client/api-client";
+import type { MyProfileResponse } from "../../client";
 
 export type ContactPref = "Email" | "Phone" | "";
 export type PreferredLanguage = "de" | "en";

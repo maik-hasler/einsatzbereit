@@ -1,8 +1,8 @@
 import type {
-	EinsatzbereitApi,
+	ApiClient,
 	PagedListOfVolunteerOpportunitySummary,
 	VolunteerOpportunityAvailableDate,
-} from "../client/api-client";
+} from "../client";
 
 export interface FetchVolunteerOpportunitiesOptions {
 	pageNumber: number;
@@ -21,26 +21,28 @@ export interface FetchVolunteerOpportunitiesOptions {
 }
 
 export function fetchVolunteerOpportunities(
-	api: EinsatzbereitApi,
+	api: ApiClient,
 	options: FetchVolunteerOpportunitiesOptions,
 	signal?: AbortSignal,
 ): Promise<PagedListOfVolunteerOpportunitySummary> {
-	return api.getVolunteerOpportunities(
-		options.pageNumber,
-		options.pageSize,
-		options.occurrence,
-		options.participationType,
-		options.isRemote,
-		options.dateFrom,
-		options.dateTo,
-		options.centerLatitude,
-		options.centerLongitude,
-		options.radiusKm,
-		options.categories,
-		options.tag,
-		options.keyword,
+	return api.getVolunteerOpportunities({
+		query: {
+			PageNumber: options.pageNumber,
+			PageSize: options.pageSize,
+			Occurrence: options.occurrence,
+			ParticipationType: options.participationType,
+			IsRemote: options.isRemote,
+			DateFrom: options.dateFrom,
+			DateTo: options.dateTo,
+			CenterLatitude: options.centerLatitude,
+			CenterLongitude: options.centerLongitude,
+			RadiusKm: options.radiusKm,
+			Categories: options.categories,
+			Tag: options.tag,
+			Keyword: options.keyword,
+		},
 		signal,
-	);
+	});
 }
 
 export interface FetchVolunteerOpportunityDateAvailabilityOptions {
@@ -58,27 +60,29 @@ export interface FetchVolunteerOpportunityDateAvailabilityOptions {
 }
 
 export function fetchVolunteerOpportunityDateAvailability(
-	api: EinsatzbereitApi,
+	api: ApiClient,
 	options: FetchVolunteerOpportunityDateAvailabilityOptions,
 	signal?: AbortSignal,
 ): Promise<VolunteerOpportunityAvailableDate[]> {
-	return api.getVolunteerOpportunityDateAvailability(
-		options.from,
-		options.to,
-		// The server derives the caller's zone from the X-Timezone header
-		// (sent on every request, see api-instance.ts) rather than this
-		// scalar offset - a single offset can't be right for every slot in
-		// a multi-week window once a DST transition falls inside it (#2203).
-		undefined,
-		options.occurrence,
-		options.participationType,
-		options.isRemote,
-		options.centerLatitude,
-		options.centerLongitude,
-		options.radiusKm,
-		options.categories,
-		options.tag,
-		options.keyword,
+	return api.getVolunteerOpportunityDateAvailability({
+		query: {
+			From: options.from,
+			To: options.to,
+			// The server derives the caller's zone from the X-Timezone header
+			// (sent on every request, see api-instance.ts) rather than this
+			// scalar offset - a single offset can't be right for every slot in
+			// a multi-week window once a DST transition falls inside it (#2203).
+			UtcOffsetMinutes: undefined,
+			Occurrence: options.occurrence,
+			ParticipationType: options.participationType,
+			IsRemote: options.isRemote,
+			CenterLatitude: options.centerLatitude,
+			CenterLongitude: options.centerLongitude,
+			RadiusKm: options.radiusKm,
+			Categories: options.categories,
+			Tag: options.tag,
+			Keyword: options.keyword,
+		},
 		signal,
-	);
+	});
 }

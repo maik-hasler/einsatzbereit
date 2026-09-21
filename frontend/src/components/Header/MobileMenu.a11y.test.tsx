@@ -33,7 +33,7 @@ describe("MobileMenu a11y", () => {
 				activeOrg={{
 					id: "org-1",
 					name: "Freiwillige Feuerwehr",
-					logoUrl: undefined,
+					logoUrl: null,
 					role: "Organizer",
 				}}
 			/>,

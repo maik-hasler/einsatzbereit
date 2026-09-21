@@ -36,7 +36,7 @@ beforeEach(() => {
 	api.__reset();
 });
 
-// useSharedOrgFetch dedupes on `opportunities:{org}:{refreshKey}` in a
+// useCachedFetch dedupes on `opportunities:{org}:{refreshKey}` in a
 // module-level map, so every case gets its own refreshKey - otherwise the
 // pending promise the loading case parks there is what all the later ones
 // subscribe to, and they never leave the skeleton.
