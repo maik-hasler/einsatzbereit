@@ -12,7 +12,7 @@
       "className": "EinsatzbereitApi",
       "injectHttpClient": true,
       "disposeHttpClient": false,
-      "generateClientInterfaces": true,
+      "generateClientInterfaces": false,
       "jsonLibrary": "SystemTextJson",
       "useBaseUrl": false,
       "generateBaseUrlProperty": false,
