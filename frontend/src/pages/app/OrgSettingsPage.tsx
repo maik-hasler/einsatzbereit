@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../../hooks/useMyOrganizations";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import {
@@ -37,6 +38,7 @@ export default function OrgSettingsPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const navigate = useNavigate();
 	usePageTitle(`${t("orgOverview.tabSettings")} - ${org.name}`);
 
@@ -165,6 +167,7 @@ export default function OrgSettingsPage() {
 			logoObjectUrlRef.current = url;
 			setLogoUrl(url);
 
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
@@ -186,6 +189,7 @@ export default function OrgSettingsPage() {
 				logoObjectUrlRef.current = null;
 			}
 			setLogoUrl(null);
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoRemoveError"));
@@ -226,6 +230,7 @@ export default function OrgSettingsPage() {
 			});
 			setEditing(false);
 			setSuccessMessage(t("orgSettings.savedSuccess"));
+			await invalidateMyOrganizations();
 			reloadOrg();
 		} catch {
 			setSettingsError(t("orgSettings.saveError"));
@@ -241,6 +246,7 @@ export default function OrgSettingsPage() {
 			await api.deleteOrganization({
 				path: { organizationId: org.id },
 			});
+			await invalidateMyOrganizations();
 			navigate("/");
 		} catch (err) {
 			setShowDeleteConfirm(false);

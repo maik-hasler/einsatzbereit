@@ -5,6 +5,7 @@ import { quoteMarks } from "../../lib/quotes";
 import { useAuth } from "react-oidc-context";
 import type { EngagementSummary, MyInvitationDto } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../../hooks/useMyOrganizations";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { refreshAccessTokenAfterRoleGrant } from "../../lib/authRefresh";
@@ -64,6 +65,7 @@ function isInterestEngagement(e: EngagementSummary): boolean {
 
 export default function ActivitySection() {
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const quotes = quoteMarks(i18n.language);
@@ -292,6 +294,10 @@ export default function ActivitySection() {
 			// doesn't say which, so refresh unconditionally rather than 403 on
 			// the caller's next organizer action (#2206).
 			await refreshAccessTokenAfterRoleGrant(auth);
+
+			// Accepting an invitation joins an organization, so it belongs in
+			// the switcher's list from here on.
+			await invalidateMyOrganizations();
 
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 		} catch {

@@ -5,6 +5,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { MemberCandidateDto, OrgInvitationDto } from "../../client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../../hooks/useMyOrganizations";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { looksLikeEmail } from "../../lib/emailLike";
@@ -96,6 +97,7 @@ export default function OrgMembersPage() {
 	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const auth = useAuth();
 	const navigate = useNavigate();
 	usePageTitle(`${t("orgOverview.tabMembers")} - ${org.name}`);
@@ -385,6 +387,7 @@ export default function OrgMembersPage() {
 			await api.removeMember({
 				path: { organizationId: org.id, userId: currentUserId },
 			});
+			await invalidateMyOrganizations();
 			navigate("/");
 		} catch (err) {
 			setShowLeaveConfirm(false);

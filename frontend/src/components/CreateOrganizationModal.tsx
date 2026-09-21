@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { Organization } from "../client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useInvalidateMyOrganizations } from "../hooks/useMyOrganizations";
 import {
 	getInputClass,
 	getTextareaClass,
@@ -40,6 +41,7 @@ interface Props {
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const api = useApiClient();
+	const invalidateMyOrganizations = useInvalidateMyOrganizations();
 	const auth = useAuth();
 	const { t, i18n } = useTranslation();
 	const schema = useMemo(() => buildOrganizationFormSchema(t), [t]);
@@ -140,6 +142,11 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					dispatchToast("warning", t("organization.logoUploadFailedWarning"));
 				}
 			}
+			// Before the caller navigates into the new organization's dashboard:
+			// its switcher resolves the active organization out of the cached
+			// list, and a list that predates this call does not contain it.
+			await invalidateMyOrganizations();
+
 			onSuccess(organization);
 			onClose();
 		} catch (err: unknown) {
