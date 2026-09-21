@@ -152,7 +152,17 @@ pnpm lint            # eslint, zero warnings allowed
 pnpm format:write    # apply Prettier formatting - run before every commit
 pnpm format:check    # check Prettier formatting (used by CI)
 pnpm i18n:check      # verify en.json/de.json key parity - CI hard gate, run before committing locale changes
+pnpm size            # size-limit against .size-limit.cjs - CI hard gate, needs a `pnpm build` first
+pnpm check:deps      # import cycles, orphans, unresolvable relative imports (scripts/check-module-graph.js)
 ```
+
+The `check:*` scripts are all plain node scripts under `scripts/`, all wired
+into `frontend-checks.yml`'s `lint` job, and all report the offending file by
+name. A deliberate choice over reaching for a tool per question: the repo pins
+`engines.node` to whatever is current and every workflow reads it via
+`node-version-file`, so a tool that follows the node.js release cycle cannot
+run here on an odd-numbered line - which is what happened to
+`dependency-cruiser` and is recorded in ADR-11.
 
 ## Unit Tests
 
