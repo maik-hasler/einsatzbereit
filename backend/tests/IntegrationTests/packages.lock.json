@@ -1198,7 +1198,7 @@
         "dependencies": {
           "Application": "[1.0.0, )",
           "EFCore.NamingConventions": "[10.0.1, 10.0.1]",
-          "MailKit": "[4.17.0, 4.17.0]",
+          "MailKit": "[4.18.0, 4.18.0]",
           "Microsoft.EntityFrameworkCore.Design": "[10.0.12, 10.0.12]",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, 10.0.12]",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.12, 10.0.12]",
@@ -1346,11 +1346,11 @@
       },
       "MailKit": {
         "type": "CentralTransitive",
-        "requested": "[4.17.0, 4.17.0]",
-        "resolved": "4.17.0",
-        "contentHash": "1nUAVLxM9fhT/78we6/AGsCesnpn5dRNLLeRqOfr52Wnk87pzVwo5YMTMyqnmoXrYc7piGhmayiMA/OgDluIjg==",
+        "requested": "[4.18.0, 4.18.0]",
+        "resolved": "4.18.0",
+        "contentHash": "Sk+n5f4uVKiQKECOCPcFcYtYpIt9rcli7dDboSkWM2TBbTYE7EpfudL+e5a6TFp9eMHOzNYOydzZh0b+zFGK4A==",
         "dependencies": {
-          "MimeKit": "4.17.0"
+          "MimeKit": "4.18.0"
         }
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
