@@ -1777,6 +1777,10 @@ export type UpdateUserProfileData = {
 
 export type UpdateUserProfileErrors = {
     /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
      * Unauthorized
      */
     401: ProblemDetails;
@@ -1834,6 +1838,10 @@ export type UpdateNotificationPreferencesData = {
 };
 
 export type UpdateNotificationPreferencesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
     /**
      * Unauthorized
      */
@@ -1904,6 +1912,10 @@ export type SetUserEnabledData = {
 
 export type SetUserEnabledErrors = {
     /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
      * Unauthorized
      */
     401: ProblemDetails;
@@ -1942,6 +1954,10 @@ export type SetUserAdminStatusData = {
 };
 
 export type SetUserAdminStatusErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
     /**
      * Unauthorized
      */
@@ -2557,6 +2573,10 @@ export type SearchMemberCandidatesErrors = {
      * Unauthorized
      */
     401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
 };
 
 export type SearchMemberCandidatesError = SearchMemberCandidatesErrors[keyof SearchMemberCandidatesErrors];
