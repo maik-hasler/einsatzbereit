@@ -8,6 +8,7 @@
 		<PackageReference Include="Aspire.Hosting.Testing" />
 		<PackageReference Include="AwesomeAssertions" />
 		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
+		<PackageReference Include="NSwag.MSBuild" />
 		<PackageReference Include="Respawn" />
 		<PackageReference Include="TUnit" />
 	</ItemGroup>
@@ -17,5 +18,42 @@
 		<ProjectReference Include="..\..\src\Aspire\AppHost\AppHost.csproj" />
 		<ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
 	</ItemGroup>
+
+	<!--
+	Generates ApiClient.cs, the typed client these tests drive the API with.
+
+	It lives here rather than in Api.csproj, where it used to, because the
+	client is this project's artifact: a production project whose build wrote
+	into ../../tests/ was an inversion that ArchitectureTests cannot see - it
+	enforces Clean Architecture on code references, and nothing enforces
+	anything on the build graph.
+
+	BeforeCompile, not AfterBuild: the generated file has to exist before this
+	project compiles. The ProjectReference on Api.csproj is what makes that
+	safe - Api builds first, and its own GenerateOpenApiDocuments target
+	refreshes wwwroot/openapi-v1.json, so NSwag always reads a current
+	document. Nothing here has to sequence that by hand.
+
+	No Configuration condition. The document is regenerated in every
+	configuration (Api.csproj sets OpenApiGenerateDocumentsOnBuild
+	unconditionally), so a Debug-only client meant `dotnet build -c Release`
+	rewrote one committed artifact and left the other stale, silently. The
+	release path does not pay for this: src/Api/Dockerfile builds Api.csproj
+	alone and never compiles this project.
+
+	A plain Exec, deliberately. This used to be ContinueOnError plus a captured
+	ConsoleOutput and a hand-rolled <Error>, which could never work: capturing
+	needs ConsoleToMSBuild="true" and the attribute was absent, so a failing
+	NSwag aborted the build with the text "(No message specified)". It was
+	broken for its whole life without anyone noticing, which says what the
+	cleverness was worth. Exec echoes NSwag's own output to the build log and
+	fails with it.
+	-->
+	<Target Name="GenerateApiClient" BeforeTargets="BeforeCompile">
+		<Exec
+			WorkingDirectory="$(MSBuildProjectDirectory)"
+			Command="$(NSwagExe_Net100) run nswag.json /variables:ApiVersion=v1"
+		/>
+	</Target>
 
 </Project>
